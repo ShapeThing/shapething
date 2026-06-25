@@ -1,0 +1,42 @@
+.editor.address {
+    position: relative;
+
+    .inner {
+        flex: 1 1 auto;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .input {
+        display: flex;
+        justify-content: space-between;
+        margin-right: 0;
+    }
+
+    .input-wrapper {
+        display: flex;
+    }
+
+    svg {
+        cursor: pointer;
+        margin: .5rem;
+    }
+
+    .geocode-results {
+        top: 100%;
+        position: absolute;
+        background-color: white;
+        cursor: pointer;
+        padding: .5rem;
+        border: 1px solid var(--gray-dark);
+        z-index: 2;
+    }
+
+    .geocode-result {
+        padding: .5rem;
+    }
+
+    .geocode-result:not(:last-child) {
+        border-bottom: 1px solid var(--gray);
+    }
+}

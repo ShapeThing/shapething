@@ -1,0 +1,13 @@
+@prefix schema: <https://schema.org/> .
+
+<urn:no-subject-given> schema:givenName "john" ;
+  schema:familyName "doe" ;
+  schema:gender "Male" ;
+  schema:address [
+    schema:streetAddress "123 Main St" ;
+    schema:postalCode "12345" ;
+    schema:addressLocality "Anytown" ;
+    schema:addressRegion "CA" ;
+    schema:addressCountry "USA"
+  ] .
+

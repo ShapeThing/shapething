@@ -1,0 +1,13 @@
+{
+  "context": {
+    "label": "rdfs:label",
+    "type": "rdf:type",
+    "@vocab": "http://ontology.shapething.com/app#",
+    "sta": "http://ontology.shapething.com/app#",
+    "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+    "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+    "sh": "http://www.w3.org/ns/shacl#",
+    "dash": "http://datashapes.org/dash#"
+  },
+  "compactValues": true
+}

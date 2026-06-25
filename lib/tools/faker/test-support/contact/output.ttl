@@ -1,0 +1,12 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#> <https://schema.org/givenName> "Hayley", "Hudson" ;
+  <https://schema.org/familyName> "Reichel" ;
+  <https://schema.org/birthDate> "2019-11-01T10:13:31.881Z"^^xsd:dateTime ;
+  <https://schema.org/address> [
+    <https://schema.org/streetAddress> "Eliza Creek" ;
+    <https://schema.org/postalCode> "13354" ;
+    <https://schema.org/addressLocality> "Doyleside" ;
+    <https://schema.org/addressRegion> "Alaska" ;
+    <https://schema.org/addressCountry> "Norway"
+  ] .

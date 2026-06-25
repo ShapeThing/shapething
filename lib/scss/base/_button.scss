@@ -1,0 +1,146 @@
+.button {
+  appearance: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--input-radius);
+  padding: 10px;
+  transition: background-color var(--easing) var(--speed), color var(--easing) var(--speed);
+
+  .iconify,
+  svg {
+    font-size: 1.5em;
+    color: var(--secondary);
+  }
+
+  &.small {
+    padding: 6px 8px;
+    font-size: .6em;
+  }
+
+  &.big {
+    padding: 12px 18px;
+    font-size: 1.1em;
+  }
+
+  &.primary {
+    color: white;
+    background-color: var(--primary);
+    border: 1px solid var(--primary);
+
+    .iconify,
+    svg {
+      color: white;
+    }
+
+    &.outline {
+      background-color: transparent;
+      border: 1px solid rgba(var(--primary-rgb), .4);
+      color: var(--primary);
+    }
+  }
+
+  &.danger {
+    color: white;
+    background-color: var(--danger);
+    border: 1px solid var(--danger);
+
+    &:not(.outline) {
+
+      .iconify,
+      svg {
+        color: white;
+      }
+    }
+
+    &.outline {
+      background-color: transparent;
+      border: 1px solid rgba(var(--danger-rgb), .4);
+      color: var(--danger);
+    }
+  }
+
+  &.secondary {
+    color: white;
+    background-color: var(--secondary);
+    border: 1px solid var(--secondary);
+
+    &:not(.outline) {
+
+      .iconify,
+      svg {
+        color: white;
+      }
+    }
+
+    &.outline {
+      background-color: transparent;
+      border: 1px solid rgba(var(--secondary-rgb), .4);
+      color: var(--secondary);
+    }
+  }
+
+  &.active,
+  &:hover {
+
+    .iconify,
+    svg {
+      color: var(--primary) !important;
+    }
+
+    &.primary,
+    &.secondary {
+      background-color: white;
+      border: 1px solid var(--primary);
+      color: var(--primary);
+    }
+  }
+
+  &.icon {
+    padding: 0;
+    min-width: 20px;
+    height: 20px;
+
+    .iconify,
+    svg {
+      font-size: 16px;
+      width: 16px;
+      height: 16px;
+      transition: color .3s ease-in-out;
+    }
+
+    span {
+      margin-right: 7px;
+    }
+  }
+}
+
+.inline-button {
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 2em;
+  max-width: var(--max-width);
+
+  .button.outline {
+    background-color: white;
+  }
+}
+
+[data-mode="edit"] .actions {
+  flex-direction: row-reverse;
+  position: sticky;
+  bottom: .5em;
+
+  .delete-resource {
+    margin-right: auto;
+  }
+}

@@ -1,0 +1,46 @@
+.shape-editor {
+    width: 100%;
+
+    >footer {
+        justify-content: flex-end;
+        padding-block: 1rem;
+        display: flex;
+        gap: .5rem;
+        background-color: white;
+    }
+
+    .sortable-store-item:has(.editor.type-group) .inner {
+        background-color: rgba(var(--secondary-rgb), .3);
+    }
+
+    .editor {
+        align-items: center;
+
+        .chip {
+            margin-left: auto;
+        }
+    }
+
+    .local-name {
+        font-style: italic;
+        font-family: monospace;
+        color: var(--gray-dark);
+    }
+
+    .unused-groups {
+        margin-top: 2em;
+    }
+
+    .unused-groups-header {
+        display: flex;
+        flex-direction: column;
+    }
+}
+
+.editor-header.shape {
+    background-color: transparent;
+}
+
+.unused-group.has-hover-over {
+    background-color: rgba(var(--secondary-rgb), .7);
+}

@@ -1,0 +1,42 @@
+.editor.classhierarchy {
+    padding-left: 1em;
+    display: flex;
+
+    .tree {
+        margin-right: auto;
+
+    }
+
+    ul {
+        list-style: none;
+        padding: 0;
+    }
+
+    .iconify {
+        transform: translateY(2px);
+        width: 1em;
+        cursor: pointer;
+
+        &:hover {
+            color: var(--primary);
+        }
+    }
+
+    .arrow {
+        transform: translateY(2px);
+        transition: transform 0.3s ease-in-out;
+        cursor: pointer;
+
+        &.arrow--open {
+            transform: rotate(90deg) translateY(2px);
+        }
+    }
+
+    .tree-node__leaf {
+        padding-left: 1em;
+    }
+
+    .name {
+        margin-left: .4em;
+    }
+}

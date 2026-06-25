@@ -1,0 +1,46 @@
+![Logo](https://storybook-shacl-renderer.shapething.com/logo.svg)
+
+# SHACL-renderer
+
+A suite of tools to use SHACL for web development.
+
+- ### Forms
+  - One or more shapes at the root level
+  - A hierarchy of shapes via rdfs:subClassOf
+  - Multiple shapes and an action picker that lets you switch
+  - Multilingual via global language tabs or individual language selector
+  - Sorting data of rdf:List and via a custom predicate
+  - Ability to show invalid data and correct it
+  - Use labels from ontology (dereference)
+  - Conditional fields
+  - owl:imports support
+  - Autocomplete widget that can load external data via SPARQL via custom predicate
+  - Pluggable widgets framework for dash:Editors, dash:Viewers, groups, lists and facets.
+  - Various types of groups, such as a collapsible group, a drawer where optional fields without values are hidden and a step group.
+  - Various editors such as: Upload editor, EditorJS (rich text / media) and a specific Shape editor to create SHACL shapes.
+  - Nested forms via modal
+  - Internationalization via Project Fluent
+  - SCSS, meaning you can decide to theme the whole system. With heavy use of CSS variables.
+- ### Views
+  - A diff mode
+  - View RDF data without shape
+- ### Facets
+  - Create facets from a shape
+- ### Faker
+  - Generate dummy data according to a shape
+- ### TypeScript Type
+  - Output a shape to a type
+- ### JavaScript object
+  - Output data to JavaScript with or without a shape
+
+# Usage
+
+See more usage examples in /lib/components/stories
+
+```tsx
+import { ShaclRenderer } from '@shapething/shacl-renderer'
+
+function App() {
+  return <ShaclRenderer mode="edit" shapes={new URL('/shapes/contact.ttl', location.origin)} />
+}
+```

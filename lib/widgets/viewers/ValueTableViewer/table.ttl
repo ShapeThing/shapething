@@ -1,0 +1,52 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix stf: <http://ontology.shapething.com/facet#> .
+@prefix ex: <http://example.org/> .
+
+<#data>
+  a ex:List ;
+  ex:fruits ex:peer, ex:apple, ex:banana ;
+.
+
+<#default>
+  a sh:NodeShape ;
+  sh:targetClass ex:List ;
+
+  sh:property [
+    sh:name "Fruits"@en ;
+    dash:viewer dash:ValueTableViewer ;
+    sh:path ex:fruits ;
+    sh:node [
+      sh:property [
+        sh:name "Label"@en, "Label"@nl ;
+        sh:path rdfs:label ;
+        sh:order 1 ;
+      ] ;
+
+      sh:property [
+        sh:name "Comment"@en, "Commentaar"@nl ;
+        sh:path rdfs:comment ;
+        sh:order 2;
+      ] ;
+
+    ] ;
+  ];
+.
+
+ex:peer
+  rdfs:label "Peer"@en ;
+  rdfs:comment "A peer is often green and juicy"@en .
+
+ ex:apple
+  rdfs:label "Apple"@en ;
+  rdfs:label "Appel"@nl ;
+  rdfs:comment "Apples come in red and green colors"@en ;
+.
+ex:banana
+  rdfs:label "Banana"@en ;
+  rdfs:comment "Bananas are yellow"@en .

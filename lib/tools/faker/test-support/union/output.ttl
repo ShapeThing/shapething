@@ -1,0 +1,6 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#> <https://schema.org/givenName> "Hayley", "Hudson" ;
+  <https://schema.org/familyName> "Reichel" ;
+  <https://schema.org/birthDate> "2019-11-01T10:13:31.881Z"^^xsd:dateTime ;
+  <https://schema.org/address> "Reichel Alley 10133, Heavenchester, Hawaii, Tajikistan" .

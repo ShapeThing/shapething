@@ -1,0 +1,40 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix stf: <http://ontology.shapething.com/facet#> .
+
+<#data>
+  a schema:Person ;
+  schema:address [
+    a schema:PostalAddress ;
+    schema:streetAddress "123 Main St" ;
+    schema:addressLocality "Anytown" ;
+    schema:addressRegion "CA" ;
+    schema:postalCode "12345" ;
+    schema:addressCountry "USA"
+  ], [
+    a schema:PostalAddress ;
+    schema:streetAddress "Breestraat 1" ;
+    schema:addressLocality "Amersfoort" ;
+    schema:addressRegion "Utrecht" ;
+    schema:postalCode "3811 BH" ;
+    schema:addressCountry "Netherlands"
+  ] .
+
+<#default>
+  a sh:NodeShape ;
+  sh:targetClass schema:Person ;
+  sh:closed true ;
+  sh:ignoredProperties (rdf:type) ;
+
+  sh:property [
+    sh:name "Address"@en ;
+    sh:path schema:address ;
+    dash:editor stsr:AddressEditor ;
+    stsr:osmCountries "nl" ;
+  ];
+.

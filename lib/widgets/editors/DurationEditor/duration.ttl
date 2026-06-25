@@ -1,0 +1,26 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix stf: <http://ontology.shapething.com/facet#> .
+
+<#data>
+  a schema:Recipe ;
+  schema:duration "P1Y2M10DT15H30M5S"^^xsd:duration ;
+.
+
+<#default>
+  a sh:NodeShape ;
+  sh:targetClass schema:Recipe ;
+  sh:closed true ;
+  sh:ignoredProperties (rdf:type) ;
+
+  sh:property [
+    sh:name "Duration"@en ;
+    sh:path schema:duration ;
+    sh:datatype xsd:duration ;
+  ];
+.

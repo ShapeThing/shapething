@@ -1,0 +1,140 @@
+.editors {
+  gap: 0.5em;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  position: relative;
+
+  >.button {
+    align-self: flex-start;
+  }
+}
+
+.field-description {
+  font-size: 15px;
+  color: var(--gray-dark);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+.field-description+.plus-options {
+  margin-top: .4em;
+}
+
+.editor {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  border-radius: var(--input-radius);
+  background-color: rgba(var(--primary-rgb), 0.07);
+  transition: background-color .3s ease-in-out;
+  padding: 0.5em;
+  gap: 0.5em;
+  margin-bottom: 6px;
+
+
+  .trash-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
+
+  // &.focused {
+  //   background-color: rgba(var(--primary-rgb), 0.3);
+  // }
+
+
+  // &.externally-focused {
+  //   outline: 2px solid var(--color);
+  //   pointer-events: none;
+  // }
+
+  >.node+.button {
+    margin-inline-start: .7em;
+  }
+
+  [data-mode='inline-edit'] & {
+    display: inline-flex;
+    padding: 0;
+    background-color: transparent;
+
+    .input {
+      padding-block: 3px;
+      margin-block: -3px;
+    }
+  }
+
+  >.button {
+    align-self: center;
+    margin-bottom: auto;
+    margin-top: 7px;
+  }
+
+  &.delete-animation {
+    animation: delete 0.4s ease-in-out forwards;
+  }
+
+  .sort-handle {
+    display: flex;
+    justify-content: center;
+    cursor: grab;
+    align-items: start;
+    margin-top: 8px;
+    width: 40px;
+  }
+
+  &.sortable-ghost {
+    background-color: rgba(var(--primary-rgb), .5);
+  }
+}
+
+@keyframes delete {
+  0% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.editor-header {
+  position: relative;
+  display: flex;
+  border-radius: var(--input-radius);
+  background-color: rgba(var(--primary-rgb), 0.07);
+}
+
+.externally-focused-ids {
+  position: absolute;
+  top: 100%;
+}
+
+.externally-focused-id {
+  background-color: var(--color);
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.validation-result {
+  font-size: 0.8em;
+  padding: 1rem .7rem;
+  width: 100%;
+  flex: 100%;
+  border-radius: var(--input-radius);
+  font-weight: bold;
+
+  &.violation {
+    background-color: rgba(var(--danger-rgb), 0.1);
+    color: var(--danger);
+    border-left: 3px solid var(--danger);
+  }
+
+  &.info {
+    background-color: rgba(var(--info-rgb), 0.1);
+    color: var(--info);
+    border-left: 3px solid var(--info);
+  }
+}

@@ -1,0 +1,22 @@
+.editor.radios {
+    padding-block: .5em;
+
+    .radio-input,
+    .radio-label {
+        cursor: pointer;
+    }
+
+    .radio-label {
+        margin-block: .2em;
+    }
+
+    .radio-input {
+        margin-inline: 1em .5em;
+    }
+
+    .radios-inner {
+        margin-right: auto;
+        display: flex;
+        flex-direction: column;
+    }
+}

@@ -1,0 +1,36 @@
+.editor.fileupload {
+    .spinner {
+        margin-left: 1em;
+    }
+
+    --size: 32px;
+
+    .image {
+        max-height: var(--size);
+        max-width: var(--size);
+        object-fit: cover;
+        display: block;
+        width: var(--size);
+        height: var(--size);
+    }
+}
+
+.editor-header.fileupload {
+    .drop-zone {
+        display: flex;
+        padding: 60px 30px;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        margin: 20px;
+        border: 2px dashed var(--primary);
+        border-radius: var(--input-radius);
+        position: relative;
+        cursor: pointer;
+    }
+}
+
+.editor-header.fileupload+.add-object,
+.editor.fileupload+.add-object {
+    display: none;
+}

@@ -1,0 +1,24 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix ed: <https://editorjs.io/> .
+
+<urn:no-subject-given> ed:time "1732052896004" ;
+  ed:version "2.30.7" ;
+  ed:blocks ([
+    ed:id "9d61vUfGCT" ;
+    ed:type "paragraph" ;
+    ed:data [
+      ed:text "Lorem"
+    ]
+  ] [
+    ed:id "pK4nbVeBqp" ;
+    ed:type "paragraph" ;
+    ed:data [
+      ed:text "Ipsum"
+    ]
+  ] [
+    ed:id "8xA8tKBIw9" ;
+    ed:type "paragraph" ;
+    ed:data [
+      ed:text "asda"
+    ]
+  ]) .

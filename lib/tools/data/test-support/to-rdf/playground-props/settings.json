@@ -1,0 +1,7 @@
+{
+  "context": {
+    "@vocab": "http://ontology.shapething.com/shacl-renderer/props/",
+    "sh": "http://www.w3.org/ns/shacl#",
+    "prop": "http://ontology.shapething.com/shacl-renderer/props/"
+  }
+}

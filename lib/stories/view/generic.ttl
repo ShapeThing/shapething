@@ -1,0 +1,37 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dce: <http://purl.org/dc/elements/1.1/> .
+@prefix schema: <http://schema.org/> .
+@prefix sschema: <httpS://schema.org/> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+
+stsr:GenericView
+    a sh:NodeShape ;
+
+    sh:property [
+        sh:path [ sh:alternativePath ( rdfs:label dce:title schema:name sschema:name ) ] ;
+        sh:name "Label"@en, "Label"@nl ;
+        sh:description "A human-readable label."@en, "Een leesbaar label."@nl ;
+        stsr:htmlElement "h1" ;
+        sh:order -10 ;
+    ] ;
+
+    sh:property [
+        sh:path [ sh:alternativePath ( rdfs:comment dce:description schema:description sschema:description) ] ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:description "A human-readable description."@en, "Een leesbare beschrijving."@nl ;
+        sh:order -9 ;
+    ] ;
+
+    sh:property [
+        sh:path rdf:type ;
+        sh:name "Type"@en, "Type"@nl ;
+        sh:description "The type of the resource."@en, "Het type van de resource."@nl ;
+        sh:order -8 ;
+    ] ;
+.
+

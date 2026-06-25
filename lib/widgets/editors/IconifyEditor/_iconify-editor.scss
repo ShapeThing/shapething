@@ -1,0 +1,60 @@
+.editor.iconify {
+
+    .inner {
+        position: relative;
+        flex: 1 1 90%;
+        display: flex;
+        flex-wrap: wrap;
+        max-width: var(--default-input-max-width);
+        margin-right: auto;
+
+    }
+
+    .top {
+        display: flex;
+        gap: 10px;
+
+    }
+
+    .iconify:first-child {
+        width: 20px;
+        font-size: 20px;
+        height: 20px;
+    }
+
+    .selected>.image {
+        margin-left: 10px;
+    }
+
+    .edit-icon {
+        margin-right: .5em;
+        cursor: pointer;
+        width: 16px;
+        font-size: 16px;
+        height: 16px;
+    }
+
+    .iconify-search-results {
+        z-index: 1000;
+        margin-block: 20px;
+        flex: 1 1 100%;
+        display: flex;
+        background-color: white;
+        flex-wrap: wrap;
+        top: 13px;
+        border: 1px solid var(--primary);
+        border-radius: var(--input-radius);
+        position: absolute;
+        width: 100%;
+        gap: 10px;
+        padding: .5em;
+
+        .button {
+
+            &.active,
+            &:hover {
+                background-color: rgba(var(--primary-rgb), .2);
+            }
+        }
+    }
+}

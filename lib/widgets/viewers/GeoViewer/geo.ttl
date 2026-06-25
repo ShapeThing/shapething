@@ -1,0 +1,27 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix stf: <http://ontology.shapething.com/facet#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+
+<#data>
+  a schema:Thing ;
+  geo:asWKT "Point (5.387227189698044 52.155278646005684)"^^geo:wktLiteral ;
+.
+
+<#default>
+  a sh:NodeShape ;
+  sh:targetClass schema:Thing ;
+  sh:closed true ;
+  sh:ignoredProperties (rdf:type) ;
+
+  sh:property [
+    sh:name "Location"@en ;
+    sh:path geo:asWKT ;
+  ];
+.
+

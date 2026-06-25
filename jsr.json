@@ -1,0 +1,24 @@
+{
+  "name": "@shapething/shacl-renderer",
+  "version": "0.0.100",
+  "license": "GPL-3.0-only",
+  "exports": {
+    ".": "./lib/index.tsx",
+    "./webcomponent": "./lib/webcomponent.tsx",
+    "./rdfToData": "./lib/tools/data/rdfToData.ts",
+    "./dataToRdf": "./lib/tools/data/dataToRdf.ts",
+    "./faker": "./lib/tools/faker/faker.ts",
+    "./type": "./lib/tools/type/type.ts",
+    "./resolveRdfInput": "./lib/core/resolveRdfInput.ts"
+  },
+  "publish": {
+    "exclude": [
+      ".github",
+      "scripts",
+      "public",
+      "ontology",
+      ".storybook",
+      "README.mdx"
+    ]
+  }
+}

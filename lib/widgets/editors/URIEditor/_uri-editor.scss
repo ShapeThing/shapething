@@ -1,0 +1,37 @@
+.uri-selector {
+    display: flex;
+    flex: 1 1 auto;
+    max-width: var(--default-input-max-width);
+    margin-right: auto;
+    position: relative;
+
+    .prefix {
+        flex: 1 1 100px;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        margin-right: -1px;
+    }
+
+    .input {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        flex: 1 1 90%;
+        padding-right: 30px;
+    }
+
+    .link {
+        position: absolute;
+        right: 0;
+        top: 50%;
+        font-size: .8em;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        transform: translate(-50%, -50%);
+        color: var(--text) !important;
+    }
+}
+
+.sortable .uri {
+    width: 100%;
+}

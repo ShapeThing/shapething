@@ -1,0 +1,117 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix : <http://ontology.shapething.com/app#> .
+<>
+    a sh:NodeShape ;
+    sh:targetClass :Dataset ;
+
+    sh:property [
+        sh:path rdf:type ;
+        sh:hasValue :Dataset ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:path rdfs:label ;
+        sh:name "Label" ;
+        sh:datatype xsd:string ;
+        sh:description "A human-readable label for the dataset." ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 1 ;
+        sh:defaultValue "My Dataset" ;
+        dash:singleLine true ;
+    ] ;
+
+    sh:property [
+        sh:path :datasetType ;
+        sh:name "Type" ;
+        sh:description "Choose the dataset type: SPARQL endpoint or local folder." ;
+        sh:in ( :SparqlEndpoint :LocalFolder ) ;
+        dash:editor stsr:RadiosEditor ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:defaultValue :LocalFolder ;
+        sh:order 3 ;
+    ] ;
+
+    sh:property [
+        sh:path :baseIRI ;
+        sh:name "BaseIRI" ;
+        sh:nodekind sh:IRI ;
+        dash:editor dash:URIEditor ;
+        sh:description "The base IRI for the dataset." ;
+        sh:order 2 ;
+        sh:defaultValue "http://example.com/" ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:or (:localFolderForm :sparqlEndpointForm) ;
+.
+
+:sparqlEndpointForm
+a sh:NodeShape ;
+
+    sh:property [
+        sh:path :datasetType ;
+        sh:hasValue :SparqlEndpoint ;
+        sh:minCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:path :endpointUrl ;
+        sh:name "Endpoint URL" ;
+        sh:datatype xsd:anyURI ;
+        sh:description "The URL of the SPARQL endpoint." ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 4 ;
+        dash:singleLine true ;
+    ] ;
+
+    sh:property [
+        sh:path :sparqlQuery ;
+        sh:name "SPARQL Query" ;
+        sh:datatype xsd:string ;
+        sh:description "An optional SPARQL query to run against the endpoint." ;
+        sh:order 5 ;
+        dash:multiLine true ;
+    ] ;
+.
+
+:localFolderForm
+    a sh:NodeShape ;
+
+    sh:property [
+        sh:path :datasetType ;
+        sh:hasValue :LocalFolder ;
+        sh:minCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:path :folderPath ;
+        sh:name "Folder Path" ;
+        sh:order 6 ;
+        dash:editor :LocalStoreEditor ;
+        sh:description "The local path to the folder containing the dataset." ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+
+.
+
+:SparqlEndpoint a rdfs:Class ;
+    rdfs:label "SPARQL Endpoint" ;
+    rdfs:comment "A dataset that is accessed via a SPARQL endpoint." ;
+.
+
+:LocalFolder a rdfs:Class ;
+    rdfs:label "Local Folder" ;
+    rdfs:comment "A dataset that is accessed via a local folder." ;
+.

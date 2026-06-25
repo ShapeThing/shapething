@@ -1,0 +1,49 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix stf: <http://ontology.shapething.com/facet#> .
+@prefix dbc: <http://dbpedia.org/resource/Category:> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<#default>
+  a sh:NodeShape ;
+  sh:targetClass schema:Person ;
+  rdfs:comment """You can set the type of groups by adding a type. 
+  Like:
+  
+  <#name>
+	  a sh:PropertyGroup, stsr:HorizontalPropertyGroup .
+  
+  """ ;
+  sh:closed true ;
+
+  sh:property [
+    sh:name "Given name"@en ;
+    sh:path schema:givenName ;
+    sh:maxCount 1;
+    sh:minCount 1;
+    sh:group <#name> ;
+  ];
+
+  sh:property [
+    sh:name "Family name"@en ;
+    sh:path schema:familyName ;
+    sh:maxCount 1;
+    sh:minCount 1;
+    sh:group <#name> ;
+  ];
+
+.
+
+<#data>
+    schema:givenName "John";
+    schema:familyName "Doe"  .
+
+<#name>
+	a sh:PropertyGroup, stsr:HorizontalPropertyGroup ;
+	sh:order 2 .

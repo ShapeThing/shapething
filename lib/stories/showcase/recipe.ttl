@@ -1,0 +1,252 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <http://schema.org/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix org: <http://www.w3.org/ns/org#> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix qudt-unit: <http://qudt.org/vocab/unit#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+
+<> a sh:NodeShape ;
+    sh:targetClass schema:Recipe ;
+
+    sh:property [
+        sh:name "Recipe name"@en, "Receptnaam"@nl ;
+        sh:path schema:name ;
+        sh:datatype rdf:langString ;
+        sh:minCount 1 ;
+        sh:order 1 ;
+        sh:uniqueLang true ;
+        sh:order 1;
+        sh:description "The name of the recipe."@en, "De naam van het recept."@nl ;
+    ] ;
+
+    sh:property [
+        sh:name "Cook method"@en, "Kookmethode"@nl ;
+        sh:path schema:cookMethod ;
+        stsr:endpoint <./cooking-methods.ttl> ;
+        dash:editor stsr:ClassHierarchyEditor ;
+        sh:class <http://purl.obolibrary.org/obo/FOODON_03450002> ;
+        sh:minCount 1 ;
+        sh:order 2;
+        sh:description "The method used to cook the recipe."@en, "De methode die gebruikt wordt om het recept te koken."@nl ;
+    ];
+
+    sh:property [
+        sh:name "Category"@en, "Categorie"@nl ;
+        sh:path schema:recipeCategory ;
+        sh:in ("Avondeten" "Lunch" "Breakfast" "Ontbijt" "Snack" "Tussendoortje") ;
+        dash:editor stsr:RadiosEditor ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 3;
+    ];
+
+    sh:property [
+        sh:name "Prep time"@en, "Voorbereidingstijd"@nl ;
+        sh:path schema:prepTime ;
+        sh:datatype xsd:duration ;
+        sh:maxCount 1 ;
+        sh:order 3;
+        stsr:durationPattern "{hh}{mm}" ;
+    ];
+
+    sh:property [
+        sh:name "Total time"@en, "Totale tijd"@nl ;
+        sh:path schema:totalTime ;
+        sh:datatype xsd:duration ;
+        sh:order 4;
+        sh:maxCount 1 ;
+        stsr:durationPattern "{hh}{mm}" ;
+    ];
+
+    sh:property [
+        sh:name "Cook time"@en, "Kookduur"@nl ;
+        sh:path schema:cookTime ;
+        sh:datatype xsd:duration ;
+        sh:order 5;
+        sh:maxCount 1 ;
+        stsr:durationPattern "{hh}{mm}" ;
+    ];
+
+    sh:property [
+        sh:name "Cuisine"@en, "Keuken"@nl ;
+        sh:path schema:cuisine ;
+        sh:datatype rdf:langString ;
+        sh:minCount 1 ;
+        sh:uniqueLang true ;
+        sh:order 6 ;
+        sh:description "The type of cuisine the recipe belongs to."@en, "Het type keuken waartoe het recept behoort."@nl ;
+    ] ;
+
+    sh:property [
+        sh:name "Category"@en, "Categorie"@nl ;
+        sh:path schema:recipeCategory ;
+        sh:datatype rdf:langString ;
+        sh:minCount 1 ;
+        sh:uniqueLang true ;
+        sh:order 7;
+        sh:description "The category of the recipe."@en, "De categorie van het recept."@nl ;
+    ] ;
+
+    sh:property [
+        sh:name "Servings"@en, "Porties"@nl ;
+        sh:path schema:recipeYield ;
+        sh:datatype xsd:integer ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 8;
+        sh:description "The number of servings the recipe yields."@en, "Het aantal porties dat het recept oplevert."@nl ;
+    ] ;
+
+    sh:property [
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:path schema:description ;
+        sh:datatype rdf:langString ;
+        sh:minCount 1 ;
+        dash:singleLine false ;
+        sh:uniqueLang true ;
+        sh:order 9;
+        sh:description "A description of the recipe."@en, "Een beschrijving van het recept."@nl ;
+    ] ;
+    sh:property [
+        sh:name "Ingredients"@en, "Ingrediënten"@nl ;
+        sh:path ( schema:recipeIngredient [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+        sh:order 10;
+        sh:node <ingredient> ;
+        sh:nodeKind sh:BlankNode ;
+        sh:description "The ingredients required for the recipe."@en, "De ingrediënten die nodig zijn voor het recept."@nl ;
+    ] ;
+
+    sh:property [
+        sh:name "Images"@en, "Afbeeldingen"@nl ;
+        dash:editor stsr:FileUploadEditor ;
+        stsr:uploadUrl "/storage-service-worker" ;
+        sh:order 11 ;
+        sh:path schema:image ;
+    ];
+
+    sh:property [
+        sh:name "Nutrition"@en, "Voedingsinformatie"@nl ;
+        sh:path schema:nutrition ;
+        sh:nodeKind sh:BlankNode ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:node <nutrition> ;
+        # sh:group <nutritionGroup> ;
+        sh:order 12 ;
+        sh:description "Nutritional information about the recipe."@en, "Voedingsinformatie over het recept."@nl ;
+    ] ;
+.
+
+<nutrition> a sh:NodeShape ;
+    sh:property [
+        sh:name "Calories"@en, "Calorieën"@nl ;
+        sh:path schema:calories ;
+        sh:datatype xsd:float ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 15 ;
+    ] ;
+    sh:property [
+        sh:name "Fat"@en, "Vetten"@nl ;
+        sh:path schema:fatContent ;
+        sh:datatype xsd:float ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:name "Carbohydrates"@en, "Koolhydraten"@nl ;
+        sh:path schema:carbohydrateContent ;
+        sh:datatype xsd:float ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:name "Protein"@en, "Eiwitten"@nl ;
+        sh:path schema:proteinContent ;
+        sh:datatype xsd:float ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:name "Fiber"@en, "Vezels"@nl ;
+        sh:path schema:fiberContent ;
+        sh:datatype xsd:float ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:name "Sugar"@en, "Suiker"@nl ;
+        sh:path schema:sugarContent ;
+        sh:datatype xsd:float ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:name "Sodium"@en, "Natrium"@nl ;
+        sh:path schema:sodiumContent ;
+        sh:datatype xsd:float ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:name "Cholesterol"@en, "Cholesterol"@nl ;
+        sh:path schema:cholesterolContent ;
+        sh:datatype xsd:float ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+<nutritionGroup> a sh:PropertyGroup, stsr:CollapsiblePropertyGroup ;
+    sh:name "Nutrition"@en, "Voedingsinformatie"@nl ;
+    sh:order 20 ;
+ .
+
+<ingredient> a sh:NodeShape ;
+    sh:property [
+        sh:name "Ingredient"@en, "Ingrediënt"@nl ;
+        sh:path schema:name ;
+        sh:datatype rdf:langString ;
+        sh:minCount 1 ;
+        sh:uniqueLang true ;
+        sh:group <ingredientRow> ;
+        sh:order 1;
+    ] ;
+
+    sh:property [
+        sh:name "Quantity"@en, "Hoeveelheid"@nl ;
+        sh:path schema:amountOfThisIngredient ;
+        sh:datatype xsd:integer ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:group <ingredientRow> ;
+        sh:order 2;
+    ] ;
+
+    sh:property [
+        sh:name "Unit"@en, "Eenheid"@nl ;
+        sh:path schema:unitText ;
+        sh:minCount 1 ;
+        sh:group <ingredientRow> ;
+        sh:in (
+            qudt-unit:Gram
+            qudt-unit:Kilogram
+            qudt-unit:Liter
+            qudt-unit:MilliL
+            qudt-unit:Cup
+            qudt-unit:Tablespoon
+            qudt-unit:Teaspoon
+            qudt-unit:Each
+        ) ;
+        sh:maxCount 1 ;
+        sh:order 3;
+    ] .
+
+<ingredientRow> a sh:PropertyGroup, stsr:HorizontalPropertyGroup .

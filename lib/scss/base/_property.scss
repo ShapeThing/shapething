@@ -1,0 +1,95 @@
+.property {
+  flex: 1 1;
+
+  .optional {
+    line-height: 1.5;
+    margin-left: .5em;
+    font-size: .8em;
+    color: var(--primary);
+  }
+
+  .plus-options {
+    display: flex;
+    gap: .5em;
+    margin-top: .3em;
+    margin-bottom: .5em;
+    justify-content: end;
+  }
+}
+
+[data-mode='facet'],
+[data-mode='edit'] {
+  .property {
+    display: flex;
+    flex-direction: column;
+    transition: height .6s ease-in-out;
+
+    &.hidden {
+      display: none;
+    }
+
+    &:not(:last-child) {
+      margin-bottom: 1.2em;
+    }
+  }
+}
+
+button {
+  .iconify {
+    width: 20px;
+    height: 20px;
+  }
+}
+
+.nested-header {
+  display: flex;
+  max-width: calc(100% - 50px - 1em);
+  gap: 1em;
+  margin-left: .5em;
+  margin-top: .5em;
+  margin-bottom: -.5em;
+
+  .property {
+    margin-bottom: 0 !important;
+  }
+
+  .field-description {
+    margin-bottom: 0;
+  }
+}
+
+.nested .editor {
+
+  .editor .remove-object,
+  .label,
+  .field-description {
+    display: none !important;
+  }
+}
+
+.nested {
+  .node {
+    max-width: calc(100% - 50px);
+  }
+}
+
+.nested:has(.sortable-store) {
+  .nested-header {
+    padding-left: 37px;
+  }
+}
+
+.editor.details:has(.group.horizontal) {
+  >.button {
+    margin-block: 0;
+  }
+}
+
+.property-objects {
+  display: inline-flex;
+}
+
+
+[data-mode='edit'] .node {
+  margin-left: 20px;
+}

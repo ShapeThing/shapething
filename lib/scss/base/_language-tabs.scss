@@ -1,0 +1,78 @@
+.language-button {
+    flex: 0 0 auto;
+    border-top-left-radius: var(--input-radius);
+    border-top-right-radius: var(--input-radius);
+    transition: box-shadow var(--easing) var(--speed);
+    border: 1px solid transparent;
+    border-bottom: 1px solid var(--gray);
+    position: relative;
+    cursor: pointer;
+    font-size: 16px;
+    padding: 12px 12px;
+    background-color: white;
+    margin-bottom: -1px;
+    display: inline-flex;
+    color: var(--gray-dark);
+
+    &:not(.active):hover {
+        background-color: var(--gray-light);
+    }
+
+    .remove-language {
+        justify-content: center;
+        align-items: center;
+        padding: 8px;
+        margin-block: -12px;
+        margin-inline-end: -14px;
+        display: none;
+    }
+
+    &.active {
+        color: var(--text);
+        border: 1px solid var(--gray);
+        border-bottom-color: white;
+        z-index: 2;
+
+        .remove-language {
+            display: flex;
+        }
+    }
+}
+
+.languages {
+    display: flex;
+    border-bottom: 1px solid var(--gray);
+    align-items: center;
+}
+
+.add-language {
+    margin-inline-start: 1em;
+    margin-bottom: 10px;
+
+    &.end {
+        margin-left: auto;
+    }
+}
+
+.add-language-dialog {
+    z-index: 1000;
+    position: fixed;
+    top: 100px;
+    width: 300px;
+    border: none;
+    border-radius: var(--input-radius);
+    box-shadow: 0 0 40px rgba(black, .2);
+
+    .add-language-actions {
+        margin-block-start: 20px;
+        display: flex;
+        justify-content: end;
+        align-items: center;
+        gap: .5em;
+    }
+
+    form {
+        flex-direction: column;
+        display: flex;
+    }
+}

@@ -1,0 +1,8 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<test> 
+a <http://ontology.shapething.com/app#Dataset>; 
+<http://ontology.shapething.com/app#datasetType> <http://ontology.shapething.com/app#SparqlEndpoint> ;
+  <http://ontology.shapething.com/app#endpointUrl> "https://example.com/sparql"^^xsd:anyURI ;
+  <http://ontology.shapething.com/app#sparqlQuery> "SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 100" ;
+  <http://ontology.shapething.com/app#baseIRI> <https://example.com/dataset> .

@@ -1,0 +1,177 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <http://schema.org/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix org: <http://www.w3.org/ns/org#> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+
+### Person Shape
+ex:PersonShape a sh:NodeShape ;
+    sh:targetClass foaf:Person ;
+    sh:property [
+        sh:path foaf:name ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 1;
+        sh:group <#person> ;
+        sh:name "Full Name" ;
+        sh:description "The full name of the person." ;
+    ] ;
+    sh:property [
+        sh:path foaf:mbox ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:group <#person> ;
+        sh:order 2;
+        sh:name "Email Address" ;
+        sh:description "A contact email." ;
+    ] ;
+
+    sh:property [
+        sh:path foaf:gender ;
+        sh:in ("male" "female" "nonbinary" "prefer_not_to_say") ;
+        sh:maxCount 1 ;
+        sh:group <#person> ;
+        sh:datatype xsd:string ;
+        sh:order 3;
+        sh:name "Gender" ;
+        sh:description "Select gender." ;
+    ] ;
+.
+
+
+<#person>
+    sh:name "Person"@en ;
+    sh:description "All about the person"@en;
+	a sh:PropertyGroup ;
+	sh:order 1 .
+
+
+<#academic>
+    sh:description "Academic achievements and external links"@en;
+    sh:name "Academic"@en ;
+	a sh:PropertyGroup ;
+	sh:order 2 .
+
+
+### Researcher Shape (inherits Person)
+ex:ResearcherShape a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:node ex:PersonShape ;
+    sh:property [
+        sh:path schema:jobTitle ;
+        sh:datatype xsd:string ;
+        sh:group <#person> ;
+        sh:order 4;
+        sh:name "Job Title" ;
+    ] ;
+    sh:property [
+        sh:path ( schema:affiliation [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+        sh:class schema:Organization ;
+        sh:group <#academic> ;
+        sh:order 5;
+        sh:name "Affiliated Organization" ;
+        sh:description "Choose the institution where the researcher works." ;
+    ] ;
+    sh:property [
+        sh:path schema:nationality ;
+        sh:nodeKind sh:IRI ;
+        sh:group <#person> ;
+        # sh:class schema:Country ;
+        stsr:endpoint <https://dbpedia.org/sparql> ;
+        sh:order 6;
+        sh:name "Nationality" ;
+        sh:description "Link to a country IRI (e.g., ISO 3166 vocabulary)." ;
+    ] ;
+
+    sh:property [
+        sh:path [ sh:inversePath schema:author ] ;
+        sh:order 5 ;
+        sh:nodeKind sh:IRI ;
+        sh:class bibo:Document ;
+        sh:group <#academic> ;
+        sh:name "Publications" ;
+    ] ;
+
+    sh:property [
+        sh:path schema:sameAs ;
+        sh:maxCount 3 ;
+        sh:group <#academic> ;
+        sh:order 7;
+        sh:name "External Profile URLs" ;
+        sh:description "Links to ORCID, Google Scholar, etc." ;
+    ] ;
+.
+
+### Publication Shape
+ex:PublicationShape a sh:NodeShape ;
+    sh:targetClass bibo:Document ;
+    sh:property [
+        sh:path dc:title ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:name "Title" ;
+    ] ;
+    sh:property [
+        sh:path dc:date ;
+        sh:datatype xsd:date ;
+        sh:name "Publication Date" ;
+    ] ;
+    sh:property [
+        sh:path bibo:doi ;
+        sh:datatype xsd:string ;
+        sh:name "DOI" ;
+    ] ;
+    sh:property [
+        sh:path bibo:abstract ;
+        dash:singleLine false ;
+        sh:datatype xsd:string ;
+        sh:name "Abstract" ;
+    ] ;
+    sh:property [
+        sh:path bibo:DocumentType ;
+        sh:in ("journal" "conference" "thesis" "book" "other") ;
+        sh:datatype xsd:string ;
+        sh:name "Type" ;
+    ] ;
+    sh:property [
+        sh:path schema:author ;
+        sh:class schema:Person ;
+        sh:name "Author(s)" ;
+    ] .
+
+### Organization Shape
+ex:OrganizationShape a sh:NodeShape ;
+    sh:targetClass schema:Organization ;
+    sh:property [
+        sh:path schema:name ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name "Organization Name" ;
+    ] ;
+    sh:property [
+        sh:path schema:location ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name "Location" ;
+    ] ;
+    sh:property [
+        sh:path schema:identifier ;
+        sh:datatype xsd:string ;
+        sh:name "Org ID" ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path org:classification ;
+        sh:in ("university" "research_institute" "company" "government" "nonprofit") ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:minCount 1 ;
+        sh:name "Type of Organization" ;
+    ] .

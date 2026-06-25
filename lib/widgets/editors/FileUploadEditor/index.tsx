@@ -1,0 +1,76 @@
+import { Localized } from '@fluent/react'
+import factory from '@rdfjs/data-model'
+import { Term } from '@rdfjs/types'
+import { useContext } from 'react'
+import Dropzone from 'react-dropzone'
+import Image from '../../../components/various/Image'
+import { fetchContext } from '../../../core/fetchContext'
+import { dash, sh, stsr } from '../../../core/namespaces'
+import Grapoi from '../../../Grapoi'
+import parsePath from '../../../helpers/parsePath'
+import { useResolveMediaUrl } from '../../../hooks/useResolveMediaUrl'
+import { WidgetProps } from '../../widgets-context'
+
+type UploadFileArguments = {
+  property: Grapoi
+  files: File[]
+  data: Grapoi
+  rerender: () => void
+  fetch: (typeof globalThis)['fetch']
+}
+
+const uploadFiles = async ({ property, files, data, rerender, fetch }: UploadFileArguments) => {
+  const uploadUrl = property.out(stsr('uploadUrl')).value
+  if (!uploadUrl) throw new Error('Missing stsr:uploadUrl')
+  const prefix = property.out(dash('uriStart'))?.value?.split(/\/|#/g).pop() ?? ''
+  const formData = new FormData()
+  for (const file of files) formData.append('files', file)
+  const response = await fetch(`${uploadUrl}/${prefix ? `/${prefix}` : ''}`, { body: formData, method: 'POST' })
+  const filePaths = await response.json()
+  const shPath = parsePath(property.out(sh('path')))
+  const predicate = shPath?.[0]?.predicates[0]
+  if (!predicate) throw new Error('The property does not have a sh:path')
+  for (const filePath of filePaths) data.addOut(predicate, factory.namedNode(filePath))
+  rerender()
+}
+
+export default function FileUploadEditor({
+  term,
+  property,
+  nodeDataPointer,
+  useConfigureWidget,
+  notifyParent
+}: WidgetProps) {
+  const { fetch } = useContext(fetchContext)
+
+  useConfigureWidget({
+    header: () => (
+      <Dropzone
+        onDrop={files => uploadFiles({ files, property, data: nodeDataPointer, fetch, rerender: notifyParent })}
+      >
+        {({ getRootProps, getInputProps }) => (
+          <div className={`drop-zone ${term.value ? 'has-value' : ''}`} {...getRootProps()}>
+            <input {...getInputProps()} />
+            <span className="info">
+              <Localized id="fileupload-description">Drag some files here or click to select files</Localized>
+            </span>
+          </div>
+        )}
+      </Dropzone>
+    ),
+    displayCriteria: (term: Term) => !!term.value,
+    // TODO make a modal that gives options to delete the image also.
+    deletionCriteria: async (term: Term) => (await fetch(term.value)).status === 200
+  })
+
+  const url = useResolveMediaUrl(term)
+
+  return term.value ? (
+    <div key={term.value} title={term.value} className="iri-preview search-result">
+      {url ? <Image className="image" url={url} size={32} /> : null}
+      <a className="link" href={term.value} target="_blank" rel="noreferrer">
+        <span className="label">{decodeURI(term.value.split(/\/|#/g).pop()!)}</span>
+      </a>
+    </div>
+  ) : null
+}

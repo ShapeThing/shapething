@@ -1,0 +1,112 @@
+.react-duration-control {
+    display: inline-block;
+    border-radius: var(--input-radius);
+    background-color: rgb(255, 255, 255);
+    margin-right: auto;
+}
+
+.react-duration-control.disabled {
+    background-color: rgb(240, 240, 240);
+}
+
+.react-duration-control-fieldset {
+    margin: 0;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    border: 1px solid var(--secondary);
+    padding: 0px;
+    border-radius: var(--input-radius);
+    transition: box-shadow var(--easing) var(--speed);
+    background-color: white;
+}
+
+
+.react-duration-control.focused>.react-duration-control-fieldset {
+    outline: none;
+    border: 1px solid var(--primary);
+    box-shadow: 0 0 0 4px rgba(var(--primary-rgb), 0.4);
+}
+
+.react-duration-control.focused>.react-duration-control-fieldset>.react-duration-control-label {
+    margin-bottom: -5px;
+    color: var(--primary);
+}
+
+.react-duration-control.disabled>.react-duration-control-fieldset {
+    border: 1px rgb(0, 0, 0, 0.2) solid;
+}
+
+
+.react-duration-control-elements-container {
+    display: flex;
+    flex-direction: row;
+    min-height: 21px;
+    padding: 6px 8px;
+    overflow: hidden;
+    align-items: baseline;
+}
+
+.react-duration-control.disabled>.react-duration-control-fieldset>.react-duration-control-elements-container {
+    opacity: 0.7;
+}
+
+.duration-control-unit-input-wrapper {
+    display: flex;
+}
+
+.duration-control-unit-input {
+    box-sizing: content-box;
+    margin-block: -2px;
+}
+
+.duration-control-unit-input:focus {
+    outline-width: 0;
+    transform: translateY(-1px);
+}
+
+.duration-control-unit-input.unfocused {
+    cursor: pointer;
+    border: none;
+    font-weight: 500;
+    color: var(--text);
+    font-size: .8em;
+    padding: 0;
+}
+
+.react-duration-control-inline-text {
+    display: inline-flex;
+    align-items: center;
+    white-space: pre;
+    font-size: .8em;
+}
+
+.spinner-button-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 20px;
+    margin-inline-start: 6px;
+    margin-inline-end: 2px;
+    border-radius: 3px;
+}
+
+.spinner-button-container>.spinner-button {
+    flex-grow: 1;
+    cursor: pointer;
+    padding: 0px;
+    line-height: 50%;
+    margin: 0;
+    border: 1px rgb(160, 160, 160) solid;
+}
+
+.spinner-button-container>.spinner-button-up {
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+}
+
+.spinner-button-container>.spinner-button-down {
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+    border-top: none;
+}

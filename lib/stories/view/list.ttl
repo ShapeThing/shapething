@@ -1,0 +1,9 @@
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+<#thing>
+    a schema:Thing ;
+    schema:parts ( "a" "b" "c" )
+.

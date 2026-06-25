@@ -1,0 +1,16 @@
+.property.valuetableviewer {
+    table {
+
+        th,
+        td {
+
+            text-align: left;
+            padding: .5rem;
+        }
+
+        th,
+        tr:not(:last-child) td {
+            border-bottom: 1px solid var(--gray-light);
+        }
+    }
+}

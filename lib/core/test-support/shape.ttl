@@ -1,0 +1,44 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix stf: <http://ontology.shapething.com/facet#> .
+@prefix ex: <http://example.org/> .
+
+<#targetNodeNodeShape> a sh:NodeShape ;
+    sh:targetNode <#data1>
+.
+
+<#targetClassNodeShape> a sh:NodeShape ;
+    sh:targetClass schema:Thing ;
+.
+
+<#implicitClassShape> a sh:NodeShape, rdfs:Class ;
+.
+
+<#subjectsOfShape> a sh:NodeShape ;
+    sh:targetSubjectsOf ex:knows ;
+.
+
+<#objectsOfShape> a sh:NodeShape ;
+    sh:targetObjectsOf ex:knows ;
+.
+
+<#data1> rdfs:label "Target Node" .
+
+
+<#data2> 
+    a schema:Thing ;
+    rdfs:label "Target Node" .
+
+
+<#data3>
+    a <#implicitClassShape> ;
+    rdfs:label "Implicit Class Target" .
+
+
+ex:subject1 ex:knows ex:object1 .
+

@@ -1,0 +1,78 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dash: <http://datashapes.org/dash#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix stf: <http://ontology.shapething.com/facet#> .
+@prefix dbc: <http://dbpedia.org/resource/Category:> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+
+<#example1>
+  a sh:NodeShape ;
+  rdfs:comment "Uses a nested sh:node to define the query." ;
+  sh:targetClass schema:Person ;
+  sh:closed true ;
+
+  sh:property [
+    sh:name "Knows"@en ;
+    sh:path schema:knows ;
+    sh:node <#knowsFilter> ;
+    sh:class schema:Person ;
+  ];
+.
+
+<#knowsFilter>
+      sh:property [
+        sh:path [ sh:alternativePath ( rdfs:label schema:name dcterms:title ) ] ;
+        sh:minCount 1;
+        stsr:purpose stsr:label ;
+      ] ;
+
+      sh:property [
+        stsr:purpose stsr:image ;
+        sh:path [ sh:alternativePath ( <http://dbpedia.org/ontology/thumbnail> schema:image <http://xmlns.com/foaf/0.1/img> ) ] ;
+      ] ;
+.
+
+<#example2>
+  a sh:NodeShape ;
+  rdfs:comment "Uses a nested sh:node to define the query." ;
+  sh:targetClass schema:Person ;
+  sh:closed true ;
+
+  sh:property [
+    sh:name "Knows"@en ;
+    sh:path schema:knows ;
+    sh:node <#knowsFilter> ;
+  ];
+.
+
+<#knowsFilter>
+      sh:property [
+        sh:path [ sh:alternativePath ( rdfs:label schema:name dcterms:title ) ] ;
+        sh:minCount 1;
+        stsr:purpose stsr:label ;
+      ] ;
+
+      sh:property [
+        stsr:purpose stsr:image ;
+        sh:path [ sh:alternativePath ( <http://dbpedia.org/ontology/thumbnail> schema:image <http://xmlns.com/foaf/0.1/img> ) ] ;
+      ] ;
+.
+
+
+<#example3>
+  a sh:NodeShape ;
+  rdfs:comment "Uses a nested sh:node to define the query." ;
+  sh:targetClass schema:Person ;
+  sh:closed true ;
+
+  sh:property [
+    sh:name "Knows"@en ;
+    sh:path schema:knows ;
+    sh:class schema:Person ;
+  ];
+.

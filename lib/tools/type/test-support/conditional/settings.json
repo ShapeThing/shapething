@@ -1,0 +1,4 @@
+{
+  "context": { "@vocab": "http://ontology.shapething.com/app#", "type": "rdf:type", "label": "rdfs:label" },
+  "compactValues": true
+}
