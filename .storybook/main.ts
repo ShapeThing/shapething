@@ -1,4 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-vite'
+import { fixRdfjsSinkMap } from '../fixRdfjsSinkMap'
 
 const config: StorybookConfig = {
   stories: ['../*.mdx', '../lib/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
@@ -11,6 +12,10 @@ const config: StorybookConfig = {
   framework: {
     name: '@storybook/react-vite',
     options: {}
+  },
+  async viteFinal(config) {
+    config.plugins = [fixRdfjsSinkMap, ...(config.plugins ?? [])]
+    return config
   }
 }
 export default config

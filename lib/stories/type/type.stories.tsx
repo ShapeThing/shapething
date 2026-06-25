@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { schema, ShaclRendererProps } from '../../components/ShaclRenderer'
+import { ShaclRendererProps } from '../../components/ShaclRenderer'
+import { schema } from '../../core/namespaces'
 import { toType } from '../../tools/type/type'
 
 const baseUrl = new URL('/lib/stories/type/', location.href)

@@ -1,6 +1,7 @@
 import factory from '@rdfjs/data-model'
-import ShaclRenderer, { ShaclRendererProps, schema, stsr } from '../../components/ShaclRenderer'
+import ShaclRenderer, { ShaclRendererProps } from '../../components/ShaclRenderer'
 import { initContext } from '../../core/main-context'
+import { schema, stsr } from '../../core/namespaces'
 import { DiffableTerm } from '../../helpers/diffableTerm'
 
 const baseUrl = new URL('/lib/stories/view/', location.href)

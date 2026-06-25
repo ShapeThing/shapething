@@ -50,7 +50,7 @@ export const skos: NamespaceBuilder<string> = namespace('http://www.w3.org/2004/
 
 /** Local app namespace */
 export const app: NamespaceBuilder<string> = namespace(
-  (globalThis.location?.origin.toString() ?? 'http://example.com') + '/'
+  ('http://example.com') + '/'
 )
 
 /** Genid */

@@ -1,4 +1,5 @@
-import ShaclRenderer, { ShaclRendererProps, schema } from '../../components/ShaclRenderer'
+import ShaclRenderer, { ShaclRendererProps } from '../../components/ShaclRenderer'
+import { schema } from '../../core/namespaces'
 export default {
   title: 'Capabilities/Facet',
   component: ShaclRenderer,

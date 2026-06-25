@@ -1,7 +1,8 @@
 import type { StoryObj } from '@storybook/react'
 import { Store } from 'n3'
 import { expect, waitFor, within } from 'storybook/test'
-import ShaclRenderer, { ShaclRendererProps, schema } from '../../components/ShaclRenderer'
+import ShaclRenderer, { ShaclRendererProps } from '../../components/ShaclRenderer'
+import { schema } from '../../core/namespaces'
 import { resolveRdfInput } from '../../core/resolveRdfInput'
 
 type Story = StoryObj<typeof ShaclRenderer>

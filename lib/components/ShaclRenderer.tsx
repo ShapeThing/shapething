@@ -5,15 +5,14 @@ import { Suspense, use, useContext, useEffect, useRef, useState } from 'react'
 import { fetchContext } from '../core/fetchContext'
 import LanguageProvider from '../core/language-context'
 import { initContext, MainContext, MainContextInput } from '../core/main-context'
+import { prefixes } from '../core/namespaces'
 import ValidationContextProvider from '../core/validation/validation-context'
 import { cleanUpDataset } from '../helpers/cleanUpDataset'
 import { rdfToData } from '../tools/data/rdfToData'
 import LanguageAwareTabs from './language/LanguageAwareTabs'
 import { MainContextProvider } from './MainContextProvider'
 import NodeShape from './NodeShape'
-import { prefixes } from './ShaclRenderer'
 import ActionPicker from './various/ActionPicker'
-export * from '../core/namespaces'
 
 export type ShaclRendererProps = MainContextInput
 

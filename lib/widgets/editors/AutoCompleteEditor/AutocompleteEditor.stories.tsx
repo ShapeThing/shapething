@@ -1,5 +1,6 @@
 import { Store } from 'n3'
-import ShaclRenderer, { schema, ShaclRendererProps } from '../../../components/ShaclRenderer'
+import ShaclRenderer, { ShaclRendererProps } from '../../../components/ShaclRenderer'
+import { schema } from '../../../core/namespaces'
 import { resolveRdfInput } from '../../../core/resolveRdfInput'
 
 export default {

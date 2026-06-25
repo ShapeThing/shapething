@@ -4,6 +4,7 @@ import { DynamicPublicDirectory } from 'vite-multiple-assets'
 import mkcert from 'vite-plugin-mkcert'
 import { nodePolyfills } from 'vite-plugin-node-polyfills'
 import sassGlobImports from 'vite-plugin-sass-glob-import'
+import { fixRdfjsSinkMap } from './fixRdfjsSinkMap'
 
 const reactConfig: Record<string, unknown> = {
   babel: {
@@ -14,9 +15,10 @@ const reactConfig: Record<string, unknown> = {
 if (process.env.VITE_DEBUG === 'true') {
   reactConfig.jsxImportSource = '@welldone-software/why-did-you-render'
 }
-// https://vitejs.dev/config/
+
 export default defineConfig({
   plugins: [
+    fixRdfjsSinkMap,
     sassGlobImports(),
     DynamicPublicDirectory(['public/**', '{\x01,lib}/**/{*.ttl,*.jpg}', '{\x01,translations}/**']),
     mkcert(),
