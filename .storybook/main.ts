@@ -1,5 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-vite'
-import { fixRdfjsSinkMap } from '../fixRdfjsSinkMap'
+import { fixRdfjsSinkMap } from '../fixRdfjsSinkMap.ts'
 
 const config: StorybookConfig = {
   stories: ['../*.mdx', '../lib/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
