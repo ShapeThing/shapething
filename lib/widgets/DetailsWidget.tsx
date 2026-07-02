@@ -4,7 +4,7 @@ import grapoi from 'grapoi'
 import { useContext } from 'react'
 import Grapoi from '../Grapoi'
 import { MainContextProvider } from '../components/MainContextProvider'
-import NodeShape from '../components/NodeShape'
+import NodeUiComponent from '../components/NodeUiComponent'
 import { languageContext } from '../core/language-context'
 import { getTargetClassOfShape, mainContext } from '../core/main-context'
 import { rdf, sh } from '../core/namespaces'
@@ -40,7 +40,7 @@ export default function DetailsWidget({ data, property, facetSearchData }: Widge
         activeInterfaceLanguage
       }}
     >
-      <NodeShape />
+      <NodeUiComponent />
     </MainContextProvider>
   )
 }

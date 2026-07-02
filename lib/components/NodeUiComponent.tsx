@@ -11,9 +11,10 @@ import Grapoi from '../Grapoi'
 import { language } from '../helpers/language'
 import { nonNullable } from '../helpers/nonNullable'
 import parsePath from '../helpers/parsePath'
+import resolvePropertyPointerConflicts from '../helpers/propertyPointerConflictResolution'
 import { WidgetItem, widgetsContext } from '../widgets/widgets-context'
 import { getConditionalFields } from './getConditionalFields'
-import PropertyShape from './PropertyShape'
+import PropertyUiComponent from './PropertyUiComponent'
 import { SubjectContextProvider } from './SubjectContextProvider'
 import SubjectEditor from './SubjectEditor'
 
@@ -76,24 +77,24 @@ export const getElementHelpers = ({
     return ignoredProperties.some(term => pathPredicates.some(pathPredicate => pathPredicate.equals(term)))
       ? null
       : ([
-          parseFloat((property.out(sh('order')).value as string) ?? '0'),
-          <PropertyShape
-            dataset={dataset}
-            notifyParent={notifyParent}
-            key={keyPrefix + property.term.value}
-            facetSearchDataPointer={facetSearchDataPointer}
-            nodeDataPointer={dataPointer}
-            notifyCount={notifyCount}
-            property={property}
-          />,
-          items.ptrs.length > 0,
-          property
-        ] as [number, ReactNode, boolean, Grapoi])
+        parseFloat((property.out(sh('order')).value as string) ?? '0'),
+        <PropertyUiComponent
+          dataset={dataset}
+          notifyParent={notifyParent}
+          key={keyPrefix + property.terms.map(term => term.value).join(',')}
+          facetSearchDataPointer={facetSearchDataPointer}
+          nodeDataPointer={dataPointer}
+          notifyCount={notifyCount}
+          property={resolvePropertyPointerConflicts(property)}
+        />,
+        items.ptrs.length > 0,
+        property
+      ] as [number, ReactNode, boolean, Grapoi])
   }
   return { mapGroup, mapProperty }
 }
 
-export default function NodeShape() {
+export default function NodeUiComponent() {
   const {
     shapePointer,
     mode,
@@ -103,17 +104,19 @@ export default function NodeShape() {
     shapes,
     showExtraneousPredicates
   } = useContext(mainContext)
-  const properties: Grapoi = filteredPropertiesFromShape(shapePointer)
+  const properties: Grapoi[] = filteredPropertiesFromShape(shapePointer)
 
   const groups = [...shapePointer.node().hasOut(rdf('type'), sh('PropertyGroup'))]
   const [notifyCount, notify] = useState(0)
 
   const topLevelGroups = groups.filter(group => !group.hasOut(sh('group')).term)
 
-  const missingGroupDefinitions = properties
-    .out(sh('group'))
-    .distinct()
-    .terms.filter(term => !groups.some(group => group.term.equals(term)))
+  const missingGroupDefinitions = properties.filter(pointer => {
+    const result = pointer.out(sh('group'))
+      .distinct()
+      .terms.filter(term => !groups.some(group => group.term.equals(term)))
+    return result.length > 0
+  })
 
   if (missingGroupDefinitions.length) {
     throw new Error(`Missing group definitions for: ${missingGroupDefinitions.map(term => term.value).join(', ')}`)
@@ -145,8 +148,8 @@ export default function NodeShape() {
   const predicatesWithoutShapes = new Map(
     showExtraneousPredicates
       ? [...dataPointer.out().quads()]
-          .filter(quad => !usedPredicates.includes(quad.predicate.value))
-          .map(quad => [quad.predicate.value, quad.predicate])
+        .filter(quad => !usedPredicates.includes(quad.predicate.value))
+        .map(quad => [quad.predicate.value, quad.predicate])
       : []
   )
 
@@ -228,57 +231,15 @@ export const filteredPropertiesFromShape = (shape: Grapoi) => {
     return [JSON.stringify(path), pointer]
   })
 
-  const uniquePaths = new Set(paths.map(path => path[0]))
-
-  if (uniquePaths.size !== properties.ptrs.length) {
-    for (const path of uniquePaths) {
-      const propertiesWithPath = paths.filter(p => p[0] === path).map(p => p[1])
-      if (propertiesWithPath.length > 1) {
-        const propertiesAndShapes = propertiesWithPath
-          .map(property => {
-            const propertyParentShape = property.in().hasOut(rdf('type'), sh('NodeShape'))
-            let propertyClass = propertyParentShape.out(sh('targetClass')).term
-
-            if (!propertyClass) {
-              const implicitShape = propertyParentShape.hasOut(rdf('type'), sh('NodeShape'))
-              propertyClass = implicitShape.term
-            }
-
-            const parentClasses = propertyParentShape.node(propertyClass).out(rdfs('subClassOf')).terms
-            const childClasses = propertyParentShape.node(propertyClass).in(rdfs('subClassOf')).terms
-
-            return propertyParentShape.term
-              ? {
-                  property,
-                  propertyParent: propertyParentShape,
-                  propertyClass,
-                  parentClasses,
-                  childClasses
-                }
-              : undefined
-          })
-          .filter(nonNullable)
-
-        const filteredProperties = propertiesAndShapes.filter(({ childClasses }) => childClasses.length === 0)
-
-        if (filteredProperties.length === 1) {
-          // Found a way to limit the amount of duplicates.
-          for (const pointer of properties.ptrs) {
-            if (
-              propertiesWithPath.some(propertyPointer => {
-                const isOneOfDuplicates = propertyPointer.term?.equals(pointer.term)
-                const isDeepestChild = pointer.term?.equals(filteredProperties[0].property.term)
-
-                return isOneOfDuplicates && !isDeepestChild
-              })
-            ) {
-              properties.ptrs.splice(properties.ptrs.indexOf(pointer), 1)
-            }
-          }
-        }
-      }
+  const mergedProperties = new Map<string, Grapoi[]>()
+  for (const [path, pointer] of paths) {
+    if (!mergedProperties.has(path)) {
+      mergedProperties.set(path, [])
     }
+    mergedProperties.get(path)?.push(pointer)
   }
 
-  return properties
+  return [...mergedProperties.values()].map((pointers: Grapoi[]) => {
+    return shape.node(pointers.flatMap(pointer => pointer.terms))
+  })
 }

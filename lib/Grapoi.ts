@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unsafe-function-type */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type Environment from '@rdfjs/environment'
-import type { DatasetCore, Quad, Term } from '@rdfjs/types'
+import type Environment from '@rdfjs/environment';
+import type { DatasetCore, Quad, Term } from '@rdfjs/types';
 
 export default Grapoi
 /**
@@ -135,7 +135,7 @@ declare class Grapoi extends PathList {
  * @property {Array} ptrs All paths of this list
  */
 declare class PathList {
-  edges: never[]
+  edges: any[]
   /**
    * Create a new instance
    * @param {DatasetCore} dataset Dataset for the pointers

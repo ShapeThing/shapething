@@ -5,9 +5,9 @@ import parsePath from '../../helpers/parsePath'
 import { setConstraint } from '../../helpers/setConstraint'
 import { useWidget } from '../../widgets/widgets-context'
 import PropertyElement from '../PropertyElement'
-import type { PropertyShapeInnerProps } from '../PropertyShape'
+import type { PropertyUiComponentInnerProps } from '../PropertyUiComponent'
 
-export default function PropertyShapeFacetMode(props: PropertyShapeInnerProps) {
+export default function PropertyShapeFacetMode(props: PropertyUiComponentInnerProps) {
   const { facetSearchDataPointer } = useContext(mainContext)
   const { nodeDataPointer, property } = props
   const path = parsePath(property.out(sh('path')))

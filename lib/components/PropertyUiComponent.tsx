@@ -7,14 +7,15 @@ import { dash, sh, stf, stsr } from '../core/namespaces'
 import { validationContext } from '../core/validation/validation-context'
 import Grapoi from '../Grapoi'
 import parsePath from '../helpers/parsePath'
+import type { ConflictFreeGrapoi } from '../helpers/propertyPointerConflictResolution'
 import { TouchableTerm } from '../helpers/touchableRdf'
 import { Path } from '../Path'
 import PropertyShapeEditMode from './EditMode/PropertyShapeEditMode'
 import PropertyShapeFacetMode from './FacetMode/PropertyShapeFacetMode'
 import PropertyShapeViewMode from './ViewMode/PropertyShapeViewMode'
 
-export type PropertyShapeProps = {
-  property: Grapoi
+export type PropertyUiComponentProps = {
+  property: ConflictFreeGrapoi
   nodeDataPointer: Grapoi
   dataset: DatasetCore
   facetSearchDataPointer: Grapoi
@@ -22,7 +23,7 @@ export type PropertyShapeProps = {
   notifyParent: () => void
 }
 
-export type PropertyShapeInnerProps = {
+export type PropertyUiComponentInnerProps = {
   nodeDataPointer: Grapoi
   property: Grapoi
   data: Grapoi
@@ -42,14 +43,14 @@ const modePredicates = {
   facet: stf('facet')
 }
 
-export default function PropertyShape(props: PropertyShapeProps) {
+export default function PropertyUiComponent(props: PropertyUiComponentProps) {
   const { property } = props
   const { mode } = useContext(mainContext)
 
   const selectedWidgetIri = property.out(modePredicates[mode]).term
 
   const path = parsePath(property.out(sh('path')))
-  const PropertyShapeInner = modes[mode]
+  const PropertyUiComponentInner = modes[mode]
 
   const { report } = useContext(validationContext)
   const validationResults =
@@ -70,5 +71,5 @@ export default function PropertyShape(props: PropertyShapeProps) {
   })
 
   if (selectedWidgetIri?.equals(stsr('HideWidget'))) return null
-  return PropertyShapeInner ? <PropertyShapeInner {...props} validationResults={validationResults} path={path} /> : null
+  return PropertyUiComponentInner ? <PropertyUiComponentInner {...props} validationResults={validationResults} path={path} /> : null
 }

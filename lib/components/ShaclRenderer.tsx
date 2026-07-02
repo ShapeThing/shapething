@@ -11,7 +11,7 @@ import { cleanUpDataset } from '../helpers/cleanUpDataset'
 import { rdfToData } from '../tools/data/rdfToData'
 import LanguageAwareTabs from './language/LanguageAwareTabs'
 import { MainContextProvider } from './MainContextProvider'
-import NodeShape from './NodeShape'
+import NodeUiComponent from './NodeUiComponent'
 import ActionPicker from './various/ActionPicker'
 
 export type ShaclRendererProps = MainContextInput
@@ -71,7 +71,7 @@ function ShaclRendererInner(props: ShaclRendererProps & { contextResource: any }
         <ValidationContextProvider>
           <ActionPicker setContext={setContextResource} />
           <LanguageAwareTabs>
-            <NodeShape key="root" />
+            <NodeUiComponent key="root" />
             <div className="actions">
               {props.children ? (
                 props.children(submit)

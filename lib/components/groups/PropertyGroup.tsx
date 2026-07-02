@@ -5,7 +5,7 @@ import Grapoi from '../../Grapoi'
 import { nonNullable } from '../../helpers/nonNullable'
 import parsePath from '../../helpers/parsePath'
 import { widgetsContext } from '../../widgets/widgets-context'
-import { filteredPropertiesFromShape, getElementHelpers } from '../NodeShape'
+import { filteredPropertiesFromShape, getElementHelpers } from '../NodeUiComponent'
 
 export type PropertyGroupProps = {
   group: Grapoi

@@ -25,6 +25,7 @@
 
   sh:property [
     sh:name "Overridden field #1"@en ;
+    sh:description "Overridden field #1"@en ;
     sh:path schema:overridden ;
     sh:minCount 1;
     sh:order 0;
@@ -41,6 +42,7 @@ ex:Animal
 
   sh:property [
     sh:name "Overridden field #2"@en ;
+    sh:description "Overridden field #2"@en ;
     sh:path schema:overridden ;
     sh:minCount 2;
     sh:order 0;

@@ -6,9 +6,9 @@ import { TouchableTerm } from '../../helpers/touchableRdf'
 import { wrapWithList } from '../../helpers/wrapWithList'
 import { useWidget } from '../../widgets/widgets-context'
 import PropertyElement from '../PropertyElement'
-import type { PropertyShapeInnerProps } from '../PropertyShape'
+import type { PropertyUiComponentInnerProps } from '../PropertyUiComponent'
 
-export default function PropertyShapeViewMode(props: PropertyShapeInnerProps) {
+export default function PropertyShapeViewMode(props: PropertyUiComponentInnerProps) {
   const { nodeDataPointer, property } = props
   const path = parsePath(property.out(sh('path')))
   const data = nodeDataPointer.executeAll(path)

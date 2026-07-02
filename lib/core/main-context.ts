@@ -237,11 +237,11 @@ export const getShapes = async ({
   const { dataset: resolvedShapes } = shapesInput
     ? await resolveRdfInput(shapesInput, true, fetch)
     : {
-        dataset: datasetFactory.dataset([
-          factory.quad(factory.namedNode('urn:shape'), rdf('type'), sh('NodeShape')),
-          factory.quad(factory.namedNode('urn:shape'), sh('targetClass'), givenTargetClass!)
-        ])
-      }
+      dataset: datasetFactory.dataset([
+        factory.quad(factory.namedNode('urn:shape'), rdf('type'), sh('NodeShape')),
+        factory.quad(factory.namedNode('urn:shape'), sh('targetClass'), givenTargetClass!)
+      ])
+    }
 
   if (!shapesInput) {
     shapeSubject = factory.namedNode('urn:shape')
