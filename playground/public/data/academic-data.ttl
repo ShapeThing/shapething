@@ -1,0 +1,49 @@
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix schema: <http://schema.org/> .
+@prefix bibo: <http://purl.org/ontology/bibo/> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix org: <http://www.w3.org/ns/org#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix ex: <http://example.org/> .
+@prefix dbr: <http://dbpedia.org/resource/> .
+
+### Organization
+ex:UniX a schema:Organization ;
+    schema:name "University of Exampleland" ;
+    schema:location "Example City, EU" ;
+    schema:identifier "UX-001" ;
+    org:classification "university" .
+
+### Organization
+ex:UniY a schema:Organization ;
+    schema:name "University of Exampleland2" ;
+    schema:location "Example City, EU" ;
+    schema:identifier "UX-002" ;
+    org:classification "university" .
+
+
+### Researcher (Person)
+ex:alice a schema:Person, foaf:Person ;
+    foaf:name "Alice Example" ;
+    foaf:mbox "alice@example.org" ;
+    foaf:gender "female" ;
+    schema:jobTitle "Assistant Professor" ;
+    schema:affiliation ( ex:UniX ex:UniY ) ;
+    schema:nationality dbr:Germany ;
+    schema:sameAs <https://orcid.org/0000-0002-1825-0097> ,
+                  <https://scholar.google.com/citations?user=xyz> .
+
+### Publication
+ex:pub1 a bibo:Document ;
+    dc:title "A SHACL-based Form Generation System" ;
+    dc:date "2024-11-01"^^xsd:date ;
+    bibo:doi "10.1234/example.doi" ;
+    bibo:abstract "This paper explores automated form generation using SHACL with semantic ontologies." ;
+    bibo:DocumentType "conference" ;
+    schema:author ex:alice .
+
+ex:pub2 a bibo:Document ;
+    dc:title "Semantic Web Technologies in Higher Education" ;
+    dc:date "2023-06-15"^^xsd:date ;
+    bibo:DocumentType "journal" ;
+    schema:author ex:alice .

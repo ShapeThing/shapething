@@ -1,0 +1,33 @@
+@prefix schema: <https://schema.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+<>
+  a schema:Person ;
+  schema:givenName "Hendrik", "Jan" ;
+  schema:familyName "Doe" ;
+  schema:name "Hendrik Jan Doe" ;
+  schema:child "Anna", "Lisa", "John jr" ;
+  schema:birthDate "1947-01-14"^^xsd:date ;
+
+  schema:image <./woman.jpg> ;
+
+  schema:householdMembers 6 ;
+
+  schema:icon "line-md:buy-me-a-coffee-twotone"^^<https://iconify.design> ;
+
+  schema:favoriteColor "#ff33ff"^^stsr:color ;
+
+  schema:isHuman true ;
+
+  schema:knows <http://dbpedia.org/resource/Søren_Kierkegaard> ;
+
+  schema:address [
+    a schema:PostalAddress ;
+    schema:streetAddress "Wagramer Strasse 5" ;
+    schema:postalCode "1220" ;
+    schema:addressRegion "Wien" ;
+    schema:addressLocality "Wien" ;
+    schema:addressCountry "Austria" ;
+  ] .
