@@ -99,6 +99,12 @@ const keepAll = (pointers: Grapoi[], property: Grapoi) => {
     return property.node(terms)
 }
 
+const keepAllListItems = (pointers: Grapoi[], property: Grapoi) => {
+    const termSets = getListItemsOrTermFromPointers(pointers)
+    const allTerms = new TermSet([...termSets].map(termSet => [...termSet]).flat())
+    return property.node([...allTerms])
+}
+
 const keepListIntersection = (pointers: Grapoi[], property: Grapoi) => {
     const termSets = pointers.map(pointer => new TermSet([...pointer.list()].map(pointer => pointer.term).flat()))
     const intersection = termSets.reduce((acc, set) => {
@@ -188,6 +194,16 @@ const enforceSingular = (fn: ResolutionFunction): ResolutionFunction => {
     }
 }
 
+const resolveBooleans = (pointers: Grapoi[], property: Grapoi) => {
+    const booleanValues = new Set(pointers.map(pointer => pointer.value))
+    if (booleanValues.has('true')) {
+        return property.node(factory.literal('true', xsd('boolean')))
+    }
+    else {
+        return property.node(factory.literal('false', xsd('boolean')))
+    }
+}
+
 const resolutions = new TermMap<Term, ResolutionFunction>([
     [sh('class'), keepMostSpecificClasses],
     [sh('datatype'), enforceSingular(keepMostSpecificClasses)],
@@ -201,14 +217,13 @@ const resolutions = new TermMap<Term, ResolutionFunction>([
     [sh('minLength'), keepHighestInteger],
     [sh('maxLength'), keepLowestInteger],
     // sh:pattern
-    // sh:singleLine
-    // sh:languageIn
+    [sh('singleLine'), resolveBooleans],
     [sh('languageIn'), keepListIntersection],
-    // sh:uniqueLang
+    [sh('uniqueLang'), resolveBooleans],
     // sh:memberShape
-    // sh:minListLength
-    // sh:maxListLength
-    // sh:uniqueMembers
+    [sh('minListLength'), keepHighestInteger],
+    [sh('maxListLength'), keepLowestInteger],
+    [sh('uniqueMembers'), resolveBooleans],
     // sh:equals
     // sh:disjoint
     // sh:subsetOf
@@ -221,20 +236,23 @@ const resolutions = new TermMap<Term, ResolutionFunction>([
     // sh:node
     // sh:property
     // sh:someValue
-    // sh:qualifiedValueShape, sh:qualifiedMinCount, sh:qualifiedMaxCount
-    // sh:reifierShape, sh:reificationRequired
-    // sh:closed, sh:ignoredProperties
+    // sh:qualifiedValueShape
+    // sh:qualifiedMinCount
+    // sh:qualifiedMaxCount
+    // sh:reifierShape
+    // sh:reificationRequired
+    [sh('closed'), resolveBooleans],
+    [sh('ignoredProperties'), keepAllListItems],
     // sh:hasValue
     [sh('in'), keepListIntersection],
     // sh:rootClass
     // sh:uniqueValuesFor
     [sh('name'), keepFirst],
     [sh('description'), keepAll],
-    // sh:intent
-    // sh:agentInstruction
-    // sh:codeIdentifier
-    // sh:unit
-    // sh:order
-    // sh:group
-
+    [sh('intent'), keepAll],
+    [sh('agentInstruction'), keepAll],
+    [sh('codeIdentifier'), keepFirst],
+    [sh('unit'), keepAll],
+    [sh('order'), keepLowestInteger],
+    [sh('group'), keepAll],
 ]);
