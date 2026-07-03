@@ -67,7 +67,7 @@ export const getProperties = ({
 }) => {
   const groups = [...shapePointer.node().hasOut(rdf('type'), sh('PropertyGroup'))]
   const groupLevelGroups = groups.filter(innerGroup => innerGroup.out(sh('group')).term?.equals(group.term))
-  const groupLevelProperties: Grapoi = filteredPropertiesFromShape(shapePointer).hasOut(sh('group'), group.term)
+  const groupLevelProperties: Grapoi[] = filteredPropertiesFromShape(shapePointer).filter(property => property.out(sh('group')).term?.equals(group.term))
   const { groups: groupWidgets } = useContext(widgetsContext)
 
   const { mapGroup, mapProperty } = getElementHelpers({
@@ -80,19 +80,21 @@ export const getProperties = ({
     notifyCount
   })
 
-  const formElements: [number, ReactNode, boolean, Grapoi][] = [
-    ...[...groupLevelGroups.map(mapGroup), ...groupLevelProperties.map((property: Grapoi) => mapProperty(property))]
-      .filter(nonNullable)
-      .sort((a, b) => a[0] - b[0])
+  const formElements: [number, ReactNode, boolean?, Grapoi?][] = [
+    ...groupLevelGroups.map(mapGroup),
+    ...groupLevelProperties.map(mapProperty)
   ]
+    .filter(nonNullable)
+    .sort((a, b) => a[0] - b[0])
+
 
   if (groupByUsage) {
     return {
       used: formElements
-        .filter(item => item[2] === true || parseInt(item[3].out(sh('minCount')).value ?? '0') > 0)
+        .filter(item => item[2] === true || parseInt(item[3]?.out(sh('minCount')).value ?? '0') > 0)
         .map(([, element]) => element),
       unused: formElements
-        .filter(item => !item[2] && parseInt(item[3].out(sh('minCount')).value ?? '0') === 0)
+        .filter(item => !item[2] && parseInt(item[3]?.out(sh('minCount')).value ?? '0') === 0)
         .map(([, , , property]) => property)
     }
   }
