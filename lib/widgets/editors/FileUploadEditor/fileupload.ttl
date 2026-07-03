@@ -24,4 +24,4 @@
 .
 
 <#data>
-    schema:image </woman.jpg> .
+    schema:image </lib/stories/edit/woman.jpg> .

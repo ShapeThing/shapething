@@ -10,7 +10,7 @@ export default {
     const modeIsList = property?.out(sh('in')).isList()
     if (modeIsList === true) {
       const options = [...(property?.out(sh('in')).list() ?? [])]
-      return options[0].term.termType === 'NamedNode' ? factory.namedNode('') : factory.literal('')
+      return options[0]?.term.termType === 'NamedNode' ? factory.namedNode('') : factory.literal('')
     } else if (modeIsList === false) {
       return factory.namedNode('')
     } else {

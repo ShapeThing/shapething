@@ -9,7 +9,7 @@ export default {
   score: (_data?: Grapoi, propertyShape?: Grapoi) => {
     if (
       propertyShape &&
-      propertyShape.out(sh('path')).term.equals(sh('property')) &&
+      propertyShape.out(sh('path')).term?.equals(sh('property')) &&
       !propertyShape.out(stsr('nestedOrder')).term
     ) {
       return 100

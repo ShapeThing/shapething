@@ -52,12 +52,12 @@ type ResolutionFunction = (pointers: Grapoi[], property: Grapoi, predicate: Term
 const getListItemsOrTermFromPointers = (pointers: Grapoi[], combinationsMapping?: TermMap<Term, TermSet>): TermSet[] => {
     return pointers.map(pointer => {
         if (pointer.isList()) {
-            return new TermSet([...pointer.list()].map(pointer => pointer.term))
+            return new TermSet([...pointer.list()].map(pointer => pointer.terms).flat().filter(Boolean))
         }
         else {
-            return new TermSet([pointer.term])
+            return new TermSet([pointer.term].filter(Boolean))
         }
-    }).map(termSet => {
+    }).filter(termSet => termSet.size > 0).map(termSet => {
         if (!combinationsMapping) return termSet
 
         const expandedTerms = new TermSet<Term>()
@@ -132,7 +132,7 @@ const combinePatterns = (pointers: Grapoi[], property: Grapoi) => {
 }
 
 const keepListIntersection = (pointers: Grapoi[], _property: Grapoi, predicate: Term) => {
-    const termSets = pointers.map(pointer => new TermSet([...pointer.list()].map(pointer => pointer.term).flat()))
+    const termSets = getListItemsOrTermFromPointers(pointers)
     const intersection = termSets.reduce((acc, set) => {
         return new TermSet([...acc].filter(term => set.has(term)))
     }, termSets[0] || new TermSet())
@@ -161,6 +161,10 @@ const nodeKindIntersection = (pointers: Grapoi[], property: Grapoi) => {
 
     const pointersNodeKinds = getListItemsOrTermFromPointers(pointers, combinationsMapping)
 
+    if (pointersNodeKinds.length === 0) {
+        return property.node()
+    }
+
     const intersection = pointersNodeKinds.reduce((acc, nodeKinds) => {
         return new TermSet([...acc].filter(nodeKind => nodeKinds.has(nodeKind)))
     }, pointersNodeKinds[0] || new TermSet())
@@ -182,7 +186,7 @@ const keepMostSpecificClasses = (pointers: Grapoi[], property: Grapoi) => {
 
     // We can never throw as we do not know if resources of certain combinations of classes exist, eg: <> a ex:Boxer, ex:Cat.
 
-    const classes = getListItemsOrTermFromPointers(pointers).flatMap(termSet => [...termSet])
+    const classes = [...new TermSet(getListItemsOrTermFromPointers(pointers).flatMap(termSet => [...termSet]))]
 
     const classAncestryMap = new TermMap<Term, Term[]>()
 

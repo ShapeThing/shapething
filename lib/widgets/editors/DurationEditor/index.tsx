@@ -1,10 +1,14 @@
 import { useLocalization } from '@fluent/react'
 import { Temporal } from '@js-temporal/polyfill'
 import factory from '@rdfjs/data-model'
-import { useState } from 'react'
-import DurationControl from 'react-duration-control'
+import { ComponentType, useState } from 'react'
+import DurationControlModule from 'react-duration-control'
+import { DurationControlProps } from 'react-duration-control/dist/DurationControl'
 import { stsr, xsd } from '../../../core/namespaces'
 import { WidgetProps } from '../../widgets-context'
+
+// There seems to be a problem in this module's export
+const DurationControl = (DurationControlModule as unknown as { default: ComponentType<DurationControlProps> }).default
 
 export default function DurationEditor({ term, setTerm, property }: WidgetProps) {
   const pattern = property.out(stsr('durationPattern')).value ?? '{dd}{hh}{mm}{ss}{fff}'
