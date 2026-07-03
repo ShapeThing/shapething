@@ -3,7 +3,7 @@ import factory from '@rdfjs/data-model';
 import datasetFactory from '@rdfjs/dataset';
 import TermMap from "@rdfjs/term-map";
 import TermSet from "@rdfjs/term-set";
-import { Literal, Term } from '@rdfjs/types';
+import type { Literal, Term } from '@rdfjs/types';
 import grapoi from 'grapoi';
 import { fromRdf } from 'rdf-literal';
 import { rdfs, sh, xsd } from '../core/namespaces';
