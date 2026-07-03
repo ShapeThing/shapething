@@ -1,8 +1,10 @@
 
 import factory from '@rdfjs/data-model';
+import datasetFactory from '@rdfjs/dataset';
 import TermMap from "@rdfjs/term-map";
 import TermSet from "@rdfjs/term-set";
 import { Literal, Term } from '@rdfjs/types';
+import grapoi from 'grapoi';
 import { fromRdf } from 'rdf-literal';
 import { rdfs, sh, xsd } from '../core/namespaces';
 import Grapoi from "../Grapoi";
@@ -32,7 +34,11 @@ export default function resolvePropertyPointerConflicts(property: Grapoi): Confl
                         returnPointers.push(...predicatePointers)
                     }
 
-                    return property.node(returnPointers.map(pointer => pointer.terms).flat())
+                    // Some resolution functions (e.g. keepAllListItems) build their result in a
+                    // throwaway dataset instead of mutating the shapes graph. property.node() would
+                    // rebind the returned terms to property's own dataset and lose that list's
+                    // rdf:first/rdf:rest triples, so we carry the pointers over as-is.
+                    return property.clone({ ptrs: returnPointers.flatMap(pointer => pointer.ptrs) })
                 }
             }
 
@@ -95,32 +101,52 @@ const keepFirst = (pointers: Grapoi[], property: Grapoi) => {
 }
 
 const keepAll = (pointers: Grapoi[], property: Grapoi) => {
-    const terms = pointers.map(pointer => pointer.terms).flat()
-    return property.node(terms)
+    const terms = new TermSet(pointers.map(pointer => pointer.terms).flat())
+    return property.node([...terms])
 }
 
-const keepAllListItems = (pointers: Grapoi[], property: Grapoi) => {
+const keepAllListItems = (pointers: Grapoi[], _property: Grapoi, predicate: Term) => {
     const termSets = getListItemsOrTermFromPointers(pointers)
     const allTerms = new TermSet([...termSets].map(termSet => [...termSet]).flat())
-    return property.node([...allTerms])
+    return asShaclList([...allTerms], predicate)
 }
 
-const keepListIntersection = (pointers: Grapoi[], property: Grapoi) => {
+// Builds an rdf:List for the resolved items in a small dataset of its own, rather than
+// writing new triples into the (shared, immutable) shapes graph.
+const asShaclList = (items: Term[], predicate: Term): Grapoi => {
+    const container = grapoi({ dataset: datasetFactory.dataset(), factory, term: factory.blankNode() })
+    container.addList(predicate, items)
+    return container.out(predicate)
+}
+
+// SHACL applies sh:pattern conjunctively across property shapes, so a value must match every
+// pattern. We fold that into a single regex using lookaheads rather than returning multiple terms,
+// since consumers expect one pattern string (e.g. for an <input pattern> attribute).
+const combinePatterns = (pointers: Grapoi[], property: Grapoi) => {
+    const patterns = new TermSet(pointers.map(pointer => pointer.term))
+    if (patterns.size === 1) {
+        return property.node([...patterns])
+    }
+    const combined = [...patterns].map(pattern => `(?=.*(?:${pattern.value}))`).join('')
+    return property.node(factory.literal(combined, xsd('string')))
+}
+
+const keepListIntersection = (pointers: Grapoi[], _property: Grapoi, predicate: Term) => {
     const termSets = pointers.map(pointer => new TermSet([...pointer.list()].map(pointer => pointer.term).flat()))
     const intersection = termSets.reduce((acc, set) => {
         return new TermSet([...acc].filter(term => set.has(term)))
     }, termSets[0] || new TermSet())
-    return property.node([...intersection])
+    return asShaclList([...intersection], predicate)
 }
 
-// const enforceEquality = (pointers: Grapoi[], property: Grapoi, predicate: Term) => {
-//     const terms = pointers.map(pointer => pointer.terms).flat()
-//     const uniqueTerms = new TermSet(terms)
-//     if (uniqueTerms.size > 1) {
-//         throw new Error(`Conflicting values for property ${predicate.value}: ${[...uniqueTerms].map(term => term.value).join(', ')}`)
-//     }
-//     return property.node([...uniqueTerms])
-// }
+const enforceSame = (pointers: Grapoi[], property: Grapoi, predicate: Term) => {
+    const terms = pointers.map(pointer => pointer.terms).flat()
+    const uniqueTerms = new TermSet(terms)
+    if (uniqueTerms.size > 1) {
+        throw new Error(`Conflicting values for property ${predicate.value}: ${[...uniqueTerms].map(term => term.value).join(', ')}`)
+    }
+    return property.node([...uniqueTerms])
+}
 
 const nodeKindIntersection = (pointers: Grapoi[], property: Grapoi) => {
     const combinationsMapping = new TermMap<Term, TermSet>([
@@ -216,37 +242,36 @@ const resolutions = new TermMap<Term, ResolutionFunction>([
     [sh('maxInclusive'), keepLowestLiteral],
     [sh('minLength'), keepHighestInteger],
     [sh('maxLength'), keepLowestInteger],
-    // sh:pattern
+    [sh('pattern'), combinePatterns],
     [sh('singleLine'), resolveBooleans],
     [sh('languageIn'), keepListIntersection],
     [sh('uniqueLang'), resolveBooleans],
-    // sh:memberShape
+    [sh('memberShape'), keepAll],
     [sh('minListLength'), keepHighestInteger],
     [sh('maxListLength'), keepLowestInteger],
     [sh('uniqueMembers'), resolveBooleans],
-    // sh:equals
-    // sh:disjoint
-    // sh:subsetOf
-    // sh:lessThan
-    // sh:lessThanOrEquals
-    // sh:not
-    // sh:and
-    // sh:or
-    // sh:xone
-    // sh:node
-    // sh:property
-    // sh:someValue
-    // sh:qualifiedValueShape
-    // sh:qualifiedMinCount
-    // sh:qualifiedMaxCount
-    // sh:reifierShape
-    // sh:reificationRequired
+    [sh('equals'), enforceSame],
+    [sh('disjoint'), keepAll],
+    [sh('subsetOf'), keepAll],
+    [sh('lessThan'), keepAll],
+    [sh('lessThanOrEquals'), keepAll],
+    [sh('not'), keepAll],
+    [sh('and'), keepAll],
+    [sh('or'), keepAll],
+    [sh('xone'), keepAll],
+    [sh('node'), keepAll],
+    [sh('property'), keepAll],
+    [sh('someValue'), keepAll],
+    [sh('qualifiedValueShape'), keepAll],
+    [sh('qualifiedMinCount'), keepHighestInteger],
+    [sh('qualifiedMaxCount'), keepLowestInteger],
+    [sh('reificationRequired'), resolveBooleans],
     [sh('closed'), resolveBooleans],
     [sh('ignoredProperties'), keepAllListItems],
-    // sh:hasValue
+    [sh('hasValue'), enforceSingular(keepAll)],
     [sh('in'), keepListIntersection],
-    // sh:rootClass
-    // sh:uniqueValuesFor
+    [sh('rootClass'), keepMostSpecificClasses],
+    [sh('uniqueValuesFor'), keepAllListItems],
     [sh('name'), keepFirst],
     [sh('description'), keepAll],
     [sh('intent'), keepAll],
@@ -254,5 +279,5 @@ const resolutions = new TermMap<Term, ResolutionFunction>([
     [sh('codeIdentifier'), keepFirst],
     [sh('unit'), keepAll],
     [sh('order'), keepLowestInteger],
-    [sh('group'), keepAll],
+    [sh('group'), keepFirst],
 ]);
