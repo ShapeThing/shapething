@@ -2,7 +2,7 @@ import fs from 'fs'
 import { expect, test } from 'vitest'
 import { rdfToData } from './rdfToData'
 
-const baseUrl = `file://${process.cwd()}/lib/tools/data/test-support/to-data/`
+const baseUrl = new URL('./test-support/to-data/', import.meta.url)
 const dir = fs.readdirSync(new URL('.', baseUrl))
 
 const filtered = dir.some(folder => folder.endsWith('.only')) ? dir.filter(folder => folder.endsWith('.only')) : dir

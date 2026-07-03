@@ -4,7 +4,7 @@ import { expect, test } from 'vitest'
 import { prefixes } from '../../core/namespaces'
 import { dataToRdf } from './dataToRdf'
 
-const baseUrl = `file://${process.cwd()}/lib/tools/data/test-support/to-rdf/`
+const baseUrl = new URL('./test-support/to-rdf/', import.meta.url)
 const dir = fs.readdirSync(new URL('.', baseUrl))
 const filtered = dir.some(folder => folder.endsWith('.only')) ? dir.filter(folder => folder.endsWith('.only')) : dir
 const filtered2 = filtered.filter(folder => !folder.endsWith('.skip'))

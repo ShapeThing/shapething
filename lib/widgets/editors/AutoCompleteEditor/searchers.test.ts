@@ -3,7 +3,7 @@ import { getShapes } from '../../../core/main-context'
 import { sh } from '../../../core/namespaces'
 import { getPurposePredicates } from '../../../helpers/getPurposePredicates'
 import { propertyToSearchQuery } from './searchers'
-const baseUrl = `file://${process.cwd()}/lib/widgets/editors/AutoCompleteEditor/`
+const baseUrl = import.meta.url
 
 describe('propertyToSearchQuery', () => {
   test('with sh:node and sh:class', async () => {

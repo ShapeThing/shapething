@@ -3,7 +3,7 @@ import fs from 'fs'
 import { expect, test } from 'vitest'
 import { generateFake } from './faker'
 
-const baseUrl = `file://${process.cwd()}/lib/tools/faker/test-support/`
+const baseUrl = new URL('./test-support/', import.meta.url)
 const dir = fs.readdirSync(new URL('.', baseUrl))
 
 const filtered = dir.some(folder => folder.endsWith('.only')) ? dir.filter(folder => folder.endsWith('.only')) : dir

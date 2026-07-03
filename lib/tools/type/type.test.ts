@@ -4,7 +4,7 @@ import * as parserTypeScript from 'prettier/parser-typescript'
 import { expect, test } from 'vitest'
 import { commonPrettierOptions, toType } from './type'
 
-const baseUrl = `file://${process.cwd()}/lib/tools/type/test-support/`
+const baseUrl = new URL('./test-support/', import.meta.url)
 const dir = fs.readdirSync(new URL('.', baseUrl))
 
 const filtered = dir.some(folder => folder.endsWith('.only')) ? dir.filter(folder => folder.endsWith('.only')) : dir

@@ -6,7 +6,7 @@ import { describe, expect, test } from 'vitest'
 import { getShapes } from './main-context'
 import { resolveRdfInput } from './resolveRdfInput'
 
-const baseUrl = `file://${process.cwd()}/lib/core/test-support/`
+const baseUrl = new URL('./test-support/', import.meta.url)
 
 const contact = new URL('contact.ttl', baseUrl)
 const john = new URL('john.ttl', baseUrl)

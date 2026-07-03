@@ -1,6 +1,12 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
-<#> <https://schema.org/givenName> "Hayley", "Hudson" ;
-  <https://schema.org/familyName> "Reichel" ;
+<#> <https://schema.org/address> [
+    <https://schema.org/addressCountry> "India" ;
+    <https://schema.org/addressLocality> "Antioch" ;
+    <https://schema.org/addressRegion> "North Dakota" ;
+    <https://schema.org/postalCode> "35462" ;
+    <https://schema.org/streetAddress> "Bethany Divide"
+  ] ;
   <https://schema.org/birthDate> "2019-11-01T10:13:31.881Z"^^xsd:dateTime ;
-  <https://schema.org/address> "Reichel Alley 10133, Heavenchester, Hawaii, Tajikistan" .
+  <https://schema.org/familyName> "Reichel" ;
+  <https://schema.org/givenName> "Oliver" .
