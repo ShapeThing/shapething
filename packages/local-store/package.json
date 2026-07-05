@@ -1,0 +1,44 @@
+{
+  "name": "@shapething/localstore",
+  "version": "0.1.14",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/LocalStore.js",
+  "types": "./dist/lib/LocalStore.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/lib/LocalStore.d.ts",
+      "default": "./dist/LocalStore.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run --passWithNoTests",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@rdfjs/data-model": "^2.1.0",
+    "events": "^3.3.0",
+    "hex-encoding": "^2.0.3",
+    "idb-keyval": "^6.2.2",
+    "n3": "^1.25.2",
+    "readable-stream": "^4.7.0"
+  },
+  "devDependencies": {
+    "@comunica/query-sparql": "^4.2.0",
+    "@rdfjs/types": "^2.0.1",
+    "@testing-library/dom": "^10.4.0",
+    "@types/events": "^3.0.3",
+    "@types/n3": "^1.25.3",
+    "@types/node": "^22.15.29",
+    "@types/rdfjs__data-model": "^2.0.9",
+    "@types/wicg-file-system-access": "^2023.10.6",
+    "@vitest/browser": "^3.1.4",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5",
+    "vitest": "^3.1.4"
+  }
+}

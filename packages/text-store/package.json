@@ -1,0 +1,37 @@
+{
+  "name": "@shapething/textstore",
+  "version": "0.1.4",
+  "type": "module",
+  "license": "MIT",
+  "main": "./dist/TextStore.js",
+  "types": "./dist/src/TextStore.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/src/TextStore.d.ts",
+      "default": "./dist/TextStore.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "@comunica/query-sparql": "^4.2.0",
+    "@rdfjs/types": "^2.0.1",
+    "@types/n3": "^1.24.2",
+    "@types/rdfjs__data-model": "^2.0.9",
+    "@types/rdfjs__namespace": "^2.0.10",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.4",
+    "vitest": "^3.1.2"
+  },
+  "dependencies": {
+    "n3": "^1.25.2",
+    "@rdfjs/data-model": "^2.1.0",
+    "@rdfjs/namespace": "^2.0.1",
+    "flexsearch": "^0.8.158"
+  }
+}

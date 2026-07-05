@@ -7,5 +7,5 @@
   "access": "public",
   "baseBranch": "main",
   "updateInternalDependencies": "patch",
-  "ignore": ["@shapething/docs", "@shapething/playground"]
+  "ignore": ["@shapething/docs", "@shapething/playground", "@shapething/resource-fetcher-website"]
 }

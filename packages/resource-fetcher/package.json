@@ -1,0 +1,48 @@
+{
+  "name": "@shapething/resource-fetcher",
+  "version": "3.0.10",
+  "type": "module",
+  "license": "GPL-3.0-only",
+  "main": "./dist/ResourceFetcher.js",
+  "types": "./dist/ResourceFetcher.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/ResourceFetcher.d.ts",
+      "default": "./dist/ResourceFetcher.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "grapoi": "^1.1.3",
+    "jsonld-context-parser": "^3.0.0",
+    "@rdfjs/data-model": "^2.1.1",
+    "@rdfjs/dataset": "^2.0.2",
+    "@rdfjs/environment": "^1.0.0",
+    "@rdfjs/namespace": "^2.0.1"
+  },
+  "devDependencies": {
+    "@comunica/query-sparql": "^4.5.0",
+    "@comunica/types": "^4.5.0",
+    "@comunica/utils-bindings-factory": "^4.5.0",
+    "@jeswr/pretty-turtle": "^1.8.2",
+    "@rdfjs/types": "^2.0.1",
+    "@triplydb/data-factory": "^6.0.0",
+    "@triplydb/speedy-memory": "11.0.3",
+    "@types/node": "^22.15.29",
+    "@types/rdfjs__data-model": "^2.0.9",
+    "@types/rdfjs__dataset": "^2.0.7",
+    "@types/rdfjs__environment": "^1.0.0",
+    "@types/rdfjs__namespace": "^2.0.10",
+    "n3": "^1.26.0",
+    "sparqljs": "^3.7.3",
+    "typescript": "~5.8.3",
+    "vite": "^6.3.5",
+    "vitest": "^3.1.4"
+  }
+}

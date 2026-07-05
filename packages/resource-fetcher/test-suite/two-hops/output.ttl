@@ -1,0 +1,8 @@
+@prefix ex: <https://example.org/> .
+@prefix schema: <https://schema.org/> .
+
+ex:allanDoyle schema:address [
+    schema:streetAddress [
+      schema:street "S Front Street"
+    ]
+  ] .

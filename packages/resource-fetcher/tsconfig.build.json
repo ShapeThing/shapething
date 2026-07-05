@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": ".",
+    "noEmit": false,
+    "emitDeclarationOnly": true,
+    "declaration": true
+  },
+  "include": ["ResourceFetcher.ts", "core/**/*.ts", "helpers/**/*.ts", "types.d.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+}

@@ -1,0 +1,6 @@
+@prefix ex: <https://example.org/> .
+@prefix schema: <https://schema.org/> .
+
+ex:allanDoyle a schema:Person .
+
+ex:otherAllan schema:parentOf ex:allanDoyle .

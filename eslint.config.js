@@ -10,9 +10,10 @@ export default [
       '**/.turbo/**',
       '**/storybook-static/**',
       '**/public/**',
-      'packages/SHACL-renderer/lib/scss',
-      'packages/SHACL-renderer/lib/style.css',
-      'packages/SHACL-renderer/lib/widgets/facets/CountFacet/multirangeslider.js'
+      'packages/shacl-renderer/lib/scss',
+      'packages/shacl-renderer/lib/style.css',
+      'packages/shacl-renderer/lib/widgets/facets/CountFacet/multirangeslider.js',
+      'packages/typed-sparql/tests/**/*.d.ts'
     ]
   },
   {

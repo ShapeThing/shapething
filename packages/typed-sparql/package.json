@@ -1,0 +1,33 @@
+{
+  "name": "@shapething/typed-sparql",
+  "version": "0.1.4",
+  "description": "",
+  "license": "GPL-3.0-only",
+  "author": "",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist", "README.md"],
+  "scripts": {
+    "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@traqula/parser-sparql-1-2": "^1.0.7"
+  },
+  "devDependencies": {
+    "@rdfjs/types": "^2.0.1",
+    "@types/node": "^22.15.29",
+    "vite": "^8.0.8",
+    "vite-tsconfig-paths": "^6.1.1",
+    "vitest": "^4.1.4"
+  }
+}

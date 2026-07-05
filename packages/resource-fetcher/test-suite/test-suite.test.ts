@@ -1,0 +1,77 @@
+import { dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { expect, test } from "vitest";
+import { ResourceFetcher } from "../ResourceFetcher.ts";
+import dataFactory from "@rdfjs/data-model";
+import { write } from "@jeswr/pretty-turtle";
+import { Parser } from "n3";
+import datasetFactory from "@rdfjs/dataset";
+import type Grapoi from "../helpers/Grapoi.ts";
+import grapoi from "grapoi";
+import * as prefixes from "../helpers/namespaces.ts";
+import { discoverTestCases } from "./cases.ts";
+import { createQueryBindingsComunica, createQueryBindingsSpeedy } from "./queryBindings.ts";
+import { toCanonicalQuads } from "./toCanonicalQuads.ts";
+
+// Discover and run test cases
+const testSuiteDir = dirname(fileURLToPath(import.meta.url));
+const testCases = await discoverTestCases(testSuiteDir);
+
+for (const queryBindings of [createQueryBindingsComunica, createQueryBindingsSpeedy]) {
+
+  for (const testCase of testCases) {
+    test(`suite ${queryBindings.name.replace('createQueryBindings', '')}: ${testCase.name}`, async () => {
+      if (!testCase.iri) {
+        throw new Error(`Missing iri.txt in ${testCase.path}`);
+      }
+
+      if (!testCase.input) {
+        throw new Error(`Missing input.ttl in ${testCase.path}`);
+      }
+
+      if (!testCase.output) {
+        throw new Error(`Missing output.ttl in ${testCase.path}`);
+      }
+
+      if (!testCase.steps) {
+        throw new Error(`Missing steps.txt in ${testCase.path}`);
+      }
+      let shapesPointer: Grapoi | undefined = undefined;
+
+      if (testCase.shapeDefinition) {
+        const parser = new Parser();
+        const quads = parser.parse(testCase.shapeDefinition);
+        const dataset = datasetFactory.dataset();
+        for (const quad of quads) {
+          dataset.add(quad);
+        }
+        shapesPointer = grapoi({
+          dataset,
+          factory: dataFactory,
+          term: testCase.shapeIri
+            ? dataFactory.namedNode(testCase.shapeIri)
+            : undefined,
+        });
+      }
+
+      const resourceFetcher = new ResourceFetcher({
+        resourceIri: dataFactory.namedNode(testCase.iri),
+        queryBindings: await queryBindings(testCase.input),
+        shapesPointer,
+        debug: !!process.env.DEBUG,
+      });
+
+      const { results, steps } = await resourceFetcher.execute();
+
+      const outputTurtle = await write(results, {
+        ordered: true,
+        prefixes: Object.fromEntries(
+          Object.entries(prefixes).map(([key, ns]) => [key, ns().value])
+        ),
+      });
+
+      expect(toCanonicalQuads(outputTurtle)).toEqual(toCanonicalQuads(testCase.output));
+      expect(steps).toEqual(testCase.steps);
+    });
+  }
+}
