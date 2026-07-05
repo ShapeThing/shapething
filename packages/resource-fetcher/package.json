@@ -11,6 +11,9 @@
       "default": "./dist/ResourceFetcher.js"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": ["dist", "README.md"],
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",

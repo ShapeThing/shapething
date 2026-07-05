@@ -11,6 +11,9 @@
       "default": "./dist/LocalStore.js"
     }
   },
+  "publishConfig": {
+    "access": "public"
+  },
   "files": ["dist", "README.md"],
   "scripts": {
     "dev": "vite",
