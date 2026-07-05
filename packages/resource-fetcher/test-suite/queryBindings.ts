@@ -1,7 +1,5 @@
 import { QueryEngine } from "@comunica/query-sparql";
 import { Bindings } from "@comunica/utils-bindings-factory";
-import factory from '@rdfjs/data-model'
-import type { Quad, Term } from "@rdfjs/types";
 
 const serializedSource = (value: string) => ({
     type: "serialized",
@@ -20,30 +18,4 @@ export const createQueryBindingsComunica = async (input: string): Promise<(query
         });
         return result.toArray() as unknown as Bindings[];
     }
-}
-
-export const createQueryBindingsSpeedy = async (input: string): Promise<(query: string) => Promise<Bindings[]>> => {
-    const { newEngine } = await import('@triplydb/speedy-memory');
-    const { parse, Store } = await import('@triplydb/data-factory');
-
-    const quads = parse(input, {
-        baseIri: "http://example.org/",
-    });
-    const store = new Store(quads.map((quad: Quad) => factory.quad(quad.subject,
-        quad.predicate,
-        quad.object,
-        factory.namedNode('urn:input'),
-    )))
-    const engine = newEngine(store);
-    return async (query: string) => {
-        const results = await engine.query(query, {
-            queryType: 'select'
-        });
-        const bindings = await results.toArray()
-        /** @ts-expect-error the speedy results shape doesn't match comunica's Bindings type */
-        return bindings.map((binding: Bindings<Term>) => {
-            /** @ts-expect-error Bindings' constructor typings don't match this Map-based construction */
-            return new Bindings(factory, new Map(Object.entries(binding)))
-        });
-    };
 }

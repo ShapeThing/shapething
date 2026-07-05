@@ -32,8 +32,6 @@
     "@comunica/utils-bindings-factory": "^4.5.0",
     "@jeswr/pretty-turtle": "^1.8.2",
     "@rdfjs/types": "^2.0.1",
-    "@triplydb/data-factory": "^6.0.0",
-    "@triplydb/speedy-memory": "11.0.3",
     "@types/node": "^22.15.29",
     "@types/rdfjs__data-model": "^2.0.9",
     "@types/rdfjs__dataset": "^2.0.7",
