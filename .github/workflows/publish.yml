@@ -9,11 +9,30 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
-      id-token: write
+      contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Publish package
-        run: npm ci && npm run css:build && cp dist/shacl-renderer.css lib/style.css && rm -rf dist && cp README.mdx README.md && npx jsr publish --allow-dirty
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.12.0
+          cache: pnpm
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Create release PR or publish to npm
+        uses: changesets/action@v1
+        with:
+          version: pnpm run version
+          publish: pnpm run release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

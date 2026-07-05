@@ -1,0 +1,25 @@
+.next-steps {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: end;
+    padding: 1rem;
+    gap: 1rem;
+
+    .install {
+        background-color: var(--pink-light);
+        padding: 1rem;
+        border-radius: 10px;
+        font-size: .9rem;
+    }
+}
+
+@media screen and (min-width: 720px) {
+    .next-steps {
+        align-items: end;
+
+        .install {
+            font-size: 1rem;
+        }
+    }
+}

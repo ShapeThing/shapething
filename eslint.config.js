@@ -4,13 +4,15 @@ import tseslint from 'typescript-eslint'
 export default [
   {
     ignores: [
-      'lib/scss',
-      'storybook-static',
-      'dist',
-      'public',
-      'lib/style.css',
-      'eslint.config.js',
-      'lib/widgets/facets/CountFacet/multirangeslider.js'
+      '**/dist/**',
+      '**/build/**',
+      '**/.astro/**',
+      '**/.turbo/**',
+      '**/storybook-static/**',
+      '**/public/**',
+      'packages/SHACL-renderer/lib/scss',
+      'packages/SHACL-renderer/lib/style.css',
+      'packages/SHACL-renderer/lib/widgets/facets/CountFacet/multirangeslider.js'
     ]
   },
   {
@@ -22,5 +24,12 @@ export default [
     }
   },
   { languageOptions: { globals: globals.browser } },
-  ...tseslint.configs.recommended
+  ...tseslint.configs.recommended,
+  {
+    languageOptions: {
+      parserOptions: {
+        tsconfigRootDir: import.meta.dirname
+      }
+    }
+  }
 ]

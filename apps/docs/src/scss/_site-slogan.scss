@@ -1,0 +1,32 @@
+@use './mixins';
+
+.site-slogan {
+    font-size: 3.6rem;
+    font-weight: 800;
+    line-height: 1;
+    padding-inline: 1rem;
+    margin: 0;
+    padding-block: 3rem;
+    text-wrap: balance;
+    text-align: center;
+    font-size-adjust: none;
+    color: var(--blue-dark);
+
+    .highlight {
+        color: var(--blue-light);
+    }
+
+    .dot {
+        width: 1rem;
+        margin-bottom: -.2rem;
+        margin-left: .5rem;
+    }
+}
+
+@media screen and (min-width: 720px) {
+    .site-slogan {
+        font-size: 7.6rem;
+        text-align: left;
+    }
+    
+}

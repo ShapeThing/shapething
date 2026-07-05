@@ -1,0 +1,37 @@
+---
+import Layout from "../../../components/Layout.astro";
+import Sidebar from "../../../components/Sidebar.astro";
+import "@fontsource-variable/jetbrains-mono";
+import { parse } from 'react-docgen-typescript';
+
+const options = {
+  savePropValueAsString: true,
+};
+
+const documentation = parse(process.cwd() + '/node_modules/@shapething/shacl-renderer/lib/components/ShaclRenderer.tsx', options);
+const shaclRenderer = documentation.find(doc => doc.displayName === 'ShaclRenderer')!;
+---
+
+<Layout title="React component" class="docs">
+  <Sidebar />
+  <main class="docs-main">
+    <h1>React component</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Prop</th>
+          <th>Type</th>
+          <!-- <th>Description</th> -->
+        </tr>
+      </thead>
+      <tbody>
+        {Object.entries(shaclRenderer.props).map(([name, prop]) => (
+          <tr>
+            <td>{name}</td>
+            <td>{prop.type.name}</td>
+            {/* <td>{prop.description || ''}</td> */}
+          </tr>
+        ))}
+      </tbody>
+  </main>
+</Layout>

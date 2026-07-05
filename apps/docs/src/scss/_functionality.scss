@@ -1,0 +1,36 @@
+.functionality {
+    font-size: 2rem;
+    color: var(--blue-light);
+    font-weight: 300;
+    font-family: 'Roboto Condensed Variable', sans-serif;
+    line-height: 1.7;
+    padding-inline: 1rem;
+    display: grid;
+    gap: 3rem;
+    padding-block: 3rem;
+    grid-template-columns: 1fr;
+    text-align: center;
+
+    li {
+        white-space: nowrap;
+    }
+
+    ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+
+    svg {
+        margin-right: .5rem;
+        margin-bottom: -.3rem;
+    }
+}
+
+@media screen and (min-width: 720px) {
+    .functionality {
+        grid-template-columns: 1fr 1fr;
+        text-align: left;
+    }
+    
+}

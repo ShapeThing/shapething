@@ -1,0 +1,63 @@
+.logo {
+    padding-block: 1rem;
+    display: flex;
+    width: 100%;
+    margin-inline: auto;
+    text-decoration: none;
+    align-items: center;
+    display: inline-flex;
+
+    .text {
+        color: var(--blue-dark);
+        font-size: 1.4rem;
+        font-weight: 600;
+    }
+
+    .image {
+        display: none;
+        height: 30px;
+    }
+
+    .dot {
+        width: 20px;
+        margin-right: .5rem;
+    }
+}
+
+@media screen and (min-width: 720px) {
+
+
+    .logo {
+        align-items: start;
+
+        .dot {
+            display: none;
+        }
+
+        .image {
+            display: block;
+
+            svg {
+                height: 30px;
+                margin-top: 4px;
+            }
+        }
+
+        .text {
+            white-space: nowrap;
+            font-family: 'Roboto Condensed Variable', sans-serif;
+            letter-spacing: -.3px;
+            border-left: 1px solid var(--blue-dark);
+            margin-left: .6rem;
+            padding-left: .6rem;
+            padding-top: 0;
+        }
+    }
+
+}
+
+@media screen and (min-width: 1280px) {
+    .logo {
+        flex-direction: row;
+    }
+}

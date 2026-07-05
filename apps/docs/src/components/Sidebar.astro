@@ -1,0 +1,50 @@
+---
+import { getCollection } from "astro:content";
+const guides = await getCollection("guides");
+const references = await getCollection("references");
+const deepDives = await getCollection("deepDives");
+
+const pages = {
+  guides: {
+    title: "Guides",
+    items: guides,
+  },
+  references: {
+    title: "References",
+    items: references,
+  },
+  "deep-dives": {
+    title: "Deep Dives",
+    items: deepDives,
+  },
+};
+
+const { pathname } = Astro.url;
+---
+
+<div class="sidebar-lines"></div>
+<aside class="sidebar">
+  <nav>
+    {
+      Object.entries(pages).map(([key, { title, items }]) => (
+        <div class="sidebar-section">
+          <h3>{title}</h3>
+          <ul>
+            {items
+              .sort((a, b) => (a.data.order ?? 0) - (b.data.order ?? 0))
+              .map((item) => {
+                const depth = item.id.split("/").length - 1;
+                const url = `/docs/${key}/${item.id}`;
+
+                return (
+                  <li class="sidebar-item" class:list={{ 'active': pathname === url }} style={{'--depth': depth}}>
+                    <a href={url} class="link">{item.data.title}</a>
+                  </li>
+                );
+              })}
+          </ul>
+        </div>
+      ))
+    }
+  </nav>
+</aside>

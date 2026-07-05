@@ -1,0 +1,94 @@
+---
+import Layout from "../components/Layout.astro";
+import { Icon } from "astro-icon/components";
+---
+
+<Layout
+  disableTitle
+  title="ShapeThing - The web toolkit for Linked Data"
+  description="Extensible React based toolkit for forms, views & facets. As well as type generation, JSON conversion and dummy data generation. All based on SHACL and DASH."
+>
+  <h1 class="site-slogan">
+    The web toolkit for <br /><span class="highlight">Linked Data</span><img
+      class="dot"
+      src="/favicon.svg"
+    />
+  </h1>
+
+  <div class="next-steps">
+    <span class="install">npm install @shapething/shacl-renderer</span>
+    <a class="button pink" href="/docs">Get started</a>
+  </div>
+
+  <p class="site-mission">
+    Extensible React based toolkit for forms, views & facets.<br />
+    As well as type generation, JSON conversion and dummy data generation.<br />
+    All based on <a href="/docs/deep-dives/about-shacl" target="_blank">SHACL</a
+    > and <a href="/docs/deep-dives/about-dash">DASH</a>.
+  </p>
+
+  <div class="functionality">
+    <ul>
+      <li>
+        <a href="/docs/guides/getting-started/forms">
+          <Icon name="logos:react" /><Icon
+            name="fluent-color:clipboard-text-edit-32"
+          />forms
+        </a>
+      </li>
+      <li>
+        <a href="/docs/guides/getting-started/views">
+          <Icon name="logos:react" /><Icon
+            name="fluent-color:contact-card-32"
+          />views
+        </a>
+      </li>
+      <li>
+        <a href="/docs/guides/getting-started/facets">
+          <Icon name="logos:react" /><Icon
+            name="fluent-color:search-sparkle-48"
+          />facets
+        </a>
+      </li>
+    </ul>
+
+    <ul>
+      <li><a href="docs/guides/getting-started/objects"> <Icon name="logos:javascript" />objects</a></li>
+      <li><a href="docs/guides/getting-started/types"> <Icon name="logos:typescript-icon" />types</a></li>
+      <li>
+        <a href="docs/guides/getting-started/fakes"> 
+        <Icon name="fluent-color:text-bullet-list-square-sparkle-32" />fake data
+        </a>
+      </li>
+    </ul>
+  </div>
+
+  <hr style="--row: 2" />
+  <hr style="--row: 3" />
+  <hr style="--row: 4" />
+  <hr style="--row: 5" />
+
+  <hr class="mobile-only" style="--row: 6" />
+  <hr class="mobile-only" style="--row: 7" />
+
+  <div class="card-grid">
+    <div class="card">
+      <h2 class="title">Model your data</h2>
+      With <a href="/docs/deep-dives/about-shacl" target="_blank">SHACL</a
+    > and <a href="/docs/deep-dives/about-dash">DASH</a> and some ShapeThing predicates.
+    </div>
+    <div class="card">
+      <h2 class="title">Render forms and views with ease</h2>
+      Use the React component and supply it with shapes and or data and it will render
+      a form or view for you.
+    </div>
+    <div class="card">
+      <h2 class="title">Generate types, JSON and dummy data</h2>
+      Generate TypeScript types, JSON schemas and dummy data from your shapes.
+    </div>
+    <div class="card">
+      <h2 class="title">Extensible and customizable</h2>
+      Add your own Editors and Viewers to the forms and views.
+    </div>
+  </div>
+</Layout>

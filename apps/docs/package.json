@@ -1,0 +1,35 @@
+{
+  "name": "@shapething/docs",
+  "type": "module",
+  "version": "0.0.1",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/react": "^4.3.0",
+    "@astrojs/starlight": "^0.34.5",
+    "@fontsource-variable/alumni-sans": "^5.2.6",
+    "@fontsource-variable/jetbrains-mono": "^5.2.6",
+    "@fontsource-variable/roboto-condensed": "^5.2.6",
+    "@shapething/shacl-renderer": "workspace:*",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "astro": "^5.6.1",
+    "react": "^19.1.0",
+    "react-docgen": "^8.0.0",
+    "react-dom": "^19.1.0",
+    "sharp": "^0.34.2"
+  },
+  "devDependencies": {
+    "@iconify-json/fluent-color": "^1.2.15",
+    "@iconify-json/logos": "^1.2.4",
+    "astro-icon": "^1.1.5",
+    "react-docgen-typescript": "^2.4.0",
+    "sass-embedded": "^1.89.2"
+  }
+}

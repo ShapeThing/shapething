@@ -1,0 +1,38 @@
+.docs-main {
+    grid-column: 3 / 5;
+    grid-row: 2 / 3;
+    padding-inline: 1rem;
+    font-size: 1.3rem;
+
+    pre {
+        padding: 1rem;
+    }
+
+    code {
+        font-family: 'JetBrains Mono Variable', monospace;
+        line-height: 1.4;
+        font-size: 16px;
+    }
+
+    h1 + p {
+        color: var(--blue-light);
+        font-size: 1.5rem;
+    }
+
+}
+
+.docs .grid {
+    grid-template-areas:
+        "header header header"
+        "a main b"
+        "a footer b";
+}
+
+@media screen and (min-width: 1280px) {
+    .docs .grid {
+        grid-template-areas:
+            "header header header header header"
+            "a main main main b"
+            "a footer footer footer b";
+    }
+}

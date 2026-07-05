@@ -1,0 +1,42 @@
+@use './mixins';
+
+.sidebar {
+    grid-column: 2 / 3;
+    padding: 1rem;
+    grid-row: 2 / 3;
+    background-color: rgba(var(--primary-rgb), .05);
+    position: relative;
+    min-height: calc(100dvh - 16.5rem);
+    ul {
+        padding: 0;
+        margin: 0;
+    }
+}
+
+.sidebar-lines {
+    position: relative;
+    @include mixins.horizontalLineTop();
+    @include mixins.horizontalLineBottom();
+    grid-column: 1 / -1;
+    grid-row: 2 / 3;
+    pointer-events: none;
+}
+
+.sidebar-item {
+    list-style: none;
+    padding-left: calc((var(--depth) + 1) * 1rem);
+    display: flex;
+
+    .link {
+        padding: 0.2rem .5rem;
+        border-radius: 0.25rem;
+    }
+
+    &.active {
+        .link {
+            color: var(--pink);
+            font-size: 1.3rem;
+            font-weight: bold;
+        }
+    }
+}

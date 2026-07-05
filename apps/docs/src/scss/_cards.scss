@@ -1,0 +1,35 @@
+@use "./mixins";
+
+.card-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 3rem;
+    position: relative;
+    padding-inline: 1rem;
+    max-width: 100%;
+    padding-block: 2rem;
+}
+
+.card {
+    .title {
+        font-weight: 500;
+        margin-block: 0;
+    }
+}
+
+@media screen and (min-width: 1280px) {
+    .card-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
+
+@media screen and (min-width: 1280px) {
+    .card-grid {
+        padding-inline: 0;
+
+    }
+
+    .card {
+        padding: 1rem;
+    }
+}

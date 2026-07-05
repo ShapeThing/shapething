@@ -1,0 +1,51 @@
+@mixin horizontalLine () {
+  content: '';
+  display: block;
+  position: absolute;
+  width: 100vw;
+  left: 50%;
+  z-index: -1;
+  transform: translateX(-50%);
+  height: 0;
+  border-top: 1px dotted var(--line-color);
+}
+
+@mixin horizontalLineBottom () {
+  &:after {
+    @include horizontalLine();
+    bottom: 0;
+  }
+}
+
+@mixin horizontalLineTop () {
+  &:before {
+    @include horizontalLine();
+    top: 0;
+  }
+}
+
+@mixin verticalLine () {
+  content: '';
+  display: block;
+  position: absolute;
+  height: 100%;
+  top: 50%;
+  z-index: -1;
+  transform: translateY(-50%);
+  width: 1px;
+  border-left: 1px dotted var(--line-color);
+}
+
+@mixin verticalLineLeft () {
+  &:before {
+    @include verticalLine();
+    left: 0;
+  }
+}
+
+@mixin verticalLineRight () {
+  &:after {
+    @include verticalLine();
+    right: 0;
+  }
+}

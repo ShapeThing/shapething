@@ -1,0 +1,38 @@
+---
+import Header from "./Header.astro";
+import "@fontsource-variable/alumni-sans";
+import "@fontsource-variable/roboto-condensed";
+import "../style.scss";
+import Footer from "./Footer.astro";
+
+type Props = {
+  title: string;
+  description?: string;
+  class?: string;
+  disableFooter?: boolean;
+  disableTitle?: boolean;
+};
+---
+
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{Astro.props.title}</title>
+    <link rel="icon" href="/favicon.svg" />
+  </head>
+  <body class={`${Astro.props.class || ""}`}>
+    <div class="root grid">
+      <Header />
+      <slot />
+      <div class="lines grid">
+        <div class="first"></div>
+        <div class="second"></div>
+        <div class="third"></div>
+      </div>
+      <hr style="--row: 3" />
+
+      {Astro.props.disableFooter ? null : <Footer />}
+    </div>
+  </body>
+</html>

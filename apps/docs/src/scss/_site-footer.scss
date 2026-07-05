@@ -1,0 +1,15 @@
+.site-footer {
+    padding-inline: 1rem;
+}
+
+@media screen and (min-width: 720px) {
+    .site-header {
+        padding-inline: 4rem;
+    }
+}
+
+@media screen and (min-width: 1280px) {
+    .site-header {
+        padding-inline: 7rem;
+   }
+}

@@ -1,0 +1,79 @@
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-family: 'Alumni Sans Variable', sans-serif;
+  font-size-adjust: .8;
+}
+
+h1 {
+    color: var(--pink);
+}
+
+h2, h3, h4, h5 {
+    color: var(--blue-dark);
+}
+
+body {
+  font-family: 'Roboto Condensed Variable', sans-serif;
+  margin: 0;
+  padding: 0;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.6;
+}
+
+html {
+  padding: 0;
+  margin: 0;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+:root {
+
+
+  --blue-light: #2a7fff;
+  --blue-dark: #0044aa;
+  --pink: #d400aa;
+  --pink-light: #ffe5fa;
+  --text: #1d1d1d;
+  --line-color: rgba(42, 127, 255, 0.521);
+  --gray: #666666;
+
+  --primary: var(--blue-light);
+  --primary-rgb: 42, 127, 255;
+  --secondary: var(--blue-dark);
+  --secondary-rgb: 0, 68, 170;
+
+}
+
+a {
+  color: var(--blue-light);
+}
+
+table {
+  table-layout: fixed;
+  margin-bottom: 2rem;
+  text-align: left;
+
+  th, td {
+    border-bottom: 1px solid var(--pink-light);
+  }
+}
+
+.mobile-only {
+  display: none;
+}
+
+@media screen and (max-width: 1280px) {
+  .mobile-only {
+    display: block;
+  }
+}

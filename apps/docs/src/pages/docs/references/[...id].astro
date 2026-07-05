@@ -1,0 +1,24 @@
+---
+import Layout from "../../../components/Layout.astro";
+import Sidebar from "../../../components/Sidebar.astro";
+import "@fontsource-variable/jetbrains-mono";
+const { page } = Astro.props;
+const { Content } = await render(page);
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const pages = await getCollection("references");
+  return pages.map((page) => ({
+    params: { id: page.id },
+    props: { page },
+  }));
+}
+---
+
+<Layout title="Documentation" class="docs">
+  <Sidebar />
+  <main class="docs-main">
+    <h1>{page.data.title}</h1>
+    <Content />
+  </main>
+</Layout>

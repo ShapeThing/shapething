@@ -1,0 +1,24 @@
+---
+const currentUrl = Astro.url.pathname;
+---
+
+<div class="menu-links">
+  <a
+    class="link"
+    class:list={{ active: currentUrl.includes("/guides/") }}
+    href="/guides/example">Guides</a
+  >
+  <a
+    class="link"
+    class:list={{ active: currentUrl.includes("/reference/") }}
+    href="/reference/example">API</a
+  >
+  <a
+    class="link"
+    target="_blank"
+    href="https://github.com/shapething/shacl-renderer">GitHub</a
+  >
+  <a class="playground link" target="_blank" href="https://play.shapething.com"
+    >Playground</a
+  >
+</div>
