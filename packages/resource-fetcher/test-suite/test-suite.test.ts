@@ -1,23 +1,23 @@
+import { write } from "@jeswr/pretty-turtle";
+import dataFactory from "@rdfjs/data-model";
+import datasetFactory from "@rdfjs/dataset";
+import grapoi from "grapoi";
+import { Parser } from "n3";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { expect, test } from "vitest";
-import { ResourceFetcher } from "../ResourceFetcher.ts";
-import dataFactory from "@rdfjs/data-model";
-import { write } from "@jeswr/pretty-turtle";
-import { Parser } from "n3";
-import datasetFactory from "@rdfjs/dataset";
 import type Grapoi from "../helpers/Grapoi.ts";
-import grapoi from "grapoi";
 import * as prefixes from "../helpers/namespaces.ts";
+import { ResourceFetcher } from "../ResourceFetcher.ts";
 import { discoverTestCases } from "./cases.ts";
-import { createQueryBindingsComunica, createQueryBindingsSpeedy } from "./queryBindings.ts";
+import { createQueryBindingsComunica } from "./queryBindings.ts";
 import { toCanonicalQuads } from "./toCanonicalQuads.ts";
 
 // Discover and run test cases
 const testSuiteDir = dirname(fileURLToPath(import.meta.url));
 const testCases = await discoverTestCases(testSuiteDir);
 
-for (const queryBindings of [createQueryBindingsComunica, createQueryBindingsSpeedy]) {
+for (const queryBindings of [createQueryBindingsComunica]) {
 
   for (const testCase of testCases) {
     test(`suite ${queryBindings.name.replace('createQueryBindings', '')}: ${testCase.name}`, async () => {

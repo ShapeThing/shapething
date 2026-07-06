@@ -336,6 +336,9 @@ importers:
       '@rdfjs/types':
         specifier: ^2.0.1
         version: 2.0.1
+      '@types/n3':
+        specifier: ^1.26.1
+        version: 1.26.1
       '@types/node':
         specifier: ^22.15.29
         version: 22.20.0
