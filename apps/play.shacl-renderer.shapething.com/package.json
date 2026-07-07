@@ -1,10 +1,10 @@
 {
-  "name": "@shapething/playground",
+  "name": "@shapething/shacl-renderer-playground",
   "type": "module",
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "dev": "vite --port 5174",
+    "dev": "vite --port 8003",
     "build": "vite build",
     "preview": "vite preview"
   },

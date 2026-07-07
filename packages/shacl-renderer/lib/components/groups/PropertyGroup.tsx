@@ -51,7 +51,8 @@ export const getProperties = ({
   nodeDataPointer,
   groupByUsage,
   notifyParent,
-  notifyCount
+  notifyCount,
+  activeInterfaceLanguage
 }: {
   shapePointer: Grapoi
   group: Grapoi
@@ -64,6 +65,7 @@ export const getProperties = ({
   groupByUsage?: boolean
   notifyParent: () => void
   notifyCount: number
+  activeInterfaceLanguage?: string
 }) => {
   const groups = [...shapePointer.node().hasOut(rdf('type'), sh('PropertyGroup'))]
   const groupLevelGroups = groups.filter(innerGroup => innerGroup.out(sh('group')).term?.equals(group.term))
@@ -77,7 +79,8 @@ export const getProperties = ({
     dataset,
     groups: groupWidgets,
     notifyParent,
-    notifyCount
+    notifyCount,
+    activeInterfaceLanguage
   })
 
   const formElements: [number, ReactNode, boolean?, Grapoi?][] = [

@@ -12,7 +12,9 @@ import { language } from '../helpers/language'
 import { nonNullable } from '../helpers/nonNullable'
 import parsePath from '../helpers/parsePath'
 import resolvePropertyPointerConflicts from '../helpers/propertyPointerConflictResolution'
+import { Path } from '../Path'
 import { WidgetItem, widgetsContext } from '../widgets/widgets-context'
+import NormalStorageStrategy from './EditMode/storage/normal'
 import { getConditionalFields } from './getConditionalFields'
 import PropertyUiComponent from './PropertyUiComponent'
 import { SubjectContextProvider } from './SubjectContextProvider'
@@ -25,7 +27,8 @@ export const getElementHelpers = ({
   dataset,
   groups,
   notifyParent,
-  notifyCount
+  notifyCount,
+  activeInterfaceLanguage
 }: {
   shapePointer: Grapoi
   facetSearchDataPointer: Grapoi
@@ -34,6 +37,7 @@ export const getElementHelpers = ({
   groups: WidgetItem[]
   notifyCount: number
   notifyParent: () => void
+  activeInterfaceLanguage?: string
 }) => {
   const keyPrefix = shapePointer.values.join(',') + ':' + dataPointer.values.join(',') + ':'
 
@@ -91,7 +95,57 @@ export const getElementHelpers = ({
         property
       ] as [number, ReactNode, boolean, Grapoi])
   }
-  return { mapGroup, mapProperty }
+
+  const listRoot = (pointer: Grapoi): Grapoi => {
+    const previous = pointer.in(rdf('rest'))
+    return previous.term ? listRoot(previous) : pointer
+  }
+
+  const mapConditionalProperty = (property: Grapoi) => {
+    const result = mapProperty(property)
+    if (!result) return null
+
+    const [score, element, hasValue, propertyPointer] = result
+
+    const list = [...listRoot(property.in(sh('property')).in()).list()]
+    const optionLabels = list.map(optionShape => {
+      const label = optionShape.out([sh('name'), rdfs('label')]).best(language([activeInterfaceLanguage, '', '*', 'localName'])).value!
+      return { option: optionShape, label, selected: optionShape.out(sh('property')).terms.find(t => t.equals(property.term)) }
+    })
+
+    return [score, <>
+      <select onChange={e => {
+        const selectedOption = list.find(option => option.term.value === e.target.value)
+        if (!selectedOption) return
+
+        for (const option of list) {
+          for (const path of option.out(sh('property')).out(sh('path'))) {
+            const parsedPath = parsePath(path)
+
+            if (parsedPath) {
+              const storage = new NormalStorageStrategy(dataPointer, parsedPath as Path)
+              if (option.term.equals(selectedOption.term)) {
+                storage.addTerm(factory.literal(''))
+              }
+              else {
+                storage.deleteTerms()
+              }
+            }
+          }
+        }
+        notifyParent()
+      }} value={optionLabels.find(option => option.selected)?.option.term.value ?? ''}>
+        {optionLabels.map(({ option, label }) => (
+          <option key={option.term.value} value={option.term.value}>
+            {label}
+          </option>
+        ))}
+      </select>
+      {element}
+    </>, hasValue, propertyPointer] as [number, ReactNode, boolean, Grapoi]
+  }
+
+  return { mapGroup, mapProperty, mapConditionalProperty }
 }
 
 export default function NodeUiComponent() {
@@ -134,7 +188,7 @@ export default function NodeUiComponent() {
   // We only have sh:or on nodeShapes, this can not exist inside a group.
   // It is possible to have conditional fields in a group but they must be set on the node shape.
   const [conditionalFieldsPointers, setConditionalFieldsPointers] = useState<Grapoi[]>([])
-
+  const { activeInterfaceLanguage } = useContext(languageContext)
   useEffect(() => {
     const conditionalFields = shapePointer.out(sh('or')).terms
     getConditionalFields({ conditionalFields, dataset, dataPointer, shapePointer, usedPredicates }).then(
@@ -168,7 +222,7 @@ export default function NodeUiComponent() {
 
   const notifyParent = useCallback(() => notify(notifyCount + 1), [notifyCount, notify])
 
-  const { mapGroup, mapProperty } = useMemo(
+  const { mapGroup, mapProperty, mapConditionalProperty } = useMemo(
     () =>
       getElementHelpers({
         shapePointer,
@@ -177,15 +231,16 @@ export default function NodeUiComponent() {
         dataset,
         groups: groupWidgets,
         notifyCount,
-        notifyParent: notifyParent
+        notifyParent: notifyParent,
+        activeInterfaceLanguage
       }),
-    [shapePointer, dataPointer, facetSearchDataPointer, dataset, groupWidgets, notifyCount, notifyParent]
+    [shapePointer, dataPointer, facetSearchDataPointer, dataset, groupWidgets, notifyCount, notifyParent, activeInterfaceLanguage]
   )
 
   const formElements: ReactNode[] = [
     ...[
       ...topLevelGroups.map(mapGroup),
-      ...conditionalFieldsPointers.map(mapProperty),
+      ...conditionalFieldsPointers.map(mapConditionalProperty),
       ...topLevelProperties.map(mapProperty),
       ...propertiesWithoutShapes.map(mapProperty)
     ]
@@ -194,7 +249,6 @@ export default function NodeUiComponent() {
       .map(([, element]) => element)
   ]
 
-  const { activeInterfaceLanguage } = useContext(languageContext)
   const description = shapePointer
     .out([sh('description'), rdfs('comment')])
     .best(language([activeInterfaceLanguage, '', '*'])).value
@@ -217,10 +271,6 @@ export default function NodeUiComponent() {
   )
 }
 
-/**
- * This logic does two things, first it filters some easy things such as deactivated properties,
- * and second it handles cases where multiple properties share the same path.
- */
 export const filteredPropertiesFromShape = (shape: Grapoi) => {
   const properties = shape.out(sh('property')).filter((pointer: Grapoi) => {
     return !pointer.hasOut(sh('deactivated'), factory.literal('true', xsd('boolean'))).term

@@ -28,7 +28,8 @@ export default function DrawerPropertyGroup(props: WidgetProps & { cssClass?: st
     dataset,
     groupByUsage: true,
     notifyCount,
-    notifyParent
+    notifyParent,
+    activeInterfaceLanguage
   }) as {
     used: ReactNode[]
     unused: Grapoi[]

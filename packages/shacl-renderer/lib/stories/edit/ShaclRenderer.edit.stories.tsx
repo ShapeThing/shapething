@@ -274,6 +274,15 @@ export const EditJSONWithShape = {
   } as ShaclRendererProps
 }
 
+
+export const OrCvShape = {
+  args: {
+    mode: 'edit',
+    shapes: new URL('or-cv-shape.ttl', baseUrl),
+    children: () => <></>
+  } as ShaclRendererProps
+}
+
 // export const CustomWidgets = {
 //   decorators: [
 //     // eslint-disable-next-line @typescript-eslint/no-explicit-any

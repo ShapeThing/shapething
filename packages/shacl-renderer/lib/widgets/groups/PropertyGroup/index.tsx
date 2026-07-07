@@ -20,7 +20,8 @@ export default function PropertyGroup(props: WidgetProps & { cssClass?: string }
     group: property,
     dataset,
     notifyCount,
-    notifyParent
+    notifyParent,
+    activeInterfaceLanguage
   }) as ReactNode[]
   const label = useGroupLabel(property, props.nodeDataPointer)
   const description = property.out([sh('description'), rdfs('comment')]).best(language([activeInterfaceLanguage])).value

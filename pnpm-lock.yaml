@@ -35,7 +35,7 @@ importers:
         specifier: ^8.62.0
         version: 8.62.1(eslint@10.6.0)(typescript@6.0.3)
 
-  apps/play.shapething.com:
+  apps/play.shacl-renderer.shapething.com:
     dependencies:
       '@codemirror/autocomplete':
         specifier: ^6.18.6

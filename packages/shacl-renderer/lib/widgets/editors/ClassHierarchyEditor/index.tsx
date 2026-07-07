@@ -52,7 +52,7 @@ const fetchTree = async (endpoint: string, className: string, language: string) 
   return bindings.map((binding: Bindings) => ({
     name: binding.get('label')!.value,
     id: binding.get('s')!.value,
-    children: binding.get('children')?.value.split(',') ?? [],
+    children: (binding.get('children')?.value.split(',') ?? []).filter(Boolean),
     parent: binding.get('s')!.value === className ? null : (binding.get('parent')?.value ?? null)
   }))
 }

@@ -11,6 +11,7 @@ export default function TabbedPropertyGroup(props: WidgetProps & { cssClass?: st
   const { data: dataset, shapePointer, facetSearchDataPointer } = useContext(mainContext)
 
   const { activeTabbedGroupIris } = useContext(tabbedPropertyGroupContext)
+  const { activeInterfaceLanguage } = useContext(mainContext)
 
   const properties = getProperties({
     ...props,
@@ -19,7 +20,8 @@ export default function TabbedPropertyGroup(props: WidgetProps & { cssClass?: st
     group: property,
     dataset,
     notifyCount,
-    notifyParent
+    notifyParent,
+    activeInterfaceLanguage
   }) as ReactNode[]
 
   const label = useGroupLabel(property, props.nodeDataPointer)

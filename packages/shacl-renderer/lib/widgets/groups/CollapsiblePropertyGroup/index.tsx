@@ -34,6 +34,7 @@ export default function CollapsiblePropertyGroup(props: WidgetProps & { cssClass
   const { property, notifyCount, notifyParent } = props
   const localName = property.term.value.split(/\/|#/g).pop()
   const { data: dataset, mode, shapePointer, facetSearchDataPointer } = useContext(mainContext)
+  const { activeInterfaceLanguage } = useContext(mainContext)
   const [isTransitioning, setIsTransitioning] = useState(false)
   const properties = getProperties({
     ...props,
@@ -42,7 +43,8 @@ export default function CollapsiblePropertyGroup(props: WidgetProps & { cssClass
     group: property,
     dataset,
     notifyCount,
-    notifyParent
+    notifyParent,
+    activeInterfaceLanguage
   }) as ReactNode[]
 
   const groupLabelPath = property.out(stsr('groupLabelPath')).list()

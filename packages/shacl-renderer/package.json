@@ -46,7 +46,7 @@
     "./style.css": "./dist/shacl-renderer.css"
   },
   "scripts": {
-    "dev": "storybook dev -p 6006",
+    "dev": "storybook dev -p 7002",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
     "lint:fix": "eslint . --report-unused-disable-directives --max-warnings 0 --fix",
     "postinstall": "rm -rf ./node_modules/@types/rdfjs__data-model/node_modules",

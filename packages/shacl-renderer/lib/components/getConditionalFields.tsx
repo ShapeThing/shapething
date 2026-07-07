@@ -7,6 +7,7 @@ import { sh, xsd } from '../core/namespaces'
 import Grapoi from '../Grapoi'
 import { nonNullable } from '../helpers/nonNullable'
 import { outAll } from '../helpers/outAll'
+import parsePath from '../helpers/parsePath'
 
 export const getConditionalFields = ({
   conditionalFields,
@@ -45,9 +46,21 @@ export const getConditionalFields = ({
             const validator = new Validator(shapeDataset, { factory })
             const report = await validator.validate({ dataset, terms: [dataPointer.term] })
 
+
+            const properties = isolatedOptionPointer.out(sh('path')).map((path: Grapoi) => {
+              const parsedPath = parsePath(path)
+              return dataPointer.executeAll(parsedPath).terms
+            }).flat()
+
+            if (process.env.DEBUG_CONDITIONAL) {
+              console.log('OPTION', conditionalFieldOptionPointer.out(sh('name')).value, 'errorCount', report.results.length, 'propertyTermCount', properties.length)
+              for (const r of report.results) console.log('  violation path=', r.path?.value, 'msg=', r.message?.[0]?.value, 'component=', r.constraintComponent?.value)
+            }
+
             return {
               report,
               errorCount: report.results.length,
+              propertyTermCount: properties.length,
               shape: shapePointer.node(conditionalFieldOptionPointer.term)
             }
           })
@@ -58,7 +71,13 @@ export const getConditionalFields = ({
     return (
       conditionalFields
         .map(conditionalField => {
-          const sortedAlternatives = conditionalField.options.sort((a, b) => a.errorCount - b.errorCount)
+          const sortedAlternatives = conditionalField.options.sort((a, b) => {
+            if (a.errorCount !== b.errorCount) {
+              return a.errorCount - b.errorCount
+            } else {
+              return b.propertyTermCount - a.propertyTermCount
+            }
+          })
           if (sortedAlternatives[0].errorCount === 0) {
             // No errors, use the first alternative
             return sortedAlternatives[0].shape
