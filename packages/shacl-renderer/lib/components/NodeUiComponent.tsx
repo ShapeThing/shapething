@@ -9,6 +9,7 @@ import { scoreWidgets } from '../core/scoreWidgets'
 import { TabbedPropertyGroupContextProvider } from '../core/tabbedPropertyGroupContextProvider'
 import Grapoi from '../Grapoi'
 import { language } from '../helpers/language'
+import { listRoot } from '../helpers/listRoot'
 import { nonNullable } from '../helpers/nonNullable'
 import parsePath from '../helpers/parsePath'
 import resolvePropertyPointerConflicts from '../helpers/propertyPointerConflictResolution'
@@ -96,10 +97,6 @@ export const getElementHelpers = ({
       ] as [number, ReactNode, boolean, Grapoi])
   }
 
-  const listRoot = (pointer: Grapoi): Grapoi => {
-    const previous = pointer.in(rdf('rest'))
-    return previous.term ? listRoot(previous) : pointer
-  }
 
   const mapConditionalProperty = (property: Grapoi) => {
     const result = mapProperty(property)
@@ -112,6 +109,8 @@ export const getElementHelpers = ({
       const label = optionShape.out([sh('name'), rdfs('label')]).best(language([activeInterfaceLanguage, '', '*', 'localName'])).value!
       return { option: optionShape, label, selected: optionShape.out(sh('property')).terms.find(t => t.equals(property.term)) }
     })
+
+    console.log(optionLabels)
 
     return [score, <>
       <select onChange={e => {

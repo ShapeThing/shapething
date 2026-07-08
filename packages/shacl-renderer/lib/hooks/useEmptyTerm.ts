@@ -35,9 +35,9 @@ export const useEmptyTerm = () => {
         defaultValue ??
         (widgetItem?.meta.createTerm
           ? widgetItem?.meta.createTerm(
-              { activeContentLanguage: unusedLanguage ?? activeContentLanguage, languageMode },
-              property
-            )
+            { activeContentLanguage: unusedLanguage ?? activeContentLanguage, languageMode },
+            property
+          )
           : null)
 
       if (emptyTerm && !defaultValue) (emptyTerm as TouchableTerm).touched = false

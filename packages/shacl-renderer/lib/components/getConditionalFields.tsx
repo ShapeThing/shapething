@@ -52,15 +52,11 @@ export const getConditionalFields = ({
               return dataPointer.executeAll(parsedPath).terms
             }).flat()
 
-            if (process.env.DEBUG_CONDITIONAL) {
-              console.log('OPTION', conditionalFieldOptionPointer.out(sh('name')).value, 'errorCount', report.results.length, 'propertyTermCount', properties.length)
-              for (const r of report.results) console.log('  violation path=', r.path?.value, 'msg=', r.message?.[0]?.value, 'component=', r.constraintComponent?.value)
-            }
-
             return {
               report,
               errorCount: report.results.length,
               propertyTermCount: properties.length,
+              propertyTerms: properties,
               shape: shapePointer.node(conditionalFieldOptionPointer.term)
             }
           })
@@ -68,6 +64,7 @@ export const getConditionalFields = ({
       }
     })
   ).then(conditionalFields => {
+    console.log(conditionalFields)
     return (
       conditionalFields
         .map(conditionalField => {
@@ -80,6 +77,7 @@ export const getConditionalFields = ({
           })
           if (sortedAlternatives[0].errorCount === 0) {
             // No errors, use the first alternative
+            console.log('No errors, using first alternative for conditional field', conditionalField.term.value)
             return sortedAlternatives[0].shape
           } else {
             return undefined

@@ -34,7 +34,7 @@ type PropertyShapeEditModeProps = {
   facetSearchDataPointer: Grapoi
 }
 
-const noop = () => {}
+const noop = () => { }
 const noopFalse = () => false
 
 export default function PropertyShapeEditMode(props: PropertyShapeEditModeProps) {

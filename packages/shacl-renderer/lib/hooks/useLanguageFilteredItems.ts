@@ -17,7 +17,7 @@ export const useLanguageFilteredItems = (fetcher: () => Grapoi) => {
       }),
     [languageMode, activeContentLanguage]
   )
-  const [items, setItems] = useState(filter(fetcher()))
+  const [items, setItems] = useState(() => filter(fetcher()))
 
   useEffect(() => {
     setItems(filter(fetcher()))
