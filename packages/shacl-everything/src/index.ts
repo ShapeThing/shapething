@@ -1,3 +1,3 @@
 export const fn = () => {
-  return "Hello, tsdown!"
-}
+  return "Hello, tsdown!";
+};

@@ -1,15 +1,13 @@
 import { expect, test } from "vite-plus/test";
 import { NodeUIElement } from "./NodeUIElement.ts";
-import { LogicalUiElement } from "./LogicalUiElement.ts";
+import { ChoiceElement } from "./ChoiceElement.ts";
 import { PropertyUIElement } from "./PropertyUIElement.ts";
 import { parseRdf } from "../helpers/rdf.ts";
-import { Effect } from "effect";
 import { ex } from "../helpers/namespaces.ts";
 
 test("NodeUIElement", async () => {
-    const shapesGraph = await Effect.runPromise(
-        parseRdf(
-            `
+  const shapesGraph = await parseRdf(
+    `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix ex: <http://example.com/> .
         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -20,36 +18,32 @@ test("NodeUIElement", async () => {
                 sh:minCount 2 ;
             ] .
     `,
-            "text/turtle",
-        ),
-    );
+    "text/turtle",
+  );
 
-    const dataGraph = await Effect.runPromise(
-        parseRdf(
-            `
+  const dataGraph = await parseRdf(
+    `
         @prefix ex: <http://example.com/> .
 
         ex:ChickenSoup a ex:Recipe ;
             ex:ingredient ex:Chicken, ex:Water, ex:Salt .
     `,
-            "text/turtle",
-        ),
-    );
+    "text/turtle",
+  );
 
-    const node = new NodeUIElement({
-        shapesGraph,
-        dataGraph,
-        focusNode: ex("ChickenSoup"),
-        nodeShapes: [ex("Recipe")],
-    });
-    expect(node).toBeInstanceOf(NodeUIElement);
-    expect(node.propertyUiElements()).toHaveLength(1);
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("ChickenSoup"),
+    nodeShapes: [ex("Recipe")],
+  });
+  expect(node).toBeInstanceOf(NodeUIElement);
+  expect(node.children()).toHaveLength(1);
 });
 
 test("propertyUiElements groups two property shapes with an identical sh:path into a single element", async () => {
-    const shapesGraph = await Effect.runPromise(
-        parseRdf(
-            `
+  const shapesGraph = await parseRdf(
+    `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix ex: <http://example.com/> .
 
@@ -64,29 +58,27 @@ test("propertyUiElements groups two property shapes with an identical sh:path in
             sh:path ex:ingredient ;
             sh:maxCount 10 .
     `,
-            "text/turtle",
-        ),
-    );
+    "text/turtle",
+  );
 
-    const dataGraph = await Effect.runPromise(parseRdf("", "text/turtle"));
+  const dataGraph = await parseRdf("", "text/turtle");
 
-    const node = new NodeUIElement({
-        shapesGraph,
-        dataGraph,
-        focusNode: ex("ChickenSoup"),
-        nodeShapes: [ex("Recipe")],
-    });
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("ChickenSoup"),
+    nodeShapes: [ex("Recipe")],
+  });
 
-    expect(node.propertyUiElements()).toHaveLength(1);
+  expect(node.children()).toHaveLength(1);
 });
 
 test("propertyUiElements groups sh:path forms that resolve to the same path", async () => {
-    // ex:ingredient and ( ex:ingredient ) are different sh:path RDF terms
-    // (a NamedNode vs. a one-element rdf:List), but both describe the same
-    // SPARQL property path, so they should still be treated as one path.
-    const shapesGraph = await Effect.runPromise(
-        parseRdf(
-            `
+  // ex:ingredient and ( ex:ingredient ) are different sh:path RDF terms
+  // (a NamedNode vs. a one-element rdf:List), but both describe the same
+  // SPARQL property path, so they should still be treated as one path.
+  const shapesGraph = await parseRdf(
+    `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix ex: <http://example.com/> .
 
@@ -101,56 +93,52 @@ test("propertyUiElements groups sh:path forms that resolve to the same path", as
             sh:path ( ex:ingredient ) ;
             sh:maxCount 10 .
     `,
-            "text/turtle",
-        ),
-    );
+    "text/turtle",
+  );
 
-    const dataGraph = await Effect.runPromise(parseRdf("", "text/turtle"));
+  const dataGraph = await parseRdf("", "text/turtle");
 
-    const node = new NodeUIElement({
-        shapesGraph,
-        dataGraph,
-        focusNode: ex("ChickenSoup"),
-        nodeShapes: [ex("Recipe")],
-    });
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("ChickenSoup"),
+    nodeShapes: [ex("Recipe")],
+  });
 
-    expect(node.propertyUiElements()).toHaveLength(1);
+  expect(node.children()).toHaveLength(1);
 });
 
 test("propertyUiElements keeps distinct paths as separate elements", async () => {
-    const shapesGraph = await Effect.runPromise(
-        parseRdf(
-            `
+  const shapesGraph = await parseRdf(
+    `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix ex: <http://example.com/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:property [ sh:path ex:ingredient ], [ sh:path ex:instructions ] .
     `,
-            "text/turtle",
-        ),
-    );
+    "text/turtle",
+  );
 
-    const dataGraph = await Effect.runPromise(parseRdf("", "text/turtle"));
+  const dataGraph = await parseRdf("", "text/turtle");
 
-    const node = new NodeUIElement({
-        shapesGraph,
-        dataGraph,
-        focusNode: ex("ChickenSoup"),
-        nodeShapes: [ex("Recipe")],
-    });
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("ChickenSoup"),
+    nodeShapes: [ex("Recipe")],
+  });
 
-    expect(node.propertyUiElements()).toHaveLength(2);
+  expect(node.children()).toHaveLength(2);
 });
 
 test("propertyUiElements does not dedupe an equal path declared on separate node shapes", async () => {
-    // Grouping happens per node shape (each sh:property list gets its own
-    // Map), so the same path repeated across two node shapes that both
-    // apply to the focus node - e.g. two branches of a sh:or - still
-    // produces one PropertyUIElement per node shape rather than one overall.
-    const shapesGraph = await Effect.runPromise(
-        parseRdf(
-            `
+  // Grouping happens per node shape (each sh:property list gets its own
+  // Map), so the same path repeated across two node shapes that both
+  // apply to the focus node - e.g. two branches of a sh:or - still
+  // produces one PropertyUIElement per node shape rather than one overall.
+  const shapesGraph = await parseRdf(
+    `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix ex: <http://example.com/> .
 
@@ -160,26 +148,24 @@ test("propertyUiElements does not dedupe an equal path declared on separate node
         ex:VeganRecipe a sh:NodeShape ;
             sh:property [ sh:path ex:ingredient ; sh:minCount 1 ] .
     `,
-            "text/turtle",
-        ),
-    );
+    "text/turtle",
+  );
 
-    const dataGraph = await Effect.runPromise(parseRdf("", "text/turtle"));
+  const dataGraph = await parseRdf("", "text/turtle");
 
-    const node = new NodeUIElement({
-        shapesGraph,
-        dataGraph,
-        focusNode: ex("ChickenSoup"),
-        nodeShapes: [ex("MeatRecipe"), ex("VeganRecipe")],
-    });
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("ChickenSoup"),
+    nodeShapes: [ex("MeatRecipe"), ex("VeganRecipe")],
+  });
 
-    expect(node.propertyUiElements()).toHaveLength(2);
+  expect(node.children()).toHaveLength(2);
 });
 
-test("propertyUiElements exposes sh:or as a selectable LogicalUiElement alongside plain properties", async () => {
-    const shapesGraph = await Effect.runPromise(
-        parseRdf(
-            `
+test("propertyUiElements exposes sh:or as a ChoiceElement alongside plain properties", async () => {
+  const shapesGraph = await parseRdf(
+    `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix ex: <http://example.com/> .
 
@@ -190,41 +176,39 @@ test("propertyUiElements exposes sh:or as a selectable LogicalUiElement alongsid
                 [ sh:property [ sh:path ex:veganCertification ] ]
             ) .
     `,
-            "text/turtle",
-        ),
-    );
+    "text/turtle",
+  );
 
-    const dataGraph = await Effect.runPromise(parseRdf("", "text/turtle"));
+  const dataGraph = await parseRdf("", "text/turtle");
 
-    const node = new NodeUIElement({
-        shapesGraph,
-        dataGraph,
-        focusNode: ex("ChickenSoup"),
-        nodeShapes: [ex("Recipe")],
-    });
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("ChickenSoup"),
+    nodeShapes: [ex("Recipe")],
+  });
 
-    const elements = node.propertyUiElements();
-    expect(elements).toHaveLength(2);
+  const elements = node.children();
+  expect(elements).toHaveLength(2);
 
-    const [property, logical] = elements;
-    expect(property).toBeInstanceOf(PropertyUIElement);
-    expect(logical).toBeInstanceOf(LogicalUiElement);
+  const [property, choice] = elements;
+  expect(property).toBeInstanceOf(PropertyUIElement);
+  expect(choice).toBeInstanceOf(ChoiceElement);
 
-    const logicalElement = logical as LogicalUiElement;
-    expect(logicalElement.connective).toBe("or");
-    expect(logicalElement.selectable).toBe(true);
-    expect(logicalElement.branches).toHaveLength(2);
-    expect(logicalElement.branches[0]).toHaveLength(1);
-    expect(logicalElement.branches[1]).toHaveLength(1);
-    expect(logicalElement.branches[0][0]).toBeInstanceOf(PropertyUIElement);
+  const choiceElement = choice as ChoiceElement;
+  expect(choiceElement.connective).toBe("or");
+  const branches = choiceElement.children();
+  expect(branches).toHaveLength(2);
+  expect(branches[0]).toHaveLength(1);
+  expect(branches[1]).toHaveLength(1);
+  expect(branches[0][0]).toBeInstanceOf(PropertyUIElement);
 });
 
 test("propertyUiElements groups multiple properties within a single sh:or branch", async () => {
-    // Mirrors the "full name" vs. "first name + surname" pattern: one branch
-    // can contribute more than one property.
-    const shapesGraph = await Effect.runPromise(
-        parseRdf(
-            `
+  // Mirrors the "full name" vs. "first name + surname" pattern: one branch
+  // can contribute more than one property.
+  const shapesGraph = await parseRdf(
+    `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix ex: <http://example.com/> .
 
@@ -237,31 +221,30 @@ test("propertyUiElements groups multiple properties within a single sh:or branch
                 ]
             ) .
     `,
-            "text/turtle",
-        ),
-    );
+    "text/turtle",
+  );
 
-    const dataGraph = await Effect.runPromise(parseRdf("", "text/turtle"));
+  const dataGraph = await parseRdf("", "text/turtle");
 
-    const node = new NodeUIElement({
-        shapesGraph,
-        dataGraph,
-        focusNode: ex("Alice"),
-        nodeShapes: [ex("Person")],
-    });
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    nodeShapes: [ex("Person")],
+  });
 
-    const elements = node.propertyUiElements();
-    expect(elements).toHaveLength(1);
+  const elements = node.children();
+  expect(elements).toHaveLength(1);
 
-    const logicalElement = elements[0] as LogicalUiElement;
-    expect(logicalElement.branches[0]).toHaveLength(1);
-    expect(logicalElement.branches[1]).toHaveLength(2);
+  const choiceElement = elements[0] as ChoiceElement;
+  const branches = choiceElement.children();
+  expect(branches[0]).toHaveLength(1);
+  expect(branches[1]).toHaveLength(2);
 });
 
-test("propertyUiElements marks sh:and branches as not selectable", async () => {
-    const shapesGraph = await Effect.runPromise(
-        parseRdf(
-            `
+test("propertyUiElements flattens sh:and branches into plain properties", async () => {
+  const shapesGraph = await parseRdf(
+    `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix ex: <http://example.com/> .
 
@@ -271,28 +254,27 @@ test("propertyUiElements marks sh:and branches as not selectable", async () => {
                 [ sh:property [ sh:path ex:servings ] ]
             ) .
     `,
-            "text/turtle",
-        ),
-    );
+    "text/turtle",
+  );
 
-    const dataGraph = await Effect.runPromise(parseRdf("", "text/turtle"));
+  const dataGraph = await parseRdf("", "text/turtle");
 
-    const node = new NodeUIElement({
-        shapesGraph,
-        dataGraph,
-        focusNode: ex("ChickenSoup"),
-        nodeShapes: [ex("Recipe")],
-    });
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("ChickenSoup"),
+    nodeShapes: [ex("Recipe")],
+  });
 
-    const [logicalElement] = node.propertyUiElements() as LogicalUiElement[];
-    expect(logicalElement.connective).toBe("and");
-    expect(logicalElement.selectable).toBe(false);
+  const elements = node.children();
+  expect(elements).toHaveLength(2);
+  expect(elements[0]).toBeInstanceOf(PropertyUIElement);
+  expect(elements[1]).toBeInstanceOf(PropertyUIElement);
 });
 
-test("propertyUiElements exposes sh:xone as a selectable LogicalUiElement", async () => {
-    const shapesGraph = await Effect.runPromise(
-        parseRdf(
-            `
+test("propertyUiElements exposes sh:xone as a ChoiceElement", async () => {
+  const shapesGraph = await parseRdf(
+    `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix ex: <http://example.com/> .
 
@@ -302,20 +284,18 @@ test("propertyUiElements exposes sh:xone as a selectable LogicalUiElement", asyn
                 [ sh:property [ sh:path ex:veganCertification ] ]
             ) .
     `,
-            "text/turtle",
-        ),
-    );
+    "text/turtle",
+  );
 
-    const dataGraph = await Effect.runPromise(parseRdf("", "text/turtle"));
+  const dataGraph = await parseRdf("", "text/turtle");
 
-    const node = new NodeUIElement({
-        shapesGraph,
-        dataGraph,
-        focusNode: ex("ChickenSoup"),
-        nodeShapes: [ex("Recipe")],
-    });
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("ChickenSoup"),
+    nodeShapes: [ex("Recipe")],
+  });
 
-    const [logicalElement] = node.propertyUiElements() as LogicalUiElement[];
-    expect(logicalElement.connective).toBe("xone");
-    expect(logicalElement.selectable).toBe(true);
+  const [choiceElement] = node.children() as ChoiceElement[];
+  expect(choiceElement.connective).toBe("xone");
 });

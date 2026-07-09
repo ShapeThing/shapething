@@ -30,6 +30,20 @@
     "check": "vp check",
     "prepublishOnly": "vp run build"
   },
+  "dependencies": {
+    "@effect/experimental": "^0.60.0",
+    "@rdfjs/environment": "^1.0.0",
+    "@rdfjs/namespace": "^2.0.1",
+    "@rdfjs/types": "^2.0.1",
+    "effect": "^3.21.4",
+    "grapoi": "^1.2.0",
+    "prettier": "^3.9.4",
+    "rdf-data-factory": "^2.0.2",
+    "rdf-parse": "^5.0.0",
+    "rdf-stores": "^2.2.0",
+    "shacl-engine": "^1.1.2",
+    "string-to-stream": "^3.0.1"
+  },
   "devDependencies": {
     "@effect/language-service": "^0.86.4",
     "@types/node": "^25.6.2",
@@ -38,17 +52,5 @@
     "bumpp": "^11.1.0",
     "typescript": "^6.0.3",
     "vite-plus": "^0.1.20"
-  },
-  "dependencies": {
-    "@effect/experimental": "^0.60.0",
-    "@rdfjs/environment": "^1.0.0",
-    "@rdfjs/namespace": "^2.0.1",
-    "@rdfjs/types": "^2.0.1",
-    "effect": "^3.21.4",
-    "grapoi": "^1.2.0",
-    "rdf-data-factory": "^2.0.2",
-    "rdf-parse": "^5.0.0",
-    "rdf-stores": "^2.2.0",
-    "string-to-stream": "^3.0.1"
   }
 }

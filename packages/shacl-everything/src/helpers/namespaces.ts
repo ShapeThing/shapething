@@ -1,38 +1,12 @@
 import namespace, { type NamespaceBuilder } from "@rdfjs/namespace";
-import { DataFactory } from "rdf-data-factory";
+import { factory } from "./factory.ts";
 
-const factory = new DataFactory();
-
-/** https://schema.org namespace */
-export const schema: NamespaceBuilder<string> = namespace(
-  "https://schema.org/",
-  { factory },
-);
-
-/** http://schema.org namespace */
-export const sdo: NamespaceBuilder<string> = namespace("http://schema.org/", {
+/** RDFS namespace */
+export const rdfs: NamespaceBuilder<string> = namespace("http://www.w3.org/2000/01/rdf-schema#", {
   factory,
 });
 
-/** rdfs.org namespace */
-export const rdfs: NamespaceBuilder<string> = namespace(
-  "http://www.w3.org/2000/01/rdf-schema#",
-  { factory },
-);
-
-/** Dublin Core namespace */
-export const dce: NamespaceBuilder<string> = namespace(
-  "http://purl.org/dc/elements/1.1/",
-  { factory },
-);
-
-/** Dublin Core namespace */
-export const dct: NamespaceBuilder<string> = namespace(
-  "http://purl.org/dc/terms/1.1/",
-  { factory },
-);
-
-/** rdf namespace */
+/** RDF namespace */
 export const rdf: NamespaceBuilder<string> = namespace(
   "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
   { factory },
@@ -44,112 +18,47 @@ export const ex: NamespaceBuilder<string> = namespace("http://example.com/", {
 });
 
 /** SHACL namespace */
-export const sh: NamespaceBuilder<string> = namespace(
-  "http://www.w3.org/ns/shacl#",
-  { factory },
-);
+export const sh: NamespaceBuilder<string> = namespace("http://www.w3.org/ns/shacl#", { factory });
+
+/** SHACL UI namespace */
+export const shui: NamespaceBuilder<string> = namespace("http://www.w3.org/ns/shacl-ui/", {
+  factory,
+});
 
 /** DASH namespace */
-export const dash: NamespaceBuilder<string> = namespace(
-  "http://datashapes.org/dash#",
-  { factory },
-);
+export const dash: NamespaceBuilder<string> = namespace("http://datashapes.org/dash#", { factory });
 
 /** XSD namespace */
-export const xsd: NamespaceBuilder<string> = namespace(
-  "http://www.w3.org/2001/XMLSchema#",
-  { factory },
-);
-
-/** Shapething SHACL renderer namespace */
-export const stsr: NamespaceBuilder<string> = namespace(
-  "http://ontology.shapething.com/shacl-renderer#",
-  { factory },
-);
-
-/** Shapething facets namespace */
-export const stf: NamespaceBuilder<string> = namespace(
-  "http://ontology.shapething.com/facet#",
-  { factory },
-);
-
-/** editor.js namespace */
-export const ed: NamespaceBuilder<string> = namespace("https://editorjs.io/", {
+export const xsd: NamespaceBuilder<string> = namespace("http://www.w3.org/2001/XMLSchema#", {
   factory,
 });
 
 /** OWL namespace */
-export const owl: NamespaceBuilder<string> = namespace(
-  "http://www.w3.org/2002/07/owl#",
-  { factory },
-);
-
-/** Faker.js namespace */
-export const faker: NamespaceBuilder<string> = namespace(
-  "https://fakerjs.dev/",
-  { factory },
-);
-
-/** SKOS namespace */
-export const skos: NamespaceBuilder<string> = namespace(
-  "http://www.w3.org/2004/02/skos/core#",
-  { factory },
-);
-
-/** Local app namespace */
-export const app: NamespaceBuilder<string> = namespace(
-  ("http://example.com") + "/",
-  { factory },
-);
-
-/** Genid */
-export const genid: NamespaceBuilder<string> = namespace(
-  "https://shacl-renderer.shapething.com/.well-known/genid/",
-  { factory },
-);
-
-export const foaf: NamespaceBuilder<string> = namespace(
-  "http://xmlns.com/foaf/0.1/",
-  { factory },
-);
-
-export const dbo: NamespaceBuilder<string> = namespace(
-  "http://dbpedia.org/ontology/",
-  { factory },
-);
-
-export const og: NamespaceBuilder<string> = namespace("http://ogp.me/ns#", {
+export const owl: NamespaceBuilder<string> = namespace("http://www.w3.org/2002/07/owl#", {
   factory,
 });
 
-export const geo: NamespaceBuilder<string> = namespace(
-  "http://www.opengis.net/ont/geosparql#",
-  { factory },
-);
+/** Faker.js namespace */
+export const faker: NamespaceBuilder<string> = namespace("https://fakerjs.dev/", { factory });
+
+/** SKOS namespace */
+export const skos: NamespaceBuilder<string> = namespace("http://www.w3.org/2004/02/skos/core#", {
+  factory,
+});
 
 /** All prefixes used in Shapething */
 export const prefixes: Record<string, string> = Object.fromEntries(
   Object.entries({
-    schema,
     rdfs,
     rdf,
     ex,
-    dce,
-    dct,
     sh,
     dash,
     xsd,
-    stsr,
-    stf,
-    ed,
     owl,
     faker,
     skos,
-    app,
-    foaf,
-    dbo,
-    og,
-    geo,
+    shui,
   }).map(([alias, namespace]) => [alias, namespace("").value]),
 );
 

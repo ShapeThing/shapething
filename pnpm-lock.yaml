@@ -390,6 +390,9 @@ importers:
       grapoi:
         specifier: ^1.2.0
         version: 1.2.0
+      prettier:
+        specifier: ^3.9.4
+        version: 3.9.4
       rdf-data-factory:
         specifier: ^2.0.2
         version: 2.0.2
@@ -399,6 +402,9 @@ importers:
       rdf-stores:
         specifier: ^2.2.0
         version: 2.2.0
+      shacl-engine:
+        specifier: ^1.1.2
+        version: 1.1.2
       string-to-stream:
         specifier: ^3.0.1
         version: 3.0.1
