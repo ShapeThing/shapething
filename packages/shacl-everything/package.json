@@ -37,7 +37,6 @@
     "@rdfjs/types": "^2.0.1",
     "effect": "^3.21.4",
     "grapoi": "^1.2.0",
-    "prettier": "^3.9.4",
     "rdf-data-factory": "^2.0.2",
     "rdf-parse": "^5.0.0",
     "rdf-stores": "^2.2.0",

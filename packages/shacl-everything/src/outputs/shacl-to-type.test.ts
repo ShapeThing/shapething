@@ -20,7 +20,7 @@ test("generates a type for a required scalar property", async () => {
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   expect(types.has("Recipe")).toBe(true);
   const recipe = types.get("Recipe") as string;
@@ -48,7 +48,7 @@ test("marks a property with sh:minCount 0 as optional", async () => {
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   const recipe = types.get("Recipe") as string;
   expect(recipe).toContain("subtitle?: string;");
@@ -71,7 +71,7 @@ test("renders properties without maxCount 1 as arrays", async () => {
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   const recipe = types.get("Recipe") as string;
   expect(recipe).toContain("ingredient: string[];");
@@ -101,7 +101,7 @@ test("maps xsd:integer and xsd:boolean datatypes to number and boolean", async (
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   const recipe = types.get("Recipe") as string;
   expect(recipe).toContain("servings: number;");
@@ -124,7 +124,7 @@ test("generates one type per node shape, keyed by local name", async () => {
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   expect([...types.keys()].sort()).toEqual(["Ingredient", "Recipe"]);
 });
@@ -141,7 +141,7 @@ test("honors sh:codeIdentifier over the shape's local name", async () => {
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   expect(types.has("ChickenSoupRecipe")).toBe(true);
   expect(types.has("Recipe")).toBe(false);
@@ -159,7 +159,7 @@ test("falls back to sh:name when sh:codeIdentifier is absent", async () => {
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   expect(types.has("RecipeType")).toBe(true);
   expect(types.has("Recipe")).toBe(false);
@@ -176,7 +176,7 @@ test("falls back to the local name of a hash-delimited shape IRI", async () => {
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   expect(types.has("Recipe")).toBe(true);
 });
@@ -197,7 +197,7 @@ test("renders sh:or as a union of the branches' object types", async () => {
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   const recipe = types.get("Recipe") as string;
   expect(recipe).toBe(
@@ -224,11 +224,11 @@ test("groups multiple properties within a single sh:or branch into one object ty
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   const person = types.get("Person") as string;
   expect(person).toBe(
-    "export type Person =\n  { fullName: string } | { firstName: string; surname: string };\n",
+    "export type Person = { fullName: string } | { firstName: string; surname: string };\n",
   );
 });
 
@@ -249,7 +249,7 @@ test("intersects plain properties with a sh:or union on the same node shape", as
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   const recipe = types.get("Recipe") as string;
   expect(recipe).toBe(
@@ -273,11 +273,11 @@ test("renders sh:xone as a mutually-exclusive union, unlike sh:or", async () => 
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   const recipe = types.get("Recipe") as string;
   expect(recipe).toBe(
-    "export type Recipe =\n  | { meatType: string; veganCertification?: never }\n  | { veganCertification: string; meatType?: never };\n",
+    "export type Recipe = { meatType: string; veganCertification?: never } | { veganCertification: string; meatType?: never };\n",
   );
 });
 
@@ -298,17 +298,13 @@ test("marks every sibling key as never for each branch of a three-way sh:xone", 
     "text/turtle",
   );
 
-  const types = await shaclToType({ shapesGraph });
+  const types = shaclToType({ shapesGraph });
 
   const recipe = types.get("Recipe") as string;
   expect(recipe).toBe(
-    "export type Recipe =\n" +
-      "  | { meatType: string; veganCertification?: never; halalCertification?: never }\n" +
-      "  | { veganCertification: string; meatType?: never; halalCertification?: never }\n" +
-      "  | {\n" +
-      "      halalCertification: string;\n" +
-      "      meatType?: never;\n" +
-      "      veganCertification?: never;\n" +
-      "    };\n",
+    "export type Recipe = " +
+      "{ meatType: string; veganCertification?: never; halalCertification?: never } | " +
+      "{ veganCertification: string; meatType?: never; halalCertification?: never } | " +
+      "{ halalCertification: string; meatType?: never; veganCertification?: never };\n",
   );
 });

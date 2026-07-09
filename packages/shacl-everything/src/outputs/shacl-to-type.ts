@@ -6,25 +6,13 @@ import { NodeUIElement } from "../structure/NodeUIElement.ts";
 import { PropertyUIElement } from "../structure/PropertyUIElement.ts";
 import { ChoiceElement } from "../structure/ChoiceElement.ts";
 import { castDataTypeTermToJs } from "../helpers/castDataTypeTermToJs.ts";
-import { format } from "prettier";
-import * as parserTypeScript from "prettier/parser-typescript";
-import prettierPluginEstree from "prettier/plugins/estree";
-
-export const commonPrettierOptions = {
-  semi: true,
-  singleQuote: true,
-  printWidth: 10,
-  tabWidth: 2,
-  useTabs: false,
-  trailingComma: "es5",
-} as const;
 
 export interface TypeOptions {
   shapesGraph: RdfStore;
   nodeShapes?: NamedNode[];
 }
 
-export async function shaclToType(options: TypeOptions): Promise<Map<string, string>> {
+export function shaclToType(options: TypeOptions): Map<string, string> {
   const types = new Map<string, string>();
   const { shapesGraph } = options;
 
@@ -44,14 +32,7 @@ export async function shaclToType(options: TypeOptions): Promise<Map<string, str
       nodeShapes: [nodeShape],
     });
 
-    const typeString = nodeUIElement(node);
-    const formattedGeneratedCode = await format(typeString, {
-      parser: "typescript",
-      plugins: [parserTypeScript, prettierPluginEstree],
-      ...commonPrettierOptions,
-      printWidth: 80,
-    });
-    types.set(codeIdentifier, formattedGeneratedCode);
+    types.set(codeIdentifier, nodeUIElement(node));
   }
 
   return types;
@@ -71,13 +52,22 @@ function nodeUIElement(node: NodeUIElement): string {
 
   const fragments: string[] = [];
   if (propertyLines.length > 0 || unionFragments.length === 0) {
-    fragments.push(`{\n  ${propertyLines.join("\n  ")}\n}`);
+    fragments.push(objectType(propertyLines));
   }
-  fragments.push(...unionFragments);
+
+  // A union only needs parens when it's intersected with something else via
+  // `&`; standing alone, its `|` members already bind correctly.
+  const needsParens = fragments.length > 0 || unionFragments.length > 1;
+  fragments.push(...unionFragments.map((union) => (needsParens ? `(${union})` : union)));
 
   const name = getCodeIdentifier(node.shapesGraph, node.focusNode);
 
-  return `export type ${name} = ${fragments.join(" & ")};`;
+  return `export type ${name} = ${fragments.join(" & ")};\n`;
+}
+
+function objectType(propertyLines: string[]): string {
+  if (propertyLines.length === 0) return "{}";
+  return `{\n  ${propertyLines.join("\n  ")}\n}`;
 }
 
 const getterFactory = (shapesGraph: RdfStore, subject: NamedNode) => (predicate: NamedNode) => {
@@ -110,12 +100,12 @@ function choiceElement(choice: ChoiceElement): string {
 
   return choice.connective === "xone"
     ? xoneUnion(branches)
-    : `(${branches.map((properties) => branchObjectType(properties)).join(" | ")})`;
+    : branches.map((properties) => branchObjectType(properties)).join(" | ");
 }
 
 function branchObjectType(properties: PropertyUIElement[], extraLines: string[] = []): string {
   const lines = [...properties.map(propertyUIElement), ...extraLines];
-  return `{ ${lines.join(" ")} }`;
+  return `{ ${lines.join(" ").replace(/;$/, "")} }`;
 }
 
 // sh:xone allows exactly one branch. Each branch marks every other branch's
@@ -138,5 +128,5 @@ function xoneUnion(branches: PropertyUIElement[][]): string {
     );
   });
 
-  return `(${rendered.join(" | ")})`;
+  return rendered.join(" | ");
 }
