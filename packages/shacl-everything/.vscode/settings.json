@@ -1,6 +1,6 @@
 {
   "npm.scriptRunner": "vp",
-  "typescript.preferences.importModuleSpecifier": "non-relative",
+  "js/ts.preferences.importModuleSpecifier": "non-relative",
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "[javascript]": {
     "editor.defaultFormatter": "oxc.oxc-vscode"

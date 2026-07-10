@@ -8,13 +8,14 @@ import type { Environment } from "@/environment.ts";
 import type { Preprocessor } from "@/preprocess/index.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
 
-export type DereferencableEnvironment =
-  & Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph">
-  & {
-    shapesGraph: RdfSource;
-    dataGraph: RdfSource;
-    scoresGraph: RdfSource;
-  };
+export type DereferencableEnvironment = Omit<
+  Environment,
+  "shapesGraph" | "dataGraph" | "scoresGraph"
+> & {
+  shapesGraph: RdfSource;
+  dataGraph: RdfSource;
+  scoresGraph: RdfSource;
+};
 
 const storeFromStream = (stream: Stream<Quad>): Promise<RdfStore> => {
   const store = RdfStore.createDefault();
@@ -35,9 +36,7 @@ const storeFromQuads = (quads: Iterable<Quad>): RdfStore => {
 const dereferenceUrl = async (url: URL): Promise<RdfStore> => {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(
-      `Failed to dereference ${url.href}: ${response.status} ${response.statusText}`,
-    );
+    throw new Error(`Failed to dereference ${url.href}: ${response.status} ${response.statusText}`);
   }
   const text = await response.text();
   return storeFromStream(
@@ -49,9 +48,7 @@ const dereferenceUrl = async (url: URL): Promise<RdfStore> => {
 };
 
 const parseRdfText = (text: string): Promise<RdfStore> =>
-  storeFromStream(
-    rdfParser.parse(stringToStream(text), { contentType: "text/turtle" }),
-  );
+  storeFromStream(rdfParser.parse(stringToStream(text), { contentType: "text/turtle" }));
 
 const resolveRdfSource = (source: RdfSource): RdfStore | Promise<RdfStore> => {
   if (source instanceof RdfStore) return source;
@@ -61,10 +58,9 @@ const resolveRdfSource = (source: RdfSource): RdfStore | Promise<RdfStore> => {
   return storeFromQuads(source);
 };
 
-export const resolveRdfSources: Preprocessor<
-  DereferencableEnvironment,
-  Environment
-> = async (raw) => {
+export const resolveRdfSources: Preprocessor<DereferencableEnvironment, Environment> = async (
+  raw,
+) => {
   const [shapesGraph, dataGraph, scoresGraph] = await Promise.all([
     resolveRdfSource(raw.shapesGraph),
     resolveRdfSource(raw.dataGraph),

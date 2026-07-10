@@ -5,9 +5,7 @@ export const DEFAULT_LOCALE: BCP47 = "en-GB";
 const fetchText = async (url: URL): Promise<string> => {
   const response = await fetch(url);
   if (!response.ok) {
-    throw new Error(
-      `Failed to fetch ${url.href}: ${response.status} ${response.statusText}`,
-    );
+    throw new Error(`Failed to fetch ${url.href}: ${response.status} ${response.statusText}`);
   }
   return response.text();
 };
@@ -24,7 +22,5 @@ const primarySubtag = (locale: string) => locale.split("-")[0]?.toLowerCase();
 export const resolveLocale = (locale: string): string | undefined => {
   if (locale in localeLoaders) return locale;
   const primary = primarySubtag(locale);
-  return Object.keys(localeLoaders).find((code) =>
-    primarySubtag(code) === primary
-  );
+  return Object.keys(localeLoaders).find((code) => primarySubtag(code) === primary);
 };

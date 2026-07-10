@@ -13,15 +13,13 @@
 //
 // Source: https://github.com/smessie/shacl-ui.js/blob/main/lib/core/ensure-process.ts
 const g = globalThis as unknown as {
-    process?: { env?: unknown; nextTick?: unknown };
+  process?: { env?: unknown; nextTick?: unknown };
 };
 
 g.process ??= {};
 g.process.env ??= {};
 if (typeof g.process.nextTick !== "function") {
-    // `queueMicrotask` gives the same "defer to a microtask" semantics readable-stream relies on.
-    g.process.nextTick = (
-        cb: (...args: unknown[]) => void,
-        ...args: unknown[]
-    ) => queueMicrotask(() => cb(...args));
+  // `queueMicrotask` gives the same "defer to a microtask" semantics readable-stream relies on.
+  g.process.nextTick = (cb: (...args: unknown[]) => void, ...args: unknown[]) =>
+    queueMicrotask(() => cb(...args));
 }

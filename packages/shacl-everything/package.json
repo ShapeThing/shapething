@@ -41,8 +41,6 @@
     "@rdfjs/types": "^2.0.1",
     "@tanstack/react-query": "^5.101.2",
     "buffer": "^6.0.3",
-    "effect": "^3.21.4",
-    "grapoi": "^1.2.0",
     "rdf-data-factory": "^2.0.2",
     "rdf-parse": "^5.0.0",
     "rdf-stores": "^2.2.0",
@@ -54,7 +52,6 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.2.1",
-    "@effect/language-service": "^0.86.5",
     "@iconify/json": "^2.2.498",
     "@storybook/addon-a11y": "^10.4.6",
     "@storybook/addon-docs": "^10.4.6",

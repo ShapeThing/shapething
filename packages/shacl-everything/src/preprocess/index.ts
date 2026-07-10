@@ -20,23 +20,21 @@ export type PreprocessorChain<
     ? In extends HIn
       ? Tail extends readonly Preprocessor<any, any>[]
         ? PreprocessorChain<HOut, Tail>
-      : HOut
-    : {
-      __chainError:
-        "Preprocessor chain type mismatch: this stage's input does not match the previous stage's output";
-      expected: HIn;
-      received: In;
-    }
-  : never
+        : HOut
+      : {
+          __chainError: "Preprocessor chain type mismatch: this stage's input does not match the previous stage's output";
+          expected: HIn;
+          received: In;
+        }
+    : never
   : In;
 
 export type RequireValidChain<Steps extends readonly Preprocessor<any, any>[]> =
-  PreprocessorChain<PipelineInput<Steps>, Steps> extends Environment ? {}
+  PreprocessorChain<PipelineInput<Steps>, Steps> extends Environment
+    ? {}
     : { __chainError: PreprocessorChain<PipelineInput<Steps>, Steps> };
 
-export const runPreprocessors = async <
-  const Steps extends readonly Preprocessor<any, any>[],
->(
+export const runPreprocessors = async <const Steps extends readonly Preprocessor<any, any>[]>(
   raw: PipelineInput<Steps>,
   steps: Steps,
 ): Promise<PreprocessorChain<PipelineInput<Steps>, Steps>> => {
