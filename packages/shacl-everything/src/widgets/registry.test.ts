@@ -1,9 +1,9 @@
 import { expect, test } from "vite-plus/test";
-import { getScoringGraph } from "./registry.ts";
-import { rdf, sh, shui } from "../helpers/namespaces.ts";
-import { score } from "../scoring/score.ts";
-import { parseRdf } from "../helpers/rdf.ts";
-import { factory } from "../helpers/factory.ts";
+import { getScoringGraph } from "@/widgets/registry.ts";
+import { rdf, sh, shui } from "@/helpers/namespaces.ts";
+import { score } from "@/scoring/score.ts";
+import { parseRdf } from "@/helpers/rdf.ts";
+import { factory } from "@/helpers/factory.ts";
 
 test("getScoringGraph combines the shared widget-scoring.ttl shapes with every editor score.ttl", async () => {
   const scoringGraph = await getScoringGraph("edit");

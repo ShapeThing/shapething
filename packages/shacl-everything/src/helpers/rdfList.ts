@@ -1,6 +1,6 @@
 import type { Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { rdf } from "./namespaces.ts";
+import { rdf } from "@/helpers/namespaces.ts";
 
 export function getRdfList(listNode: Term, store: RdfStore): Term[] {
   const items: Term[] = [];

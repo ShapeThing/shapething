@@ -1,7 +1,7 @@
 import { expect, test } from "vite-plus/test";
-import { score } from "./score.ts";
-import { parseRdf } from "../helpers/rdf.ts";
-import { ex } from "../helpers/namespaces.ts";
+import { score } from "@/scoring/score.ts";
+import { parseRdf } from "@/helpers/rdf.ts";
+import { ex } from "@/helpers/namespaces.ts";
 
 test("returns the single highest-scoring widget when best is true", async () => {
   const scoringGraph = await parseRdf(

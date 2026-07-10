@@ -1,4 +1,4 @@
-import type { PropertyPath } from "./parsePropertyPath.ts";
+import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 
 /**
  * Compiles a parsed SHACL property path into a SPARQL 1.1 property path

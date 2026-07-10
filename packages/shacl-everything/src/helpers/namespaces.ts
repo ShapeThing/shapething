@@ -1,5 +1,5 @@
 import namespace, { type NamespaceBuilder } from "@rdfjs/namespace";
-import { factory } from "./factory.ts";
+import { factory } from "@/helpers/factory.ts";
 
 /** RDFS namespace */
 export const rdfs: NamespaceBuilder<string> = namespace("http://www.w3.org/2000/01/rdf-schema#", {

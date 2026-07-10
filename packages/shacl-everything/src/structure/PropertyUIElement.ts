@@ -6,7 +6,12 @@ export class PropertyUIElement {
   public dataGraph: RdfStore;
   public propertyShape: NamedNode;
 
-  constructor(shapesGraph: RdfStore, dataGraph: RdfStore, propertyShape: NamedNode) {
+  // TODO change to options object instead.
+  constructor(
+    shapesGraph: RdfStore,
+    dataGraph: RdfStore,
+    propertyShape: NamedNode,
+  ) {
     this.shapesGraph = shapesGraph;
     this.dataGraph = dataGraph;
     this.propertyShape = propertyShape;

@@ -1,7 +1,7 @@
 import type { NamedNode, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { getRdfList } from "../../helpers/rdfList.ts";
-import { rdf, sh } from "../../helpers/namespaces.ts";
+import { getRdfList } from "@/helpers/rdfList.ts";
+import { rdf, sh } from "@/helpers/namespaces.ts";
 
 export type PropertyPath =
   | { type: "predicate"; predicate: NamedNode }

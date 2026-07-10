@@ -1,9 +1,9 @@
 import { expect, test } from "vite-plus/test";
-import { NodeUIElement } from "./NodeUIElement.ts";
-import { ChoiceElement } from "./ChoiceElement.ts";
-import { PropertyUIElement } from "./PropertyUIElement.ts";
-import { parseRdf } from "../helpers/rdf.ts";
-import { ex } from "../helpers/namespaces.ts";
+import { NodeUIElement } from "@/structure/NodeUIElement.ts";
+import { ChoiceElement } from "@/structure/ChoiceElement.ts";
+import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { parseRdf } from "@/helpers/rdf.ts";
+import { ex } from "@/helpers/namespaces.ts";
 
 test("NodeUIElement", async () => {
   const shapesGraph = await parseRdf(

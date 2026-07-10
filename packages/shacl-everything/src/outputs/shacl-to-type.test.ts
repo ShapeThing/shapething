@@ -1,6 +1,6 @@
 import { expect, test } from "vite-plus/test";
-import { parseRdf } from "../helpers/rdf.ts";
-import { shaclToType } from "./shacl-to-type.ts";
+import { parseRdf } from "@/helpers/rdf.ts";
+import { shaclToType } from "@/outputs/shacl-to-type.ts";
 
 test("generates a type for a required scalar property", async () => {
   const shapesGraph = await parseRdf(

@@ -1,5 +1,5 @@
-import { localName } from "./localName.ts";
-import { sh } from "./namespaces.ts";
+import { localName } from "@/helpers/localName.ts";
+import { sh } from "@/helpers/namespaces.ts";
 import type { NamedNode } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 

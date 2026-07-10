@@ -1,8 +1,8 @@
 import type { Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { Validator as ShaclEngine } from "shacl-engine";
-import { factory } from "../helpers/factory.ts";
-import { rdf, shui } from "../helpers/namespaces.ts";
+import { factory } from "@/helpers/factory.ts";
+import { rdf, shui } from "@/helpers/namespaces.ts";
 
 type ScoreProps = {
   // A boolean flag; if true, return only the first matching result.

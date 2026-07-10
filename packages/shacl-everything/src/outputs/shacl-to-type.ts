@@ -1,11 +1,11 @@
 import { RdfStore } from "rdf-stores";
 import type { NamedNode, Term } from "@rdfjs/types";
-import { rdf, sh, xsd } from "../helpers/namespaces.ts";
-import { getCodeIdentifier } from "../helpers/getCodeIdentifier.ts";
-import { NodeUIElement } from "../structure/NodeUIElement.ts";
-import { PropertyUIElement } from "../structure/PropertyUIElement.ts";
-import { ChoiceElement } from "../structure/ChoiceElement.ts";
-import { castDataTypeTermToJs } from "../helpers/castDataTypeTermToJs.ts";
+import { rdf, sh, xsd } from "@/helpers/namespaces.ts";
+import { getCodeIdentifier } from "@/helpers/getCodeIdentifier.ts";
+import { NodeUIElement } from "@/structure/NodeUIElement.ts";
+import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { ChoiceElement } from "@/structure/ChoiceElement.ts";
+import { castDataTypeTermToJs } from "@/helpers/castDataTypeTermToJs.ts";
 
 export interface TypeOptions {
   shapesGraph: RdfStore;

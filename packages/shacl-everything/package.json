@@ -28,28 +28,49 @@
     "dev": "vp pack --watch",
     "test": "vp test",
     "check": "vp check",
-    "prepublishOnly": "vp run build"
+    "prepublishOnly": "vp run build",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "@effect/experimental": "^0.60.0",
     "@rdfjs/environment": "^1.0.0",
     "@rdfjs/namespace": "^2.0.1",
     "@rdfjs/types": "^2.0.1",
+    "@tanstack/react-query": "^5.101.2",
     "effect": "^3.21.4",
     "grapoi": "^1.2.0",
     "rdf-data-factory": "^2.0.2",
     "rdf-parse": "^5.0.0",
     "rdf-stores": "^2.2.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "shacl-engine": "^1.1.2",
     "string-to-stream": "^3.0.1"
   },
   "devDependencies": {
-    "@effect/language-service": "^0.86.4",
-    "@types/node": "^25.6.2",
+    "@chromatic-com/storybook": "^5.2.1",
+    "@effect/language-service": "^0.86.5",
+    "@iconify/json": "^2.2.498",
+    "@storybook/addon-a11y": "^10.4.6",
+    "@storybook/addon-docs": "^10.4.6",
+    "@storybook/addon-vitest": "^10.4.6",
+    "@storybook/react-vite": "^10.4.6",
+    "@svgr/core": "^8.1.0",
+    "@svgr/plugin-jsx": "^8.1.0",
+    "@types/node": "^25.9.5",
     "@types/rdfjs__namespace": "^2.0.10",
+    "@types/react": "^19.2.17",
     "@typescript/native-preview": "7.0.0-dev.20260509.2",
+    "@vitest/browser-playwright": "^4.1.10",
+    "@vitest/coverage-v8": "^4.1.10",
     "bumpp": "^11.1.0",
+    "eslint-plugin-storybook": "^10.4.6",
+    "playwright": "^1.61.1",
+    "storybook": "^10.4.6",
     "typescript": "^6.0.3",
-    "vite-plus": "^0.1.20"
+    "unplugin-icons": "^23.0.1",
+    "vite-plus": "^0.2.4",
+    "vitest": "^4.1.10"
   }
 }

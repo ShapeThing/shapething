@@ -1,5 +1,5 @@
 import type { Term } from "@rdfjs/types";
-import { rdf, xsd } from "./namespaces.ts";
+import { rdf, xsd } from "@/helpers/namespaces.ts";
 
 // Translated from https://github.com/rubensworks/rdf-literal.js
 export const castDataTypeTermToJs = (datatype: Term) => {

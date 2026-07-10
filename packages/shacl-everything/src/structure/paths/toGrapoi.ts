@@ -1,5 +1,5 @@
 import type { NamedNode } from "@rdfjs/types";
-import type { PropertyPath } from "./parsePropertyPath.ts";
+import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 
 type Quantifier = "one" | "oneOrMore" | "zeroOrMore" | "zeroOrOne";
 

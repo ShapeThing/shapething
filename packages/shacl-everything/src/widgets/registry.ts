@@ -1,13 +1,13 @@
 import type { RdfStore } from "rdf-stores";
-import { parseRdf } from "../helpers/rdf.ts";
-import widgetScoringTtl from "../scoring/widget-scoring.ttl?raw";
+import { parseRdf } from "@/helpers/rdf.ts";
+import widgetScoringTtl from "@/scoring/widget-scoring.ttl?raw";
 
 export const shuiEditorsScoringGraphs = import.meta.glob(
-  "./implementations/shui/editors/*/score.ttl",
+  "@/widgets/implementations/shui/editors/*/score.ttl",
   { eager: true, query: "?raw", import: "default" },
 );
 export const shuiViewersScoringGraphs = import.meta.glob(
-  "./implementations/shui/viewers/*/score.ttl",
+  "@/widgets/implementations/shui/viewers/*/score.ttl",
   { eager: true, query: "?raw", import: "default" },
 );
 

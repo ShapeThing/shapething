@@ -1,8 +1,8 @@
 import { expect, test } from "vite-plus/test";
-import { parsePropertyPath } from "./parsePropertyPath.ts";
-import { toSparql } from "./toSparql.ts";
-import { parseRdf } from "../../helpers/rdf.ts";
-import { ex } from "../../helpers/namespaces.ts";
+import { parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import { toSparql } from "@/structure/paths/toSparql.ts";
+import { parseRdf } from "@/helpers/rdf.ts";
+import { ex } from "@/helpers/namespaces.ts";
 
 async function compile(turtle: string, shapeName: string) {
   const shapesGraph = await parseRdf(

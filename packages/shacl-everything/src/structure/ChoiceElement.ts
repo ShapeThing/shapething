@@ -1,8 +1,8 @@
 import type { Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { getRdfList } from "../helpers/rdfList.ts";
-import { PropertyUIElement } from "./PropertyUIElement.ts";
-import { propertiesForShape } from "./propertiesForShape.ts";
+import { getRdfList } from "@/helpers/rdfList.ts";
+import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { propertiesForShape } from "@/structure/propertiesForShape.ts";
 
 export type ChoiceConnective = "or" | "xone";
 

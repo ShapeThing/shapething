@@ -38,6 +38,7 @@
       "@parcel/watcher",
       "@swc/core",
       "esbuild",
+      "msgpackr-extract",
       "sharp"
     ]
   }

@@ -1,17 +1,17 @@
 import type { NamedNode } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { getRdfList } from "../helpers/rdfList.ts";
-import { sh } from "../helpers/namespaces.ts";
-import { CHOICE_CONNECTIVES, ChoiceElement } from "./ChoiceElement.ts";
-import { PropertyUIElement } from "./PropertyUIElement.ts";
-import { propertiesForShape } from "./propertiesForShape.ts";
+import { getRdfList } from "@/helpers/rdfList.ts";
+import { sh } from "@/helpers/namespaces.ts";
+import { CHOICE_CONNECTIVES, ChoiceElement } from "@/structure/ChoiceElement.ts";
+import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { propertiesForShape } from "@/structure/propertiesForShape.ts";
 
-export interface NodeUIElementOptions {
+export type NodeUIElementOptions = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
   focusNode: NamedNode;
   nodeShapes: NamedNode[];
-}
+};
 
 export class NodeUIElement {
   public shapesGraph: RdfStore;
@@ -29,13 +29,23 @@ export class NodeUIElement {
   children(): (PropertyUIElement | ChoiceElement)[] {
     const elements: (PropertyUIElement | ChoiceElement)[] = [];
     for (const nodeShape of this.nodeShapes) {
-      elements.push(...propertiesForShape(this.shapesGraph, this.dataGraph, nodeShape));
+      elements.push(
+        ...propertiesForShape(this.shapesGraph, this.dataGraph, nodeShape),
+      );
 
       // sh:and applies all branches unconditionally, so its properties
       // are flattened in as if they were declared on the node shape.
       for (const listQuad of this.shapesGraph.getQuads(nodeShape, sh("and"))) {
-        for (const branchShape of getRdfList(listQuad.object, this.shapesGraph)) {
-          elements.push(...propertiesForShape(this.shapesGraph, this.dataGraph, branchShape));
+        for (
+          const branchShape of getRdfList(listQuad.object, this.shapesGraph)
+        ) {
+          elements.push(
+            ...propertiesForShape(
+              this.shapesGraph,
+              this.dataGraph,
+              branchShape,
+            ),
+          );
         }
       }
 

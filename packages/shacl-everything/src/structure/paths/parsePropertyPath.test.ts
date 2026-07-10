@@ -1,7 +1,7 @@
 import { expect, test } from "vite-plus/test";
-import { parsePropertyPath } from "./parsePropertyPath.ts";
-import { parseRdf } from "../../helpers/rdf.ts";
-import { ex } from "../../helpers/namespaces.ts";
+import { parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import { parseRdf } from "@/helpers/rdf.ts";
+import { ex } from "@/helpers/namespaces.ts";
 
 function parse(turtle: string) {
   return parseRdf(

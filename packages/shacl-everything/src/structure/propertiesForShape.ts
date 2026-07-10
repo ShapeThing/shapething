@@ -1,9 +1,9 @@
 import type { NamedNode, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { sh } from "../helpers/namespaces.ts";
-import { PropertyUIElement } from "./PropertyUIElement.ts";
-import { parsePropertyPath } from "./paths/parsePropertyPath.ts";
-import { toSparql } from "./paths/toSparql.ts";
+import { sh } from "@/helpers/namespaces.ts";
+import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import { toSparql } from "@/structure/paths/toSparql.ts";
 
 export function propertiesForShape(
   shapesGraph: RdfStore,
