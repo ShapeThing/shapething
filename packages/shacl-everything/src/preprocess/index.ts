@@ -1,5 +1,6 @@
 import type { Environment } from "@/environment.ts";
 import { resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
+import { resolveScoresGraph } from "@/preprocess/scoresGraph.ts";
 import { addMissingShapes } from "@/preprocess/shapes.ts";
 import { assertValidEnvironment } from "@/preprocess/configuration.ts";
 
@@ -50,6 +51,7 @@ export const runPreprocessors = async <
 
 export const defaultPreprocessors = [
   resolveRdfSources,
+  resolveScoresGraph,
   addMissingShapes,
   assertValidEnvironment,
 ] as const;

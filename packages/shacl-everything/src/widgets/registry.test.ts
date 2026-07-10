@@ -1,5 +1,5 @@
 import { expect, test } from "vite-plus/test";
-import { getScoringGraph } from "@/widgets/registry.ts";
+import { getScoringGraph, getWidgetComponent } from "@/widgets/registry.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
 import { score } from "@/scoring/score.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
@@ -68,4 +68,13 @@ test("getScoringGraph + score picks the BooleanEditor for a plain boolean proper
   });
 
   expect(best?.widget).toEqual(shui("BooleanEditor"));
+});
+
+test("getWidgetComponent resolves a widget IRI to its component for the given mode", () => {
+  expect(getWidgetComponent("edit", shui("BooleanEditor"))).toBeDefined();
+  expect(getWidgetComponent("view", shui("LiteralViewer"))).toBeDefined();
+
+  // An editor-only widget shouldn't resolve when asked for view mode, and vice versa.
+  expect(getWidgetComponent("view", shui("BooleanEditor"))).toBeUndefined();
+  expect(getWidgetComponent("edit", shui("LiteralViewer"))).toBeUndefined();
 });

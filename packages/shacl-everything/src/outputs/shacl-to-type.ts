@@ -1,5 +1,5 @@
 import { RdfStore } from "rdf-stores";
-import type { NamedNode, Term } from "@rdfjs/types";
+import type { NamedNode } from "@rdfjs/types";
 import { rdf, sh, xsd } from "@/helpers/namespaces.ts";
 import { getCodeIdentifier } from "@/helpers/getCodeIdentifier.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
@@ -70,20 +70,15 @@ function objectType(propertyLines: string[]): string {
   return `{\n  ${propertyLines.join("\n  ")}\n}`;
 }
 
-const getterFactory = (shapesGraph: RdfStore, subject: NamedNode) => (predicate: NamedNode) => {
-  return shapesGraph.getQuads(subject, predicate)[0]?.object as Term | undefined;
-};
-
 function propertyUIElement(property: PropertyUIElement): string {
-  const { shapesGraph, propertyShape } = property;
-  const get = getterFactory(shapesGraph, propertyShape);
+  const { shapesGraph, propertyShapes } = property;
 
-  const codeIdentifier = getCodeIdentifier(shapesGraph, propertyShape);
-  const minCount = parseFloat(get(sh("minCount"))?.value ?? "0");
-  const maxCount = parseFloat(get(sh("maxCount"))?.value ?? "Infinity");
+  const codeIdentifier = getCodeIdentifier(shapesGraph, propertyShapes[0]);
+  const minCount = parseFloat(property.getOne(sh("minCount"))?.value ?? "0");
+  const maxCount = parseFloat(property.getOne(sh("maxCount"))?.value ?? "Infinity");
   const required = minCount > 0;
   const multiple = maxCount > 1;
-  const datatype = castDataTypeTermToJs(get(sh("datatype")) ?? xsd("string"));
+  const datatype = castDataTypeTermToJs(property.getOne(sh("datatype")) ?? xsd("string"));
 
   const propertyType: string[] = [codeIdentifier];
   if (!required) propertyType.push("?");
@@ -115,7 +110,9 @@ function branchObjectType(properties: PropertyUIElement[], extraLines: string[] 
 // merely an excess-property warning that literals can dodge.
 function xoneUnion(branches: PropertyUIElement[][]): string {
   const branchKeys = branches.map((properties) =>
-    properties.map((property) => getCodeIdentifier(property.shapesGraph, property.propertyShape)),
+    properties.map((property) =>
+      getCodeIdentifier(property.shapesGraph, property.propertyShapes[0]),
+    ),
   );
   const allKeys = [...new Set(branchKeys.flat())];
 

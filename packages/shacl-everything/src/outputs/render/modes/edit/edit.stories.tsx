@@ -15,6 +15,5 @@ export const edit: Story = {
   args: {
     shapesGraph: contactUrl,
     nodeShapes: [factory.namedNode(contactUrl.href)],
-    interfaceLanguage: "nl-NL",
   },
 };

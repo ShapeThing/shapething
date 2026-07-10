@@ -9,24 +9,23 @@ export function propertiesForShape(
   shapesGraph: RdfStore,
   dataGraph: RdfStore,
   shape: Term,
+  scoresGraph?: RdfStore,
 ): PropertyUIElement[] {
-  const propertyShapes = shapesGraph.getQuads(shape, sh("property"));
-  const groupedPropertyShapes = new Map<string, PropertyUIElement>();
+  const propertyShapeQuads = shapesGraph.getQuads(shape, sh("property"));
+  const groupedPropertyShapes = new Map<string, NamedNode[]>();
 
-  for (const propertyShape of propertyShapes) {
-    const path = parsePropertyPath(propertyShape.object, shapesGraph);
+  for (const propertyShapeQuad of propertyShapeQuads) {
+    const path = parsePropertyPath(propertyShapeQuad.object, shapesGraph);
 
     if (!path) continue;
     const sparqlPath = toSparql(path);
-    groupedPropertyShapes.set(
-      sparqlPath,
-      new PropertyUIElement({
-        shapesGraph,
-        dataGraph,
-        propertyShape: propertyShape.object as NamedNode,
-      }),
-    );
+    const propertyShapes = groupedPropertyShapes.get(sparqlPath) ?? [];
+    propertyShapes.push(propertyShapeQuad.object as NamedNode);
+    groupedPropertyShapes.set(sparqlPath, propertyShapes);
   }
 
-  return [...groupedPropertyShapes.values()];
+  return [...groupedPropertyShapes.values()].map(
+    (propertyShapes) =>
+      new PropertyUIElement({ shapesGraph, dataGraph, scoresGraph, propertyShapes }),
+  );
 }

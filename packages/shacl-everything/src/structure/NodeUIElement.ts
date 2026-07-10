@@ -1,5 +1,5 @@
 import type { NamedNode } from "@rdfjs/types";
-import type { RdfStore } from "rdf-stores";
+import { RdfStore } from "rdf-stores";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import { CHOICE_CONNECTIVES, ChoiceElement } from "@/structure/ChoiceElement.ts";
@@ -9,6 +9,7 @@ import { propertiesForShape } from "@/structure/propertiesForShape.ts";
 export type NodeUIElementOptions = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
+  scoresGraph?: RdfStore;
   focusNode: NamedNode;
   nodeShapes: NamedNode[];
 };
@@ -16,12 +17,14 @@ export type NodeUIElementOptions = {
 export class NodeUIElement {
   public shapesGraph: RdfStore;
   public dataGraph: RdfStore;
+  public scoresGraph: RdfStore;
   public focusNode: NamedNode;
   public nodeShapes: NamedNode[];
 
   constructor(options: NodeUIElementOptions) {
     this.shapesGraph = options.shapesGraph;
     this.dataGraph = options.dataGraph;
+    this.scoresGraph = options.scoresGraph ?? RdfStore.createDefault();
     this.focusNode = options.focusNode;
     this.nodeShapes = options.nodeShapes;
   }
@@ -30,21 +33,15 @@ export class NodeUIElement {
     const elements: (PropertyUIElement | ChoiceElement)[] = [];
     for (const nodeShape of this.nodeShapes) {
       elements.push(
-        ...propertiesForShape(this.shapesGraph, this.dataGraph, nodeShape),
+        ...propertiesForShape(this.shapesGraph, this.dataGraph, nodeShape, this.scoresGraph),
       );
 
       // sh:and applies all branches unconditionally, so its properties
       // are flattened in as if they were declared on the node shape.
       for (const listQuad of this.shapesGraph.getQuads(nodeShape, sh("and"))) {
-        for (
-          const branchShape of getRdfList(listQuad.object, this.shapesGraph)
-        ) {
+        for (const branchShape of getRdfList(listQuad.object, this.shapesGraph)) {
           elements.push(
-            ...propertiesForShape(
-              this.shapesGraph,
-              this.dataGraph,
-              branchShape,
-            ),
+            ...propertiesForShape(this.shapesGraph, this.dataGraph, branchShape, this.scoresGraph),
           );
         }
       }
@@ -60,6 +57,7 @@ export class NodeUIElement {
               listQuad.subject,
               connective,
               listQuad.object,
+              this.scoresGraph,
             ),
           );
         }
