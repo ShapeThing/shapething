@@ -20,7 +20,11 @@ export function propertiesForShape(
     const sparqlPath = toSparql(path);
     groupedPropertyShapes.set(
       sparqlPath,
-      new PropertyUIElement(shapesGraph, dataGraph, propertyShape.object as NamedNode),
+      new PropertyUIElement({
+        shapesGraph,
+        dataGraph,
+        propertyShape: propertyShape.object as NamedNode,
+      }),
     );
   }
 

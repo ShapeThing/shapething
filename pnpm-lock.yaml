@@ -375,6 +375,12 @@ importers:
       '@effect/experimental':
         specifier: ^0.60.0
         version: 0.60.0(@effect/platform@0.96.2(effect@3.21.4))(effect@3.21.4)
+      '@fluent/bundle':
+        specifier: ^0.19.1
+        version: 0.19.1
+      '@fluent/react':
+        specifier: ^0.15.2
+        version: 0.15.2(@fluent/bundle@0.19.1)(react@19.2.7)
       '@rdfjs/environment':
         specifier: ^1.0.0
         version: 1.0.0
@@ -387,6 +393,9 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.101.2
         version: 5.101.2(react@19.2.7)
+      buffer:
+        specifier: ^6.0.3
+        version: 6.0.3
       effect:
         specifier: ^3.21.4
         version: 3.21.4
@@ -408,6 +417,9 @@ importers:
       react-dom:
         specifier: ^19.2.7
         version: 19.2.7(react@19.2.7)
+      react-error-boundary:
+        specifier: ^6.1.2
+        version: 6.1.2(react@19.2.7)
       shacl-engine:
         specifier: ^1.1.2
         version: 1.1.2

@@ -1,17 +1,20 @@
 import type { StoryObj } from "@storybook/react-vite";
-import ShaclRenderer from "@/outputs/render/render.tsx";
-type Story = StoryObj<typeof ShaclRenderer>;
+import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
+import { factory } from "@/helpers/factory.ts";
+
+type Story = StoryObj<ShaclRendererProps>;
 
 export default {
   title: "Shacl Renderer",
   component: ShaclRenderer,
 };
 
-console.log(new URL("contact.ttl", import.meta.url));
+const contactUrl = new URL("contact.ttl", import.meta.url);
 
 export const edit: Story = {
   args: {
-    shapesGraph: new URL("contact.ttl", import.meta.url),
-    nodeShapes: [],
+    shapesGraph: contactUrl,
+    nodeShapes: [factory.namedNode(contactUrl.href)],
+    interfaceLanguage: "nl-NL",
   },
 };

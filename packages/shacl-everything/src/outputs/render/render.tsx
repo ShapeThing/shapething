@@ -1,15 +1,47 @@
 import type { Environment } from "@/environment.ts";
+import { defaultEnvironment } from "@/environment.ts";
+import {
+  type Preprocessor,
+  type PipelineInput,
+  type RequireValidChain,
+  type DefaultPreprocessors,
+} from "@/preprocess/index.ts";
 import EnvironmentContextProvider from "@/outputs/render/contexts/EnvironmentContextProvider.tsx";
+import L10nProvider from "@/outputs/render/contexts/L10nProvider.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
-import { lazy } from "react";
+import { lazy, useId, useState } from "react";
+import { ErrorBoundary, getErrorMessage } from "react-error-boundary";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-export type ShaclRendererProps = Partial<Environment>;
+export type ShaclRendererProps<
+  Steps extends readonly Preprocessor<any, any>[] = DefaultPreprocessors,
+> = Partial<PipelineInput<Steps>> & {
+  preprocessors?: Steps;
+} & RequireValidChain<Steps>;
 
-export default function ShaclRenderer(inputProps: ShaclRendererProps) {
+export default function ShaclRenderer<
+  const Steps extends readonly Preprocessor<any, any>[] = DefaultPreprocessors,
+>(inputProps: ShaclRendererProps<Steps>) {
+  const [queryClient] = useState(() => new QueryClient());
+  const instanceId = useId();
+  const interfaceLanguage = inputProps.interfaceLanguage ?? defaultEnvironment.interfaceLanguage;
+
   return (
-    <EnvironmentContextProvider {...inputProps}>
-      <ShaclRendererInner />
-    </EnvironmentContextProvider>
+    <ErrorBoundary
+      fallbackRender={({ error }) => (
+        <div role="alert">
+          <pre>{getErrorMessage(error)}</pre>
+        </div>
+      )}
+    >
+      <QueryClientProvider client={queryClient}>
+        <L10nProvider interfaceLanguage={interfaceLanguage}>
+          <EnvironmentContextProvider {...inputProps} instanceId={instanceId}>
+            <ShaclRendererInner />
+          </EnvironmentContextProvider>
+        </L10nProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 
@@ -22,10 +54,5 @@ const modesNodeUIComponents: Record<Environment["mode"], React.ComponentType> = 
 function ShaclRendererInner() {
   const { mode } = useEnvironment();
   const NodeUIComponent = modesNodeUIComponents[mode];
-  return (
-    <div>
-      test1
-      <NodeUIComponent />
-    </div>
-  );
+  return <NodeUIComponent />;
 }

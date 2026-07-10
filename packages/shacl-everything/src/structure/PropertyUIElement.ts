@@ -1,19 +1,20 @@
 import type { NamedNode } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 
+export type PropertyUIElementOptions = {
+  shapesGraph: RdfStore;
+  dataGraph: RdfStore;
+  propertyShape: NamedNode;
+};
+
 export class PropertyUIElement {
   public shapesGraph: RdfStore;
   public dataGraph: RdfStore;
   public propertyShape: NamedNode;
 
-  // TODO change to options object instead.
-  constructor(
-    shapesGraph: RdfStore,
-    dataGraph: RdfStore,
-    propertyShape: NamedNode,
-  ) {
-    this.shapesGraph = shapesGraph;
-    this.dataGraph = dataGraph;
-    this.propertyShape = propertyShape;
+  constructor(options: PropertyUIElementOptions) {
+    this.shapesGraph = options.shapesGraph;
+    this.dataGraph = options.dataGraph;
+    this.propertyShape = options.propertyShape;
   }
 }
