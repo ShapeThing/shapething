@@ -7,7 +7,7 @@ import { ex, queryPrefixes, sh } from "@/helpers/namespaces.ts";
 const createElement = async (turtle: string, propertyShapes: NamedNode[]) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${turtle}`, "text/turtle");
   const dataGraph = await parseRdf("", "text/turtle");
-  return new PropertyUIElement({ shapesGraph, dataGraph, propertyShapes });
+  return new PropertyUIElement({ shapesGraph, dataGraph, focusNode: ex("Alice"), propertyShapes });
 };
 
 test("get() returns an empty array when the predicate is absent", async () => {
@@ -425,6 +425,7 @@ test("widget() returns the highest-scoring widget for the property shape alone",
     shapesGraph,
     dataGraph,
     scoresGraph,
+    focusNode: ex("Alice"),
     propertyShapes: [ex("property1")],
   });
 
@@ -463,6 +464,7 @@ test("widget() also scores the given value against shui:dataGraphShape", async (
     shapesGraph,
     dataGraph,
     scoresGraph,
+    focusNode: ex("Alice"),
     propertyShapes: [ex("property1")],
   });
 
@@ -506,8 +508,34 @@ test("widget() merges grouped property shapes, so a widget hint on either shape 
     shapesGraph,
     dataGraph,
     scoresGraph,
+    focusNode: ex("Alice"),
     propertyShapes: [ex("minShape"), ex("editorShape")],
   });
 
   expect((await element.widget())?.value).toEqual(ex("CustomWidget").value);
+});
+
+test("getObjects() walks this element's path through the data graph from this.focusNode", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:nameShape a sh:PropertyShape ; sh:path ex:name .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:name "Alice" .`,
+    "text/turtle",
+  );
+
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("nameShape")],
+  });
+
+  expect(element.getObjects().map((term) => term.value)).toEqual(["Alice"]);
+});
+
+test("getObjects() returns an empty array when the property shape has no sh:path", async () => {
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  expect(element.getObjects()).toEqual([]);
 });

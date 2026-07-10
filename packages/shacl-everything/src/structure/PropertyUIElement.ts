@@ -1,17 +1,21 @@
 import type { Literal, NamedNode, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
+import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
 import { localName } from "@/helpers/localName.ts";
 import { rdf, rdfs, sh, xsd } from "@/helpers/namespaces.ts";
 import { getRdfList } from "@/helpers/rdfList.ts";
+import { termKey } from "@/helpers/termKey.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
-import { type PropertyPath, parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import { score } from "@/scoring/score.ts";
 
 export type PropertyUIElementOptions = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
   scoresGraph?: RdfStore;
+  focusNode: NamedNode;
   propertyShapes: NamedNode[];
 };
 
@@ -19,12 +23,14 @@ export class PropertyUIElement {
   public shapesGraph: RdfStore;
   public dataGraph: RdfStore;
   public scoresGraph: RdfStore;
+  public focusNode: NamedNode;
   public propertyShapes: NamedNode[];
 
   constructor(options: PropertyUIElementOptions) {
     this.shapesGraph = options.shapesGraph;
     this.dataGraph = options.dataGraph;
     this.scoresGraph = options.scoresGraph ?? RdfStore.createDefault();
+    this.focusNode = options.focusNode;
     this.propertyShapes = options.propertyShapes;
   }
 
@@ -44,6 +50,18 @@ export class PropertyUIElement {
 
     const resolve = resolutions.get(predicate.value);
     return resolve ? resolve(values, this, predicate) : dedupeTerms(values);
+  }
+
+  /**
+   * The actual value(s) this property currently holds on `this.focusNode`, found by walking this
+   * element's path through `dataGraph` - as opposed to `get()`, which reads shape metadata like
+   * sh:minCount from `shapesGraph`. Every grouped shape shares the same path (propertiesForShape
+   * groups them by it), so propertyShapes[0] alone is enough to determine it.
+   */
+  getObjects(): Term[] {
+    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    if (!path) return [];
+    return walkPropertyPath(path, this.focusNode, this.dataGraph);
   }
 
   /**
@@ -95,7 +113,10 @@ export class PropertyUIElement {
 // SHACL treats repeated constraints conjunctively whether declared on one shape or several.
 function widgetShapeSource(element: PropertyUIElement): { shapeNode: Term; shapesGraph: RdfStore } {
   if (element.propertyShapes.length === 1) {
-    return { shapeNode: element.propertyShapes[0], shapesGraph: element.shapesGraph };
+    return {
+      shapeNode: element.propertyShapes[0],
+      shapesGraph: element.shapesGraph,
+    };
   }
 
   const synthetic = factory.blankNode();
@@ -161,52 +182,12 @@ function orderedValues(element: PropertyUIElement, predicate: NamedNode): Term[]
   );
 }
 
-function termKey(term: Term): string {
-  if (term.termType === "Literal") {
-    return `Literal|${term.value}|${term.datatype.value}|${term.language}`;
-  }
-  return `${term.termType}|${term.value}`;
-}
-
 function dedupeTerms(terms: Term[]): Term[] {
   const seen = new Map<string, Term>();
   for (const term of terms) {
     if (!seen.has(termKey(term))) seen.set(termKey(term), term);
   }
   return [...seen.values()];
-}
-
-const primarySubtag = (language: string) => language.split("-")[0].toLowerCase();
-
-// BCP47 "lookup" negotiation: an exact tag match wins, then a shared primary subtag (nl-NL asked
-// for, nl-BE offered), then a value with no language tag at all (e.g. an IRI or a plain literal),
-// and only if none of those exist does it fall back to whatever came first so a label is never
-// dropped purely because it is in the wrong language. Ties within a tier keep `values`' order,
-// i.e. the shape-order tie-break `orderedValues` already applied.
-function bestByLanguage(values: Term[], languages: BCP47[]): Term | undefined {
-  if (values.length === 0) return undefined;
-
-  const hasLanguageTag = (term: Term): term is Literal =>
-    term.termType === "Literal" && term.language !== "";
-
-  if (!values.some(hasLanguageTag)) return values[0];
-
-  for (const language of languages) {
-    const exact = values.find(
-      (term) => hasLanguageTag(term) && term.language.toLowerCase() === language.toLowerCase(),
-    );
-    if (exact) return exact;
-  }
-
-  for (const language of languages) {
-    const primary = primarySubtag(language);
-    const match = values.find(
-      (term) => hasLanguageTag(term) && primarySubtag(term.language) === primary,
-    );
-    if (match) return match;
-  }
-
-  return values.find((term) => !hasLanguageTag(term)) ?? values[0];
 }
 
 // sh:in/sh:languageIn/sh:ignoredProperties/sh:uniqueValuesFor/sh:nodeKind may point at either a

@@ -33,7 +33,13 @@ export class NodeUIElement {
     const elements: (PropertyUIElement | ChoiceElement)[] = [];
     for (const nodeShape of this.nodeShapes) {
       elements.push(
-        ...propertiesForShape(this.shapesGraph, this.dataGraph, nodeShape, this.scoresGraph),
+        ...propertiesForShape(
+          this.shapesGraph,
+          this.dataGraph,
+          nodeShape,
+          this.focusNode,
+          this.scoresGraph,
+        ),
       );
 
       // sh:and applies all branches unconditionally, so its properties
@@ -41,7 +47,13 @@ export class NodeUIElement {
       for (const listQuad of this.shapesGraph.getQuads(nodeShape, sh("and"))) {
         for (const branchShape of getRdfList(listQuad.object, this.shapesGraph)) {
           elements.push(
-            ...propertiesForShape(this.shapesGraph, this.dataGraph, branchShape, this.scoresGraph),
+            ...propertiesForShape(
+              this.shapesGraph,
+              this.dataGraph,
+              branchShape,
+              this.focusNode,
+              this.scoresGraph,
+            ),
           );
         }
       }
@@ -54,6 +66,7 @@ export class NodeUIElement {
             new ChoiceElement(
               this.shapesGraph,
               this.dataGraph,
+              this.focusNode,
               listQuad.subject,
               connective,
               listQuad.object,

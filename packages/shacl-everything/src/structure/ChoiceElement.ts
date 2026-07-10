@@ -1,4 +1,4 @@
-import type { Term } from "@rdfjs/types";
+import type { NamedNode, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -12,6 +12,7 @@ export class ChoiceElement {
   public shapesGraph: RdfStore;
   public dataGraph: RdfStore;
   public scoresGraph: RdfStore;
+  public focusNode: NamedNode;
   public shape: Term;
   public connective: ChoiceConnective;
   public list: Term;
@@ -19,6 +20,7 @@ export class ChoiceElement {
   constructor(
     shapesGraph: RdfStore,
     dataGraph: RdfStore,
+    focusNode: NamedNode,
     shape: Term,
     connective: ChoiceConnective,
     list: Term,
@@ -27,6 +29,7 @@ export class ChoiceElement {
     this.shapesGraph = shapesGraph;
     this.dataGraph = dataGraph;
     this.scoresGraph = scoresGraph ?? RdfStore.createDefault();
+    this.focusNode = focusNode;
     this.shape = shape;
     this.connective = connective;
     this.list = list;
@@ -34,7 +37,13 @@ export class ChoiceElement {
 
   children(): PropertyUIElement[][] {
     return getRdfList(this.list, this.shapesGraph).map((branchShape) =>
-      propertiesForShape(this.shapesGraph, this.dataGraph, branchShape, this.scoresGraph),
+      propertiesForShape(
+        this.shapesGraph,
+        this.dataGraph,
+        branchShape,
+        this.focusNode,
+        this.scoresGraph,
+      ),
     );
   }
 }

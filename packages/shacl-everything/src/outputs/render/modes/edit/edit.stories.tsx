@@ -10,10 +10,13 @@ export default {
 };
 
 const contactUrl = new URL("contact.ttl", import.meta.url);
+const johnUrl = new URL("john.ttl", import.meta.url);
 
 export const edit: Story = {
   args: {
     shapesGraph: contactUrl,
     nodeShapes: [factory.namedNode(contactUrl.href)],
+    dataGraph: new URL("john.ttl", import.meta.url),
+    focusNode: factory.namedNode(johnUrl.href + "#john"),
   },
 };

@@ -9,6 +9,7 @@ export function propertiesForShape(
   shapesGraph: RdfStore,
   dataGraph: RdfStore,
   shape: Term,
+  focusNode: NamedNode,
   scoresGraph?: RdfStore,
 ): PropertyUIElement[] {
   const propertyShapeQuads = shapesGraph.getQuads(shape, sh("property"));
@@ -26,6 +27,6 @@ export function propertiesForShape(
 
   return [...groupedPropertyShapes.values()].map(
     (propertyShapes) =>
-      new PropertyUIElement({ shapesGraph, dataGraph, scoresGraph, propertyShapes }),
+      new PropertyUIElement({ shapesGraph, dataGraph, scoresGraph, focusNode, propertyShapes }),
   );
 }

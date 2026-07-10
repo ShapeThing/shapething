@@ -9,6 +9,8 @@ type PropertyUIComponentProps = {
 export default function PropertyUIComponent({ propertyUIElement }: PropertyUIComponentProps) {
   const Widget = useWidget(propertyUIElement);
 
+  console.log(propertyUIElement.getObjects());
+
   return (
     <FormElement label={propertyUIElement.label()?.value}>
       {Widget && <Widget node={propertyUIElement} />}
