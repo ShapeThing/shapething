@@ -29,8 +29,15 @@ function PreprocessedEnvironmentProvider({ id, children, ...props }: Props & { i
 
   const { data: environment } = useSuspenseQuery({
     queryKey: ["preprocess-environment", id],
-    queryFn: () =>
-      runPreprocessors(initialEnvironment, props.preprocessors || defaultEnvironment.preprocessors),
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    queryFn: () => {
+      console.log("Running preprocessors for environment with id:", id);
+      return runPreprocessors(
+        initialEnvironment,
+        props.preprocessors || defaultEnvironment.preprocessors,
+      );
+    },
   });
 
   return <environmentContext.Provider value={environment}>{children}</environmentContext.Provider>;

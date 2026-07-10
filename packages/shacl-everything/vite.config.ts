@@ -8,10 +8,12 @@ const dirname = typeof __dirname !== "undefined"
   ? __dirname
   : path.dirname(fileURLToPath(import.meta.url));
 import Icons from "unplugin-icons/vite";
+import react from "@vitejs/plugin-react";
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [
+    react(),
     Icons({ compiler: "jsx", jsx: "react" }),
   ],
   resolve: {

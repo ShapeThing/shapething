@@ -1,7 +1,7 @@
 import type { Environment } from "@/environment.ts";
 import EnvironmentContextProvider from "@/outputs/render/contexts/EnvironmentContextProvider.tsx";
-import { environmentContext } from "@/outputs/render/contexts/environmentContext.tsx";
-import { lazy, useContext } from "react";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { lazy } from "react";
 
 export type ShaclRendererProps = Partial<Environment>;
 
@@ -20,11 +20,11 @@ const modesNodeUIComponents: Record<Environment["mode"], React.ComponentType> = 
 };
 
 function ShaclRendererInner() {
-  const { mode } = useContext(environmentContext);
+  const { mode } = useEnvironment();
   const NodeUIComponent = modesNodeUIComponents[mode];
   return (
     <div>
-      test
+      test1
       <NodeUIComponent />
     </div>
   );

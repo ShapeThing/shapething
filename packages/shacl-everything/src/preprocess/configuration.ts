@@ -6,3 +6,15 @@ export const assertValidEnvironment: Preprocessor = (
 ) => {
     return environment;
 };
+
+type DereferencableEnvironment = {
+    shapesGraph: Environment["shapesGraph"] | URL;
+    dataGraph: Environment["dataGraph"] | URL;
+};
+
+export const dereferenceUrlsToRdf: Preprocessor = (
+    environment: DereferencableEnvironment,
+) => {
+    // TODO dereference all URLs in the shapes and data graphs to RDF and add them to the respective graphs.
+    return environment;
+};
