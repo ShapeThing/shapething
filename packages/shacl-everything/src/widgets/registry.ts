@@ -2,7 +2,7 @@ import type { NamedNode } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { localName } from "@/helpers/localName.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
-import type { ObjectWidgetComponent } from "@/widgets/types.ts";
+import type { ObjectWidgetComponent, WidgetMeta } from "@/widgets/types.ts";
 import widgetScoringTtl from "@/scoring/widget-scoring.ttl?raw";
 
 export const shuiEditorsScoringGraphs = import.meta.glob(
@@ -22,6 +22,13 @@ const shuiViewersWidgets = import.meta.glob("@/widgets/implementations/shui/view
   eager: true,
   import: "default",
 }) as Record<string, ObjectWidgetComponent>;
+
+// Only editors ever produce a fresh/empty term for a property, so meta.ts (and createTerm)
+// is an editor-only concept - viewers have nothing to create.
+const shuiEditorsMeta = import.meta.glob("@/widgets/implementations/shui/editors/*/meta.ts", {
+  eager: true,
+  import: "default",
+}) as Record<string, WidgetMeta>;
 
 export type WidgetMode = "edit" | "view";
 
@@ -59,4 +66,13 @@ export function getWidgetComponent(
   const folder = mode === "edit" ? "editors" : "viewers";
   const name = localName(widget);
   return widgets[`/src/widgets/implementations/shui/${folder}/${name}/widget.tsx`];
+}
+
+/**
+ * Resolves an editor widget IRI to its meta.ts (see WidgetMeta) - `undefined` both when the
+ * widget has no meta.ts and when it has one that declares no createTerm override.
+ */
+export function getWidgetMeta(widget: NamedNode): WidgetMeta | undefined {
+  const name = localName(widget);
+  return shuiEditorsMeta[`/src/widgets/implementations/shui/editors/${name}/meta.ts`];
 }

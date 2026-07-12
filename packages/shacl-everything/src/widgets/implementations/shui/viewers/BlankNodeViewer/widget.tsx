@@ -1,5 +1,5 @@
 import type { ObjectWidgetProps } from "@/widgets/types.ts";
 
-export default function BlankNodeViewer({ node: _node }: ObjectWidgetProps) {
+export default function BlankNodeViewer({ shape }: ObjectWidgetProps) {
   return <div />;
 }

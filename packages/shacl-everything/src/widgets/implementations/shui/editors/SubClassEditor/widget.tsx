@@ -1,5 +1,5 @@
 import type { ObjectWidgetProps } from "@/widgets/types.ts";
 
-export default function SubClassEditor({ node: _node }: ObjectWidgetProps) {
+export default function SubClassEditor({ shape }: ObjectWidgetProps) {
   return <select />;
 }

@@ -1,57 +1,32 @@
-import type { Environment } from "@/environment.ts";
+import type { Environment, RawEnvironment } from "@/environment.ts";
 import { resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
 import { resolveScoresGraph } from "@/preprocess/scoresGraph.ts";
 import { addMissingShapes } from "@/preprocess/shapes.ts";
 import { assertValidEnvironment } from "@/preprocess/configuration.ts";
+import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
 
-export type Preprocessor<TIn = Environment, TOut = TIn> = (
-  environment: TIn,
-) => TOut | Promise<TOut>;
+export type Preprocessor = (
+  environment: RawEnvironment,
+) => RawEnvironment | Promise<RawEnvironment>;
 
-// The input type expected by the first stage of a preprocessor chain.
-export type PipelineInput<Steps extends readonly Preprocessor<any, any>[]> =
-  Steps extends readonly [Preprocessor<infer TIn, any>, ...any[]] ? TIn : never;
+export const defaultPreprocessors: readonly Preprocessor[] = [
+  resolveRdfSources,
+  resolveScoresGraph,
+  addMissingShapes,
+];
 
-export type PreprocessorChain<
-  In,
-  Steps extends readonly Preprocessor<any, any>[],
-> = Steps extends readonly [infer Head, ...infer Tail]
-  ? Head extends Preprocessor<infer HIn, infer HOut>
-    ? In extends HIn
-      ? Tail extends readonly Preprocessor<any, any>[]
-        ? PreprocessorChain<HOut, Tail>
-        : HOut
-      : {
-          __chainError: "Preprocessor chain type mismatch: this stage's input does not match the previous stage's output";
-          expected: HIn;
-          received: In;
-        }
-    : never
-  : In;
-
-export type RequireValidChain<Steps extends readonly Preprocessor<any, any>[]> =
-  PreprocessorChain<PipelineInput<Steps>, Steps> extends Environment
-    ? {}
-    : { __chainError: PreprocessorChain<PipelineInput<Steps>, Steps> };
-
-export const runPreprocessors = async <const Steps extends readonly Preprocessor<any, any>[]>(
-  raw: PipelineInput<Steps>,
-  steps: Steps,
-): Promise<PreprocessorChain<PipelineInput<Steps>, Steps>> => {
-  let result: any = raw;
+export const runPreprocessors = async (
+  raw: RawEnvironment,
+  steps: readonly Preprocessor[] = defaultPreprocessors,
+): Promise<Environment> => {
+  let result = raw;
 
   for (const step of steps) {
     result = await step(result);
   }
 
-  return result;
+  const environment = assertValidEnvironment(result);
+  // Only dataGraph is written to at runtime (e.g. PropertyUIElement.addObject) - shapesGraph and
+  // scoresGraph are read-only for the lifetime of an Environment, so they don't need reactivity.
+  return { ...environment, dataGraph: makeReactive(environment.dataGraph) };
 };
-
-export const defaultPreprocessors = [
-  resolveRdfSources,
-  resolveScoresGraph,
-  addMissingShapes,
-  assertValidEnvironment,
-] as const;
-
-export type DefaultPreprocessors = typeof defaultPreprocessors;

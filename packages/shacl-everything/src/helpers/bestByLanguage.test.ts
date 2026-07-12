@@ -1,6 +1,7 @@
 import { expect, test } from "vite-plus/test";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
+import type { BCP47 } from "@/types/BCP47.ts";
 
 test("bestByLanguage - returns undefined for an empty list", () => {
   expect(bestByLanguage([], ["en"])).toBeUndefined();
@@ -25,7 +26,9 @@ test("bestByLanguage - returns the exact language match", () => {
 
 test("bestByLanguage - is case-insensitive when matching the exact language", () => {
   const en = factory.literal("Hello", "en");
-  expect(bestByLanguage([en], ["EN"])).toEqual(en);
+  // BCP47 only models the canonical lowercase form - "EN" here deliberately deviates to exercise
+  // bestByLanguage's own case-insensitive comparison.
+  expect(bestByLanguage([en], ["EN" as BCP47])).toEqual(en);
 });
 
 test("bestByLanguage - honors the order of the preferred languages", () => {

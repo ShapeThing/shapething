@@ -1,5 +1,5 @@
 import type { ObjectWidgetProps } from "@/widgets/types.ts";
 
-export default function IRIEditor({ node: _node }: ObjectWidgetProps) {
+export default function IRIEditor({ shape }: ObjectWidgetProps) {
   return <input type="url" />;
 }

@@ -4,6 +4,7 @@ import { LocalizationProvider, ReactLocalization } from "@fluent/react";
 import { Loading } from "@/helpers/icons.tsx";
 import type { BCP47 } from "@/types/BCP47.ts";
 import { loadBundles } from "@/l10n/loadBundles.ts";
+import { noRefetch } from "@/helpers/noRefetch.ts";
 
 type Props = { interfaceLanguage: BCP47; children: React.ReactNode };
 
@@ -20,9 +21,7 @@ export default function L10nProvider({ interfaceLanguage, children }: Props) {
 function NegotiatedLocalizationProvider({ interfaceLanguage, children }: Props) {
   const { data: bundles } = useSuspenseQuery({
     queryKey: ["l10n-bundles", interfaceLanguage],
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    retry: false,
+    ...noRefetch,
     queryFn: () => loadBundles(interfaceLanguage),
   });
 

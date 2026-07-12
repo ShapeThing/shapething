@@ -153,6 +153,22 @@ type ValidateProps = {
   shapesGraph: RdfStore;
 };
 
+// Compiling a ShaclEngine parses every shape in shapesGraph up front (see shacl-engine's
+// Validator constructor), which is wasted work when repeated for the same shapesGraph - as
+// happens here, since matcher() always validates against the same scoringGraph, once or twice
+// per candidate widget. Keyed by object identity (scoringGraph is a stable, cached instance per
+// registry.ts), so this never serves a stale engine for a graph that's actually changed.
+const shaclEngineCache = new WeakMap<RdfStore, ShaclEngine>();
+
+function getShaclEngine(shapesGraph: RdfStore): ShaclEngine {
+  let shaclEngine = shaclEngineCache.get(shapesGraph);
+  if (!shaclEngine) {
+    shaclEngine = new ShaclEngine(shapesGraph.asDataset(), { factory });
+    shaclEngineCache.set(shapesGraph, shaclEngine);
+  }
+  return shaclEngine;
+}
+
 async function validate({ focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps) {
   if (!shapeNode) return true;
 
@@ -160,7 +176,7 @@ async function validate({ focusNode, targetGraph, shapeNode, shapesGraph }: Vali
   if (focusNode?.termType !== "Literal" && targetGraph.getQuads(focusNode).length === 0) {
     return false;
   }
-  const shaclEngine = new ShaclEngine(shapesGraph.asDataset(), { factory });
+  const shaclEngine = getShaclEngine(shapesGraph);
   const report = await shaclEngine.validate(
     {
       dataset: targetGraph.asDataset(),

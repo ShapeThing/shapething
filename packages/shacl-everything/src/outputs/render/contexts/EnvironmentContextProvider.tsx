@@ -1,32 +1,28 @@
 import React, { Suspense, useMemo } from "react";
 import { Loading } from "@/helpers/icons.tsx";
 import { useSuspenseQuery } from "@tanstack/react-query";
-import type { Environment } from "@/environment.ts";
+import type { Environment, RawEnvironment } from "@/environment.ts";
 import { defaultEnvironment } from "@/environment.ts";
-import {
-  runPreprocessors,
-  defaultPreprocessors,
-  type Preprocessor,
-  type PipelineInput,
-  type RequireValidChain,
-} from "@/preprocess/index.ts";
+import { runPreprocessors, defaultPreprocessors, type Preprocessor } from "@/preprocess/index.ts";
 import { environmentContext } from "@/outputs/render/contexts/environmentContext.tsx";
 import { Localized } from "@fluent/react";
+import { noRefetch } from "@/helpers/noRefetch.ts";
 
-type DefaultPreprocessors = typeof defaultPreprocessors;
-
-type Props<Steps extends readonly Preprocessor<any, any>[]> = Partial<PipelineInput<Steps>> & {
-  preprocessors?: Steps;
+type Props = Partial<RawEnvironment> & {
+  preprocessors?: readonly Preprocessor[];
   children: React.ReactNode;
   instanceId: string;
-} & RequireValidChain<Steps>;
+};
 
-export default function EnvironmentContextProvider<
-  const Steps extends readonly Preprocessor<any, any>[] = DefaultPreprocessors,
->({ children, preprocessors, instanceId, ...props }: Props<Steps>) {
-  const steps = (preprocessors ?? defaultPreprocessors) as Steps;
-  const initialEnvironment = useMemo<PipelineInput<Steps>>(
-    () => ({ ...defaultEnvironment, ...props }) as PipelineInput<Steps>,
+export default function EnvironmentContextProvider({
+  children,
+  preprocessors,
+  instanceId,
+  ...props
+}: Props) {
+  const steps = preprocessors ?? defaultPreprocessors;
+  const initialEnvironment = useMemo<RawEnvironment>(
+    () => ({ ...defaultEnvironment, ...props }) as RawEnvironment,
     [],
   );
 
@@ -59,9 +55,7 @@ function PreprocessedEnvironmentProvider({
 }) {
   const { data: environment } = useSuspenseQuery({
     queryKey: ["preprocess-environment", id],
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    retry: false,
+    ...noRefetch,
     queryFn: run,
   });
 

@@ -4,18 +4,8 @@ import type { Quad, Stream } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { rdfParser } from "rdf-parse";
 import stringToStream from "string-to-stream";
-import type { Environment } from "@/environment.ts";
 import type { Preprocessor } from "@/preprocess/index.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
-
-export type DereferencableEnvironment = Omit<
-  Environment,
-  "shapesGraph" | "dataGraph" | "scoresGraph"
-> & {
-  shapesGraph: RdfSource;
-  dataGraph: RdfSource;
-  scoresGraph: RdfSource;
-};
 
 const storeFromStream = (stream: Stream<Quad>): Promise<RdfStore> => {
   const store = RdfStore.createDefault();
@@ -58,9 +48,7 @@ const resolveRdfSource = (source: RdfSource): RdfStore | Promise<RdfStore> => {
   return storeFromQuads(source);
 };
 
-export const resolveRdfSources: Preprocessor<DereferencableEnvironment, Environment> = async (
-  raw,
-) => {
+export const resolveRdfSources: Preprocessor = async (raw) => {
   const [shapesGraph, dataGraph, scoresGraph] = await Promise.all([
     resolveRdfSource(raw.shapesGraph),
     resolveRdfSource(raw.dataGraph),

@@ -1,6 +1,5 @@
 import { RdfStore } from "rdf-stores";
-import type { Preprocessor } from "@/preprocess/index.ts";
-import type { Environment } from "@/environment.ts";
+import type { Environment, RawEnvironment } from "@/environment.ts";
 
 const MODES = ["edit", "view", "facet"] as const;
 const BCP47_PATTERN = /^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|\d{3}))?$/;
@@ -10,12 +9,17 @@ const isNamedNode = (value: unknown): boolean =>
   value !== null &&
   (value as { termType?: unknown }).termType === "NamedNode";
 
-export const assertValidEnvironment: Preprocessor = (environment: Environment) => {
+// The last, non-removable step of runPreprocessors: whatever a custom chain did, this is the
+// actual guard that the result is usable, and the only place a RawEnvironment is asserted into
+// a real Environment.
+export const assertValidEnvironment = (environment: RawEnvironment): Environment => {
   const errors: string[] = [];
 
   for (const key of ["shapesGraph", "dataGraph", "scoresGraph"] as const) {
-    if (!(environment[key] instanceof RdfStore)) {
-      errors.push(`${key} must resolve to an RdfStore, got ${String(environment[key])}`);
+    const value = environment[key];
+    if (!(value instanceof RdfStore)) {
+      const description = value instanceof URL ? value.href : typeof value;
+      errors.push(`${key} must resolve to an RdfStore, got ${description}`);
     }
   }
 
@@ -47,5 +51,6 @@ export const assertValidEnvironment: Preprocessor = (environment: Environment) =
     throw new Error(`Invalid Environment:\n${errors.map((error) => `  - ${error}`).join("\n")}`);
   }
 
-  return environment;
+  // Checked above: the graph fields are RdfStore instances, so this RawEnvironment is a valid Environment.
+  return environment as Environment;
 };

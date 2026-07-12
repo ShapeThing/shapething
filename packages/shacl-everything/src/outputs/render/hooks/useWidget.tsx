@@ -5,6 +5,7 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { getWidgetComponent } from "@/widgets/registry.ts";
 import type { ObjectWidgetComponent } from "@/widgets/types.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { noRefetch } from "@/helpers/noRefetch.ts";
 
 /**
  * Resolves the highest-scoring widget component for a property, per the environment's
@@ -30,6 +31,7 @@ export function useWidget(
     // react-query treats a resolved `undefined` as an error ("Query data cannot be undefined"),
     // so the no-match case is represented as `null` instead.
     queryFn: async () => (await property.widget(valueNode)) ?? null,
+    ...noRefetch,
   });
 
   if (!widget || widget.termType !== "NamedNode" || mode === "facet") return undefined;

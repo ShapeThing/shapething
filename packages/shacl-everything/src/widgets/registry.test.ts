@@ -1,5 +1,5 @@
 import { expect, test } from "vite-plus/test";
-import { getScoringGraph, getWidgetComponent } from "@/widgets/registry.ts";
+import { getScoringGraph, getWidgetComponent, getWidgetMeta } from "@/widgets/registry.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
 import { score } from "@/scoring/score.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
@@ -77,4 +77,12 @@ test("getWidgetComponent resolves a widget IRI to its component for the given mo
   // An editor-only widget shouldn't resolve when asked for view mode, and vice versa.
   expect(getWidgetComponent("view", shui("BooleanEditor"))).toBeUndefined();
   expect(getWidgetComponent("edit", shui("LiteralViewer"))).toBeUndefined();
+});
+
+test("getWidgetMeta resolves a createTerm override where one is declared", () => {
+  expect(getWidgetMeta(shui("BooleanEditor"))?.createTerm).toBeDefined();
+});
+
+test("getWidgetMeta returns a meta with no createTerm for widgets whose value shape is shape-derived", () => {
+  expect(getWidgetMeta(shui("TextFieldEditor"))?.createTerm).toBeUndefined();
 });

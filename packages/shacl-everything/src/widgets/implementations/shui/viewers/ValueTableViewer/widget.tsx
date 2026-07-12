@@ -1,6 +1,6 @@
 import type { ObjectWidgetProps } from "@/widgets/types.ts";
 
-export default function ValueTableViewer({ node: _node }: ObjectWidgetProps) {
+export default function ValueTableViewer({ shape }: ObjectWidgetProps) {
   return (
     <table>
       <tbody />

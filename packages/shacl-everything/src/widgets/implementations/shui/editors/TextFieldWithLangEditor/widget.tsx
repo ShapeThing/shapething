@@ -1,7 +1,7 @@
 import { sh } from "@/helpers/namespaces.ts";
 import type { ObjectWidgetProps } from "@/widgets/types.ts";
 
-export default function TextFieldWithLangEditor({ node }: ObjectWidgetProps) {
+export default function TextFieldWithLangEditor({ shape: node }: ObjectWidgetProps) {
   const languages = node.get(sh("languageIn"));
 
   return (

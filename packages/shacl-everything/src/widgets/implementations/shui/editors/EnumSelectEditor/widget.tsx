@@ -2,7 +2,7 @@ import { sh } from "@/helpers/namespaces.ts";
 import { localName } from "@/helpers/localName.ts";
 import type { ObjectWidgetProps } from "@/widgets/types.ts";
 
-export default function EnumSelectEditor({ node }: ObjectWidgetProps) {
+export default function EnumSelectEditor({ shape: node }: ObjectWidgetProps) {
   const options = node.get(sh("in"));
 
   return (

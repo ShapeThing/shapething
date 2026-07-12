@@ -20,3 +20,10 @@ export const edit: Story = {
     focusNode: factory.namedNode(johnUrl.href + "#john"),
   },
 };
+
+export const create: Story = {
+  args: {
+    shapesGraph: contactUrl,
+    nodeShapes: [factory.namedNode(contactUrl.href)],
+  },
+};

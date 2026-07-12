@@ -2,6 +2,7 @@ import { expect, test } from "vite-plus/test";
 import type { NamedNode } from "@rdfjs/types";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
+import { factory } from "@/helpers/factory.ts";
 import { ex, queryPrefixes, sh } from "@/helpers/namespaces.ts";
 
 const createElement = async (turtle: string, propertyShapes: NamedNode[]) => {
@@ -249,6 +250,33 @@ test("sh:group keeps the value from the lowest sh:order shape, so a property is 
   );
 
   expect(element.get(sh("group"))[0].value).toBe(ex("groupB").value);
+});
+
+test("sh:severity keeps the most severe value when shapes disagree", async () => {
+  const element = await createElement(
+    `
+        ex:property1 a sh:PropertyShape ; sh:severity sh:Info .
+        ex:property2 a sh:PropertyShape ; sh:severity sh:Violation .
+        ex:property3 a sh:PropertyShape ; sh:severity sh:Warning .
+    `,
+    [ex("property1"), ex("property2"), ex("property3")],
+  );
+
+  expect(element.get(sh("severity"))[0].value).toBe(sh("Violation").value);
+});
+
+test("sh:severity keeps a single declared value unchanged", async () => {
+  const element = await createElement(
+    `ex:property1 a sh:PropertyShape ; sh:severity sh:Warning .`,
+    [ex("property1")],
+  );
+
+  expect(element.get(sh("severity"))[0].value).toBe(sh("Warning").value);
+});
+
+test("sh:severity is empty when absent, leaving the spec default of sh:Violation to the caller", async () => {
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  expect(element.get(sh("severity"))).toEqual([]);
 });
 
 test("sh:order resolves to the lowest declared order across shapes", async () => {
@@ -537,5 +565,94 @@ test("getObjects() walks this element's path through the data graph from this.fo
 
 test("getObjects() returns an empty array when the property shape has no sh:path", async () => {
   const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  expect(element.getObjects()).toEqual([]);
+});
+
+test("addObject() writes a new value onto this.focusNode via this element's path, on top of any existing ones", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:nameShape a sh:PropertyShape ; sh:path ex:name .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:name "Alice" .`,
+    "text/turtle",
+  );
+
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("nameShape")],
+  });
+
+  element.addObject(factory.literal("Ally"));
+
+  expect(
+    element
+      .getObjects()
+      .map((term) => term.value)
+      .sort(),
+  ).toEqual(["Ally", "Alice"].sort());
+});
+
+test("addObject() does nothing when the property shape has no sh:path", async () => {
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  element.addObject(factory.literal("hello"));
+  expect(element.getObjects()).toEqual([]);
+});
+
+test("replaceObject() swaps an existing value on this.focusNode via this element's path", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:nameShape a sh:PropertyShape ; sh:path ex:name .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:name "Alice" .`,
+    "text/turtle",
+  );
+
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("nameShape")],
+  });
+
+  element.replaceObject(factory.literal("Alice"), factory.literal("Alicia"));
+
+  expect(element.getObjects().map((term) => term.value)).toEqual(["Alicia"]);
+});
+
+test("replaceObject() does nothing when the property shape has no sh:path", async () => {
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  element.replaceObject(factory.literal("hello"), factory.literal("world"));
+  expect(element.getObjects()).toEqual([]);
+});
+
+test("removeObject() removes an existing value from this.focusNode via this element's path", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:nameShape a sh:PropertyShape ; sh:path ex:name .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:name "Alice", "Ally" .`,
+    "text/turtle",
+  );
+
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("nameShape")],
+  });
+
+  element.removeObject(factory.literal("Alice"));
+
+  expect(element.getObjects().map((term) => term.value)).toEqual(["Ally"]);
+});
+
+test("removeObject() does nothing when the property shape has no sh:path", async () => {
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  element.removeObject(factory.literal("hello"));
   expect(element.getObjects()).toEqual([]);
 });

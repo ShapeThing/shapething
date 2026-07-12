@@ -1,11 +1,6 @@
-import type { Environment } from "@/environment.ts";
+import type { Environment, RawEnvironment } from "@/environment.ts";
 import { defaultEnvironment } from "@/environment.ts";
-import {
-  type Preprocessor,
-  type PipelineInput,
-  type RequireValidChain,
-  type DefaultPreprocessors,
-} from "@/preprocess/index.ts";
+import { type Preprocessor } from "@/preprocess/index.ts";
 import EnvironmentContextProvider from "@/outputs/render/contexts/EnvironmentContextProvider.tsx";
 import L10nProvider from "@/outputs/render/contexts/L10nProvider.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
@@ -13,15 +8,11 @@ import { lazy, useId, useState } from "react";
 import { ErrorBoundary, getErrorMessage } from "react-error-boundary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-export type ShaclRendererProps<
-  Steps extends readonly Preprocessor<any, any>[] = DefaultPreprocessors,
-> = Partial<PipelineInput<Steps>> & {
-  preprocessors?: Steps;
-} & RequireValidChain<Steps>;
+export type ShaclRendererProps = Partial<RawEnvironment> & {
+  preprocessors?: readonly Preprocessor[];
+};
 
-export default function ShaclRenderer<
-  const Steps extends readonly Preprocessor<any, any>[] = DefaultPreprocessors,
->(inputProps: ShaclRendererProps<Steps>) {
+export default function ShaclRenderer(inputProps: ShaclRendererProps) {
   const [queryClient] = useState(() => new QueryClient());
   const instanceId = useId();
   const interfaceLanguage = inputProps.interfaceLanguage ?? defaultEnvironment.interfaceLanguage;

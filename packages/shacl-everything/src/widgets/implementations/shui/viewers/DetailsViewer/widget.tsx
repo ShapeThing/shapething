@@ -1,6 +1,6 @@
 import type { ObjectWidgetProps } from "@/widgets/types.ts";
 
-export default function DetailsViewer({ node: _node }: ObjectWidgetProps) {
+export default function DetailsViewer({ shape }: ObjectWidgetProps) {
   return (
     <details>
       <div />
