@@ -2,8 +2,8 @@ import type { Term } from "@rdfjs/types";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { getWidgetComponent } from "@/widgets/registry.ts";
-import type { WidgetComponent } from "@/widgets/types.ts";
+import { getWidgetComponent, getWidgetMeta } from "@/widgets/registry.ts";
+import type { WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 
@@ -16,12 +16,14 @@ import { noRefetch } from "@/helpers/noRefetch.ts";
  * same property) - omit it to score on the property shape(s) alone.
  */
 export function useWidget(
+  widgetPredicate: Term,
   property: PropertyUIElement,
   valueNode?: Term,
 ):
   | {
       Widget: WidgetComponent;
       iri: Term;
+      meta: WidgetMeta | undefined;
     }
   | undefined {
   const { mode } = useEnvironment();
@@ -31,17 +33,18 @@ export function useWidget(
       "widget",
       mode,
       property.propertyShapes.map((shape) => shape.value),
-      valueNode && termKey(valueNode),
+      valueNode ? termKey(valueNode) : "no-object",
     ],
     // react-query treats a resolved `undefined` as an error ("Query data cannot be undefined"),
     // so the no-match case is represented as `null` instead.
-    queryFn: async () => (await property.widget(valueNode)) ?? null,
+    queryFn: async () => (await property.widget(widgetPredicate, valueNode)) ?? null,
     ...noRefetch,
   });
 
   if (!widget || widget.termType !== "NamedNode" || mode === "facet") return undefined;
   return {
     Widget: getWidgetComponent(mode, widget)!,
+    meta: getWidgetMeta(widget),
     iri: widget,
   };
 }

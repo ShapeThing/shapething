@@ -25,17 +25,16 @@
 <#data>
     a schema:Person ;
     schema:givenName "Hendrik", "Jan" ;
-    schema:parent [
-        a schema:Person ;
-        schema:givenName "John" ;
-    ] ;
+    schema:parent <#john> ;
     .
 
 <#someone>
     a schema:Person ;
     schema:givenName "Someone" ;
-    schema:parent [
-        a schema:Person ;
-        schema:givenName "John" ;
-    ] ;
+    schema:parent <#john> ;
+    .
+
+<#john>
+    a schema:Person ;
+    schema:givenName "John" ;
     .

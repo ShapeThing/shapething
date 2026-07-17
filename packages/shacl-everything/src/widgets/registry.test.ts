@@ -1,5 +1,9 @@
 import { expect, test } from "vite-plus/test";
-import { getScoringGraph, getWidgetComponent, getWidgetMeta } from "@/widgets/registry.ts";
+import {
+  getScoringGraph,
+  getWidgetComponent,
+  getWidgetMeta,
+} from "@/widgets/registry.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
 import { score } from "@/scoring/score.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
@@ -9,26 +13,33 @@ test("getScoringGraph combines the shared widget-scoring.ttl shapes with every e
   const scoringGraph = await getScoringGraph("edit");
 
   // A shape from the shared widget-scoring.ttl.
-  expect(scoringGraph.getQuads(shui("isBoolean"), rdf("type"), sh("NodeShape"))).toHaveLength(1);
+  expect(scoringGraph.getQuads(shui("isBoolean"), rdf("type"), sh("NodeShape")))
+    .toHaveLength(1);
 
   // A WidgetScore that only exists for the BooleanEditor.
-  expect(scoringGraph.getQuads(null, shui("widget"), shui("BooleanEditor")).length).toBeGreaterThan(
+  expect(
+    scoringGraph.getQuads(null, shui("widget"), shui("BooleanEditor")).length,
+  ).toBeGreaterThan(
     0,
   );
 
   // Viewer-only widgets should not be present in the editor graph.
-  expect(scoringGraph.getQuads(null, shui("widget"), shui("LiteralViewer"))).toHaveLength(0);
+  expect(scoringGraph.getQuads(null, shui("widget"), shui("LiteralViewer")))
+    .toHaveLength(0);
 });
 
 test("getScoringGraph combines the shared widget-scoring.ttl shapes with every viewer score.ttl", async () => {
   const scoringGraph = await getScoringGraph("view");
 
-  expect(scoringGraph.getQuads(null, shui("widget"), shui("LiteralViewer")).length).toBeGreaterThan(
+  expect(
+    scoringGraph.getQuads(null, shui("widget"), shui("LiteralViewer")).length,
+  ).toBeGreaterThan(
     0,
   );
 
   // Editor-only widgets should not be present in the viewer graph.
-  expect(scoringGraph.getQuads(null, shui("widget"), shui("BooleanEditor"))).toHaveLength(0);
+  expect(scoringGraph.getQuads(null, shui("widget"), shui("BooleanEditor")))
+    .toHaveLength(0);
 });
 
 test("getScoringGraph + score picks the BooleanEditor for a plain boolean property, using the real widget scoring rules", async () => {
@@ -58,16 +69,17 @@ test("getScoringGraph + score picks the BooleanEditor for a plain boolean proper
     factory.namedNode("http://example.com/isActive"),
   );
 
-  const best = await score({
+  const best = await Array.fromAsync(score({
     best: true,
     focusNode: isActiveQuad.object,
     dataGraph,
     shapeNode: factory.namedNode("http://example.com/isActiveShape"),
     shapesGraph,
     scoringGraph,
-  });
+    widgetPredicate: shui("editor"),
+  }));
 
-  expect(best?.widget).toEqual(shui("BooleanEditor"));
+  expect(best[0]?.widget).toEqual(shui("BooleanEditor"));
 });
 
 test("getWidgetComponent resolves a widget IRI to its component for the given mode", () => {

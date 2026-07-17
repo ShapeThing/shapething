@@ -23,4 +23,5 @@ export type CreateTermContext = {
  */
 export type WidgetMeta = {
   createTerm?: (context: CreateTermContext, shape: PropertyUIElement) => Term;
+  canAddMore?: (shape: PropertyUIElement) => boolean;
 };

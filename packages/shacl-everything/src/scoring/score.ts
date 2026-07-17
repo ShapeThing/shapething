@@ -17,6 +17,8 @@ type ScoreProps = {
   shapesGraph: RdfStore;
   // The RDF graph containing the Widget Score definitions.
   scoringGraph: RdfStore;
+
+  widgetPredicate: Term;
 };
 
 export type WidgetScoreResult = {
@@ -25,23 +27,42 @@ export type WidgetScoreResult = {
   score: number;
 };
 
+export async function* select(props: ScoreProps) {
+  const {
+    shapeNode,
+    shapesGraph,
+    widgetPredicate,
+  } = props;
+  const widget = shapesGraph.getQuads(shapeNode, widgetPredicate)[0]?.object;
+
+  const processedWidget = await processWidget(widget, props);
+  if (processedWidget) {
+    yield processedWidget;
+    return;
+  }
+
+  for await (const { widget } of score(props)) {
+    const processedWidget = await processWidget(widget, props);
+    if (processedWidget) {
+      yield processedWidget;
+    }
+  }
+}
+
 /**
  *  The score function used to find the best widget or an ordered list of matches.
  */
-export async function score(
-  props: ScoreProps & { best: true },
-): Promise<WidgetScoreResult | undefined>;
-export async function score(props: ScoreProps & { best: false }): Promise<WidgetScoreResult[]>;
-export async function score({
+export async function* score({
   best,
   focusNode,
   dataGraph,
   shapeNode,
   shapesGraph,
   scoringGraph,
-}: ScoreProps): Promise<WidgetScoreResult | WidgetScoreResult[] | undefined> {
-  const results: WidgetScoreResult[] = [];
-  const widgetScores = [...scoringGraph.getQuads(null, rdf("type"), shui("WidgetScore"))]
+}: ScoreProps): AsyncGenerator<WidgetScoreResult> {
+  const widgetScores = [
+    ...scoringGraph.getQuads(null, rdf("type"), shui("WidgetScore")),
+  ]
     .map((quad) => {
       const widgetScore = quad.subject;
       const [scoreQuad] = scoringGraph.getQuads(widgetScore, shui("score"));
@@ -51,7 +72,9 @@ export async function score({
       const score = scoreQuad ? parseFloat(scoreQuad.object.value) : NaN;
 
       if (!widget || isNaN(score)) {
-        throw new Error(`Invalid Widget Score definition for ${widgetScore.value}`);
+        throw new Error(
+          `Invalid Widget Score definition for ${widgetScore.value}`,
+        );
       }
 
       return { widgetScore, widget, score };
@@ -75,15 +98,47 @@ export async function score({
 
     if (!isMatch) continue;
 
-    if (best) {
-      return widgetScore;
-    }
+    yield widgetScore;
 
-    results.push(widgetScore);
+    if (best) return;
   }
-
-  return best ? undefined : results;
 }
+
+/**
+ * Processes a widget to determine if it matches the given SHACL shape and scoring criteria.
+ */
+const processWidget = async (widget: Term, props: ScoreProps) => {
+  if (widget) {
+    const [widgetAcceptMatcher] = props.shapesGraph.getQuads(
+      null,
+      rdf("type"),
+      shui("WidgetAcceptMatcher"),
+    ).filter((quad) => {
+      const [matcherWidgetQuad] = props.shapesGraph.getQuads(
+        quad.subject,
+        shui("widget"),
+        widget,
+      );
+      return !!matcherWidgetQuad;
+    });
+
+    if (!widgetAcceptMatcher) {
+      // If no matcher is defined for the widget, it is allowed by spec.
+      return widget;
+    } else {
+      const isMatch = await matcher({
+        ...props,
+        matcherNode: widgetAcceptMatcher.subject,
+      });
+
+      if (isMatch) {
+        return widget;
+      } else {
+        return;
+      }
+    }
+  }
+};
 
 type matcherProps = {
   // The node to validate. This is instance data.
@@ -120,6 +175,7 @@ async function matcher({
     null,
     null,
   );
+
   const matcherDataGraphShape = matcherDataGraphShapeQuad?.object;
   const matcherShapeGraphShape = matcherShapeGraphShapeQuad?.object;
   // A widget does not match if its score shape does not specify scores for property shapes and no focus node of the instance data has been given.
@@ -169,11 +225,16 @@ function getShaclEngine(shapesGraph: RdfStore): ShaclEngine {
   return shaclEngine;
 }
 
-async function validate({ focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps) {
+async function validate(
+  { focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps,
+) {
   if (!shapeNode) return true;
 
   // Literals can't be a quad subject, so the existence check only applies to IRIs/blank nodes.
-  if (focusNode?.termType !== "Literal" && targetGraph.getQuads(focusNode).length === 0) {
+  if (
+    focusNode?.termType !== "Literal" &&
+    targetGraph.getQuads(focusNode).length === 0
+  ) {
     return false;
   }
   const shaclEngine = getShaclEngine(shapesGraph);
@@ -211,7 +272,12 @@ export function accept({
   scoringGraph,
 }: AcceptProps) {
   const matcherNode = [
-    ...scoringGraph.getQuads(null, rdf("type"), shui("WidgetAcceptmatcher"), null),
+    ...scoringGraph.getQuads(
+      null,
+      rdf("type"),
+      shui("WidgetAcceptMatcher"),
+      null,
+    ),
   ].find((quad) => {
     const [matcherWidgetQuad] = scoringGraph.getQuads(
       quad.subject,

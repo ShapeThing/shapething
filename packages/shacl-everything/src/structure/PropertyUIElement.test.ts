@@ -3,16 +3,26 @@ import type { NamedNode } from "@rdfjs/types";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
-import { ex, queryPrefixes, sh } from "@/helpers/namespaces.ts";
+import { ex, queryPrefixes, sh, shui } from "@/helpers/namespaces.ts";
 
 const createElement = async (turtle: string, propertyShapes: NamedNode[]) => {
-  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${turtle}`, "text/turtle");
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\n${turtle}`,
+    "text/turtle",
+  );
   const dataGraph = await parseRdf("", "text/turtle");
-  return new PropertyUIElement({ shapesGraph, dataGraph, focusNode: ex("Alice"), propertyShapes });
+  return new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes,
+  });
 };
 
 test("get() returns an empty array when the predicate is absent", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
+    ex("property1"),
+  ]);
   expect(element.get(sh("minCount"))).toEqual([]);
 });
 
@@ -21,7 +31,9 @@ test("get() passes a single value through unchanged for predicates without a res
     `ex:property1 a sh:PropertyShape ; ex:customPredicate "hello" .`,
     [ex("property1")],
   );
-  expect(element.get(ex("customPredicate")).map((term) => term.value)).toEqual(["hello"]);
+  expect(element.get(ex("customPredicate")).map((term) => term.value)).toEqual([
+    "hello",
+  ]);
 });
 
 test("sh:class keeps only the most specific classes across shapes", async () => {
@@ -72,7 +84,9 @@ test("sh:nodeKind intersects across shapes, including list-form values", async (
     [ex("property1"), ex("property2"), ex("property3")],
   );
 
-  expect(element.get(sh("nodeKind")).map((term) => term.value)).toEqual([sh("IRI").value]);
+  expect(element.get(sh("nodeKind")).map((term) => term.value)).toEqual([
+    sh("IRI").value,
+  ]);
 });
 
 test("sh:nodeKind throws when there is no intersection", async () => {
@@ -84,7 +98,9 @@ test("sh:nodeKind throws when there is no intersection", async () => {
     [ex("property1"), ex("property2")],
   );
 
-  expect(() => element.get(sh("nodeKind"))).toThrow(/No intersection found for sh:nodeKind/);
+  expect(() => element.get(sh("nodeKind"))).toThrow(
+    /No intersection found for sh:nodeKind/,
+  );
 });
 
 test("sh:minCount and sh:maxCount combine across shapes to the tightest bound", async () => {
@@ -127,9 +143,12 @@ test("sh:pattern combines differing patterns so a value must match all of them",
 });
 
 test("sh:pattern keeps a single value unchanged", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape ; sh:pattern "^[A-Z]" .`, [
-    ex("property1"),
-  ]);
+  const element = await createElement(
+    `ex:property1 a sh:PropertyShape ; sh:pattern "^[A-Z]" .`,
+    [
+      ex("property1"),
+    ],
+  );
   expect(element.get(sh("pattern"))[0].value).toBe("^[A-Z]");
 });
 
@@ -142,7 +161,9 @@ test("sh:languageIn intersects the declared lists", async () => {
     [ex("property1"), ex("property2")],
   );
 
-  expect(element.get(sh("languageIn")).map((term) => term.value)).toEqual(["nl"]);
+  expect(element.get(sh("languageIn")).map((term) => term.value)).toEqual([
+    "nl",
+  ]);
 });
 
 test("sh:in with a single list still returns the expanded items, not the list node", async () => {
@@ -167,11 +188,12 @@ test("sh:ignoredProperties merges lists across shapes into a deduplicated set", 
     [ex("property1"), ex("property2")],
   );
 
-  expect(element.get(sh("ignoredProperties")).map((term) => term.value)).toEqual([
-    ex("a").value,
-    ex("b").value,
-    ex("c").value,
-  ]);
+  expect(element.get(sh("ignoredProperties")).map((term) => term.value))
+    .toEqual([
+      ex("a").value,
+      ex("b").value,
+      ex("c").value,
+    ]);
 });
 
 test("sh:equals resolves when every shape targets the same path", async () => {
@@ -195,7 +217,9 @@ test("sh:equals throws when shapes target different paths", async () => {
     [ex("property1"), ex("property2")],
   );
 
-  expect(() => element.get(sh("equals"))).toThrow(/Conflicting values for property/);
+  expect(() => element.get(sh("equals"))).toThrow(
+    /Conflicting values for property/,
+  );
 });
 
 test("sh:disjoint keeps every distinct value in declaration order, deduplicated", async () => {
@@ -275,7 +299,9 @@ test("sh:severity keeps a single declared value unchanged", async () => {
 });
 
 test("sh:severity is empty when absent, leaving the spec default of sh:Violation to the caller", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
+    ex("property1"),
+  ]);
   expect(element.get(sh("severity"))).toEqual([]);
 });
 
@@ -304,7 +330,9 @@ test("getOne() returns the single resolved value directly", async () => {
 });
 
 test("getOne() returns undefined when the predicate is absent", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
+    ex("property1"),
+  ]);
   expect(element.getOne(sh("minCount"))).toBeUndefined();
 });
 
@@ -354,7 +382,9 @@ test("get() without a language preference is unaffected by language tags", async
     [ex("property1")],
   );
 
-  expect(element.get(sh("name")).map((term) => term.value)).toEqual(["Given name"]);
+  expect(element.get(sh("name")).map((term) => term.value)).toEqual([
+    "Given name",
+  ]);
 });
 
 test("label() prefers sh:name over the ontology's rdfs:label", async () => {
@@ -409,16 +439,21 @@ test("label() has no ontology fallback for an alternative path", async () => {
 });
 
 test("label() returns undefined when neither sh:name nor an ontology rdfs:label exists", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape ; sh:path ex:givenName .`, [
-    ex("property1"),
-  ]);
+  const element = await createElement(
+    `ex:property1 a sh:PropertyShape ; sh:path ex:givenName .`,
+    [
+      ex("property1"),
+    ],
+  );
 
   expect(element.label()).toBeUndefined();
 });
 
 test("widget() returns undefined when scoresGraph has no matching widget score", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
-  expect(await element.widget()).toBeUndefined();
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
+    ex("property1"),
+  ]);
+  expect(await element.widget(shui("editor"))).toBeUndefined();
 });
 
 test("widget() returns the highest-scoring widget for the property shape alone", async () => {
@@ -457,7 +492,9 @@ test("widget() returns the highest-scoring widget for the property shape alone",
     propertyShapes: [ex("property1")],
   });
 
-  expect((await element.widget())?.value).toEqual(ex("BooleanWidget").value);
+  expect((await element.widget(shui("editor")))?.value).toEqual(
+    ex("BooleanWidget").value,
+  );
 });
 
 test("widget() also scores the given value against shui:dataGraphShape", async () => {
@@ -496,7 +533,10 @@ test("widget() also scores the given value against shui:dataGraphShape", async (
     propertyShapes: [ex("property1")],
   });
 
-  expect((await element.widget(isActiveQuad.object))?.value).toEqual(ex("BooleanWidget").value);
+  expect((await element.widget(shui("editor"), isActiveQuad.object))?.value)
+    .toEqual(
+      ex("BooleanWidget").value,
+    );
 });
 
 test("widget() merges grouped property shapes, so a widget hint on either shape is honored", async () => {
@@ -540,7 +580,9 @@ test("widget() merges grouped property shapes, so a widget hint on either shape 
     propertyShapes: [ex("minShape"), ex("editorShape")],
   });
 
-  expect((await element.widget())?.value).toEqual(ex("CustomWidget").value);
+  expect((await element.widget(shui("editor")))?.value).toEqual(
+    ex("CustomWidget").value,
+  );
 });
 
 test("getObjects() walks this element's path through the data graph from this.focusNode", async () => {
@@ -564,7 +606,9 @@ test("getObjects() walks this element's path through the data graph from this.fo
 });
 
 test("getObjects() returns an empty array when the property shape has no sh:path", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
+    ex("property1"),
+  ]);
   expect(element.getObjects()).toEqual([]);
 });
 
@@ -596,7 +640,9 @@ test("addObject() writes a new value onto this.focusNode via this element's path
 });
 
 test("addObject() does nothing when the property shape has no sh:path", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
+    ex("property1"),
+  ]);
   element.addObject(factory.literal("hello"));
   expect(element.getObjects()).toEqual([]);
 });
@@ -624,7 +670,9 @@ test("replaceObject() swaps an existing value on this.focusNode via this element
 });
 
 test("replaceObject() does nothing when the property shape has no sh:path", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
+    ex("property1"),
+  ]);
   element.replaceObject(factory.literal("hello"), factory.literal("world"));
   expect(element.getObjects()).toEqual([]);
 });
@@ -652,7 +700,9 @@ test("removeObject() removes an existing value from this.focusNode via this elem
 });
 
 test("removeObject() does nothing when the property shape has no sh:path", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
+    ex("property1"),
+  ]);
   element.removeObject(factory.literal("hello"));
   expect(element.getObjects()).toEqual([]);
 });

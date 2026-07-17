@@ -3,7 +3,7 @@ import { RdfStore } from "rdf-stores";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
 import { localName } from "@/helpers/localName.ts";
-import { rdf, rdfs, sh, xsd } from "@/helpers/namespaces.ts";
+import { rdf, rdfs, sh, shui, xsd } from "@/helpers/namespaces.ts";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
@@ -15,7 +15,7 @@ import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import { insertPropertyPath } from "@/structure/paths/insertPropertyPath.ts";
 import { replacePropertyPath } from "@/structure/paths/replacePropertyPath.ts";
 import { removePropertyPath } from "@/structure/paths/removePropertyPath.ts";
-import { score } from "@/scoring/score.ts";
+import { select } from "@/scoring/score.ts";
 import { createDefaultTerm } from "@/widgets/defaultTerm.ts";
 
 export type PropertyUIElementOptions = {
@@ -91,7 +91,7 @@ export class PropertyUIElement {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return;
     const existing = walkPropertyPath(path, this.focusNode, this.dataGraph)
-      .includes(oldValue);
+      .some((term) => term.equals(oldValue));
 
     if (!existing) {
       insertPropertyPath(path, this.focusNode, this.dataGraph, newValue);
@@ -146,17 +146,22 @@ export class PropertyUIElement {
    * shui:dataGraphShape - omit it to score on the property shape(s) alone (e.g. before a value
    * exists yet), which every scoring rule supports falling back to.
    */
-  async widget(valueNode?: Term): Promise<Term | undefined> {
+  async widget(
+    widgetPredicate: Term,
+    valueNode?: Term,
+  ): Promise<Term | undefined> {
     const { shapeNode, shapesGraph } = widgetShapeSource(this);
-    const result = await score({
+    const results = await Array.fromAsync(select({
       best: true,
       focusNode: valueNode,
       dataGraph: this.dataGraph,
       shapeNode,
       shapesGraph,
       scoringGraph: this.scoresGraph,
-    });
-    return result?.widget;
+      widgetPredicate,
+    }));
+
+    return results[0];
   }
 
   /**
@@ -166,7 +171,7 @@ export class PropertyUIElement {
    * widgets/defaultTerm.ts). `undefined` when no widget can be resolved at all.
    */
   async getDefaultObject(contentLanguage: BCP47): Promise<Term | undefined> {
-    const widget = await this.widget();
+    const widget = await this.widget(shui("editor"));
     if (!widget || widget.termType !== "NamedNode") return undefined;
     return createDefaultTerm(widget, this, { contentLanguage });
   }

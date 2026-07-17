@@ -1,3 +1,10 @@
 .items {
   display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+}
+
+.property-ui-component-object {
+  display: flex;
+  align-items: center;
 }

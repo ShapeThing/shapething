@@ -8,6 +8,7 @@ import { sh } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import style from "./style.module.css";
 import { useState } from "react";
+import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 
 type PropertyUIComponentProps = {
   propertyUIElement: PropertyUIElement;
@@ -35,6 +36,9 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
     ? (localName(propertyUIElement.getOne(sh("severity"))) ?? "Violation")
     : undefined;
 
+  // const { meta } = useWidget(propertyUIElement) ?? {};
+  // console.log(meta);
+
   return (
     <FormElement label={propertyUIElement.label()?.value} severity={severity}>
       <div className={style["items"]}>
@@ -44,6 +48,11 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
             index={index}
             propertyUIElement={propertyUIElement}
             object={object}
+            onTermSet={
+              showEmptyWidget && index === objects.length - 1
+                ? () => setShowEmptyWidget(false)
+                : undefined
+            }
           />
         ))}
       </div>
