@@ -1,5 +1,5 @@
-import type { ObjectWidgetProps } from "@/widgets/types.ts";
+import type { WidgetProps } from "@/widgets/types.ts";
 
-export default function BooleanEditor({ shape }: ObjectWidgetProps) {
+export default function BooleanEditor({ shape }: WidgetProps) {
   return <input type="checkbox" />;
 }

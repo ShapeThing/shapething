@@ -1,15 +1,15 @@
 import { factory } from "@/helpers/factory.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
-import type { ObjectWidgetProps } from "@/widgets/types.ts";
+import type { WidgetProps } from "@/widgets/types.ts";
 
-export default function TextFieldEditor({ shape, term }: ObjectWidgetProps) {
+export default function TextFieldEditor({ shape, term, setTerm }: WidgetProps) {
   const pattern = shape.getOne(sh("pattern"))?.value;
   const minLength = shape.getOne(sh("minLength"))?.value;
   const maxLength = shape.getOne(sh("maxLength"))?.value;
 
   const { localValue, onChange, onBlur } = useDeferredInput(term, (value: string) =>
-    shape.replaceObject(term, factory.literal(value)),
+    setTerm(factory.literal(value)),
   );
 
   return (

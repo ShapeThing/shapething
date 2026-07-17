@@ -1,0 +1,10 @@
+.form-element {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-family: var(--st-font-family);
+}
+
+.label {
+  font-weight: bold;
+}

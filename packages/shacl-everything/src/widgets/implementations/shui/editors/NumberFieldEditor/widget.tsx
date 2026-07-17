@@ -1,9 +1,9 @@
 import { sh, xsd } from "@/helpers/namespaces.ts";
-import type { ObjectWidgetProps } from "@/widgets/types.ts";
+import type { WidgetProps } from "@/widgets/types.ts";
 
 const INTEGER_DATATYPES = new Set([xsd("integer").value]);
 
-export default function NumberFieldEditor({ shape: node }: ObjectWidgetProps) {
+export default function NumberFieldEditor({ shape: node }: WidgetProps) {
   const min = node.getOne(sh("minInclusive"))?.value;
   const max = node.getOne(sh("maxInclusive"))?.value;
   const datatype = node.getOne(sh("datatype"))?.value;

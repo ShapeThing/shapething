@@ -41,6 +41,7 @@
     "@rdfjs/types": "^2.0.1",
     "@tanstack/react-query": "^5.101.2",
     "buffer": "^6.0.3",
+    "open-props": "^1.7.23",
     "rdf-data-factory": "^2.0.2",
     "rdf-parse": "^5.0.0",
     "rdf-stores": "^2.2.0",

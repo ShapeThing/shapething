@@ -1,0 +1,26 @@
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Parent"@en ;
+        sh:path [
+            sh:inversePath schema:isParentOf ;
+        ] ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    foaf:name "Hendrik" ;
+    .
+
+<#dad>
+    a schema:Person ;
+    foaf:name "John" ;
+    schema:isParentOf <#data> ;
+    .

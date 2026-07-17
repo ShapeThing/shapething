@@ -1,5 +1,5 @@
-import type { ObjectWidgetProps } from "@/widgets/types.ts";
+import type { WidgetProps } from "@/widgets/types.ts";
 
-export default function TextAreaEditor({ shape }: ObjectWidgetProps) {
+export default function TextAreaEditor({ shape }: WidgetProps) {
   return <textarea />;
 }

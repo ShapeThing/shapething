@@ -1,5 +1,5 @@
-import type { ObjectWidgetProps } from "@/widgets/types.ts";
+import type { WidgetProps } from "@/widgets/types.ts";
 
-export default function DateTimePickerEditor({ shape }: ObjectWidgetProps) {
+export default function DateTimePickerEditor({ shape }: WidgetProps) {
   return <input type="datetime-local" />;
 }

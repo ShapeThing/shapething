@@ -1,5 +1,5 @@
-import type { ObjectWidgetProps } from "@/widgets/types.ts";
+import type { WidgetProps } from "@/widgets/types.ts";
 
-export default function LabelViewer({ shape }: ObjectWidgetProps) {
+export default function LabelViewer({ shape }: WidgetProps) {
   return <span />;
 }

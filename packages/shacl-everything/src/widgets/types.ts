@@ -3,12 +3,13 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
 import type { BCP47 } from "@/types/BCP47.ts";
 
-export type ObjectWidgetProps = {
+export type WidgetProps = {
   shape: PropertyUIElement;
   term: Term;
+  setTerm: (newTerm: Term) => void;
 };
 
-export type ObjectWidgetComponent = ComponentType<ObjectWidgetProps>;
+export type WidgetComponent = ComponentType<WidgetProps>;
 
 export type CreateTermContext = {
   contentLanguage: BCP47;

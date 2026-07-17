@@ -1,4 +1,4 @@
-import type { NamedNode } from "@rdfjs/types";
+import type { NamedNode, Quad_Subject } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { ex } from "@/helpers/namespaces.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
@@ -9,7 +9,7 @@ export type Environment = {
   dataGraph: RdfStore;
   scoresGraph: RdfStore;
   focusNode: NamedNode;
-  nodeShapes: NamedNode[];
+  nodeShapes: Quad_Subject[];
   mode: "edit" | "view" | "facet";
   interfaceLanguage: BCP47;
   contentLanguage: BCP47;
@@ -19,11 +19,13 @@ export type Environment = {
 // still be an unparsed/undereferenced RdfSource rather than a ready RdfStore. RdfStore is itself
 // a valid RdfSource, so a fully-resolved Environment already satisfies this type - preprocessors
 // don't need a different type per stage of the chain.
-export type RawEnvironment = Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph"> & {
-  shapesGraph: RdfSource;
-  dataGraph: RdfSource;
-  scoresGraph: RdfSource;
-};
+export type RawEnvironment =
+  & Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph">
+  & {
+    shapesGraph: RdfSource;
+    dataGraph: RdfSource;
+    scoresGraph: RdfSource;
+  };
 
 export const defaultEnvironment: Environment = {
   shapesGraph: RdfStore.createDefault(),

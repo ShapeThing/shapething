@@ -90,13 +90,20 @@ export class PropertyUIElement {
   replaceObject(oldValue: Term, newValue: Term): void {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return;
-    replacePropertyPath(
-      path,
-      this.focusNode,
-      this.dataGraph,
-      oldValue,
-      newValue,
-    );
+    const existing = walkPropertyPath(path, this.focusNode, this.dataGraph)
+      .includes(oldValue);
+
+    if (!existing) {
+      insertPropertyPath(path, this.focusNode, this.dataGraph, newValue);
+    } else {
+      replacePropertyPath(
+        path,
+        this.focusNode,
+        this.dataGraph,
+        oldValue,
+        newValue,
+      );
+    }
   }
 
   /**

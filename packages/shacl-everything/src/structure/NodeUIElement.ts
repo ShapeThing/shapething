@@ -1,8 +1,11 @@
-import type { NamedNode } from "@rdfjs/types";
+import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import { sh } from "@/helpers/namespaces.ts";
-import { CHOICE_CONNECTIVES, ChoiceElement } from "@/structure/ChoiceElement.ts";
+import {
+  CHOICE_CONNECTIVES,
+  ChoiceElement,
+} from "@/structure/ChoiceElement.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { propertiesForShape } from "@/structure/propertiesForShape.ts";
 
@@ -11,7 +14,7 @@ export type NodeUIElementOptions = {
   dataGraph: RdfStore;
   scoresGraph?: RdfStore;
   focusNode: NamedNode;
-  nodeShapes: NamedNode[];
+  nodeShapes: Quad_Subject[];
 };
 
 export class NodeUIElement {
@@ -19,7 +22,7 @@ export class NodeUIElement {
   public dataGraph: RdfStore;
   public scoresGraph: RdfStore;
   public focusNode: NamedNode;
-  public nodeShapes: NamedNode[];
+  public nodeShapes: Quad_Subject[];
 
   constructor(options: NodeUIElementOptions) {
     this.shapesGraph = options.shapesGraph;
@@ -45,7 +48,9 @@ export class NodeUIElement {
       // sh:and applies all branches unconditionally, so its properties
       // are flattened in as if they were declared on the node shape.
       for (const listQuad of this.shapesGraph.getQuads(nodeShape, sh("and"))) {
-        for (const branchShape of getRdfList(listQuad.object, this.shapesGraph)) {
+        for (
+          const branchShape of getRdfList(listQuad.object, this.shapesGraph)
+        ) {
           elements.push(
             ...propertiesForShape(
               this.shapesGraph,

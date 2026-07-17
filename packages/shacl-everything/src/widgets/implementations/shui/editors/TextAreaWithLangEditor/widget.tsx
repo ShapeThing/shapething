@@ -1,7 +1,7 @@
 import { sh } from "@/helpers/namespaces.ts";
-import type { ObjectWidgetProps } from "@/widgets/types.ts";
+import type { WidgetProps } from "@/widgets/types.ts";
 
-export default function TextAreaWithLangEditor({ shape: node }: ObjectWidgetProps) {
+export default function TextAreaWithLangEditor({ shape: node }: WidgetProps) {
   const languages = node.get(sh("languageIn"));
 
   return (

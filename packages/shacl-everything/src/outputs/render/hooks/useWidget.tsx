@@ -3,7 +3,7 @@ import { useSuspenseQuery } from "@tanstack/react-query";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { getWidgetComponent } from "@/widgets/registry.ts";
-import type { ObjectWidgetComponent } from "@/widgets/types.ts";
+import type { WidgetComponent } from "@/widgets/types.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 
@@ -18,7 +18,12 @@ import { noRefetch } from "@/helpers/noRefetch.ts";
 export function useWidget(
   property: PropertyUIElement,
   valueNode?: Term,
-): ObjectWidgetComponent | undefined {
+):
+  | {
+      Widget: WidgetComponent;
+      iri: Term;
+    }
+  | undefined {
   const { mode } = useEnvironment();
 
   const { data: widget } = useSuspenseQuery({
@@ -35,5 +40,8 @@ export function useWidget(
   });
 
   if (!widget || widget.termType !== "NamedNode" || mode === "facet") return undefined;
-  return getWidgetComponent(mode, widget);
+  return {
+    Widget: getWidgetComponent(mode, widget)!,
+    iri: widget,
+  };
 }

@@ -6,6 +6,8 @@ import PropertyUIComponentObject from "@/outputs/render/modes/edit/PropertyUICom
 import { localName } from "@/helpers/localName.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import style from "./style.module.css";
+import { useState } from "react";
 
 type PropertyUIComponentProps = {
   propertyUIElement: PropertyUIElement;
@@ -15,11 +17,15 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   // Reads this.dataGraph reactively - addObject() below re-renders only this property, not the
   // whole tree, once the write it makes actually lands (see helpers/reactiveRdfStore.ts).
   const existingObjects = useDataGraphObjects(propertyUIElement);
+  const [showEmptyWidget, setShowEmptyWidget] = useState(false);
+
   // getDefaultObject() resolves the widget via score() (async, runs SHACL validation), so it's
   // fetched through a hook rather than called inline here.
-  const defaultObject = useDefaultObject(propertyUIElement, existingObjects.length === 0);
+  const defaultObject = useDefaultObject(propertyUIElement, true);
   const objects =
     existingObjects.length > 0 ? existingObjects : defaultObject ? [defaultObject] : [];
+
+  if (showEmptyWidget && defaultObject) objects.push(defaultObject);
 
   // sh:minCount isn't met yet - the shape's sh:severity (sh:Violation, the spec default, when
   // absent) describes how serious that unmet constraint is, for the caller to style as it sees fit.
@@ -31,14 +37,21 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
 
   return (
     <FormElement label={propertyUIElement.label()?.value} severity={severity}>
-      {objects.map((object) => (
-        <PropertyUIComponentObject
-          key={object.value}
-          propertyUIElement={propertyUIElement}
-          object={object}
-        />
-      ))}
-      <PropertyUIComponentAdd propertyUIElement={propertyUIElement} />
+      <div className={style["items"]}>
+        {objects.map((object, index) => (
+          <PropertyUIComponentObject
+            key={object.value + index}
+            index={index}
+            propertyUIElement={propertyUIElement}
+            object={object}
+          />
+        ))}
+      </div>
+      <PropertyUIComponentAdd
+        showEmptyWidget={showEmptyWidget}
+        setShowEmptyWidget={setShowEmptyWidget}
+        propertyUIElement={propertyUIElement}
+      />
     </FormElement>
   );
 }

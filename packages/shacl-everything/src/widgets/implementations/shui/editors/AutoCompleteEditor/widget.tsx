@@ -1,5 +1,5 @@
-import type { ObjectWidgetProps } from "@/widgets/types.ts";
+import type { WidgetProps } from "@/widgets/types.ts";
 
-export default function AutoCompleteEditor({ shape, term }: ObjectWidgetProps) {
+export default function AutoCompleteEditor({ shape, term }: WidgetProps) {
   return <input type="text" value={term.value} />;
 }

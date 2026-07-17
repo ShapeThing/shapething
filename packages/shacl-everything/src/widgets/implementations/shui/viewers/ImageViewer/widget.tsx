@@ -1,5 +1,5 @@
-import type { ObjectWidgetProps } from "@/widgets/types.ts";
+import type { WidgetProps } from "@/widgets/types.ts";
 
-export default function ImageViewer({ shape: node }: ObjectWidgetProps) {
+export default function ImageViewer({ shape: node }: WidgetProps) {
   return <img alt={node.label()?.value} />;
 }
