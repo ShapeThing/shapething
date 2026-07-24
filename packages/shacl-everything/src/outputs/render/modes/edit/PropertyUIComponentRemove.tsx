@@ -4,6 +4,7 @@ import { sh } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
 import { Localized } from "@fluent/react";
+import buttonStyle from "@/theme/button.module.scss";
 
 /**
  * A component that renders a button to remove a value from a property UI element, if allowed.
@@ -34,7 +35,12 @@ export default function PropertyUIComponentRemove({
 
   return (
     <Localized id="property-remove-value" attrs={{ "aria-label": true }}>
-      <button type="button" aria-label="Remove value" onClick={removeValue}>
+      <button
+        className={buttonStyle.button}
+        type="button"
+        aria-label="Remove value"
+        onClick={removeValue}
+      >
         <Minus />
       </button>
     </Localized>

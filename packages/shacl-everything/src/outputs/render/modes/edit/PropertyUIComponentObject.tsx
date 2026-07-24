@@ -4,7 +4,7 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
 import { useCallback } from "react";
 import style from "./style.module.css";
-import { shui } from "@/helpers/namespaces.ts";
+import { sh, shui } from "@/helpers/namespaces.ts";
 
 export default function PropertyUIComponentObject({
   propertyUIElement,
@@ -25,10 +25,12 @@ export default function PropertyUIComponentObject({
     },
     [propertyUIElement, object, index, onTermSet],
   );
+  const unit = propertyUIElement.getOne(sh("unit"))?.value;
 
   return (
     <div className={style["property-ui-component-object"]}>
       {Widget && iri && <Widget shape={propertyUIElement} term={object} setTerm={setTerm} />}
+      {unit && <span className={style.unit}>{unit}</span>}
       <PropertyUIComponentRemove
         onRemove={onTermSet}
         propertyUIElement={propertyUIElement}

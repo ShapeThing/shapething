@@ -1,0 +1,23 @@
+.form-element {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-family: var(--st-font-family);
+  gap: var(--size-2);
+}
+
+.label {
+  font-weight: bold;
+  height: var(--size-6);
+  line-height: var(--size-6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.description {
+  margin: 0;
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text-muted);
+}

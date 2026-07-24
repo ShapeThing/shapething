@@ -7,7 +7,7 @@ import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { lazy, useId, useState } from "react";
 import { ErrorBoundary, getErrorMessage } from "react-error-boundary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import "@/theme.scss";
+import "@/theme/index.scss";
 
 export type ShaclRendererProps = Partial<RawEnvironment> & {
   preprocessors?: readonly Preprocessor[];

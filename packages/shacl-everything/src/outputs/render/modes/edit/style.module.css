@@ -1,10 +1,40 @@
 .items {
   display: flex;
   flex-direction: column;
-  gap: var(--size-1);
+  gap: var(--size-2);
+  width: 100%;
 }
 
 .property-ui-component-object {
   display: flex;
   align-items: center;
+  gap: var(--size-2);
+  flex: 1;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.property-ui-component-object > *:has(+ .unit) {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.end {
+  margin-inline-start: auto;
+}
+
+.unit {
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text-muted);
+  background-color: var(--gray-2);
+  padding: var(--size-2);
+  border-top-right-radius: var(--radius-2);
+  border-bottom-right-radius: var(--radius-2);
+  margin-inline-start: calc(-1 * var(--size-2));
+}
+
+.property-ui-component-object > *:hover + .unit,
+.property-ui-component-object > *:focus + .unit {
+  outline: 2px solid var(--st-primary-color);
+  box-shadow: none;
 }

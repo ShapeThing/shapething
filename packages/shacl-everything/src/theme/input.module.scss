@@ -1,0 +1,14 @@
+.input {
+    padding: var(--size-2);
+    border-radius: var(--radius-2);
+    border: 1px solid var(--gray-5);
+    flex: 1;
+    position: relative;
+    z-index: 2;
+
+    &:hover,
+    &:focus {
+        outline: 2px solid var(--st-primary-color);
+        box-shadow: none;
+    }
+}

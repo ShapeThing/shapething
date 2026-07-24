@@ -1,5 +1,6 @@
 import { sh, xsd } from "@/helpers/namespaces.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
+import inputStyle from "@/theme/input.module.scss";
 
 const INTEGER_DATATYPES = new Set([xsd("integer").value]);
 
@@ -11,6 +12,7 @@ export default function NumberFieldEditor({ shape: node }: WidgetProps) {
   return (
     <input
       type="number"
+      className={inputStyle.input}
       min={min ? parseFloat(min) : undefined}
       max={max ? parseFloat(max) : undefined}
       step={datatype && INTEGER_DATATYPES.has(datatype) ? 1 : "any"}

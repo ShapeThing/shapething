@@ -33,6 +33,8 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
 
   if (showEmptyWidget && defaultObject) objects.push(defaultObject);
 
+  const description = propertyUIElement.getOne(sh("description"))?.value;
+
   // sh:minCount isn't met yet - the shape's sh:severity (sh:Violation, the spec default, when
   // absent) describes how serious that unmet constraint is, for the caller to style as it sees fit.
   const minCount = parseFloat(propertyUIElement.getOne(sh("minCount"))?.value ?? "0");
@@ -42,7 +44,11 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
     : undefined;
 
   return (
-    <FormElement label={propertyUIElement.label()?.value} severity={severity}>
+    <FormElement
+      label={propertyUIElement.label()?.value}
+      description={description}
+      severity={severity}
+    >
       <div className={style["items"]}>
         {objects.map((object, index) => (
           <Suspense key={index} fallback={<Loading />}>

@@ -3,6 +3,7 @@ import { sh, xsd } from "@/helpers/namespaces.ts";
 import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import type { NamedNode } from "@rdfjs/types";
+import style from "@/theme/input.module.scss";
 
 const dataTypesMapping: Record<HTMLInputElement["type"], NamedNode> = {
   date: xsd("date"),
@@ -36,6 +37,7 @@ export default function TextFieldEditor({
   return (
     <input
       type={type}
+      className={style.input}
       value={localValue}
       onChange={onChange}
       onBlur={onBlur}

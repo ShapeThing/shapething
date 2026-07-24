@@ -1,0 +1,9 @@
+@use "open-props/style";
+
+:root {
+  --font-size-0: 0.9rem;
+  --st-font-family: var(--font-rounded-sans);
+  --st-primary-color: var(--indigo-6);
+  --st-color-text-muted: var(--gray-7);
+  --st-font-size-small: var(--font-size-0);
+}

@@ -4,6 +4,9 @@ import { sh, shui } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { Localized } from "@fluent/react";
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
+import buttonStyle from "@/theme/button.module.scss";
+import style from "./style.module.css";
+import { clsx } from "clsx";
 
 export default function PropertyUIComponentAdd({
   propertyUIElement,
@@ -28,7 +31,12 @@ export default function PropertyUIComponentAdd({
 
   return (
     <Localized id="property-add-value" attrs={{ "aria-label": true }}>
-      <button type="button" aria-label="Add value" onClick={() => setShowEmptyWidget(true)}>
+      <button
+        className={clsx(buttonStyle.button, style.end)}
+        type="button"
+        aria-label="Add value"
+        onClick={() => setShowEmptyWidget(true)}
+      >
         <Plus />
       </button>
     </Localized>
