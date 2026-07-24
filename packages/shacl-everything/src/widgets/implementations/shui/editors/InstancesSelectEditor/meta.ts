@@ -1,5 +1,16 @@
+import { rdf, sh } from "@/helpers/namespaces.ts";
 import type { WidgetMeta } from "@/widgets/types.ts";
 
-// This widget's value shape (datatype/nodeKind) is always readable straight off the
-// property shape, so it needs no createTerm override - see defaultTermFromShape.
-export default {} satisfies WidgetMeta;
+export default {
+    canAddMore: (shape) => {
+        const shClass = shape.getOne(sh("class"));
+        const classes = shape.dataGraph.getQuads(null, rdf("type"), shClass)
+            .map((quad) => quad.subject);
+        const existingObjects = shape.getObjects();
+        const availableOptions = classes.filter(
+            (subject) =>
+                !existingObjects.some((obj) => obj.value === subject.value),
+        );
+        return availableOptions.length > 0;
+    },
+} satisfies WidgetMeta;

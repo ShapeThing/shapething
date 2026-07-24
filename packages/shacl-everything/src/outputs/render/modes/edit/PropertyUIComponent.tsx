@@ -7,8 +7,8 @@ import { localName } from "@/helpers/localName.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import style from "./style.module.css";
-import { useState } from "react";
-import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
+import { Suspense, useState } from "react";
+import { Loading } from "@/helpers/icons.tsx";
 
 type PropertyUIComponentProps = {
   propertyUIElement: PropertyUIElement;
@@ -23,8 +23,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   // getDefaultObject() resolves the widget via score() (async, runs SHACL validation), so it's
   // fetched through a hook rather than called inline here.
   const defaultObject = useDefaultObject(propertyUIElement, true);
-  const objects =
-    existingObjects.length > 0 ? existingObjects : defaultObject ? [defaultObject] : [];
+  const objects = existingObjects;
 
   if (showEmptyWidget && defaultObject) objects.push(defaultObject);
 
@@ -36,24 +35,19 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
     ? (localName(propertyUIElement.getOne(sh("severity"))) ?? "Violation")
     : undefined;
 
-  // const { meta } = useWidget(propertyUIElement) ?? {};
-  // console.log(meta);
-
   return (
     <FormElement label={propertyUIElement.label()?.value} severity={severity}>
       <div className={style["items"]}>
         {objects.map((object, index) => (
-          <PropertyUIComponentObject
-            key={object.value + index}
-            index={index}
-            propertyUIElement={propertyUIElement}
-            object={object}
-            onTermSet={
-              showEmptyWidget && index === objects.length - 1
-                ? () => setShowEmptyWidget(false)
-                : undefined
-            }
-          />
+          <Suspense key={object.value + index} fallback={<Loading />}>
+            <PropertyUIComponentObject
+              key={object.value + index}
+              index={index}
+              propertyUIElement={propertyUIElement}
+              object={object}
+              onTermSet={showEmptyWidget ? () => setShowEmptyWidget(false) : () => {}}
+            />
+          </Suspense>
         ))}
       </div>
       <PropertyUIComponentAdd

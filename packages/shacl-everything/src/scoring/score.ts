@@ -97,7 +97,6 @@ export async function* score({
     });
 
     if (!isMatch) continue;
-
     yield widgetScore;
 
     if (best) return;
@@ -109,12 +108,12 @@ export async function* score({
  */
 const processWidget = async (widget: Term, props: ScoreProps) => {
   if (widget) {
-    const [widgetAcceptMatcher] = props.shapesGraph.getQuads(
+    const [widgetAcceptMatcher] = props.scoringGraph.getQuads(
       null,
       rdf("type"),
       shui("WidgetAcceptMatcher"),
     ).filter((quad) => {
-      const [matcherWidgetQuad] = props.shapesGraph.getQuads(
+      const [matcherWidgetQuad] = props.scoringGraph.getQuads(
         quad.subject,
         shui("widget"),
         widget,
@@ -169,7 +168,7 @@ async function matcher({
     null,
     null,
   );
-  const [matcherShapeGraphShapeQuad] = scoringGraph.getQuads(
+  const matcherShapeGraphShapeQuads = scoringGraph.getQuads(
     matcherNode,
     shui("shapesGraphShape"),
     null,
@@ -177,20 +176,25 @@ async function matcher({
   );
 
   const matcherDataGraphShape = matcherDataGraphShapeQuad?.object;
-  const matcherShapeGraphShape = matcherShapeGraphShapeQuad?.object;
+  const matcherShapeGraphShapes = matcherShapeGraphShapeQuads.map((q) =>
+    q.object
+  );
   // A widget does not match if its score shape does not specify scores for property shapes and no focus node of the instance data has been given.
-  if (!focusNode && matcherDataGraphShape && !matcherShapeGraphShape) {
+  if (
+    !focusNode && matcherDataGraphShape && matcherShapeGraphShapes.length === 0
+  ) {
     return false;
   }
 
-  const widgetIsValid = await validate({
-    focusNode: shapeNode,
-    targetGraph: shapesGraph,
-    shapeNode: matcherShapeGraphShape,
-    shapesGraph: scoringGraph,
-  });
-
-  if (!widgetIsValid) return false;
+  for (const matcherShapeGraphShape of matcherShapeGraphShapes) {
+    const widgetIsValid = await validate({
+      focusNode: shapeNode,
+      targetGraph: shapesGraph,
+      shapeNode: matcherShapeGraphShape,
+      shapesGraph: scoringGraph,
+    });
+    if (!widgetIsValid) return false;
+  }
 
   if (!focusNode) return true;
 

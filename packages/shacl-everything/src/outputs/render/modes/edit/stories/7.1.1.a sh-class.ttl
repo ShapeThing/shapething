@@ -1,0 +1,32 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Parent"@en ;
+        sh:path schema:parent ;
+        sh:class schema:Person ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik", "Jan" ;
+    schema:parent <#john> ;
+    .
+
+<#someone>
+    a schema:Person ;
+    schema:givenName "Someone" ;
+    schema:parent <#john> ;
+    .
+
+<#john>
+    a schema:Person ;
+    schema:givenName "John" ;
+    .

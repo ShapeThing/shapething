@@ -152,7 +152,7 @@ export class PropertyUIElement {
   ): Promise<Term | undefined> {
     const { shapeNode, shapesGraph } = widgetShapeSource(this);
     const results = await Array.fromAsync(select({
-      best: true,
+      best: false,
       focusNode: valueNode,
       dataGraph: this.dataGraph,
       shapeNode,
@@ -160,6 +160,8 @@ export class PropertyUIElement {
       scoringGraph: this.scoresGraph,
       widgetPredicate,
     }));
+
+    console.log(results);
 
     return results[0];
   }
@@ -190,6 +192,8 @@ function widgetShapeSource(
       shapesGraph: element.shapesGraph,
     };
   }
+
+  // TODO this probably is a huge mistake.
 
   const synthetic = factory.blankNode();
   const merged = RdfStore.createDefault();

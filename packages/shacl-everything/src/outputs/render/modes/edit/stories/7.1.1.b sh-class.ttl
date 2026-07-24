@@ -10,6 +10,8 @@
         sh:name "Parent"@en ;
         sh:path schema:parent ;
         sh:class schema:Person ;
+        sh:nodeKind sh:IRI ;
+        shui:editor shui:InstancesSelectEditor ;
         sh:node [
             sh:property [
                 sh:name "Given name"@en ;

@@ -15,7 +15,7 @@ export default function PropertyUIComponentObject({
   propertyUIElement: PropertyUIElement;
   object: Term;
   index: number;
-  onTermSet?: () => void;
+  onTermSet: () => void;
 }) {
   const { Widget, iri } = useWidget(shui("editor"), propertyUIElement, object) ?? {};
   const setTerm = useCallback(
@@ -29,7 +29,11 @@ export default function PropertyUIComponentObject({
   return (
     <div className={style["property-ui-component-object"]}>
       {Widget && iri && <Widget shape={propertyUIElement} term={object} setTerm={setTerm} />}
-      <PropertyUIComponentRemove propertyUIElement={propertyUIElement} object={object} />
+      <PropertyUIComponentRemove
+        onRemove={onTermSet}
+        propertyUIElement={propertyUIElement}
+        object={object}
+      />
     </div>
   );
 }

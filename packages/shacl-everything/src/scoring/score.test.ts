@@ -416,3 +416,166 @@ test("throws when a widget score definition has a non-numeric score", async () =
     })),
   ).rejects.toThrow("Invalid Widget Score definition");
 });
+
+test("includes a widget whose shapes graph shape uses sh:not when the property shape has no sh:class", async () => {
+  const scoringGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.com/> .
+
+        ex:hasClassConstraint a sh:NodeShape ;
+            sh:property [
+                sh:path sh:class ;
+                sh:minCount 1 ;
+            ] .
+
+        ex:hasNoClassConstraint a sh:NodeShape ;
+            sh:not ex:hasClassConstraint .
+
+        ex:iriEditorScore a shui:WidgetScore ;
+            shui:widget ex:IRIEditor ;
+            shui:score 10 ;
+            shui:shapesGraphShape ex:hasNoClassConstraint .
+    `,
+    "text/turtle",
+  );
+
+  // Property shape with no sh:class - should conform to ex:hasNoClassConstraint.
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.com/> .
+        ex:nameShape a sh:PropertyShape ;
+            sh:path ex:name ;
+            sh:nodeKind sh:IRI .
+    `,
+    "text/turtle",
+  );
+
+  const results = await Array.fromAsync(score({
+    best: false,
+    focusNode: ex("Alice"),
+    dataGraph: await parseRdf("", "text/turtle"),
+    shapeNode: ex("nameShape"),
+    shapesGraph,
+    scoringGraph,
+    widgetPredicate: shui("editor"),
+  }));
+
+  expect(results.map((result) => result.widget.value)).toEqual([
+    ex("IRIEditor").value,
+  ]);
+});
+
+test("excludes a widget whose shapes graph shape uses sh:not when the property shape has sh:class", async () => {
+  const scoringGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.com/> .
+
+        ex:hasClassConstraint a sh:NodeShape ;
+            sh:property [
+                sh:path sh:class ;
+                sh:minCount 1 ;
+            ] .
+
+        ex:hasNoClassConstraint a sh:NodeShape ;
+            sh:not ex:hasClassConstraint .
+
+        ex:iriEditorScore a shui:WidgetScore ;
+            shui:widget ex:IRIEditor ;
+            shui:score 10 ;
+            shui:shapesGraphShape ex:hasNoClassConstraint .
+    `,
+    "text/turtle",
+  );
+
+  // Property shape WITH sh:class - should NOT conform to ex:hasNoClassConstraint.
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.com/> .
+        ex:ownerShape a sh:PropertyShape ;
+            sh:path ex:owner ;
+            sh:nodeKind sh:IRI ;
+            sh:class ex:Person .
+    `,
+    "text/turtle",
+  );
+
+  const results = await Array.fromAsync(score({
+    best: false,
+    focusNode: ex("Alice"),
+    dataGraph: await parseRdf("", "text/turtle"),
+    shapeNode: ex("ownerShape"),
+    shapesGraph,
+    scoringGraph,
+    widgetPredicate: shui("editor"),
+  }));
+
+  expect(results).toHaveLength(0);
+});
+
+test("excludes a widget when the property shape has sh:class, even when sh:not is combined with another shapesGraphShape", async () => {
+  // This tests the multi-shapesGraphShape scenario that matches the real IRIEditor score.ttl:
+  //   shui:shapesGraphShape shui:hasNodeKindIRIConstraint, shui:hasNoClassConstraint ;
+  // Both constraints must be satisfied — a shape with sh:nodeKind sh:IRI but also sh:class
+  // should NOT match, because hasNoClassConstraint (sh:not hasClassConstraint) is violated.
+  const scoringGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.com/> .
+
+        ex:hasNodeKindIRIConstraint a sh:NodeShape ;
+            sh:property [
+                sh:path sh:nodeKind ;
+                sh:minCount 1 ;
+                sh:hasValue sh:IRI ;
+            ] .
+
+        ex:hasClassConstraint a sh:NodeShape ;
+            sh:property [
+                sh:path sh:class ;
+                sh:minCount 1 ;
+            ] .
+
+        ex:hasNoClassConstraint a sh:NodeShape ;
+            sh:not ex:hasClassConstraint .
+
+        ex:iriEditorScore a shui:WidgetScore ;
+            shui:widget ex:IRIEditor ;
+            shui:score 10 ;
+            shui:shapesGraphShape ex:hasNodeKindIRIConstraint, ex:hasNoClassConstraint .
+    `,
+    "text/turtle",
+  );
+
+  // Property shape with sh:nodeKind sh:IRI AND sh:class — satisfies hasNodeKindIRIConstraint
+  // but violates hasNoClassConstraint.
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.com/> .
+        ex:ownerShape a sh:PropertyShape ;
+            sh:path ex:owner ;
+            sh:nodeKind sh:IRI ;
+            sh:class ex:Person .
+    `,
+    "text/turtle",
+  );
+
+  const results = await Array.fromAsync(score({
+    best: false,
+    focusNode: ex("Alice"),
+    dataGraph: await parseRdf("", "text/turtle"),
+    shapeNode: ex("ownerShape"),
+    shapesGraph,
+    scoringGraph,
+    widgetPredicate: shui("editor"),
+  }));
+
+  expect(results).toHaveLength(0);
+});
