@@ -1,0 +1,26 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Parent's email"@en ;
+        sh:path ( schema:parent schema:email ) ;
+        sh:codeIdentifier "parentEmail" ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    schema:parent <#john> ;
+    .
+
+<#john>
+    a schema:Person ;
+    schema:givenName "John" ;
+    schema:email "john@example.org" ;
+    .

@@ -1,0 +1,28 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Favorite animal category"@en ;
+        sh:path ex:favoriteAnimalCategory ;
+        sh:rootClass ex:Animal ;
+        shui:editor shui:SubClassEditor ;
+    ] ;
+    .
+
+ex:Animal a rdfs:Class .
+ex:Mammal rdfs:subClassOf ex:Animal .
+ex:Dog rdfs:subClassOf ex:Mammal .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:favoriteAnimalCategory ex:Dog ;
+    .

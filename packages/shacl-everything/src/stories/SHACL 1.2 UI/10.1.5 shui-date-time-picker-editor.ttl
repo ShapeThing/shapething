@@ -1,0 +1,22 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Last visit time"@en ;
+        sh:path ex:lastVisitTime ;
+        sh:datatype xsd:dateTime ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:lastVisitTime "2026-01-01T10:30:00"^^xsd:dateTime ;
+    .

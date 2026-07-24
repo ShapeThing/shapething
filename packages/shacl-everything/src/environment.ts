@@ -19,13 +19,11 @@ export type Environment = {
 // still be an unparsed/undereferenced RdfSource rather than a ready RdfStore. RdfStore is itself
 // a valid RdfSource, so a fully-resolved Environment already satisfies this type - preprocessors
 // don't need a different type per stage of the chain.
-export type RawEnvironment =
-  & Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph">
-  & {
-    shapesGraph: RdfSource;
-    dataGraph: RdfSource;
-    scoresGraph: RdfSource;
-  };
+export type RawEnvironment = Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph"> & {
+  shapesGraph: RdfSource;
+  dataGraph: RdfSource;
+  scoresGraph: RdfSource;
+};
 
 export const defaultEnvironment: Environment = {
   shapesGraph: RdfStore.createDefault(),

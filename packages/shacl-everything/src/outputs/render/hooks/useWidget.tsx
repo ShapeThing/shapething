@@ -1,5 +1,5 @@
 import type { Term } from "@rdfjs/types";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { getWidgetComponent, getWidgetMeta } from "@/widgets/registry.ts";
@@ -28,7 +28,7 @@ export function useWidget(
   | undefined {
   const { mode } = useEnvironment();
 
-  const { data: widget } = useSuspenseQuery({
+  const { data: widget } = useQuery({
     queryKey: [
       "widget",
       mode,
@@ -38,6 +38,7 @@ export function useWidget(
     // react-query treats a resolved `undefined` as an error ("Query data cannot be undefined"),
     // so the no-match case is represented as `null` instead.
     queryFn: async () => (await property.widget(widgetPredicate, valueNode)) ?? null,
+    placeholderData: keepPreviousData,
     ...noRefetch,
   });
 

@@ -1,0 +1,24 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Address"@en ;
+        sh:path schema:address ;
+        sh:nodeKind sh:BlankNode ;
+        shui:viewer shui:BlankNodeViewer ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    schema:address [
+        schema:postalCode "1012 AB" ;
+    ] ;
+    .

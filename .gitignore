@@ -27,3 +27,4 @@ storybook-static
 stats.html
 
 .env
+package-lock.json

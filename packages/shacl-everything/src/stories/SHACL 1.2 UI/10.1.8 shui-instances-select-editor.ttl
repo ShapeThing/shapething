@@ -1,0 +1,26 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Home country"@en ;
+        sh:path ex:homeCountry ;
+        sh:class ex:Country ;
+        shui:editor shui:InstancesSelectEditor ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:homeCountry ex:Netherlands ;
+    .
+
+ex:Netherlands a ex:Country .
+ex:Germany a ex:Country .

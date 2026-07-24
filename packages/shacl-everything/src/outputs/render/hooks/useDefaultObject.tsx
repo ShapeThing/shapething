@@ -1,5 +1,5 @@
 import type { Term } from "@rdfjs/types";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { noRefetch } from "@/helpers/noRefetch.ts";
@@ -12,7 +12,7 @@ import { noRefetch } from "@/helpers/noRefetch.ts";
 export function useDefaultObject(property: PropertyUIElement, enabled: boolean): Term | undefined {
   const { contentLanguage } = useEnvironment();
 
-  const { data } = useSuspenseQuery({
+  const { data } = useQuery({
     queryKey: [
       "default-object",
       property.propertyShapes.map((shape) => shape.value),

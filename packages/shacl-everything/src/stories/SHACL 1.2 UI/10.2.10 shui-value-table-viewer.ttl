@@ -1,0 +1,73 @@
+@prefix ex: <http://example.org/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass skos:Concept ;
+    sh:property ex:Concept-narrower ;
+    .
+
+ex:Concept-narrower
+    a sh:PropertyShape ;
+    sh:path [ sh:inversePath skos:broader ] ;
+    sh:name "Narrower concepts (table)"@en ;
+    shui:viewer shui:ValueTableViewer ;
+    sh:node ex:ConceptTableShape ;
+    .
+
+ex:ConceptTableShape
+    a sh:NodeShape ;
+    rdfs:label "Concept table shape"@en ;
+    sh:property ex:ConceptTableShape-self ;
+    sh:property ex:ConceptTableShape-type ;
+    sh:property ex:ConceptTableShape-altLabel ;
+    .
+
+ex:ConceptTableShape-self
+    a sh:PropertyShape ;
+    sh:path ex:self ;
+    sh:name "narrower concept"@en ;
+    sh:nodeKind sh:IRI ;
+    sh:order 0 ;
+    sh:values sh:this ;
+    .
+
+ex:ConceptTableShape-type
+    a sh:PropertyShape ;
+    sh:path rdf:type ;
+    sh:name "type"@en ;
+    sh:nodeKind sh:IRI ;
+    sh:order 1 ;
+    .
+
+ex:ConceptTableShape-altLabel
+    a sh:PropertyShape ;
+    sh:path skos:altLabel ;
+    sh:name "alt labels"@en ;
+    sh:order 2 ;
+    .
+
+
+<#data>
+    a skos:Concept ;
+    skos:prefLabel "Animal"@en ;
+    .
+
+ex:dog
+    a skos:Concept ;
+    skos:prefLabel "Dog"@en ;
+    skos:altLabel "Canine"@en ;
+    skos:broader <#data> ;
+    .
+
+ex:cat
+    a skos:Concept ;
+    skos:prefLabel "Cat"@en ;
+    skos:altLabel "Feline"@en ;
+    skos:broader <#data> ;
+    .

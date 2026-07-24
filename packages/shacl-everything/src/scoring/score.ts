@@ -28,11 +28,7 @@ export type WidgetScoreResult = {
 };
 
 export async function* select(props: ScoreProps) {
-  const {
-    shapeNode,
-    shapesGraph,
-    widgetPredicate,
-  } = props;
+  const { shapeNode, shapesGraph, widgetPredicate } = props;
   const widget = shapesGraph.getQuads(shapeNode, widgetPredicate)[0]?.object;
 
   const processedWidget = await processWidget(widget, props);
@@ -60,9 +56,7 @@ export async function* score({
   shapesGraph,
   scoringGraph,
 }: ScoreProps): AsyncGenerator<WidgetScoreResult> {
-  const widgetScores = [
-    ...scoringGraph.getQuads(null, rdf("type"), shui("WidgetScore")),
-  ]
+  const widgetScores = [...scoringGraph.getQuads(null, rdf("type"), shui("WidgetScore"))]
     .map((quad) => {
       const widgetScore = quad.subject;
       const [scoreQuad] = scoringGraph.getQuads(widgetScore, shui("score"));
@@ -72,9 +66,7 @@ export async function* score({
       const score = scoreQuad ? parseFloat(scoreQuad.object.value) : NaN;
 
       if (!widget || isNaN(score)) {
-        throw new Error(
-          `Invalid Widget Score definition for ${widgetScore.value}`,
-        );
+        throw new Error(`Invalid Widget Score definition for ${widgetScore.value}`);
       }
 
       return { widgetScore, widget, score };
@@ -108,18 +100,16 @@ export async function* score({
  */
 const processWidget = async (widget: Term, props: ScoreProps) => {
   if (widget) {
-    const [widgetAcceptMatcher] = props.scoringGraph.getQuads(
-      null,
-      rdf("type"),
-      shui("WidgetAcceptMatcher"),
-    ).filter((quad) => {
-      const [matcherWidgetQuad] = props.scoringGraph.getQuads(
-        quad.subject,
-        shui("widget"),
-        widget,
-      );
-      return !!matcherWidgetQuad;
-    });
+    const [widgetAcceptMatcher] = props.scoringGraph
+      .getQuads(null, rdf("type"), shui("WidgetAcceptMatcher"))
+      .filter((quad) => {
+        const [matcherWidgetQuad] = props.scoringGraph.getQuads(
+          quad.subject,
+          shui("widget"),
+          widget,
+        );
+        return !!matcherWidgetQuad;
+      });
 
     if (!widgetAcceptMatcher) {
       // If no matcher is defined for the widget, it is allowed by spec.
@@ -176,13 +166,9 @@ async function matcher({
   );
 
   const matcherDataGraphShape = matcherDataGraphShapeQuad?.object;
-  const matcherShapeGraphShapes = matcherShapeGraphShapeQuads.map((q) =>
-    q.object
-  );
+  const matcherShapeGraphShapes = matcherShapeGraphShapeQuads.map((q) => q.object);
   // A widget does not match if its score shape does not specify scores for property shapes and no focus node of the instance data has been given.
-  if (
-    !focusNode && matcherDataGraphShape && matcherShapeGraphShapes.length === 0
-  ) {
+  if (!focusNode && matcherDataGraphShape && matcherShapeGraphShapes.length === 0) {
     return false;
   }
 
@@ -229,16 +215,11 @@ function getShaclEngine(shapesGraph: RdfStore): ShaclEngine {
   return shaclEngine;
 }
 
-async function validate(
-  { focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps,
-) {
+async function validate({ focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps) {
   if (!shapeNode) return true;
 
   // Literals can't be a quad subject, so the existence check only applies to IRIs/blank nodes.
-  if (
-    focusNode?.termType !== "Literal" &&
-    targetGraph.getQuads(focusNode).length === 0
-  ) {
+  if (focusNode?.termType !== "Literal" && targetGraph.getQuads(focusNode).length === 0) {
     return false;
   }
   const shaclEngine = getShaclEngine(shapesGraph);
@@ -276,12 +257,7 @@ export function accept({
   scoringGraph,
 }: AcceptProps) {
   const matcherNode = [
-    ...scoringGraph.getQuads(
-      null,
-      rdf("type"),
-      shui("WidgetAcceptMatcher"),
-      null,
-    ),
+    ...scoringGraph.getQuads(null, rdf("type"), shui("WidgetAcceptMatcher"), null),
   ].find((quad) => {
     const [matcherWidgetQuad] = scoringGraph.getQuads(
       quad.subject,

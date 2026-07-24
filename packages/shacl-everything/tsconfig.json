@@ -25,5 +25,6 @@
     {
       "name": "@effect/language-service"
     }
-  ]
+  ],
+  "include": ["src", ".storybook", "vite-env.d.ts"]
 }

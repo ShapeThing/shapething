@@ -1,0 +1,54 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Given name"@en ;
+        sh:path schema:givenName ;
+        sh:order 0 ;
+        sh:group <#nameGroup> ;
+    ] ;
+    sh:property [
+        sh:name "Family name"@en ;
+        sh:path ex:familyName ;
+        sh:order 1 ;
+        sh:group <#nameGroup> ;
+    ] ;
+    sh:property [
+        sh:name "Street address"@en ;
+        sh:path schema:streetAddress ;
+        sh:order 0 ;
+        sh:group <#addressGroup> ;
+    ] ;
+    sh:property [
+        sh:name "Postal code"@en ;
+        sh:path schema:postalCode ;
+        sh:order 1 ;
+        sh:group <#addressGroup> ;
+    ] ;
+    .
+
+<#nameGroup>
+    a sh:PropertyGroup ;
+    sh:order 0 ;
+    rdfs:label "Name"@en ;
+    .
+
+<#addressGroup>
+    a sh:PropertyGroup ;
+    sh:order 1 ;
+    rdfs:label "Address"@en ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:familyName "Jansen" ;
+    schema:streetAddress "Dam 1" ;
+    schema:postalCode "1012 AB" ;
+    .

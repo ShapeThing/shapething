@@ -14,30 +14,21 @@ export const shuiViewersScoringGraphs = import.meta.glob(
   { eager: true, query: "?raw", import: "default" },
 );
 
-const shuiEditorsWidgets = import.meta.glob(
-  "@/widgets/implementations/shui/editors/*/widget.tsx",
-  {
-    eager: true,
-    import: "default",
-  },
-) as Record<string, WidgetComponent>;
-const shuiViewersWidgets = import.meta.glob(
-  "@/widgets/implementations/shui/viewers/*/widget.tsx",
-  {
-    eager: true,
-    import: "default",
-  },
-) as Record<string, WidgetComponent>;
+const shuiEditorsWidgets = import.meta.glob("@/widgets/implementations/shui/editors/*/widget.tsx", {
+  eager: true,
+  import: "default",
+}) as Record<string, WidgetComponent>;
+const shuiViewersWidgets = import.meta.glob("@/widgets/implementations/shui/viewers/*/widget.tsx", {
+  eager: true,
+  import: "default",
+}) as Record<string, WidgetComponent>;
 
 // Only editors ever produce a fresh/empty term for a property, so meta.ts (and createTerm)
 // is an editor-only concept - viewers have nothing to create.
-const shuiEditorsMeta = import.meta.glob(
-  "@/widgets/implementations/shui/editors/*/meta.ts",
-  {
-    eager: true,
-    import: "default",
-  },
-) as Record<string, WidgetMeta>;
+const shuiEditorsMeta = import.meta.glob("@/widgets/implementations/shui/editors/*/meta.ts", {
+  eager: true,
+  import: "default",
+}) as Record<string, WidgetMeta>;
 
 export type WidgetMode = "edit" | "view";
 
@@ -54,13 +45,8 @@ export function getScoringGraph(mode: WidgetMode): Promise<RdfStore> {
   const cached = scoringGraphCache.get(mode);
   if (cached) return cached;
 
-  const widgetScoringGraphs = mode === "edit"
-    ? shuiEditorsScoringGraphs
-    : shuiViewersScoringGraphs;
-  const turtle = [
-    widgetScoringTtl,
-    ...(Object.values(widgetScoringGraphs) as string[]),
-  ].join("\n");
+  const widgetScoringGraphs = mode === "edit" ? shuiEditorsScoringGraphs : shuiViewersScoringGraphs;
+  const turtle = [widgetScoringTtl, ...(Object.values(widgetScoringGraphs) as string[])].join("\n");
   const graph = parseRdf(turtle, "text/turtle");
 
   scoringGraphCache.set(mode, graph);
@@ -79,9 +65,7 @@ export function getWidgetComponent(
   const widgets = mode === "edit" ? shuiEditorsWidgets : shuiViewersWidgets;
   const folder = mode === "edit" ? "editors" : "viewers";
   const name = localName(widget);
-  return widgets[
-    `/src/widgets/implementations/shui/${folder}/${name}/widget.tsx`
-  ];
+  return widgets[`/src/widgets/implementations/shui/${folder}/${name}/widget.tsx`];
 }
 
 /**
@@ -90,7 +74,5 @@ export function getWidgetComponent(
  */
 export function getWidgetMeta(widget: NamedNode): WidgetMeta | undefined {
   const name = localName(widget);
-  return shuiEditorsMeta[
-    `/src/widgets/implementations/shui/editors/${name}/meta.ts`
-  ];
+  return shuiEditorsMeta[`/src/widgets/implementations/shui/editors/${name}/meta.ts`];
 }

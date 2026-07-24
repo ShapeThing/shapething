@@ -1,0 +1,21 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:intent "A parent must be strictly older than each of their children."@en ;
+    sh:intent "Age values are compared in years using the same reference date."@en ;
+
+    sh:property [
+        sh:name "Given name"@en ;
+        sh:path schema:givenName ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    .

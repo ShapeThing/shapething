@@ -1,6 +1,9 @@
 import type { Preview } from "@storybook/react-vite";
+import { withGraphInspector } from "./addons/graph-inspector/withGraphInspector.tsx";
+import React from "react";
 
 const preview: Preview = {
+  decorators: [withGraphInspector],
   parameters: {
     controls: {
       matchers: {

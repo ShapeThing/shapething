@@ -1,0 +1,21 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:agentInstruction "When populating instances of this shape, look up matching values from a trusted directory rather than inventing them."@en ;
+    sh:agentInstruction "Do not guess a person's given name from their email address."@en ;
+
+    sh:property [
+        sh:name "Given name"@en ;
+        sh:path schema:givenName ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    .

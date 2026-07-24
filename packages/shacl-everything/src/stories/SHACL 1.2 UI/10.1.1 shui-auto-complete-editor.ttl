@@ -1,0 +1,28 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Born in"@en ;
+        sh:path ex:bornIn ;
+        sh:class ex:Country ;
+        sh:nodeKind sh:IRI ;
+        shui:editor shui:AutoCompleteEditor ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:bornIn ex:Netherlands ;
+    .
+
+ex:Netherlands a ex:Country ; rdfs:label "Netherlands"@en .
+ex:Germany a ex:Country ; rdfs:label "Germany"@en .
