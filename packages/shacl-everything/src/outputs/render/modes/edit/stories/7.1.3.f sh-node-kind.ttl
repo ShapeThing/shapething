@@ -1,0 +1,21 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Logo"@en ;
+        sh:path schema:logo ;
+        sh:nodeKind sh:IRIOrLiteral ;
+        sh:minCount 1 ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    schema:logo <https://example.org/hendrik.png> ;
+    .

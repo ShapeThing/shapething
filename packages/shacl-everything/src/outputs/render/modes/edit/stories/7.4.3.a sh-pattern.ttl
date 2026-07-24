@@ -1,0 +1,24 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Product code"@en ;
+        sh:path ex:productCode ;
+        sh:datatype xsd:string ;
+        sh:pattern "^[A-Z]{2}[0-9]{4}$" ;
+        sh:flags "i" ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:productCode "ab1234" ;
+    .

@@ -1,0 +1,22 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Favorite child"@en ;
+        sh:path ex:favoriteChild ;
+        sh:subsetOf ex:child ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:child "Calvin", "Donald" ;
+    ex:favoriteChild "Calvin" ;
+    .

@@ -1,0 +1,26 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Pets"@en ;
+        sh:path ex:pet ;
+        sh:someValue [
+            sh:class ex:Duck ;
+        ] ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:pet ex:Rex, ex:Fido ;
+    .
+
+ex:Rex a ex:Dog .
+ex:Fido a ex:Dog .

@@ -1,0 +1,26 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Scores"@en ;
+        sh:path ex:scores ;
+        sh:memberShape [
+            sh:datatype xsd:integer ;
+            sh:minInclusive 0 ;
+            sh:maxInclusive 100 ;
+        ] ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:scores ( 42 150 ) ;
+    .

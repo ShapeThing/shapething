@@ -1,0 +1,22 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Preferred label"@en ;
+        sh:path ex:prefLabel ;
+        sh:disjoint ex:altLabel ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:prefLabel "Hendrik" ;
+    ex:altLabel "Hendrik" ;
+    .

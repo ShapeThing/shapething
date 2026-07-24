@@ -1,0 +1,20 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Note"@en ;
+        sh:path schema:comment ;
+        sh:nodeKind sh:BlankNodeOrLiteral ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    schema:comment "Loves hiking" ;
+    .

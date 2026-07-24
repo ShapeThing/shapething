@@ -1,0 +1,28 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:uniqueValuesFor ex:email ;
+    sh:property [
+        sh:name "Email"@en ;
+        sh:path ex:email ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:email "same@example.org" ;
+    .
+
+<#other>
+    a schema:Person ;
+    schema:givenName "Jan" ;
+    ex:email "same@example.org" ;
+    .

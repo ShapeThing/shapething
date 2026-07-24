@@ -1,0 +1,24 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Min age"@en ;
+        sh:path ex:minAge ;
+        sh:datatype xsd:integer ;
+        sh:lessThanOrEquals ex:maxAge ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:minAge 18 ;
+    ex:maxAge 18 ;
+    .
