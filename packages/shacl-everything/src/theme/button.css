@@ -1,0 +1,30 @@
+.st-button {
+  appearance: none;
+  background: none;
+  padding: var(--size-2);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  color: var(--gray-8);
+  border: 1px solid var(--gray-3);
+  border-radius: var(--radius-2);
+
+  &:hover,
+  &:focus {
+    outline: 2px solid var(--st-primary-color);
+    box-shadow: none;
+    color: var(--st-primary-color);
+  }
+
+  &[disabled] {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--gray-2);
+
+    &:hover,
+    &:focus {
+      outline: none;
+      box-shadow: none;
+    }
+  }
+}

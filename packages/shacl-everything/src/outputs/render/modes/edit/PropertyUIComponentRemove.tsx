@@ -4,7 +4,8 @@ import { sh } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
 import { Localized } from "@fluent/react";
-import buttonStyle from "@/theme/button.module.scss";
+import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
+import type { Severity } from "@/types/severity.ts";
 
 /**
  * A component that renders a button to remove a value from a property UI element, if allowed.
@@ -25,24 +26,26 @@ export default function PropertyUIComponentRemove({
   const existingObjects = useDataGraphObjects(propertyUIElement);
   const minCount = parseFloat(propertyUIElement.getOne(sh("minCount"))?.value ?? "0");
   const canRemove = existingObjects.length > minCount;
+  const severity = propertyUIElement.getOne(sh("severity"))?.value as Severity | undefined;
 
   const removeValue = () => {
     propertyUIElement.removeObject(object);
     onRemove();
   };
 
-  if (!canRemove) return null;
-
   return (
     <Localized id="property-remove-value" attrs={{ "aria-label": true }}>
-      <button
-        className={buttonStyle.button}
-        type="button"
-        aria-label="Remove value"
-        onClick={removeValue}
-      >
-        <Minus />
-      </button>
+      <Tooltip enabled={!canRemove} severity={severity} tip={<Localized id="min-count-required" />}>
+        <button
+          disabled={!canRemove}
+          className="st-button"
+          type="button"
+          aria-label="Remove value"
+          onClick={removeValue}
+        >
+          <Minus />
+        </button>
+      </Tooltip>
     </Localized>
   );
 }

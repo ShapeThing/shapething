@@ -1,4 +1,4 @@
-import style from "./style.module.scss";
+import "./style.css";
 
 type Props = {
   label?: string;
@@ -9,9 +9,9 @@ type Props = {
 
 export default function FormElement({ label, severity, description, children }: Props) {
   return (
-    <div className={style["form-element"]} data-severity={severity}>
-      {label && <label className={style.label}>{label}</label>}
-      {description && <p className={style.description}>{description}</p>}
+    <div className="st-form-element" data-severity={severity}>
+      {label && <label className="st-form-element__label">{label}</label>}
+      {description && <p className="st-form-element__description">{description}</p>}
       {children}
     </div>
   );

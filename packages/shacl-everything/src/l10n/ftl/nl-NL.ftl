@@ -6,3 +6,4 @@ property-add-value =
 property-remove-value =
     .aria-label = Waarde verwijderen
 select-an-option = - Selecteer een optie -
+min-count-required = Waarde vereist

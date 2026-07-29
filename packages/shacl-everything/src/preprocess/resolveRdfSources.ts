@@ -24,38 +24,80 @@ const storeFromQuads = (quads: Iterable<Quad>): RdfStore => {
   return store;
 };
 
-const dereferenceUrl = async (url: URL): Promise<RdfStore> => {
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// Dereferencing over HTTP is inherently flaky (dev servers cold-starting a route, proxies,
+// transient network blips), so a fetch failure - including a 404 - is retried a couple of times
+// with a short backoff before being treated as a real, permanent failure.
+const RETRY_DELAYS_MS = [100, 300, 800, 1500];
+
+const fetchText = async (url: URL): Promise<string> => {
+  for (let attempt = 0; ; attempt++) {
+    const response = await fetch(url).catch((error: Error) => error);
+    if (response instanceof Response && response.ok) return response.text();
+
+    if (attempt >= RETRY_DELAYS_MS.length) {
+      if (response instanceof Response) {
+        throw new Error(`Failed to dereference ${url.href}: ${response.status} ${response.statusText}`);
+      }
+      throw response;
+    }
+    await wait(RETRY_DELAYS_MS[attempt]);
+  }
+};
+
+// shapesGraph, dataGraph and scoresGraph are frequently dereferenced from the very same URL (e.g.
+// test fixtures that combine shapes and instance data in one file). Fetching it once per source
+// would fire that many concurrent, independent HTTP requests for one resource, which is wasteful.
+// Keyed by hashless href, single-flight per call to resolveRdfSources() rather than cached
+// module-wide, so a later preprocessing pass still refetches (in case the underlying resource
+// changed) and mutation isolation between the returned stores is preserved - only the network
+// round trip and parse are shared, each caller still gets its own RdfStore instance built from a
+// fresh copy of the parsed quads.
+const dereferenceUrl = async (
+  url: URL,
+  quadCache: Map<string, Promise<Quad[]>>,
+): Promise<RdfStore> => {
   const hashlessUrl = new URL(url.href.split("#")[0]);
-  const response = await fetch(hashlessUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to dereference ${url.href}: ${response.status} ${response.statusText}`);
+
+  let quadsPromise = quadCache.get(hashlessUrl.href);
+  if (!quadsPromise) {
+    quadsPromise = (async () => {
+      const text = await fetchText(hashlessUrl);
+      const store = await storeFromStream(
+        rdfParser.parse(stringToStream(text), {
+          path: hashlessUrl.href,
+          baseIRI: url.href,
+        }),
+      );
+      return store.getQuads();
+    })();
+    quadCache.set(hashlessUrl.href, quadsPromise);
   }
 
-  const text = await response.text();
-  return storeFromStream(
-    rdfParser.parse(stringToStream(text), {
-      path: hashlessUrl.href,
-      baseIRI: url.href,
-    }),
-  );
+  return storeFromQuads(await quadsPromise);
 };
 
 const parseRdfText = (text: string): Promise<RdfStore> =>
   storeFromStream(rdfParser.parse(stringToStream(text), { contentType: "text/turtle" }));
 
-const resolveRdfSource = (source: RdfSource): RdfStore | Promise<RdfStore> => {
+const resolveRdfSource = (
+  source: RdfSource,
+  quadCache: Map<string, Promise<Quad[]>>,
+): RdfStore | Promise<RdfStore> => {
   if (source instanceof RdfStore) return source;
-  if (source instanceof URL) return dereferenceUrl(source);
+  if (source instanceof URL) return dereferenceUrl(source, quadCache);
   if (Array.isArray(source)) return storeFromQuads(source);
   if (typeof source === "string") return parseRdfText(source);
   return storeFromQuads(source);
 };
 
 export const resolveRdfSources: Preprocessor = async (raw) => {
+  const quadCache = new Map<string, Promise<Quad[]>>();
   const [shapesGraph, dataGraph, scoresGraph] = await Promise.all([
-    resolveRdfSource(raw.shapesGraph),
-    resolveRdfSource(raw.dataGraph),
-    resolveRdfSource(raw.scoresGraph),
+    resolveRdfSource(raw.shapesGraph, quadCache),
+    resolveRdfSource(raw.dataGraph, quadCache),
+    resolveRdfSource(raw.scoresGraph, quadCache),
   ]);
 
   let nodeShapes: Quad_Subject[] = [];

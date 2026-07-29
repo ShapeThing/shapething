@@ -1,0 +1,51 @@
+:root {
+  /* ic:outline-arrow-drop-down — shape only, no color. Swap the `d` path
+     here to change the icon; used as a mask so it stays colorless. */
+  --select-arrow-icon: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='m7 10l5 5l5-5z'/%3E%3C/svg%3E");
+}
+
+.st-select-wrapper {
+  position: relative;
+  display: flex;
+  flex: 1;
+}
+
+.st-select {
+  padding: var(--size-2);
+  padding-right: var(--size-6);
+  border-radius: var(--radius-2);
+  border: 1px solid var(--gray-5);
+  width: 100%;
+  position: relative;
+  z-index: 2;
+  appearance: none;
+  background-color: transparent;
+  cursor: pointer;
+
+  &:hover,
+  &:focus {
+    outline: 2px solid var(--st-primary-color);
+    box-shadow: none;
+  }
+}
+
+.st-select-arrow {
+  position: absolute;
+  top: 50%;
+  right: var(--size-2);
+  translate: 0 -50%;
+  width: 1.6rem;
+  height: 1.6rem;
+  z-index: 3;
+  pointer-events: none;
+  background-color: var(--gray-8);
+  mask-image: var(--select-arrow-icon);
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+.st-select:hover ~ .st-select-arrow,
+.st-select:focus ~ .st-select-arrow {
+  background-color: var(--st-primary-color);
+}

@@ -3,7 +3,7 @@ import PropertyUIComponentRemove from "@/outputs/render/modes/edit/PropertyUICom
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
 import { useCallback } from "react";
-import style from "./style.module.css";
+import "./style.css";
 import { sh, shui } from "@/helpers/namespaces.ts";
 
 export default function PropertyUIComponentObject({
@@ -28,9 +28,9 @@ export default function PropertyUIComponentObject({
   const unit = propertyUIElement.getOne(sh("unit"))?.value;
 
   return (
-    <div className={style["property-ui-component-object"]}>
+    <div className="st-property-object">
       {Widget && iri && <Widget shape={propertyUIElement} term={object} setTerm={setTerm} />}
-      {unit && <span className={style.unit}>{unit}</span>}
+      {unit && <span className="st-property-object__unit">{unit}</span>}
       <PropertyUIComponentRemove
         onRemove={onTermSet}
         propertyUIElement={propertyUIElement}

@@ -1,4 +1,4 @@
-.form-element {
+.st-form-element {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -6,7 +6,7 @@
   gap: var(--size-2);
 }
 
-.label {
+.st-form-element__label {
   font-weight: bold;
   height: var(--size-6);
   line-height: var(--size-6);
@@ -16,7 +16,7 @@
   max-width: 100%;
 }
 
-.description {
+.st-form-element__description {
   margin: 0;
   font-size: var(--st-font-size-small);
   color: var(--st-color-text-muted);

@@ -8,13 +8,16 @@ export default function TextAreaWithLangEditor({ shape: node }: WidgetProps) {
     <>
       <textarea />
       {languages.length > 0 && (
-        <select>
-          {languages.map((language) => (
-            <option key={language.value} value={language.value}>
-              {language.value}
-            </option>
-          ))}
-        </select>
+        <span className="st-select-wrapper">
+          <select className="st-select">
+            {languages.map((language) => (
+              <option key={language.value} value={language.value}>
+                {language.value}
+              </option>
+            ))}
+          </select>
+          <span className="st-select-arrow" aria-hidden="true" />
+        </span>
       )}
     </>
   );

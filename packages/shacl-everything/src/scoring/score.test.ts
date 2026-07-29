@@ -1,5 +1,5 @@
 import { expect, test } from "vite-plus/test";
-import { score } from "@/scoring/score.ts";
+import { accept, score } from "@/scoring/score.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, shui } from "@/helpers/namespaces.ts";
 
@@ -532,6 +532,47 @@ test("excludes a widget whose shapes graph shape uses sh:not when the property s
   );
 
   expect(results).toHaveLength(0);
+});
+
+test("accept returns false for a WidgetAcceptMatcher whose shape can never conform", async () => {
+  // An empty shape has no constraints, so every node conforms to it - negating it with sh:not
+  // means no node, regardless of value, can ever conform to ex:neverConforms.
+  const scoringGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.com/> .
+
+        ex:neverConforms a sh:NodeShape ;
+            sh:not [ a sh:NodeShape ] .
+
+        ex:someWidgetAcceptMatcher a shui:WidgetAcceptMatcher ;
+            shui:widget ex:SomeWidget ;
+            shui:dataGraphShape ex:neverConforms .
+    `,
+    "text/turtle",
+  );
+
+  const dataGraph = await parseRdf(
+    `
+        @prefix ex: <http://example.com/> .
+        ex:Alice ex:name "Alice" .
+    `,
+    "text/turtle",
+  );
+  const [nameQuad] = dataGraph.getQuads(ex("Alice"), ex("name"));
+  const focusNode = nameQuad.object;
+
+  const result = await accept({
+    focusNode,
+    dataGraph,
+    shapeNode: ex("SomeShape"),
+    shapesGraph: await parseRdf("", "text/turtle"),
+    widgetNode: ex("SomeWidget"),
+    scoringGraph,
+  });
+
+  expect(result).toBe(false);
 });
 
 test("excludes a widget when the property shape has sh:class, even when sh:not is combined with another shapesGraphShape", async () => {

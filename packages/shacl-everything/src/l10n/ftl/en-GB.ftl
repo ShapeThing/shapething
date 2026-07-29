@@ -6,3 +6,4 @@ property-add-value =
 property-remove-value =
     .aria-label = Remove value
 select-an-option = - Select an option -
+min-count-required = Value required

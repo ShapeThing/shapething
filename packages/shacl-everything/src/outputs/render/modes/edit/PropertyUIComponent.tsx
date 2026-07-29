@@ -7,7 +7,7 @@ import PropertyUIComponentObject from "@/outputs/render/modes/edit/PropertyUICom
 import { localName } from "@/helpers/localName.ts";
 import { sh, shui } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import style from "./style.module.css";
+import "./style.css";
 import { Suspense, useState } from "react";
 import { Loading } from "@/helpers/icons.tsx";
 
@@ -49,7 +49,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
       description={description}
       severity={severity}
     >
-      <div className={style["items"]}>
+      <div className="st-property-items">
         {objects.map((object, index) => (
           <Suspense key={index} fallback={<Loading />}>
             <PropertyUIComponentObject

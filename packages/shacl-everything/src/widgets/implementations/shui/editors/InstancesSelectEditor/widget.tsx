@@ -16,17 +16,24 @@ export default function InstancesSelectEditor({ shape, term, setTerm }: WidgetPr
   );
 
   return (
-    <select value={term.value} onChange={(e) => setTerm(factory.namedNode(e.target.value))}>
-      {!term.value && (
-        <option value="" disabled>
-          <Localized id="select-an-option" />
-        </option>
-      )}
-      {options.map((subject) => (
-        <option key={subject.value} value={subject.value}>
-          {valueNodeLabel({ term: subject, propertyShape: shape }).value}
-        </option>
-      ))}
-    </select>
+    <span className="st-select-wrapper">
+      <select
+        className="st-select"
+        value={term.value}
+        onChange={(e) => setTerm(factory.namedNode(e.target.value))}
+      >
+        {!term.value && (
+          <option value="" disabled>
+            <Localized id="select-an-option" />
+          </option>
+        )}
+        {options.map((subject) => (
+          <option key={subject.value} value={subject.value}>
+            {valueNodeLabel({ term: subject, propertyShape: shape }).value}
+          </option>
+        ))}
+      </select>
+      <span className="st-select-arrow" aria-hidden="true" />
+    </span>
   );
 }
