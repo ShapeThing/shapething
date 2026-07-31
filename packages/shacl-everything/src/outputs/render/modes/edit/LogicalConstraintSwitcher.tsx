@@ -25,7 +25,9 @@ export default function LogicalConstraintSwitcher({ shape, term, setTerm }: Prop
   if (branches.length === 0) return null;
 
   const handleChange = async (branchShapeValue: string) => {
-    const branch = branches.find(({ shape: branchShape }) => branchShape.value === branchShapeValue);
+    const branch = branches.find(
+      ({ shape: branchShape }) => branchShape.value === branchShapeValue,
+    );
     if (!branch) return;
 
     const branchProperty = withBranch(shape, branch.shape);

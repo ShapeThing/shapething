@@ -1,8 +1,7 @@
 import type { RdfSource } from "../../../src/types/RdfSource.ts";
 import type { GraphText } from "./constants.ts";
 
-const filenameFromUrl = (url: URL): string =>
-  url.pathname.split("/").pop() || url.href;
+const filenameFromUrl = (url: URL): string => url.pathname.split("/").pop() || url.href;
 
 const fetchText = async (url: URL): Promise<string> => {
   const response = await fetch(url);

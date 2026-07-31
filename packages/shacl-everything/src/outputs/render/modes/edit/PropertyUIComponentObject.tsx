@@ -31,16 +31,27 @@ export default function PropertyUIComponentObject({
     ? withBranch(propertyUIElement, activeBranch.shape)
     : propertyUIElement;
 
-  const { Widget } = useWidget(shui("editor"), effectiveProperty, object) ?? {};
+  const { Widget, isPlaceholderData } = useWidget(shui("editor"), effectiveProperty, object) ?? {};
   const [ActiveWidget, setActiveWidget] = useState<typeof Widget | undefined>(undefined);
   const ref = useRef<HTMLDivElement>(null);
 
   const activeElement = useActiveElement();
   const currentlyFocused = ref.current?.contains(activeElement);
 
+  // Re-sync ActiveWidget when the sh:or/sh:xone branch changes underneath it - not just on first
+  // resolve - otherwise switching branches (e.g. boolean -> string) leaves the old branch's widget
+  // mounted. Gated on !isPlaceholderData so this waits for the *new* branch's own widget query to
+  // resolve, rather than committing the still-stale (keepPreviousData) Widget from the old branch.
+  const activeBranchKey = activeBranch?.shape.value;
+  const syncedBranchKeyRef = useRef(activeBranchKey);
   useEffect(() => {
-    if (!ActiveWidget && Widget) setActiveWidget(() => Widget);
-  }, [Widget, ActiveWidget]);
+    if (!Widget || isPlaceholderData) return;
+    const branchChanged = syncedBranchKeyRef.current !== activeBranchKey;
+    if (!ActiveWidget || branchChanged) {
+      setActiveWidget(() => Widget);
+      syncedBranchKeyRef.current = activeBranchKey;
+    }
+  }, [Widget, ActiveWidget, activeBranchKey, isPlaceholderData]);
 
   const setTerm = useCallback(
     (newTerm: Term) => {
@@ -54,7 +65,7 @@ export default function PropertyUIComponentObject({
   return (
     <div className="st-property-object">
       {ActiveWidget && (
-        <div className="st-property-object__widget" ref={ref}>
+        <div className="st-property-object__widget" ref={ref} data-widget={ActiveWidget?.name}>
           <ActiveWidget shape={effectiveProperty} term={object} setTerm={setTerm} />
           {currentlyFocused && (
             <div className="st-property-object__fly-out">

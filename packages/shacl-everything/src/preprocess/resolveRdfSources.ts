@@ -38,7 +38,9 @@ const fetchText = async (url: URL): Promise<string> => {
 
     if (attempt >= RETRY_DELAYS_MS.length) {
       if (response instanceof Response) {
-        throw new Error(`Failed to dereference ${url.href}: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `Failed to dereference ${url.href}: ${response.status} ${response.statusText}`,
+        );
       }
       throw response;
     }

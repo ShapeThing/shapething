@@ -59,9 +59,7 @@ function nodeUIElement(node: NodeUIElement): string {
   // A union only needs parens when it's intersected with something else via
   // `&`; standing alone, its `|` members already bind correctly.
   const needsParens = fragments.length > 0 || unionFragments.length > 1;
-  fragments.push(
-    ...unionFragments.map((union) => (needsParens ? `(${union})` : union)),
-  );
+  fragments.push(...unionFragments.map((union) => (needsParens ? `(${union})` : union)));
 
   const name = getCodeIdentifier(node.shapesGraph, node.focusNode);
 
@@ -78,9 +76,7 @@ function propertyUIElement(property: PropertyUIElement): string {
 
   const codeIdentifier = getCodeIdentifier(shapesGraph, propertyShapes[0]);
   const minCount = parseFloat(property.getOne(sh("minCount"))?.value ?? "0");
-  const maxCount = parseFloat(
-    property.getOne(sh("maxCount"))?.value ?? "Infinity",
-  );
+  const maxCount = parseFloat(property.getOne(sh("maxCount"))?.value ?? "Infinity");
   const required = minCount > 0;
   const multiple = maxCount > 1;
   const datatype = resolveDatatype(property);
@@ -113,10 +109,7 @@ function choiceElement(choice: ChoiceElement): string {
     : branches.map((properties) => branchObjectType(properties)).join(" | ");
 }
 
-function branchObjectType(
-  properties: PropertyUIElement[],
-  extraLines: string[] = [],
-): string {
+function branchObjectType(properties: PropertyUIElement[], extraLines: string[] = []): string {
   const lines = [...properties.map(propertyUIElement), ...extraLines];
   return `{ ${lines.join(" ").replace(/;$/, "")} }`;
 }
@@ -129,8 +122,8 @@ function branchObjectType(
 function xoneUnion(branches: PropertyUIElement[][]): string {
   const branchKeys = branches.map((properties) =>
     properties.map((property) =>
-      getCodeIdentifier(property.shapesGraph, property.propertyShapes[0])
-    )
+      getCodeIdentifier(property.shapesGraph, property.propertyShapes[0]),
+    ),
   );
   const allKeys = [...new Set(branchKeys.flat())];
 

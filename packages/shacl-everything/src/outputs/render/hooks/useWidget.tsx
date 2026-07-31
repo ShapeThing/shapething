@@ -24,11 +24,16 @@ export function useWidget(
       Widget: WidgetComponent;
       iri: Term;
       meta: WidgetMeta | undefined;
+      // True while `Widget` is still the previous query key's result (via keepPreviousData),
+      // shown to avoid unmounting the widget on every keystroke - callers that need to react to
+      // the resolved widget actually changing (e.g. an sh:or branch switch) should wait for this
+      // to go false rather than trusting `Widget` the instant it changes.
+      isPlaceholderData: boolean;
     }
   | undefined {
   const { mode } = useEnvironment();
 
-  const { data: widget } = useQuery({
+  const { data: widget, isPlaceholderData } = useQuery({
     queryKey: [
       "widget",
       mode,
@@ -47,5 +52,6 @@ export function useWidget(
     Widget: getWidgetComponent(mode, widget)!,
     meta: getWidgetMeta(widget),
     iri: widget,
+    isPlaceholderData,
   };
 }

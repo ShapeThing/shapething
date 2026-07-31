@@ -26,7 +26,7 @@ export function logicalBranches(element: PropertyUIElement): LogicalBranch[] {
     element
       .get(sh(connective))
       .flatMap((list) => getRdfList(list, element.shapesGraph))
-      .map((shape) => ({ shape, connective }))
+      .map((shape) => ({ shape, connective })),
   );
 }
 

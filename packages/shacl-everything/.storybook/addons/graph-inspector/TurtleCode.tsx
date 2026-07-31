@@ -18,7 +18,7 @@ const STYLE_BY_GROUP: Record<string, React.CSSProperties> = {
 const TOKEN_PATTERN = new RegExp(
   [
     "(?<comment>#[^\\n]*)",
-    '(?<string>"""[\\s\\S]*?"""|\'\'\'[\\s\\S]*?\'\'\'|"(?:\\\\.|[^"\\\\])*"|\'(?:\\\\.|[^\'\\\\])*\')',
+    "(?<string>\"\"\"[\\s\\S]*?\"\"\"|'''[\\s\\S]*?'''|\"(?:\\\\.|[^\"\\\\])*\"|'(?:\\\\.|[^'\\\\])*')",
     "(?<iri><[^>\\s]*>)",
     "(?<directive>@(?:prefix|base)\\b|\\b(?:PREFIX|BASE)\\b)",
     "(?<prefixedName>[A-Za-z][\\w-]*:[A-Za-z_][\\w.-]*|:[A-Za-z_][\\w.-]*)",
@@ -39,7 +39,9 @@ export const TurtleCode = ({ text }: Props) => {
   while ((match = TOKEN_PATTERN.exec(text))) {
     if (match.index > lastIndex) nodes.push(text.slice(lastIndex, match.index));
 
-    const groupName = Object.keys(match.groups ?? {}).find((name) => match!.groups![name] !== undefined);
+    const groupName = Object.keys(match.groups ?? {}).find(
+      (name) => match!.groups![name] !== undefined,
+    );
 
     nodes.push(
       <span key={key++} style={groupName ? STYLE_BY_GROUP[groupName] : undefined}>

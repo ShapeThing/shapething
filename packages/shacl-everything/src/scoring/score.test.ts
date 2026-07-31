@@ -155,9 +155,7 @@ test("excludes widgets whose data graph shape does not conform to the value, eve
     }),
   );
 
-  expect(results.map((result) => result.widget.value)).toEqual([
-    ex("TextWidget").value,
-  ]);
+  expect(results.map((result) => result.widget.value)).toEqual([ex("TextWidget").value]);
 });
 
 test("includes a widget whose data graph shape does conform to a literal value", async () => {
@@ -201,9 +199,7 @@ test("includes a widget whose data graph shape does conform to a literal value",
     }),
   );
 
-  expect(results.map((result) => result.widget.value)).toEqual([
-    ex("BooleanWidget").value,
-  ]);
+  expect(results.map((result) => result.widget.value)).toEqual([ex("BooleanWidget").value]);
 });
 
 test("excludes widgets whose shapes graph shape does not conform to the property shape", async () => {
@@ -296,9 +292,7 @@ test("includes a widget whose shapes graph shape does conform to the property sh
     }),
   );
 
-  expect(results.map((result) => result.widget.value)).toEqual([
-    ex("InstancesSelectWidget").value,
-  ]);
+  expect(results.map((result) => result.widget.value)).toEqual([ex("InstancesSelectWidget").value]);
 });
 
 test("excludes a widget score that only has a data graph shape when no focus node is given", async () => {
@@ -370,9 +364,7 @@ test("includes a widget score with only a shapes graph shape when no focus node 
     }),
   );
 
-  expect(results.map((result) => result.widget.value)).toEqual([
-    ex("SomeWidget").value,
-  ]);
+  expect(results.map((result) => result.widget.value)).toEqual([ex("SomeWidget").value]);
 });
 
 test("throws when a widget score definition is missing shui:widget", async () => {
@@ -475,9 +467,7 @@ test("includes a widget whose shapes graph shape uses sh:not when the property s
     }),
   );
 
-  expect(results.map((result) => result.widget.value)).toEqual([
-    ex("IRIEditor").value,
-  ]);
+  expect(results.map((result) => result.widget.value)).toEqual([ex("IRIEditor").value]);
 });
 
 test("excludes a widget whose shapes graph shape uses sh:not when the property shape has sh:class", async () => {

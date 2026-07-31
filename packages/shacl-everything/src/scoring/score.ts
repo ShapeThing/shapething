@@ -66,13 +66,9 @@ type ScoreProps = {
 /**
  *  The score function used to find the best widget or an ordered list of matches.
  */
-export async function* score(
-  props: ScoreProps,
-): AsyncGenerator<WidgetScoreResult> {
+export async function* score(props: ScoreProps): AsyncGenerator<WidgetScoreResult> {
   const { scoringGraph } = props;
-  const widgetScores = [
-    ...scoringGraph.getQuads(null, rdf("type"), shui("WidgetScore")),
-  ]
+  const widgetScores = [...scoringGraph.getQuads(null, rdf("type"), shui("WidgetScore"))]
     .map((quad) => {
       const widgetScore = quad.subject;
       const [scoreQuad] = scoringGraph.getQuads(widgetScore, shui("score"));
@@ -82,9 +78,7 @@ export async function* score(
       const score = scoreQuad ? parseFloat(scoreQuad.object.value) : NaN;
 
       if (!widget || isNaN(score)) {
-        throw new Error(
-          `Invalid Widget Score definition for ${widgetScore.value}`,
-        );
+        throw new Error(`Invalid Widget Score definition for ${widgetScore.value}`);
       }
 
       return { widgetScore, widget, score };
@@ -131,25 +125,12 @@ async function match({
   scoringGraph,
   matcherNode,
 }: matchProps) {
-  const matcherDataGraphShapeQuads = scoringGraph.getQuads(
-    matcherNode,
-    shui("dataGraphShape"),
-  );
-  const matcherShapeGraphShapeQuads = scoringGraph.getQuads(
-    matcherNode,
-    shui("shapesGraphShape"),
-  );
+  const matcherDataGraphShapeQuads = scoringGraph.getQuads(matcherNode, shui("dataGraphShape"));
+  const matcherShapeGraphShapeQuads = scoringGraph.getQuads(matcherNode, shui("shapesGraphShape"));
 
-  const matcherDataGraphShapes = matcherDataGraphShapeQuads.map((q) =>
-    q.object
-  );
-  const matcherShapeGraphShapes = matcherShapeGraphShapeQuads.map((q) =>
-    q.object
-  );
-  if (
-    !focusNode && matcherDataGraphShapes.length &&
-    matcherShapeGraphShapes.length === 0
-  ) {
+  const matcherDataGraphShapes = matcherDataGraphShapeQuads.map((q) => q.object);
+  const matcherShapeGraphShapes = matcherShapeGraphShapeQuads.map((q) => q.object);
+  if (!focusNode && matcherDataGraphShapes.length && matcherShapeGraphShapes.length === 0) {
     return false;
   }
 
@@ -185,33 +166,32 @@ type ValidateProps = {
   shapesGraph: RdfStore;
 };
 
-export async function validate(
-  { focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps,
-) {
+export async function validate({ focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps) {
   if (!shapeNode) return true;
 
   // Literals can't be a quad subject, so the existence check only applies to IRIs/blank nodes.
-  if (
-    focusNode?.termType !== "Literal" &&
-    targetGraph.getQuads(focusNode).length === 0
-  ) {
+  if (focusNode?.termType !== "Literal" && targetGraph.getQuads(focusNode).length === 0) {
     return false;
   }
+
+  // shacl-engine's validate() reports a vacuous conforms:true against a completely empty target
+  // dataset (nothing to traverse, so nothing fails) instead of actually checking focusNode against
+  // shapeNode - shapesGraph is used as filler instead in that case, which changes nothing observable
+  // (an empty targetGraph had nothing to find either way).
+  const dataset = targetGraph.size > 0 ? targetGraph.asDataset() : shapesGraph.asDataset();
+
   const shaclEngine = getShaclEngine(shapesGraph);
   try {
     const report = await shaclEngine.validate(
       {
-        dataset: targetGraph.asDataset(),
+        dataset,
         terms: [focusNode],
       },
       [{ terms: [shapeNode] }],
     );
     return report.conforms;
   } catch (error) {
-    console.warn(
-      `SHACL validation failed for shape ${shapeNode.value}:`,
-      error,
-    );
+    console.warn(`SHACL validation failed for shape ${shapeNode.value}:`, error);
     return false;
   }
 }
@@ -240,12 +220,7 @@ export function accept({
   scoringGraph,
 }: AcceptProps) {
   const matcherQuad = [
-    ...scoringGraph.getQuads(
-      null,
-      rdf("type"),
-      shui("WidgetAcceptMatcher"),
-      null,
-    ),
+    ...scoringGraph.getQuads(null, rdf("type"), shui("WidgetAcceptMatcher"), null),
   ].find((quad) => {
     const [matcherWidgetQuad] = scoringGraph.getQuads(
       quad.subject,

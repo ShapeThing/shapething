@@ -24,3 +24,13 @@ export const shOrC: Story = {
   name: "Datatype",
   args: argsByTestFile("7.7.3.c sh-or.ttl", import.meta.url),
 };
+
+export const shOrD: Story = {
+  name: "Datatype 2",
+  args: argsByTestFile("7.7.3.d sh-or.ttl", import.meta.url),
+};
+
+export const shOrE: Story = {
+  name: "Free text vs. structured fields (address)",
+  args: argsByTestFile("7.7.3.e sh-or.ttl", import.meta.url),
+};

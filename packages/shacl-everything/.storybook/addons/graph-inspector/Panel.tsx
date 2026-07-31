@@ -27,7 +27,8 @@ export const GraphInspectorPanel = ({ active }: Props) => {
   // short - put them side by side.
   const flexDirection = layout.panelPosition === "right" ? "column" : "row";
   const sameSource =
-    payload?.shapesGraph?.href !== undefined && payload.shapesGraph.href === payload?.dataGraph?.href;
+    payload?.shapesGraph?.href !== undefined &&
+    payload.shapesGraph.href === payload?.dataGraph?.href;
 
   return (
     <div

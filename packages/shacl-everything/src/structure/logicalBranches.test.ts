@@ -60,7 +60,9 @@ test("withBranch merges a branch's own constraints (e.g. sh:datatype) into the p
   expect(element.getOne(sh("datatype"))).toBeUndefined();
 
   const [stringBranch, langStringBranch] = logicalBranches(element);
-  expect(withBranch(element, stringBranch.shape).getOne(sh("datatype"))?.value).toBe(xsd("string").value);
+  expect(withBranch(element, stringBranch.shape).getOne(sh("datatype"))?.value).toBe(
+    xsd("string").value,
+  );
   expect(withBranch(element, langStringBranch.shape).getOne(sh("datatype"))?.value).toBe(
     rdf("langString").value,
   );

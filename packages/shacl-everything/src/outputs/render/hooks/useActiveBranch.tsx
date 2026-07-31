@@ -2,10 +2,7 @@ import type { Term } from "@rdfjs/types";
 import { useQuery } from "@tanstack/react-query";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import { termKey } from "@/helpers/termKey.ts";
-import {
-  detectActiveBranch,
-  type LogicalBranch,
-} from "@/structure/logicalBranches.ts";
+import { detectActiveBranch, type LogicalBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 
 /**

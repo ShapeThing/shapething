@@ -1,0 +1,31 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Thing ;
+
+    sh:property [
+        sh:name "Thing"@en ;
+        sh:path ex:bla ;
+        sh:or (
+            [ 
+                sh:name "As string"@en ;
+                sh:datatype xsd:string 
+            ]
+            [ 
+                sh:name "As boolean"@en ;
+                sh:datatype xsd:boolean 
+            ]
+        ) ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Thing ;
+    ex:bla true ;
+    .

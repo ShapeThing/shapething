@@ -8,4 +8,4 @@ property-remove-value =
 select-an-option = - Selecteer een optie -
 min-count-required = Waarde vereist
 widget-switcher-label = Selecteer een widget
-logical-constraint-switcher-label = Selecteer een optie
+logical-constraint-switcher-label = Selecteer een alternatief
