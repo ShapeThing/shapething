@@ -1,5 +1,5 @@
 import { expect, test } from "vite-plus/test";
-import { accept, score } from "@/scoring/score.ts";
+import { accept, score, select } from "@/scoring/score.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, shui } from "@/helpers/namespaces.ts";
 
@@ -21,7 +21,7 @@ test("returns the single highest-scoring widget when best is true", async () => 
   );
 
   const result = await Array.fromAsync(
-    score({
+    select({
       best: true,
       focusNode: ex("Alice"),
       dataGraph: await parseRdf("", "text/turtle"),
@@ -33,8 +33,7 @@ test("returns the single highest-scoring widget when best is true", async () => 
   );
 
   expect(result).toBeDefined();
-  expect(result.length).toEqual(1);
-  expect(result?.[0]?.widget).toEqual(ex("WidgetB"));
+  expect(result[0].value).toBe(ex("WidgetB").value);
 });
 
 test("returns undefined when best is true and no widget matches", async () => {
@@ -68,7 +67,6 @@ test("returns undefined when best is true and no widget matches", async () => {
 
   const result = await Array.fromAsync(
     score({
-      best: true,
       focusNode,
       dataGraph,
       shapeNode: ex("SomeShape"),
@@ -96,7 +94,6 @@ test("orders matches by descending score, tie-broken by widget IRI, when best is
 
   const results = await Array.fromAsync(
     score({
-      best: false,
       focusNode: ex("Alice"),
       dataGraph: await parseRdf("", "text/turtle"),
       shapeNode: ex("SomeShape"),
@@ -149,7 +146,6 @@ test("excludes widgets whose data graph shape does not conform to the value, eve
 
   const results = await Array.fromAsync(
     score({
-      best: false,
       focusNode,
       dataGraph,
       shapeNode: ex("SomeShape"),
@@ -159,7 +155,9 @@ test("excludes widgets whose data graph shape does not conform to the value, eve
     }),
   );
 
-  expect(results.map((result) => result.widget.value)).toEqual([ex("TextWidget").value]);
+  expect(results.map((result) => result.widget.value)).toEqual([
+    ex("TextWidget").value,
+  ]);
 });
 
 test("includes a widget whose data graph shape does conform to a literal value", async () => {
@@ -194,7 +192,6 @@ test("includes a widget whose data graph shape does conform to a literal value",
 
   const results = await Array.fromAsync(
     score({
-      best: false,
       focusNode,
       dataGraph,
       shapeNode: ex("SomeShape"),
@@ -204,7 +201,9 @@ test("includes a widget whose data graph shape does conform to a literal value",
     }),
   );
 
-  expect(results.map((result) => result.widget.value)).toEqual([ex("BooleanWidget").value]);
+  expect(results.map((result) => result.widget.value)).toEqual([
+    ex("BooleanWidget").value,
+  ]);
 });
 
 test("excludes widgets whose shapes graph shape does not conform to the property shape", async () => {
@@ -241,7 +240,6 @@ test("excludes widgets whose shapes graph shape does not conform to the property
 
   const results = await Array.fromAsync(
     score({
-      best: false,
       focusNode: ex("Alice"),
       dataGraph: await parseRdf("", "text/turtle"),
       shapeNode: ex("ownerShape"),
@@ -289,7 +287,6 @@ test("includes a widget whose shapes graph shape does conform to the property sh
 
   const results = await Array.fromAsync(
     score({
-      best: false,
       focusNode: ex("Alice"),
       dataGraph: await parseRdf("", "text/turtle"),
       shapeNode: ex("ownerShape"),
@@ -299,7 +296,9 @@ test("includes a widget whose shapes graph shape does conform to the property sh
     }),
   );
 
-  expect(results.map((result) => result.widget.value)).toEqual([ex("InstancesSelectWidget").value]);
+  expect(results.map((result) => result.widget.value)).toEqual([
+    ex("InstancesSelectWidget").value,
+  ]);
 });
 
 test("excludes a widget score that only has a data graph shape when no focus node is given", async () => {
@@ -318,7 +317,6 @@ test("excludes a widget score that only has a data graph shape when no focus nod
 
   const results = await Array.fromAsync(
     score({
-      best: false,
       dataGraph: await parseRdf("", "text/turtle"),
       shapeNode: ex("SomeShape"),
       shapesGraph: await parseRdf("", "text/turtle"),
@@ -364,7 +362,6 @@ test("includes a widget score with only a shapes graph shape when no focus node 
 
   const results = await Array.fromAsync(
     score({
-      best: false,
       dataGraph: await parseRdf("", "text/turtle"),
       shapeNode: ex("ownerShape"),
       shapesGraph,
@@ -373,7 +370,9 @@ test("includes a widget score with only a shapes graph shape when no focus node 
     }),
   );
 
-  expect(results.map((result) => result.widget.value)).toEqual([ex("SomeWidget").value]);
+  expect(results.map((result) => result.widget.value)).toEqual([
+    ex("SomeWidget").value,
+  ]);
 });
 
 test("throws when a widget score definition is missing shui:widget", async () => {
@@ -391,7 +390,6 @@ test("throws when a widget score definition is missing shui:widget", async () =>
   await expect(
     Array.fromAsync(
       score({
-        best: false,
         focusNode: ex("Alice"),
         dataGraph: await parseRdf("", "text/turtle"),
         shapeNode: ex("SomeShape"),
@@ -419,7 +417,6 @@ test("throws when a widget score definition has a non-numeric score", async () =
   await expect(
     Array.fromAsync(
       score({
-        best: false,
         focusNode: ex("Alice"),
         dataGraph: await parseRdf("", "text/turtle"),
         shapeNode: ex("SomeShape"),
@@ -469,7 +466,6 @@ test("includes a widget whose shapes graph shape uses sh:not when the property s
 
   const results = await Array.fromAsync(
     score({
-      best: false,
       focusNode: ex("Alice"),
       dataGraph: await parseRdf("", "text/turtle"),
       shapeNode: ex("nameShape"),
@@ -479,7 +475,9 @@ test("includes a widget whose shapes graph shape uses sh:not when the property s
     }),
   );
 
-  expect(results.map((result) => result.widget.value)).toEqual([ex("IRIEditor").value]);
+  expect(results.map((result) => result.widget.value)).toEqual([
+    ex("IRIEditor").value,
+  ]);
 });
 
 test("excludes a widget whose shapes graph shape uses sh:not when the property shape has sh:class", async () => {
@@ -521,7 +519,6 @@ test("excludes a widget whose shapes graph shape uses sh:not when the property s
 
   const results = await Array.fromAsync(
     score({
-      best: false,
       focusNode: ex("Alice"),
       dataGraph: await parseRdf("", "text/turtle"),
       shapeNode: ex("ownerShape"),
@@ -626,7 +623,6 @@ test("excludes a widget when the property shape has sh:class, even when sh:not i
 
   const results = await Array.fromAsync(
     score({
-      best: false,
       focusNode: ex("Alice"),
       dataGraph: await parseRdf("", "text/turtle"),
       shapeNode: ex("ownerShape"),

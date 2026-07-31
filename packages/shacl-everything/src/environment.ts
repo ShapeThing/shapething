@@ -13,17 +13,23 @@ export type Environment = {
   mode: "edit" | "view" | "facet";
   interfaceLanguage: BCP47;
   contentLanguage: BCP47;
+  // When multiple widgets are available for a property, allow switching between them. If false, the first widget will be used and no switching will be possible.
+  enableWidgetSwitching?: boolean;
+  // When true, the predicate of a property will be included in the label's title attribute. This is useful for debugging and for users who want to see the underlying data model.
+  enableShPathInLabelTitle?: boolean;
 };
 
 // What flows through the preprocessor chain before it's fully resolved: the graph fields may
 // still be an unparsed/undereferenced RdfSource rather than a ready RdfStore. RdfStore is itself
 // a valid RdfSource, so a fully-resolved Environment already satisfies this type - preprocessors
 // don't need a different type per stage of the chain.
-export type RawEnvironment = Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph"> & {
-  shapesGraph: RdfSource;
-  dataGraph: RdfSource;
-  scoresGraph: RdfSource;
-};
+export type RawEnvironment =
+  & Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph">
+  & {
+    shapesGraph: RdfSource;
+    dataGraph: RdfSource;
+    scoresGraph: RdfSource;
+  };
 
 export const defaultEnvironment: Environment = {
   shapesGraph: RdfStore.createDefault(),
@@ -34,4 +40,6 @@ export const defaultEnvironment: Environment = {
   mode: "edit",
   interfaceLanguage: "en-GB",
   contentLanguage: "en-GB",
+  enableWidgetSwitching: true,
+  enableShPathInLabelTitle: true,
 };

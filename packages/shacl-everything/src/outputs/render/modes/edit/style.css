@@ -1,7 +1,7 @@
 .st-property-items {
   display: flex;
   flex-direction: column;
-  gap: var(--size-2);
+  gap: var(--size-3);
   width: 100%;
 }
 
@@ -10,7 +10,7 @@
   align-items: center;
   gap: var(--size-2);
   flex: 1;
-  align-items: stretch;
+  align-items: start;
   justify-content: space-between;
 }
 
@@ -39,4 +39,38 @@
 .st-property-object > *:focus + .st-property-object__unit {
   outline: 2px solid var(--st-primary-color);
   box-shadow: none;
+}
+
+.st-property-object__widget {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  position: relative;
+  gap: var(--size-2);
+}
+
+.st-property-object__fly-out {
+  position: absolute;
+  top: calc(100% + var(--size-3));
+  left: 0;
+  padding: var(--size-2);
+  border-radius: var(--radius-2);
+  box-shadow: var(--shadow-3);
+  z-index: var(--st-z-index-flyout);
+  border: 1px solid var(--st-color-border);
+  background-color: var(--st-primary-color-lighter);
+  z-index: 10;
+
+  &::after {
+    --size: var(--size-2);
+    content: "";
+    position: absolute;
+    top: calc(-1 * var(--size));
+    right: var(--size-2);
+    width: 0;
+    height: 0;
+    border-left: var(--size) solid transparent;
+    border-right: var(--size) solid transparent;
+    border-bottom: var(--size) solid var(--st-primary-color-lighter);
+  }
 }

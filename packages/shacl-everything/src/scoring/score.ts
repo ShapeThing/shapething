@@ -1,10 +1,10 @@
-import type { Term } from "@rdfjs/types";
+import type { NamedNode, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { Validator as ShaclEngine } from "shacl-engine";
 import { factory } from "@/helpers/factory.ts";
 import { rdf, shui } from "@/helpers/namespaces.ts";
 
-type ScoreProps = {
+type SelectProps = {
   // A boolean flag; if true, return only the first matching result.
   best: boolean;
   // The node to validate in the instance data. Omit to score based on the shape alone.
@@ -22,30 +22,46 @@ type ScoreProps = {
 };
 
 export type WidgetScoreResult = {
-  widgetScore: Term;
   widget: Term;
+  widgetScore: Term;
   score: number;
 };
 
-export async function* select(props: ScoreProps) {
+export async function* select(props: SelectProps) {
   const { shapeNode, shapesGraph, widgetPredicate } = props;
   const widget = shapesGraph.getQuads(shapeNode, widgetPredicate)[0]?.object;
 
   if (widget) {
     const isAccepted = await accept({ ...props, widgetNode: widget });
     if (isAccepted) {
-      yield widget;
-      return;
+      yield widget as NamedNode;
+      if (props.best) return;
     }
   }
 
   for await (const { widget } of score(props)) {
     const isAccepted = await accept({ ...props, widgetNode: widget });
     if (isAccepted) {
-      yield widget;
+      yield widget as NamedNode;
+      if (props.best) return;
     }
   }
 }
+
+type ScoreProps = {
+  // The node to validate in the instance data. Omit to score based on the shape alone.
+  focusNode?: Term;
+  // The RDF graph containing the focus node. This is the instance data.
+  dataGraph: RdfStore;
+  // A shape IRI.
+  shapeNode: Term;
+  // The RDF graph containing the list of SHACL shapes.
+  shapesGraph: RdfStore;
+  // The RDF graph containing the Widget Score definitions.
+  scoringGraph: RdfStore;
+
+  widgetPredicate: Term;
+};
 
 /**
  *  The score function used to find the best widget or an ordered list of matches.
@@ -53,7 +69,7 @@ export async function* select(props: ScoreProps) {
 export async function* score(
   props: ScoreProps,
 ): AsyncGenerator<WidgetScoreResult> {
-  const { best, scoringGraph } = props;
+  const { scoringGraph } = props;
   const widgetScores = [
     ...scoringGraph.getQuads(null, rdf("type"), shui("WidgetScore")),
   ]
@@ -82,19 +98,17 @@ export async function* score(
     });
 
   for (const widgetScore of widgetScores) {
-    const isMatch = await matcher({
+    const isMatch = await match({
       ...props,
       matcherNode: widgetScore.widgetScore,
     });
 
     if (!isMatch) continue;
     yield widgetScore;
-
-    if (best) return;
   }
 }
 
-type matcherProps = {
+type matchProps = {
   // The node to validate. This is instance data.
   focusNode?: Term;
   // The RDF graph containing the focus node. This is the instance data.
@@ -109,14 +123,14 @@ type matcherProps = {
   matcherNode: Term;
 };
 
-async function matcher({
+async function match({
   focusNode,
   dataGraph,
   shapeNode,
   shapesGraph,
   scoringGraph,
   matcherNode,
-}: matcherProps) {
+}: matchProps) {
   const matcherDataGraphShapeQuads = scoringGraph.getQuads(
     matcherNode,
     shui("dataGraphShape"),
@@ -170,22 +184,6 @@ type ValidateProps = {
   shapeNode: Term;
   shapesGraph: RdfStore;
 };
-
-// Compiling a ShaclEngine parses every shape in shapesGraph up front (see shacl-engine's
-// Validator constructor), which is wasted work when repeated for the same shapesGraph - as
-// happens here, since matcher() always validates against the same scoringGraph, once or twice
-// per candidate widget. Keyed by object identity (scoringGraph is a stable, cached instance per
-// registry.ts), so this never serves a stale engine for a graph that's actually changed.
-const shaclEngineCache = new WeakMap<RdfStore, ShaclEngine>();
-
-function getShaclEngine(shapesGraph: RdfStore): ShaclEngine {
-  let shaclEngine = shaclEngineCache.get(shapesGraph);
-  if (!shaclEngine) {
-    shaclEngine = new ShaclEngine(shapesGraph.asDataset(), { factory });
-    shaclEngineCache.set(shapesGraph, shaclEngine);
-  }
-  return shaclEngine;
-}
 
 async function validate(
   { focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps,
@@ -260,7 +258,7 @@ export function accept({
 
   if (!matcherQuad) return true;
 
-  return matcher({
+  return match({
     focusNode,
     dataGraph,
     shapeNode,
@@ -268,4 +266,20 @@ export function accept({
     scoringGraph,
     matcherNode: matcherQuad.subject,
   });
+}
+
+// Compiling a ShaclEngine parses every shape in shapesGraph up front (see shacl-engine's
+// Validator constructor), which is wasted work when repeated for the same shapesGraph - as
+// happens here, since matcher() always validates against the same scoringGraph, once or twice
+// per candidate widget. Keyed by object identity (scoringGraph is a stable, cached instance per
+// registry.ts), so this never serves a stale engine for a graph that's actually changed.
+const shaclEngineCache = new WeakMap<RdfStore, ShaclEngine>();
+
+function getShaclEngine(shapesGraph: RdfStore): ShaclEngine {
+  let shaclEngine = shaclEngineCache.get(shapesGraph);
+  if (!shaclEngine) {
+    shaclEngine = new ShaclEngine(shapesGraph.asDataset(), { factory });
+    shaclEngineCache.set(shapesGraph, shaclEngine);
+  }
+  return shaclEngine;
 }

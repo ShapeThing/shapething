@@ -1,0 +1,26 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Contact"@en ;
+        sh:path ex:contact ;
+        sh:or (
+            [ sh:datatype xsd:string ]
+            [ sh:datatype rdf:langString ]
+        ) ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:contact "hendrik@example.org" ;
+    .

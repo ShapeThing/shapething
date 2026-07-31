@@ -1,21 +1,46 @@
 import { factory } from "@/helpers/factory.ts";
-import { sh, shui } from "@/helpers/namespaces.ts";
+import { rdfs, sh, shui } from "@/helpers/namespaces.ts";
 import language from "@/resolution/language.ts";
 import { parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Literal, Term } from "@rdfjs/types";
 
-type PropertyLabelOptions = {};
+type PropertyLabelOptions = { widget: Term; propertyShape: PropertyUIElement };
+
+export function propertyLabel({ widget, propertyShape }: PropertyLabelOptions) {
+  const { scoresGraph, shapesGraph } = propertyShape;
+
+  const labelQuadViaShapes = language(
+    shapesGraph.getQuads(widget, rdfs("label")).map(({ object }) =>
+      object as Literal
+    ),
+  );
+  if (labelQuadViaShapes) {
+    return labelQuadViaShapes.value;
+  }
+
+  const labelQuadViaScores = language(
+    scoresGraph.getQuads(widget, rdfs("label")).map(({ object }) =>
+      object as Literal
+    ),
+  );
+  if (labelQuadViaScores) {
+    return labelQuadViaScores.value;
+  }
+
+  return widget.value.split(/\/|#/g).pop()!;
+}
+
 type ValueNodeLabelOptions = {
   term: Term;
   propertyShape: PropertyUIElement;
 };
 
-export function propertyLabel({}: PropertyLabelOptions) {}
-
 // 8.2.2 Value Node Labels
-export function valueNodeLabel({ term, propertyShape }: ValueNodeLabelOptions): Literal {
+export function valueNodeLabel(
+  { term, propertyShape }: ValueNodeLabelOptions,
+): Literal {
   const { shapesGraph, dataGraph } = propertyShape;
 
   //  1. If V is a literal, use its lexical form as the label.
@@ -31,7 +56,8 @@ export function valueNodeLabel({ term, propertyShape }: ValueNodeLabelOptions): 
     .getQuads(node, sh("property"))
     .filter(
       ({ object: property }) =>
-        shapesGraph.getQuads(property, shui("propertyRole"), shui("LabelRole")).length > 0,
+        shapesGraph.getQuads(property, shui("propertyRole"), shui("LabelRole"))
+          .length > 0,
     )
     .map(({ object: property }) => property)
     .flatMap((property) => {

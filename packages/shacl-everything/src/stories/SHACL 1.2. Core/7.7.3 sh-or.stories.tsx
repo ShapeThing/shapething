@@ -19,3 +19,8 @@ export const shOrB: Story = {
   name: "Violated (matches neither branch)",
   args: argsByTestFile("7.7.3.b sh-or.ttl", import.meta.url),
 };
+
+export const shOrC: Story = {
+  name: "Datatype",
+  args: argsByTestFile("7.7.3.c sh-or.ttl", import.meta.url),
+};

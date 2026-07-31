@@ -13,3 +13,11 @@
     box-shadow: none;
   }
 }
+
+.st-label {
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text-muted);
+  margin-bottom: var(--size-2);
+  display: block;
+  font-weight: 600;
+}

@@ -21,3 +21,11 @@
   font-size: var(--st-font-size-small);
   color: var(--st-color-text-muted);
 }
+
+.st-form-element__header {
+  display: flex;
+  gap: var(--size-2);
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+}

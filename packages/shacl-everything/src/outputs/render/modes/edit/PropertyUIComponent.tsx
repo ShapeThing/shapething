@@ -46,6 +46,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   return (
     <FormElement
       label={propertyUIElement.label()?.value}
+      labelTitle={propertyUIElement.pathAsSparql()}
       description={description}
       severity={severity}
     >
@@ -57,7 +58,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
               index={index}
               propertyUIElement={propertyUIElement}
               object={object}
-              onTermSet={showEmptyWidget ? () => setShowEmptyWidget(false) : () => {}}
+              onTermSet={() => setShowEmptyWidget(false)}
             />
           </Suspense>
         ))}

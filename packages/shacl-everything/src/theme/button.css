@@ -28,3 +28,13 @@
     }
   }
 }
+
+.st-button--text {
+  background: none;
+  border-color: transparent;
+}
+
+.st-button-small {
+  padding: var(--size-1);
+  font-size: 0.7rem;
+}

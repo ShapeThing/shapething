@@ -7,3 +7,4 @@ property-remove-value =
     .aria-label = Waarde verwijderen
 select-an-option = - Selecteer een optie -
 min-count-required = Waarde vereist
+widget-switcher-label = Selecteer een widget

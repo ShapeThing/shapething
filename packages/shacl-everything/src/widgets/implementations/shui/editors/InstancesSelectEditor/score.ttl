@@ -1,5 +1,8 @@
 PREFIX sh: <http://www.w3.org/ns/shacl#>
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+shui:InstancesSelectEditor rdfs:label "Instance Picker"@en, "Instantiekiezer"@nl .
 
 shui:instancesSelectEditorScore40
     a shui:WidgetScore ;

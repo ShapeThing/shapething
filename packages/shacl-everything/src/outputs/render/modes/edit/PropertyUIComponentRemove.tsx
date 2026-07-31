@@ -29,6 +29,7 @@ export default function PropertyUIComponentRemove({
   const severity = propertyUIElement.getOne(sh("severity"))?.value as Severity | undefined;
 
   const removeValue = () => {
+    debugger;
     propertyUIElement.removeObject(object);
     onRemove();
   };

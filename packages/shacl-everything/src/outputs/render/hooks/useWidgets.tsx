@@ -1,4 +1,4 @@
-import type { Term } from "@rdfjs/types";
+import type { NamedNode, Term } from "@rdfjs/types";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -15,37 +15,38 @@ import { noRefetch } from "@/helpers/noRefetch.ts";
  * shui:dataGraphShape (e.g. picking a different widget for a URL than for plain text sharing the
  * same property) - omit it to score on the property shape(s) alone.
  */
-export function useWidget(
+export function useWidgets(
   widgetPredicate: Term,
   property: PropertyUIElement,
   valueNode?: Term,
-):
-  | {
-      Widget: WidgetComponent;
-      iri: Term;
-      meta: WidgetMeta | undefined;
-    }
-  | undefined {
+): {
+  Widget: WidgetComponent;
+  iri: Term;
+  meta: WidgetMeta | undefined;
+}[] {
   const { mode } = useEnvironment();
 
-  const { data: widget } = useQuery({
+  const { data: widgets } = useQuery({
     queryKey: [
-      "widget",
+      "widgets",
       mode,
       property.propertyShapes.map((shape) => shape.value),
       valueNode ? termKey(valueNode) : "no-object",
     ],
     // react-query treats a resolved `undefined` as an error ("Query data cannot be undefined"),
     // so the no-match case is represented as `null` instead.
-    queryFn: async () => (await property.widget({ widgetPredicate, valueNode })) ?? null,
+    queryFn: async () => (await property.widgets({ widgetPredicate, valueNode })) ?? null,
     placeholderData: keepPreviousData,
     ...noRefetch,
   });
 
-  if (!widget || widget.termType !== "NamedNode" || mode === "facet") return undefined;
-  return {
-    Widget: getWidgetComponent(mode, widget)!,
-    meta: getWidgetMeta(widget),
-    iri: widget,
-  };
+  if (!widgets || mode === "facet") return [];
+  return widgets
+    .filter((widgetResult) => widgetResult.widget.termType === "NamedNode")
+    .map(({ widget, score }) => ({
+      Widget: getWidgetComponent(mode, widget as NamedNode)!,
+      meta: getWidgetMeta(widget as NamedNode),
+      iri: widget,
+      score,
+    }));
 }

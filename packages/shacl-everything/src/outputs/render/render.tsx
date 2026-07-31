@@ -44,7 +44,8 @@ const modesNodeUIComponents: Record<Environment["mode"], React.ComponentType> = 
 };
 
 function ShaclRendererInner() {
-  const { mode } = useEnvironment();
+  const { mode, dataGraph } = useEnvironment();
+  console.log(dataGraph);
   const NodeUIComponent = modesNodeUIComponents[mode];
   return <NodeUIComponent />;
 }
