@@ -59,6 +59,14 @@
   z-index: var(--st-z-index-flyout);
   border: 1px solid var(--st-color-border);
   background-color: var(--st-primary-color-lighter);
+  display: flex;
+  gap: var(--size-2);
+  flex-wrap: wrap;
+
+  &:empty {
+    display: none;
+  }
+
   z-index: 10;
 
   &::after {

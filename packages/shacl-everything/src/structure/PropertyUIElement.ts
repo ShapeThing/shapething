@@ -1,10 +1,10 @@
 import type { Literal, NamedNode, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
+import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 import { factory } from "@/helpers/factory.ts";
 import { localName } from "@/helpers/localName.ts";
-import { rdf, rdfs, sh, shui, xsd } from "@/helpers/namespaces.ts";
-import { getRdfList } from "@/helpers/rdfList.ts";
+import { rdfs, sh, shui, xsd } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 import {
@@ -300,18 +300,6 @@ function dedupeTerms(terms: Term[]): Term[] {
     if (!seen.has(termKey(term))) seen.set(termKey(term), term);
   }
   return [...seen.values()];
-}
-
-// sh:in/sh:languageIn/sh:ignoredProperties/sh:uniqueValuesFor/sh:nodeKind may point at either a
-// plain term or the head of an rdf:List. Both forms need to resolve to "the values this constraint
-// is actually about" before they can be merged.
-function expandListOrTerm(term: Term, shapesGraph: RdfStore): Term[] {
-  if (term.termType !== "BlankNode" && term.termType !== "NamedNode") {
-    return [term];
-  }
-  if (term.equals(rdf("nil"))) return [];
-  if (shapesGraph.getQuads(term, rdf("first")).length === 0) return [term];
-  return getRdfList(term, shapesGraph);
 }
 
 // xsd:date/dateTime-family literals sort by calendar time; everything else sorts numerically,

@@ -17,7 +17,7 @@
   --st-severity-info: var(--blue-6);
 
   /* ShapeThing derived */
-  --st-primary-color-lighter: hsl(from var(--st-primary-color) h s calc(l + 30));
+  --st-primary-color-lighter: hsl(from var(--st-primary-color) h s calc(l + 33));
 
   /* Contextual variables */
   --color: var(--st-primary-color);

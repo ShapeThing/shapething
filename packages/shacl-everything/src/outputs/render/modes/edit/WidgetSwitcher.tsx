@@ -1,4 +1,5 @@
 import { shui } from "@/helpers/namespaces.ts";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useWidgets } from "@/outputs/render/hooks/useWidgets.tsx";
 import { propertyLabel } from "@/resolution/label.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -14,12 +15,14 @@ export default function WidgetSwitcher({
   setActiveWidget: (widget: () => WidgetComponent | undefined) => void;
   shape: PropertyUIElement;
 }) {
+  const { enableWidgetSwitching } = useEnvironment();
+
   const widgets = useWidgets(shui("editor"), shape);
   const activeWidgetIri = ActiveWidget
     ? widgets.find(({ Widget }) => Widget === ActiveWidget)?.iri
     : undefined;
 
-  return widgets.length > 1 ? (
+  return enableWidgetSwitching && widgets.length > 1 ? (
     <div className="st-widget-switcher">
       <label className="st-label">
         <Localized id="widget-switcher-label">Pick a widget</Localized>
@@ -32,12 +35,12 @@ export default function WidgetSwitcher({
             setActiveWidget(() => widgets.find(({ iri }) => iri.value === e.target.value)?.Widget);
           }}
         >
-          {widgets.map(({ iri }) => {
+          {widgets.map(({ iri, score }) => {
             const widgetLabel = propertyLabel({ widget: iri, propertyShape: shape });
 
             return (
               <option key={iri.value} value={iri.value}>
-                {widgetLabel}
+                {widgetLabel} ({score})
               </option>
             );
           })}

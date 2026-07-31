@@ -1,6 +1,6 @@
 import type { NamedNode, Term } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
-import { sh, xsd } from "@/helpers/namespaces.ts";
+import { rdf, sh, xsd } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { getWidgetMeta } from "@/widgets/registry.ts";
 import type { CreateTermContext } from "@/widgets/types.ts";
@@ -36,4 +36,30 @@ export function createDefaultTerm(
 ): Term {
   const createTerm = getWidgetMeta(widget)?.createTerm;
   return createTerm ? createTerm(context, shape) : defaultTermFromShape(shape);
+}
+
+/**
+ * The term a property's value should become after switching to a different sh:or/sh:xone branch.
+ * Literal values switching between datatype-only branches (e.g. xsd:string <-> rdf:langString)
+ * keep their lexical form - the user's typed text is still valid, only its datatype changes.
+ * Anything else (e.g. switching to a sh:class/sh:node branch, where the old value's shape doesn't
+ * carry over at all) falls back to a fresh default term for the newly selected branch.
+ */
+export function coerceTermToBranch(
+  term: Term,
+  widget: NamedNode,
+  branchProperty: PropertyUIElement,
+  context: CreateTermContext,
+): Term {
+  const datatype = branchProperty.getOne(sh("datatype")) as NamedNode | undefined;
+  if (term.termType === "Literal" && datatype) {
+    // rdf:langString literals are identified by their language tag, not an explicit datatype -
+    // factory.literal(value, aNamedNode) sets the datatype directly instead, which for
+    // rdf:langString produces an invalid literal with no language tag at all.
+    if (datatype.equals(rdf("langString"))) {
+      return factory.literal(term.value, context.contentLanguage);
+    }
+    return factory.literal(term.value, datatype);
+  }
+  return createDefaultTerm(widget, branchProperty, context);
 }

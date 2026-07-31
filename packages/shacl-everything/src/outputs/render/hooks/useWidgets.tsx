@@ -23,6 +23,7 @@ export function useWidgets(
   Widget: WidgetComponent;
   iri: Term;
   meta: WidgetMeta | undefined;
+  score: number;
 }[] {
   const { mode } = useEnvironment();
 

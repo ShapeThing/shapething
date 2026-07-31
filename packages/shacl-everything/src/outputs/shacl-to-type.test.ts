@@ -108,6 +108,31 @@ test("maps xsd:integer and xsd:boolean datatypes to number and boolean", async (
   expect(recipe).toContain("vegan: boolean;");
 });
 
+test("maps a sh:datatype SHACL list of xsd:string and rdf:langString to string", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.com/> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+        @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+        ex:Recipe a sh:NodeShape ;
+            sh:property [
+                sh:path ex:title ;
+                sh:datatype ( xsd:string rdf:langString ) ;
+                sh:minCount 1 ;
+                sh:maxCount 1 ;
+            ] .
+    `,
+    "text/turtle",
+  );
+
+  const types = shaclToType({ shapesGraph });
+
+  const recipe = types.get("Recipe") as string;
+  expect(recipe).toContain("title: string;");
+});
+
 test("generates one type per node shape, keyed by local name", async () => {
   const shapesGraph = await parseRdf(
     `

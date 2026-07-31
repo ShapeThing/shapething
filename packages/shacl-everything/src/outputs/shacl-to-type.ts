@@ -6,6 +6,7 @@ import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { castDataTypeTermToJs } from "@/helpers/castDataTypeTermToJs.ts";
+import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 
 export interface TypeOptions {
   shapesGraph: RdfStore;
@@ -58,7 +59,9 @@ function nodeUIElement(node: NodeUIElement): string {
   // A union only needs parens when it's intersected with something else via
   // `&`; standing alone, its `|` members already bind correctly.
   const needsParens = fragments.length > 0 || unionFragments.length > 1;
-  fragments.push(...unionFragments.map((union) => (needsParens ? `(${union})` : union)));
+  fragments.push(
+    ...unionFragments.map((union) => (needsParens ? `(${union})` : union)),
+  );
 
   const name = getCodeIdentifier(node.shapesGraph, node.focusNode);
 
@@ -75,18 +78,30 @@ function propertyUIElement(property: PropertyUIElement): string {
 
   const codeIdentifier = getCodeIdentifier(shapesGraph, propertyShapes[0]);
   const minCount = parseFloat(property.getOne(sh("minCount"))?.value ?? "0");
-  const maxCount = parseFloat(property.getOne(sh("maxCount"))?.value ?? "Infinity");
+  const maxCount = parseFloat(
+    property.getOne(sh("maxCount"))?.value ?? "Infinity",
+  );
   const required = minCount > 0;
   const multiple = maxCount > 1;
-  const datatype = castDataTypeTermToJs(property.getOne(sh("datatype")) ?? xsd("string"));
+  const datatype = resolveDatatype(property);
+  const isUnion = datatype.includes(" | ");
 
   const propertyType: string[] = [codeIdentifier];
   if (!required) propertyType.push("?");
   propertyType.push(": ");
-  propertyType.push(datatype);
+  propertyType.push(multiple && isUnion ? `(${datatype})` : datatype);
   if (multiple) propertyType.push(`[]`);
   propertyType.push(";");
   return propertyType.join("");
+}
+
+// sh:datatype normally holds a single IRI, but this renderer also accepts an rdf:List of
+// datatypes (any one of which may hold), rendering the union of their distinct JS types.
+function resolveDatatype(property: PropertyUIElement): string {
+  const declared = property.getOne(sh("datatype")) ?? xsd("string");
+  const datatypeTerms = expandListOrTerm(declared, property.shapesGraph);
+  const jsTypes = [...new Set(datatypeTerms.map(castDataTypeTermToJs))];
+  return jsTypes.join(" | ");
 }
 
 // sh:or is an inclusive union: any one (or more) of the branches may hold.
@@ -98,7 +113,10 @@ function choiceElement(choice: ChoiceElement): string {
     : branches.map((properties) => branchObjectType(properties)).join(" | ");
 }
 
-function branchObjectType(properties: PropertyUIElement[], extraLines: string[] = []): string {
+function branchObjectType(
+  properties: PropertyUIElement[],
+  extraLines: string[] = [],
+): string {
   const lines = [...properties.map(propertyUIElement), ...extraLines];
   return `{ ${lines.join(" ").replace(/;$/, "")} }`;
 }
@@ -111,8 +129,8 @@ function branchObjectType(properties: PropertyUIElement[], extraLines: string[] 
 function xoneUnion(branches: PropertyUIElement[][]): string {
   const branchKeys = branches.map((properties) =>
     properties.map((property) =>
-      getCodeIdentifier(property.shapesGraph, property.propertyShapes[0]),
-    ),
+      getCodeIdentifier(property.shapesGraph, property.propertyShapes[0])
+    )
   );
   const allKeys = [...new Set(branchKeys.flat())];
 

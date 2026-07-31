@@ -185,7 +185,7 @@ type ValidateProps = {
   shapesGraph: RdfStore;
 };
 
-async function validate(
+export async function validate(
   { focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps,
 ) {
   if (!shapeNode) return true;

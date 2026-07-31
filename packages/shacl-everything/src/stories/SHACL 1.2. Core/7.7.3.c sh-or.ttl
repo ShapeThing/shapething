@@ -12,8 +12,14 @@
         sh:name "Contact"@en ;
         sh:path ex:contact ;
         sh:or (
-            [ sh:datatype xsd:string ]
-            [ sh:datatype rdf:langString ]
+            [ 
+                sh:name "Contact as string"@en ;
+                sh:datatype xsd:string 
+            ]
+            [ 
+                sh:name "Contact as language string"@en ;
+                sh:datatype rdf:langString 
+            ]
         ) ;
     ] ;
     .

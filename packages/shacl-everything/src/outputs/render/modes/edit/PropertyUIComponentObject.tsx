@@ -1,13 +1,15 @@
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
+import { useActiveBranch } from "@/outputs/render/hooks/useActiveBranch.tsx";
 import useActiveElement from "@/outputs/render/hooks/useActiveElement.tsx";
 import PropertyUIComponentRemove from "@/outputs/render/modes/edit/PropertyUIComponentRemove.tsx";
+import { logicalBranches, withBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "./style.css";
 import { sh, shui } from "@/helpers/namespaces.ts";
 import WidgetSwitcher from "@/outputs/render/modes/edit/WidgetSwitcher.tsx";
-import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import LogicalConstraintSwitcher from "@/outputs/render/modes/edit/LogicalConstraintSwitcher.tsx";
 
 export default function PropertyUIComponentObject({
   propertyUIElement,
@@ -20,10 +22,18 @@ export default function PropertyUIComponentObject({
   index: number;
   onTermSet: () => void;
 }) {
-  const { Widget } = useWidget(shui("editor"), propertyUIElement, object) ?? {};
+  // A property constrained by sh:or/sh:xone has no top-level sh:datatype/sh:class of its own -
+  // widget scoring needs the currently active branch's constraints merged in too, or it stays
+  // blind to them entirely (see structure/logicalBranches.ts).
+  const branches = useMemo(() => logicalBranches(propertyUIElement), [propertyUIElement]);
+  const activeBranch = useActiveBranch(propertyUIElement, object, branches);
+  const effectiveProperty = activeBranch
+    ? withBranch(propertyUIElement, activeBranch.shape)
+    : propertyUIElement;
+
+  const { Widget } = useWidget(shui("editor"), effectiveProperty, object) ?? {};
   const [ActiveWidget, setActiveWidget] = useState<typeof Widget | undefined>(undefined);
   const ref = useRef<HTMLDivElement>(null);
-  const { enableWidgetSwitching } = useEnvironment();
 
   const activeElement = useActiveElement();
   const currentlyFocused = ref.current?.contains(activeElement);
@@ -40,22 +50,24 @@ export default function PropertyUIComponentObject({
     [propertyUIElement, object, index, onTermSet],
   );
   const unit = propertyUIElement.getOne(sh("unit"))?.value;
-  const needsFlyOut = enableWidgetSwitching && currentlyFocused && ActiveWidget;
 
   return (
     <div className="st-property-object">
       {ActiveWidget && (
         <div className="st-property-object__widget" ref={ref}>
-          <ActiveWidget shape={propertyUIElement} term={object} setTerm={setTerm} />
-          {needsFlyOut && (
+          <ActiveWidget shape={effectiveProperty} term={object} setTerm={setTerm} />
+          {currentlyFocused && (
             <div className="st-property-object__fly-out">
-              {enableWidgetSwitching && (
-                <WidgetSwitcher
-                  ActiveWidget={ActiveWidget}
-                  setActiveWidget={setActiveWidget}
-                  shape={propertyUIElement}
-                />
-              )}
+              <LogicalConstraintSwitcher
+                shape={propertyUIElement}
+                term={object}
+                setTerm={setTerm}
+              />
+              <WidgetSwitcher
+                ActiveWidget={ActiveWidget}
+                setActiveWidget={setActiveWidget}
+                shape={effectiveProperty}
+              />
             </div>
           )}
         </div>
