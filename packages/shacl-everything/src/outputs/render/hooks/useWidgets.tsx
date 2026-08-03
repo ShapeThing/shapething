@@ -42,12 +42,21 @@ export function useWidgets(
   });
 
   if (!widgets || mode === "facet") return [];
-  return widgets
-    .filter((widgetResult) => widgetResult.widget.termType === "NamedNode")
-    .map(({ widget, score }) => ({
-      Widget: getWidgetComponent(mode, widget as NamedNode)!,
-      meta: getWidgetMeta(widget as NamedNode),
-      iri: widget,
-      score,
-    }));
+
+  const seen = new Set<string>();
+  return (
+    widgets
+      .filter((widgetResult) => widgetResult.widget.termType === "NamedNode")
+      // A widget can have several WidgetScore rules that all match the same property at once (e.g.
+      // TextFieldEditor scoring both on shui:isString and shui:hasDatatypeStringConstraint), so the
+      // same widget IRI can appear more than once here - keep only its highest-scoring entry, which
+      // is the first one since score() already yields in descending-score order.
+      .filter(({ widget }) => (seen.has(widget.value) ? false : (seen.add(widget.value), true)))
+      .map(({ widget, score }) => ({
+        Widget: getWidgetComponent(mode, widget as NamedNode)!,
+        meta: getWidgetMeta(widget as NamedNode),
+        iri: widget,
+        score,
+      }))
+  );
 }

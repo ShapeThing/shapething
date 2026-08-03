@@ -1,8 +1,8 @@
-import type { NamedNode, Term } from "@rdfjs/types";
+import type { Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { getRdfList } from "@/helpers/rdfList.ts";
+import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { propertiesForShape } from "@/structure/propertiesForShape.ts";
 
 export type ChoiceConnective = "or" | "xone";
 
@@ -12,7 +12,7 @@ export class ChoiceElement {
   public shapesGraph: RdfStore;
   public dataGraph: RdfStore;
   public scoresGraph: RdfStore;
-  public focusNode: NamedNode;
+  public focusNode: Quad_Subject;
   public shape: Term;
   public connective: ChoiceConnective;
   public list: Term;
@@ -20,7 +20,7 @@ export class ChoiceElement {
   constructor(
     shapesGraph: RdfStore,
     dataGraph: RdfStore,
-    focusNode: NamedNode,
+    focusNode: Quad_Subject,
     shape: Term,
     connective: ChoiceConnective,
     list: Term,
@@ -35,9 +35,9 @@ export class ChoiceElement {
     this.list = list;
   }
 
-  children(): PropertyUIElement[][] {
+  children(): (PropertyUIElement | ChoiceElement)[][] {
     return getRdfList(this.list, this.shapesGraph).map((branchShape) =>
-      propertiesForShape(
+      childrenForShape(
         this.shapesGraph,
         this.dataGraph,
         branchShape,

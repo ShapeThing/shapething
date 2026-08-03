@@ -27,26 +27,33 @@ export default function PropertyUIComponentRemove({
   const minCount = parseFloat(propertyUIElement.getOne(sh("minCount"))?.value ?? "0");
   const canRemove = existingObjects.length > minCount;
   const severity = propertyUIElement.getOne(sh("severity"))?.value as Severity | undefined;
+  const maxCount = parseFloat(propertyUIElement.getOne(sh("maxCount"))?.value ?? "Infinity");
+  const fieldIsSingleValued = maxCount === 1 && minCount <= 1;
 
   const removeValue = () => {
-    debugger;
     propertyUIElement.removeObject(object);
     onRemove();
   };
 
   return (
-    <Localized id="property-remove-value" attrs={{ "aria-label": true }}>
-      <Tooltip enabled={!canRemove} severity={severity} tip={<Localized id="min-count-required" />}>
-        <button
-          disabled={!canRemove}
-          className="st-button"
-          type="button"
-          aria-label="Remove value"
-          onClick={removeValue}
+    !fieldIsSingleValued && (
+      <Localized id="property-remove-value" attrs={{ "aria-label": true }}>
+        <Tooltip
+          enabled={!canRemove}
+          severity={severity}
+          tip={<Localized id="min-count-required" />}
         >
-          <Minus />
-        </button>
-      </Tooltip>
-    </Localized>
+          <button
+            disabled={!canRemove}
+            className="st-button"
+            type="button"
+            aria-label="Remove value"
+            onClick={removeValue}
+          >
+            <Minus />
+          </button>
+        </Tooltip>
+      </Localized>
+    )
   );
 }

@@ -1,0 +1,63 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix dbo: <http://dbpedia.org/ontology/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Favourite philosopher"@en ;
+        sh:path ex:favouritePhilosopher ;
+        sh:class dbo:Philosopher ;
+        sh:nodeKind sh:IRI ;
+        sh:node <#philosopherShape> ;
+        shui:editor shui:AutoCompleteEditor ;
+        sh:in [
+            # dbpedia's Virtuoso endpoint has its own fulltext index (bif:contains) - shui:searchQuery
+            # lets this shape hand that straight to the renderer instead of relying on its default
+            # IRI/LabelRole substring search (which can only ever see already-loaded local data).
+            # ?searchTerm/?uiLanguage are substituted by the renderer at execution time; the LIMIT the
+            # spec forbids here is added by the renderer instead (see federatedQuery.ts).
+            shui:searchQuery """
+                PREFIX bif: <bif:>
+                PREFIX dbo: <http://dbpedia.org/ontology/>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                SELECT ?value WHERE {
+                    SERVICE <https://dbpedia.org/sparql> {
+                        ?value a dbo:Philosopher .
+                        ?value rdfs:label ?searchLabel .
+                        ?searchLabel bif:contains ?searchTerm .
+                        FILTER(strstarts(?uiLanguage, lang(?searchLabel)))
+                    }
+                }
+            """
+        ] ;
+    ] ;
+    .
+
+<#philosopherShape>
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+        sh:order 1 ;
+    ] ;
+    sh:property [
+        sh:path rdfs:comment ;
+        shui:propertyRole shui:SubLabelRole ;
+        sh:order 2 ;
+    ] ;
+    sh:property [
+        sh:path dbo:thumbnail ;
+        shui:propertyRole shui:DepictionRole ;
+        sh:order 3 ;
+    ] .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:favouritePhilosopher <http://dbpedia.org/resource/Aristotle> ;
+    .

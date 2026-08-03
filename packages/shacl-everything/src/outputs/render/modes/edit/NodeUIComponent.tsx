@@ -1,9 +1,7 @@
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
-import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { Fragment, useMemo } from "react";
-import { Localized } from "@fluent/react";
-import PropertyUIElementComponent from "@/outputs/render/modes/edit/PropertyUIComponent.tsx";
+import { useMemo } from "react";
+import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 
 export default function NodeUIComponent() {
   const { focusNode, shapesGraph, dataGraph, scoresGraph, nodeShapes } = useEnvironment();
@@ -21,17 +19,7 @@ export default function NodeUIComponent() {
 
   return (
     <div>
-      {nodeUiElement.children().map((child, index) => (
-        <Fragment key={index}>
-          {child instanceof PropertyUIElement ? (
-            <PropertyUIElementComponent propertyUIElement={child} />
-          ) : (
-            <Localized id="node-ui-choice-element">
-              <div>Choice Element</div>
-            </Localized>
-          )}
-        </Fragment>
-      ))}
+      <NodeUIElementChildren nodeUiElement={nodeUiElement} />
     </div>
   );
 }

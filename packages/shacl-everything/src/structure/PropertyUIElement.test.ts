@@ -1,5 +1,5 @@
 import { expect, test } from "vite-plus/test";
-import type { NamedNode } from "@rdfjs/types";
+import type { BlankNode, NamedNode } from "@rdfjs/types";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
@@ -621,6 +621,34 @@ test("addObject() writes a new value onto this.focusNode via this element's path
       .map((term) => term.value)
       .sort(),
   ).toEqual(["Ally", "Alice"].sort());
+});
+
+test("addObject() writes onto a BlankNode this.focusNode too, not just a NamedNode (e.g. a nested sh:node value)", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:streetShape a sh:PropertyShape ; sh:path ex:street .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n _:address ex:street "Dam 1" .`,
+    "text/turtle",
+  );
+  const focusNode = dataGraph.getQuads(null, ex("street"))[0].subject as BlankNode;
+
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode,
+    propertyShapes: [ex("streetShape")],
+  });
+
+  element.addObject(factory.literal("Dam 2"));
+
+  expect(
+    element
+      .getObjects()
+      .map((term) => term.value)
+      .sort(),
+  ).toEqual(["Dam 1", "Dam 2"].sort());
 });
 
 test("addObject() does nothing when the property shape has no sh:path", async () => {

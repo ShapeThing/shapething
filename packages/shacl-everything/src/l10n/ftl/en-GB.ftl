@@ -1,5 +1,4 @@
 node-ui-property-element = Property UI Element
-node-ui-choice-element = Choice Element
 loading = Loading
 property-add-value =
     .aria-label = Add value
@@ -9,3 +8,8 @@ select-an-option = - Select an option -
 min-count-required = Value required
 widget-switcher-label = Pick a widget
 logical-constraint-switcher-label = Pick an alternative
+autocomplete-search-placeholder =
+    .placeholder = Search…
+autocomplete-no-results = No results found
+autocomplete-edit-value =
+    .aria-label = Edit

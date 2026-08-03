@@ -18,6 +18,8 @@ export default function PropertyUIComponentAdd({
 }) {
   const existingObjects = useDataGraphObjects(propertyUIElement);
   const maxCount = parseFloat(propertyUIElement.getOne(sh("maxCount"))?.value ?? "Infinity");
+  const minCount = parseFloat(propertyUIElement.getOne(sh("minCount"))?.value ?? "0");
+  const fieldIsSingleValued = maxCount === 1 && minCount <= 1;
   let canAddValue = maxCount > 1 && existingObjects.length < maxCount && !showEmptyWidget;
   const { meta } = useWidget(shui("editor"), propertyUIElement) ?? {};
 
@@ -27,16 +29,18 @@ export default function PropertyUIComponentAdd({
   }
 
   return (
-    <Localized id="property-add-value" attrs={{ "aria-label": true }}>
-      <button
-        disabled={!canAddValue}
-        className={clsx("st-button", "st-property-add-button")}
-        type="button"
-        aria-label="Add value"
-        onClick={() => setShowEmptyWidget(true)}
-      >
-        <Plus />
-      </button>
-    </Localized>
+    !fieldIsSingleValued && (
+      <Localized id="property-add-value" attrs={{ "aria-label": true }}>
+        <button
+          disabled={!canAddValue}
+          className={clsx("st-button", "st-property-add-button")}
+          type="button"
+          aria-label="Add value"
+          onClick={() => setShowEmptyWidget(true)}
+        >
+          <Plus />
+        </button>
+      </Localized>
+    )
   );
 }

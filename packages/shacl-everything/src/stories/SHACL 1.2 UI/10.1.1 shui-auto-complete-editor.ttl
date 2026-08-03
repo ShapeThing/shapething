@@ -1,3 +1,5 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
 @prefix ex: <http://example.org/>.
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
 @prefix schema: <http://schema.org/>.
@@ -24,5 +26,25 @@
     ex:bornIn ex:Netherlands ;
     .
 
-ex:Netherlands a ex:Country ; rdfs:label "Netherlands"@en .
-ex:Germany a ex:Country ; rdfs:label "Germany"@en .
+ex:Netherlands a ex:Country ; 
+    foaf:depiction <https://upload.wikimedia.org/wikipedia/commons/2/20/Flag_of_the_Netherlands.svg> ;
+    rdfs:label "Netherlands"@en .
+
+ex:Germany a ex:Country ; 
+    foaf:depiction <https://upload.wikimedia.org/wikipedia/en/b/ba/Flag_of_Germany.svg> ;
+    rdfs:label "Germany"@en .
+
+<#countryShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Country ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:datatype xsd:string ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+
+    sh:property [
+        sh:path foaf:depiction ;
+        shui:propertyRole shui:DepictionRole ;
+    ]
+    .

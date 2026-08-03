@@ -61,7 +61,11 @@ function nodeUIElement(node: NodeUIElement): string {
   const needsParens = fragments.length > 0 || unionFragments.length > 1;
   fragments.push(...unionFragments.map((union) => (needsParens ? `(${union})` : union)));
 
-  const name = getCodeIdentifier(node.shapesGraph, node.focusNode);
+  // shaclToType only ever feeds NodeUIElement a node shape as its "focus node" (see
+  // shaclToType() above), never real instance data - so despite NodeUIElement.focusNode
+  // being typed Quad_Subject (to also support blank-node-rooted forms elsewhere), it's
+  // always a NamedNode here.
+  const name = getCodeIdentifier(node.shapesGraph, node.focusNode as NamedNode);
 
   return `export type ${name} = ${fragments.join(" & ")};\n`;
 }
@@ -106,12 +110,28 @@ function choiceElement(choice: ChoiceElement): string {
 
   return choice.connective === "xone"
     ? xoneUnion(branches)
-    : branches.map((properties) => branchObjectType(properties)).join(" | ");
+    : branches.map((elements) => branchObjectType(elements)).join(" | ");
 }
 
-function branchObjectType(properties: PropertyUIElement[], extraLines: string[] = []): string {
-  const lines = [...properties.map(propertyUIElement), ...extraLines];
-  return `{ ${lines.join(" ").replace(/;$/, "")} }`;
+function branchObjectType(
+  elements: (PropertyUIElement | ChoiceElement)[],
+  extraLines: string[] = [],
+): string {
+  const propertyLines: string[] = [];
+  const nestedChoiceFragments: string[] = [];
+  for (const element of elements) {
+    if (element instanceof PropertyUIElement) propertyLines.push(propertyUIElement(element));
+    else nestedChoiceFragments.push(choiceElement(element));
+  }
+
+  const base = `{ ${[...propertyLines, ...extraLines].join(" ").replace(/;$/, "")} }`;
+  if (nestedChoiceFragments.length === 0) return base;
+
+  // A branch nesting a further sh:or/xone (via sh:node) must satisfy its own properties *and*
+  // one of the nested choice's branches - mirrors nodeUIElement()'s own `&`-combination of its
+  // object type with a union fragment. Parens are always required here (unlike
+  // nodeUIElement()'s conditional needsParens), since `base` is always present as a sibling.
+  return [base, ...nestedChoiceFragments.map((fragment) => `(${fragment})`)].join(" & ");
 }
 
 // sh:xone allows exactly one branch. Each branch marks every other branch's
@@ -119,19 +139,25 @@ function branchObjectType(properties: PropertyUIElement[], extraLines: string[] 
 // whether a fresh literal or a value coming from a typed variable - is
 // rejected: a property typed `never` is a genuine structural mismatch, not
 // merely an excess-property warning that literals can dodge.
-function xoneUnion(branches: PropertyUIElement[][]): string {
-  const branchKeys = branches.map((properties) =>
-    properties.map((property) =>
-      getCodeIdentifier(property.shapesGraph, property.propertyShapes[0]),
-    ),
+//
+// TODO a branch nesting a further sh:or/xone (via sh:node) only contributes its own direct
+// sh:property keys to this exclusivity check - properties reachable through the nested choice
+// aren't accounted for. Full transitive exclusivity through arbitrary nesting depth is out of
+// scope for what is a type-generation convenience; shacl-engine remains the actual runtime
+// source of truth for conformance.
+function xoneUnion(branches: (PropertyUIElement | ChoiceElement)[][]): string {
+  const branchKeys = branches.map((elements) =>
+    elements
+      .filter((element): element is PropertyUIElement => element instanceof PropertyUIElement)
+      .map((property) => getCodeIdentifier(property.shapesGraph, property.propertyShapes[0])),
   );
   const allKeys = [...new Set(branchKeys.flat())];
 
-  const rendered = branches.map((properties, index) => {
+  const rendered = branches.map((elements, index) => {
     const ownKeys = new Set(branchKeys[index]);
     const foreignKeys = allKeys.filter((key) => !ownKeys.has(key));
     return branchObjectType(
-      properties,
+      elements,
       foreignKeys.map((key) => `${key}?: never;`),
     );
   });

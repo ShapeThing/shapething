@@ -16,6 +16,7 @@
                 sh:name "Street"@en ;
                 sh:path schema:streetAddress ;
                 sh:minCount 1 ;
+                shui:propertyRole shui:LabelRole ;
             ] ;
             sh:property [
                 sh:name "Postal code"@en ;

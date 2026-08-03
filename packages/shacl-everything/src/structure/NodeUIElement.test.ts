@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+import type { BlankNode } from "@rdfjs/types";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -298,4 +299,84 @@ test("propertyUiElements exposes sh:xone as a ChoiceElement", async () => {
 
   const [choiceElement] = node.children() as ChoiceElement[];
   expect(choiceElement.connective).toBe("xone");
+});
+
+test("focusNode may be a BlankNode, as when walking a nested sh:node value (e.g. DetailsEditor)", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.com/> .
+
+        ex:Address a sh:NodeShape ;
+            sh:property [ sh:path ex:street ] .
+    `,
+    "text/turtle",
+  );
+
+  const dataGraph = await parseRdf(
+    `
+        @prefix ex: <http://example.com/> .
+
+        _:address1 ex:street "Dam 1" .
+    `,
+    "text/turtle",
+  );
+
+  const focusNode = dataGraph.getQuads(null, ex("street"))[0].subject as BlankNode;
+  expect(focusNode.termType).toBe("BlankNode");
+
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode,
+    nodeShapes: [ex("Address")],
+  });
+
+  const [property] = node.children() as PropertyUIElement[];
+  expect(property.getObjects().map((term) => term.value)).toEqual(["Dam 1"]);
+});
+
+test("root sh:or with a sh:node branch (mirrors 7.7.3.f) resolves real data through ChoiceElement.children()", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.com/> .
+
+        ex:Person a sh:NodeShape ;
+            sh:or (
+                [ sh:property [ sh:path ex:address ] ]
+                [
+                    sh:node [
+                        sh:property [ sh:path ex:street ] ;
+                        sh:property [ sh:path ex:houseNumber ] ;
+                    ]
+                ]
+            ) .
+    `,
+    "text/turtle",
+  );
+
+  const dataGraph = await parseRdf(
+    `
+        @prefix ex: <http://example.com/> .
+
+        ex:Hendrik ex:street "Dam" ; ex:houseNumber "1" .
+    `,
+    "text/turtle",
+  );
+
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Hendrik"),
+    nodeShapes: [ex("Person")],
+  });
+
+  const [choice] = node.children() as ChoiceElement[];
+  expect(choice).toBeInstanceOf(ChoiceElement);
+
+  const branches = choice.children();
+  const structuredBranch = branches[1] as PropertyUIElement[];
+  expect(structuredBranch).toHaveLength(2);
+  expect(structuredBranch.map((property) => property.getObjects()[0]?.value)).toEqual(["Dam", "1"]);
 });

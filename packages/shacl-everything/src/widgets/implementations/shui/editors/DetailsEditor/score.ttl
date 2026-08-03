@@ -2,7 +2,7 @@ PREFIX sh: <http://www.w3.org/ns/shacl#>
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-shui:DetailsEditor rdfs:label "Collapsible Section"@en, "Uitklapbare sectie"@nl .
+shui:DetailsEditor rdfs:label "Nested Form"@en, "Genest formulier"@nl .
 
 shui:detailsEditorScore40
     a shui:WidgetScore ;

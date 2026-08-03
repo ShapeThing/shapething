@@ -333,3 +333,63 @@ test("marks every sibling key as never for each branch of a three-way sh:xone", 
       "{ halalCertification: string; meatType?: never; veganCertification?: never };\n",
   );
 });
+
+test("renders a sh:or branch declared via sh:node the same as one declared via sh:property", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.com/> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+        ex:Person a sh:NodeShape ;
+            sh:or (
+                [ sh:property [ sh:path ex:address ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ]
+                [
+                    sh:node [
+                        sh:property [ sh:path ex:street ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+                        sh:property [ sh:path ex:houseNumber ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+                    ]
+                ]
+            ) .
+    `,
+    "text/turtle",
+  );
+
+  const types = shaclToType({ shapesGraph });
+
+  const person = types.get("Person") as string;
+  expect(person).toBe(
+    "export type Person = { address: string } | { street: string; houseNumber: string };\n",
+  );
+});
+
+test("intersects a branch's own properties with a further sh:or nested inside it (via sh:node)", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.com/> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+        ex:Recipe a sh:NodeShape ;
+            sh:or (
+                [ sh:property [ sh:path ex:meatType ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ]
+                [
+                    sh:property [ sh:path ex:servings ; sh:datatype xsd:integer ; sh:minCount 1 ; sh:maxCount 1 ] ;
+                    sh:or (
+                        [ sh:property [ sh:path ex:veganCertification ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ]
+                        [ sh:property [ sh:path ex:halalCertification ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ]
+                    ) ;
+                ]
+            ) .
+    `,
+    "text/turtle",
+  );
+
+  const types = shaclToType({ shapesGraph });
+
+  const recipe = types.get("Recipe") as string;
+  expect(recipe).toBe(
+    "export type Recipe = { meatType: string } | " +
+      "{ servings: number } & ({ veganCertification: string } | { halalCertification: string });\n",
+  );
+});

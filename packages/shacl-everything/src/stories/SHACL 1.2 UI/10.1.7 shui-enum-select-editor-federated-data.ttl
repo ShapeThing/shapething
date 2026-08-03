@@ -1,0 +1,55 @@
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix dbo: <http://dbpedia.org/ontology/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Likes Philosopher"@en ;
+        sh:path ex:likesPhilosopher ;
+        sh:node <#philosopherShape> ;
+        sh:in [
+            # This sh:select only projects ?value - its label, sub-label and depiction are resolved
+            # by the renderer itself via sh:node's shui:propertyRole declarations below (see
+            # "Using Dynamic SHACL and shui:propertyRole").
+            sh:select """
+                PREFIX dbo: <http://dbpedia.org/ontology/>
+                SELECT DISTINCT ?value WHERE {
+                    SERVICE <https://dbpedia.org/sparql> {
+                        ?value a dbo:Philosopher .
+                    }
+                }
+                LIMIT 100
+            """
+        ] ;
+    ] ;
+    .
+
+<#philosopherShape>
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+        sh:order 1 ;
+    ] ;
+    sh:property [
+        sh:path rdfs:comment ;
+        shui:propertyRole shui:SubLabelRole ;
+        sh:order 2 ;
+    ] ;
+    sh:property [
+        sh:path dbo:thumbnail ;
+        shui:propertyRole shui:DepictionRole ;
+        sh:order 3 ;
+    ] .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:likesPhilosopher <http://dbpedia.org/resource/Aristotle> ;
+    schema:addressRegion "NSW" ;
+    .

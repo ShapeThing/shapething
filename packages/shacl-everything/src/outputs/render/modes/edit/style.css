@@ -49,6 +49,15 @@
   gap: var(--size-2);
 }
 
+.st-choice-element {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-3);
+  padding: var(--size-3);
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+}
+
 .st-property-object__fly-out {
   position: absolute;
   top: calc(100% + var(--size-3));
@@ -61,12 +70,12 @@
   background-color: var(--st-primary-color-lighter);
   display: flex;
   flex-wrap: wrap;
+  z-index: 10;
+  gap: var(--size-4);
 
   &:empty {
     display: none;
   }
-
-  z-index: 10;
 
   &::before {
     --size: calc(var(--size-2) + 1px);
@@ -92,11 +101,5 @@
     border-left: var(--size) solid transparent;
     border-right: var(--size) solid transparent;
     border-bottom: var(--size) solid var(--st-primary-color-lighter);
-  }
-
-  > *:not(:last-child) {
-    border-inline-end: 1px solid var(--st-color-border);
-    padding-inline-end: var(--size-3);
-    margin-inline-end: var(--size-3);
   }
 }

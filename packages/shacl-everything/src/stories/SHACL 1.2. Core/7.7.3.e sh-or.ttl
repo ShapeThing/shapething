@@ -1,4 +1,4 @@
-@prefix shui: <https://vocab.eccenca.com/shui/>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
 @prefix ex: <http://example.org/>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
 @prefix schema: <http://schema.org/>.
@@ -25,18 +25,30 @@
                     sh:property [
                         sh:name "Street"@en ;
                         sh:path schema:streetAddress ;
+                        sh:datatype xsd:string ;
+                        sh:minCount 1 ;
+                        sh:maxCount 1 ;
                     ] ;
                     sh:property [
                         sh:name "House number"@en ;
                         sh:path ex:houseNumber ;
+                        sh:datatype xsd:string ;
+                        sh:minCount 1 ;
+                        sh:maxCount 1 ;
                     ] ;
                     sh:property [
                         sh:name "Postal code"@en ;
                         sh:path schema:postalCode ;
+                        sh:datatype xsd:string ;
+                        sh:minCount 1 ;
+                        sh:maxCount 1 ;
                     ] ;
                     sh:property [
                         sh:name "City"@en ;
                         sh:path schema:addressLocality ;
+                        sh:datatype xsd:string ;
+                        sh:minCount 1 ;
+                        sh:maxCount 1 ;
                     ] ;
                 ] ;
             ]

@@ -31,6 +31,11 @@ export const shOrD: Story = {
 };
 
 export const shOrE: Story = {
-  name: "Free text vs. structured fields (address)",
+  name: "Property Free text vs. structured fields (address)",
   args: argsByTestFile("7.7.3.e sh-or.ttl", import.meta.url),
+};
+
+export const shOrF: Story = {
+  name: "Node Free text vs. structured fields (address)",
+  args: argsByTestFile("7.7.3.f sh-or.ttl", import.meta.url),
 };

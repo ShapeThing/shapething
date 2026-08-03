@@ -11,7 +11,7 @@
   --st-font-family: var(--font-rounded-sans);
   --st-primary-color: var(--indigo-6);
   --st-color-border: var(--gray-5);
-  --st-color-text-muted: var(--gray-7);
+  --st-color-text-muted: var(--gray-6);
   --st-font-size-small: var(--font-size-0);
   --st-severity-warning: var(--yellow-6);
   --st-severity-error: var(--red-6);

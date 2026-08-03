@@ -10,7 +10,12 @@ export default {
   component: ShaclRenderer,
 };
 
-export const shuiEnumSelectEditor: Story = {
+export const shuiEnumSelectEditor1: Story = {
   name: "Drop-down of sh:in values",
   args: argsByTestFile("10.1.7 shui-enum-select-editor.ttl", import.meta.url),
+};
+
+export const shuiEnumSelectEditor2: Story = {
+  name: "Federated values",
+  args: argsByTestFile("10.1.7 shui-enum-select-editor-federated-data.ttl", import.meta.url),
 };

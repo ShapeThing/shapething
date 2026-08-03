@@ -29,9 +29,12 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   // useWidget() call - same query key - hits cache instead of suspending behind the per-item
   // Suspense below (which would otherwise flash a loading indicator on every single Add click).
   useWidget(shui("editor"), propertyUIElement, defaultObject);
-  const objects = existingObjects;
-
-  if (showEmptyWidget && defaultObject) objects.push(defaultObject);
+  // existingObjects is a live-cached array (see useDataGraphObjects/useReactiveRead) - mutating it
+  // in place here would silently grow that same cached array by one on every re-render this branch
+  // is taken, since a plain push() never touches the RDF store writes the cache actually keys its
+  // invalidation on.
+  const objects =
+    showEmptyWidget && defaultObject ? [...existingObjects, defaultObject] : existingObjects;
 
   const description = propertyUIElement.getOne(sh("description"))?.value;
 

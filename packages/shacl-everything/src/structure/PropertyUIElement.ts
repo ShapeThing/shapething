@@ -1,4 +1,4 @@
-import type { Literal, NamedNode, Term } from "@rdfjs/types";
+import type { Literal, NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
@@ -20,7 +20,7 @@ export type PropertyUIElementOptions = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
   scoresGraph?: RdfStore;
-  focusNode: NamedNode;
+  focusNode: Quad_Subject;
   propertyShapes: NamedNode[];
 };
 
@@ -28,7 +28,7 @@ export class PropertyUIElement {
   public shapesGraph: RdfStore;
   public dataGraph: RdfStore;
   public scoresGraph: RdfStore;
-  public focusNode: NamedNode;
+  public focusNode: Quad_Subject;
   public propertyShapes: NamedNode[];
 
   constructor(options: PropertyUIElementOptions) {

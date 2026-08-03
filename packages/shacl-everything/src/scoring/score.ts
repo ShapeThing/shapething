@@ -169,8 +169,16 @@ type ValidateProps = {
 export async function validate({ focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps) {
   if (!shapeNode) return true;
 
-  // Literals can't be a quad subject, so the existence check only applies to IRIs/blank nodes.
-  if (focusNode?.termType !== "Literal" && targetGraph.getQuads(focusNode).length === 0) {
+  // A node with no properties of its own (e.g. a freshly created blank node whose fields are all
+  // still empty) is not "missing" - it can still validly exist purely as the object of some other
+  // triple (e.g. the triple that assigns it as a property's value in the first place). Literals
+  // can't be a quad subject or object-checked this way at all, so this only applies to IRIs/blank
+  // nodes, and only rules out focus nodes absent from targetGraph in every position.
+  if (
+    focusNode?.termType !== "Literal" &&
+    targetGraph.getQuads(focusNode).length === 0 &&
+    targetGraph.getQuads(null, null, focusNode).length === 0
+  ) {
     return false;
   }
 

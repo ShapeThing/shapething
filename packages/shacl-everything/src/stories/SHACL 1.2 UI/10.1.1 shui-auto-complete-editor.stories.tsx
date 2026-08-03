@@ -14,3 +14,8 @@ export const shuiAutoCompleteEditor: Story = {
   name: "Auto-complete by class instances",
   args: argsByTestFile("10.1.1 shui-auto-complete-editor.ttl", import.meta.url),
 };
+
+export const shuiAutoCompleteEditorFederatedSearch: Story = {
+  name: "Federated search (shui:searchQuery)",
+  args: argsByTestFile("10.1.1 shui-auto-complete-editor-federated-search.ttl", import.meta.url),
+};

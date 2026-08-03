@@ -1,4 +1,4 @@
-import type { NamedNode, Term } from "@rdfjs/types";
+import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { sh } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -9,7 +9,7 @@ export function propertiesForShape(
   shapesGraph: RdfStore,
   dataGraph: RdfStore,
   shape: Term,
-  focusNode: NamedNode,
+  focusNode: Quad_Subject,
   scoresGraph?: RdfStore,
 ): PropertyUIElement[] {
   const propertyShapeQuads = shapesGraph.getQuads(shape, sh("property"));

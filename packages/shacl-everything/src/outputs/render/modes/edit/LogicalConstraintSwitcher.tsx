@@ -1,26 +1,33 @@
 import { Localized } from "@fluent/react";
 import type { Term } from "@rdfjs/types";
-import type { RdfStore } from "rdf-stores";
-import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
-import { localName } from "@/helpers/localName.ts";
-import { sh, shui } from "@/helpers/namespaces.ts";
-import { useActiveBranch } from "@/outputs/render/hooks/useActiveBranch.tsx";
+import { branchLabel } from "@/helpers/branchLabel.ts";
+import { shui } from "@/helpers/namespaces.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
-import { logicalBranches, withBranch } from "@/structure/logicalBranches.ts";
+import { logicalBranches, withBranch, type LogicalBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import type { BCP47 } from "@/types/BCP47.ts";
 import { coerceTermToBranch } from "@/widgets/defaultTerm.ts";
 
 type Props = {
   shape: PropertyUIElement;
   term: Term;
   setTerm: (newTerm: Term) => void;
+  // Resolved by the parent (see PropertyUIComponentObject) rather than re-derived here, since it
+  // stays pinned to whichever branch was last explicitly picked until the data itself conforms to
+  // a different one - a plain data-conformance lookup would disagree with what's actually
+  // rendered whenever the picked branch's own required fields aren't filled in yet.
+  activeBranch: LogicalBranch | undefined;
+  onBranchSelected: (branch: LogicalBranch) => void;
 };
 
-export default function LogicalConstraintSwitcher({ shape, term, setTerm }: Props) {
+export default function LogicalConstraintSwitcher({
+  shape,
+  term,
+  setTerm,
+  activeBranch,
+  onBranchSelected,
+}: Props) {
   const { contentLanguage } = useEnvironment();
   const branches = logicalBranches(shape);
-  const activeBranch = useActiveBranch(shape, term, branches);
 
   if (branches.length === 0) return null;
 
@@ -34,6 +41,7 @@ export default function LogicalConstraintSwitcher({ shape, term, setTerm }: Prop
     const widget = await branchProperty.widget({ widgetPredicate: shui("editor") });
     if (!widget || widget.termType !== "NamedNode") return;
 
+    onBranchSelected(branch);
     setTerm(coerceTermToBranch(term, widget, branchProperty, { contentLanguage }));
   };
 
@@ -59,21 +67,5 @@ export default function LogicalConstraintSwitcher({ shape, term, setTerm }: Prop
         <span className="st-select-arrow" aria-hidden="true" />
       </span>
     </div>
-  );
-}
-
-// Branches are constraint-only shape nodes, not PropertyUIElements, so their sh:name is read
-// straight off shapesGraph rather than through PropertyUIElement.getOne() (which would resolve
-// the outer property's own sh:name instead, once merged in via withBranch()).
-function branchLabel(branchShape: Term, shapesGraph: RdfStore, languages: BCP47[]): string {
-  const names = shapesGraph.getQuads(branchShape, sh("name")).map((quad) => quad.object);
-  const best = names.length > 0 ? bestByLanguage(names, languages) : undefined;
-  if (best) return best.value;
-
-  return (
-    localName(shapesGraph.getQuads(branchShape, sh("datatype"))[0]?.object) ??
-    localName(shapesGraph.getQuads(branchShape, sh("class"))[0]?.object) ??
-    localName(shapesGraph.getQuads(branchShape, sh("node"))[0]?.object) ??
-    branchShape.value
   );
 }

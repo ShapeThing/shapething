@@ -1,0 +1,17 @@
+.st-autocomplete-option__iri {
+  color: var(--st-color-text-muted);
+}
+
+.st-autocomplete-option__sub-label {
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+  margin-inline-start: var(--size-1);
+}
+
+.st-autocomplete-option__depiction {
+  height: 1.25em;
+  width: auto;
+  object-fit: contain;
+  vertical-align: -0.25em;
+  margin-inline-end: var(--size-1);
+}

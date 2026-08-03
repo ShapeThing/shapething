@@ -13,6 +13,7 @@
   &:focus {
     outline: 2px solid var(--st-primary-color);
     box-shadow: none;
+    z-index: 3;
     color: var(--st-primary-color);
   }
 

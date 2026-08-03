@@ -19,3 +19,8 @@ export const shClassB: Story = {
   name: "InstancesSelectEditor with sh:node and propertyRole",
   args: argsByTestFile("7.1.1.b sh-class.ttl", import.meta.url),
 };
+
+export const shClassC: Story = {
+  name: "AutoCompleteEditor with sh:node and propertyRole",
+  args: argsByTestFile("7.1.1.c sh-class.ttl", import.meta.url),
+};

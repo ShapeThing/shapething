@@ -1,0 +1,32 @@
+.st-details-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+  flex: 1;
+  padding-inline-start: var(--size-3);
+  border-inline-start: 2px solid var(--st-color-border);
+}
+
+.st-details-editor__label {
+  font: inherit;
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text-muted);
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  text-align: inherit;
+  align-self: flex-start;
+  cursor: pointer;
+}
+
+.st-details-editor__label:focus-visible {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: 2px;
+}
+
+.st-details-editor__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-3);
+}
