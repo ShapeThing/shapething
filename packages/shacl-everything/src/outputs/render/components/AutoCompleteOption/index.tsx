@@ -1,11 +1,43 @@
 import type { NamedNode, Term } from "@rdfjs/types";
 import "./style.css";
-import { useState } from "react";
+import { Fragment, useState, type ReactNode } from "react";
+import { Link } from "@/helpers/icons.tsx";
 
-type Props = { term: Term; label?: string; subLabel?: string; depiction?: NamedNode };
+type Props = {
+  term: Term;
+  label?: string;
+  subLabel?: string;
+  depiction?: NamedNode;
+  highlight?: string;
+};
 
-export default function AutoCompleteOption({ term, label, subLabel, depiction }: Props) {
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// Splits `text` on every case-insensitive occurrence of `query` and wraps the matches in <mark>,
+// so a search snippet like "amst" reads as highlighted inside a result label of "Amsterdam".
+function highlightMatches(text: string, query: string | undefined): ReactNode {
+  const trimmed = query?.trim();
+  if (!trimmed) return text;
+
+  const parts = text.split(new RegExp(`(${escapeRegExp(trimmed)})`, "gi"));
+  if (parts.length === 1) return text;
+
+  return parts.map((part, index) =>
+    part.toLowerCase() === trimmed.toLowerCase() ? (
+      <mark key={index} className="st-autocomplete-option__match">
+        {part}
+      </mark>
+    ) : (
+      <Fragment key={index}>{part}</Fragment>
+    ),
+  );
+}
+
+export default function AutoCompleteOption({ term, label, subLabel, depiction, highlight }: Props) {
   const [hasError, setHasError] = useState<boolean | undefined>(undefined);
+  const displayLabel = label ?? term.value.split(/\/|#/g).pop() ?? "";
 
   return (
     <span className="st-autocomplete-option">
@@ -21,10 +53,23 @@ export default function AutoCompleteOption({ term, label, subLabel, depiction }:
       ) : (
         <span className="st-autocomplete-option__depiction-spacer"></span>
       )}
-      {label ?? term.value.split(/\/|#/g).pop()}
-      {subLabel && <span className="st-autocomplete-option__sub-label">{subLabel}</span>}
+      <span className="st-autocomplete-option__label">
+        {highlightMatches(displayLabel, highlight)}
+      </span>
+      {subLabel && (
+        <span className="st-autocomplete-option__sub-label">
+          {highlightMatches(subLabel, highlight)}
+        </span>
+      )}
       {term.termType === "NamedNode" && (
-        <em className="st-autocomplete-option__iri">{term.value}</em>
+        <a
+          className="st-autocomplete-option__iri"
+          href={term.value}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Link />
+        </a>
       )}
     </span>
   );

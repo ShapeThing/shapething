@@ -4,6 +4,7 @@ import MinusIcon from "~icons/ic/round-remove";
 import ArrowDropDown from "~icons/ic/round-arrow-drop-down";
 import SwitchLeft from "~icons/ic/round-settings";
 import EditIcon from "~icons/ic/round-edit";
+import LinkIcon from "~icons/ic/round-link";
 
 export const Loading = LoadingTwotoneLoopIcon;
 export const Plus = PlusIcon;
@@ -11,3 +12,4 @@ export const Minus = MinusIcon;
 export const SelectArrow = ArrowDropDown;
 export const Cog = SwitchLeft;
 export const Edit = EditIcon;
+export const Link = LinkIcon;

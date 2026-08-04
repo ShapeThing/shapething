@@ -8,16 +8,31 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  border-radius: var(--radius-2);
 }
 
 .st-autocomplete-option__iri {
   color: var(--st-color-text-muted);
+  display: flex;
+  align-items: center;
+  margin-inline-start: auto;
+  margin-inline-end: var(--size-1);
+  margin-block: -1px;
+  font-size: var(--st-font-size-small);
+
+  &:focus,
+  &:hover {
+    color: var(--st-primary-color);
+  }
 }
 
 .st-autocomplete-option__sub-label {
   color: var(--st-color-text-muted);
   font-size: var(--st-font-size-small);
+}
+
+.st-autocomplete-option__match {
+  font-weight: bold;
+  background-color: transparent;
 }
 
 .st-autocomplete-option__depiction {

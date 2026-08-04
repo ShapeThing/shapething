@@ -29,6 +29,12 @@
   }
 }
 
+.st-autocomplete__label {
+  .st-autocomplete-option__depiction {
+    border-radius: var(--radius-2) 0 0 var(--radius-2);
+  }
+}
+
 .st-autocomplete__results {
   position: absolute;
   top: calc(100% + var(--size-1));

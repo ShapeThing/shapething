@@ -156,6 +156,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm }: WidgetProps
                   label={result.label}
                   subLabel={result.subLabel}
                   depiction={result.depiction}
+                  highlight={search}
                 />
               </div>
             ))
