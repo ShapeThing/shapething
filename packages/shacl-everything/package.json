@@ -34,7 +34,6 @@
   },
   "dependencies": {
     "@comunica/query-sparql": "^4.5.0",
-    "@comunica/query-sparql-rdfjs-lite": "^4.5.0",
     "@effect/experimental": "^0.60.0",
     "@fluent/bundle": "^0.19.1",
     "@fluent/react": "^0.15.2",

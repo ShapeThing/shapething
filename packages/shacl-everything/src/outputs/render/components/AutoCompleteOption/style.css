@@ -1,3 +1,16 @@
+.st-autocomplete-option {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  min-height: 2rem;
+  gap: var(--size-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: var(--radius-2);
+}
+
 .st-autocomplete-option__iri {
   color: var(--st-color-text-muted);
 }
@@ -5,13 +18,17 @@
 .st-autocomplete-option__sub-label {
   color: var(--st-color-text-muted);
   font-size: var(--st-font-size-small);
-  margin-inline-start: var(--size-1);
 }
 
 .st-autocomplete-option__depiction {
-  height: 1.25em;
+  height: 2rem;
   width: auto;
-  object-fit: contain;
+  object-fit: cover;
   vertical-align: -0.25em;
-  margin-inline-end: var(--size-1);
+  aspect-ratio: 1 / 1;
+}
+
+.st-autocomplete-option__depiction-spacer {
+  padding-inline-start: var(--size-2);
+  height: 2rem;
 }

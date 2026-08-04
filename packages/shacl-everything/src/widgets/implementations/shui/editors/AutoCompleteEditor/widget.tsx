@@ -5,7 +5,7 @@ import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/i
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useInstanceSearch } from "@/outputs/render/hooks/useInstanceSearch.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
-import type { SearchResult } from "@/outputs/render/hooks/localInstanceQuery.ts";
+import type { SearchResult } from "@/outputs/render/hooks/query.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
@@ -13,7 +13,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm }: WidgetProps
   const existingObjects = useDataGraphObjects(shape);
 
   const [mode, setMode] = useState<"view" | "edit">(term.value ? "view" : "edit");
-  const { search, setSearch, results, reset } = useInstanceSearch(shape);
+  const { search, setSearch, results, error, reset } = useInstanceSearch(shape);
   const [selected, setSelected] = useState<SearchResult>();
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -130,7 +130,11 @@ export default function AutoCompleteEditor({ shape, term, setTerm }: WidgetProps
 
       {results !== undefined && (
         <div id={listboxId} className="st-autocomplete__results" role="listbox">
-          {options.length > 0 ? (
+          {error ? (
+            <div className="st-autocomplete__empty" role="alert">
+              <Localized id="autocomplete-search-error">Search failed</Localized>
+            </div>
+          ) : options.length > 0 ? (
             options.map((result, index) => (
               <div
                 key={result.iri.value}

@@ -1,5 +1,7 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Localized } from "@fluent/react";
 import type { NamedNode } from "@rdfjs/types";
+import { Loading } from "@/helpers/icons.tsx";
 import { sh } from "@/helpers/namespaces.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
@@ -11,35 +13,66 @@ import "./style.css";
 export default function EnumSelectEditor({ shape, term, setTerm }: WidgetProps) {
   const options = useMemo(() => shape.get(sh("in")), [shape]);
   const selectQuery = useMemo(() => selectQueryFor(shape), [shape]);
+  const [open, setOpen] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
 
   // A sh:select-driven sh:in resolves its own labels as part of its query (useSelectOptions) - the
   // plain rdf:List form instead resolves every NamedNode option's LabelRole label/DepictionRole
   // image up front, in one batched query (useOptionLookups) rather than one per option. A Literal
   // option is already its own label (see valueNodeLabel), so only NamedNode options need a lookup.
+  // Both stay deferred until the dropdown is actually opened, so a form with several enum selects
+  // (some federated) doesn't fan every one of their queries out on page load - only the closed
+  // trigger's own current value (below) needs to resolve eagerly.
   const namedNodeOptions = useMemo(
     () =>
-      selectQuery
+      selectQuery || !hasOpened
         ? []
         : options.filter((option): option is NamedNode => option.termType === "NamedNode"),
-    [options, selectQuery],
+    [options, selectQuery, hasOpened],
   );
   const lookups = useOptionLookups(shape, namedNodeOptions);
-  const selectResolved = useSelectOptions(shape, selectQuery);
+  const {
+    options: selectResolved,
+    isLoading: selectLoading,
+    error: selectError,
+  } = useSelectOptions(shape, hasOpened ? selectQuery : undefined);
 
-  const resolved: ResolvedOption[] = selectQuery
-    ? (selectResolved ?? [])
-    : options.map((option) => {
-        if (option.termType !== "NamedNode") return { term: option };
-        const match = lookups.find((lookup) => lookup.iri.value === option.value);
-        return {
-          term: option,
-          label: match?.label,
-          subLabel: match?.subLabel,
-          depiction: match?.depiction,
-        };
-      });
+  // The batched lookups above only cover the current value once the list has been opened and has
+  // resolved (or, for sh:select, if its query happens to return it at all) - until then, resolve it
+  // separately, the same way AutoCompleteEditor re-hydrates its currently applied value on mount.
+  const hasResolvedCurrentValue = selectQuery
+    ? (selectResolved?.some((option) => option.term.value === term.value) ?? false)
+    : lookups.some((lookup) => lookup.iri.value === term.value);
+  const currentValueIris = useMemo(
+    () =>
+      term.termType === "NamedNode" && term.value !== "" && !hasResolvedCurrentValue ? [term] : [],
+    [term, hasResolvedCurrentValue],
+  );
+  const currentValueLookups = useOptionLookups(shape, currentValueIris);
 
-  const [open, setOpen] = useState(false);
+  const resolved: ResolvedOption[] = (
+    selectQuery
+      ? (selectResolved ?? [])
+      : options.map((option) => {
+          if (option.termType !== "NamedNode") return { term: option };
+          const match =
+            lookups.find((lookup) => lookup.iri.value === option.value) ??
+            currentValueLookups.find((lookup) => lookup.iri.value === option.value);
+          return {
+            term: option,
+            label: match?.label,
+            subLabel: match?.subLabel,
+            depiction: match?.depiction,
+          };
+        })
+  ).sort((a, b) => {
+    if (a.label && b.label) {
+      return a.label.localeCompare(b.label);
+    }
+
+    return a.term.value.localeCompare(b.term.value);
+  });
+
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -50,9 +83,19 @@ export default function EnumSelectEditor({ shape, term, setTerm }: WidgetProps) 
       optionRefs.current[activeIndex]?.scrollIntoView({ block: "nearest" });
   }, [open, activeIndex]);
 
-  const current = resolved.find((option) => option.term.value === term.value);
+  const current =
+    resolved.find((option) => option.term.value === term.value) ??
+    (currentValueLookups[0]
+      ? {
+          term,
+          label: currentValueLookups[0].label,
+          subLabel: currentValueLookups[0].subLabel,
+          depiction: currentValueLookups[0].depiction,
+        }
+      : undefined);
 
   const openList = () => {
+    setHasOpened(true);
     setActiveIndex(
       Math.max(
         resolved.findIndex((option) => option.term.value === term.value),
@@ -125,6 +168,16 @@ export default function EnumSelectEditor({ shape, term, setTerm }: WidgetProps) 
 
       {open && (
         <div id={listboxId} className="st-enum-select__results" role="listbox">
+          {selectError ? (
+            <div className="st-enum-select__empty" role="alert">
+              <Localized id="autocomplete-search-error">Search failed</Localized>
+            </div>
+          ) : selectLoading ? (
+            <div className="st-enum-select__empty">
+              <Loading />
+              <Localized id="loading">Loading</Localized>
+            </div>
+          ) : null}
           {resolved.map((option, index) => (
             <div
               key={option.term.value}

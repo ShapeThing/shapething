@@ -2,7 +2,7 @@ import { expect, test } from "vite-plus/test";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { fetchOptions, searchInstances } from "./localInstanceQuery.ts";
+import { fetchOptions, searchInstances } from "./query.ts";
 
 const createShape = async (shapesTurtle: string, dataTurtle: string) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${shapesTurtle}`, "text/turtle");

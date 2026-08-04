@@ -4,8 +4,12 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
 import { useEnvironment } from "./useEnvironment.tsx";
-import { searchInstances, type SearchResult } from "./localInstanceQuery.ts";
-import { runFederatedQuery, substituteSearchParameters } from "./federatedQuery.ts";
+import {
+  runFederatedQuery,
+  searchInstances,
+  substituteSearchParameters,
+  type SearchResult,
+} from "./query.ts";
 
 const SEARCH_DEBOUNCE_MS = 200;
 
@@ -50,6 +54,7 @@ export function useInstanceSearch(shape: PropertyUIElement): {
   search: string;
   setSearch: (value: string) => void;
   results: SearchResult[] | undefined;
+  error: unknown;
   reset: () => void;
 } {
   const { interfaceLanguage } = useEnvironment();
@@ -63,13 +68,16 @@ export function useInstanceSearch(shape: PropertyUIElement): {
     return () => clearTimeout(timeout);
   }, [search]);
 
-  const { data } = useQuery({
+  const { data, error } = useQuery({
     queryKey: ["instance-search", shape.propertyShapes.map((s) => s.value), searchQuery, debounced],
     queryFn: () =>
       (searchQuery
         ? runSearchQuery(shape, searchQuery, debounced ?? "", interfaceLanguage)
         : searchInstances(shape, debounced ?? "")
-      ).catch(() => []),
+      ).catch((cause) => {
+        console.error("[shacl-everything] instance search failed", cause);
+        throw cause;
+      }),
     enabled: debounced !== undefined,
     ...noRefetch,
   });
@@ -78,6 +86,7 @@ export function useInstanceSearch(shape: PropertyUIElement): {
     search: search ?? "",
     setSearch,
     results: debounced === undefined ? undefined : (data ?? []),
+    error: debounced === undefined ? undefined : error,
     reset: () => {
       setSearch(undefined);
       setDebounced(undefined);

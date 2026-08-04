@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef } from "react";
-import "trix";
 import { factory } from "@/helpers/factory.ts";
 import { rdf } from "@/helpers/namespaces.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
@@ -29,38 +28,54 @@ export default function RichTextEditor({ term, setTerm }: WidgetProps) {
     const container = containerRef.current;
     if (!container) return;
 
-    const input = document.createElement("input");
-    input.type = "hidden";
-    input.id = inputId;
-    input.value = lastValue.current;
+    let cancelled = false;
+    let cleanup: (() => void) | undefined;
 
-    const editor = document.createElement("trix-editor") as TrixEditorElement;
-    editor.setAttribute("input", inputId);
+    // Importing "trix" registers the <trix-editor> custom element and touches `document` as a
+    // load-time side effect, so it's loaded lazily on mount rather than at module scope - that
+    // keeps this widget import-safe wherever the widget registry is loaded without a DOM (e.g.
+    // the node-based unit test project, which eagerly imports every widget.tsx).
+    import("trix").then(() => {
+      if (cancelled) return;
 
-    const onChange = (event: Event) => {
-      const html = (event.target as TrixEditorElement).value;
-      lastValue.current = html;
-      setTermRef.current(factory.literal(html, rdf("HTML")));
-    };
-    const onFocus = () => container.classList.add(FOCUSED_CLASS);
-    const onBlur = () => container.classList.remove(FOCUSED_CLASS);
+      const input = document.createElement("input");
+      input.type = "hidden";
+      input.id = inputId;
+      input.value = lastValue.current;
 
-    editor.addEventListener("trix-change", onChange);
-    editor.addEventListener("trix-focus", onFocus);
-    editor.addEventListener("trix-blur", onBlur);
-    container.append(input, editor);
-    editorRef.current = editor;
+      const editor = document.createElement("trix-editor") as TrixEditorElement;
+      editor.setAttribute("input", inputId);
 
-    container.querySelectorAll(".trix-button").forEach((button) => {
-      button.classList.add("st-button");
+      const onChange = (event: Event) => {
+        const html = (event.target as TrixEditorElement).value;
+        lastValue.current = html;
+        setTermRef.current(factory.literal(html, rdf("HTML")));
+      };
+      const onFocus = () => container.classList.add(FOCUSED_CLASS);
+      const onBlur = () => container.classList.remove(FOCUSED_CLASS);
+
+      editor.addEventListener("trix-change", onChange);
+      editor.addEventListener("trix-focus", onFocus);
+      editor.addEventListener("trix-blur", onBlur);
+      container.append(input, editor);
+      editorRef.current = editor;
+
+      container.querySelectorAll(".trix-button").forEach((button) => {
+        button.classList.add("st-button");
+      });
+
+      cleanup = () => {
+        editor.removeEventListener("trix-change", onChange);
+        editor.removeEventListener("trix-focus", onFocus);
+        editor.removeEventListener("trix-blur", onBlur);
+        container.replaceChildren();
+        editorRef.current = null;
+      };
     });
 
     return () => {
-      editor.removeEventListener("trix-change", onChange);
-      editor.removeEventListener("trix-focus", onFocus);
-      editor.removeEventListener("trix-blur", onBlur);
-      container.replaceChildren();
-      editorRef.current = null;
+      cancelled = true;
+      cleanup?.();
     };
   }, [inputId]);
 

@@ -11,5 +11,6 @@ logical-constraint-switcher-label = Pick an alternative
 autocomplete-search-placeholder =
     .placeholder = Search…
 autocomplete-no-results = No results found
+autocomplete-search-error = Search failed
 autocomplete-edit-value =
     .aria-label = Edit

@@ -24,7 +24,6 @@
                         ?value a dbo:Philosopher .
                     }
                 }
-                LIMIT 100
             """
         ] ;
     ] ;

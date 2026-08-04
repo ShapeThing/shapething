@@ -6,20 +6,14 @@
 
 .st-enum-select__trigger {
   width: 100%;
-  padding-inline-start: var(--size-2);
   padding-inline-end: var(--size-6);
-  padding-block: var(--size-2);
+  padding-inline-start: 0;
+  padding-block: 0;
   background-color: white;
   border: 1px solid var(--gray-3);
   border-radius: var(--radius-2);
   cursor: pointer;
-  gap: var(--size-2);
-  display: flex;
-  align-items: center;
   position: relative;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 
   &:hover,
   &:focus {
@@ -64,12 +58,27 @@
 }
 
 .st-enum-select__result {
-  padding: var(--size-2);
   cursor: pointer;
 
   &:hover,
   &[aria-selected="true"],
   &.st-enum-select__result--active {
     background-color: var(--st-primary-color-lighter);
+  }
+}
+
+.st-enum-select__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--size-1);
+  min-height: 3rem;
+  padding: var(--size-2);
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+
+  svg {
+    width: 1.2em;
+    height: 1.2em;
   }
 }

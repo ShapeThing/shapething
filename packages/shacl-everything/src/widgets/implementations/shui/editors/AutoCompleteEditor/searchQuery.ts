@@ -4,8 +4,8 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 /**
  * The raw SPARQL text of this property's `sh:in [ shui:searchQuery "..." ]`, if declared - lets a
  * shape writer hand the renderer a concrete fulltext-search query (e.g. against a vendor's own
- * text index) instead of the renderer's own local IRI/LabelRole search (see
- * localInstanceQuery.ts's searchInstances). Mirrors EnumSelectEditor/selectQuery.ts's
+ * text index) instead of the renderer's own local IRI/LabelRole search (see query.ts's
+ * searchInstances). Mirrors EnumSelectEditor/selectQuery.ts's
  * selectQueryFor - shui:searchQuery is asserted on the same sh:in blank node, just with a
  * different predicate.
  */
