@@ -7,6 +7,7 @@ import { runPreprocessors, defaultPreprocessors, type Preprocessor } from "@/pre
 import { environmentContext } from "@/outputs/render/contexts/environmentContext.tsx";
 import { Localized } from "@fluent/react";
 import { noRefetch } from "@/helpers/noRefetch.ts";
+import "./style.css";
 
 type Props = Partial<RawEnvironment> & {
   preprocessors?: readonly Preprocessor[];
@@ -31,10 +32,10 @@ export default function EnvironmentContextProvider({
   return (
     <Suspense
       fallback={
-        <>
+        <div className="st-environment-context-provider__loading">
           <Localized id="loading" />
           <Loading />
-        </>
+        </div>
       }
     >
       <PreprocessedEnvironmentProvider id={instanceId} run={run}>

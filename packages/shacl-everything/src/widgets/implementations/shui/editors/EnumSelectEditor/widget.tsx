@@ -114,7 +114,6 @@ export default function EnumSelectEditor({ shape, term, setTerm }: WidgetProps) 
     <div
       ref={containerRef}
       className="st-enum-select"
-      data-block-fly-out
       onBlur={(event) => {
         if (!containerRef.current?.contains(event.relatedTarget as Node | null)) setOpen(false);
       }}

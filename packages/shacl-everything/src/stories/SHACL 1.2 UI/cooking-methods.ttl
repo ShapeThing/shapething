@@ -1,0 +1,298 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix dct: <http://purl.org/dc/terms/>.
+@prefix bnode: <https://nightly.triplydb.com/.well-known/genid/>.
+@prefix foodon: <http://purl.obolibrary.org/obo/FOODON_>.
+@prefix iao: <http://purl.obolibrary.org/obo/IAO_>.
+@prefix obo: <http://www.geneontology.org/formats/oboInOwl#>.
+
+foodon:03450002 a owl:Class;
+    rdfs:label "food cooking"@en;
+    rdfs:subClassOf foodon:00002451.
+foodon:03450004 rdfs:comment "Cooked at moderate to high levels of heat in which no liquid is added and only small amounts of fat may be added to prevent sticking."@en;
+    a owl:Class;
+    rdfs:comment "LanguaL"@en;
+    rdfs:label "cooking by dry heat"@en;
+    rdfs:subClassOf foodon:03450002.
+foodon:03450012 rdfs:comment "Cooking in varying amounts of water, water-based liquid or steam."@en;
+    a owl:Class;
+    rdfs:comment "LanguaL curation note: If the food absorbs a significant amount of water, also used *REHYDRATED* or *WATER ADDED*."@en;
+    rdfs:label "cooking by moist heat"@en;
+    rdfs:subClassOf foodon:03450002.
+foodon:03450024 a owl:Class;
+    rdfs:label "cooking with fat or oil"@en;
+    rdfs:subClassOf foodon:03450002.
+foodon:03450032 rdfs:comment "A food cooking method in which heat is transferred to the outside of a container."@en;
+    a owl:Class;
+    rdfs:label "heating container"@en;
+    rdfs:subClassOf foodon:03450002.
+foodon:03450037 rdfs:comment "A process to bring an already fully cooked product to serving temperature."@en;
+    a owl:Class;
+    rdfs:comment "LanguaL curation note: Do not use for a process that completes the cooking of a partially cooked food."@en;
+    rdfs:label "food reheating"@en;
+    rdfs:subClassOf foodon:03450002.
+foodon:03450005 rdfs:comment "Cooked without moisture, covered or uncovered, in an oven."@en;
+    a owl:Class;
+    rdfs:label "food baking"@en;
+    rdfs:subClassOf foodon:03450004.
+foodon:03450006 rdfs:comment "Cooked without moisture under or over intense direct heat."@en;
+    a owl:Class;
+    rdfs:label "broiling or grilling"@en;
+    rdfs:subClassOf foodon:03450004.
+foodon:03450013 rdfs:comment "A process of cooking by moist heat which is effected by hot water or water-based liquid in a container."@en;
+    a owl:Class;
+    rdfs:label "cooking in water or water-based liquid"@en;
+    rdfs:subClassOf foodon:03450012.
+foodon:03450021 a owl:Class;
+    rdfs:label "cooking in steam"@en;
+    rdfs:subClassOf foodon:03450012.
+foodon:03450025 rdfs:comment "Cooked by adding fat or oil to those foods that do not contain fat or oil that would render during the cooking process."@en;
+    a owl:Class;
+    rdfs:label "cooking with added fat or oil"@en;
+    rdfs:subClassOf foodon:03450024.
+foodon:03450014 rdfs:comment "A cooking in water or water-based liquid process in which the liquid is boiling."@en;
+    a owl:Class;
+    rdfs:comment "Water at standard atmospheric pressure (in other words, at sea level) will boil at a temperature of 100 degrees C (212 degrees F)."@en;
+    rdfs:label "boiling in container"@en;
+    rdfs:subClassOf foodon:03450013.
+foodon:03450026 rdfs:comment "Cooked with sufficient fat or oil to coat and moisten the food being prepared, but not cooked in enough fat or oil to immerse the food."@en;
+    a owl:Class;
+    rdfs:comment "Use *griddle cooking* when only enough fat or oil is used to prevent sticking."@en;
+    rdfs:label "cooking in small amount of fat or oil"@en;
+    rdfs:seeAlso "http://purl.obolibrary.org/obo/FOODON_03450008";
+    rdfs:subClassOf foodon:03450025.
+foodon:03450015 rdfs:comment "Cooked in boiling water at 212 degrees F.; water that is not absorbed into the food product is discarded after cooking."@en;
+    a owl:Class;
+    rdfs:label "boiling and then draining"@en;
+    rdfs:subClassOf foodon:03450014.
+foodon:03470175 rdfs:comment "Blanching is a cooking process wherein a food, usually a vegetable or fruit, is scalded in boiling water, removed after a brief, timed interval, and finally plunged into iced water or placed under cold running water (shocking or refreshing) to halt the cooking process. Blanching foods helps reduce quality loss over time. People often use blanching as a pre-treatment prior to freezing, drying, or canning—heating vegetables or fruits to inactivate enzymes, modify texture, remove the peel, and wilt tissue. Blanching is also utilized to preserve color, flavor, and nutritional value. The process has three stages: preheating, blanching, and cooling. The most common blanching methods for vegetables/fruits are hot water and steam, while cooling is either done using cold water or cool air."@en;
+    dct:contributor "Damion Dooley";
+    <http://www.geneontology.org/formats/oboInOwl#hasExactSynonym> "blanching"@en;
+    a owl:Class;
+    rdfs:comment "LanguaL definition: \"Short time scalding; this can be used to stop emzymatic activity for vegetables being prepared for freezing."@en;
+    rdfs:label "food blanching"@en;
+    rdfs:subClassOf foodon:03450002, foodon:03460130, foodon:03470120.
+foodon:00002648 rdfs:comment "A method of precooking food where a liquid is heated to just below the boiling point. Often used to retard the spoiling of milk."@en;
+    <http://www.geneontology.org/formats/oboInOwl#hasExactSynonym> "scalding"@en;
+    a owl:Class;
+    rdfs:label "food scalding"@en;
+    rdfs:subClassOf foodon:03450002.
+foodon:03450011 rdfs:comment "Cooking in a microwave oven."@en;
+    a owl:Class;
+    rdfs:label "cooking by microwave"@en;
+    rdfs:subClassOf foodon:03450002.
+foodon:03470150 rdfs:comment "Sous-vide, French for \"under vacuum\", is a method of cooking that is intended to maintain the integrity of ingredients by heating them for an extended period of time in vacuum sealed plastic pouches at relatively low temperatures. Food is cooked for a long time, sometimes well over 24 hours. Unlike cooking in a slow cooker, sous-vide cooking uses airtight plastic bags placed in hot water well below boiling point (usually around 60°C or 140°F)."@en;
+    <http://www.geneontology.org/formats/oboInOwl#hasExactSynonym> "sous vide"@en;
+    a owl:Class;
+    rdfs:label "sous vide cooking"@en;
+    rdfs:subClassOf foodon:03450002.
+foodon:03450010 rdfs:comment "Cooking with direct heat until the surface of the food is browned, usually associated with bread or sandwiches."@en;
+    a owl:Class;
+    rdfs:label "food toasting"@en;
+    rdfs:subClassOf foodon:03450004.
+foodon:03450008 rdfs:comment "Cooking on a flat surface at medium heat with only a sufficient amount of fat used to prevent sticking."@en;
+    a owl:Class;
+    rdfs:label "griddle cooking"@en;
+    rdfs:subClassOf foodon:03450004.
+foodon:03450009 rdfs:comment "Cooking by agitating the food over a dry, high heat source, resulting in exploding."@en;
+    a owl:Class;
+    rdfs:label "cooked by popping"@en;
+    rdfs:subClassOf foodon:03450004.
+foodon:03460220 rdfs:comment "Treated with moist heat to soften the grain and to transfer nutrients from the bran to the endosperm."@en;
+    <http://www.geneontology.org/formats/oboInOwl#hasSynonym> "parboiled (rice)"@en;
+    a owl:Class;
+    rdfs:label "food parboiling process (grain)"@en;
+    rdfs:subClassOf foodon:03450012, foodon:03460130.
+foodon:03450030 rdfs:comment "Cooked in fat or oil rendered from the food being prepared."@en;
+    a owl:Class;
+    rdfs:label "cooking with inherent fat or oil"@en;
+    rdfs:subClassOf foodon:03450024.
+foodon:00004088 rdfs:comment "A heating container process in which the container conducts heat by being in proximity to an open flame, a hot surface or an oven."@en;
+    a owl:Class;
+    rdfs:comment "The challenge here is to make a clean distinction between methods that immerse a cooking container in water or steam vs those that don't."@en;
+    rdfs:label "direct heating of container"@en;
+    rdfs:subClassOf foodon:03450032.
+foodon:00004089 rdfs:comment "A heating container process in which the temperature of contained liquid is raised to a threshold."@en;
+    dct:date "2021-11-30T00:09:17Z"^^xsd:dateTime;
+    a owl:Class;
+    rdfs:label "heating liquid in container"@en;
+    rdfs:subClassOf foodon:03450032.
+foodon:03450031 a owl:Class;
+    rdfs:comment "LanguaL curation note: Used when the food is cooked in a closed container such as a pouch immersed in hot water or steam."@en;
+    rdfs:label "heating container by immersion in water or steam"@en;
+    rdfs:subClassOf foodon:03450032.
+foodon:03450033 rdfs:comment "Heating a container that is placed in another container filled with boiling water."@en;
+    a owl:Class;
+    rdfs:label "heating container in double boiler"@en;
+    rdfs:subClassOf foodon:03450032.
+foodon:03450034 rdfs:comment "Heating a container that is placed in another container filled with water kept near the boiling point."@en;
+    a owl:Class;
+    rdfs:label "heating container by water bath"@en;
+    rdfs:subClassOf foodon:03450032.
+foodon:03450038 a owl:Class;
+    rdfs:label "food reheating by microwave"@en;
+    rdfs:subClassOf foodon:03450037.
+foodon:03450039 a owl:Class;
+    rdfs:label "food reheating by dry heat"@en;
+    rdfs:subClassOf foodon:03450037.
+foodon:03450040 a owl:Class;
+    rdfs:label "food reheating by boil-in-bag"@en;
+    rdfs:subClassOf foodon:03450037.
+foodon:03450041 a owl:Class;
+    rdfs:label "food reheating in pan or cooking utensil"@en;
+    rdfs:subClassOf foodon:03450037.
+foodon:03460391 a owl:Class;
+    rdfs:comment "LanguaL curation note: Used primarily for processing of seeds, such as coffee, spices, nuts, and cacao beans."@en;
+    rdfs:label "seed roasting"@en;
+    rdfs:subClassOf foodon:03450005.
+foodon:00002404 rdfs:comment "Roasting is a baking process when the food being baked is meats"@en;
+    a owl:Class;
+    rdfs:label "meat roasting"@en;
+    rdfs:subClassOf foodon:03450005.
+foodon:03450046 a owl:Class;
+    rdfs:comment "LanguaL curation note: Use when a pie crust or other pastry is baked without the filling."@en;
+    rdfs:label "blind baking"@en;
+    rdfs:subClassOf foodon:03450005.
+foodon:00003912 rdfs:comment "A Japanese cooking method in which food is broiled or grilled with a glaze of soy sauce, mirin, and sugar."@en;
+    a owl:Class;
+    rdfs:label "teriyaki cooking method"@en;
+    rdfs:subClassOf foodon:03450006.
+foodon:03450007 rdfs:comment "Cooked without moisture over direct heat from a charcoal fire."@en;
+    a owl:Class;
+    rdfs:label "charcoal broiling"@en;
+    rdfs:subClassOf foodon:03450006.
+foodon:03450044 rdfs:comment "Rotisserie is a style of roasting where meat is skewered on a spit and revolves over a flame or other heat source."@en;
+    a owl:Class;
+    rdfs:comment "The rotation cooks the meat evenly in its own juices and allows easy access for continuous basting if desired. [Wikipedia]"@en;
+    rdfs:label "rotisserie roasting"@en;
+    rdfs:subClassOf foodon:03450006.
+foodon:03450045 rdfs:comment "Searing is a technique used in grilling, roasting, braising, sautéing, etc. that cooks the surface of the food at high temperature so that a brownish crust forms by Maillard reaction and denaturation of proteins."@en;
+    a owl:Class;
+    rdfs:comment "A similar technique, browning, is typically used to sear or brown all sides of a particular piece of meat, fish, poultry, etc. before finishing it in the oven. To obtain the desired brown crust, the meat surface must exceed 300 °F (150 °C), so searing requires the meat surface be free of water, which boils at around 212 °F (100 °C)."@en;
+    rdfs:label "searing"@en;
+    rdfs:subClassOf foodon:03450006.
+foodon:03450019 rdfs:comment "Browned initially in fat and then tightly covered and cooked over low heat in a small amount of water."@en;
+    a owl:Class;
+    rdfs:label "cooking by braising"@en;
+    rdfs:subClassOf foodon:03450013.
+foodon:03450020 rdfs:comment "Cooking in a moderate amount of liquid at just below the boiling point."@en;
+    <http://www.geneontology.org/formats/oboInOwl#hasSynonym> "poaching"@en, "stewing"@en;
+    a owl:Class;
+    rdfs:label "cooking by simmering"@en;
+    rdfs:subClassOf foodon:03450013.
+foodon:03450036 rdfs:comment "Extracting flavor and other components from food sources by immersion in water, usually at near-boiling temperature."@en;
+    a owl:Class;
+    rdfs:label "steeping"@en;
+    rdfs:subClassOf foodon:03450013.
+foodon:03450022 rdfs:comment "Cooked in a pressure cooker."@en;
+    <http://www.geneontology.org/formats/oboInOwl#hasSynonym> "pressure-cooked"@en;
+    a owl:Class;
+    rdfs:label "steaming with pressure"@en;
+    rdfs:subClassOf foodon:03450021.
+foodon:03450023 rdfs:comment "Cooked suspended above boiling water."@en;
+    a owl:Class;
+    rdfs:label "steaming without pressure"@en;
+    rdfs:subClassOf foodon:03450021.
+foodon:03450029 rdfs:comment "Cooked in hot fat or oil deep enough to immerse the food entirely."@en;
+    <http://www.geneontology.org/formats/oboInOwl#hasExactSynonym> "deep-frying"@en;
+    a owl:Class;
+    rdfs:label "deep-frying process"@en;
+    rdfs:subClassOf foodon:03450025.
+foodon:03450035 rdfs:comment "A chinese cooking technique similar to sauteing in which thick slices or chunks of floured or battered ingredients are slow seared over moderate to low heat."@en;
+    <http://purl.obolibrary.org/obo/IAO_0000119> "Kuo, The key to chinese cooking, Knopf, 1977, p.87";
+    <http://www.geneontology.org/formats/oboInOwl#hasExactSynonym> "shallow frying"@en;
+    a owl:Class;
+    rdfs:label "shallow frying process"@en;
+    rdfs:subClassOf foodon:03450025.
+foodon:03450047 a owl:Class;
+    rdfs:comment "LanguaL curation note: Use when e.g. meat and cooking oil are brought to high temperatures while pressure is held high enough that the water within is prevented from boiling off."@en;
+    rdfs:label "pressure frying process"@en;
+    rdfs:subClassOf foodon:03450025.
+foodon:03450018 rdfs:comment "Cooked in boiling water at 212 degrees F. The water incorporates itself into the product being cooked or is not discarded when cooking is complete."@en;
+    a owl:Class;
+    rdfs:label "boiling without draining"@en;
+    rdfs:subClassOf foodon:03450014.
+foodon:03450043 rdfs:comment "A Chinese cooking technique to prepare delicate food such as bird nests, shark fins, etc. The food is covered with water and put in a covered ceramic jar and the jar is then steamed for several hours."@en;
+    <http://purl.obolibrary.org/obo/IAO_0000119> "https://en.wikipedia.org/wiki/Double_steaming";
+    <http://www.geneontology.org/formats/oboInOwl#hasSynonym> "double boiling"@en;
+    a owl:Class;
+    rdfs:comment "This technique ensures there is no loss of liquid or moisture (its essences) from the food being cooked, hence it is often used with expensive ingredients like Chinese herbal medicines. [Wikipedia]"@en;
+    rdfs:label "double steaming"@en;
+    rdfs:subClassOf foodon:03450014.
+foodon:00002462 rdfs:comment "A form of frying characterized by the use of minimal cooking oil or fat (compared to shallow frying or deep frying); typically using just enough oil to lubricate the pan. A pan fry takes place at lower heat than does a sauté."@en;
+    a owl:Class;
+    rdfs:label "shallow frying"@en;
+    rdfs:subClassOf foodon:03450026.
+foodon:03450027 rdfs:comment "Cooking in a very small amount of very hot fat, turning and browning the food on all sides."@en;
+    a owl:Class;
+    rdfs:label "sautéing"@en;
+    rdfs:subClassOf foodon:03450026.
+foodon:03450028 rdfs:comment "Cooked by frying foods quickly over high heat, stirring constantly. Only enough cooking oil is used to coat the bottom of the pan."@en;
+    a owl:Class;
+    rdfs:label "stir-frying"@en;
+    rdfs:subClassOf foodon:03450026.
+foodon:03450016 rdfs:comment "Cooked in boiling water at 212 degrees F. Liquid to solid ratio is greater than 2:1."@en;
+    a owl:Class;
+    rdfs:label "boiling in large amount of liquid"@en;
+    rdfs:subClassOf foodon:03450015.
+foodon:03450017 a owl:Class;
+    rdfs:label "boiling in small amount of liquid"@en;
+    rdfs:subClassOf foodon:03450015.
+
+foodon:03450004 rdfs:label "koken met droge hitte"@nl.
+foodon:03450005 rdfs:label "voedsel bakken"@nl.
+foodon:03450006 rdfs:label "grillen of roosteren"@nl.
+foodon:03450012 rdfs:label "koken met vochtige hitte"@nl.
+foodon:03450013 rdfs:label "koken in water of waterige vloeistof"@nl.
+foodon:03450014 rdfs:label "koken in container"@nl.
+foodon:03450015 rdfs:label "koken en afgieten"@nl.
+foodon:03450025 rdfs:label "koken met toegevoegde vet of olie"@nl.
+foodon:03450026 rdfs:label "koken in kleine hoeveelheid vet of olie"@nl.
+foodon:03450032 rdfs:label "verhitten van container"@nl.
+foodon:00002404 rdfs:label "vlees braden"@nl.
+foodon:00002462 rdfs:label "oppervlakkig bakken"@nl.
+foodon:00002648 rdfs:label "voedsel schroeien"@nl.
+foodon:00003912 rdfs:label "teriyaki kookmethode"@nl.
+foodon:00004088 rdfs:label "direct verhitten van container"@nl.
+foodon:00004089 rdfs:label "vloeistof verhitten in container"@nl.
+foodon:03450007 rdfs:label "grillen op houtskool"@nl.
+foodon:03450008 rdfs:label "bakplaat koken"@nl.
+foodon:03450009 rdfs:label "poffen"@nl.
+foodon:03450010 rdfs:label "voedsel roosteren"@nl.
+foodon:03450011 rdfs:label "koken met magnetron"@nl.
+foodon:03450016 rdfs:label "koken in grote hoeveelheid vloeistof"@nl.
+foodon:03450018 rdfs:label "koken zonder afgieten"@nl.
+foodon:03450019 rdfs:label "stoven"@nl.
+foodon:03450020 rdfs:label "sudderen"@nl.
+foodon:03450022 rdfs:label "stomen onder druk"@nl.
+foodon:03450023 rdfs:label "stomen zonder druk"@nl.
+foodon:03450027 rdfs:label "sauteren"@nl.
+foodon:03450028 rdfs:label "roerbakken"@nl.
+foodon:03450029 rdfs:label "diep frituren"@nl.
+foodon:03450030 rdfs:label "koken met eigen vet of olie"@nl.
+foodon:03450033 rdfs:label "container verhitten in au bain-marie"@nl.
+foodon:03450034 rdfs:label "container verhitten in waterbad"@nl.
+foodon:03450035 rdfs:label "oppervlakkig frituren"@nl.
+foodon:03450036 rdfs:label "trekken"@nl.
+foodon:03450037 rdfs:label "opwarmen van voedsel"@nl.
+foodon:03450043 rdfs:label "dubbel stomen"@nl.
+foodon:03450044 rdfs:label "spitbraden"@nl.
+foodon:03450045 rdfs:label "aanbraden"@nl.
+foodon:03460220 rdfs:label "voedsel voorkoken (graan)"@nl.
+foodon:03470150 rdfs:label "sous-vide koken"@nl.
+foodon:03470175 rdfs:label "blancheren van voedsel"@nl.
+
+foodon:03450002 rdfs:label "voedsel koken"@nl.
+foodon:03450024 rdfs:label "koken met vet of olie"@nl.
+foodon:03450021 rdfs:label "koken in stoom"@nl.
+foodon:03450017 rdfs:label "koken in kleine hoeveelheid vloeistof"@nl.
+foodon:03450031 rdfs:label "container verhitten door onderdompeling in water of stoom"@nl.
+foodon:03450038 rdfs:label "opwarmen van voedsel met magnetron"@nl.
+foodon:03450039 rdfs:label "opwarmen van voedsel met droge hitte"@nl.
+foodon:03450040 rdfs:label "opwarmen van voedsel door koken in zakje"@nl.
+foodon:03450041 rdfs:label "opwarmen van voedsel in pan of kookgerei"@nl.
+foodon:03460391 rdfs:label "zaden roosteren"@nl.
+foodon:03450046 rdfs:label "blind bakken"@nl.
+foodon:03450047 rdfs:label "frituren onder druk"@nl.

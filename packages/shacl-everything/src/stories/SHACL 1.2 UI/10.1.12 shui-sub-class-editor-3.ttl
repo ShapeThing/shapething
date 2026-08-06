@@ -1,0 +1,25 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#data>
+  a schema:Recipe ;
+.
+
+<#shape>
+  a sh:NodeShape ;
+  sh:targetClass schema:Recipe ;
+  sh:closed true ;
+  sh:ignoredProperties (rdf:type) ;
+
+  sh:property [
+    sh:name "Main cook method"@en ;
+    sh:path schema:cookMethod ;
+    sh:maxCount 1 ;
+    shui:editor shui:SubClassEditor ;
+    owl:imports <./cooking-methods.ttl> ;
+    sh:rootClass <http://purl.obolibrary.org/obo/FOODON_03450002> ;
+  ];
+.

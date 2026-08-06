@@ -1,0 +1,21 @@
+.st-option {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  padding: var(--size-1);
+  border-radius: var(--radius-2);
+  cursor: pointer;
+
+  &:hover,
+  &.st-option--active {
+    background-color: var(--st-primary-color-lighter);
+  }
+}
+
+.st-checkbox {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  accent-color: var(--st-primary-color);
+  cursor: pointer;
+}

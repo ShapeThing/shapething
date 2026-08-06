@@ -28,13 +28,22 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   // when "Add" is clicked and PropertyUIComponentObject mounts with this same object, its own
   // useWidget() call - same query key - hits cache instead of suspending behind the per-item
   // Suspense below (which would otherwise flash a loading indicator on every single Add click).
-  useWidget(shui("editor"), propertyUIElement, defaultObject);
+  // Also the only place this level has to check singleUnifiedWidget - PropertyUIComponentObject's
+  // own useWidget() call resolves the same meta again per object, once one actually renders.
+  const { meta } = useWidget(shui("editor"), propertyUIElement, defaultObject) ?? {};
+  const isSingleUnifiedWidget = meta?.singleUnifiedWidget?.(propertyUIElement) === true;
   // existingObjects is a live-cached array (see useDataGraphObjects/useReactiveRead) - mutating it
   // in place here would silently grow that same cached array by one on every re-render this branch
   // is taken, since a plain push() never touches the RDF store writes the cache actually keys its
   // invalidation on.
-  const objects =
-    showEmptyWidget && defaultObject ? [...existingObjects, defaultObject] : existingObjects;
+  // A singleUnifiedWidget renders exactly once for the whole property, regardless of value count -
+  // it owns reading/writing its own values via `shape`, so it gets whatever's already there (or a
+  // fresh default) rather than one instance per existing value.
+  const objects = isSingleUnifiedWidget
+    ? [existingObjects[0] ?? defaultObject].filter((object) => object !== undefined)
+    : showEmptyWidget && defaultObject
+      ? [...existingObjects, defaultObject]
+      : existingObjects;
 
   const description = propertyUIElement.getOne(sh("description"))?.value;
 
@@ -62,15 +71,21 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
               propertyUIElement={propertyUIElement}
               object={object}
               onTermSet={() => setShowEmptyWidget(false)}
+              // Removing a value can leave a single-valued field (its "+" always hidden, and now
+              // its "-" no longer hidden either) with none left and no other way back to an
+              // editable widget - re-show the empty one whenever that happens, for any field.
+              onRemove={() => setShowEmptyWidget(propertyUIElement.getObjects().length === 0)}
             />
           </Suspense>
         ))}
       </div>
-      <PropertyUIComponentAdd
-        showEmptyWidget={showEmptyWidget}
-        setShowEmptyWidget={setShowEmptyWidget}
-        propertyUIElement={propertyUIElement}
-      />
+      {!isSingleUnifiedWidget && (
+        <PropertyUIComponentAdd
+          showEmptyWidget={showEmptyWidget}
+          setShowEmptyWidget={setShowEmptyWidget}
+          propertyUIElement={propertyUIElement}
+        />
+      )}
     </FormElement>
   );
 }

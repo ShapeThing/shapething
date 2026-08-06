@@ -37,7 +37,7 @@
 
 .st-autocomplete__results {
   position: absolute;
-  top: calc(100% + var(--size-1));
+  top: calc(100% + var(--size-2));
   left: 0;
   z-index: 20;
   width: 100%;
@@ -62,7 +62,16 @@
 }
 
 .st-autocomplete__empty {
-  padding: var(--size-2);
+  display: flex;
+  align-items: center;
+  padding-inline: var(--size-2);
+  gap: var(--size-1);
+  min-height: 2rem;
   color: var(--st-color-text-muted);
   font-size: var(--st-font-size-small);
+
+  svg {
+    width: 1.2em;
+    height: 1.2em;
+  }
 }
