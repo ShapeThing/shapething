@@ -1,13 +1,16 @@
 {
   "name": "@shapething/monorepo",
   "version": "1.0.0",
+  "private": true,
   "description": "",
   "homepage": "https://shapething.com",
   "license": "GPL-3.0-only",
   "author": "Daniel Beeke <mail@danielbeeke.nl>",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:ShapeThing/shapething.git"
+  },
   "type": "module",
-  "private": true,
-  "packageManager": "pnpm@10.33.0",
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",
@@ -19,27 +22,14 @@
     "prepare": "husky"
   },
   "devDependencies": {
-    "@changesets/cli": "^2.31.0",
-    "eslint": "^10.5.0",
-    "globals": "^17.7.0",
+    "@changesets/cli": "3.0.0-next.11",
     "husky": "^9.1.7",
     "lint-staged": "^17.0.8",
-    "turbo": "^2.10.3",
-    "typescript-eslint": "^8.62.0"
+    "turbo": "^2.10.8",
+    "vite-plus": "^0.2.8"
   },
   "lint-staged": {
-    "**/*.{js,mjs,cjs,ts,jsx,tsx}": "eslint --report-unused-disable-directives --no-warn-ignored --max-warnings 0"
+    "**/*.{js,mjs,cjs,ts,jsx,tsx}": "vp lint"
   },
-  "pnpm": {
-    "patchedDependencies": {
-      "@hydrofoil/shape-to-query@0.15.0": "patches/@hydrofoil__shape-to-query@0.15.0.patch"
-    },
-    "onlyBuiltDependencies": [
-      "@parcel/watcher",
-      "@swc/core",
-      "esbuild",
-      "msgpackr-extract",
-      "sharp"
-    ]
-  }
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee"
 }

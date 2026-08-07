@@ -9,8 +9,11 @@ export class PublicStore<
   OutQuad extends RDF.BaseQuad = RDF.Quad,
   InQuad extends RDF.BaseQuad = RDF.Quad
 > extends Store<Q_RDF, Q_N3, OutQuad, InQuad> {
-  /** @ts-expect-error we declare it because it is a private from Store */
-  public _termToNumericId(term: RDF.Term): number
-  /** @ts-expect-error we declare it because it is a private from Store */
-  public _termFromId(id: number): Term
+  public _termToNumericId(term: RDF.Term): number {
+    return (Store.prototype as any)._termToNumericId.call(this, term)
+  }
+
+  public _termFromId(id: number): Term {
+    return (Store.prototype as any)._termFromId.call(this, id)
+  }
 }

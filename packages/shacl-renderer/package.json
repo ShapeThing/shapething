@@ -4,6 +4,11 @@
   "type": "module",
   "license": "GPL-3.0-only",
   "homepage": "https://shapething.com",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShapeThing/shapething.git",
+    "directory": "packages/shacl-renderer"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -47,8 +52,8 @@
   },
   "scripts": {
     "dev": "storybook dev -p 7002",
-    "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
-    "lint:fix": "eslint . --report-unused-disable-directives --max-warnings 0 --fix",
+    "lint": "vp lint --react-plugin --jsx-a11y-plugin",
+    "lint:fix": "vp lint --react-plugin --jsx-a11y-plugin --fix",
     "postinstall": "rm -rf ./node_modules/@types/rdfjs__data-model/node_modules",
     "inspect": "npx vite-bundle-visualizer -o stats.html",
     "build": "vite build --config vite.lib.config.ts && vite build --config vite.css.ts && tsc -p tsconfig.json",
@@ -137,7 +142,6 @@
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.2.1",
-    "@eslint/js": "^10.0.1",
     "@rdfjs/types": "^2.0.1",
     "@rollup/plugin-virtual": "^3.0.2",
     "@storybook/addon-a11y": "^10.4.6",
@@ -171,10 +175,6 @@
     "ajv": "^8.20.0",
     "babel-plugin-react-compiler": "^1.0.0",
     "chromatic": "^17.7.1",
-    "eslint": "^10.5.0",
-    "eslint-plugin-react": "^7.37.5",
-    "eslint-plugin-storybook": "^10.4.6",
-    "globals": "^17.7.0",
     "jsdom": "^29.1.1",
     "memfs": "^4.57.8",
     "next-tick": "^1.1.0",
@@ -184,7 +184,6 @@
     "storybook": "^10.4.6",
     "ts-to-zod": "^5.1.0",
     "typescript": "^6.0.3",
-    "typescript-eslint": "^8.62.0",
     "vite": "^8.1.0",
     "vite-dts": "^1.0.4",
     "vite-multiple-assets": "^2.2.6",

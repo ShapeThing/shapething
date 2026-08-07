@@ -14,17 +14,16 @@ jobs:
       id-token: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
-          node-version: 22.14.0
+          node-version: '26'
           cache: pnpm
-          registry-url: 'https://registry.npmjs.org'
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -32,10 +31,14 @@ jobs:
       - name: Update npm for OIDC trusted publishing support
         run: npm install -g npm@latest
 
-      - name: Create release PR or publish to npm
+      - name: Create release PR
+        id: changesets
         uses: changesets/action@v1
         with:
           version: pnpm run version
-          publish: pnpm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and publish to npm via OIDC
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: pnpm run release

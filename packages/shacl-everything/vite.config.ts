@@ -4,8 +4,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
-const dirname =
-  typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const dirname = typeof __dirname !== "undefined"
+  ? __dirname
+  : path.dirname(fileURLToPath(import.meta.url));
 import Icons from "unplugin-icons/vite";
 import react from "@vitejs/plugin-react";
 
@@ -22,12 +23,6 @@ export default defineConfig({
       tsgo: true,
     },
     exports: true,
-  },
-  lint: {
-    options: {
-      typeAware: true,
-      typeCheck: true,
-    },
   },
   fmt: {},
   test: {
