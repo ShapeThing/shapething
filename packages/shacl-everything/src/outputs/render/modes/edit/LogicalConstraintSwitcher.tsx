@@ -2,7 +2,9 @@ import { Localized } from "@fluent/react";
 import type { Term } from "@rdfjs/types";
 import { branchLabel } from "@/helpers/branchLabel.ts";
 import { shui } from "@/helpers/namespaces.ts";
-import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import FormElement from "@/outputs/render/components/FormElement/index.tsx";
+import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
+import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { logicalBranches, withBranch, type LogicalBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { coerceTermToBranch } from "@/widgets/defaultTerm.ts";
@@ -26,7 +28,8 @@ export default function LogicalConstraintSwitcher({
   activeBranch,
   onBranchSelected,
 }: Props) {
-  const { contentLanguage } = useEnvironment();
+  const { activeLanguage } = useContentLanguage();
+  const { activeInterfaceLanguage } = useInterfaceLanguage();
   const branches = logicalBranches(shape);
 
   if (branches.length === 0) return null;
@@ -42,14 +45,16 @@ export default function LogicalConstraintSwitcher({
     if (!widget || widget.termType !== "NamedNode") return;
 
     onBranchSelected(branch);
-    setTerm(coerceTermToBranch(term, widget, branchProperty, { contentLanguage }));
+    setTerm(coerceTermToBranch(term, widget, branchProperty, { contentLanguage: activeLanguage }));
   };
 
   return (
-    <div className="st-logical-constraint-switcher">
-      <label className="st-label">
-        <Localized id="logical-constraint-switcher-label">Pick an option</Localized>
-      </label>
+    <FormElement
+      size="small"
+      className="st-logical-constraint-switcher"
+      label={<Localized id="logical-constraint-switcher-label">Pick an option</Localized>}
+      tooltip={<Localized id="logical-constraint-switcher-tooltip" />}
+    >
       <span className="st-select-wrapper st-select-wrapper-small">
         <select
           className="st-select"
@@ -60,12 +65,12 @@ export default function LogicalConstraintSwitcher({
         >
           {branches.map(({ shape: branchShape }) => (
             <option key={branchShape.value} value={branchShape.value}>
-              {branchLabel(branchShape, shape.shapesGraph, [contentLanguage])}
+              {branchLabel(branchShape, shape.shapesGraph, [activeInterfaceLanguage])}
             </option>
           ))}
         </select>
         <span className="st-select-arrow" aria-hidden="true" />
       </span>
-    </div>
+    </FormElement>
   );
 }

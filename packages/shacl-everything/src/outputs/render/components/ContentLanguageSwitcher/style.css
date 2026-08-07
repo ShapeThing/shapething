@@ -1,0 +1,23 @@
+.st-create-language-modal {
+  display: flex;
+  flex-direction: column;
+}
+
+.st-create-language-modal__hint {
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+  margin: var(--size-2) 0 0;
+}
+
+.st-create-language-modal__error {
+  color: var(--st-severity-error);
+  font-size: var(--st-font-size-small);
+  margin: var(--size-2) 0 0;
+}
+
+.st-create-language-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--size-2);
+  margin-top: var(--size-4);
+}

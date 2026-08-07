@@ -5,6 +5,7 @@ import type { Environment, RawEnvironment } from "@/environment.ts";
 import { defaultEnvironment } from "@/environment.ts";
 import { runPreprocessors, defaultPreprocessors, type Preprocessor } from "@/preprocess/index.ts";
 import { environmentContext } from "@/outputs/render/contexts/environmentContext.tsx";
+import ContentLanguageProvider from "@/outputs/render/contexts/ContentLanguageProvider.tsx";
 import { Localized } from "@fluent/react";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import "./style.css";
@@ -60,5 +61,9 @@ function PreprocessedEnvironmentProvider({
     queryFn: run,
   });
 
-  return <environmentContext.Provider value={environment}>{children}</environmentContext.Provider>;
+  return (
+    <environmentContext.Provider value={environment}>
+      <ContentLanguageProvider>{children}</ContentLanguageProvider>
+    </environmentContext.Provider>
+  );
 }

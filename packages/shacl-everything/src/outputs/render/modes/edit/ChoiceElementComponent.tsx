@@ -1,8 +1,9 @@
 import { Localized } from "@fluent/react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { branchLabel } from "@/helpers/branchLabel.ts";
+import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import { useActiveChoiceBranch } from "@/outputs/render/hooks/useActiveChoiceBranch.tsx";
-import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import UIElementChildren from "@/outputs/render/modes/edit/UIElementChildren.tsx";
 import { choiceBranchShapes } from "@/structure/choiceBranches.ts";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
@@ -21,25 +22,23 @@ export default function ChoiceElementComponent({
 }: {
   choiceElement: ChoiceElement;
 }) {
-  const { contentLanguage } = useEnvironment();
+  const { activeInterfaceLanguage } = useInterfaceLanguage();
 
   const branchShapes = useMemo(() => choiceBranchShapes(choiceElement), [choiceElement]);
   const branches = useMemo(() => choiceElement.children(), [choiceElement]);
   const detectedBranch = useActiveChoiceBranch(choiceElement, branchShapes);
 
-  // Mirrors PropertyUIComponentObject's pinnedBranchKey: a manual pick sticks until the data
-  // itself conforms to some branch again (including a different one).
+  // Unlike PropertyUIComponentObject's pinnedBranchKey, a manual pick here is never superseded by
+  // detection afterwards: switching branches doesn't touch the data (see class doc above), so the
+  // branch the focus node already conformed to before the switch never stops being "detected" -
+  // deferring to detectedBranch once a pin exists would just snap the picker straight back. The
+  // pin only defers to detection as the initial default, before the user has touched the picker.
   const [pinnedBranchKey, setPinnedBranchKey] = useState<string | undefined>(undefined);
-  useEffect(() => {
-    if (detectedBranch && detectedBranch.value !== pinnedBranchKey) {
-      setPinnedBranchKey(undefined);
-    }
-  }, [detectedBranch, pinnedBranchKey]);
 
   if (branchShapes.length === 0) return null;
 
   const activeBranchShape =
-    detectedBranch ?? branchShapes.find((shape) => shape.value === pinnedBranchKey);
+    branchShapes.find((shape) => shape.value === pinnedBranchKey) ?? detectedBranch;
   const selectedIndex = activeBranchShape
     ? Math.max(
         branchShapes.findIndex((shape) => shape.equals(activeBranchShape)),
@@ -49,11 +48,12 @@ export default function ChoiceElementComponent({
 
   return (
     <div className="st-choice-element">
-      <div className="st-logical-constraint-switcher">
-        <label className="st-label">
-          <Localized id="logical-constraint-switcher-label">Pick an option</Localized>
-        </label>
-        <span className="st-select-wrapper st-select-wrapper-small">
+      <FormElement
+        className="st-logical-constraint-switcher"
+        label={<Localized id="logical-constraint-switcher-label">Pick an option</Localized>}
+        tooltip={<Localized id="logical-constraint-switcher-tooltip" />}
+      >
+        <span className="st-select-wrapper">
           <select
             className="st-select"
             value={branchShapes[selectedIndex]?.value ?? ""}
@@ -61,13 +61,13 @@ export default function ChoiceElementComponent({
           >
             {branchShapes.map((branchShape) => (
               <option key={branchShape.value} value={branchShape.value}>
-                {branchLabel(branchShape, choiceElement.shapesGraph, [contentLanguage])}
+                {branchLabel(branchShape, choiceElement.shapesGraph, [activeInterfaceLanguage])}
               </option>
             ))}
           </select>
           <span className="st-select-arrow" aria-hidden="true" />
         </span>
-      </div>
+      </FormElement>
       {/* Keyed on the active branch: switching branches swaps in an entirely different set of
           properties, not just new props for the same ones - without this key, React would reuse
           each position's PropertyUIComponent instance (and its stale internal state, e.g.

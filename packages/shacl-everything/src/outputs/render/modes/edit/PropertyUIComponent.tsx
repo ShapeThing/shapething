@@ -1,14 +1,18 @@
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useDefaultObject } from "@/outputs/render/hooks/useDefaultObject.tsx";
+import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
+import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import PropertyUIComponentAdd from "@/outputs/render/modes/edit/PropertyUIComponentAdd.tsx";
 import PropertyUIComponentObject from "@/outputs/render/modes/edit/PropertyUIComponentObject.tsx";
 import { localName } from "@/helpers/localName.ts";
+import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
 import { sh, shui } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import "./style.css";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Loading } from "@/helpers/icons.tsx";
 
 type PropertyUIComponentProps = {
@@ -16,10 +20,31 @@ type PropertyUIComponentProps = {
 };
 
 export default function PropertyUIComponent({ propertyUIElement }: PropertyUIComponentProps) {
+  const { languageMode } = useEnvironment();
+  const { activeLanguage } = useContentLanguage();
+  const { activeInterfaceLanguage } = useInterfaceLanguage();
   // Reads this.dataGraph reactively - addObject() below re-renders only this property, not the
   // whole tree, once the write it makes actually lands (see helpers/reactiveRdfStore.ts).
   const existingObjects = useDataGraphObjects(propertyUIElement);
-  const [showEmptyWidget, setShowEmptyWidget] = useState(existingObjects.length === 0);
+  // Narrows a multi-lingual property (e.g. rdf:langString "Cat"@en / "Kat"@nl) down to the value
+  // matching the currently active content language - values with no language tag, and non-literal
+  // values, are unaffected. sh:minCount/severity below still use the unfiltered existingObjects,
+  // since SHACL conformance doesn't care which language happens to be on screen. Skipped entirely
+  // in "individual" mode, where every translation renders side by side instead of one at a time.
+  const languageFilteredObjects =
+    languageMode === "individual"
+      ? existingObjects
+      : filterByContentLanguage(existingObjects, activeLanguage);
+  const [showEmptyWidget, setShowEmptyWidget] = useState(languageFilteredObjects.length === 0);
+
+  // Switching the active language can leave this property with no existing value in the newly
+  // active language at all - re-show the empty widget in that case, same as removing the last
+  // value does, so there's always something to type a translation into. Deliberately keyed on
+  // activeLanguage alone (not languageFilteredObjects) - this should only fire on a language
+  // switch, not on every data write that happens to change the filtered set for other reasons.
+  useEffect(() => {
+    setShowEmptyWidget(languageFilteredObjects.length === 0);
+  }, [activeLanguage]);
 
   // getDefaultObject() resolves the widget via score() (async, runs SHACL validation), so it's
   // fetched through a hook rather than called inline here.
@@ -40,10 +65,23 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   // it owns reading/writing its own values via `shape`, so it gets whatever's already there (or a
   // fresh default) rather than one instance per existing value.
   const objects = isSingleUnifiedWidget
-    ? [existingObjects[0] ?? defaultObject].filter((object) => object !== undefined)
+    ? [languageFilteredObjects[0] ?? defaultObject].filter((object) => object !== undefined)
     : showEmptyWidget && defaultObject
-      ? [...existingObjects, defaultObject]
-      : existingObjects;
+      ? [...languageFilteredObjects, defaultObject]
+      : languageFilteredObjects;
+
+  // Re-derives whether the empty widget should show from the live data, rather than assuming a
+  // write always means "a value now exists in the active language" - a write can just as well be
+  // the per-value language <select> retagging the only active-language value to a different
+  // language, which must bring the empty widget straight back rather than leaving this property
+  // rendering nothing at all until the active language happens to change too.
+  const syncShowEmptyWidget = () =>
+    setShowEmptyWidget(
+      (languageMode === "individual"
+        ? propertyUIElement.getObjects()
+        : filterByContentLanguage(propertyUIElement.getObjects(), activeLanguage)
+      ).length === 0,
+    );
 
   const description = propertyUIElement.getOne(sh("description"))?.value;
 
@@ -57,7 +95,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
 
   return (
     <FormElement
-      label={propertyUIElement.label()?.value}
+      label={propertyUIElement.label([activeInterfaceLanguage])?.value}
       labelTitle={propertyUIElement.pathAsSparql()}
       description={description}
       severity={severity}
@@ -70,11 +108,11 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
               index={index}
               propertyUIElement={propertyUIElement}
               object={object}
-              onTermSet={() => setShowEmptyWidget(false)}
+              onTermSet={syncShowEmptyWidget}
               // Removing a value can leave a single-valued field (its "+" always hidden, and now
               // its "-" no longer hidden either) with none left and no other way back to an
               // editable widget - re-show the empty one whenever that happens, for any field.
-              onRemove={() => setShowEmptyWidget(propertyUIElement.getObjects().length === 0)}
+              onRemove={syncShowEmptyWidget}
             />
           </Suspense>
         ))}

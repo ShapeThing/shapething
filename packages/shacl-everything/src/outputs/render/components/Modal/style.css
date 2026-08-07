@@ -1,0 +1,32 @@
+.st-modal {
+  border: none;
+  border-radius: var(--radius-3);
+  padding: 0;
+  max-width: min(90vw, var(--size-15));
+  width: 100%;
+  color: var(--gray-8);
+
+  &::backdrop {
+    background-color: var(--gray-12);
+    opacity: 0.5;
+  }
+}
+
+.st-modal__content {
+  padding: var(--size-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-3);
+}
+
+.st-modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-3);
+}
+
+.st-modal__title {
+  font-size: var(--font-size-1);
+  margin: 0;
+}

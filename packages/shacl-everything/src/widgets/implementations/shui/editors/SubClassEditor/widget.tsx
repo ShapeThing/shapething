@@ -8,7 +8,9 @@ import language from "@/resolution/language.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
 import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
+import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import type { BCP47 } from "@/types/BCP47.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
@@ -23,28 +25,37 @@ type ClassNode = {
 // own ontologyLabel), rather than dataGraph, where valueNodeLabel looks for value nodes. Checking
 // both stores keeps this working whether an rdfs:label happens to be asserted alongside the
 // ontology or alongside the data.
-function classLabel(shape: PropertyUIElement, term: NamedNode): string {
+function classLabel(shape: PropertyUIElement, term: NamedNode, languages: BCP47[]): string {
   const labels = [
     ...shape.shapesGraph.getQuads(term, rdfs("label")),
     ...shape.dataGraph.getQuads(term, rdfs("label")),
   ].map((quad) => quad.object as Literal);
 
-  return (labels.length > 0 ? language(labels) : undefined)?.value ?? localName(term) ?? term.value;
+  return (
+    (labels.length > 0 ? language(labels, languages) : undefined)?.value ??
+    localName(term) ??
+    term.value
+  );
 }
 
 // Walks rdfs:subClassOf downward from `root`, the same relation keepMostSpecificClasses in
 // PropertyUIElement.ts reads upward - both look for it on shapesGraph, since that's where this
 // codebase's fixtures declare ontology structure (rdfs:subClassOf, rdfs:label) alongside shapes.
 // `seen` guards against a cyclical subClassOf graph, which would otherwise recurse forever.
-function buildHierarchy(shape: PropertyUIElement, root: NamedNode, seen: Set<string>): ClassNode {
+function buildHierarchy(
+  shape: PropertyUIElement,
+  root: NamedNode,
+  seen: Set<string>,
+  languages: BCP47[],
+): ClassNode {
   seen.add(root.value);
   const children = shape.shapesGraph
     .getQuads(null, rdfs("subClassOf"), root)
     .map((quad) => quad.subject as NamedNode)
     .filter((child) => !seen.has(child.value))
-    .map((child) => buildHierarchy(shape, child, seen));
+    .map((child) => buildHierarchy(shape, child, seen, languages));
 
-  return { term: root, label: classLabel(shape, root), children };
+  return { term: root, label: classLabel(shape, root, languages), children };
 }
 
 // Keeps a node whose own label matches `query` together with its whole subtree (so a category hit
@@ -135,6 +146,7 @@ function SubClassTreeNode({
 }
 
 export default function SubClassEditor({ shape, term, setTerm }: WidgetProps) {
+  const { activeInterfaceLanguage } = useInterfaceLanguage();
   const rootClass = shape.getOne(sh("rootClass"));
   // Mirrors meta.ts's singleUnifiedWidget: no sh:maxCount means unbounded, so only an explicit
   // maxCount of 1 rules out a second value ever existing for this property.
@@ -157,8 +169,10 @@ export default function SubClassEditor({ shape, term, setTerm }: WidgetProps) {
 
   const tree = useMemo(
     () =>
-      rootClass?.termType === "NamedNode" ? buildHierarchy(shape, rootClass, new Set()) : undefined,
-    [shape, rootClass],
+      rootClass?.termType === "NamedNode"
+        ? buildHierarchy(shape, rootClass, new Set(), [activeInterfaceLanguage])
+        : undefined,
+    [shape, rootClass, activeInterfaceLanguage],
   );
 
   const query = search.trim().toLowerCase();
@@ -191,7 +205,9 @@ export default function SubClassEditor({ shape, term, setTerm }: WidgetProps) {
   }, [mode, activeTerm]);
 
   const currentLabel =
-    term.termType === "NamedNode" && term.value ? classLabel(shape, term) : undefined;
+    term.termType === "NamedNode" && term.value
+      ? classLabel(shape, term, [activeInterfaceLanguage])
+      : undefined;
 
   const isChecked = (candidate: NamedNode): boolean =>
     isMultiValued
@@ -238,7 +254,11 @@ export default function SubClassEditor({ shape, term, setTerm }: WidgetProps) {
             <ValueChip
               key={object.value}
               term={object}
-              label={object.termType === "NamedNode" ? classLabel(shape, object) : object.value}
+              label={
+                object.termType === "NamedNode"
+                  ? classLabel(shape, object, [activeInterfaceLanguage])
+                  : object.value
+              }
               onRemove={() => shape.removeObject(object)}
             />
           ))}

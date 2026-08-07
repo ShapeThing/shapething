@@ -2,6 +2,7 @@ import { RdfStore } from "rdf-stores";
 import type { Environment, RawEnvironment } from "@/environment.ts";
 
 const MODES = ["edit", "view", "facet"] as const;
+const LANGUAGE_MODES = ["switcher", "individual"] as const;
 const BCP47_PATTERN = /^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|\d{3}))?$/;
 
 const isNamedNode = (value: unknown): boolean =>
@@ -45,6 +46,23 @@ export const assertValidEnvironment = (environment: RawEnvironment): Environment
     if (typeof environment[key] !== "string" || !BCP47_PATTERN.test(environment[key])) {
       errors.push(`${key} must be a BCP47 language tag, got ${JSON.stringify(environment[key])}`);
     }
+  }
+
+  if (
+    !Array.isArray(environment.languages) ||
+    !environment.languages.every(
+      (language) => typeof language === "string" && BCP47_PATTERN.test(language),
+    )
+  ) {
+    errors.push(
+      `languages must be an array of BCP47 language tags, got ${JSON.stringify(environment.languages)}`,
+    );
+  }
+
+  if (!LANGUAGE_MODES.includes(environment.languageMode)) {
+    errors.push(
+      `languageMode must be one of ${LANGUAGE_MODES.join(", ")}, got ${JSON.stringify(environment.languageMode)}`,
+    );
   }
 
   if (errors.length > 0) {

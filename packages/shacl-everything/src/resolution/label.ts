@@ -4,15 +4,21 @@ import language from "@/resolution/language.ts";
 import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import type { BCP47 } from "@/types/BCP47.ts";
 import type { Literal, NamedNode, Term } from "@rdfjs/types";
 
-type PropertyLabelOptions = { widget: Term; propertyShape: PropertyUIElement };
+type PropertyLabelOptions = {
+  widget: Term;
+  propertyShape: PropertyUIElement;
+  languages?: BCP47[];
+};
 
-export function propertyLabel({ widget, propertyShape }: PropertyLabelOptions) {
+export function propertyLabel({ widget, propertyShape, languages }: PropertyLabelOptions) {
   const { scoresGraph, shapesGraph } = propertyShape;
 
   const labelQuadViaShapes = language(
     shapesGraph.getQuads(widget, rdfs("label")).map(({ object }) => object as Literal),
+    languages,
   );
   if (labelQuadViaShapes) {
     return labelQuadViaShapes.value;
@@ -20,6 +26,7 @@ export function propertyLabel({ widget, propertyShape }: PropertyLabelOptions) {
 
   const labelQuadViaScores = language(
     scoresGraph.getQuads(widget, rdfs("label")).map(({ object }) => object as Literal),
+    languages,
   );
   if (labelQuadViaScores) {
     return labelQuadViaScores.value;
@@ -31,6 +38,7 @@ export function propertyLabel({ widget, propertyShape }: PropertyLabelOptions) {
 type ValueNodeLabelOptions = {
   term: Term;
   propertyShape: PropertyUIElement;
+  languages?: BCP47[];
 };
 
 // The property paths (sh:path) of every property shape on `propertyShape`'s sh:node that's
@@ -79,7 +87,7 @@ export function subLabelRolePropertyPaths(propertyShape: PropertyUIElement): Pro
 }
 
 // 8.2.2 Value Node Labels
-export function valueNodeLabel({ term, propertyShape }: ValueNodeLabelOptions): Literal {
+export function valueNodeLabel({ term, propertyShape, languages }: ValueNodeLabelOptions): Literal {
   const { dataGraph } = propertyShape;
 
   //  1. If V is a literal, use its lexical form as the label.
@@ -95,14 +103,17 @@ export function valueNodeLabel({ term, propertyShape }: ValueNodeLabelOptions): 
     .filter((value): value is Literal => value.termType === "Literal");
 
   if (labelsViaPropertyRoles.length > 0) {
-    return language(labelsViaPropertyRoles);
+    return language(labelsViaPropertyRoles, languages);
   }
 
   // 3. If V is an IRI, try to find its rdfs:label in the data graph. If found, use that literal as the label.
   if (term.termType === "NamedNode") {
     const labelQuads = dataGraph.getQuads(term, rdfs("label"));
     if (labelQuads.length > 0) {
-      return language(labelQuads.map(({ object }) => object as Literal));
+      return language(
+        labelQuads.map(({ object }) => object as Literal),
+        languages,
+      );
     }
   }
 
@@ -112,6 +123,7 @@ export function valueNodeLabel({ term, propertyShape }: ValueNodeLabelOptions): 
 type ValueNodeSubLabelOptions = {
   term: Term;
   propertyShape: PropertyUIElement;
+  languages?: BCP47[];
 };
 
 /**
@@ -123,6 +135,7 @@ type ValueNodeSubLabelOptions = {
 export function valueNodeSubLabel({
   term,
   propertyShape,
+  languages,
 }: ValueNodeSubLabelOptions): Literal | undefined {
   if (term.termType === "Literal") return undefined;
 
@@ -131,7 +144,7 @@ export function valueNodeSubLabel({
     .flatMap((path) => walkPropertyPath(path, term, dataGraph))
     .filter((value): value is Literal => value.termType === "Literal");
 
-  return subLabels.length > 0 ? language(subLabels) : undefined;
+  return subLabels.length > 0 ? language(subLabels, languages) : undefined;
 }
 
 type ValueNodeDepictionOptions = {
