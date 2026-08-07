@@ -6,6 +6,7 @@ import SwitchLeft from "~icons/ic/round-settings";
 import EditIcon from "~icons/ic/round-edit";
 import LinkIcon from "~icons/ic/round-link";
 import CloseIcon from "~icons/ic/round-close";
+import HelpIcon from "~icons/ic/round-help";
 
 export const Loading = LoadingTwotoneLoopIcon;
 export const Plus = PlusIcon;
@@ -15,3 +16,4 @@ export const Cog = SwitchLeft;
 export const Edit = EditIcon;
 export const Link = LinkIcon;
 export const Close = CloseIcon;
+export const Help = HelpIcon;

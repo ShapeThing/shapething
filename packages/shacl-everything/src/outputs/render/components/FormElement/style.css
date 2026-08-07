@@ -14,6 +14,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
+  color: var(--st-color-text);
+}
+
+.st-form-element[data-size="small"] .st-form-element__label {
+  font-size: var(--st-font-size-small);
+  color: var(--gray-7);
 }
 
 .st-form-element__description {
@@ -28,4 +34,13 @@
   width: 100%;
   align-items: center;
   justify-content: space-between;
+}
+
+.st-form-element__actions {
+  display: flex;
+  gap: var(--size-2);
+  align-items: center;
+  justify-content: center;
+  align-content: center;
+  justify-items: center;
 }

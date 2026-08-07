@@ -130,7 +130,12 @@ async function match({
 
   const matcherDataGraphShapes = matcherDataGraphShapeQuads.map((q) => q.object);
   const matcherShapeGraphShapes = matcherShapeGraphShapeQuads.map((q) => q.object);
-  if (!focusNode && matcherDataGraphShapes.length && matcherShapeGraphShapes.length === 0) {
+  // A rule that requires a dataGraphShape check can never match with no value to check it
+  // against - regardless of whether it also declares a shapesGraphShape check. Without this,
+  // a rule combining both (e.g. dataGraphShape isString + shapesGraphShape isSingleLineFalse)
+  // would pass its shapesGraphShape half below, hit the `!focusNode` early return further down,
+  // and match despite its dataGraphShape half being entirely unverified.
+  if (!focusNode && matcherDataGraphShapes.length > 0) {
     return false;
   }
 

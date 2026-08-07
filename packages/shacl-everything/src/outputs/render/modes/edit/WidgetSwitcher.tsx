@@ -1,5 +1,7 @@
 import { shui } from "@/helpers/namespaces.ts";
+import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useWidgets } from "@/outputs/render/hooks/useWidgets.tsx";
 import { propertyLabel } from "@/resolution/label.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -16,6 +18,7 @@ export default function WidgetSwitcher({
   shape: PropertyUIElement;
 }) {
   const { enableWidgetSwitching } = useEnvironment();
+  const { activeInterfaceLanguage } = useInterfaceLanguage();
 
   const widgets = useWidgets(shui("editor"), shape);
   const activeWidgetIri = ActiveWidget
@@ -23,10 +26,12 @@ export default function WidgetSwitcher({
     : undefined;
 
   return enableWidgetSwitching && widgets.length > 1 ? (
-    <div className="st-widget-switcher">
-      <label className="st-label">
-        <Localized id="widget-switcher-label">Pick a widget</Localized>
-      </label>
+    <FormElement
+      className="st-widget-switcher"
+      size="small"
+      label={<Localized id="widget-switcher-label">Pick a widget</Localized>}
+      tooltip={<Localized id="widget-switcher-tooltip" />}
+    >
       <span className="st-select-wrapper st-select-wrapper-small">
         <select
           className="st-select"
@@ -36,7 +41,11 @@ export default function WidgetSwitcher({
           }}
         >
           {widgets.map(({ iri, score }) => {
-            const widgetLabel = propertyLabel({ widget: iri, propertyShape: shape });
+            const widgetLabel = propertyLabel({
+              widget: iri,
+              propertyShape: shape,
+              languages: [activeInterfaceLanguage],
+            });
 
             return (
               <option key={iri.value} value={iri.value}>
@@ -47,6 +56,6 @@ export default function WidgetSwitcher({
         </select>
         <span className="st-select-arrow" aria-hidden="true" />
       </span>
-    </div>
+    </FormElement>
   ) : null;
 }

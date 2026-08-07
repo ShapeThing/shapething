@@ -1,37 +1,92 @@
+@position-try --tooltip-right {
+  position-area: center right;
+}
+
+@position-try --tooltip-top {
+  position-area: top center;
+}
+
+@position-try --tooltip-bottom {
+  position-area: bottom center;
+}
+
 .tooltip {
   border: 2px solid var(--color);
   position: fixed;
-  z-index: 2;
+  z-index: var(--layer-important);
   background-color: var(--gray-0);
   border-radius: var(--radius-2);
   padding: var(--size-3);
   color: var(--gray-8);
-  position-anchor: --tooltip-anchor;
+  max-width: var(--size-14);
+  overflow-wrap: break-word;
+  position-anchor: var(--tooltip-anchor);
   position-area: center left;
+  position-try-fallbacks: --tooltip-right, --tooltip-top, --tooltip-bottom;
+  position-visibility: anchors-visible;
   margin: var(--size-2);
 
   &:after {
     content: "";
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    left: 100%;
     border-width: var(--size-2);
     border-style: solid;
+  }
+
+  /* tooltip is left of the anchor: arrow on the right edge, pointing right */
+  &[data-placement="left"]:after {
+    top: var(--arrow-offset, 50%);
+    left: 100%;
+    transform: translateY(-50%);
     border-color: transparent transparent transparent var(--color);
+  }
+
+  /* tooltip is right of the anchor: arrow on the left edge, pointing left */
+  &[data-placement="right"]:after {
+    top: var(--arrow-offset, 50%);
+    right: 100%;
+    transform: translateY(-50%);
+    border-color: transparent var(--color) transparent transparent;
+  }
+
+  /* tooltip is above the anchor: arrow on the bottom edge, pointing down */
+  &[data-placement="top"]:after {
+    top: 100%;
+    left: var(--arrow-offset, 50%);
+    transform: translateX(-50%);
+    border-color: var(--color) transparent transparent transparent;
+  }
+
+  /* tooltip is below the anchor: arrow on the top edge, pointing up */
+  &[data-placement="bottom"]:after {
+    bottom: 100%;
+    left: var(--arrow-offset, 50%);
+    transform: translateX(-50%);
+    border-color: transparent transparent var(--color) transparent;
   }
 }
 
 .tooltip-wrapper {
-  anchor-name: --tooltip-anchor;
+  anchor-name: var(--tooltip-anchor);
   position: relative;
   border: 1px solid var(--gray-3);
   border-radius: var(--radius-2);
+  justify-content: center;
+  display: flex;
 
   &:hover,
   &:focus {
     outline: 2px solid var(--color);
     box-shadow: none;
     color: var(--color);
+  }
+}
+
+.tooltip-wrapper--bare {
+  border: none;
+
+  &:hover,
+  &:focus {
+    outline: none;
   }
 }

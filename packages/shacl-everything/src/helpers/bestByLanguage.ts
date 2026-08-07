@@ -1,7 +1,7 @@
 import type { Literal, Term } from "@rdfjs/types";
 import type { BCP47 } from "@/types/BCP47.ts";
 
-const primarySubtag = (language: string) => language.split("-")[0].toLowerCase();
+export const primarySubtag = (language: string): string => language.split("-")[0].toLowerCase();
 
 export function bestByLanguage(values: Term[], languages: BCP47[]): Term | undefined {
   if (values.length === 0) return undefined;

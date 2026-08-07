@@ -4,11 +4,15 @@ import { sh } from "@/helpers/namespaces.ts";
 import { valueNodeLabel } from "@/resolution/label.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
+import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
+import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
 export default function DetailsEditor({ shape, term, flyOut }: WidgetProps) {
+  const { activeLanguage } = useContentLanguage();
+  const { activeInterfaceLanguage } = useInterfaceLanguage();
   const nodeShapes = useMemo(() => shape.get(sh("node")) as Quad_Subject[], [shape]);
 
   const nodeUiElement = useMemo(
@@ -26,12 +30,16 @@ export default function DetailsEditor({ shape, term, flyOut }: WidgetProps) {
   // A fresh BlankNode has no data to derive a label from yet - valueNodeLabel() falls all the way
   // back to the term's own opaque id in that case (e.g. "_:b0"), which is meaningless to show, so
   // this widget prefers the outer property's own name (e.g. "Address") until there's real data.
-  const label = useReactiveRead(shape.dataGraph, `details-editor-label@${term.value}`, () => {
-    const rawLabel = valueNodeLabel({ term, propertyShape: shape });
-    return term.termType === "BlankNode" && rawLabel.value === term.value
-      ? (shape.label()?.value ?? rawLabel.value)
-      : rawLabel.value;
-  });
+  const label = useReactiveRead(
+    shape.dataGraph,
+    `details-editor-label@${term.value}@${activeLanguage}@${activeInterfaceLanguage}`,
+    () => {
+      const rawLabel = valueNodeLabel({ term, propertyShape: shape, languages: [activeLanguage] });
+      return term.termType === "BlankNode" && rawLabel.value === term.value
+        ? (shape.label([activeInterfaceLanguage])?.value ?? rawLabel.value)
+        : rawLabel.value;
+    },
+  );
 
   return (
     <div className="st-details-editor">

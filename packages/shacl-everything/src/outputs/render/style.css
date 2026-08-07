@@ -1,0 +1,10 @@
+.st-header {
+  display: flex;
+  gap: var(--size-3);
+  margin-bottom: var(--size-3);
+  justify-content: end;
+
+  > * {
+    flex: 200px 0 1;
+  }
+}

@@ -322,6 +322,62 @@ test("excludes a widget score that only has a data graph shape when no focus nod
   expect(results).toHaveLength(0);
 });
 
+test("excludes a widget score that combines a data graph shape with a shapes graph shape when no focus node is given", async () => {
+  // Regression: a WidgetScore combining both kinds of shape (e.g. TextAreaWithLangEditor's own
+  // score.ttl rules) used to match with no focus node once its shapesGraphShape half passed,
+  // never checking whether its dataGraphShape half could even be verified - letting an
+  // unrelated, lower-scoring widget's "get a default value" resolution win by an unverified rule.
+  const scoringGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+        @prefix ex: <http://example.com/> .
+
+        ex:isString a sh:NodeShape ;
+            sh:datatype xsd:string .
+
+        ex:hasClassConstraint a sh:NodeShape ;
+            sh:property [
+                sh:path sh:class ;
+                sh:minCount 1 ;
+            ] .
+
+        ex:widgetScore a shui:WidgetScore ;
+            shui:widget ex:SomeWidget ;
+            shui:score 30 ;
+            shui:dataGraphShape ex:isString ;
+            shui:shapesGraphShape ex:hasClassConstraint .
+    `,
+    "text/turtle",
+  );
+
+  // A property shape that DOES conform to the shapesGraphShape half (sh:class) - only the
+  // dataGraphShape half (isString) is left unverifiable with no focus node.
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.com/> .
+        ex:ownerShape a sh:PropertyShape ;
+            sh:path ex:owner ;
+            sh:class ex:Person .
+    `,
+    "text/turtle",
+  );
+
+  const results = await Array.fromAsync(
+    score({
+      dataGraph: await parseRdf("", "text/turtle"),
+      shapeNode: ex("ownerShape"),
+      shapesGraph,
+      scoringGraph,
+      widgetPredicate: shui("editor"),
+    }),
+  );
+
+  expect(results).toHaveLength(0);
+});
+
 test("includes a widget score with only a shapes graph shape when no focus node is given", async () => {
   const scoringGraph = await parseRdf(
     `
