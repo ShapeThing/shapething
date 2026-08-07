@@ -60,7 +60,6 @@ test("getScoringGraph + score picks the BooleanEditor for a plain boolean proper
 
   const best = await Array.fromAsync(
     score({
-      best: true,
       focusNode: isActiveQuad.object,
       dataGraph,
       shapeNode: factory.namedNode("http://example.com/isActiveShape"),

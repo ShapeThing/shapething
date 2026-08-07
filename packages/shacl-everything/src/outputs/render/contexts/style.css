@@ -1,0 +1,6 @@
+.st-environment-context-provider__loading {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  height: 100%;
+}

@@ -54,6 +54,7 @@ export function useInstanceSearch(shape: PropertyUIElement): {
   search: string;
   setSearch: (value: string) => void;
   results: SearchResult[] | undefined;
+  isLoading: boolean;
   error: unknown;
   reset: () => void;
 } {
@@ -68,7 +69,7 @@ export function useInstanceSearch(shape: PropertyUIElement): {
     return () => clearTimeout(timeout);
   }, [search]);
 
-  const { data, error } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["instance-search", shape.propertyShapes.map((s) => s.value), searchQuery, debounced],
     queryFn: () =>
       (searchQuery
@@ -86,6 +87,7 @@ export function useInstanceSearch(shape: PropertyUIElement): {
     search: search ?? "",
     setSearch,
     results: debounced === undefined ? undefined : (data ?? []),
+    isLoading: debounced !== undefined && isLoading,
     error: debounced === undefined ? undefined : error,
     reset: () => {
       setSearch(undefined);

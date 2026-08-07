@@ -2,6 +2,7 @@
 @import "./button.css";
 @import "./input.css";
 @import "./select.css";
+@import "./checkbox.css";
 
 :root {
   /* Open props overrides */

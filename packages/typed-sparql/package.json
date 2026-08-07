@@ -4,6 +4,11 @@
   "description": "",
   "license": "GPL-3.0-only",
   "author": "",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ShapeThing/shapething.git",
+    "directory": "packages/typed-sparql"
+  },
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -19,7 +24,7 @@
   "files": ["dist", "README.md"],
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
-    "lint": "eslint .",
+    "lint": "vp lint",
     "test": "vitest run",
     "test:watch": "vitest"
   },

@@ -31,4 +31,8 @@ export type CreateTermContext = {
 export type WidgetMeta = {
   createTerm?: (context: CreateTermContext, shape: PropertyUIElement) => Term;
   canAddMore?: (shape: PropertyUIElement) => boolean;
+  // When true for a given shape, this widget renders once for the whole property instead of
+  // once per value (PropertyUIComponent skips its per-value "+"/"-" buttons) - the widget reads
+  // and writes the full value set itself via `shape` (see SubClassEditor for the first example).
+  singleUnifiedWidget?: (shape: PropertyUIElement) => boolean;
 };

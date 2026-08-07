@@ -14,3 +14,13 @@ export const shuiSubClassEditor: Story = {
   name: "Select a subclass of a given root class",
   args: argsByTestFile("10.1.12 shui-sub-class-editor.ttl", import.meta.url),
 };
+
+export const shuiSubClassEditor2: Story = {
+  name: "Cooking methods",
+  args: argsByTestFile("10.1.12 shui-sub-class-editor-2.ttl", import.meta.url),
+};
+
+export const shuiSubClassEditor3: Story = {
+  name: "Cooking methods (single choice, sh:maxCount 1)",
+  args: argsByTestFile("10.1.12 shui-sub-class-editor-3.ttl", import.meta.url),
+};

@@ -49,6 +49,7 @@
 
   .trix-button--icon {
     font-size: inherit;
+    cursor: pointer;
     position: relative;
     text-indent: -9999px;
     width: var(--size-7);

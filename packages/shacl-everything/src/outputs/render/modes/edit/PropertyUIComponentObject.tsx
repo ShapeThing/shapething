@@ -16,11 +16,13 @@ export default function PropertyUIComponentObject({
   object,
   index,
   onTermSet,
+  onRemove,
 }: {
   propertyUIElement: PropertyUIElement;
   object: Term;
   index: number;
   onTermSet: () => void;
+  onRemove: () => void;
 }) {
   // A property constrained by sh:or/sh:xone has no top-level sh:datatype/sh:class of its own -
   // widget scoring needs the currently active branch's constraints merged in too, or it stays
@@ -48,7 +50,8 @@ export default function PropertyUIComponentObject({
     ? withBranch(propertyUIElement, activeBranch.shape)
     : propertyUIElement;
 
-  const { Widget, isPlaceholderData } = useWidget(shui("editor"), effectiveProperty, object) ?? {};
+  const { Widget, meta, isPlaceholderData } =
+    useWidget(shui("editor"), effectiveProperty, object) ?? {};
   const [ActiveWidget, setActiveWidget] = useState<typeof Widget | undefined>(undefined);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -121,9 +124,10 @@ export default function PropertyUIComponentObject({
       )}
       {unit && <span className="st-property-object__unit">{unit}</span>}
       <PropertyUIComponentRemove
-        onRemove={onTermSet}
+        onRemove={onRemove}
         propertyUIElement={propertyUIElement}
         object={object}
+        clearAll={meta?.singleUnifiedWidget?.(propertyUIElement) === true}
       />
     </div>
   );

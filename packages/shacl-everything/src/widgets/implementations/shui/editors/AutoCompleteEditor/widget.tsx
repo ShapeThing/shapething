@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
-import { Edit } from "@/helpers/icons.tsx";
+import { Edit, Loading } from "@/helpers/icons.tsx";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useInstanceSearch } from "@/outputs/render/hooks/useInstanceSearch.tsx";
@@ -13,7 +13,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm }: WidgetProps
   const existingObjects = useDataGraphObjects(shape);
 
   const [mode, setMode] = useState<"view" | "edit">(term.value ? "view" : "edit");
-  const { search, setSearch, results, error, reset } = useInstanceSearch(shape);
+  const { search, setSearch, results, isLoading, error, reset } = useInstanceSearch(shape);
   const [selected, setSelected] = useState<SearchResult>();
   const [activeIndex, setActiveIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -133,6 +133,11 @@ export default function AutoCompleteEditor({ shape, term, setTerm }: WidgetProps
           {error ? (
             <div className="st-autocomplete__empty" role="alert">
               <Localized id="autocomplete-search-error">Search failed</Localized>
+            </div>
+          ) : isLoading ? (
+            <div className="st-autocomplete__empty">
+              <Loading />
+              <Localized id="loading">Loading</Localized>
             </div>
           ) : options.length > 0 ? (
             options.map((result, index) => (

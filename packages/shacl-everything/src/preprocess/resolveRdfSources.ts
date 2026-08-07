@@ -4,9 +4,9 @@ import type { Quad, Quad_Subject, Stream } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { rdfParser } from "rdf-parse";
 import stringToStream from "string-to-stream";
-import type { Preprocessor } from "@/preprocess/index.ts";
+import type { Environment, RawEnvironment } from "@/environment.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
-import { rdf, sh } from "@/helpers/namespaces.ts";
+import { owl, rdf, sh } from "@/helpers/namespaces.ts";
 
 const storeFromStream = (stream: Stream<Quad>): Promise<RdfStore> => {
   const store = RdfStore.createDefault();
@@ -83,18 +83,59 @@ const dereferenceUrl = async (
 const parseRdfText = (text: string): Promise<RdfStore> =>
   storeFromStream(rdfParser.parse(stringToStream(text), { contentType: "text/turtle" }));
 
-const resolveRdfSource = (
-  source: RdfSource,
+// owl:imports is resolved transitively: importing graph B into A can itself declare further
+// imports, so the store is rescanned after every merge until a pass turns up nothing new.
+// visitedImports is scoped to a single resolveRdfSource() call (one store) so that an import
+// cycle (A imports B, B imports A) terminates instead of looping forever. It must NOT be shared
+// across shapesGraph/dataGraph/scoresGraph: each of those needs the same import actually merged
+// into its own store, and quadCache (shared across all of them) already dedups the fetch itself -
+// sharing visitedImports too would make whichever store claims an href first "consume" it, leaving
+// the others without the merge.
+const resolveOwlImports = async (
+  store: RdfStore,
   quadCache: Map<string, Promise<Quad[]>>,
-): RdfStore | Promise<RdfStore> => {
-  if (source instanceof RdfStore) return source;
-  if (source instanceof URL) return dereferenceUrl(source, quadCache);
-  if (Array.isArray(source)) return storeFromQuads(source);
-  if (typeof source === "string") return parseRdfText(source);
-  return storeFromQuads(source);
+  visitedImports: Set<string>,
+): Promise<void> => {
+  const importUrls = new Set<string>();
+  for (const quad of store.getQuads(null, owl("imports"), null, null)) {
+    if (quad.object.termType === "NamedNode" && !visitedImports.has(quad.object.value)) {
+      importUrls.add(quad.object.value);
+    }
+  }
+  if (!importUrls.size) return;
+
+  for (const href of importUrls) visitedImports.add(href);
+
+  const importedStores = await Promise.all(
+    [...importUrls].map((href) => dereferenceUrl(new URL(href), quadCache)),
+  );
+  for (const importedStore of importedStores) {
+    for (const quad of importedStore.getQuads()) store.addQuad(quad);
+  }
+
+  await resolveOwlImports(store, quadCache, visitedImports);
 };
 
-export const resolveRdfSources: Preprocessor = async (raw) => {
+const resolveRdfSource = async (
+  source: RdfSource,
+  quadCache: Map<string, Promise<Quad[]>>,
+): Promise<RdfStore> => {
+  const store =
+    source instanceof RdfStore
+      ? source
+      : source instanceof URL
+        ? await dereferenceUrl(source, quadCache)
+        : Array.isArray(source)
+          ? storeFromQuads(source)
+          : typeof source === "string"
+            ? await parseRdfText(source)
+            : storeFromQuads(source);
+
+  await resolveOwlImports(store, quadCache, new Set<string>());
+  return store;
+};
+
+export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environment> => {
   const quadCache = new Map<string, Promise<Quad[]>>();
   const [shapesGraph, dataGraph, scoresGraph] = await Promise.all([
     resolveRdfSource(raw.shapesGraph, quadCache),
