@@ -36,6 +36,19 @@
   border: none;
 }
 
+.st-button--danger {
+  color: white;
+  background-color: var(--st-severity-error);
+  border-color: var(--st-severity-error);
+
+  &:hover,
+  &:focus {
+    color: white;
+    outline: 2px solid var(--st-severity-error);
+    background-color: hsl(from var(--st-severity-error) h s calc(l - 8));
+  }
+}
+
 .st-button-small {
   padding: var(--size-1);
   font-size: 0.7rem;

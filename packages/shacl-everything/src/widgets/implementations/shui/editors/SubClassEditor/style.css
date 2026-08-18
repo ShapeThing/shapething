@@ -3,36 +3,13 @@
   flex: 1;
   width: 100%;
   display: flex;
-
-  .st-edit-button {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-  }
+  flex-direction: column;
 }
 
-.st-subclass__label {
-  flex: 1;
-  min-width: 0;
-  padding-inline-end: var(--size-2);
-  border: 1px solid var(--gray-3);
-  border-radius: var(--radius-2);
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  border-inline-end: none;
-  position: relative;
-
-  &:hover,
-  &:focus {
-    z-index: 2;
-    outline: 2px solid var(--st-primary-color);
-    box-shadow: none;
-  }
-}
-
-/* Takes over the single label's docking role (flush against the edit button) when a multi-valued
-   field has several classes selected at once - individual picks render as ValueChip components
-   inside, wrapping onto further rows rather than stretching one label edge to edge. */
-.st-subclass__pills {
+/* Looks like a single .st-input (same border/radius) but wraps its own chips plus the bare search
+   input - the focus ring lives here (:focus-within) rather than on the input itself, since the
+   input has no border of its own once it's sharing this box with the pills. */
+.st-subclass__chips {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -40,11 +17,25 @@
   align-items: center;
   gap: var(--size-2);
   padding: var(--size-1) var(--size-2);
-  border: 1px solid var(--gray-3);
+  border: 1px solid var(--gray-5);
   border-radius: var(--radius-2);
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
-  border-inline-end: none;
+
+  &:hover,
+  &:focus-within {
+    outline: 2px solid var(--st-primary-color);
+    box-shadow: none;
+  }
+}
+
+/* Shares the row with whatever chips already exist - never shrinks to nothing when they wrap,
+   and grows to fill the rest of the row when there's only one or none. */
+.st-subclass__input {
+  flex: 1 1 auto;
+  min-width: 6rem;
+  border: none;
+  outline: none;
+  background: none;
+  padding: var(--size-1) 0;
 }
 
 /* Floats over whatever comes after this field in the form instead of pushing it down, same as

@@ -42,7 +42,7 @@ export default function WidgetSwitcher({
         >
           {widgets.map(({ iri, score }) => {
             const widgetLabel = propertyLabel({
-              widget: iri,
+              term: iri,
               propertyShape: shape,
               languages: [activeInterfaceLanguage],
             });

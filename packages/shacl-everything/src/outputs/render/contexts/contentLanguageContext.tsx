@@ -11,6 +11,10 @@ export type ContentLanguageContextValue = {
   languages: BCP47[];
   // Adds `language` to `languages` (a no-op if already present) and makes it the active one.
   addLanguage: (language: BCP47) => void;
+  // Drops `language` from `languages` (e.g. after ContentLanguageSwitcher's delete action wipes
+  // every value in it - see deleteLiteralsByLanguage) - if it was the active language, falls back
+  // to whatever's left, or leaves it as-is if that was the last one.
+  removeLanguage: (language: BCP47) => void;
 };
 
 export const contentLanguageContext = createContext<ContentLanguageContextValue | undefined>(

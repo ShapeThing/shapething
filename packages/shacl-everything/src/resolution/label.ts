@@ -1,4 +1,5 @@
 import { factory } from "@/helpers/factory.ts";
+import { localName } from "@/helpers/localName.ts";
 import { rdfs, sh, shui } from "@/helpers/namespaces.ts";
 import language from "@/resolution/language.ts";
 import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
@@ -8,31 +9,44 @@ import type { BCP47 } from "@/types/BCP47.ts";
 import type { Literal, NamedNode, Term } from "@rdfjs/types";
 
 type PropertyLabelOptions = {
-  widget: Term;
+  term: Term;
   propertyShape: PropertyUIElement;
   languages?: BCP47[];
 };
 
-export function propertyLabel({ widget, propertyShape, languages }: PropertyLabelOptions) {
-  const { scoresGraph, shapesGraph } = propertyShape;
+// Resolves a display label for any term hung off `propertyShape` - a widget IRI, an ontology
+// class, etc. rdfs:label conventionally lives in shapesGraph alongside whatever declared the
+// term, but it can also surface in dataGraph (e.g. a class labelled alongside instance data) or
+// scoresGraph (e.g. a widget registry entry) - checked in that order, each graph only consulted
+// if the previous one had nothing.
+export function propertyLabel({ term, propertyShape, languages }: PropertyLabelOptions) {
+  const { scoresGraph, shapesGraph, dataGraph } = propertyShape;
 
   const labelQuadViaShapes = language(
-    shapesGraph.getQuads(widget, rdfs("label")).map(({ object }) => object as Literal),
+    shapesGraph.getQuads(term, rdfs("label")).map(({ object }) => object as Literal),
     languages,
   );
   if (labelQuadViaShapes) {
     return labelQuadViaShapes.value;
   }
 
+  const labelQuadViaData = language(
+    dataGraph.getQuads(term, rdfs("label")).map(({ object }) => object as Literal),
+    languages,
+  );
+  if (labelQuadViaData) {
+    return labelQuadViaData.value;
+  }
+
   const labelQuadViaScores = language(
-    scoresGraph.getQuads(widget, rdfs("label")).map(({ object }) => object as Literal),
+    scoresGraph.getQuads(term, rdfs("label")).map(({ object }) => object as Literal),
     languages,
   );
   if (labelQuadViaScores) {
     return labelQuadViaScores.value;
   }
 
-  return widget.value.split(/\/|#/g).pop()!;
+  return localName(term) ?? term.value;
 }
 
 type ValueNodeLabelOptions = {

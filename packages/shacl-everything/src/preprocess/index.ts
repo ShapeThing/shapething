@@ -1,6 +1,6 @@
 import type { Environment, RawEnvironment } from "@/environment.ts";
 import { resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
-import { distillLanguages } from "@/preprocess/languages.ts";
+import { distillLanguages, distillInterfaceLanguages } from "@/preprocess/languages.ts";
 import { resolveScoresGraph } from "@/preprocess/scoresGraph.ts";
 import { addMissingShapes } from "@/preprocess/shapes.ts";
 import { assertValidEnvironment } from "@/preprocess/configuration.ts";
@@ -13,6 +13,7 @@ export type Preprocessor = (
 export const defaultPreprocessors: readonly Preprocessor[] = [
   resolveRdfSources,
   distillLanguages,
+  distillInterfaceLanguages,
   resolveScoresGraph,
   addMissingShapes,
 ];

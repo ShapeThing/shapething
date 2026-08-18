@@ -58,22 +58,40 @@ async function findFieldInput(canvasElement: HTMLElement): Promise<HTMLInputElem
   });
 }
 
-function findContentLanguageSwitcher(canvasElement: HTMLElement): HTMLSelectElement {
-  const select = canvasElement.querySelector<HTMLSelectElement>(
-    ".st-content-language-switcher select",
+// The content language switcher is a custom listbox rather than a native <select> (its rows need
+// room for a per-language delete button - see ContentLanguageSwitcher) - the trigger button carries
+// the active language as a data attribute rather than a real `value`, and its options only exist
+// in the DOM while open, unlike a native <select>'s always-present <option>s.
+function findContentLanguageTrigger(canvasElement: HTMLElement): HTMLButtonElement {
+  const button = canvasElement.querySelector<HTMLButtonElement>(
+    ".st-content-language-switcher .st-content-language-switcher__trigger",
   );
-  if (!select) throw new Error("Could not find the content language switcher");
-  return select;
+  if (!button) throw new Error("Could not find the content language switcher");
+  return button;
 }
 
-// The "add language" trigger sits in FormElement's own actions slot, alongside the (also
-// button-shaped) help tooltip trigger - .st-button (not .st-icon-button) is what tells them apart.
-function findAddLanguageButton(canvasElement: HTMLElement): HTMLButtonElement {
-  const button = canvasElement.querySelector<HTMLButtonElement>(
-    ".st-content-language-switcher .st-form-element__actions button.st-button",
-  );
-  if (!button) throw new Error("Could not find the add-content-language button");
-  return button;
+function activeContentLanguage(canvasElement: HTMLElement): string | undefined {
+  return findContentLanguageTrigger(canvasElement).dataset.activeLanguage;
+}
+
+// Every helper below assumes the menu is already open - open it first via this before reading or
+// clicking into it.
+async function openContentLanguageMenu(canvasElement: HTMLElement): Promise<void> {
+  await userEvent.click(findContentLanguageTrigger(canvasElement));
+}
+
+function contentLanguageOptionLabels(canvasElement: HTMLElement): (string | null)[] {
+  return Array.from(
+    canvasElement.querySelectorAll(".st-content-language-switcher [role='option']"),
+  ).map((option) => option.textContent);
+}
+
+// The "add language" trigger is the last row of the listbox (after every real language) rather
+// than a separate button - clicking it opens the modal below instead of changing the active
+// content language (see ContentLanguageSwitcher's openCreateModal).
+async function clickAddLanguageOption(canvasElement: HTMLElement): Promise<void> {
+  const option = within(canvasElement).getByText("Add language…");
+  await userEvent.click(option);
 }
 
 function findModal(canvasElement: HTMLElement): HTMLElement {
@@ -107,17 +125,24 @@ export const creatingANewContentLanguageAddsItToTheSwitcher: Story = {
     const canvas = within(canvasElement);
     await canvas.findByDisplayValue("Redhead", {}, { timeout: 5000 });
 
-    expect(
-      within(findContentLanguageSwitcher(canvasElement))
-        .getAllByRole("option")
-        .map((o) => o.textContent),
-    ).toEqual(["English", "Dutch"]);
+    await openContentLanguageMenu(canvasElement);
+    expect(contentLanguageOptionLabels(canvasElement)).toEqual([
+      "English",
+      "Dutch",
+      "Add language…",
+    ]);
+    const languageBeforeCreating = activeContentLanguage(canvasElement);
 
-    await userEvent.click(findAddLanguageButton(canvasElement));
+    await clickAddLanguageOption(canvasElement);
     expect(findModal(canvasElement)).toBeVisible();
+    // Picking the "Add language…" row opens the modal without changing the active language -
+    // it's a trigger, not a real selectable value.
+    expect(activeContentLanguage(canvasElement)).toBe(languageBeforeCreating);
 
-    // A malformed tag is rejected without closing the modal or touching the switcher.
+    // A malformed tag previews nothing - there's no valid code yet to resolve a label for - and is
+    // rejected without closing the modal or touching the switcher.
     await userEvent.type(findModalInput(canvasElement), "not a tag");
+    expect(findModal(canvasElement)).not.toHaveTextContent("Preview:");
     await userEvent.click(findModalSubmitButton(canvasElement));
     expect(findModal(canvasElement)).toHaveTextContent(
       "That doesn't look like a valid BCP 47 language tag.",
@@ -130,21 +155,30 @@ export const creatingANewContentLanguageAddsItToTheSwitcher: Story = {
     await userEvent.click(findModalSubmitButton(canvasElement));
     expect(findModal(canvasElement)).toHaveTextContent("That language is already in the list.");
 
-    // A brand new tag is accepted, canonicalized, closes the modal, and becomes the active
-    // language - which here means an empty field, since neither graph has a "de" translation.
+    // Typing a well-formed tag previews the label it resolves to, live, before submitting -
+    // lowercase "de-de" still previews as "German", same canonicalization findModalSubmitButton
+    // below relies on. Fluent wraps interpolated vars in bidi-isolation characters, so this checks
+    // for the label rather than an exact "Preview: German" substring.
     await userEvent.clear(findModalInput(canvasElement));
     await userEvent.type(findModalInput(canvasElement), "de-de");
+    expect(findModal(canvasElement)).toHaveTextContent("Preview");
+    expect(findModal(canvasElement)).toHaveTextContent("German");
+
+    // A brand new tag is accepted, canonicalized, closes the modal, and becomes the active
+    // language - which here means an empty field, since neither graph has a "de" translation.
     await userEvent.click(findModalSubmitButton(canvasElement));
 
     expect(canvasElement.querySelector("dialog.st-modal[open]")).toBeNull();
-    const select = findContentLanguageSwitcher(canvasElement);
-    expect(
-      within(select)
-        .getAllByRole("option")
-        .map((o) => o.textContent),
-    ).toEqual(["English", "Dutch", "German"]);
-    expect(select).toHaveValue("de-DE");
+    expect(activeContentLanguage(canvasElement)).toBe("de-DE");
     expect(await findFieldInput(canvasElement)).toHaveValue("");
+
+    await openContentLanguageMenu(canvasElement);
+    expect(contentLanguageOptionLabels(canvasElement)).toEqual([
+      "English",
+      "Dutch",
+      "German",
+      "Add language…",
+    ]);
   },
 };
 
@@ -155,20 +189,22 @@ export const cancelingDiscardsTheDraftLanguage: Story = {
     const canvas = within(canvasElement);
     await canvas.findByDisplayValue("Redhead", {}, { timeout: 5000 });
 
-    await userEvent.click(findAddLanguageButton(canvasElement));
+    await openContentLanguageMenu(canvasElement);
+    await clickAddLanguageOption(canvasElement);
     await userEvent.type(findModalInput(canvasElement), "de-DE");
     await userEvent.click(findModalCancelButton(canvasElement));
 
     expect(canvasElement.querySelector("dialog.st-modal[open]")).toBeNull();
-    expect(
-      within(findContentLanguageSwitcher(canvasElement))
-        .getAllByRole("option")
-        .map((o) => o.textContent),
-    ).toEqual(["English", "Dutch"]);
+    await openContentLanguageMenu(canvasElement);
+    expect(contentLanguageOptionLabels(canvasElement)).toEqual([
+      "English",
+      "Dutch",
+      "Add language…",
+    ]);
 
     // Reopening starts from a blank draft rather than the "de-DE" left over from the canceled
     // attempt above.
-    await userEvent.click(findAddLanguageButton(canvasElement));
+    await clickAddLanguageOption(canvasElement);
     expect(findModalInput(canvasElement)).toHaveValue("");
   },
 };

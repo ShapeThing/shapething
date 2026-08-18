@@ -21,6 +21,7 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
   const [queryClient] = useState(() => new QueryClient());
   const instanceId = useId();
   const interfaceLanguage = inputProps.interfaceLanguage ?? defaultEnvironment.interfaceLanguage;
+  const interfaceLocales = inputProps.interfaceLocales ?? defaultEnvironment.interfaceLocales;
 
   return (
     <ErrorBoundary
@@ -32,7 +33,7 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
     >
       <QueryClientProvider client={queryClient}>
         <InterfaceLanguageProvider interfaceLanguage={interfaceLanguage}>
-          <L10nProvider>
+          <L10nProvider interfaceLocales={interfaceLocales}>
             <EnvironmentContextProvider {...inputProps} instanceId={instanceId}>
               <ShaclRendererInner />
             </EnvironmentContextProvider>

@@ -61,6 +61,22 @@ function findPerValueLanguageSelects(canvasElement: HTMLElement): HTMLSelectElem
   );
 }
 
+// The content language switcher is a custom listbox rather than a native <select> (its rows need
+// room for a per-language delete button - see ContentLanguageSwitcher) - opening it and clicking
+// the row for `language` is the equivalent of userEvent.selectOptions on a native select.
+async function pickContentLanguage(canvasElement: HTMLElement, language: string): Promise<void> {
+  const trigger = canvasElement.querySelector<HTMLButtonElement>(
+    ".st-content-language-switcher__trigger",
+  );
+  if (!trigger) throw new Error("Could not find the content language switcher");
+  await userEvent.click(trigger);
+  const option = canvasElement.querySelector<HTMLElement>(
+    `.st-content-language-switcher [data-language="${language}"]`,
+  );
+  if (!option) throw new Error(`Could not find content language option "${language}"`);
+  await userEvent.click(option);
+}
+
 export const switcherModeShowsOneTranslationAtATime: Story = {
   name: '"switcher" languageMode (the default): one global switcher, one value at a time, no per-value selectors',
   args: { ...baseArgs, languageMode: "switcher" } as ShaclRendererProps,
@@ -72,10 +88,7 @@ export const switcherModeShowsOneTranslationAtATime: Story = {
     expect(findAllFieldInputs(canvasElement)).toHaveLength(1);
     expect(findPerValueLanguageSelects(canvasElement)).toHaveLength(0);
 
-    const languageSwitcher = canvasElement.querySelector<HTMLSelectElement>(
-      ".st-content-language-switcher select",
-    )!;
-    await userEvent.selectOptions(languageSwitcher, "nl");
+    await pickContentLanguage(canvasElement, "nl");
     expect(findAllFieldInputs(canvasElement)).toHaveLength(1);
     expect(findAllFieldInputs(canvasElement)[0]).toHaveValue("Roodharige");
     expect(findPerValueLanguageSelects(canvasElement)).toHaveLength(0);

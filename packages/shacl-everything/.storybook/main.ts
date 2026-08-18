@@ -1,10 +1,13 @@
 import type { StorybookConfig } from "@storybook/react-vite";
-import { dirname } from "path";
+import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { copyStoryFixtures } from "./copyStoryFixtures.ts";
 
 function getAbsolutePath(value: string) {
   return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
 }
+const storiesDir = join(dirname(fileURLToPath(import.meta.url)), "../src/stories");
+
 const config: StorybookConfig = {
   stories: [
     // "../src/**/*.mdx",
@@ -17,5 +20,10 @@ const config: StorybookConfig = {
     getAbsolutePath("@storybook/addon-docs"),
   ],
   framework: getAbsolutePath("@storybook/react-vite"),
+  async viteFinal(config) {
+    config.plugins ??= [];
+    config.plugins.push(copyStoryFixtures(storiesDir));
+    return config;
+  },
 };
 export default config;

@@ -17,8 +17,6 @@ export default function NodeUIComponent() {
     [shapesGraph, dataGraph, scoresGraph, focusNode, nodeShapes],
   );
 
-  console.log(nodeUiElement);
-
   return (
     <div>
       <NodeUIElementChildren nodeUiElement={nodeUiElement} />

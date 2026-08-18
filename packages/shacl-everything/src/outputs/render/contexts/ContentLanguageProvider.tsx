@@ -38,9 +38,17 @@ export default function ContentLanguageProvider({ children }: { children: ReactN
     setActiveLanguage(language);
   };
 
+  const removeLanguage = (language: BCP47) => {
+    const remaining = languages.filter((candidate) => candidate !== language);
+    setLanguages(remaining);
+    // Only touches activeLanguage if it was the one just removed - otherwise whatever's currently
+    // active stays active regardless of what else changed in the list.
+    if (activeLanguage === language) setActiveLanguage(remaining[0] ?? language);
+  };
+
   return (
     <contentLanguageContext.Provider
-      value={{ activeLanguage, setActiveLanguage, languages, addLanguage }}
+      value={{ activeLanguage, setActiveLanguage, languages, addLanguage, removeLanguage }}
     >
       {children}
     </contentLanguageContext.Provider>

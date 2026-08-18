@@ -1,15 +1,16 @@
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
-import { localeLoaders } from "@/l10n/locales.ts";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { languageLabels } from "@/helpers/languageLabels.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 import { Localized } from "@fluent/react";
 
-const interfaceLanguages = Object.keys(localeLoaders) as BCP47[];
-const interfaceLanguageLabels = languageLabels(interfaceLanguages);
-
 export default function InterfaceLanguageSwitcher() {
   const { activeInterfaceLanguage, setActiveInterfaceLanguage } = useInterfaceLanguage();
+  // Every switchable interface language: the shipped/overridden .ftl locales unioned with every
+  // language tag found on sh:name/sh:description in shapesGraph - see preprocess/languages.ts.
+  const { interfaceLanguages } = useEnvironment();
+  const interfaceLanguageLabels = languageLabels(interfaceLanguages);
 
   return interfaceLanguages.length > 1 ? (
     <FormElement
