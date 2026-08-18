@@ -9,11 +9,12 @@ import PropertyUIComponentAdd from "@/outputs/render/modes/edit/PropertyUICompon
 import PropertyUIComponentObject from "@/outputs/render/modes/edit/PropertyUIComponentObject.tsx";
 import { localName } from "@/helpers/localName.ts";
 import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
-import { sh, shui } from "@/helpers/namespaces.ts";
+import { rdf, sh, shui } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import "./style.css";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { Loading } from "@/helpers/icons.tsx";
+import { languageLabels } from "@/helpers/languageLabels.ts";
 
 type PropertyUIComponentProps = {
   propertyUIElement: PropertyUIElement;
@@ -23,6 +24,9 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   const { languageMode } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
+  const isRdfLangString = propertyUIElement
+    .get(sh("datatype"))
+    .find((term) => term.equals(rdf("langString")));
   // Reads this.dataGraph reactively - addObject() below re-renders only this property, not the
   // whole tree, once the write it makes actually lands (see helpers/reactiveRdfStore.ts).
   const existingObjects = useDataGraphObjects(propertyUIElement);
@@ -45,6 +49,20 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   useEffect(() => {
     setShowEmptyWidget(languageFilteredObjects.length === 0);
   }, [activeLanguage]);
+
+  // Values in the active language can also disappear without the active language changing at all
+  // and without going through this property's own widget - e.g. ContentLanguageSwitcher bulk-
+  // deleting every literal in a language elsewhere in the data graph. That path has no onRemove
+  // callback to call syncShowEmptyWidget through, so catch the same "went from having a value to
+  // having none" transition here instead. Only ever flips this to true, never false, so it can't
+  // fight the "0 -> 1" transition while typing into the empty widget commits a first value (see
+  // the activeLanguage effect above for why that direction has to stay untouched).
+  const hasFilteredValues = languageFilteredObjects.length > 0;
+  const hadFilteredValues = useRef(hasFilteredValues);
+  useEffect(() => {
+    if (hadFilteredValues.current && !hasFilteredValues) setShowEmptyWidget(true);
+    hadFilteredValues.current = hasFilteredValues;
+  }, [hasFilteredValues]);
 
   // getDefaultObject() resolves the widget via score() (async, runs SHACL validation), so it's
   // fetched through a hook rather than called inline here.
@@ -83,7 +101,8 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
       ).length === 0,
     );
 
-  const description = propertyUIElement.getOne(sh("description"))?.value;
+  const label = propertyUIElement.label([activeInterfaceLanguage])?.value;
+  const description = propertyUIElement.getOne(sh("description"), [activeInterfaceLanguage])?.value;
 
   // sh:minCount isn't met yet - the shape's sh:severity (sh:Violation, the spec default, when
   // absent) describes how serious that unmet constraint is, for the caller to style as it sees fit.
@@ -95,7 +114,18 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
 
   return (
     <FormElement
-      label={propertyUIElement.label([activeInterfaceLanguage])?.value}
+      label={
+        label && activeLanguage && isRdfLangString ? (
+          <>
+            {label}{" "}
+            <span className="st-property-language-tag">
+              ({Object.values(languageLabels([activeLanguage], activeInterfaceLanguage))})
+            </span>
+          </>
+        ) : (
+          label
+        )
+      }
       labelTitle={propertyUIElement.pathAsSparql()}
       description={description}
       severity={severity}

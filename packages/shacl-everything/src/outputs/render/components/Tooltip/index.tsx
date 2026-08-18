@@ -40,8 +40,10 @@ export default function Tooltip({ tip, children, enabled, severity, bare }: Prop
 
     const wrapperRect = wrapper.getBoundingClientRect();
     const tooltipRect = tooltip.getBoundingClientRect();
-    const dx = tooltipRect.left + tooltipRect.width / 2 - (wrapperRect.left + wrapperRect.width / 2);
-    const dy = tooltipRect.top + tooltipRect.height / 2 - (wrapperRect.top + wrapperRect.height / 2);
+    const dx =
+      tooltipRect.left + tooltipRect.width / 2 - (wrapperRect.left + wrapperRect.width / 2);
+    const dy =
+      tooltipRect.top + tooltipRect.height / 2 - (wrapperRect.top + wrapperRect.height / 2);
     const nextPlacement: Placement =
       Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : dy < 0 ? "top" : "bottom";
     setPlacement(nextPlacement);
@@ -87,7 +89,11 @@ export default function Tooltip({ tip, children, enabled, severity, bare }: Prop
   ) : (
     <div
       ref={wrapperRef}
-      className={clsx("tooltip-wrapper", severity && `severity-${severity}`, bare && "tooltip-wrapper--bare")}
+      className={clsx(
+        "tooltip-wrapper",
+        severity && `severity-${severity}`,
+        bare && "tooltip-wrapper--bare",
+      )}
       style={{ "--tooltip-anchor": anchorName } as React.CSSProperties}
       tabIndex={0}
       onFocus={open}
@@ -100,7 +106,11 @@ export default function Tooltip({ tip, children, enabled, severity, bare }: Prop
           ref={tooltipRef}
           className="tooltip"
           data-placement={placement}
-          style={arrowOffset != null ? ({ "--arrow-offset": `${arrowOffset}px` } as React.CSSProperties) : undefined}
+          style={
+            arrowOffset != null
+              ? ({ "--arrow-offset": `${arrowOffset}px` } as React.CSSProperties)
+              : undefined
+          }
         >
           {tip}
         </div>

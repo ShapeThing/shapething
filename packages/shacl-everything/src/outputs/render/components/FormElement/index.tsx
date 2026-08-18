@@ -8,6 +8,7 @@ import "./style.css";
 type Props = {
   label?: ReactNode;
   labelTitle?: string;
+  htmlFor?: string;
   actions?: ReactNode;
   severity?: string;
   description?: string;
@@ -20,6 +21,7 @@ type Props = {
 export default function FormElement({
   label,
   labelTitle,
+  htmlFor,
   severity,
   description,
   children,
@@ -32,7 +34,7 @@ export default function FormElement({
     <div className={clsx("st-form-element", className)} data-severity={severity} data-size={size}>
       <header className="st-form-element__header">
         {label && (
-          <label className="st-form-element__label" title={labelTitle}>
+          <label className="st-form-element__label" htmlFor={htmlFor} title={labelTitle}>
             {label}
           </label>
         )}

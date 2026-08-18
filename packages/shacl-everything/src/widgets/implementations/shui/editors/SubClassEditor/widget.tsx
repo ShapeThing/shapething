@@ -1,11 +1,9 @@
 import { useEffect, useId, useMemo, useRef, useState, type RefObject } from "react";
 import { Localized } from "@fluent/react";
-import type { Literal, NamedNode } from "@rdfjs/types";
-import { localName } from "@/helpers/localName.ts";
-import { Edit } from "@/helpers/icons.tsx";
+import type { NamedNode, Term } from "@rdfjs/types";
+import { factory } from "@/helpers/factory.ts";
 import { rdfs, sh } from "@/helpers/namespaces.ts";
-import language from "@/resolution/language.ts";
-import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
+import { propertyLabel } from "@/resolution/label.ts";
 import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
@@ -19,24 +17,6 @@ type ClassNode = {
   label: string;
   children: ClassNode[];
 };
-
-// A class is an ontology term, not instance data - rdfs:label for it conventionally lives in
-// shapesGraph, alongside the rdfs:subClassOf declarations themselves (see PropertyUIElement.ts's
-// own ontologyLabel), rather than dataGraph, where valueNodeLabel looks for value nodes. Checking
-// both stores keeps this working whether an rdfs:label happens to be asserted alongside the
-// ontology or alongside the data.
-function classLabel(shape: PropertyUIElement, term: NamedNode, languages: BCP47[]): string {
-  const labels = [
-    ...shape.shapesGraph.getQuads(term, rdfs("label")),
-    ...shape.dataGraph.getQuads(term, rdfs("label")),
-  ].map((quad) => quad.object as Literal);
-
-  return (
-    (labels.length > 0 ? language(labels, languages) : undefined)?.value ??
-    localName(term) ??
-    term.value
-  );
-}
 
 // Walks rdfs:subClassOf downward from `root`, the same relation keepMostSpecificClasses in
 // PropertyUIElement.ts reads upward - both look for it on shapesGraph, since that's where this
@@ -55,7 +35,11 @@ function buildHierarchy(
     .filter((child) => !seen.has(child.value))
     .map((child) => buildHierarchy(shape, child, seen, languages));
 
-  return { term: root, label: classLabel(shape, root, languages), children };
+  return {
+    term: root,
+    label: propertyLabel({ term: root, propertyShape: shape, languages }),
+    children,
+  };
 }
 
 // Keeps a node whose own label matches `query` together with its whole subtree (so a category hit
@@ -158,9 +142,10 @@ export default function SubClassEditor({ shape, term, setTerm }: WidgetProps) {
   // term/setTerm pair every other widget is limited to. Only meaningful when isMultiValued.
   const selectedObjects = useDataGraphObjects(shape);
   const groupName = useId();
-  const [mode, setMode] = useState<"view" | "edit">(
-    (isMultiValued ? selectedObjects.length > 0 : term.value !== "") ? "view" : "edit",
-  );
+  // Both arities render through the same pills+input row - single-valued just never has more
+  // than one chip, since a fresh pick overwrites `term` directly (see toggle() below).
+  const chips: Term[] = isMultiValued ? selectedObjects : term.value ? [term] : [];
+  const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -191,49 +176,51 @@ export default function SubClassEditor({ shape, term, setTerm }: WidgetProps) {
     setActiveIndex(-1);
   }, [visibleItems]);
 
+  // An empty required field opens ready to type, same as ever - mount-only, so removing the last
+  // chip later (backspace or a chip's own x) doesn't reopen a panel the user just closed.
   useEffect(() => {
-    if (mode === "edit") searchRef.current?.focus();
-  }, [mode]);
+    if (chips.length === 0) searchRef.current?.focus();
+  }, []);
 
   // Jumps the (possibly long) tree to whatever's currently highlighted - including the property's
-  // existing value the moment the tree opens (see openEditor), so a value nested deep in the
+  // existing value the moment the tree opens (see openPanel), so a value nested deep in the
   // hierarchy doesn't open scrolled to the top with no indication of where it actually is.
   useEffect(() => {
-    if (mode === "edit" && activeTerm) {
+    if (isOpen && activeTerm) {
       rowRefs.current.get(activeTerm)?.scrollIntoView({ block: "nearest" });
     }
-  }, [mode, activeTerm]);
-
-  const currentLabel =
-    term.termType === "NamedNode" && term.value
-      ? classLabel(shape, term, [activeInterfaceLanguage])
-      : undefined;
+  }, [isOpen, activeTerm]);
 
   const isChecked = (candidate: NamedNode): boolean =>
     isMultiValued
       ? selectedObjects.some((object) => object.value === candidate.value)
       : candidate.value === term.value;
 
-  const openEditor = () => {
+  const openPanel = () => {
     const anchor = isMultiValued ? selectedObjects[0]?.value : term.value;
     setActiveIndex(visibleItems.findIndex((item) => item.term.value === anchor));
-    setMode("edit");
+    setIsOpen(true);
   };
 
-  const closeEditor = () => {
-    setSearch("");
-    setMode("view");
-  };
-
-  // Single-valued: picking a class replaces this instance's own term and closes, same as ever.
   // Multi-valued: this is the property's only widget instance (see meta.ts's singleUnifiedWidget),
-  // so it owns the whole value set directly via `shape` - toggling a box adds/removes right away
-  // and leaves the panel open for further picks (mousedown on the row keeps focus on the search
-  // input throughout, so nothing here trips the container's onBlur close).
+  // so it owns the whole value set directly via `shape` - removing a value works the same whether
+  // it comes from a chip's own x or from Backspace on the search input.
+  const removeChip = (chip: Term) => {
+    if (isMultiValued) shape.removeObject(chip);
+    else setTerm(factory.namedNode(""));
+  };
+
+  // Single-valued: picking a class replaces this instance's own term and closes the panel, same as
+  // ever. Multi-valued: toggling a box adds/removes right away and leaves the panel open for
+  // further picks. Closing is done via state directly rather than blurring the search input -
+  // clicking a row's label also activates its nested radio/checkbox, which the browser focuses as
+  // part of that same click, so by the time this runs the search input may already not be the
+  // focused element and a blur() call on it would silently do nothing.
   const toggle = (candidate: NamedNode, checked: boolean) => {
     if (!isMultiValued) {
       setTerm(candidate);
-      closeEditor();
+      setSearch("");
+      setIsOpen(false);
       return;
     }
     if (checked) shape.addObject(candidate);
@@ -245,75 +232,67 @@ export default function SubClassEditor({ shape, term, setTerm }: WidgetProps) {
       ref={containerRef}
       className="st-subclass"
       onBlur={(event) => {
-        if (!containerRef.current?.contains(event.relatedTarget as Node | null)) closeEditor();
+        if (!containerRef.current?.contains(event.relatedTarget as Node | null)) {
+          setSearch("");
+          setIsOpen(false);
+        }
       }}
     >
-      {isMultiValued ? (
-        <div className="st-subclass__pills">
-          {selectedObjects.map((object) => (
-            <ValueChip
-              key={object.value}
-              term={object}
-              label={
-                object.termType === "NamedNode"
-                  ? classLabel(shape, object, [activeInterfaceLanguage])
-                  : object.value
+      <div className="st-subclass__chips">
+        {chips.map((chip) => (
+          <ValueChip
+            key={chip.value}
+            term={chip}
+            label={
+              chip.termType === "NamedNode"
+                ? propertyLabel({ term: chip, propertyShape: shape, languages: [activeInterfaceLanguage] })
+                : chip.value
+            }
+            onRemove={() => {
+              removeChip(chip);
+              searchRef.current?.focus();
+            }}
+          />
+        ))}
+        <Localized id="autocomplete-search-placeholder" attrs={{ placeholder: true }}>
+          <input
+            ref={searchRef}
+            type="text"
+            className="st-subclass__input"
+            placeholder="Search…"
+            value={search}
+            onFocus={openPanel}
+            onChange={(event) => setSearch(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                if (search) setSearch("");
+                else searchRef.current?.blur();
+              } else if (event.key === "Backspace" && search === "" && chips.length > 0) {
+                removeChip(chips[chips.length - 1]);
+              } else if (event.key === "ArrowDown" && visibleItems.length > 0) {
+                event.preventDefault();
+                setActiveIndex((index) => (index + 1) % visibleItems.length);
+              } else if (event.key === "ArrowUp" && visibleItems.length > 0) {
+                event.preventDefault();
+                setActiveIndex((index) => (index <= 0 ? visibleItems.length - 1 : index - 1));
+              } else if (event.key === "Home" && visibleItems.length > 0) {
+                event.preventDefault();
+                setActiveIndex(0);
+              } else if (event.key === "End" && visibleItems.length > 0) {
+                event.preventDefault();
+                setActiveIndex(visibleItems.length - 1);
+              } else if (event.key === "Enter") {
+                event.preventDefault();
+                const target = visibleItems[activeIndex] ?? visibleItems[0];
+                if (target) toggle(target.term, isMultiValued ? !isChecked(target.term) : true);
               }
-              onRemove={() => shape.removeObject(object)}
-            />
-          ))}
-        </div>
-      ) : (
-        <span tabIndex={0} className="st-subclass__label">
-          <AutoCompleteOption term={term} label={currentLabel} />
-        </span>
-      )}
-      <Localized id="autocomplete-edit-value" attrs={{ "aria-label": true }}>
-        <button
-          type="button"
-          className="st-button st-edit-button"
-          aria-label="Edit"
-          onClick={() => (mode === "edit" ? closeEditor() : openEditor())}
-        >
-          <Edit />
-        </button>
-      </Localized>
+            }}
+          />
+        </Localized>
+      </div>
 
-      {mode === "edit" && (
+      {isOpen && (
         <div className="st-subclass__panel" data-block-fly-out>
-          <Localized id="autocomplete-search-placeholder" attrs={{ placeholder: true }}>
-            <input
-              ref={searchRef}
-              type="text"
-              className="st-input"
-              placeholder="Search…"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  if (search) setSearch("");
-                  else searchRef.current?.blur();
-                } else if (event.key === "ArrowDown" && visibleItems.length > 0) {
-                  event.preventDefault();
-                  setActiveIndex((index) => (index + 1) % visibleItems.length);
-                } else if (event.key === "ArrowUp" && visibleItems.length > 0) {
-                  event.preventDefault();
-                  setActiveIndex((index) => (index <= 0 ? visibleItems.length - 1 : index - 1));
-                } else if (event.key === "Home" && visibleItems.length > 0) {
-                  event.preventDefault();
-                  setActiveIndex(0);
-                } else if (event.key === "End" && visibleItems.length > 0) {
-                  event.preventDefault();
-                  setActiveIndex(visibleItems.length - 1);
-                } else if (event.key === "Enter") {
-                  event.preventDefault();
-                  const target = visibleItems[activeIndex] ?? visibleItems[0];
-                  if (target) toggle(target.term, isMultiValued ? !isChecked(target.term) : true);
-                }
-              }}
-            />
-          </Localized>
-
           <div className="st-subclass-tree" role={inputType === "radio" ? "radiogroup" : "group"}>
             {filteredTree ? (
               <SubClassTreeNode

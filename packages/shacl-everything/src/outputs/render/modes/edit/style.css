@@ -1,3 +1,9 @@
+.st-property-language-tag {
+  font-weight: normal;
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text-muted);
+}
+
 .st-property-items {
   display: flex;
   flex-direction: column;

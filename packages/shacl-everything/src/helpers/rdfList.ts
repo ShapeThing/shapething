@@ -6,10 +6,7 @@ export function getRdfList(listNode: Term, store: RdfStore): Term[] {
   const items: Term[] = [];
   let current = listNode;
 
-  while (
-    current &&
-    (current.termType === "BlankNode" || current.termType === "NamedNode")
-  ) {
+  while (current && (current.termType === "BlankNode" || current.termType === "NamedNode")) {
     if (current.value === rdf("nil").value) {
       break;
     }

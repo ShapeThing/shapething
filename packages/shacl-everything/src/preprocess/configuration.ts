@@ -48,15 +48,14 @@ export const assertValidEnvironment = (environment: RawEnvironment): Environment
     }
   }
 
-  if (
-    !Array.isArray(environment.languages) ||
-    !environment.languages.every(
-      (language) => typeof language === "string" && BCP47_PATTERN.test(language),
-    )
-  ) {
-    errors.push(
-      `languages must be an array of BCP47 language tags, got ${JSON.stringify(environment.languages)}`,
-    );
+  for (const key of ["languages", "interfaceLanguages"] as const) {
+    const value = environment[key];
+    if (
+      !Array.isArray(value) ||
+      !value.every((language) => typeof language === "string" && BCP47_PATTERN.test(language))
+    ) {
+      errors.push(`${key} must be an array of BCP47 language tags, got ${JSON.stringify(value)}`);
+    }
   }
 
   if (!LANGUAGE_MODES.includes(environment.languageMode)) {

@@ -10,6 +10,7 @@
     sh:property [
         sh:name "Bio"@en ;
         sh:path ex:bio ;
+        sh:maxCount 1 ;
         sh:datatype rdf:HTML ;
     ] ;
     .
