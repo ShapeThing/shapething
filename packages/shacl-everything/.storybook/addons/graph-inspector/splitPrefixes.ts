@@ -21,3 +21,13 @@ export const parsePrefixMap = (prefixText: string): Record<string, string> => {
   }
   return map;
 };
+
+// The same prefix can be pulled from multiple places (the document's own @prefix block,
+// plus PREFIX lines embedded in federated query text elsewhere in the body) and in either
+// Turtle or SPARQL syntax. Render every declaration the same way, once each, sorted by name,
+// so the collapsible list doesn't show mixed styles or duplicates.
+export const formatPrefixDeclarations = (prefixMap: Record<string, string>): string =>
+  Object.entries(prefixMap)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([prefix, namespace]) => `@prefix ${prefix}: <${namespace}> .`)
+    .join("\n");

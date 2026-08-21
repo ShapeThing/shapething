@@ -4,7 +4,7 @@ import { useChannel, useStorybookState } from "storybook/manager-api";
 import { GRAPH_INSPECTOR_EVENT } from "./constants.ts";
 import type { GraphInspectorPayload, GraphText } from "./constants.ts";
 import { TurtleCode } from "./TurtleCode.tsx";
-import { splitPrefixes, parsePrefixMap } from "./splitPrefixes.ts";
+import { splitPrefixes, parsePrefixMap, formatPrefixDeclarations } from "./splitPrefixes.ts";
 import { prefixes as wellKnownPrefixes } from "../../../src/helpers/namespaces.ts";
 
 type Props = {
@@ -72,10 +72,12 @@ const preStyle: React.CSSProperties = {
 const GraphSection = ({ title, graph }: { title: string; graph?: GraphText }) => {
   if (!graph) return null;
 
-  const { prefixText, bodyText } =
+  const { prefixText: rawPrefixText, bodyText } =
     graph.text !== undefined ? splitPrefixes(graph.text) : { prefixText: "", bodyText: "" };
-  const prefixCount = prefixText ? prefixText.split("\n").filter(Boolean).length : 0;
-  const prefixMap = { ...wellKnownPrefixes, ...parsePrefixMap(prefixText) };
+  const declaredPrefixes = parsePrefixMap(rawPrefixText);
+  const prefixCount = Object.keys(declaredPrefixes).length;
+  const prefixText = formatPrefixDeclarations(declaredPrefixes);
+  const prefixMap = { ...wellKnownPrefixes, ...declaredPrefixes };
   const sectionSlug = title.replace(/[^A-Za-z0-9]+/g, "-").toLowerCase();
 
   return (
