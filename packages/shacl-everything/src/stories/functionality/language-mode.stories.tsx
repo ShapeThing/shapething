@@ -50,12 +50,14 @@ function findAllFieldInputs(canvasElement: HTMLElement): HTMLInputElement[] {
   );
 }
 
-// Scoped to wrappers without the small modifier, since WidgetSwitcher uses that variant
-// inside the same parent - this excludes it.
+// Scoped to direct children of .st-property-object__widget - WidgetSwitcher/LogicalConstraintSwitcher
+// render inside their own .st-property-object__fly-out wrapper one level deeper, so the `>` alone
+// excludes them without needing to key off the shared "small" sizing modifier (which the per-value
+// language trigger also legitimately carries).
 function findPerValueLanguageTriggers(canvasElement: HTMLElement): HTMLButtonElement[] {
   return Array.from(
     canvasElement.querySelectorAll<HTMLButtonElement>(
-      ".st-property-object__widget > .st-listbox__wrapper:not(.st-select-wrapper-small) .st-listbox__trigger",
+      ".st-property-object__widget > .st-listbox__wrapper .st-listbox__trigger",
     ),
   );
 }

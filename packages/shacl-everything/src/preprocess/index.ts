@@ -3,6 +3,7 @@ import { resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
 import { distillLanguages, distillInterfaceLanguages } from "@/preprocess/languages.ts";
 import { resolveScoresGraph } from "@/preprocess/scoresGraph.ts";
 import { addMissingShapes } from "@/preprocess/shapes.ts";
+import { prepareEnvironmentScoringGraph } from "@/preprocess/scoringGraphPreparation.ts";
 import { assertValidEnvironment } from "@/preprocess/configuration.ts";
 import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
 
@@ -16,6 +17,7 @@ export const defaultPreprocessors: readonly Preprocessor[] = [
   distillInterfaceLanguages,
   resolveScoresGraph,
   addMissingShapes,
+  prepareEnvironmentScoringGraph,
 ];
 
 export const runPreprocessors = async (

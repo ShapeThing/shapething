@@ -1,7 +1,7 @@
 import { expect, test } from "vite-plus/test";
-import { accept, score, select } from "@/scoring/score.ts";
+import { accept, prepareScoringGraph, score, select } from "@/scoring/score.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
-import { ex, shui } from "@/helpers/namespaces.ts";
+import { ex, rdf, sh, shui } from "@/helpers/namespaces.ts";
 
 test("returns the single highest-scoring widget when best is true", async () => {
   const scoringGraph = await parseRdf(
@@ -322,11 +322,13 @@ test("excludes a widget score that only has a data graph shape when no focus nod
   expect(results).toHaveLength(0);
 });
 
-test("excludes a widget score that combines a data graph shape with a shapes graph shape when no focus node is given", async () => {
-  // Regression: a WidgetScore combining both kinds of shape (e.g. TextAreaWithLangEditor's own
-  // score.ttl rules) used to match with no focus node once its shapesGraphShape half passed,
-  // never checking whether its dataGraphShape half could even be verified - letting an
-  // unrelated, lower-scoring widget's "get a default value" resolution win by an unverified rule.
+test("includes a widget score that combines a data graph shape with a shapes graph shape when no focus node is given, once its shapes graph shape half passes", async () => {
+  // Per spec (Matcher Function, step 1 & 4): the no-focus-node early exclusion only applies to a
+  // rule with a dataGraphShape and *no* shapesGraphShape at all - a rule combining both (e.g. a
+  // built-in editor's own score.ttl band-40 rule pairing shui:editor's shapesGraphShape check
+  // with a dataGraphShape type check) matches on its shapesGraphShape half alone once there's no
+  // value to check the dataGraphShape half against, so an explicitly-declared editor still shows
+  // up before any value exists.
   const scoringGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
@@ -375,7 +377,7 @@ test("excludes a widget score that combines a data graph shape with a shapes gra
     }),
   );
 
-  expect(results).toHaveLength(0);
+  expect(results.map((result) => result.widget.value)).toEqual([ex("SomeWidget").value]);
 });
 
 test("includes a widget score with only a shapes graph shape when no focus node is given", async () => {
@@ -679,4 +681,217 @@ test("excludes a widget when the property shape has sh:class, even when sh:not i
   );
 
   expect(results).toHaveLength(0);
+});
+
+test("prepareScoringGraph - adds a shui:WidgetScore matching Example 7 of the spec for a widget declared via shui:editor with no score of its own", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.org/> .
+
+        ex:PersonShapeName
+            a sh:PropertyShape ;
+            sh:path ex:name ;
+            shui:editor ex:MyCustomEditor ;
+        .
+    `,
+    "text/turtle",
+  );
+
+  const prepared = prepareScoringGraph({
+    shapesGraph,
+    scoringGraph: await parseRdf("", "text/turtle"),
+  });
+
+  const [widgetScore] = prepared.getQuads(null, rdf("type"), shui("WidgetScore"));
+  expect(widgetScore).toBeDefined();
+  expect(prepared.getQuads(widgetScore.subject, shui("widget"))[0]?.object.value).toBe(
+    ex("MyCustomEditor").value,
+  );
+  expect(prepared.getQuads(widgetScore.subject, shui("score"))[0]?.object.value).toBe("40");
+
+  const [shapesGraphShapeQuad] = prepared.getQuads(widgetScore.subject, shui("shapesGraphShape"));
+  const nodeShape = shapesGraphShapeQuad.object;
+  expect(prepared.getQuads(nodeShape, rdf("type"), sh("NodeShape"))).toHaveLength(1);
+  const [propertyQuad] = prepared.getQuads(nodeShape, sh("property"));
+  const propertyShape = propertyQuad.object;
+  expect(prepared.getQuads(propertyShape, sh("path"))[0]?.object.value).toBe(shui("editor").value);
+  expect(prepared.getQuads(propertyShape, sh("hasValue"))[0]?.object.value).toBe(
+    ex("MyCustomEditor").value,
+  );
+});
+
+test("prepareScoringGraph - lets score() return a widget declared via shui:editor with no prior score at all", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.org/> .
+
+        ex:PersonShapeName
+            a sh:PropertyShape ;
+            sh:path ex:name ;
+            shui:editor ex:MyCustomEditor ;
+        .
+    `,
+    "text/turtle",
+  );
+
+  const scoringGraph = prepareScoringGraph({
+    shapesGraph,
+    scoringGraph: await parseRdf("", "text/turtle"),
+  });
+
+  const results = await Array.fromAsync(
+    score({
+      dataGraph: await parseRdf("", "text/turtle"),
+      shapeNode: ex("PersonShapeName"),
+      shapesGraph,
+      scoringGraph,
+      widgetPredicate: shui("editor"),
+    }),
+  );
+
+  expect(results.map((result) => result.widget.value)).toEqual([ex("MyCustomEditor").value]);
+});
+
+test("prepareScoringGraph - leaves a widget scoringGraph already scores untouched, even for the declared case", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.org/> .
+
+        ex:PersonShapeName
+            a sh:PropertyShape ;
+            sh:path ex:name ;
+            shui:editor ex:AlreadyScoredEditor ;
+        .
+    `,
+    "text/turtle",
+  );
+
+  const scoringGraph = await parseRdf(
+    `
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.org/> .
+
+        ex:alreadyScoredEditorScore a shui:WidgetScore ;
+            shui:widget ex:AlreadyScoredEditor ;
+            shui:score 5 .
+    `,
+    "text/turtle",
+  );
+
+  const prepared = prepareScoringGraph({ shapesGraph, scoringGraph });
+
+  expect(prepared.getQuads(null, shui("widget"), ex("AlreadyScoredEditor"))).toHaveLength(1);
+});
+
+test("prepareScoringGraph - ignores a shui:editor value at a node that isn't a shape", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.org/> .
+
+        ex:NotAShape shui:editor ex:SomeOtherWidget .
+    `,
+    "text/turtle",
+  );
+
+  const prepared = prepareScoringGraph({
+    shapesGraph,
+    scoringGraph: await parseRdf("", "text/turtle"),
+  });
+
+  expect(prepared.getQuads(null, rdf("type"), shui("WidgetScore"))).toHaveLength(0);
+});
+
+test("prepareScoringGraph - also covers shui:viewer declarations", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.org/> .
+
+        ex:PersonShapeName
+            a sh:PropertyShape ;
+            sh:path ex:name ;
+            shui:viewer ex:MyCustomViewer ;
+        .
+    `,
+    "text/turtle",
+  );
+
+  const scoringGraph = prepareScoringGraph({
+    shapesGraph,
+    scoringGraph: await parseRdf("", "text/turtle"),
+  });
+
+  const results = await Array.fromAsync(
+    score({
+      dataGraph: await parseRdf("", "text/turtle"),
+      shapeNode: ex("PersonShapeName"),
+      shapesGraph,
+      scoringGraph,
+      widgetPredicate: shui("viewer"),
+    }),
+  );
+
+  expect(results.map((result) => result.widget.value)).toEqual([ex("MyCustomViewer").value]);
+});
+
+test("prepareScoringGraph - honors a configured shui:defaultWidgetScore instead of the spec's default of 40", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.org/> .
+
+        ex:PersonShapeName
+            a sh:PropertyShape ;
+            sh:path ex:name ;
+            shui:editor ex:MyCustomEditor ;
+        .
+    `,
+    "text/turtle",
+  );
+
+  const scoringGraph = await parseRdf(
+    `
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.org/> .
+
+        ex:globalConfig shui:defaultWidgetScore 55 .
+    `,
+    "text/turtle",
+  );
+
+  const prepared = prepareScoringGraph({ shapesGraph, scoringGraph });
+
+  const [widgetScore] = prepared.getQuads(null, shui("widget"), ex("MyCustomEditor"));
+  expect(prepared.getQuads(widgetScore.subject, shui("score"))[0]?.object.value).toBe("55");
+});
+
+test("prepareScoringGraph - is idempotent when applied to an already-prepared scoring graph", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.org/> .
+
+        ex:PersonShapeName
+            a sh:PropertyShape ;
+            sh:path ex:name ;
+            shui:editor ex:MyCustomEditor ;
+        .
+    `,
+    "text/turtle",
+  );
+
+  const once = prepareScoringGraph({ shapesGraph, scoringGraph: await parseRdf("", "text/turtle") });
+  const twice = prepareScoringGraph({ shapesGraph, scoringGraph: once });
+
+  expect(twice.getQuads(null, rdf("type"), shui("WidgetScore"))).toHaveLength(1);
 });

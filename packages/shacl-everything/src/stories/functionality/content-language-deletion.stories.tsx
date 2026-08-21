@@ -77,18 +77,20 @@ function contentLanguageOptionLabels(canvasElement: HTMLElement): (string | null
 async function pickContentLanguage(canvasElement: HTMLElement, language: string): Promise<void> {
   await openContentLanguageMenu(canvasElement);
   const option = canvasElement.querySelector<HTMLElement>(
-    `.st-content-language-switcher [data-value="${language}"]`,
+    `.st-content-language-switcher [role='option'][data-value="${language}"]`,
   );
   if (!option) throw new Error(`Could not find content language option "${language}"`);
   await userEvent.click(option);
 }
 
 // The delete button lives inside its row, reachable by mouse only (see ContentLanguageSwitcher) -
-// opening the menu first is required, same as picking a row.
+// opening the menu first is required, same as picking a row. Scoped to [role='option'] rather than
+// just [data-value] - the trigger button also carries data-value (for its own active language), so
+// once `language` is the active one, an unscoped lookup would match the trigger instead of the row.
 async function clickDeleteLanguage(canvasElement: HTMLElement, language: string): Promise<void> {
   await openContentLanguageMenu(canvasElement);
   const option = canvasElement.querySelector<HTMLElement>(
-    `.st-content-language-switcher [data-value="${language}"]`,
+    `.st-content-language-switcher [role='option'][data-value="${language}"]`,
   );
   if (!option) throw new Error(`Could not find content language option "${language}"`);
   const deleteButton = option.querySelector<HTMLButtonElement>(
