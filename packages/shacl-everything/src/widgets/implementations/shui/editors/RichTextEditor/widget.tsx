@@ -1,92 +1,93 @@
-import { useEffect, useId, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import { useEditor, EditorContent } from "@tiptap/react";
+import type { Editor } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
 import { factory } from "@/helpers/factory.ts";
 import { rdf } from "@/helpers/namespaces.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
-type TrixEditorElement = HTMLElement & { value: string };
+type ToolbarButton = { label: string; title: string; active: boolean; onClick: () => void };
 
-const FOCUSED_CLASS = "st-rich-text-editor--focused";
+function ToolbarBtn({ label, title, active, onClick }: ToolbarButton) {
+  return (
+    <button
+      type="button"
+      className={`st-button st-button--text st-rte-btn${active ? " is-active" : ""}`}
+      // preventDefault keeps editor focus when clicking toolbar buttons
+      onMouseDown={(e) => {
+        e.preventDefault();
+        onClick();
+      }}
+      title={title}
+      aria-pressed={active}
+    >
+      {label}
+    </button>
+  );
+}
+
+function Toolbar({ editor }: { editor: Editor }) {
+  const btn = (label: string, title: string, active: boolean, onClick: () => void) => (
+    <ToolbarBtn key={title} label={label} title={title} active={active} onClick={onClick} />
+  );
+  return (
+    <div className="st-rte-toolbar" aria-label="Text formatting">
+      {btn("B", "Bold", editor.isActive("bold"), () => editor.chain().focus().toggleBold().run())}
+      {btn("I", "Italic", editor.isActive("italic"), () =>
+        editor.chain().focus().toggleItalic().run(),
+      )}
+      <span className="st-rte-toolbar__sep" />
+      {btn("• List", "Bullet list", editor.isActive("bulletList"), () =>
+        editor.chain().focus().toggleBulletList().run(),
+      )}
+      {btn("1. List", "Ordered list", editor.isActive("orderedList"), () =>
+        editor.chain().focus().toggleOrderedList().run(),
+      )}
+      <span className="st-rte-toolbar__sep" />
+      {btn("❝", "Blockquote", editor.isActive("blockquote"), () =>
+        editor.chain().focus().toggleBlockquote().run(),
+      )}
+    </div>
+  );
+}
 
 export default function RichTextEditor({ term, setTerm, labelledBy }: WidgetProps) {
-  const inputId = useId();
-  const containerRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<TrixEditorElement>(null);
-
-  // setTerm's identity changes on every edit (see PropertyUIComponentObject), so the mount effect
-  // below reads it through a ref rather than closing over it directly.
   const setTermRef = useRef(setTerm);
   setTermRef.current = setTerm;
 
-  // Trix owns the document once mounted (undo history, cursor position, ...), so the element is
-  // built imperatively, once, instead of through JSX - a re-render must never recreate or
-  // re-seed it. External value changes are pushed in by the sync effect further down, which
-  // ignores the change this widget just emitted itself (tracked via lastValue).
-  const lastValue = useRef(term.value);
+  // Track the last HTML we emitted so external updates don't fight the editor.
+  const lastEmitted = useRef(term.value);
+  // Suppress onUpdate while we're pushing in an external value change.
+  const isExternalUpdate = useRef(false);
 
+  const onUpdate = useCallback(({ editor }: { editor: { getHTML: () => string } }) => {
+    if (isExternalUpdate.current) return;
+    const html = editor.getHTML();
+    lastEmitted.current = html;
+    setTermRef.current(factory.literal(html, rdf("HTML")));
+  }, []);
+
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: term.value,
+    onUpdate,
+  });
+
+  // Push external value changes in without disturbing cursor position.
   useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    let cancelled = false;
-    let cleanup: (() => void) | undefined;
-
-    // Importing "trix" registers the <trix-editor> custom element and touches `document` as a
-    // load-time side effect, so it's loaded lazily on mount rather than at module scope - that
-    // keeps this widget import-safe wherever the widget registry is loaded without a DOM (e.g.
-    // the node-based unit test project, which eagerly imports every widget.tsx).
-    import("trix").then(() => {
-      if (cancelled) return;
-
-      const input = document.createElement("input");
-      input.type = "hidden";
-      input.id = inputId;
-      input.value = lastValue.current;
-
-      const editor = document.createElement("trix-editor") as TrixEditorElement;
-      editor.setAttribute("input", inputId);
-      if (labelledBy) editor.setAttribute("aria-labelledby", labelledBy);
-
-      const onChange = (event: Event) => {
-        const html = (event.target as TrixEditorElement).value;
-        lastValue.current = html;
-        setTermRef.current(factory.literal(html, rdf("HTML")));
-      };
-      const onFocus = () => container.classList.add(FOCUSED_CLASS);
-      const onBlur = () => container.classList.remove(FOCUSED_CLASS);
-
-      editor.addEventListener("trix-change", onChange);
-      editor.addEventListener("trix-focus", onFocus);
-      editor.addEventListener("trix-blur", onBlur);
-      container.append(input, editor);
-      editorRef.current = editor;
-
-      container.querySelectorAll(".trix-button").forEach((button) => {
-        button.classList.add("st-button");
-      });
-
-      cleanup = () => {
-        editor.removeEventListener("trix-change", onChange);
-        editor.removeEventListener("trix-focus", onFocus);
-        editor.removeEventListener("trix-blur", onBlur);
-        container.replaceChildren();
-        editorRef.current = null;
-      };
-    });
-
-    return () => {
-      cancelled = true;
-      cleanup?.();
-    };
-  }, [inputId, labelledBy]);
-
-  useEffect(() => {
-    const editor = editorRef.current;
-    if (editor && term.value !== lastValue.current) {
-      lastValue.current = term.value;
-      editor.value = term.value;
+    if (editor && term.value !== lastEmitted.current) {
+      lastEmitted.current = term.value;
+      isExternalUpdate.current = true;
+      editor.commands.setContent(term.value);
+      isExternalUpdate.current = false;
     }
-  }, [term.value]);
+  }, [editor, term.value]);
 
-  return <div className="st-rich-text-editor" ref={containerRef} />;
+  return (
+    <div className="st-rich-text-editor" aria-labelledby={labelledBy}>
+      <EditorContent editor={editor} />
+      {editor && <Toolbar editor={editor} />}
+    </div>
+  );
 }

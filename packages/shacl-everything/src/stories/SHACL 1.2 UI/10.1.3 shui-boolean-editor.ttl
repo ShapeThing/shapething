@@ -11,6 +11,8 @@
         sh:name "Married"@en ;
         sh:path ex:married ;
         sh:datatype xsd:boolean ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
     ] ;
     .
 
