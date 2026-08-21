@@ -5,8 +5,8 @@ import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
 export default function TextAreaEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
-  const minLength = shape.getOne(sh("minLength"))?.value;
-  const maxLength = shape.getOne(sh("maxLength"))?.value;
+  const minLength = shape.get(sh("minLength"));
+  const maxLength = shape.get(sh("maxLength"));
 
   const { localValue, onChange, onBlur } = useDeferredInput(term, (value: string) =>
     setTerm(factory.literal(value, xsd("string"))),
@@ -18,8 +18,8 @@ export default function TextAreaEditor({ shape, term, setTerm, labelledBy }: Wid
       value={localValue}
       onChange={onChange}
       onBlur={onBlur}
-      minLength={minLength ? parseInt(minLength) : undefined}
-      maxLength={maxLength ? parseInt(maxLength) : undefined}
+      minLength={minLength}
+      maxLength={maxLength}
       aria-labelledby={labelledBy}
     >
       {localValue}

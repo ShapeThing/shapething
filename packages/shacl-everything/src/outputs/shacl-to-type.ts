@@ -59,7 +59,9 @@ function nodeUIElement(node: NodeUIElement): string {
   // A union only needs parens when it's intersected with something else via
   // `&`; standing alone, its `|` members already bind correctly.
   const needsParens = fragments.length > 0 || unionFragments.length > 1;
-  fragments.push(...unionFragments.map((union) => (needsParens ? `(${union})` : union)));
+  fragments.push(
+    ...unionFragments.map((union) => (needsParens ? `(${union})` : union)),
+  );
 
   // shaclToType only ever feeds NodeUIElement a node shape as its "focus node" (see
   // shaclToType() above), never real instance data - so despite NodeUIElement.focusNode
@@ -79,8 +81,8 @@ function propertyUIElement(property: PropertyUIElement): string {
   const { shapesGraph, propertyShapes } = property;
 
   const codeIdentifier = getCodeIdentifier(shapesGraph, propertyShapes[0]);
-  const minCount = parseFloat(property.getOne(sh("minCount"))?.value ?? "0");
-  const maxCount = parseFloat(property.getOne(sh("maxCount"))?.value ?? "Infinity");
+  const minCount = property.get(sh("minCount")) ?? 0;
+  const maxCount = property.get(sh("maxCount")) ?? Infinity;
   const required = minCount > 0;
   const multiple = maxCount > 1;
   const datatype = resolveDatatype(property);
@@ -98,7 +100,7 @@ function propertyUIElement(property: PropertyUIElement): string {
 // sh:datatype normally holds a single IRI, but this renderer also accepts an rdf:List of
 // datatypes (any one of which may hold), rendering the union of their distinct JS types.
 function resolveDatatype(property: PropertyUIElement): string {
-  const declared = property.getOne(sh("datatype")) ?? xsd("string");
+  const declared = property.get(sh("datatype")) ?? xsd("string");
   const datatypeTerms = expandListOrTerm(declared, property.shapesGraph);
   const jsTypes = [...new Set(datatypeTerms.map(castDataTypeTermToJs))];
   return jsTypes.join(" | ");
@@ -120,18 +122,22 @@ function branchObjectType(
   const propertyLines: string[] = [];
   const nestedChoiceFragments: string[] = [];
   for (const element of elements) {
-    if (element instanceof PropertyUIElement) propertyLines.push(propertyUIElement(element));
-    else nestedChoiceFragments.push(choiceElement(element));
+    if (element instanceof PropertyUIElement) {
+      propertyLines.push(propertyUIElement(element));
+    } else nestedChoiceFragments.push(choiceElement(element));
   }
 
-  const base = `{ ${[...propertyLines, ...extraLines].join(" ").replace(/;$/, "")} }`;
+  const base = `{ ${
+    [...propertyLines, ...extraLines].join(" ").replace(/;$/, "")
+  } }`;
   if (nestedChoiceFragments.length === 0) return base;
 
   // A branch nesting a further sh:or/xone (via sh:node) must satisfy its own properties *and*
   // one of the nested choice's branches - mirrors nodeUIElement()'s own `&`-combination of its
   // object type with a union fragment. Parens are always required here (unlike
   // nodeUIElement()'s conditional needsParens), since `base` is always present as a sibling.
-  return [base, ...nestedChoiceFragments.map((fragment) => `(${fragment})`)].join(" & ");
+  return [base, ...nestedChoiceFragments.map((fragment) => `(${fragment})`)]
+    .join(" & ");
 }
 
 // sh:xone allows exactly one branch. Each branch marks every other branch's
@@ -148,8 +154,12 @@ function branchObjectType(
 function xoneUnion(branches: (PropertyUIElement | ChoiceElement)[][]): string {
   const branchKeys = branches.map((elements) =>
     elements
-      .filter((element): element is PropertyUIElement => element instanceof PropertyUIElement)
-      .map((property) => getCodeIdentifier(property.shapesGraph, property.propertyShapes[0])),
+      .filter((element): element is PropertyUIElement =>
+        element instanceof PropertyUIElement
+      )
+      .map((property) =>
+        getCodeIdentifier(property.shapesGraph, property.propertyShapes[0])
+      )
   );
   const allKeys = [...new Set(branchKeys.flat())];
 

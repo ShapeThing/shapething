@@ -24,9 +24,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   const { languageMode } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
-  const isRdfLangString = propertyUIElement
-    .get(sh("datatype"))
-    .find((term) => term.equals(rdf("langString")));
+  const isRdfLangString = propertyUIElement.get(sh("datatype"))?.equals(rdf("langString"));
   // Reads this.dataGraph reactively - addObject() below re-renders only this property, not the
   // whole tree, once the write it makes actually lands (see helpers/reactiveRdfStore.ts).
   const existingObjects = useDataGraphObjects(propertyUIElement);
@@ -107,10 +105,10 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
 
   // sh:minCount isn't met yet - the shape's sh:severity (sh:Violation, the spec default, when
   // absent) describes how serious that unmet constraint is, for the caller to style as it sees fit.
-  const minCount = parseFloat(propertyUIElement.getOne(sh("minCount"))?.value ?? "0");
+  const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
   const isMissingRequiredValue = existingObjects.length < minCount;
   const severity = isMissingRequiredValue
-    ? (localName(propertyUIElement.getOne(sh("severity"))) ?? "Violation")
+    ? (localName(propertyUIElement.get(sh("severity"))) ?? "Violation")
     : undefined;
 
   return (

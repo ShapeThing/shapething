@@ -48,6 +48,8 @@ export type Environment = {
   languageMode: "switcher" | "individual";
   // When multiple widgets are available for a property, allow switching between them. If false, the first widget will be used and no switching will be possible.
   enableWidgetSwitching?: boolean;
+  // When a property has sh:or/sh:xone branches, allow switching between them. If false, the first matching branch will be used and no switching will be possible.
+  enableLogicalBranchSwitching?: boolean;
   // When true, ContentLanguageSwitcher offers an option to create a brand new BCP47 content
   // language at runtime, in addition to the ones supplied via `languages`/found in the graphs.
   enableContentLanguageCreation?: boolean;
@@ -63,11 +65,13 @@ export type Environment = {
 // still be an unparsed/undereferenced RdfSource rather than a ready RdfStore. RdfStore is itself
 // a valid RdfSource, so a fully-resolved Environment already satisfies this type - preprocessors
 // don't need a different type per stage of the chain.
-export type RawEnvironment = Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph"> & {
-  shapesGraph: RdfSource;
-  dataGraph: RdfSource;
-  scoresGraph: RdfSource;
-};
+export type RawEnvironment =
+  & Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph">
+  & {
+    shapesGraph: RdfSource;
+    dataGraph: RdfSource;
+    scoresGraph: RdfSource;
+  };
 
 export const defaultEnvironment: Environment = {
   shapesGraph: RdfStore.createDefault(),
@@ -83,12 +87,16 @@ export const defaultEnvironment: Environment = {
   contentLanguages: [],
   languageMode: "switcher",
   enableWidgetSwitching: true,
+  enableLogicalBranchSwitching: true,
   enableContentLanguageCreation: true,
   enableShPathInLabelTitle: true,
   enableFullLanguageRemoval: true,
 };
 
-export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph" | "dataGraph"> = {
+export const minimalEnvironment: Omit<
+  Environment,
+  "scoresGraph" | "shapesGraph" | "dataGraph"
+> = {
   focusNode: ex("focusNode"),
   nodeShapes: [],
   mode: "edit",
@@ -101,6 +109,7 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   contentLanguages: [],
   languageMode: "switcher",
   enableWidgetSwitching: false,
+  enableLogicalBranchSwitching: false,
   enableContentLanguageCreation: false,
   enableShPathInLabelTitle: false,
   enableFullLanguageRemoval: false,

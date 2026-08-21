@@ -28,9 +28,9 @@ export default function PropertyUIComponentRemove({
   clearAll?: boolean;
 }) {
   const existingObjects = useDataGraphObjects(propertyUIElement);
-  const minCount = parseFloat(propertyUIElement.getOne(sh("minCount"))?.value ?? "0");
+  const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
   const canRemove = existingObjects.length > minCount;
-  const severity = propertyUIElement.getOne(sh("severity"))?.value as Severity | undefined;
+  const severity = propertyUIElement.get(sh("severity"))?.value as Severity | undefined;
 
   const removeValue = () => {
     if (clearAll) {

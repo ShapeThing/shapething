@@ -131,10 +131,10 @@ function SubClassTreeNode({
 
 export default function SubClassEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
-  const rootClass = shape.getOne(sh("rootClass"));
+  const rootClass = shape.get(sh("rootClass"))[0];
   // Mirrors meta.ts's singleUnifiedWidget: no sh:maxCount means unbounded, so only an explicit
   // maxCount of 1 rules out a second value ever existing for this property.
-  const maxCount = parseFloat(shape.getOne(sh("maxCount"))?.value ?? "Infinity");
+  const maxCount = shape.get(sh("maxCount")) ?? Infinity;
   const isMultiValued = maxCount !== 1;
   const inputType: "checkbox" | "radio" = isMultiValued ? "checkbox" : "radio";
   // singleUnifiedWidget means this is the only instance for the whole property - it owns the full

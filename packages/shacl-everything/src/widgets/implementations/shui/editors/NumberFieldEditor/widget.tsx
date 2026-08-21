@@ -6,9 +6,9 @@ import type { NamedNode } from "@rdfjs/types";
 const INTEGER_DATATYPES = new Set([xsd("integer").value]);
 
 export default function NumberFieldEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
-  const min = shape.getOne(sh("minInclusive"))?.value;
-  const max = shape.getOne(sh("maxInclusive"))?.value;
-  const datatype = (shape.getOne(sh("datatype")) ?? xsd("integer")) as NamedNode;
+  const min = shape.get(sh("minInclusive"));
+  const max = shape.get(sh("maxInclusive"));
+  const datatype = (shape.get(sh("datatype")) ?? xsd("integer")) as NamedNode;
 
   return (
     <input
@@ -16,8 +16,8 @@ export default function NumberFieldEditor({ shape, term, setTerm, labelledBy }: 
       value={term.value}
       onChange={(e) => setTerm(factory.literal(e.target.value, datatype))}
       className="st-input"
-      min={min ? parseFloat(min) : undefined}
-      max={max ? parseFloat(max) : undefined}
+      min={min}
+      max={max}
       step={datatype && INTEGER_DATATYPES.has(datatype.value) ? 1 : "any"}
       aria-labelledby={labelledBy}
     />

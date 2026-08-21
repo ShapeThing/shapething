@@ -3,7 +3,7 @@ import { useCallback, useId, useLayoutEffect, useRef, useState, type ReactNode }
 import "./style.css";
 import type { Severity } from "@/types/severity.ts";
 
-type Placement = "left" | "right" | "top" | "bottom";
+export type Placement = "left" | "right" | "top" | "bottom";
 
 type Props = {
   tip: ReactNode;
@@ -11,14 +11,32 @@ type Props = {
   enabled: boolean;
   severity?: Severity;
   bare?: boolean;
+  // Preferred side, used whenever there's room for it. Falls back to whichever other side
+  // actually fits - see recompute() below.
+  placement?: Placement;
 };
 
 // Keeps the arrow off the tooltip's rounded corners when aiming it at the anchor.
 const ARROW_EDGE_MARGIN = 16;
 
-export default function Tooltip({ tip, children, enabled, severity, bare }: Props) {
+const OPPOSITE_PLACEMENT: Record<Placement, Placement> = {
+  left: "right",
+  right: "left",
+  top: "bottom",
+  bottom: "top",
+};
+const ALL_PLACEMENTS: Placement[] = ["left", "right", "top", "bottom"];
+
+export default function Tooltip({
+  tip,
+  children,
+  enabled,
+  severity,
+  bare,
+  placement: preferredPlacement = "left",
+}: Props) {
   const [showTooltip, setShowTooltip] = useState(false);
-  const [placement, setPlacement] = useState<Placement>("left");
+  const [placement, setPlacement] = useState<Placement>(preferredPlacement);
   const [arrowOffset, setArrowOffset] = useState<number | null>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
@@ -28,24 +46,50 @@ export default function Tooltip({ tip, children, enabled, severity, bare }: Prop
   // the same anchor.
   const anchorName = `--tooltip-anchor-${useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
 
-  // CSS anchor positioning (position-try-fallbacks) picks which side the tooltip lands on,
-  // and centers it on the anchor when there's room — but near viewport edges the browser
-  // shifts the box to avoid overflowing, so its middle no longer lines up with the anchor.
-  // @position-try can't expose either choice back to CSS, so both the arrow's direction and
-  // its position along the edge (aimed at the anchor's actual center) are derived here.
+  // The browser's own position-try-fallbacks only kicks in once a side would actually clip -
+  // and since the tooltip's width/height are otherwise free to shrink-to-fit whatever room a
+  // side happens to have, a cramped side never clips, so the browser never tries another one.
+  // Picking the side ourselves, from real measured space, is what actually gets a comfortably-
+  // sized tooltip on the side that has room for it. CSS still owns the resulting coordinates
+  // for whichever side we pick (see position-area) - it just no longer picks the side itself.
   const recompute = useCallback(() => {
     const wrapper = wrapperRef.current;
     const tooltip = tooltipRef.current;
     if (!wrapper || !tooltip) return;
 
     const wrapperRect = wrapper.getBoundingClientRect();
+    // The tooltip is sized with `width: max-content` (see style.css), so this reflects its
+    // natural size regardless of which side it's currently rendered on - safe to use for
+    // judging every candidate side, not just the one it happens to be showing on right now.
     const tooltipRect = tooltip.getBoundingClientRect();
-    const dx =
-      tooltipRect.left + tooltipRect.width / 2 - (wrapperRect.left + wrapperRect.width / 2);
-    const dy =
-      tooltipRect.top + tooltipRect.height / 2 - (wrapperRect.top + wrapperRect.height / 2);
-    const nextPlacement: Placement =
-      Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : dy < 0 ? "top" : "bottom";
+
+    const space: Record<Placement, number> = {
+      left: wrapperRect.left,
+      right: window.innerWidth - wrapperRect.right,
+      top: wrapperRect.top,
+      bottom: window.innerHeight - wrapperRect.bottom,
+    };
+    const required: Record<Placement, number> = {
+      left: tooltipRect.width,
+      right: tooltipRect.width,
+      top: tooltipRect.height,
+      bottom: tooltipRect.height,
+    };
+
+    const candidates = [
+      preferredPlacement,
+      OPPOSITE_PLACEMENT[preferredPlacement],
+      ...ALL_PLACEMENTS.filter(
+        (candidate) =>
+          candidate !== preferredPlacement && candidate !== OPPOSITE_PLACEMENT[preferredPlacement],
+      ),
+    ];
+    const nextPlacement =
+      candidates.find((candidate) => space[candidate] >= required[candidate]) ??
+      // Nothing fits cleanly - use whichever side overflows the least.
+      candidates.reduce((best, candidate) =>
+        space[candidate] - required[candidate] > space[best] - required[best] ? candidate : best,
+      );
     setPlacement(nextPlacement);
 
     const vertical = nextPlacement === "left" || nextPlacement === "right";
@@ -55,7 +99,7 @@ export default function Tooltip({ tip, children, enabled, severity, bare }: Prop
       : wrapperRect.left + wrapperRect.width / 2 - tooltipRect.left;
     const max = Math.max(ARROW_EDGE_MARGIN, size - ARROW_EDGE_MARGIN);
     setArrowOffset(Math.min(Math.max(anchorCenter, ARROW_EDGE_MARGIN), max));
-  }, []);
+  }, [preferredPlacement]);
 
   const open = useCallback(() => {
     setShowTooltip(true);

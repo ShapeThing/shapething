@@ -1,4 +1,4 @@
-import type { NamedNode, Term } from "@rdfjs/types";
+import type { Bindings, NamedNode, Term } from "@rdfjs/types";
 import { queryPrefixes, sh } from "@/helpers/namespaces.ts";
 import {
   depictionRolePropertyPaths,
@@ -39,14 +39,21 @@ export type SearchResult = {
 // paths for "local" vs "federated" queries, just different query text run against the same one.
 // Dynamically imported and cached so nothing pays for Comunica's SPARQL-over-HTTP machinery until
 // a query actually runs.
-let enginePromise: Promise<import("@comunica/query-sparql").QueryEngine> | undefined;
+let enginePromise:
+  | Promise<import("@comunica/query-sparql").QueryEngine>
+  | undefined;
 function getEngine() {
-  enginePromise ??= import("@comunica/query-sparql").then(({ QueryEngine }) => new QueryEngine());
+  enginePromise ??= import("@comunica/query-sparql").then(({ QueryEngine }) =>
+    new QueryEngine()
+  );
   return enginePromise;
 }
 
 function escapeSparqlLiteral(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(
+    /\n/g,
+    "\\n",
+  );
 }
 
 // dbpedia-style data tags literals with a bare language subtag ("en"), not a full BCP47 tag
@@ -64,9 +71,10 @@ export function extractServiceEndpoint(query: string): string | undefined {
   return query.match(/\bSERVICE\s*(?:SILENT\s+)?<([^>]+)>/i)?.[1];
 }
 
-function toResolvedTerms(bindings: { get(name: string): Term | undefined }[]): ResolvedTerm[] {
+function toResolvedTerms(bindings: Bindings[]): ResolvedTerm[] {
   return bindings.flatMap((binding): ResolvedTerm[] => {
-    const term = binding.get("value");
+    // Use the first projected variable, so sh:select queries need not name it ?value.
+    const term = [...binding][0]?.[1];
     if (!term) return [];
 
     const labelTerm = binding.get("label");
@@ -77,8 +85,12 @@ function toResolvedTerms(bindings: { get(name: string): Term | undefined }[]): R
       {
         term,
         label: labelTerm?.termType === "Literal" ? labelTerm.value : undefined,
-        subLabel: subLabelTerm?.termType === "Literal" ? subLabelTerm.value : undefined,
-        depiction: depictionTerm?.termType === "NamedNode" ? depictionTerm : undefined,
+        subLabel: subLabelTerm?.termType === "Literal"
+          ? subLabelTerm.value
+          : undefined,
+        depiction: depictionTerm?.termType === "NamedNode"
+          ? depictionTerm
+          : undefined,
       },
     ];
   });
@@ -89,13 +101,18 @@ function toResolvedTerms(bindings: { get(name: string): Term | undefined }[]): R
 // than a filter that could drop real results.
 function toSearchResults(results: ResolvedTerm[]): SearchResult[] {
   return results.flatMap(({ term, ...rest }): SearchResult[] =>
-    term.termType === "NamedNode" ? [{ iri: term, ...rest }] : [],
+    term.termType === "NamedNode" ? [{ iri: term, ...rest }] : []
   );
 }
 
-async function runQuery(query: string, propertyShape: PropertyUIElement): Promise<ResolvedTerm[]> {
+async function runQuery(
+  query: string,
+  propertyShape: PropertyUIElement,
+): Promise<ResolvedTerm[]> {
   const engine = await getEngine();
-  const bindingsStream = await engine.queryBindings(query, { sources: [propertyShape.dataGraph] });
+  const bindingsStream = await engine.queryBindings(query, {
+    sources: [propertyShape.dataGraph],
+  });
   return toResolvedTerms(await bindingsStream.toArray());
 }
 
@@ -119,18 +136,18 @@ export function buildSearchQuery(
   search: string,
 ): string {
   const needle = escapeSparqlLiteral(search.trim().toLowerCase());
-  const labelPattern =
-    labelPaths.length > 0 ? `optional { ?value ${labelPaths.join("|")} ?iriLabel }` : "";
-  const labelScoreExpression =
-    labelPaths.length > 0
-      ? `if(bound(?iriLabel) && contains(lcase(str(?iriLabel)), "${needle}"), ${LABEL_MATCH_WEIGHT}, 0)`
-      : "0";
-  const subLabelPattern =
-    subLabelPaths.length > 0 ? `optional { ?value ${subLabelPaths.join("|")} ?iriSubLabel }` : "";
-  const depictionPattern =
-    depictionPaths.length > 0
-      ? `optional { ?value ${depictionPaths.join("|")} ?iriDepiction }`
-      : "";
+  const labelPattern = labelPaths.length > 0
+    ? `optional { ?value ${labelPaths.join("|")} ?iriLabel }`
+    : "";
+  const labelScoreExpression = labelPaths.length > 0
+    ? `if(bound(?iriLabel) && contains(lcase(str(?iriLabel)), "${needle}"), ${LABEL_MATCH_WEIGHT}, 0)`
+    : "0";
+  const subLabelPattern = subLabelPaths.length > 0
+    ? `optional { ?value ${subLabelPaths.join("|")} ?iriSubLabel }`
+    : "";
+  const depictionPattern = depictionPaths.length > 0
+    ? `optional { ?value ${depictionPaths.join("|")} ?iriDepiction }`
+    : "";
 
   return `
     ${queryPrefixes}
@@ -171,22 +188,29 @@ function buildRoleLookupQuery(
 ): string {
   const languageFilter = uiLanguage
     ? (variable: string) => {
-        const language = primaryLanguageSubtag(uiLanguage);
-        return ` . filter(lang(${variable}) = "${language}" || lang(${variable}) = "")`;
-      }
+      const language = primaryLanguageSubtag(uiLanguage);
+      return ` . filter(lang(${variable}) = "${language}" || lang(${variable}) = "")`;
+    }
     : () => "";
 
   const patterns = [
     labelPaths.length > 0 &&
-      `optional { ?value ${labelPaths.join("|")} ?roleLabel${languageFilter("?roleLabel")} }`,
+    `optional { ?value ${labelPaths.join("|")} ?roleLabel${
+      languageFilter("?roleLabel")
+    } }`,
     subLabelPaths.length > 0 &&
-      `optional { ?value ${subLabelPaths.join("|")} ?roleSubLabel${languageFilter("?roleSubLabel")} }`,
-    depictionPaths.length > 0 && `optional { ?value ${depictionPaths.join("|")} ?roleDepiction }`,
+    `optional { ?value ${subLabelPaths.join("|")} ?roleSubLabel${
+      languageFilter("?roleSubLabel")
+    } }`,
+    depictionPaths.length > 0 &&
+    `optional { ?value ${depictionPaths.join("|")} ?roleDepiction }`,
   ]
     .filter((pattern): pattern is string => Boolean(pattern))
     .join("\n");
 
-  const valuesClause = `values ?value { ${values.map((value) => `<${value.value}>`).join(" ")} }`;
+  const valuesClause = `values ?value { ${
+    values.map((value) => `<${value.value}>`).join(" ")
+  } }`;
   const where = endpoint
     ? `service <${endpoint}> { ${valuesClause} ${patterns} }`
     : `${valuesClause} ${patterns}`;
@@ -217,7 +241,9 @@ async function resolveRoles(
 
   const labelPaths = labelRolePropertyPaths(propertyShape).map(toSparql);
   const subLabelPaths = subLabelRolePropertyPaths(propertyShape).map(toSparql);
-  const depictionPaths = depictionRolePropertyPaths(propertyShape).map(toSparql);
+  const depictionPaths = depictionRolePropertyPaths(propertyShape).map(
+    toSparql,
+  );
 
   if (labelPaths.length + subLabelPaths.length + depictionPaths.length === 0) {
     return values.map((term) => ({ term }));
@@ -232,7 +258,9 @@ async function resolveRoles(
     options.endpoint,
   );
   const resolved = await runQuery(query, propertyShape);
-  const resolvedByValue = new Map(resolved.map((result) => [result.term.value, result]));
+  const resolvedByValue = new Map(
+    resolved.map((result) => [result.term.value, result]),
+  );
 
   return values.map((term) => ({ term, ...resolvedByValue.get(term.value) }));
 }
@@ -247,13 +275,19 @@ export async function searchInstances(
   shape: PropertyUIElement,
   search: string,
 ): Promise<SearchResult[]> {
-  const classIri = shape.getOne(sh("class")) as NamedNode | undefined;
+  const classIri = shape.get(sh("class"))[0] as NamedNode | undefined;
   if (!classIri) return [];
 
   const labelPaths = labelRolePropertyPaths(shape).map(toSparql);
   const subLabelPaths = subLabelRolePropertyPaths(shape).map(toSparql);
   const depictionPaths = depictionRolePropertyPaths(shape).map(toSparql);
-  const query = buildSearchQuery(classIri, labelPaths, subLabelPaths, depictionPaths, search);
+  const query = buildSearchQuery(
+    classIri,
+    labelPaths,
+    subLabelPaths,
+    depictionPaths,
+    search,
+  );
 
   return toSearchResults(await runQuery(query, shape));
 }
@@ -276,34 +310,24 @@ export async function fetchOptions(
 }
 
 /**
- * Runs a federated query that projects `?value` (a `sh:in [ sh:select ]`/`shui:searchQuery` body),
- * resolving each result's LabelRole/SubLabelRole/DepictionRole via `propertyShape`'s sh:node - the
- * "Using Dynamic SHACL and shui:propertyRole" mechanism. When the shape declares none of those
- * roles, `rawQuery` is expected to bind its own `?value`/`?label`/`?subLabel`/`?depiction` directly
- * (the simpler, sh:node-less form) and runs completely unmodified - one HTTP request total.
+ * Runs a federated query (a `sh:in [ sh:select ]`/`shui:searchQuery` body) and resolves each
+ * result's LabelRole/SubLabelRole/DepictionRole via `propertyShape`'s sh:node in a second request.
+ * The first projected variable is used as the value IRI - it need not be named `?value`.
  *
- * When roles ARE declared, resolving them is a *second*, separate request that batches every
- * `?value` via resolveRoles's single `VALUES` clause, rather than one query that joins the value-
- * producing SERVICE call against a second role-resolving SERVICE call textually. That matters
- * because Comunica's join planner evaluates a join between a small bindings stream and a SERVICE
- * clause as a bind join - materializing and re-running the SERVICE operation once PER binding on
- * the other side - so e.g. 100 candidate values would mean ~100 extra HTTP requests to the
- * endpoint instead of one. Two requests total (independent of how many values come back) is worth
- * the extra round trip.
+ * Labels always come from propertyRoles (resolveRoles), never from the query itself. When no roles
+ * are declared, results are returned without labels - the raw IRIs.
+ *
+ * Role resolution is a *second*, separate request that batches every value via a single `VALUES`
+ * clause. That matters because Comunica's join planner evaluates a join between a small bindings
+ * stream and a SERVICE clause as a bind join - materializing and re-running the SERVICE operation
+ * once PER binding - so e.g. 100 results would mean ~100 extra HTTP requests. Two requests total
+ * (independent of result count) is worth the extra round trip.
  */
 export async function runFederatedQuery(
   rawQuery: string,
   propertyShape: PropertyUIElement,
   uiLanguage: string,
 ): Promise<ResolvedTerm[]> {
-  const hasRoles =
-    labelRolePropertyPaths(propertyShape).length +
-      subLabelRolePropertyPaths(propertyShape).length +
-      depictionRolePropertyPaths(propertyShape).length >
-    0;
-
-  if (!hasRoles) return runQuery(rawQuery, propertyShape);
-
   const values = await runQuery(rawQuery, propertyShape);
   if (values.length === 0) return [];
 

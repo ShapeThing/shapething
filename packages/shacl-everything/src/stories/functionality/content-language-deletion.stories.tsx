@@ -77,7 +77,7 @@ function contentLanguageOptionLabels(canvasElement: HTMLElement): (string | null
 async function pickContentLanguage(canvasElement: HTMLElement, language: string): Promise<void> {
   await openContentLanguageMenu(canvasElement);
   const option = canvasElement.querySelector<HTMLElement>(
-    `.st-content-language-switcher [data-language="${language}"]`,
+    `.st-content-language-switcher [data-value="${language}"]`,
   );
   if (!option) throw new Error(`Could not find content language option "${language}"`);
   await userEvent.click(option);
@@ -88,7 +88,7 @@ async function pickContentLanguage(canvasElement: HTMLElement, language: string)
 async function clickDeleteLanguage(canvasElement: HTMLElement, language: string): Promise<void> {
   await openContentLanguageMenu(canvasElement);
   const option = canvasElement.querySelector<HTMLElement>(
-    `.st-content-language-switcher [data-language="${language}"]`,
+    `.st-content-language-switcher [data-value="${language}"]`,
   );
   if (!option) throw new Error(`Could not find content language option "${language}"`);
   const deleteButton = option.querySelector<HTMLButtonElement>(
@@ -123,16 +123,19 @@ export const deletingALanguageWipesItFromEveryProperty: Story = {
     expect(findDeleteConfirmModal(canvasElement)).toHaveTextContent("Dutch");
 
     // Canceling leaves every value untouched.
-    const cancelButton = findDeleteConfirmModal(canvasElement).querySelector<HTMLButtonElement>(
-      "button.st-button--text",
-    )!;
+    const cancelButton =
+      findDeleteConfirmModal(canvasElement).querySelector<HTMLButtonElement>(
+        "button.st-button--text",
+      )!;
     await userEvent.click(cancelButton);
     expect(canvasElement.querySelector("dialog.st-modal[open]")).toBeNull();
 
     await pickContentLanguage(canvasElement, "nl");
-    expect(findFieldInputs(canvasElement).map((input) => input.value).sort()).toEqual(
-      ["Een persoon met rood haar", "Roodharige"].sort(),
-    );
+    expect(
+      findFieldInputs(canvasElement)
+        .map((input) => input.value)
+        .sort(),
+    ).toEqual(["Een persoon met rood haar", "Roodharige"].sort());
 
     // Confirming actually deletes - both Dutch translations disappear, not just the one on
     // whichever property happened to be visible when the delete was triggered.
@@ -146,9 +149,11 @@ export const deletingALanguageWipesItFromEveryProperty: Story = {
     // Deleting the active language falls back to whatever's left (here, the only other one) -
     // there's nothing left to show in Dutch, so staying on it would leave every field looking
     // empty for no visible reason.
-    expect(findFieldInputs(canvasElement).map((input) => input.value).sort()).toEqual(
-      ["A person with red hair", "Redhead"].sort(),
-    );
+    expect(
+      findFieldInputs(canvasElement)
+        .map((input) => input.value)
+        .sort(),
+    ).toEqual(["A person with red hair", "Redhead"].sort());
 
     // The language itself is gone from the switcher too, not just its values - it served its
     // purpose (emptying the data) and re-adding it is one click away via "Add language…" if it's

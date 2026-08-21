@@ -93,7 +93,7 @@ async function pickContentLanguage(canvasElement: HTMLElement, language: string)
   if (!trigger) throw new Error("Could not find the content language switcher");
   await userEvent.click(trigger);
   const option = canvasElement.querySelector<HTMLElement>(
-    `.st-content-language-switcher [data-language="${language}"]`,
+    `.st-content-language-switcher [data-value="${language}"]`,
   );
   if (!option) throw new Error(`Could not find content language option "${language}"`);
   await userEvent.click(option);

@@ -26,9 +26,9 @@ export default function TextFieldEditor({
   type = "text",
   labelledBy,
 }: WidgetProps & { type?: HTMLInputElement["type"] }) {
-  const pattern = shape.getOne(sh("pattern"))?.value;
-  const minLength = shape.getOne(sh("minLength"))?.value;
-  const maxLength = shape.getOne(sh("maxLength"))?.value;
+  const pattern = shape.get(sh("pattern"))?.source;
+  const minLength = shape.get(sh("minLength"));
+  const maxLength = shape.get(sh("maxLength"));
 
   const { localValue, onChange, onBlur } = useDeferredInput(term, (value: string) =>
     setTerm(factory.literal(value, dataTypesMapping[type])),
@@ -42,8 +42,8 @@ export default function TextFieldEditor({
       onChange={onChange}
       onBlur={onBlur}
       pattern={pattern}
-      minLength={minLength ? parseInt(minLength) : undefined}
-      maxLength={maxLength ? parseInt(maxLength) : undefined}
+      minLength={minLength}
+      maxLength={maxLength}
       aria-labelledby={labelledBy}
     />
   );

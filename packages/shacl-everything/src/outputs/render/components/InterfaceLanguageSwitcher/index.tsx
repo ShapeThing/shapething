@@ -1,9 +1,9 @@
 import { useId } from "react";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
+import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { languageLabels } from "@/helpers/languageLabels.ts";
-import type { BCP47 } from "@/types/BCP47.ts";
 import { Localized } from "@fluent/react";
 
 export default function InterfaceLanguageSwitcher() {
@@ -21,21 +21,14 @@ export default function InterfaceLanguageSwitcher() {
       tooltip={<Localized id="interface-language-switcher-tooltip" />}
       htmlFor={selectId}
     >
-      <div className="st-select-wrapper">
-        <select
-          id={selectId}
-          className="st-select"
-          value={activeInterfaceLanguage}
-          onChange={(e) => setActiveInterfaceLanguage(e.target.value as BCP47)}
-        >
-          {interfaceLanguages.map((language) => (
-            <option key={language} value={language}>
-              {interfaceLanguageLabels[language]}
-            </option>
-          ))}
-        </select>
-        <span className="st-select-arrow" aria-hidden="true" />
-      </div>
+      <SelectListbox
+        triggerId={selectId}
+        value={activeInterfaceLanguage}
+        options={interfaceLanguages}
+        onChange={setActiveInterfaceLanguage}
+        renderTriggerContent={(lang) => interfaceLanguageLabels[lang]}
+        renderOption={(lang) => interfaceLanguageLabels[lang]}
+      />
     </FormElement>
   ) : null;
 }

@@ -13,12 +13,16 @@ import type { CreateTermContext } from "@/widgets/types.ts";
  * nothing at all.
  */
 export function defaultTermFromShape(shape: PropertyUIElement): Term {
-  const datatype = shape.getOne(sh("datatype"));
+  const datatype = shape.get(sh("datatype"));
   if (datatype) return factory.literal("", datatype as NamedNode);
 
   const nodeKinds = shape.get(sh("nodeKind"));
-  if (nodeKinds.length === 1 && nodeKinds[0].equals(sh("IRI"))) return factory.namedNode("");
-  if (nodeKinds.length === 1 && nodeKinds[0].equals(sh("BlankNode"))) return factory.blankNode();
+  if (nodeKinds.length === 1 && nodeKinds[0].equals(sh("IRI"))) {
+    return factory.namedNode("");
+  }
+  if (nodeKinds.length === 1 && nodeKinds[0].equals(sh("BlankNode"))) {
+    return factory.blankNode();
+  }
 
   if (shape.get(sh("class")).length > 0) return factory.namedNode("");
 
@@ -51,7 +55,9 @@ export function coerceTermToBranch(
   branchProperty: PropertyUIElement,
   context: CreateTermContext,
 ): Term {
-  const datatype = branchProperty.getOne(sh("datatype")) as NamedNode | undefined;
+  const datatype = branchProperty.getOne(sh("datatype")) as
+    | NamedNode
+    | undefined;
   if (term.termType === "Literal" && datatype) {
     // rdf:langString literals are identified by their language tag, not an explicit datatype -
     // factory.literal(value, aNamedNode) sets the datatype directly instead, which for

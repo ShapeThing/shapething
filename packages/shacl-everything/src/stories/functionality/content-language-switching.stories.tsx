@@ -87,7 +87,7 @@ function findContentLanguageTrigger(canvasElement: HTMLElement): HTMLButtonEleme
 }
 
 function activeContentLanguage(canvasElement: HTMLElement): string | undefined {
-  return findContentLanguageTrigger(canvasElement).dataset.activeLanguage;
+  return findContentLanguageTrigger(canvasElement).dataset.value;
 }
 
 // Every helper below assumes the menu is already open - open it first via this before reading or
@@ -104,18 +104,37 @@ function contentLanguageOptionLabels(canvasElement: HTMLElement): (string | null
 
 async function pickContentLanguage(canvasElement: HTMLElement, language: string): Promise<void> {
   const option = canvasElement.querySelector<HTMLElement>(
-    `.st-content-language-switcher [data-language="${language}"]`,
+    `.st-content-language-switcher [data-value="${language}"]`,
   );
   if (!option) throw new Error(`Could not find content language option "${language}"`);
   await userEvent.click(option);
 }
 
-function findInterfaceLanguageSwitcher(canvasElement: HTMLElement): HTMLSelectElement {
-  const select = canvasElement.querySelector<HTMLSelectElement>(
-    ".st-interface-language-switcher select",
+function findInterfaceLanguageTrigger(canvasElement: HTMLElement): HTMLButtonElement {
+  const trigger = canvasElement.querySelector<HTMLButtonElement>(
+    ".st-interface-language-switcher .st-listbox__trigger",
   );
-  if (!select) throw new Error("Could not find the interface language switcher");
-  return select;
+  if (!trigger) throw new Error("Could not find the interface language switcher");
+  return trigger;
+}
+
+async function openInterfaceLanguageSwitcher(canvasElement: HTMLElement): Promise<void> {
+  await userEvent.click(findInterfaceLanguageTrigger(canvasElement));
+}
+
+function interfaceLanguageOptions(canvasElement: HTMLElement): HTMLElement[] {
+  return Array.from(
+    canvasElement.querySelectorAll<HTMLElement>(".st-interface-language-switcher [role='option']"),
+  );
+}
+
+async function selectInterfaceLanguage(canvasElement: HTMLElement, value: string): Promise<void> {
+  await openInterfaceLanguageSwitcher(canvasElement);
+  const option = canvasElement.querySelector<HTMLElement>(
+    `.st-interface-language-switcher [data-value="${value}"]`,
+  );
+  if (!option) throw new Error(`Could not find interface language option "${value}"`);
+  await userEvent.click(option);
 }
 
 export const switchingContentLanguageShowsTheMatchingTranslation: Story = {
@@ -192,11 +211,13 @@ export const contentAndInterfaceLanguagesAreIndependent: Story = {
     // the ones with a bundled translation (see preprocess/languages.ts) - chrome text for "fr"
     // just falls back to English (see loadBundles' resolveLocale) while the field's own label
     // still switches, same as it does for "en-GB"/"nl-NL" below.
-    expect(
-      within(findInterfaceLanguageSwitcher(canvasElement))
-        .getAllByRole("option")
-        .map((o) => o.textContent),
-    ).toEqual(["English", "Nederlands", "français"]);
+    await openInterfaceLanguageSwitcher(canvasElement);
+    expect(interfaceLanguageOptions(canvasElement).map((o) => o.textContent)).toEqual([
+      "English",
+      "Nederlands",
+      "français",
+    ]);
+    await userEvent.keyboard("{Escape}");
 
     expect(findFieldLabel(canvasElement)).toHaveTextContent("Preferred label");
     expect(await findFieldInput(canvasElement)).toHaveValue("Redhead");
@@ -207,7 +228,7 @@ export const contentAndInterfaceLanguagesAreIndependent: Story = {
     // bundle (see L10nProvider), which briefly suspends and remounts the whole tree below it -
     // findByText waits that out, and every element is re-queried afterwards rather than reusing
     // a reference that may point at a now-detached node.
-    await userEvent.selectOptions(findInterfaceLanguageSwitcher(canvasElement), "nl-NL");
+    await selectInterfaceLanguage(canvasElement, "nl-NL");
     await canvas.findByText("Voorkeursnaam", {}, { timeout: 5000 });
     expect(await findFieldInput(canvasElement)).toHaveValue("Redhead");
     expect(activeContentLanguage(canvasElement)).toBe("en");
@@ -222,7 +243,7 @@ export const contentAndInterfaceLanguagesAreIndependent: Story = {
 
     // Switching the UI back to English only moves the label - the Dutch value stays shown, since
     // the content switcher is still on "nl".
-    await userEvent.selectOptions(findInterfaceLanguageSwitcher(canvasElement), "en-GB");
+    await selectInterfaceLanguage(canvasElement, "en-GB");
     await canvas.findByText("Preferred label", {}, { timeout: 5000 });
     expect(await findFieldInput(canvasElement)).toHaveValue("Roodharige");
   },

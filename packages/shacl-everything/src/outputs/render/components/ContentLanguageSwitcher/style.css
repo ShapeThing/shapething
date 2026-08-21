@@ -50,6 +50,8 @@
   text-align: left;
   font: inherit;
   color: inherit;
+  display: flex;
+  justify-content: space-between;
 }
 
 .st-content-language-switcher__listbox {
@@ -71,7 +73,7 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--size-2);
-  padding-inline-start: var(--size-2);
+  padding-inline: var(--size-2);
   min-height: 2.2rem;
   cursor: pointer;
 
@@ -106,4 +108,10 @@
     color: var(--st-severity-error);
     outline: none;
   }
+}
+
+.st-content-language-switcher__option-language-code {
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text-muted);
+  font-style: italic;
 }

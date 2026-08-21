@@ -71,7 +71,7 @@ function findContentLanguageTrigger(canvasElement: HTMLElement): HTMLButtonEleme
 }
 
 function activeContentLanguage(canvasElement: HTMLElement): string | undefined {
-  return findContentLanguageTrigger(canvasElement).dataset.activeLanguage;
+  return findContentLanguageTrigger(canvasElement).dataset.value;
 }
 
 // Every helper below assumes the menu is already open - open it first via this before reading or

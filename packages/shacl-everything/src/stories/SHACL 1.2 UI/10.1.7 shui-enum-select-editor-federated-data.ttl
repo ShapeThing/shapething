@@ -19,9 +19,9 @@
             # "Using Dynamic SHACL and shui:propertyRole").
             sh:select """
                 PREFIX dbo: <http://dbpedia.org/ontology/>
-                SELECT DISTINCT ?value WHERE {
+                SELECT DISTINCT ?value1 WHERE {
                     SERVICE <https://dbpedia.org/sparql> {
-                        ?value a dbo:Philosopher .
+                        ?value1 a dbo:Philosopher .
                     }
                 }
             """
@@ -32,6 +32,7 @@
 <#philosopherShape>
     sh:property [
         sh:path rdfs:label ;
+        sh:minCount 1 ;
         shui:propertyRole shui:LabelRole ;
         sh:order 1 ;
     ] ;
