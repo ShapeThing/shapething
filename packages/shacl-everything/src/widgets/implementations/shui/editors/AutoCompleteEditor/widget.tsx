@@ -24,6 +24,14 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
     if (mode === "edit") inputRef.current?.focus();
   }, [mode]);
 
+  // `term` can go from having a value to being empty without this widget remounting - e.g. the
+  // property row is keyed by index, so removing its only value swaps in a fresh empty term on the
+  // same instance (see PropertyUIComponent). Search mode should always be shown once that happens,
+  // not whatever mode was left over from before the value disappeared.
+  useEffect(() => {
+    if (!term.value) setMode("edit");
+  }, [term.value]);
+
   // A fresh set of results invalidates whatever the previous list had highlighted.
   useEffect(() => {
     setActiveIndex(-1);
@@ -46,13 +54,17 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
 
   const closeEditor = () => {
     reset();
-    setMode("view");
+    setMode(term.value ? "view" : "edit");
   };
 
   const apply = (result: SearchResult) => {
     setTerm(result.iri);
     setSelected(result);
-    closeEditor();
+    // Not closeEditor(): its term.value check would still see the pre-selection term, since
+    // setTerm's write hasn't round-tripped back into this prop yet - a result was just chosen, so
+    // the value display is always correct here regardless of what `term` currently reads.
+    reset();
+    setMode("view");
   };
 
   // Values already used elsewhere for this (possibly multi-valued) property shouldn't be offered
