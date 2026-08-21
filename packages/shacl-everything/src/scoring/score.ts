@@ -1,8 +1,8 @@
 import type { NamedNode, Term } from "@rdfjs/types";
-import type { RdfStore } from "rdf-stores";
+import { RdfStore } from "rdf-stores";
 import { Validator as ShaclEngine } from "shacl-engine";
 import { factory } from "@/helpers/factory.ts";
-import { rdf, shui } from "@/helpers/namespaces.ts";
+import { rdf, sh, shui, xsd } from "@/helpers/namespaces.ts";
 
 type SelectProps = {
   // A boolean flag; if true, return only the first matching result.
@@ -26,6 +26,107 @@ export type WidgetScoreResult = {
   widgetScore: Term;
   score: number;
 };
+
+type PrepareScoringGraphProps = {
+  // The RDF graph containing the list of SHACL shapes - read for shui:editor/shui:viewer
+  // declarations.
+  shapesGraph: RdfStore;
+  // The RDF graph containing the Widget Score definitions, to be extended.
+  scoringGraph: RdfStore;
+};
+
+const DEFAULT_DECLARED_WIDGET_SCORE = 40;
+
+/**
+ * Scoring Graph Preparation (spec §4.3). MUST be called on a scoring graph before it is passed
+ * to score()/select() - without it, a widget attached to a shape only via shui:editor/shui:viewer,
+ * with no shui:WidgetScore of its own (e.g. a third-party widget shipped without a score.ttl), is
+ * never returned. A widget scoringGraph already scores is left untouched even if that scoring
+ * doesn't itself cover the declared case - see the shui:editor score.ttl-authoring convention
+ * instead (a dedicated band-40 rule whose shapesGraphShape alone tests for the declaration).
+ *
+ * Depends only on shapesGraph and scoringGraph, not on any particular focus/shape node - callers
+ * should run this once per environment (see preprocess/scoringGraphPreparation.ts) and reuse the
+ * result, rather than re-running it on every score()/select() call.
+ */
+export function prepareScoringGraph({
+  shapesGraph,
+  scoringGraph,
+}: PrepareScoringGraphProps): RdfStore {
+  const prepared = RdfStore.createDefault();
+  for (const quad of scoringGraph.getQuads()) prepared.addQuad(quad);
+
+  // The global shui:defaultWidgetScore configuration property isn't pinned down yet (spec editor's
+  // note - pending PR #900), so this reads it generically as a triple with that predicate anywhere
+  // in the scoring graph, falling back to the spec's stated default of 40 otherwise.
+  const defaultScore =
+    scoringGraph.getQuads(null, shui("defaultWidgetScore"))[0]?.object ??
+    factory.literal(String(DEFAULT_DECLARED_WIDGET_SCORE), xsd("integer"));
+
+  const alreadyScoredWidgets = new Set(
+    scoringGraph
+      .getQuads(null, rdf("type"), shui("WidgetScore"))
+      .map((quad) => scoringGraph.getQuads(quad.subject, shui("widget"))[0]?.object.value),
+  );
+
+  for (const widgetPredicate of [shui("editor"), shui("viewer")]) {
+    const declaredWidgets = new Set(
+      shapesGraph
+        .getQuads(null, widgetPredicate)
+        .filter(
+          (quad) => quad.object.termType === "NamedNode" && isShapeNode(quad.subject, shapesGraph),
+        )
+        .map((quad) => quad.object.value),
+    );
+
+    for (const widgetValue of declaredWidgets) {
+      if (alreadyScoredWidgets.has(widgetValue)) continue;
+
+      const widget = factory.namedNode(widgetValue);
+      const widgetScore = factory.blankNode();
+      const nodeShape = factory.blankNode();
+      const propertyShape = factory.blankNode();
+
+      prepared.addQuad(factory.quad(widgetScore, rdf("type"), shui("WidgetScore")));
+      prepared.addQuad(factory.quad(widgetScore, shui("widget"), widget));
+      prepared.addQuad(factory.quad(widgetScore, shui("score"), defaultScore));
+      prepared.addQuad(factory.quad(widgetScore, shui("shapesGraphShape"), nodeShape));
+      prepared.addQuad(factory.quad(nodeShape, rdf("type"), sh("NodeShape")));
+      prepared.addQuad(factory.quad(nodeShape, sh("property"), propertyShape));
+      prepared.addQuad(factory.quad(propertyShape, sh("path"), widgetPredicate));
+      prepared.addQuad(factory.quad(propertyShape, sh("hasValue"), widget));
+    }
+  }
+
+  return prepared;
+}
+
+// A shui:editor/shui:viewer value at a node that isn't itself a shape doesn't declare a widget
+// (spec §4.3) - covers the common ways a node is recognizable as a shape without running full
+// SHACL shape-expansion: an explicit sh:NodeShape/sh:PropertyShape type, sh:path (property shapes
+// are frequently left untyped), a node-shape target declaration, or being referenced as a shape
+// from elsewhere (sh:property, sh:node, sh:qualifiedValueShape, sh:not).
+function isShapeNode(node: Term, shapesGraph: RdfStore): boolean {
+  if (node.termType !== "NamedNode" && node.termType !== "BlankNode") return false;
+
+  const ownMarkers = [
+    [rdf("type"), sh("NodeShape")],
+    [rdf("type"), sh("PropertyShape")],
+    [sh("path"), null],
+    [sh("targetClass"), null],
+    [sh("targetNode"), null],
+    [sh("targetSubjectsOf"), null],
+    [sh("targetObjectsOf"), null],
+  ] as const;
+  if (ownMarkers.some(([predicate, object]) => shapesGraph.getQuads(node, predicate, object).length > 0)) {
+    return true;
+  }
+
+  const referencedAsShapeBy = [sh("property"), sh("node"), sh("qualifiedValueShape"), sh("not")];
+  return referencedAsShapeBy.some(
+    (predicate) => shapesGraph.getQuads(null, predicate, node).length > 0,
+  );
+}
 
 export async function* select(props: SelectProps) {
   const { shapeNode, shapesGraph, widgetPredicate } = props;
@@ -130,12 +231,13 @@ async function match({
 
   const matcherDataGraphShapes = matcherDataGraphShapeQuads.map((q) => q.object);
   const matcherShapeGraphShapes = matcherShapeGraphShapeQuads.map((q) => q.object);
-  // A rule that requires a dataGraphShape check can never match with no value to check it
-  // against - regardless of whether it also declares a shapesGraphShape check. Without this,
-  // a rule combining both (e.g. dataGraphShape isString + shapesGraphShape isSingleLineFalse)
-  // would pass its shapesGraphShape half below, hit the `!focusNode` early return further down,
-  // and match despite its dataGraphShape half being entirely unverified.
-  if (!focusNode && matcherDataGraphShapes.length > 0) {
+  // Per spec (Matcher Function, step 1): a rule that requires a dataGraphShape check but
+  // declares no shapesGraphShape at all can never match with no value to check it against.
+  // A rule that combines both is not excluded this way - with no focus node, its dataGraphShape
+  // half simply goes unverified and the match rests on its shapesGraphShape half alone (step 4),
+  // e.g. so an explicitly-declared editor (shui:editor, always scored via a shapesGraphShape
+  // check for that declaration) still matches before any value exists.
+  if (!focusNode && matcherDataGraphShapes.length > 0 && matcherShapeGraphShapes.length === 0) {
     return false;
   }
 

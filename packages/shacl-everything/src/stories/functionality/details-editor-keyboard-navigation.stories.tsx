@@ -96,10 +96,12 @@ export const keyboardNavigation: Story = {
 
     // Tab from the label must reach the sh:or branch switcher (DetailsEditor's own fly-out) -
     // regression: it used to be skipped entirely once the fly-out was removed from tab order to
-    // stop the sub-form eating every Tab press meant for it.
+    // stop the sub-form eating every Tab press meant for it. The branch switcher is a custom
+    // listbox rather than a native <select> (see LogicalConstraintSwitcher/SelectListbox) - its
+    // trigger is a real <button>, so it still lands in tab order the same way a <select> would.
     await userEvent.tab();
-    const branchSwitcher = canvasElement.querySelector<HTMLSelectElement>(
-      ".st-property-object__fly-out select",
+    const branchSwitcher = canvasElement.querySelector<HTMLButtonElement>(
+      ".st-property-object__fly-out .st-listbox__trigger",
     );
     expect(branchSwitcher).not.toBeNull();
     await expect(branchSwitcher).toHaveFocus();
@@ -110,8 +112,19 @@ export const keyboardNavigation: Story = {
 
     // Continuing forward from the fly-out must land inside the nested sub-form, not exit past it -
     // regression: the fly-out and the sub-form's first field can't both be "immediately next" after
-    // the label, so whichever fix reached one broke reaching the other.
+    // the label, so whichever fix reached one broke reaching the other. The fly-out has two tab
+    // stops here (the branch switcher, then, since enableWidgetSwitching defaults to true, the
+    // widget switcher), so it takes three tabs from the label to reach the sub-form.
     await userEvent.tab();
+    await expect(branchSwitcher).toHaveFocus();
+
+    await userEvent.tab();
+    const widgetSwitcher = canvasElement.querySelector<HTMLButtonElement>(
+      ".st-property-object__fly-out .st-widget-switcher .st-listbox__trigger",
+    );
+    expect(widgetSwitcher).not.toBeNull();
+    await expect(widgetSwitcher).toHaveFocus();
+
     await userEvent.tab();
     const streetInput = findFieldInput(canvasElement, "Street");
     await expect(streetInput).toHaveFocus();

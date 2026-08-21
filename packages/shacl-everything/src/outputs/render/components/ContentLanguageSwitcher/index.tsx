@@ -57,22 +57,14 @@ export default function ContentLanguageSwitcher() {
           onChange={setActiveLanguage}
           classPrefix="st-content-language-switcher"
           renderTriggerContent={(language) => (
-            <>
-              <span className="st-content-language-switcher__option-label">
-                {labels[language] ?? language}
-              </span>
-              <span className="st-content-language-switcher__option-language-code">
-                {language}
-              </span>
-            </>
+            <span className="st-content-language-switcher__option-label">
+              {labels[language] ?? language}
+            </span>
           )}
           renderOption={(language, close) => (
             <>
               <span className="st-content-language-switcher__option-label">
                 {labels[language]}
-              </span>
-              <span className="st-content-language-switcher__option-language-code">
-                {language}
               </span>
               {enableFullLanguageRemoval && (
                 <Localized

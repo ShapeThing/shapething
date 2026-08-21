@@ -43,6 +43,22 @@ test("prefixes - maps every namespace alias to its base IRI", () => {
     faker: "https://fakerjs.dev/",
     skos: "http://www.w3.org/2004/02/skos/core#",
     shui: "http://www.w3.org/ns/shacl-ui/",
+    foaf: "http://xmlns.com/foaf/0.1/",
+    dc: "http://purl.org/dc/elements/1.1/",
+    dcterms: "http://purl.org/dc/terms/",
+    dcat: "http://www.w3.org/ns/dcat#",
+    schema: "http://schema.org/",
+    void: "http://rdfs.org/ns/void#",
+    prov: "http://www.w3.org/ns/prov#",
+    vann: "http://purl.org/vocab/vann/",
+    qb: "http://purl.org/linked-data/cube#",
+    time: "http://www.w3.org/2006/time#",
+    geo: "http://www.w3.org/2003/01/geo/wgs84_pos#",
+    as: "https://www.w3.org/ns/activitystreams#",
+    vs: "http://www.w3.org/2003/06/sw-vocab-status/ns#",
+    dbo: "http://dbpedia.org/ontology/",
+    dbr: "http://dbpedia.org/resource/",
+    dbp: "http://dbpedia.org/property/",
   });
 });
 

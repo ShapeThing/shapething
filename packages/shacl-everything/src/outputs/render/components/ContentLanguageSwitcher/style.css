@@ -110,8 +110,3 @@
   }
 }
 
-.st-content-language-switcher__option-language-code {
-  font-size: var(--st-font-size-small);
-  color: var(--st-color-text-muted);
-  font-style: italic;
-}
