@@ -4,7 +4,9 @@ import type { Term } from "@rdfjs/types";
 import { branchLabel } from "@/helpers/branchLabel.ts";
 import { shui } from "@/helpers/namespaces.ts";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
+import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { logicalBranches, withBranch, type LogicalBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -29,12 +31,13 @@ export default function LogicalConstraintSwitcher({
   activeBranch,
   onBranchSelected,
 }: Props) {
+  const { enableLogicalBranchSwitching } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const branches = logicalBranches(shape);
   const selectId = useId();
 
-  if (branches.length === 0) return null;
+  if (branches.length === 0 || !enableLogicalBranchSwitching) return null;
 
   const handleChange = async (branchShapeValue: string) => {
     const branch = branches.find(
@@ -58,23 +61,29 @@ export default function LogicalConstraintSwitcher({
       tooltip={<Localized id="logical-constraint-switcher-tooltip" />}
       htmlFor={selectId}
     >
-      <span className="st-select-wrapper st-select-wrapper-small">
-        <select
-          id={selectId}
-          className="st-select"
-          value={activeBranch?.shape.value ?? ""}
-          onChange={(e) => {
-            handleChange(e.target.value);
-          }}
-        >
-          {branches.map(({ shape: branchShape }) => (
-            <option key={branchShape.value} value={branchShape.value}>
-              {branchLabel(branchShape, shape.shapesGraph, [activeInterfaceLanguage])}
-            </option>
-          ))}
-        </select>
-        <span className="st-select-arrow" aria-hidden="true" />
-      </span>
+      <SelectListbox
+        triggerId={selectId}
+        value={activeBranch?.shape.value ?? ""}
+        options={branches.map(({ shape: branchShape }) => branchShape.value)}
+        onChange={(v) => {
+          handleChange(v);
+        }}
+        renderTriggerContent={(v) =>
+          branchLabel(
+            branches.find(({ shape: s }) => s.value === v)?.shape ?? branches[0].shape,
+            shape.shapesGraph,
+            [activeInterfaceLanguage],
+          )
+        }
+        renderOption={(v) =>
+          branchLabel(
+            branches.find(({ shape: s }) => s.value === v)?.shape ?? branches[0].shape,
+            shape.shapesGraph,
+            [activeInterfaceLanguage],
+          )
+        }
+        wrapperClassName="st-select-wrapper-small"
+      />
     </FormElement>
   );
 }

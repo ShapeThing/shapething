@@ -86,7 +86,7 @@ export default function PropertyUIComponentObject({
     },
     [propertyUIElement, object, index, onTermSet],
   );
-  const unit = propertyUIElement.getOne(sh("unit"))?.value;
+  const unit = propertyUIElement.get(sh("unit"))[0]?.value;
 
   const flyOut = currentlyFocused ? (
     <div className="st-property-object__fly-out">

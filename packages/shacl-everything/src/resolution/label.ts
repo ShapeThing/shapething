@@ -2,7 +2,10 @@ import { factory } from "@/helpers/factory.ts";
 import { localName } from "@/helpers/localName.ts";
 import { rdfs, sh, shui } from "@/helpers/namespaces.ts";
 import language from "@/resolution/language.ts";
-import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import {
+  parsePropertyPath,
+  type PropertyPath,
+} from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
@@ -19,11 +22,15 @@ type PropertyLabelOptions = {
 // term, but it can also surface in dataGraph (e.g. a class labelled alongside instance data) or
 // scoresGraph (e.g. a widget registry entry) - checked in that order, each graph only consulted
 // if the previous one had nothing.
-export function propertyLabel({ term, propertyShape, languages }: PropertyLabelOptions) {
+export function propertyLabel(
+  { term, propertyShape, languages }: PropertyLabelOptions,
+) {
   const { scoresGraph, shapesGraph, dataGraph } = propertyShape;
 
   const labelQuadViaShapes = language(
-    shapesGraph.getQuads(term, rdfs("label")).map(({ object }) => object as Literal),
+    shapesGraph.getQuads(term, rdfs("label")).map(({ object }) =>
+      object as Literal
+    ),
     languages,
   );
   if (labelQuadViaShapes) {
@@ -31,7 +38,9 @@ export function propertyLabel({ term, propertyShape, languages }: PropertyLabelO
   }
 
   const labelQuadViaData = language(
-    dataGraph.getQuads(term, rdfs("label")).map(({ object }) => object as Literal),
+    dataGraph.getQuads(term, rdfs("label")).map(({ object }) =>
+      object as Literal
+    ),
     languages,
   );
   if (labelQuadViaData) {
@@ -39,7 +48,9 @@ export function propertyLabel({ term, propertyShape, languages }: PropertyLabelO
   }
 
   const labelQuadViaScores = language(
-    scoresGraph.getQuads(term, rdfs("label")).map(({ object }) => object as Literal),
+    scoresGraph.getQuads(term, rdfs("label")).map(({ object }) =>
+      object as Literal
+    ),
     languages,
   );
   if (labelQuadViaScores) {
@@ -58,18 +69,22 @@ type ValueNodeLabelOptions = {
 // The property paths (sh:path) of every property shape on `propertyShape`'s sh:node that's
 // annotated shui:propertyRole `role` - shared by labelRolePropertyPaths and
 // depictionRolePropertyPaths, which only differ in which role they look for.
-function propertyPathsByRole(propertyShape: PropertyUIElement, role: NamedNode): PropertyPath[] {
+function propertyPathsByRole(
+  propertyShape: PropertyUIElement,
+  role: NamedNode,
+): PropertyPath[] {
   const { shapesGraph } = propertyShape;
-  const node = propertyShape.getOne(sh("node"));
 
-  return shapesGraph
-    .getQuads(node, sh("property"))
-    .filter(
-      ({ object: property }) =>
-        shapesGraph.getQuads(property, shui("propertyRole"), role).length > 0,
-    )
-    .map(({ object: property }) => parsePropertyPath(property, shapesGraph))
-    .filter((path): path is PropertyPath => path !== null);
+  return propertyShape.get(sh("node")).flatMap((node) =>
+    shapesGraph
+      .getQuads(node, sh("property"))
+      .filter(
+        ({ object: property }) =>
+          shapesGraph.getQuads(property, shui("propertyRole"), role).length > 0,
+      )
+      .map(({ object: property }) => parsePropertyPath(property, shapesGraph))
+      .filter((path): path is PropertyPath => path !== null)
+  );
 }
 
 /**
@@ -78,7 +93,9 @@ function propertyPathsByRole(propertyShape: PropertyUIElement, role: NamedNode):
  * display label. Shared by valueNodeLabel (walks the path per value) and anything that instead
  * needs the path itself, e.g. to build a SPARQL query (see structure/paths/toSparql.ts).
  */
-export function labelRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
+export function labelRolePropertyPaths(
+  propertyShape: PropertyUIElement,
+): PropertyPath[] {
   return propertyPathsByRole(propertyShape, shui("LabelRole"));
 }
 
@@ -87,7 +104,9 @@ export function labelRolePropertyPaths(propertyShape: PropertyUIElement): Proper
  * annotated shui:propertyRole shui:DepictionRole - i.e. what to walk from a value node to find an
  * image representing it. Mirrors labelRolePropertyPaths.
  */
-export function depictionRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
+export function depictionRolePropertyPaths(
+  propertyShape: PropertyUIElement,
+): PropertyPath[] {
   return propertyPathsByRole(propertyShape, shui("DepictionRole"));
 }
 
@@ -96,12 +115,16 @@ export function depictionRolePropertyPaths(propertyShape: PropertyUIElement): Pr
  * annotated shui:propertyRole shui:SubLabelRole - secondary, disambiguating text shown alongside
  * the main LabelRole label (e.g. a pseudonym next to a person's name). Mirrors labelRolePropertyPaths.
  */
-export function subLabelRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
+export function subLabelRolePropertyPaths(
+  propertyShape: PropertyUIElement,
+): PropertyPath[] {
   return propertyPathsByRole(propertyShape, shui("SubLabelRole"));
 }
 
 // 8.2.2 Value Node Labels
-export function valueNodeLabel({ term, propertyShape, languages }: ValueNodeLabelOptions): Literal {
+export function valueNodeLabel(
+  { term, propertyShape, languages }: ValueNodeLabelOptions,
+): Literal {
   const { dataGraph } = propertyShape;
 
   //  1. If V is a literal, use its lexical form as the label.

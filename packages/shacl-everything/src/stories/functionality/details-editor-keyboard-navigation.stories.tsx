@@ -85,6 +85,7 @@ export const keyboardNavigation: Story = {
     dataGraph: shapesAndData,
     nodeShapes: [factory.namedNode("http://example.org/shape")],
     focusNode: factory.namedNode("http://example.org/data"),
+    enableLogicalBranchSwitching: true,
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

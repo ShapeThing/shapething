@@ -8,6 +8,5 @@ export default {
   createTerm: () => factory.namedNode(""),
   // A field that can hold more than one class picks them all from the same tree - see
   // widget.tsx's multi-check mode - rather than opening a fresh tree per value.
-  singleUnifiedWidget: (shape) =>
-    parseFloat(shape.getOne(sh("maxCount"))?.value ?? "Infinity") !== 1,
+  singleUnifiedWidget: (shape) => (shape.get(sh("maxCount")) ?? Infinity) !== 1,
 } satisfies WidgetMeta;

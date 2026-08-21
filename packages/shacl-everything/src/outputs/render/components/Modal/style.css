@@ -5,6 +5,7 @@
   max-width: min(90vw, var(--size-15));
   width: 100%;
   color: var(--gray-8);
+  font-family: var(--st-font-family);
 
   &::backdrop {
     background-color: var(--gray-12);

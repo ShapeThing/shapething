@@ -1,3 +1,6 @@
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix dbo: <http://dbpedia.org/ontology/>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
 @prefix foaf: <http://xmlns.com/foaf/0.1/>.
 @prefix ex: <http://example.org/>.
@@ -9,7 +12,6 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix dash: <http://datashapes.org/dash#> .
-@prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
 @prefix dbr: <http://dbpedia.org/resource/> .
 
 ### Organization
@@ -125,10 +127,62 @@ ex:ResearcherShape a sh:NodeShape ;
     ] ;
     sh:property [
         sh:path schema:nationality ;
+        sh:in [
+            sh:select """
+                PREFIX dbo: <http://dbpedia.org/ontology/>
+                PREFIX dbp: <http://dbpedia.org/property/>
+                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+                PREFIX dct: <http://purl.org/dc/terms/>
+                PREFIX dbc: <http://dbpedia.org/resource/Category:>
+
+                SELECT DISTINCT ?country ?label WHERE {
+                    SERVICE <https://dbpedia.org/sparql> {
+                        ?country a dbo:Country ;
+                                rdfs:label ?label .
+
+                        # Ensure the label is in English
+                        FILTER (lang(?label) = "en")
+
+                        # Require at least ONE modern validation signal
+                        FILTER EXISTS {
+                            { ?country dct:subject dbc:Member_states_of_the_United_Nations }
+                            UNION
+                            { ?country dct:subject dbc:Sovereign_states }
+                            UNION
+                            { ?country dbp:iso3166code ?iso }
+                            UNION
+                            { ?country dbo:cca2 ?cca2 }
+                        }
+
+                        # Exclude entities with explicit end/dissolution dates or years
+                        FILTER NOT EXISTS { ?country dbo:dissolutionYear ?dYear }
+                        FILTER NOT EXISTS { ?country dbo:dissolutionDate ?dDate }
+                        FILTER NOT EXISTS { ?country dbp:yearEnd ?yEnd }
+                    }
+                }
+                ORDER BY ?label
+            """
+        ] ;        
+        sh:node [
+            sh:property [
+                sh:path rdfs:label ;
+                sh:minCount 1 ;
+                sh:datatype xsd:string ;
+                sh:maxCount 1 ;
+                sh:name "Country Name" ;
+                shui:propertyRole shui:LabelRole ;
+            ] ;
+
+            sh:property [
+                sh:path dbo:thumbnail ;
+                sh:minCount 1 ;
+                sh:maxCount 1 ;
+                sh:name "Country flag" ;
+                shui:propertyRole shui:DepictionRole ;
+            ] ;
+        ] ;
         sh:nodeKind sh:IRI ;
         sh:group <#person> ;
-        # sh:class schema:Country ;
-        stsr:endpoint <https://dbpedia.org/sparql> ;
         sh:order 6;
         sh:name "Nationality" ;
         sh:description "Link to a country IRI (e.g., ISO 3166 vocabulary)." ;

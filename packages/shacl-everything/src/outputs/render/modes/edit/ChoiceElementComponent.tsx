@@ -2,6 +2,7 @@ import { Localized } from "@fluent/react";
 import { useId, useMemo, useState } from "react";
 import { branchLabel } from "@/helpers/branchLabel.ts";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
+import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
 import { useActiveChoiceBranch } from "@/outputs/render/hooks/useActiveChoiceBranch.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import UIElementChildren from "@/outputs/render/modes/edit/UIElementChildren.tsx";
@@ -55,21 +56,26 @@ export default function ChoiceElementComponent({
         tooltip={<Localized id="logical-constraint-switcher-tooltip" />}
         htmlFor={selectId}
       >
-        <span className="st-select-wrapper">
-          <select
-            id={selectId}
-            className="st-select"
-            value={branchShapes[selectedIndex]?.value ?? ""}
-            onChange={(e) => setPinnedBranchKey(e.target.value)}
-          >
-            {branchShapes.map((branchShape) => (
-              <option key={branchShape.value} value={branchShape.value}>
-                {branchLabel(branchShape, choiceElement.shapesGraph, [activeInterfaceLanguage])}
-              </option>
-            ))}
-          </select>
-          <span className="st-select-arrow" aria-hidden="true" />
-        </span>
+        <SelectListbox
+          triggerId={selectId}
+          value={branchShapes[selectedIndex]?.value ?? ""}
+          options={branchShapes.map((s) => s.value)}
+          onChange={setPinnedBranchKey}
+          renderTriggerContent={(v) =>
+            branchLabel(
+              branchShapes.find((s) => s.value === v) ?? branchShapes[0],
+              choiceElement.shapesGraph,
+              [activeInterfaceLanguage],
+            )
+          }
+          renderOption={(v) =>
+            branchLabel(
+              branchShapes.find((s) => s.value === v) ?? branchShapes[0],
+              choiceElement.shapesGraph,
+              [activeInterfaceLanguage],
+            )
+          }
+        />
       </FormElement>
       {/* Keyed on the active branch: switching branches swaps in an entirely different set of
           properties, not just new props for the same ones - without this key, React would reuse

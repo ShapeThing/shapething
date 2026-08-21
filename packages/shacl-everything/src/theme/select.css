@@ -13,16 +13,18 @@
 
 .st-select {
   padding: var(--size-2);
-  padding-right: var(--size-6);
+  padding-inline-end: calc(var(--size-7) + var(--size-1));
   border-radius: var(--radius-2);
   border: 1px solid var(--gray-5);
   width: 100%;
   position: relative;
   z-index: 2;
   appearance: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   background-color: white;
   cursor: pointer;
-  padding-inline-end: var(--size-6);
 
   &:hover,
   &:focus {

@@ -17,8 +17,8 @@ export default function PropertyUIComponentAdd({
   setShowEmptyWidget: (show: boolean) => void;
 }) {
   const existingObjects = useDataGraphObjects(propertyUIElement);
-  const maxCount = parseFloat(propertyUIElement.getOne(sh("maxCount"))?.value ?? "Infinity");
-  const minCount = parseFloat(propertyUIElement.getOne(sh("minCount"))?.value ?? "0");
+  const maxCount = propertyUIElement.get(sh("maxCount")) ?? Infinity;
+  const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
   const fieldIsSingleValued = maxCount === 1 && minCount <= 1;
   let canAddValue = maxCount > 1 && existingObjects.length < maxCount && !showEmptyWidget;
   const { meta } = useWidget(shui("editor"), propertyUIElement) ?? {};

@@ -7,7 +7,10 @@ import { localName } from "@/helpers/localName.ts";
 import { rdfs, sh, shui, xsd } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
-import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import {
+  parsePropertyPath,
+  type PropertyPath,
+} from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import { insertPropertyPath } from "@/structure/paths/insertPropertyPath.ts";
 import { replacePropertyPath } from "@/structure/paths/replacePropertyPath.ts";
@@ -23,6 +26,48 @@ export type PropertyUIElementOptions = {
   focusNode: Quad_Subject;
   propertyShapes: NamedNode[];
 };
+
+type ShBase = "http://www.w3.org/ns/shacl#";
+type ShIri<T extends string> = `${ShBase}${T}`;
+
+type NumberPredicates = ShIri<
+  | "minCount"
+  | "maxCount"
+  | "minLength"
+  | "maxLength"
+  | "qualifiedMinCount"
+  | "qualifiedMaxCount"
+  | "minListLength"
+  | "maxListLength"
+  | "order"
+  | "minExclusive"
+  | "minInclusive"
+  | "maxExclusive"
+  | "maxInclusive"
+>;
+type BooleanPredicates = ShIri<
+  | "closed"
+  | "singleLine"
+  | "uniqueLang"
+  | "uniqueMembers"
+  | "reificationRequired"
+>;
+type SingleTermPredicates = ShIri<
+  | "name"
+  | "codeIdentifier"
+  | "group"
+  | "severity"
+  | "equals"
+  | "hasValue"
+  | "datatype"
+>;
+
+export type PredicateReturn<Iri extends string> = Iri extends NumberPredicates
+  ? number | undefined
+  : Iri extends BooleanPredicates ? boolean | undefined
+  : Iri extends ShIri<"pattern"> ? RegExp | undefined
+  : Iri extends SingleTermPredicates ? Term | undefined
+  : Term[];
 
 export class PropertyUIElement {
   public shapesGraph: RdfStore;
@@ -49,12 +94,12 @@ export class PropertyUIElement {
    * registered resolution, and the common case of a single value, are simply
    * deduplicated and returned as-is.
    */
-  get(predicate: NamedNode): Term[] {
+  get<Iri extends string>(predicate: NamedNode<Iri>): PredicateReturn<Iri> {
     const values = orderedValues(this, predicate);
-    if (values.length === 0) return [];
-
     const resolve = resolutions.get(predicate.value);
-    return resolve ? resolve(values, this, predicate) : dedupeTerms(values);
+    return (resolve
+      ? resolve(values, this, predicate)
+      : dedupeTerms(values)) as PredicateReturn<Iri>;
   }
 
   /**
@@ -88,14 +133,19 @@ export class PropertyUIElement {
   replaceObject(oldValue: Term, newValue: Term): void {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return;
-    const existing = walkPropertyPath(path, this.focusNode, this.dataGraph).some((term) =>
-      term.equals(oldValue),
-    );
+    const existing = walkPropertyPath(path, this.focusNode, this.dataGraph)
+      .some((term) => term.equals(oldValue));
 
     if (!existing) {
       insertPropertyPath(path, this.focusNode, this.dataGraph, newValue);
     } else {
-      replacePropertyPath(path, this.focusNode, this.dataGraph, oldValue, newValue);
+      replacePropertyPath(
+        path,
+        this.focusNode,
+        this.dataGraph,
+        oldValue,
+        newValue,
+      );
     }
   }
 
@@ -117,17 +167,13 @@ export class PropertyUIElement {
   }
 
   /**
-   * Convenience for single-valued predicates (e.g. sh:name, sh:minCount): `get(predicate)[0]`.
-   *
-   * With `languages`, picks the best BCP47 match among multi-lingual values (e.g. sh:name
-   * "Given name"@en, "Gegeven naam"@nl) directly from the raw declared values - ahead of any
-   * per-predicate merge like sh:name's "lowest sh:order wins" - falling back to a language-less
-   * value and then to whatever is there when nothing matches. It has no effect (falls through to
-   * `get(predicate)[0]`) when there is nothing language-tagged to choose between.
+   * Picks the best BCP47 match among multi-lingual values (e.g. sh:name "Given name"@en,
+   * "Gegeven naam"@nl), falling back to a language-less value and then to whatever is there
+   * when nothing matches. Without `languages`, returns the first raw declared value by sh:order.
    */
   getOne(predicate: NamedNode, languages?: BCP47[]): Term | undefined {
-    if (!languages || languages.length === 0) return this.get(predicate)[0];
-    return bestByLanguage(orderedValues(this, predicate), languages);
+    const raw = orderedValues(this, predicate);
+    return languages?.length ? bestByLanguage(raw, languages) : raw[0];
   }
 
   /**
@@ -207,7 +253,9 @@ export class PropertyUIElement {
 // shui:editor, ...) - so a grouped element backed by more than one property shape needs those
 // triples merged onto one synthetic node first, for the same reason get() merges their values:
 // SHACL treats repeated constraints conjunctively whether declared on one shape or several.
-function widgetShapeSource(element: PropertyUIElement): { shapeNode: Term; shapesGraph: RdfStore } {
+function widgetShapeSource(
+  element: PropertyUIElement,
+): { shapeNode: Term; shapesGraph: RdfStore } {
   if (element.propertyShapes.length === 1) {
     return {
       shapeNode: element.propertyShapes[0],
@@ -258,25 +306,39 @@ function terminalPredicate(path: PropertyPath): NamedNode | undefined {
 // rdfs:label lives on the RDF property the shape targets (the ontology term), not on the (often
 // blank) SHACL property shape node itself, so it needs a separate lookup by path rather than
 // going through get()/getOne(), which only ever query the property shape(s) as subjects.
-function ontologyLabel(element: PropertyUIElement, languages?: BCP47[]): Term | undefined {
-  const path = parsePropertyPath(element.propertyShapes[0], element.shapesGraph);
+function ontologyLabel(
+  element: PropertyUIElement,
+  languages?: BCP47[],
+): Term | undefined {
+  const path = parsePropertyPath(
+    element.propertyShapes[0],
+    element.shapesGraph,
+  );
   const predicate = path && terminalPredicate(path);
   if (!predicate) return undefined;
 
-  const values = element.shapesGraph.getQuads(predicate, rdfs("label")).map((quad) => quad.object);
+  const values = element.shapesGraph.getQuads(predicate, rdfs("label")).map((
+    quad,
+  ) => quad.object);
   if (values.length === 0) return undefined;
 
-  return languages && languages.length > 0 ? bestByLanguage(values, languages) : values[0];
+  return languages && languages.length > 0
+    ? bestByLanguage(values, languages)
+    : values[0];
 }
 
 // Raw values for `predicate` across every grouped shape, in ascending sh:order - the ordering
 // both a keepFirst-style resolution and language selection rely on to break ties consistently.
-function orderedValues(element: PropertyUIElement, predicate: NamedNode): Term[] {
+function orderedValues(
+  element: PropertyUIElement,
+  predicate: NamedNode,
+): Term[] {
   const orderedShapes = [...element.propertyShapes].sort(
-    (a, b) => shapeOrder(a, element.shapesGraph) - shapeOrder(b, element.shapesGraph),
+    (a, b) =>
+      shapeOrder(a, element.shapesGraph) - shapeOrder(b, element.shapesGraph),
   );
   return orderedShapes.flatMap((shape) =>
-    element.shapesGraph.getQuads(shape, predicate).map((quad) => quad.object),
+    element.shapesGraph.getQuads(shape, predicate).map((quad) => quad.object)
   );
 }
 
@@ -308,94 +370,121 @@ function literalOrder(term: Term): number {
     : parseFloat(term.value);
 }
 
-type ResolutionFunction = (values: Term[], element: PropertyUIElement, predicate: Term) => Term[];
+type ResolutionFunction<T> = (
+  values: Term[],
+  element: PropertyUIElement,
+  predicate: Term,
+) => T;
 
-const keepHighestLiteral: ResolutionFunction = (values) => {
-  return [
-    values.reduce((highest, term) => (literalOrder(term) > literalOrder(highest) ? term : highest)),
-  ];
+const keepHighestLiteral: ResolutionFunction<number | undefined> = (values) => {
+  if (!values.length) return undefined;
+  return literalOrder(values.reduce((
+    highest,
+    term,
+  ) => (literalOrder(term) > literalOrder(highest) ? term : highest)));
 };
 
-const keepLowestLiteral: ResolutionFunction = (values) => {
-  return [
-    values.reduce((lowest, term) => (literalOrder(term) < literalOrder(lowest) ? term : lowest)),
-  ];
+const keepLowestLiteral: ResolutionFunction<number | undefined> = (values) => {
+  if (!values.length) return undefined;
+  return literalOrder(values.reduce((
+    lowest,
+    term,
+  ) => (literalOrder(term) < literalOrder(lowest) ? term : lowest)));
 };
 
-const keepHighestInteger: ResolutionFunction = (values) => {
-  const highest = Math.max(...values.map((term) => parseInt(term.value)));
-  return [factory.literal(highest.toString(), xsd("integer"))];
+const keepHighestInteger: ResolutionFunction<number | undefined> = (values) => {
+  if (!values.length) return undefined;
+  return Math.max(...values.map((term) => parseInt(term.value)));
 };
 
-const keepLowestInteger: ResolutionFunction = (values) => {
-  const lowest = Math.min(...values.map((term) => parseInt(term.value)));
-  return [factory.literal(lowest.toString(), xsd("integer"))];
+const keepLowestInteger: ResolutionFunction<number | undefined> = (values) => {
+  if (!values.length) return undefined;
+  return Math.min(...values.map((term) => parseInt(term.value)));
 };
 
 // Values are gathered in ascending sh:order across shapes, so `values[0]` already is "the first
 // value declared by the lowest-order shape that declares one" - shapes without a value contribute
 // nothing to the array, so there is nothing to skip over.
-const keepFirst: ResolutionFunction = (values) => {
-  return values.length ? [values[0]] : [];
+const keepFirst: ResolutionFunction<Term | undefined> = (values) => values[0];
+
+const keepAll: ResolutionFunction<Term[]> = (values) => dedupeTerms(values);
+
+const keepAllListItems: ResolutionFunction<Term[]> = (values, element) => {
+  return dedupeTerms(
+    values.flatMap((value) => expandListOrTerm(value, element.shapesGraph)),
+  );
 };
 
-const keepAll: ResolutionFunction = (values) => {
-  return dedupeTerms(values);
+const keepListIntersection: ResolutionFunction<Term[]> = (values, element) => {
+  if (!values.length) return [];
+  const sets = values.map((value) =>
+    dedupeTerms(expandListOrTerm(value, element.shapesGraph))
+  );
+  return sets.reduce((acc, set) =>
+    acc.filter((term) => set.some((other) => other.equals(term)))
+  );
 };
 
-const keepAllListItems: ResolutionFunction = (values, element) => {
-  return dedupeTerms(values.flatMap((value) => expandListOrTerm(value, element.shapesGraph)));
-};
-
-const keepListIntersection: ResolutionFunction = (values, element) => {
-  const sets = values.map((value) => dedupeTerms(expandListOrTerm(value, element.shapesGraph)));
-  return sets.reduce((acc, set) => acc.filter((term) => set.some((other) => other.equals(term))));
-};
-
-// sh:pattern applies conjunctively: a value must match every declared pattern. That is folded into
-// a single regex via lookaheads rather than returned as multiple terms, since consumers expect one
-// pattern string (e.g. for an <input pattern> attribute).
-const combinePatterns: ResolutionFunction = (values) => {
+// sh:pattern applies conjunctively: a value must match every declared pattern. Combined into one
+// RegExp via lookaheads so consumers get a single object to test against (e.g. new RegExp / .source
+// for <input pattern>).
+const combinePatterns: ResolutionFunction<RegExp | undefined> = (values) => {
   const patterns = dedupeTerms(values);
-  if (patterns.length === 1) return patterns;
-  const combined = patterns.map((pattern) => `(?=.*(?:${pattern.value}))`).join("");
-  return [factory.literal(combined, xsd("string"))];
+  if (!patterns.length) return undefined;
+  if (patterns.length === 1) return new RegExp(patterns[0].value);
+  const combined = patterns.map((p) => `(?=.*(?:${p.value}))`).join("");
+  return new RegExp(combined);
 };
 
-const resolveBooleans: ResolutionFunction = (values) => {
-  const isTrue = values.some((term) => term.value === "true");
-  return [factory.literal(isTrue ? "true" : "false", xsd("boolean"))];
+const resolveBooleans: ResolutionFunction<boolean | undefined> = (values) => {
+  if (!values.length) return undefined;
+  return values.some((term) => term.value === "true");
 };
 
-const enforceSame: ResolutionFunction = (values, _element, predicate) => {
+const enforceSame: ResolutionFunction<Term | undefined> = (
+  values,
+  _element,
+  predicate,
+) => {
   const unique = dedupeTerms(values);
   if (unique.length > 1) {
     throw new Error(
-      `Conflicting values for property ${predicate.value}: ${unique
-        .map((term) => term.value)
-        .join(", ")}`,
+      `Conflicting values for property ${predicate.value}: ${
+        unique
+          .map((term) => term.value)
+          .join(", ")
+      }`,
     );
   }
-  return unique;
+  return unique[0];
 };
 
-function enforceSingular(resolve: ResolutionFunction): ResolutionFunction {
+function enforceSingular(
+  resolve: ResolutionFunction<Term[]>,
+): ResolutionFunction<Term | undefined> {
   return (values, element, predicate) => {
     const result = resolve(values, element, predicate);
     if (result.length > 1) {
       throw new Error(
-        `Expected a singular value for ${localName(predicate)} but found disjoint values: ${result
-          .map((term) => localName(term) ?? term.value)
-          .join(", ")}`,
+        `Expected a singular value for ${
+          localName(predicate)
+        } but found disjoint values: ${
+          result
+            .map((term) => localName(term) ?? term.value)
+            .join(", ")
+        }`,
       );
     }
-    return result;
+    return result[0];
   };
 }
 
 // sh:class ex:Dog, ex:Animal means a value must be a Dog (Dog being the more specific class); this
 // keeps only the classes that are not an ancestor (via rdfs:subClassOf) of another declared class.
-const keepMostSpecificClasses: ResolutionFunction = (values, element) => {
+const keepMostSpecificClasses: ResolutionFunction<Term[]> = (
+  values,
+  element,
+) => {
   const classes = dedupeTerms(values);
   const ancestorsOf = new Map<string, Term[]>();
 
@@ -405,7 +494,9 @@ const keepMostSpecificClasses: ResolutionFunction = (values, element) => {
     while (frontier.length > 0) {
       const next: Term[] = [];
       for (const node of frontier) {
-        for (const quad of element.shapesGraph.getQuads(node, rdfs("subClassOf"))) {
+        for (
+          const quad of element.shapesGraph.getQuads(node, rdfs("subClassOf"))
+        ) {
           ancestors.push(quad.object);
           next.push(quad.object);
         }
@@ -418,7 +509,9 @@ const keepMostSpecificClasses: ResolutionFunction = (values, element) => {
   return classes.filter((classEntry) => {
     return !classes.some((otherClass) => {
       if (classEntry.equals(otherClass)) return false;
-      return ancestorsOf.get(termKey(otherClass))?.some((ancestor) => ancestor.equals(classEntry));
+      return ancestorsOf.get(termKey(otherClass))?.some((ancestor) =>
+        ancestor.equals(classEntry)
+      );
     });
   });
 };
@@ -434,14 +527,14 @@ const SEVERITY_RANK = new Map<string, number>([
   [sh("Info").value, 0],
 ]);
 
-const keepMostSevere: ResolutionFunction = (values) => {
-  return [
-    values.reduce((mostSevere, term) =>
-      (SEVERITY_RANK.get(term.value) ?? 0) > (SEVERITY_RANK.get(mostSevere.value) ?? 0)
-        ? term
-        : mostSevere,
-    ),
-  ];
+const keepMostSevere: ResolutionFunction<Term | undefined> = (values) => {
+  if (!values.length) return undefined;
+  return values.reduce((mostSevere, term) =>
+    (SEVERITY_RANK.get(term.value) ?? 0) >
+        (SEVERITY_RANK.get(mostSevere.value) ?? 0)
+      ? term
+      : mostSevere
+  );
 };
 
 const NODE_KIND_COMBINATIONS = new Map<string, NamedNode[]>([
@@ -454,31 +547,35 @@ const NODE_KIND_COMBINATIONS = new Map<string, NamedNode[]>([
   [sh("TripleTerm").value, [sh("TripleTerm")]],
 ]);
 
-const nodeKindIntersection: ResolutionFunction = (values, element) => {
+const nodeKindIntersection: ResolutionFunction<Term[]> = (values, element) => {
+  if (!values.length) return [];
   const sets = values.map((value) =>
     dedupeTerms(
       expandListOrTerm(value, element.shapesGraph).flatMap(
         (item) => NODE_KIND_COMBINATIONS.get(item.value) ?? [item],
       ),
-    ),
+    )
   );
 
   const intersection = sets.reduce((acc, set) =>
-    acc.filter((term) => set.some((other) => other.equals(term))),
+    acc.filter((term) => set.some((other) => other.equals(term)))
   );
 
   if (intersection.length === 0) {
     throw new Error(
-      `No intersection found for sh:nodeKind: ${sets
-        .map((set) => set.map((term) => localName(term)).join(", "))
-        .join(" | ")}`,
+      `No intersection found for sh:nodeKind: ${
+        sets
+          .map((set) => set.map((term) => localName(term)).join(", "))
+          .join(" | ")
+      }`,
     );
   }
 
   return intersection;
 };
 
-const resolutions = new Map<string, ResolutionFunction>([
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const resolutions = new Map<string, ResolutionFunction<any>>([
   [sh("class").value, keepMostSpecificClasses],
   [sh("datatype").value, enforceSingular(keepMostSpecificClasses)],
   [sh("nodeKind").value, nodeKindIntersection],

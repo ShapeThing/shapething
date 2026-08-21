@@ -1,6 +1,7 @@
 import { useId } from "react";
 import { shui } from "@/helpers/namespaces.ts";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
+import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useWidgets } from "@/outputs/render/hooks/useWidgets.tsx";
@@ -27,7 +28,7 @@ export default function WidgetSwitcher({
     ? widgets.find(({ Widget }) => Widget === ActiveWidget)?.iri
     : undefined;
 
-  return enableWidgetSwitching && widgets.length > 1 ? (
+  return enableWidgetSwitching ? (
     <FormElement
       className="st-widget-switcher"
       size="small"
@@ -35,31 +36,23 @@ export default function WidgetSwitcher({
       tooltip={<Localized id="widget-switcher-tooltip" />}
       htmlFor={selectId}
     >
-      <span className="st-select-wrapper st-select-wrapper-small">
-        <select
-          id={selectId}
-          className="st-select"
-          value={activeWidgetIri?.value ?? ""}
-          onChange={(e) => {
-            setActiveWidget(() => widgets.find(({ iri }) => iri.value === e.target.value)?.Widget);
-          }}
-        >
-          {widgets.map(({ iri, score }) => {
-            const widgetLabel = propertyLabel({
-              term: iri,
-              propertyShape: shape,
-              languages: [activeInterfaceLanguage],
-            });
-
-            return (
-              <option key={iri.value} value={iri.value}>
-                {widgetLabel} ({score})
-              </option>
-            );
-          })}
-        </select>
-        <span className="st-select-arrow" aria-hidden="true" />
-      </span>
+      <SelectListbox
+        triggerId={selectId}
+        value={activeWidgetIri?.value ?? ""}
+        options={widgets.map(({ iri }) => iri.value)}
+        onChange={(v) => setActiveWidget(() => widgets.find(({ iri }) => iri.value === v)?.Widget)}
+        renderTriggerContent={(v) => {
+          const w = widgets.find(({ iri }) => iri.value === v);
+          if (!w) return v;
+          return `${propertyLabel({ term: w.iri, propertyShape: shape, languages: [activeInterfaceLanguage] })} (${w.score})`;
+        }}
+        renderOption={(v) => {
+          const w = widgets.find(({ iri }) => iri.value === v);
+          if (!w) return v;
+          return `${propertyLabel({ term: w.iri, propertyShape: shape, languages: [activeInterfaceLanguage] })} (${w.score})`;
+        }}
+        wrapperClassName="st-select-wrapper-small"
+      />
     </FormElement>
   ) : null;
 }

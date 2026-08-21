@@ -3,6 +3,7 @@ import { sh } from "@/helpers/namespaces.ts";
 import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import type { WidgetProps } from "@/widgets/types.ts";
+import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
 
 export default function TextAreaWithLangEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
   const { languageMode } = useEnvironment();
@@ -29,21 +30,15 @@ export default function TextAreaWithLangEditor({ shape, term, setTerm, labelledB
         {localValue}
       </textarea>
       {languageMode === "individual" && languages.length > 0 && (
-        <span className="st-select-wrapper">
-          <select
-            className="st-select"
-            value={language}
-            onChange={(e) => setTerm(factory.literal(term.value, e.target.value))}
-            aria-labelledby={labelledBy}
-          >
-            {languages.map((language) => (
-              <option key={language.value} value={language.value}>
-                {language.value}
-              </option>
-            ))}
-          </select>
-          <span className="st-select-arrow" aria-hidden="true" />
-        </span>
+        <SelectListbox
+          ariaLabelledby={labelledBy}
+          value={language}
+          options={languages.map((l) => l.value)}
+          onChange={(v) => setTerm(factory.literal(term.value, v))}
+          renderTriggerContent={(v) => v}
+          renderOption={(v) => v}
+          wrapperClassName="st-select-wrapper-small"
+        />
       )}
     </>
   );

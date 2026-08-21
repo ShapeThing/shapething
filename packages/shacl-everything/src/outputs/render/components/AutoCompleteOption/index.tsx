@@ -38,6 +38,8 @@ function highlightMatches(text: string, query: string | undefined): ReactNode {
 export default function AutoCompleteOption({ term, label, subLabel, depiction, highlight }: Props) {
   const [hasError, setHasError] = useState<boolean | undefined>(undefined);
   const displayLabel = label ?? term.value.split(/\/|#/g).pop() ?? "";
+  const isDirectRenderable =
+    depiction?.value.includes(".svg") || depiction?.value.includes("data:");
 
   return (
     <span className="st-autocomplete-option">
@@ -47,7 +49,11 @@ export default function AutoCompleteOption({ term, label, subLabel, depiction, h
           onError={() => setHasError(true)}
           onLoad={() => setHasError(false)}
           className="st-autocomplete-option__depiction"
-          src={`//wsrv.nl/?url=${encodeURIComponent(depiction.value)}&w=64&h=64&fit=cover`}
+          src={
+            isDirectRenderable
+              ? depiction.value
+              : `//wsrv.nl/?url=${encodeURIComponent(depiction.value)}&w=64&h=64&fit=cover`
+          }
           alt=""
         />
       ) : (

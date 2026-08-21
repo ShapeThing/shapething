@@ -1,15 +1,3 @@
-@position-try --tooltip-right {
-  position-area: center right;
-}
-
-@position-try --tooltip-top {
-  position-area: top center;
-}
-
-@position-try --tooltip-bottom {
-  position-area: bottom center;
-}
-
 .tooltip {
   border: 2px solid var(--color);
   position: fixed;
@@ -18,13 +6,33 @@
   border-radius: var(--radius-2);
   padding: var(--size-3);
   color: var(--gray-8);
+  /* Sized to content rather than shrink-to-fit-to-available-space - the latter is what let the
+     tooltip render right at min-width against a cramped side instead of ever being considered
+     for a comfier one; see Tooltip/index.tsx's recompute(), which picks the side and relies on
+     this being the tooltip's real size regardless of which side it ends up rendered on. */
+  width: max-content;
   max-width: var(--size-14);
+  min-width: var(--size-10);
   overflow-wrap: break-word;
   position-anchor: var(--tooltip-anchor);
-  position-area: center left;
-  position-try-fallbacks: --tooltip-right, --tooltip-top, --tooltip-bottom;
   position-visibility: anchors-visible;
   margin: var(--size-2);
+
+  &[data-placement="left"] {
+    position-area: center left;
+  }
+
+  &[data-placement="right"] {
+    position-area: center right;
+  }
+
+  &[data-placement="top"] {
+    position-area: top center;
+  }
+
+  &[data-placement="bottom"] {
+    position-area: bottom center;
+  }
 
   &:after {
     content: "";

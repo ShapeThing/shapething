@@ -1,12 +1,16 @@
 import type { StorybookConfig } from "@storybook/react-vite";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { checkBannedContent } from "./checkBannedContent.ts";
 import { copyStoryFixtures } from "./copyStoryFixtures.ts";
 
 function getAbsolutePath(value: string) {
   return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
 }
-const storiesDir = join(dirname(fileURLToPath(import.meta.url)), "../src/stories");
+const storiesDir = join(
+  dirname(fileURLToPath(import.meta.url)),
+  "../src/stories",
+);
 
 const config: StorybookConfig = {
   stories: [
@@ -21,8 +25,12 @@ const config: StorybookConfig = {
   ],
   framework: getAbsolutePath("@storybook/react-vite"),
   async viteFinal(config) {
+    const srcDir = join(dirname(fileURLToPath(import.meta.url)), "../src");
     config.plugins ??= [];
-    config.plugins.push(copyStoryFixtures(storiesDir));
+    config.plugins.push(
+      checkBannedContent(srcDir),
+      copyStoryFixtures(storiesDir),
+    );
     return config;
   },
 };

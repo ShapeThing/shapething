@@ -1,6 +1,6 @@
 import { clsx } from "clsx";
 import type { ReactNode } from "react";
-import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
+import Tooltip, { type Placement } from "@/outputs/render/components/Tooltip/index.tsx";
 import { Help } from "@/helpers/icons.tsx";
 import { Localized } from "@fluent/react";
 import "./style.css";
@@ -19,6 +19,8 @@ type Props = {
   children?: ReactNode;
   className?: string;
   tooltip?: ReactNode;
+  // Preferred side for the tooltip - see Tooltip's own `placement` prop.
+  tooltipPlacement?: Placement;
   size?: "small" | "medium";
 };
 
@@ -33,6 +35,7 @@ export default function FormElement({
   actions,
   className,
   tooltip,
+  tooltipPlacement,
   size = "medium",
 }: Props) {
   return (
@@ -51,7 +54,7 @@ export default function FormElement({
         {(actions || tooltip) && (
           <div className="st-form-element__actions">
             {tooltip && (
-              <Tooltip bare enabled tip={tooltip}>
+              <Tooltip bare enabled tip={tooltip} placement={tooltipPlacement}>
                 <Localized id="form-element-help" attrs={{ "aria-label": true }}>
                   {/* Sits before the field itself in the DOM, so a normal tab stop here would
                       interrupt Tab from the label reaching the field - it's still reachable by
