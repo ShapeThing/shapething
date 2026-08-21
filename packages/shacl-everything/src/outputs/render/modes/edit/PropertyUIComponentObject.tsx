@@ -109,25 +109,13 @@ export default function PropertyUIComponentObject({
     <div className="st-property-object">
       {ActiveWidget && (
         <div className="st-property-object__widget" ref={ref} data-widget={ActiveWidget?.name}>
-          {ActiveWidget.placesOwnFlyOut ? (
-            <ActiveWidget
-              shape={effectiveProperty}
-              term={object}
-              setTerm={setTerm}
-              flyOut={flyOut}
-              labelledBy={labelledBy}
-            />
-          ) : (
-            <>
-              <ActiveWidget
-                shape={effectiveProperty}
-                term={object}
-                setTerm={setTerm}
-                labelledBy={labelledBy}
-              />
-              {flyOut}
-            </>
-          )}
+          <ActiveWidget
+            shape={effectiveProperty}
+            term={object}
+            setTerm={setTerm}
+            labelledBy={labelledBy}
+          />
+          {flyOut}
         </div>
       )}
       {unit && <span className="st-property-object__unit">{unit}</span>}

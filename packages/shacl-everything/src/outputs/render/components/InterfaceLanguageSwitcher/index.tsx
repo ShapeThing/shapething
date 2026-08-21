@@ -10,11 +10,11 @@ export default function InterfaceLanguageSwitcher() {
   const { activeInterfaceLanguage, setActiveInterfaceLanguage } = useInterfaceLanguage();
   // Every switchable interface language: the shipped/overridden .ftl locales unioned with every
   // language tag found on sh:name/sh:description in shapesGraph - see preprocess/languages.ts.
-  const { interfaceLanguages } = useEnvironment();
+  const { interfaceLanguages, languageMode } = useEnvironment();
   const interfaceLanguageLabels = languageLabels(interfaceLanguages);
   const selectId = useId();
 
-  return interfaceLanguages.length > 1 ? (
+  return interfaceLanguages.length > 1 && languageMode === "switcher" ? (
     <FormElement
       className="st-interface-language-switcher"
       label={<Localized id="interface-language-switcher-label">Interface language</Localized>}

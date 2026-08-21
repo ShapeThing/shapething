@@ -11,12 +11,6 @@ import useActiveElement from "@/outputs/render/hooks/useActiveElement.tsx";
  */
 export function useFocusWithinNearest(ref: RefObject<Element | null>, selector: string): boolean {
   const activeElement = useActiveElement();
-
-  const hasBlock = ref.current?.querySelector("[data-block-fly-out]") !== null;
-  if (hasBlock) {
-    return false;
-  }
-
   const container = ref.current?.closest(selector) ?? null;
   if (!container || !activeElement) return false;
   return activeElement.closest(selector) === container;
