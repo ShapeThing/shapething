@@ -31,8 +31,8 @@
     "test": "vp test",
     "check": "vp check",
     "prepublishOnly": "vp run build",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "storybook": "pnpm --filter @shapething/resource-fetcher build && storybook dev -p 6006",
+    "build-storybook": "pnpm --filter @shapething/resource-fetcher build && storybook build"
   },
   "dependencies": {
     "@comunica/query-sparql": "^4.5.0",
