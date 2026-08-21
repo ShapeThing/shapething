@@ -66,16 +66,22 @@ type ValueNodeLabelOptions = {
   languages?: BCP47[];
 };
 
-// The property paths (sh:path) of every property shape on `propertyShape`'s sh:node that's
-// annotated shui:propertyRole `role` - shared by labelRolePropertyPaths and
-// depictionRolePropertyPaths, which only differ in which role they look for.
+// The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
+// node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole `role`.
 function propertyPathsByRole(
   propertyShape: PropertyUIElement,
   role: NamedNode,
 ): PropertyPath[] {
   const { shapesGraph } = propertyShape;
 
-  return propertyShape.get(sh("node")).flatMap((node) =>
+  const explicitNodes = propertyShape.get(sh("node"));
+  const classNodes = propertyShape.get(sh("class")).flatMap((classIri) =>
+    shapesGraph
+      .getQuads(null, sh("targetClass"), classIri)
+      .map(({ subject }) => subject)
+  );
+
+  return [...explicitNodes, ...classNodes].flatMap((node) =>
     shapesGraph
       .getQuads(node, sh("property"))
       .filter(
@@ -88,10 +94,11 @@ function propertyPathsByRole(
 }
 
 /**
- * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node that's
- * annotated shui:propertyRole shui:LabelRole - i.e. what to walk from a value node to find its
- * display label. Shared by valueNodeLabel (walks the path per value) and anything that instead
- * needs the path itself, e.g. to build a SPARQL query (see structure/paths/toSparql.ts).
+ * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
+ * node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole
+ * shui:LabelRole - i.e. what to walk from a value node to find its display label. Shared by
+ * valueNodeLabel (walks the path per value) and anything that instead needs the path itself, e.g.
+ * to build a SPARQL query (see structure/paths/toSparql.ts).
  */
 export function labelRolePropertyPaths(
   propertyShape: PropertyUIElement,
@@ -100,9 +107,10 @@ export function labelRolePropertyPaths(
 }
 
 /**
- * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node that's
- * annotated shui:propertyRole shui:DepictionRole - i.e. what to walk from a value node to find an
- * image representing it. Mirrors labelRolePropertyPaths.
+ * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
+ * node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole
+ * shui:DepictionRole - i.e. what to walk from a value node to find an image representing it.
+ * Mirrors labelRolePropertyPaths.
  */
 export function depictionRolePropertyPaths(
   propertyShape: PropertyUIElement,
@@ -111,9 +119,10 @@ export function depictionRolePropertyPaths(
 }
 
 /**
- * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node that's
- * annotated shui:propertyRole shui:SubLabelRole - secondary, disambiguating text shown alongside
- * the main LabelRole label (e.g. a pseudonym next to a person's name). Mirrors labelRolePropertyPaths.
+ * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
+ * node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole
+ * shui:SubLabelRole - secondary, disambiguating text shown alongside the main LabelRole label
+ * (e.g. a pseudonym next to a person's name). Mirrors labelRolePropertyPaths.
  */
 export function subLabelRolePropertyPaths(
   propertyShape: PropertyUIElement,
