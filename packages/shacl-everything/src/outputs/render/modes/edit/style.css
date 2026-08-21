@@ -106,3 +106,11 @@
     border-bottom: var(--size) solid var(--st-primary-color-lighter);
   }
 }
+
+.st-edit-mode--actions {
+  display: flex;
+  gap: var(--size-2);
+  margin-top: var(--size-3);
+  align-items: center;
+  justify-content: flex-end;
+}

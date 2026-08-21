@@ -4,14 +4,14 @@ import { factory } from "@/helpers/factory.ts";
 import { xsd } from "@/helpers/namespaces.ts";
 
 test("termKey - named nodes with the same IRI produce the same key", () => {
-  const a = factory.namedNode("http://example.com/Alice");
-  const b = factory.namedNode("http://example.com/Alice");
+  const a = factory.namedNode("http://example.org/Alice");
+  const b = factory.namedNode("http://example.org/Alice");
   expect(termKey(a)).toEqual(termKey(b));
 });
 
 test("termKey - named nodes with different IRIs produce different keys", () => {
-  const a = factory.namedNode("http://example.com/Alice");
-  const b = factory.namedNode("http://example.com/Bob");
+  const a = factory.namedNode("http://example.org/Alice");
+  const b = factory.namedNode("http://example.org/Bob");
   expect(termKey(a)).not.toEqual(termKey(b));
 });
 
@@ -46,7 +46,7 @@ test("termKey - literals differing only by datatype produce different keys", () 
 });
 
 test("termKey - a literal and a named node with the same value produce different keys", () => {
-  const literal = factory.literal("http://example.com/Alice");
-  const namedNode = factory.namedNode("http://example.com/Alice");
+  const literal = factory.literal("http://example.org/Alice");
+  const namedNode = factory.namedNode("http://example.org/Alice");
   expect(termKey(literal)).not.toEqual(termKey(namedNode));
 });

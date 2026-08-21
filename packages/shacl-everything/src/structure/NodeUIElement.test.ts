@@ -10,7 +10,7 @@ test("NodeUIElement", async () => {
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 
         ex:Recipe a sh:NodeShape, rdfs:Class ;
@@ -24,7 +24,7 @@ test("NodeUIElement", async () => {
 
   const dataGraph = await parseRdf(
     `
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:ChickenSoup a ex:Recipe ;
             ex:ingredient ex:Chicken, ex:Water, ex:Salt .
@@ -46,7 +46,7 @@ test("propertyUiElements groups two property shapes with an identical sh:path in
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:property ex:ingredientMinShape, ex:ingredientMaxShape .
@@ -81,7 +81,7 @@ test("propertyUiElements groups sh:path forms that resolve to the same path", as
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:property ex:ingredientShape, ex:ingredientSequenceShape .
@@ -113,7 +113,7 @@ test("propertyUiElements keeps distinct paths as separate elements", async () =>
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:property [ sh:path ex:ingredient ], [ sh:path ex:instructions ] .
@@ -141,7 +141,7 @@ test("propertyUiElements does not dedupe an equal path declared on separate node
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:MeatRecipe a sh:NodeShape ;
             sh:property [ sh:path ex:ingredient ; sh:minCount 1 ] .
@@ -168,7 +168,7 @@ test("propertyUiElements exposes sh:or as a ChoiceElement alongside plain proper
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:property [ sh:path ex:title ] ;
@@ -211,7 +211,7 @@ test("propertyUiElements groups multiple properties within a single sh:or branch
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Person a sh:NodeShape ;
             sh:or (
@@ -247,7 +247,7 @@ test("propertyUiElements flattens sh:and branches into plain properties", async 
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:and (
@@ -277,7 +277,7 @@ test("propertyUiElements exposes sh:xone as a ChoiceElement", async () => {
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:xone (
@@ -305,7 +305,7 @@ test("focusNode may be a BlankNode, as when walking a nested sh:node value (e.g.
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Address a sh:NodeShape ;
             sh:property [ sh:path ex:street ] .
@@ -315,7 +315,7 @@ test("focusNode may be a BlankNode, as when walking a nested sh:node value (e.g.
 
   const dataGraph = await parseRdf(
     `
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         _:address1 ex:street "Dam 1" .
     `,
@@ -340,7 +340,7 @@ test("root sh:or with a sh:node branch (mirrors 7.7.3.f) resolves real data thro
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Person a sh:NodeShape ;
             sh:or (
@@ -358,7 +358,7 @@ test("root sh:or with a sh:node branch (mirrors 7.7.3.f) resolves real data thro
 
   const dataGraph = await parseRdf(
     `
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Hendrik ex:street "Dam" ; ex:houseNumber "1" .
     `,

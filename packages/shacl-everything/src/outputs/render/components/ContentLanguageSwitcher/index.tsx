@@ -24,6 +24,7 @@ export default function ContentLanguageSwitcher() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const listboxId = useId();
+  const triggerId = useId();
 
   // Content values are in all sorts of languages - but the picker naming them is chrome, so it
   // reads in whichever language the interface itself is currently in (unlike the interface
@@ -78,6 +79,7 @@ export default function ContentLanguageSwitcher() {
         className="st-content-language-switcher"
         label={<Localized id="content-language-switcher-label">Content language</Localized>}
         tooltip={<Localized id="content-language-switcher-tooltip" />}
+        htmlFor={triggerId}
       >
         <div
           className="st-content-language-switcher__wrapper"
@@ -92,6 +94,7 @@ export default function ContentLanguageSwitcher() {
         >
           <button
             ref={triggerRef}
+            id={triggerId}
             type="button"
             className="st-select st-content-language-switcher__trigger"
             // A test/query hook: the button carries the picked language as text (in whichever

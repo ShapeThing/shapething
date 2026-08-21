@@ -62,7 +62,7 @@ import factory from "@rdfjs/data-model"
 // --- Fetch the resource ---
 const resourceFetcher = new ResourceFetcher({
     resourceIri: factory.namedNode("https://example.org/alice"),
-    sources: ['http://example.com/sparql'],
+    sources: ['http://example.org/sparql'],
     shapes: { type: 'file', value: './shape.ttl' },
     engine,
 })

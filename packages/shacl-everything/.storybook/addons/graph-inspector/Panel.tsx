@@ -4,7 +4,8 @@ import { useChannel, useStorybookState } from "storybook/manager-api";
 import { GRAPH_INSPECTOR_EVENT } from "./constants.ts";
 import type { GraphInspectorPayload, GraphText } from "./constants.ts";
 import { TurtleCode } from "./TurtleCode.tsx";
-import { splitPrefixes } from "./splitPrefixes.ts";
+import { splitPrefixes, parsePrefixMap } from "./splitPrefixes.ts";
+import { prefixes as wellKnownPrefixes } from "../../../src/helpers/namespaces.ts";
 
 type Props = {
   active: boolean;
@@ -74,6 +75,8 @@ const GraphSection = ({ title, graph }: { title: string; graph?: GraphText }) =>
   const { prefixText, bodyText } =
     graph.text !== undefined ? splitPrefixes(graph.text) : { prefixText: "", bodyText: "" };
   const prefixCount = prefixText ? prefixText.split("\n").filter(Boolean).length : 0;
+  const prefixMap = { ...wellKnownPrefixes, ...parsePrefixMap(prefixText) };
+  const sectionSlug = title.replace(/[^A-Za-z0-9]+/g, "-").toLowerCase();
 
   return (
     <section
@@ -102,12 +105,12 @@ const GraphSection = ({ title, graph }: { title: string; graph?: GraphText }) =>
                 {prefixCount} prefix declaration{prefixCount === 1 ? "" : "s"}
               </summary>
               <pre style={{ ...preStyle, maxHeight: 200 }}>
-                <TurtleCode text={prefixText} />
+                <TurtleCode text={prefixText} prefixes={prefixMap} idPrefix={`${sectionSlug}-prefixes`} />
               </pre>
             </details>
           )}
           <pre style={{ ...preStyle, flex: 1, minHeight: 0 }}>
-            <TurtleCode text={bodyText} />
+            <TurtleCode text={bodyText} prefixes={prefixMap} idPrefix={`${sectionSlug}-body`} />
           </pre>
         </div>
       ) : (

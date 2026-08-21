@@ -4,7 +4,7 @@ import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
-export default function TextAreaEditor({ shape, term, setTerm }: WidgetProps) {
+export default function TextAreaEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
   const minLength = shape.getOne(sh("minLength"))?.value;
   const maxLength = shape.getOne(sh("maxLength"))?.value;
 
@@ -20,6 +20,7 @@ export default function TextAreaEditor({ shape, term, setTerm }: WidgetProps) {
       onBlur={onBlur}
       minLength={minLength ? parseInt(minLength) : undefined}
       maxLength={maxLength ? parseInt(maxLength) : undefined}
+      aria-labelledby={labelledBy}
     >
       {localValue}
     </textarea>

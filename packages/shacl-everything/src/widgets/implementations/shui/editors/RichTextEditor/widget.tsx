@@ -8,7 +8,7 @@ type TrixEditorElement = HTMLElement & { value: string };
 
 const FOCUSED_CLASS = "st-rich-text-editor--focused";
 
-export default function RichTextEditor({ term, setTerm }: WidgetProps) {
+export default function RichTextEditor({ term, setTerm, labelledBy }: WidgetProps) {
   const inputId = useId();
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<TrixEditorElement>(null);
@@ -45,6 +45,7 @@ export default function RichTextEditor({ term, setTerm }: WidgetProps) {
 
       const editor = document.createElement("trix-editor") as TrixEditorElement;
       editor.setAttribute("input", inputId);
+      if (labelledBy) editor.setAttribute("aria-labelledby", labelledBy);
 
       const onChange = (event: Event) => {
         const html = (event.target as TrixEditorElement).value;
@@ -77,7 +78,7 @@ export default function RichTextEditor({ term, setTerm }: WidgetProps) {
       cancelled = true;
       cleanup?.();
     };
-  }, [inputId]);
+  }, [inputId, labelledBy]);
 
   useEffect(() => {
     const editor = editorRef.current;

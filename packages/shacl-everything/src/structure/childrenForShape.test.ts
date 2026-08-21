@@ -10,7 +10,7 @@ test("sh:node directly on a shape expands to that node shape's own properties", 
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:node ex:Metadata .
@@ -32,7 +32,7 @@ test("sh:node inside a sh:or branch expands against the same focus node (mirrors
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Person a sh:NodeShape ;
             sh:or (
@@ -50,7 +50,7 @@ test("sh:node inside a sh:or branch expands against the same focus node (mirrors
 
   const dataGraph = await parseRdf(
     `
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Hendrik ex:street "Dam" ; ex:city "Amsterdam" .
     `,
@@ -83,7 +83,7 @@ test("a sh:and branch containing a further sh:or recurses into a nested ChoiceEl
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:and (
@@ -111,7 +111,7 @@ test("a branch shape that itself declares sh:or produces a nested ChoiceElement"
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:or (
@@ -145,7 +145,7 @@ test("a plain sh:property-only shape matches propertiesForShape directly", async
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:property [ sh:path ex:title ] .

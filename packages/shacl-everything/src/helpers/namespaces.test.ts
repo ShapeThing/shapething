@@ -17,7 +17,7 @@ import {
 test("namespaces - build IRIs by appending the local name to the base IRI", () => {
   expect(rdf("type").value).toEqual("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
   expect(rdfs("label").value).toEqual("http://www.w3.org/2000/01/rdf-schema#label");
-  expect(ex("Alice").value).toEqual("http://example.com/Alice");
+  expect(ex("Alice").value).toEqual("http://example.org/Alice");
   expect(sh("PropertyShape").value).toEqual("http://www.w3.org/ns/shacl#PropertyShape");
   expect(shui("BooleanEditor").value).toEqual("http://www.w3.org/ns/shacl-ui/BooleanEditor");
   expect(dash("StringEditor").value).toEqual("http://datashapes.org/dash#StringEditor");
@@ -35,7 +35,7 @@ test("prefixes - maps every namespace alias to its base IRI", () => {
   expect(prefixes).toEqual({
     rdfs: "http://www.w3.org/2000/01/rdf-schema#",
     rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-    ex: "http://example.com/",
+    ex: "http://example.org/",
     sh: "http://www.w3.org/ns/shacl#",
     dash: "http://datashapes.org/dash#",
     xsd: "http://www.w3.org/2001/XMLSchema#",

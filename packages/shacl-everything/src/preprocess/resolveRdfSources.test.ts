@@ -32,19 +32,19 @@ const rawEnvironment = (overrides: Partial<RawEnvironment>): RawEnvironment => (
 });
 
 test("owl:imports on a dereferenced graph pulls in and merges the imported graph", async () => {
-  fixtures["http://example.com/a.ttl"] = `
+  fixtures["http://example.org/a.ttl"] = `
     @prefix owl: <http://www.w3.org/2002/07/owl#> .
-    @prefix ex: <http://example.com/> .
-    ex:a owl:imports <http://example.com/b.ttl> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://example.org/b.ttl> .
     ex:a ex:name "A" .
   `;
-  fixtures["http://example.com/b.ttl"] = `
-    @prefix ex: <http://example.com/> .
+  fixtures["http://example.org/b.ttl"] = `
+    @prefix ex: <http://example.org/> .
     ex:b ex:name "B" .
   `;
 
   const environment = await resolveRdfSources(
-    rawEnvironment({ dataGraph: new URL("http://example.com/a.ttl") }),
+    rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }),
   );
 
   expect(environment.dataGraph.getQuads(ex("a"), ex("name")).length).toBe(1);
@@ -52,75 +52,75 @@ test("owl:imports on a dereferenced graph pulls in and merges the imported graph
 });
 
 test("owl:imports is resolved transitively", async () => {
-  fixtures["http://example.com/a.ttl"] = `
+  fixtures["http://example.org/a.ttl"] = `
     @prefix owl: <http://www.w3.org/2002/07/owl#> .
-    @prefix ex: <http://example.com/> .
-    ex:a owl:imports <http://example.com/b.ttl> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://example.org/b.ttl> .
   `;
-  fixtures["http://example.com/b.ttl"] = `
+  fixtures["http://example.org/b.ttl"] = `
     @prefix owl: <http://www.w3.org/2002/07/owl#> .
-    @prefix ex: <http://example.com/> .
-    ex:b owl:imports <http://example.com/c.ttl> .
+    @prefix ex: <http://example.org/> .
+    ex:b owl:imports <http://example.org/c.ttl> .
   `;
-  fixtures["http://example.com/c.ttl"] = `
-    @prefix ex: <http://example.com/> .
+  fixtures["http://example.org/c.ttl"] = `
+    @prefix ex: <http://example.org/> .
     ex:c ex:name "C" .
   `;
 
   const environment = await resolveRdfSources(
-    rawEnvironment({ dataGraph: new URL("http://example.com/a.ttl") }),
+    rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }),
   );
 
   expect(environment.dataGraph.getQuads(ex("c"), ex("name")).length).toBe(1);
 });
 
 test("an import cycle terminates instead of looping forever", async () => {
-  fixtures["http://example.com/a.ttl"] = `
+  fixtures["http://example.org/a.ttl"] = `
     @prefix owl: <http://www.w3.org/2002/07/owl#> .
-    @prefix ex: <http://example.com/> .
-    ex:a owl:imports <http://example.com/b.ttl> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://example.org/b.ttl> .
     ex:a ex:name "A" .
   `;
-  fixtures["http://example.com/b.ttl"] = `
+  fixtures["http://example.org/b.ttl"] = `
     @prefix owl: <http://www.w3.org/2002/07/owl#> .
-    @prefix ex: <http://example.com/> .
-    ex:b owl:imports <http://example.com/a.ttl> .
+    @prefix ex: <http://example.org/> .
+    ex:b owl:imports <http://example.org/a.ttl> .
     ex:b ex:name "B" .
   `;
 
   const environment = await resolveRdfSources(
-    rawEnvironment({ dataGraph: new URL("http://example.com/a.ttl") }),
+    rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }),
   );
 
   expect(environment.dataGraph.getQuads(ex("a"), ex("name")).length).toBe(1);
   expect(environment.dataGraph.getQuads(ex("b"), ex("name")).length).toBe(1);
   expect(fetchCalls.sort()).toEqual(
-    ["http://example.com/a.ttl", "http://example.com/b.ttl"].sort(),
+    ["http://example.org/a.ttl", "http://example.org/b.ttl"].sort(),
   );
 });
 
 test("the same import reached from multiple sources is only fetched once", async () => {
-  fixtures["http://example.com/shapes.ttl"] = `
+  fixtures["http://example.org/shapes.ttl"] = `
     @prefix owl: <http://www.w3.org/2002/07/owl#> .
-    <http://example.com/shapes.ttl> owl:imports <http://example.com/shared.ttl> .
+    <http://example.org/shapes.ttl> owl:imports <http://example.org/shared.ttl> .
   `;
-  fixtures["http://example.com/data.ttl"] = `
+  fixtures["http://example.org/data.ttl"] = `
     @prefix owl: <http://www.w3.org/2002/07/owl#> .
-    <http://example.com/data.ttl> owl:imports <http://example.com/shared.ttl> .
+    <http://example.org/data.ttl> owl:imports <http://example.org/shared.ttl> .
   `;
-  fixtures["http://example.com/shared.ttl"] = `
-    @prefix ex: <http://example.com/> .
+  fixtures["http://example.org/shared.ttl"] = `
+    @prefix ex: <http://example.org/> .
     ex:shared ex:name "shared" .
   `;
 
   const environment = await resolveRdfSources(
     rawEnvironment({
-      shapesGraph: new URL("http://example.com/shapes.ttl"),
-      dataGraph: new URL("http://example.com/data.ttl"),
+      shapesGraph: new URL("http://example.org/shapes.ttl"),
+      dataGraph: new URL("http://example.org/data.ttl"),
     }),
   );
 
   expect(environment.shapesGraph.getQuads(ex("shared"), ex("name")).length).toBe(1);
   expect(environment.dataGraph.getQuads(ex("shared"), ex("name")).length).toBe(1);
-  expect(fetchCalls.filter((href) => href === "http://example.com/shared.ttl").length).toBe(1);
+  expect(fetchCalls.filter((href) => href === "http://example.org/shared.ttl").length).toBe(1);
 });

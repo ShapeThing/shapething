@@ -47,7 +47,7 @@
         dash:editor dash:URIEditor ;
         sh:description "The base IRI for the dataset." ;
         sh:order 2 ;
-        sh:defaultValue "http://example.com/" ;
+        sh:defaultValue "http://example.org/" ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
     ] ;

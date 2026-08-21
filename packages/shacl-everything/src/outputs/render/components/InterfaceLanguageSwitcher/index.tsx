@@ -1,3 +1,4 @@
+import { useId } from "react";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
@@ -11,15 +12,18 @@ export default function InterfaceLanguageSwitcher() {
   // language tag found on sh:name/sh:description in shapesGraph - see preprocess/languages.ts.
   const { interfaceLanguages } = useEnvironment();
   const interfaceLanguageLabels = languageLabels(interfaceLanguages);
+  const selectId = useId();
 
   return interfaceLanguages.length > 1 ? (
     <FormElement
       className="st-interface-language-switcher"
       label={<Localized id="interface-language-switcher-label">Interface language</Localized>}
       tooltip={<Localized id="interface-language-switcher-tooltip" />}
+      htmlFor={selectId}
     >
       <div className="st-select-wrapper">
         <select
+          id={selectId}
           className="st-select"
           value={activeInterfaceLanguage}
           onChange={(e) => setActiveInterfaceLanguage(e.target.value as BCP47)}

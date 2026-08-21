@@ -24,11 +24,11 @@ function initialActiveLanguage(languages: BCP47[], contentLanguage: BCP47): BCP4
 }
 
 export default function ContentLanguageProvider({ children }: { children: ReactNode }) {
-  const { languages: initialLanguages, contentLanguage } = useEnvironment();
+  const { contentLanguages: initialLanguages, contentLanguage } = useEnvironment();
   const [activeLanguage, setActiveLanguage] = useState<BCP47>(() =>
     initialActiveLanguage(initialLanguages, contentLanguage),
   );
-  // Environment.languages is fixed for the instance's lifetime (it's derived once by the
+  // Environment.contentLanguages is fixed for the instance's lifetime (it's derived once by the
   // preprocessor chain - see preprocess/languages.ts), so runtime additions from
   // enableContentLanguageCreation live in local state here rather than trying to mutate it.
   const [languages, setLanguages] = useState<BCP47[]>(initialLanguages);

@@ -129,7 +129,7 @@ function SubClassTreeNode({
   );
 }
 
-export default function SubClassEditor({ shape, term, setTerm }: WidgetProps) {
+export default function SubClassEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const rootClass = shape.getOne(sh("rootClass"));
   // Mirrors meta.ts's singleUnifiedWidget: no sh:maxCount means unbounded, so only an explicit
@@ -245,7 +245,11 @@ export default function SubClassEditor({ shape, term, setTerm }: WidgetProps) {
             term={chip}
             label={
               chip.termType === "NamedNode"
-                ? propertyLabel({ term: chip, propertyShape: shape, languages: [activeInterfaceLanguage] })
+                ? propertyLabel({
+                    term: chip,
+                    propertyShape: shape,
+                    languages: [activeInterfaceLanguage],
+                  })
                 : chip.value
             }
             onRemove={() => {
@@ -260,6 +264,7 @@ export default function SubClassEditor({ shape, term, setTerm }: WidgetProps) {
             type="text"
             className="st-subclass__input"
             placeholder="Search…"
+            aria-labelledby={labelledBy}
             value={search}
             onFocus={openPanel}
             onChange={(event) => setSearch(event.target.value)}

@@ -18,7 +18,7 @@ const shapesAndData = `
 @prefix skos: <http://www.w3.org/2004/02/skos/core#>.
 @prefix schema: <http://schema.org/>.
 @prefix sh: <http://www.w3.org/ns/shacl#>.
-@prefix ex: <http://example.com/>.
+@prefix ex: <http://example.org/>.
 
 ex:shape
     a sh:NodeShape ;
@@ -41,8 +41,8 @@ ex:data
 const baseArgs = {
   shapesGraph: shapesAndData,
   dataGraph: shapesAndData,
-  nodeShapes: [factory.namedNode("http://example.com/shape")],
-  focusNode: factory.namedNode("http://example.com/data"),
+  nodeShapes: [factory.namedNode("http://example.org/shape")],
+  focusNode: factory.namedNode("http://example.org/data"),
 };
 
 // Same as shapesAndData, but sh:name is English-only - InterfaceLanguageSwitcher also picks up
@@ -55,7 +55,7 @@ const singleInterfaceLanguageShapesAndData = `
 @prefix skos: <http://www.w3.org/2004/02/skos/core#>.
 @prefix schema: <http://schema.org/>.
 @prefix sh: <http://www.w3.org/ns/shacl#>.
-@prefix ex: <http://example.com/>.
+@prefix ex: <http://example.org/>.
 
 ex:shape
     a sh:NodeShape ;

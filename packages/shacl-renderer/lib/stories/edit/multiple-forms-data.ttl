@@ -6,7 +6,7 @@
 @prefix dash: <http://datashapes.org/dash#> .
 @prefix stsr: <http://ontology.shapething.com/shacl-renderer#> .
 @prefix stf: <http://ontology.shapething.com/facet#> .
-@prefix ex: <http://example.com/> .
+@prefix ex: <http://example.org/> .
 
 <#Peugeot_208>
   schema:name "Peugeot 208" ;

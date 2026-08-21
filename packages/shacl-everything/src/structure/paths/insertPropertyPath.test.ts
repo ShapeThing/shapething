@@ -15,7 +15,7 @@ async function insert(
 ) {
   const prefixes = `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
     `;
   const shapesGraph = await parseRdf(`${prefixes}\n${shapeTurtle}`, "text/turtle");
   const dataGraph = await parseRdf(`${prefixes}\n${dataTurtle}`, "text/turtle");
@@ -61,14 +61,14 @@ test("insertPropertyPath - sequence path reuses an already reachable intermediat
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:spouseFatherShape a sh:PropertyShape ; sh:path ( ex:spouse ex:father ) .
     `,
     "text/turtle",
   );
   const dataGraph = await parseRdf(
     `
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:Alice ex:spouse ex:Bob .
     `,
     "text/turtle",
@@ -101,7 +101,7 @@ test("insertPropertyPath - inverse of a sequence reverses order and direction of
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:inverseSequenceShape a sh:PropertyShape ; sh:path [ sh:inversePath ( ex:father ex:mother ) ] .
     `,
     "text/turtle",

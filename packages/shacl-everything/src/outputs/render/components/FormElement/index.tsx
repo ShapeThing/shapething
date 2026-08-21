@@ -9,6 +9,10 @@ type Props = {
   label?: ReactNode;
   labelTitle?: string;
   htmlFor?: string;
+  // Id put on the <label> element itself, for a caller whose label describes more than one
+  // rendered control (e.g. a multi-valued property's one label above several widget instances) -
+  // those controls point back at it via aria-labelledby, since htmlFor/id only pairs one-to-one.
+  labelId?: string;
   actions?: ReactNode;
   severity?: string;
   description?: string;
@@ -22,6 +26,7 @@ export default function FormElement({
   label,
   labelTitle,
   htmlFor,
+  labelId,
   severity,
   description,
   children,
@@ -34,7 +39,12 @@ export default function FormElement({
     <div className={clsx("st-form-element", className)} data-severity={severity} data-size={size}>
       <header className="st-form-element__header">
         {label && (
-          <label className="st-form-element__label" htmlFor={htmlFor} title={labelTitle}>
+          <label
+            className="st-form-element__label"
+            id={labelId}
+            htmlFor={htmlFor}
+            title={labelTitle}
+          >
             {label}
           </label>
         )}
@@ -43,7 +53,10 @@ export default function FormElement({
             {tooltip && (
               <Tooltip bare enabled tip={tooltip}>
                 <Localized id="form-element-help" attrs={{ "aria-label": true }}>
-                  <button type="button" className="st-icon-button" aria-label="Help">
+                  {/* Sits before the field itself in the DOM, so a normal tab stop here would
+                      interrupt Tab from the label reaching the field - it's still reachable by
+                      mouse/touch, and by keyboard once the field itself is focused. */}
+                  <button type="button" className="st-icon-button" aria-label="Help" tabIndex={-1}>
                     <Help />
                   </button>
                 </Localized>

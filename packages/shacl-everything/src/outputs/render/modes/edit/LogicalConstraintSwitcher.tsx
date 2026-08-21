@@ -1,4 +1,5 @@
 import { Localized } from "@fluent/react";
+import { useId } from "react";
 import type { Term } from "@rdfjs/types";
 import { branchLabel } from "@/helpers/branchLabel.ts";
 import { shui } from "@/helpers/namespaces.ts";
@@ -31,6 +32,7 @@ export default function LogicalConstraintSwitcher({
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const branches = logicalBranches(shape);
+  const selectId = useId();
 
   if (branches.length === 0) return null;
 
@@ -54,9 +56,11 @@ export default function LogicalConstraintSwitcher({
       className="st-logical-constraint-switcher"
       label={<Localized id="logical-constraint-switcher-label">Pick an option</Localized>}
       tooltip={<Localized id="logical-constraint-switcher-tooltip" />}
+      htmlFor={selectId}
     >
       <span className="st-select-wrapper st-select-wrapper-small">
         <select
+          id={selectId}
           className="st-select"
           value={activeBranch?.shape.value ?? ""}
           onChange={(e) => {

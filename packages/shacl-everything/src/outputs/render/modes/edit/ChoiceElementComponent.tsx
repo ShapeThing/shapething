@@ -1,5 +1,5 @@
 import { Localized } from "@fluent/react";
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { branchLabel } from "@/helpers/branchLabel.ts";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import { useActiveChoiceBranch } from "@/outputs/render/hooks/useActiveChoiceBranch.tsx";
@@ -23,6 +23,7 @@ export default function ChoiceElementComponent({
   choiceElement: ChoiceElement;
 }) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
+  const selectId = useId();
 
   const branchShapes = useMemo(() => choiceBranchShapes(choiceElement), [choiceElement]);
   const branches = useMemo(() => choiceElement.children(), [choiceElement]);
@@ -52,9 +53,11 @@ export default function ChoiceElementComponent({
         className="st-logical-constraint-switcher"
         label={<Localized id="logical-constraint-switcher-label">Pick an option</Localized>}
         tooltip={<Localized id="logical-constraint-switcher-tooltip" />}
+        htmlFor={selectId}
       >
         <span className="st-select-wrapper">
           <select
+            id={selectId}
             className="st-select"
             value={branchShapes[selectedIndex]?.value ?? ""}
             onChange={(e) => setPinnedBranchKey(e.target.value)}

@@ -12,7 +12,7 @@ import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import "./style.css";
-import { Suspense, useEffect, useRef, useState } from "react";
+import { Suspense, useEffect, useId, useRef, useState } from "react";
 import { Loading } from "@/helpers/icons.tsx";
 import { languageLabels } from "@/helpers/languageLabels.ts";
 
@@ -101,6 +101,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
       ).length === 0,
     );
 
+  const labelId = useId();
   const label = propertyUIElement.label([activeInterfaceLanguage])?.value;
   const description = propertyUIElement.getOne(sh("description"), [activeInterfaceLanguage])?.value;
 
@@ -127,6 +128,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
         )
       }
       labelTitle={propertyUIElement.pathAsSparql()}
+      labelId={labelId}
       description={description}
       severity={severity}
     >
@@ -138,6 +140,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
               index={index}
               propertyUIElement={propertyUIElement}
               object={object}
+              labelledBy={labelId}
               onTermSet={syncShowEmptyWidget}
               // Removing a value can leave a single-valued field (its "+" always hidden, and now
               // its "-" no longer hidden either) with none left and no other way back to an

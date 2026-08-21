@@ -6,7 +6,7 @@ import { Localized } from "@fluent/react/esm/localized.js";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 
-export default function InstancesSelectEditor({ shape, term, setTerm }: WidgetProps) {
+export default function InstancesSelectEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
   const { activeLanguage } = useContentLanguage();
   const shClass = shape.getOne(sh("class"));
   const classes = shape.dataGraph.getQuads(null, rdf("type"), shClass).map((quad) => quad.subject);
@@ -23,6 +23,7 @@ export default function InstancesSelectEditor({ shape, term, setTerm }: WidgetPr
         className="st-select"
         value={term.value}
         onChange={(e) => setTerm(factory.namedNode(e.target.value))}
+        aria-labelledby={labelledBy}
       >
         {!term.value && (
           <option value="" disabled>

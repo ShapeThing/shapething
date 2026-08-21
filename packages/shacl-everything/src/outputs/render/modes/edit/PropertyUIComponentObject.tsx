@@ -15,12 +15,14 @@ export default function PropertyUIComponentObject({
   propertyUIElement,
   object,
   index,
+  labelledBy,
   onTermSet,
   onRemove,
 }: {
   propertyUIElement: PropertyUIElement;
   object: Term;
   index: number;
+  labelledBy: string;
   onTermSet: () => void;
   onRemove: () => void;
 }) {
@@ -113,10 +115,16 @@ export default function PropertyUIComponentObject({
               term={object}
               setTerm={setTerm}
               flyOut={flyOut}
+              labelledBy={labelledBy}
             />
           ) : (
             <>
-              <ActiveWidget shape={effectiveProperty} term={object} setTerm={setTerm} />
+              <ActiveWidget
+                shape={effectiveProperty}
+                term={object}
+                setTerm={setTerm}
+                labelledBy={labelledBy}
+              />
               {flyOut}
             </>
           )}

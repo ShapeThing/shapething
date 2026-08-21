@@ -8,7 +8,7 @@ async function compile(turtle: string, shapeName: string) {
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ${turtle}
     `,
@@ -28,7 +28,7 @@ test("toSparql - 4.1 Predicate Paths", async () => {
     `ex:ingredientShape a sh:PropertyShape ; sh:path ex:ingredient .`,
     "ingredientShape",
   );
-  expect(sparql).toBe("<http://example.com/ingredient>");
+  expect(sparql).toBe("<http://example.org/ingredient>");
 });
 
 // 4.2 Sequence Paths
@@ -37,7 +37,7 @@ test("toSparql - 4.2 Sequence Paths", async () => {
     `ex:spouseFatherShape a sh:PropertyShape ; sh:path ( ex:spouse ex:father ) .`,
     "spouseFatherShape",
   );
-  expect(sparql).toBe("<http://example.com/spouse>/<http://example.com/father>");
+  expect(sparql).toBe("<http://example.org/spouse>/<http://example.org/father>");
 });
 
 // 4.3 Alternative Paths
@@ -46,7 +46,7 @@ test("toSparql - 4.3 Alternative Paths", async () => {
     `ex:parentShape a sh:PropertyShape ; sh:path [ sh:alternativePath ( ex:father ex:mother ) ] .`,
     "parentShape",
   );
-  expect(sparql).toBe("<http://example.com/father>|<http://example.com/mother>");
+  expect(sparql).toBe("<http://example.org/father>|<http://example.org/mother>");
 });
 
 // 4.4 Inverse Paths
@@ -55,7 +55,7 @@ test("toSparql - 4.4 Inverse Paths", async () => {
     `ex:childShape a sh:PropertyShape ; sh:path [ sh:inversePath ex:parent ] .`,
     "childShape",
   );
-  expect(sparql).toBe("^<http://example.com/parent>");
+  expect(sparql).toBe("^<http://example.org/parent>");
 });
 
 // 4.5 Zero-Or-More Paths
@@ -64,7 +64,7 @@ test("toSparql - 4.5 Zero-Or-More Paths", async () => {
     `ex:ancestorShape a sh:PropertyShape ; sh:path [ sh:zeroOrMorePath ex:parent ] .`,
     "ancestorShape",
   );
-  expect(sparql).toBe("<http://example.com/parent>*");
+  expect(sparql).toBe("<http://example.org/parent>*");
 });
 
 // 4.6 One-Or-More Paths
@@ -73,7 +73,7 @@ test("toSparql - 4.6 One-Or-More Paths", async () => {
     `ex:strictAncestorShape a sh:PropertyShape ; sh:path [ sh:oneOrMorePath ex:parent ] .`,
     "strictAncestorShape",
   );
-  expect(sparql).toBe("<http://example.com/parent>+");
+  expect(sparql).toBe("<http://example.org/parent>+");
 });
 
 // 4.7 Zero-Or-One Paths
@@ -82,7 +82,7 @@ test("toSparql - 4.7 Zero-Or-One Paths", async () => {
     `ex:selfOrParentShape a sh:PropertyShape ; sh:path [ sh:zeroOrOnePath ex:parent ] .`,
     "selfOrParentShape",
   );
-  expect(sparql).toBe("<http://example.com/parent>?");
+  expect(sparql).toBe("<http://example.org/parent>?");
 });
 
 // Deeply nested combinations - SPARQL has native grouping, so these never
@@ -95,7 +95,7 @@ test("toSparql - alternative of two sequences", async () => {
     "byMotherOrFatherShape",
   );
   expect(sparql).toBe(
-    "(<http://example.com/mother>/<http://example.com/name>)|(<http://example.com/father>/<http://example.com/name>)",
+    "(<http://example.org/mother>/<http://example.org/name>)|(<http://example.org/father>/<http://example.org/name>)",
   );
 });
 
@@ -105,7 +105,7 @@ test("toSparql - alternative mixing a predicate and an inverse path", async () =
             sh:path [ sh:alternativePath ( ex:father [ sh:inversePath ex:child ] ) ] .`,
     "relatedShape",
   );
-  expect(sparql).toBe("<http://example.com/father>|(^<http://example.com/child>)");
+  expect(sparql).toBe("<http://example.org/father>|(^<http://example.org/child>)");
 });
 
 test("toSparql - inverse of a sequence", async () => {
@@ -114,7 +114,7 @@ test("toSparql - inverse of a sequence", async () => {
             sh:path [ sh:inversePath ( ex:father ex:mother ) ] .`,
     "inverseSequenceShape",
   );
-  expect(sparql).toBe("^(<http://example.com/father>/<http://example.com/mother>)");
+  expect(sparql).toBe("^(<http://example.org/father>/<http://example.org/mother>)");
 });
 
 test("toSparql - zero-or-more over a sequence", async () => {
@@ -123,7 +123,7 @@ test("toSparql - zero-or-more over a sequence", async () => {
             sh:path [ sh:zeroOrMorePath ( ex:parent ex:sibling ) ] .`,
     "zeroOrMoreSequenceShape",
   );
-  expect(sparql).toBe("(<http://example.com/parent>/<http://example.com/sibling>)*");
+  expect(sparql).toBe("(<http://example.org/parent>/<http://example.org/sibling>)*");
 });
 
 test("toSparql - one-or-more of an inverse path", async () => {
@@ -132,7 +132,7 @@ test("toSparql - one-or-more of an inverse path", async () => {
             sh:path [ sh:oneOrMorePath [ sh:inversePath ex:parent ] ] .`,
     "strictDescendantShape",
   );
-  expect(sparql).toBe("(^<http://example.com/parent>)+");
+  expect(sparql).toBe("(^<http://example.org/parent>)+");
 });
 
 test("toSparql - sequence containing an alternative", async () => {
@@ -142,7 +142,7 @@ test("toSparql - sequence containing an alternative", async () => {
     "parentThenNameShape",
   );
   expect(sparql).toBe(
-    "(<http://example.com/father>|<http://example.com/mother>)/<http://example.com/name>",
+    "(<http://example.org/father>|<http://example.org/mother>)/<http://example.org/name>",
   );
 });
 
@@ -152,5 +152,5 @@ test("toSparql - zero-or-one wrapping a one-or-more path", async () => {
             sh:path [ sh:zeroOrOnePath [ sh:oneOrMorePath ex:parent ] ] .`,
     "maybeAncestorShape",
   );
-  expect(sparql).toBe("(<http://example.com/parent>+)?");
+  expect(sparql).toBe("(<http://example.org/parent>+)?");
 });

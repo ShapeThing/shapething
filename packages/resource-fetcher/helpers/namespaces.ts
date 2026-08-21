@@ -34,7 +34,7 @@ export const rdf: NamespaceBuilder<string> = namespace(
   "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 );
 
-/** example.com namespace */
+/** example.org namespace */
 export const ex: NamespaceBuilder<string> = namespace("https://example.org/");
 
 /** SHACL namespace */
@@ -82,7 +82,7 @@ export const skos: NamespaceBuilder<string> = namespace(
 
 /** Local app namespace */
 export const app: NamespaceBuilder<string> = namespace(
-  (globalThis.location?.origin ?? "http://example.com") + "/"
+  (globalThis.location?.origin ?? "http://example.org") + "/"
 );
 
 /** Genid */
