@@ -7,7 +7,7 @@ test("returns the single highest-scoring widget when best is true", async () => 
   const scoringGraph = await parseRdf(
     `
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:widgetAScore a shui:WidgetScore ;
             shui:widget ex:WidgetA ;
@@ -42,7 +42,7 @@ test("returns undefined when best is true and no widget matches", async () => {
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:isBoolean a sh:NodeShape ;
             sh:datatype xsd:boolean .
@@ -57,7 +57,7 @@ test("returns undefined when best is true and no widget matches", async () => {
 
   const dataGraph = await parseRdf(
     `
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:Alice ex:name "Alice" .
     `,
     "text/turtle",
@@ -83,7 +83,7 @@ test("orders matches by descending score, tie-broken by widget IRI, when best is
   const scoringGraph = await parseRdf(
     `
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:widgetBScore a shui:WidgetScore ; shui:widget ex:WidgetB ; shui:score 5 .
         ex:widgetAScore a shui:WidgetScore ; shui:widget ex:WidgetA ; shui:score 5 .
@@ -116,7 +116,7 @@ test("excludes widgets whose data graph shape does not conform to the value, eve
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:isBoolean a sh:NodeShape ;
             sh:datatype xsd:boolean .
@@ -135,7 +135,7 @@ test("excludes widgets whose data graph shape does not conform to the value, eve
 
   const dataGraph = await parseRdf(
     `
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:Alice ex:name "Alice" .
     `,
     "text/turtle",
@@ -164,7 +164,7 @@ test("includes a widget whose data graph shape does conform to a literal value",
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:isBoolean a sh:NodeShape ;
             sh:datatype xsd:boolean .
@@ -179,7 +179,7 @@ test("includes a widget whose data graph shape does conform to a literal value",
 
   const dataGraph = await parseRdf(
     `
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
         ex:Alice ex:isActive true .
     `,
@@ -207,7 +207,7 @@ test("excludes widgets whose shapes graph shape does not conform to the property
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:hasClassConstraint a sh:NodeShape ;
             sh:property [
@@ -227,7 +227,7 @@ test("excludes widgets whose shapes graph shape does not conform to the property
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:ownerShape a sh:PropertyShape ;
             sh:path ex:owner .
     `,
@@ -253,7 +253,7 @@ test("includes a widget whose shapes graph shape does conform to the property sh
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:hasClassConstraint a sh:NodeShape ;
             sh:property [
@@ -273,7 +273,7 @@ test("includes a widget whose shapes graph shape does conform to the property sh
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:ownerShape a sh:PropertyShape ;
             sh:path ex:owner ;
             sh:class ex:Person .
@@ -299,7 +299,7 @@ test("excludes a widget score that only has a data graph shape when no focus nod
   const scoringGraph = await parseRdf(
     `
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:widgetScore a shui:WidgetScore ;
             shui:widget ex:SomeWidget ;
@@ -332,7 +332,7 @@ test("excludes a widget score that combines a data graph shape with a shapes gra
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:isString a sh:NodeShape ;
             sh:datatype xsd:string .
@@ -357,7 +357,7 @@ test("excludes a widget score that combines a data graph shape with a shapes gra
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:ownerShape a sh:PropertyShape ;
             sh:path ex:owner ;
             sh:class ex:Person .
@@ -383,7 +383,7 @@ test("includes a widget score with only a shapes graph shape when no focus node 
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:hasClassConstraint a sh:NodeShape ;
             sh:property [
@@ -402,7 +402,7 @@ test("includes a widget score with only a shapes graph shape when no focus node 
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:ownerShape a sh:PropertyShape ;
             sh:path ex:owner ;
             sh:class ex:Person .
@@ -427,7 +427,7 @@ test("throws when a widget score definition is missing shui:widget", async () =>
   const scoringGraph = await parseRdf(
     `
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:widgetScore a shui:WidgetScore ;
             shui:score 5 .
@@ -453,7 +453,7 @@ test("throws when a widget score definition has a non-numeric score", async () =
   const scoringGraph = await parseRdf(
     `
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:widgetScore a shui:WidgetScore ;
             shui:widget ex:SomeWidget ;
@@ -481,7 +481,7 @@ test("includes a widget whose shapes graph shape uses sh:not when the property s
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:hasClassConstraint a sh:NodeShape ;
             sh:property [
@@ -504,7 +504,7 @@ test("includes a widget whose shapes graph shape uses sh:not when the property s
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:nameShape a sh:PropertyShape ;
             sh:path ex:name ;
             sh:nodeKind sh:IRI .
@@ -531,7 +531,7 @@ test("excludes a widget whose shapes graph shape uses sh:not when the property s
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:hasClassConstraint a sh:NodeShape ;
             sh:property [
@@ -554,7 +554,7 @@ test("excludes a widget whose shapes graph shape uses sh:not when the property s
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:ownerShape a sh:PropertyShape ;
             sh:path ex:owner ;
             sh:nodeKind sh:IRI ;
@@ -584,7 +584,7 @@ test("accept returns false for a WidgetAcceptMatcher whose shape can never confo
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:neverConforms a sh:NodeShape ;
             sh:not [ a sh:NodeShape ] .
@@ -598,7 +598,7 @@ test("accept returns false for a WidgetAcceptMatcher whose shape can never confo
 
   const dataGraph = await parseRdf(
     `
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:Alice ex:name "Alice" .
     `,
     "text/turtle",
@@ -627,7 +627,7 @@ test("excludes a widget when the property shape has sh:class, even when sh:not i
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:hasNodeKindIRIConstraint a sh:NodeShape ;
             sh:property [
@@ -658,7 +658,7 @@ test("excludes a widget when the property shape has sh:class, even when sh:not i
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:ownerShape a sh:PropertyShape ;
             sh:path ex:owner ;
             sh:nodeKind sh:IRI ;

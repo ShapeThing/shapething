@@ -8,7 +8,7 @@ test("bestByLanguage - returns undefined for an empty list", () => {
 });
 
 test("bestByLanguage - returns the only value when none of the values have a language tag", () => {
-  const value = factory.namedNode("http://example.com/Alice");
+  const value = factory.namedNode("http://example.org/Alice");
   expect(bestByLanguage([value], ["en"])).toEqual(value);
 });
 

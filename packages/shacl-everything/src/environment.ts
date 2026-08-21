@@ -1,9 +1,18 @@
-import type { NamedNode, Quad_Subject } from "@rdfjs/types";
+import type { NamedNode, Quad, Quad_Subject } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { ex } from "@/helpers/namespaces.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
 import type { LocaleLoaderOverrides } from "@/l10n/locales.ts";
+
+// What the edit mode form hands back on submit: a fresh RdfStore containing a copy of every quad
+// currently in dataGraph (not the live, reactive dataGraph itself), plus the quads added/removed
+// since the form was first shown - the diff between dataGraph's quads at mount and at submit time.
+export type SubmitResult = {
+  dataGraph: RdfStore;
+  additions: Quad[];
+  deletions: Quad[];
+};
 
 export type Environment = {
   shapesGraph: RdfStore;
@@ -26,8 +35,10 @@ export type Environment = {
   interfaceLanguages: BCP47[];
   contentLanguage: BCP47;
   // Every language available to switch content to: whatever the caller specified, unioned with
-  // every language tag actually found in shapesGraph/dataGraph (see preprocess/languages.ts).
-  languages: BCP47[];
+  // every language tag actually found in dataGraph (see preprocess/languages.ts). shapesGraph is
+  // deliberately excluded - its language tags (sh:name/sh:description chrome labels, etc.) feed
+  // interfaceLanguages instead, not this.
+  contentLanguages: BCP47[];
   // How a multi-lingual property's translations are presented: "switcher" shows one language at
   // a time, controlled by a single global content language switcher (ContentLanguageSwitcher) -
   // every *WithLangEditor widget's own per-value language <select> stays hidden, since there's
@@ -44,19 +55,19 @@ export type Environment = {
   enableShPathInLabelTitle?: boolean;
   // When true, shows a trash icon inside the content language switcher.
   enableFullLanguageRemoval?: boolean;
+  // Called when the edit mode form is submitted. See SubmitResult.
+  onSubmit?: (result: SubmitResult) => void;
 };
 
 // What flows through the preprocessor chain before it's fully resolved: the graph fields may
 // still be an unparsed/undereferenced RdfSource rather than a ready RdfStore. RdfStore is itself
 // a valid RdfSource, so a fully-resolved Environment already satisfies this type - preprocessors
 // don't need a different type per stage of the chain.
-export type RawEnvironment =
-  & Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph">
-  & {
-    shapesGraph: RdfSource;
-    dataGraph: RdfSource;
-    scoresGraph: RdfSource;
-  };
+export type RawEnvironment = Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph"> & {
+  shapesGraph: RdfSource;
+  dataGraph: RdfSource;
+  scoresGraph: RdfSource;
+};
 
 export const defaultEnvironment: Environment = {
   shapesGraph: RdfStore.createDefault(),
@@ -69,7 +80,7 @@ export const defaultEnvironment: Environment = {
   interfaceLocales: {},
   interfaceLanguages: [],
   contentLanguage: "en-GB",
-  languages: [],
+  contentLanguages: [],
   languageMode: "switcher",
   enableWidgetSwitching: true,
   enableContentLanguageCreation: true,
@@ -77,10 +88,7 @@ export const defaultEnvironment: Environment = {
   enableFullLanguageRemoval: true,
 };
 
-export const minimalEnvironment: Environment = {
-  shapesGraph: RdfStore.createDefault(),
-  dataGraph: RdfStore.createDefault(),
-  scoresGraph: RdfStore.createDefault(),
+export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph" | "dataGraph"> = {
   focusNode: ex("focusNode"),
   nodeShapes: [],
   mode: "edit",
@@ -90,7 +98,7 @@ export const minimalEnvironment: Environment = {
   },
   interfaceLanguages: [],
   contentLanguage: "en-GB",
-  languages: [],
+  contentLanguages: [],
   languageMode: "switcher",
   enableWidgetSwitching: false,
   enableContentLanguageCreation: false,
@@ -98,8 +106,11 @@ export const minimalEnvironment: Environment = {
   enableFullLanguageRemoval: false,
 };
 
-export const minimalEnvironmentWithContentLanguages: Environment = {
+export const minimalEnvironmentWithContentLanguages: Omit<
+  Environment,
+  "scoresGraph" | "shapesGraph" | "dataGraph"
+> = {
   ...minimalEnvironment,
   enableContentLanguageCreation: true,
-  languages: ["en-GB", "nl-NL", "fr-FR"],
+  contentLanguages: ["en-GB", "nl-NL", "fr-FR"],
 };

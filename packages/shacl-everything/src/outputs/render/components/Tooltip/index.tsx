@@ -95,7 +95,11 @@ export default function Tooltip({ tip, children, enabled, severity, bare }: Prop
         bare && "tooltip-wrapper--bare",
       )}
       style={{ "--tooltip-anchor": anchorName } as React.CSSProperties}
-      tabIndex={0}
+      // Only needed when children aren't already a focusable element of their own (e.g. a
+      // disabled button) - React's onFocus/onBlur below still fire on focus bubbling up from a
+      // focusable child regardless, so giving the wrapper its own tab stop in that case would
+      // just add a redundant stop before the child's.
+      tabIndex={bare ? undefined : 0}
       onFocus={open}
       onBlur={close}
       onMouseEnter={open}

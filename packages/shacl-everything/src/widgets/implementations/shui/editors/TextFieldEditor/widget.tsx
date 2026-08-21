@@ -24,6 +24,7 @@ export default function TextFieldEditor({
   term,
   setTerm,
   type = "text",
+  labelledBy,
 }: WidgetProps & { type?: HTMLInputElement["type"] }) {
   const pattern = shape.getOne(sh("pattern"))?.value;
   const minLength = shape.getOne(sh("minLength"))?.value;
@@ -43,6 +44,7 @@ export default function TextFieldEditor({
       pattern={pattern}
       minLength={minLength ? parseInt(minLength) : undefined}
       maxLength={maxLength ? parseInt(maxLength) : undefined}
+      aria-labelledby={labelledBy}
     />
   );
 }

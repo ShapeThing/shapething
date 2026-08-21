@@ -441,7 +441,7 @@ test("widget() returns the highest-scoring widget for the property shape alone",
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:hasBooleanDatatype a sh:NodeShape ;
             sh:property [ sh:path sh:datatype ; sh:hasValue xsd:boolean ] .
@@ -489,7 +489,7 @@ test("widget() also scores the given value against shui:dataGraphShape", async (
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:isBoolean a sh:NodeShape ; sh:datatype xsd:boolean .
 
@@ -529,7 +529,7 @@ test("widget() merges grouped property shapes, so a widget hint on either shape 
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:minShape a sh:PropertyShape ; sh:minCount 1 .
         ex:editorShape a sh:PropertyShape ; shui:editor ex:CustomWidget .
@@ -541,7 +541,7 @@ test("widget() merges grouped property shapes, so a widget hint on either shape 
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:prefersCustomWidget a sh:NodeShape ;
             sh:property [ sh:path shui:editor ; sh:hasValue ex:CustomWidget ] .

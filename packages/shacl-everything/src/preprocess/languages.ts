@@ -29,36 +29,41 @@ function usedLanguages(store: RdfStore, predicates?: Set<string>): BCP47[] {
 
 const LABEL_PREDICATES = new Set([sh("name").value, sh("description").value]);
 
-// Runs after resolveRdfSources, so shapesGraph/dataGraph are always resolved RdfStores here even
-// though RawEnvironment's type still allows an unresolved RdfSource.
+// Runs after resolveRdfSources, so dataGraph is always a resolved RdfStore here even though
+// RawEnvironment's type still allows an unresolved RdfSource.
+//
+// Only dataGraph is scanned - shapesGraph holds shape metadata (sh:name/sh:description chrome
+// labels, sh:message, etc.), not content, so any language tag found there belongs to
+// interfaceLanguages (see distillInterfaceLanguages below), never here. Scanning it here too would
+// mix the two: a shape whose sh:name happens to be authored in French would offer French as a
+// content language even though no French data exists.
 //
 // Deduped by primary subtag, same as distillInterfaceLanguages below - a configured "en-GB"
-// already covers a bare "en" literal found in the graphs (filterByContentLanguage matches content
+// already covers a bare "en" literal found in the data (filterByContentLanguage matches content
 // by primary subtag too), so listing both would just give the switcher two indistinguishable
 // "English" entries. The configured/earlier-found tag wins and the later bare one is dropped.
-export const distillLanguages: Preprocessor = (environment) => {
-  const configured = environment.languages ?? [];
+export const distillLanguages = ((environment) => {
+  const configured = environment.contentLanguages ?? [];
   const seen = new Set(configured.map((language) => primarySubtag(language)));
 
-  const languages = [...configured];
-  for (const language of [
-    ...usedLanguages(environment.shapesGraph as RdfStore),
-    ...usedLanguages(environment.dataGraph as RdfStore),
-  ]) {
+  const contentLanguages = [...configured];
+  for (const language of usedLanguages(environment.dataGraph as RdfStore)) {
     const key = primarySubtag(language);
     if (!seen.has(key)) {
       seen.add(key);
-      languages.push(language);
+      contentLanguages.push(language);
     }
   }
 
   // Nothing configured and no rdf:langString tag found anywhere - rather than leave the content
   // language switcher/filterByContentLanguage with an empty list to work from, fall back to
   // contentLanguage itself (English by default - see defaultEnvironment).
-  if (languages.length === 0) languages.push(environment.contentLanguage);
+  if (contentLanguages.length === 0) {
+    contentLanguages.push(environment.contentLanguage);
+  }
 
-  return { ...environment, languages };
-};
+  return { ...environment, contentLanguages: contentLanguages };
+}) satisfies Preprocessor;
 
 // Every language available for the interface (chrome) to switch to: the shipped/overridden
 // Fluent locales (see l10n/locales.ts), unioned with whatever language sh:name/sh:description
@@ -71,14 +76,16 @@ export const distillLanguages: Preprocessor = (environment) => {
 // locales are checked first, so a regioned tag they ship wins over a bare one later found in the
 // shapes graph (matching resolveLocale's own primary-subtag fallback for loading its bundle, and
 // bestByLanguage's for picking a label in it).
-export const distillInterfaceLanguages: Preprocessor = (environment) => {
+export const distillInterfaceLanguages = ((environment) => {
   const seen = new Set<string>();
   const interfaceLanguages: BCP47[] = [];
 
-  for (const language of [
-    ...Object.keys(mergeLocaleLoaders(environment.interfaceLocales)),
-    ...usedLanguages(environment.shapesGraph as RdfStore, LABEL_PREDICATES),
-  ] as BCP47[]) {
+  for (
+    const language of [
+      ...Object.keys(mergeLocaleLoaders(environment.interfaceLocales)),
+      ...usedLanguages(environment.shapesGraph as RdfStore, LABEL_PREDICATES),
+    ] as BCP47[]
+  ) {
     const key = primarySubtag(language);
     if (!seen.has(key)) {
       seen.add(key);
@@ -87,4 +94,4 @@ export const distillInterfaceLanguages: Preprocessor = (environment) => {
   }
 
   return { ...environment, interfaceLanguages };
-};
+}) satisfies Preprocessor;

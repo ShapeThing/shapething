@@ -1,4 +1,6 @@
 node-ui-property-element = Eigenschap UI-element
+node-ui-submit-create = Aanmaken
+node-ui-submit-update = Bijwerken
 loading = Laden
 property-add-value =
     .aria-label = Waarde toevoegen

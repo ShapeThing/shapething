@@ -1,4 +1,6 @@
 node-ui-property-element = Property UI Element
+node-ui-submit-create = Create
+node-ui-submit-update = Update
 loading = Loading
 property-add-value =
     .aria-label = Add value

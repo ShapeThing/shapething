@@ -44,22 +44,22 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
   );
 }
 
-const modesNodeUIComponents: Record<Environment["mode"], React.ComponentType> = {
-  edit: lazy(() => import("@/outputs/render/modes/edit/NodeUIComponent.tsx")),
-  view: lazy(() => import("@/outputs/render/modes/view/NodeUIComponent.tsx")),
-  facet: lazy(() => import("@/outputs/render/modes/facet/NodeUIComponent.tsx")),
+const modesComponents: Record<Environment["mode"], React.ComponentType> = {
+  edit: lazy(() => import("@/outputs/render/modes/edit/index.tsx")),
+  view: lazy(() => import("@/outputs/render/modes/view/index.tsx")),
+  facet: lazy(() => import("@/outputs/render/modes/facet/index.tsx")),
 };
 
 function ShaclRendererInner() {
   const { mode } = useEnvironment();
-  const NodeUIComponent = modesNodeUIComponents[mode];
+  const ModeComponent = modesComponents[mode];
   return (
     <>
       <header className="st-header">
         <InterfaceLanguageSwitcher />
         <ContentLanguageSwitcher />
       </header>
-      <NodeUIComponent />
+      <ModeComponent />
     </>
   );
 }

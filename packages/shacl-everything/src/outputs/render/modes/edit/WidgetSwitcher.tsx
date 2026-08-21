@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { shui } from "@/helpers/namespaces.ts";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
@@ -19,6 +20,7 @@ export default function WidgetSwitcher({
 }) {
   const { enableWidgetSwitching } = useEnvironment();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
+  const selectId = useId();
 
   const widgets = useWidgets(shui("editor"), shape);
   const activeWidgetIri = ActiveWidget
@@ -31,9 +33,11 @@ export default function WidgetSwitcher({
       size="small"
       label={<Localized id="widget-switcher-label">Pick a widget</Localized>}
       tooltip={<Localized id="widget-switcher-tooltip" />}
+      htmlFor={selectId}
     >
       <span className="st-select-wrapper st-select-wrapper-small">
         <select
+          id={selectId}
           className="st-select"
           value={activeWidgetIri?.value ?? ""}
           onChange={(e) => {

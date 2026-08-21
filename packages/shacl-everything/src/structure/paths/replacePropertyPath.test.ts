@@ -16,7 +16,7 @@ async function replace(
 ) {
   const prefixes = `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
     `;
   const shapesGraph = await parseRdf(`${prefixes}\n${shapeTurtle}`, "text/turtle");
   const dataGraph = await parseRdf(`${prefixes}\n${dataTurtle}`, "text/turtle");

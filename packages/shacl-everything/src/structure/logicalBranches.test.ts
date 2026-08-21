@@ -9,7 +9,7 @@ async function contactShapesGraph() {
   return parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
         @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
@@ -117,7 +117,7 @@ test("logicalBranches returns an empty array for a property with no sh:or/sh:xon
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:property ex:titleShape .

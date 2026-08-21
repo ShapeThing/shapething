@@ -18,8 +18,8 @@ export const dct: NamespaceBuilder<string> = namespace('http://purl.org/dc/terms
 /** rdf namespace */
 export const rdf: NamespaceBuilder<string> = namespace('http://www.w3.org/1999/02/22-rdf-syntax-ns#')
 
-/** example.com namespace */
-export const ex: NamespaceBuilder<string> = namespace('http://example.com/')
+/** example.org namespace */
+export const ex: NamespaceBuilder<string> = namespace('http://example.org/')
 
 /** SHACL namespace */
 export const sh: NamespaceBuilder<string> = namespace('http://www.w3.org/ns/shacl#')
@@ -50,7 +50,7 @@ export const skos: NamespaceBuilder<string> = namespace('http://www.w3.org/2004/
 
 /** Local app namespace */
 export const app: NamespaceBuilder<string> = namespace(
-  ('http://example.com') + '/'
+  ('http://example.org') + '/'
 )
 
 /** Genid */

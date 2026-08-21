@@ -10,7 +10,7 @@ const termToString = (term: Term) => {
 }
 
 const store = new LocalStore({
-  baseUri: new URL('http://example.com/')
+  baseUri: new URL('http://example.org/')
 })
 
 const engine = new QueryEngine()
@@ -29,9 +29,9 @@ document.querySelector('#graphs')?.addEventListener('click', async () => {
 document.querySelector('#query')?.addEventListener('click', async () => {
   const quadsStream = await engine.queryQuads(
     `construct { ?s ?p ?o } where { 
-        { graph <http://example.com/nested/lorem> { ?s ?p ?o } } union
+        { graph <http://example.org/nested/lorem> { ?s ?p ?o } } union
         { graph <https://shapething.com/lorem> { ?s ?p ?o } } union
-        { graph <http://example.com/ipsum> { ?s ?p ?o } }
+        { graph <http://example.org/ipsum> { ?s ?p ?o } }
     }`,
     {
       sources: [store]
@@ -45,7 +45,7 @@ document.querySelector('#query')?.addEventListener('click', async () => {
 document.querySelector('#update')?.addEventListener('click', async () => {
   const contents = (document.querySelector('#input-area') as HTMLTextAreaElement)?.value
   const quads = new Parser({
-    baseIRI: new URL('http://example.com/').toString()
+    baseIRI: new URL('http://example.org/').toString()
   }).parse(contents)
 
   const query = `insert data { ${quads.map(
@@ -61,7 +61,7 @@ document.querySelector('#update')?.addEventListener('click', async () => {
 })
 
 document.querySelector('#delete')?.addEventListener('click', async () => {
-  const query = `drop graph <http://example.com/lorem>`
+  const query = `drop graph <http://example.org/lorem>`
 
   await engine.queryVoid(query, {
     sources: [store]
@@ -70,8 +70,8 @@ document.querySelector('#delete')?.addEventListener('click', async () => {
 
 document.querySelector('#delete-where')?.addEventListener('click', async () => {
   const query = `DELETE WHERE { 
-    GRAPH <http://example.com/y/> {
-      <http://example.com/y/> <http://example.com/y/lorem> <http://example.com/y/ipsum>
+    GRAPH <http://example.org/y/> {
+      <http://example.org/y/> <http://example.org/y/lorem> <http://example.org/y/ipsum>
     }
   }
 `

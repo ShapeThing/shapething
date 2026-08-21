@@ -10,7 +10,7 @@ import type { WidgetProps } from "@/widgets/types.ts";
 import { selectQueryFor } from "./selectQuery.ts";
 import "./style.css";
 
-export default function EnumSelectEditor({ shape, term, setTerm }: WidgetProps) {
+export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
   const options = useMemo(() => shape.get(sh("in")), [shape]);
   const selectQuery = useMemo(() => selectQueryFor(shape), [shape]);
   const [open, setOpen] = useState(false);
@@ -127,6 +127,7 @@ export default function EnumSelectEditor({ shape, term, setTerm }: WidgetProps) 
         aria-activedescendant={
           open && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
         }
+        aria-labelledby={labelledBy}
         onClick={() => (open ? setOpen(false) : openList())}
         onKeyDown={(event) => {
           if (event.key === "Escape") {

@@ -4,7 +4,7 @@ import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import type { WidgetProps } from "@/widgets/types.ts";
 
-export default function TextAreaWithLangEditor({ shape, term, setTerm }: WidgetProps) {
+export default function TextAreaWithLangEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
   const { languageMode } = useEnvironment();
   const languages = shape.get(sh("languageIn"));
   // Only a Literal carries a language tag - this widget is only ever scored in for rdf:langString
@@ -19,7 +19,13 @@ export default function TextAreaWithLangEditor({ shape, term, setTerm }: WidgetP
 
   return (
     <>
-      <textarea className="st-input" value={localValue} onChange={onChange} onBlur={onBlur}>
+      <textarea
+        className="st-input"
+        value={localValue}
+        onChange={onChange}
+        onBlur={onBlur}
+        aria-labelledby={labelledBy}
+      >
         {localValue}
       </textarea>
       {languageMode === "individual" && languages.length > 0 && (
@@ -28,6 +34,7 @@ export default function TextAreaWithLangEditor({ shape, term, setTerm }: WidgetP
             className="st-select"
             value={language}
             onChange={(e) => setTerm(factory.literal(term.value, e.target.value))}
+            aria-labelledby={labelledBy}
           >
             {languages.map((language) => (
               <option key={language.value} value={language.value}>

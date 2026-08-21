@@ -7,7 +7,7 @@ function parse(turtle: string) {
   return parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ${turtle}
     `,

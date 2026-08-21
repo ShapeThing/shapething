@@ -38,7 +38,7 @@ test("getScoringGraph + score picks the BooleanEditor for a plain boolean proper
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:isActiveShape a sh:PropertyShape ;
             sh:path ex:isActive ;
             sh:datatype xsd:boolean .
@@ -48,21 +48,21 @@ test("getScoringGraph + score picks the BooleanEditor for a plain boolean proper
 
   const dataGraph = await parseRdf(
     `
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:Alice ex:isActive true .
     `,
     "text/turtle",
   );
   const [isActiveQuad] = dataGraph.getQuads(
-    factory.namedNode("http://example.com/Alice"),
-    factory.namedNode("http://example.com/isActive"),
+    factory.namedNode("http://example.org/Alice"),
+    factory.namedNode("http://example.org/isActive"),
   );
 
   const best = await Array.fromAsync(
     score({
       focusNode: isActiveQuad.object,
       dataGraph,
-      shapeNode: factory.namedNode("http://example.com/isActiveShape"),
+      shapeNode: factory.namedNode("http://example.org/isActiveShape"),
       shapesGraph,
       scoringGraph,
       widgetPredicate: shui("editor"),

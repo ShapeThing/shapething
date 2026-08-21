@@ -3,8 +3,8 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 <urn:no-subject-given> a "Dataset" ;
-  sta:baseIRI <https://example.com/dataset> ;
+  sta:baseIRI <https://example.org/dataset> ;
   sta:datasetType sta:SparqlEndpoint ;
-  sta:endpointUrl "https://example.com/sparql"^^xsd:anyURI ;
+  sta:endpointUrl "https://example.org/sparql"^^xsd:anyURI ;
   sta:sparqlQuery "SELECT ?s ?p ?o WHERE { ?s ?p ?o } LIMIT 100" ;
   rdfs:label "My Dataset" .

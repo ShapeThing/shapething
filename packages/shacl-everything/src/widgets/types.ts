@@ -14,6 +14,11 @@ export type WidgetProps = {
   // label and the sub-form, in DetailsEditor's case - so it lands in the DOM (and hence the tab
   // order) where it actually belongs instead of trailing after the sub-form's own fields.
   flyOut?: ReactNode;
+  // Id of the FormElement <label> describing this property, for the widget's actual control(s) to
+  // reference via aria-labelledby - PropertyUIComponent can render several widget instances (one
+  // per value) under a single label, so this is a many-to-one aria-labelledby rather than a
+  // one-to-one htmlFor/id pairing.
+  labelledBy?: string;
 };
 
 export type WidgetComponent = ComponentType<WidgetProps> & { placesOwnFlyOut?: boolean };

@@ -5,7 +5,7 @@ import { ex } from "@/helpers/namespaces.ts";
 test("parseRdf - parses turtle content into a store", async () => {
   const store = await parseRdf(
     `
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         ex:Alice ex:name "Alice" .
     `,
     "text/turtle",
@@ -18,8 +18,8 @@ test("parseRdf - parses turtle content into a store", async () => {
 test("parseRdf - parses a different content type (JSON-LD)", async () => {
   const store = await parseRdf(
     JSON.stringify({
-      "@id": "http://example.com/Alice",
-      "http://example.com/name": "Alice",
+      "@id": "http://example.org/Alice",
+      "http://example.org/name": "Alice",
     }),
     "application/ld+json",
   );

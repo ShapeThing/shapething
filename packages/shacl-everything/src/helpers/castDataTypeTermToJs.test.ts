@@ -50,7 +50,7 @@ test("castDataTypeTermToJs - maps date/time datatypes to 'Date'", () => {
 });
 
 test("castDataTypeTermToJs - falls back to 'string' for an unrecognized datatype", () => {
-  expect(castDataTypeTermToJs(factory.namedNode("http://example.com/customType"))).toEqual(
+  expect(castDataTypeTermToJs(factory.namedNode("http://example.org/customType"))).toEqual(
     "string",
   );
 });

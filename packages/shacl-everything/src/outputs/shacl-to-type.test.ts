@@ -6,7 +6,7 @@ test("generates a type for a required scalar property", async () => {
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Recipe a sh:NodeShape ;
@@ -34,7 +34,7 @@ test("marks a property with sh:minCount 0 as optional", async () => {
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Recipe a sh:NodeShape ;
@@ -58,7 +58,7 @@ test("renders properties without maxCount 1 as arrays", async () => {
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Recipe a sh:NodeShape ;
@@ -81,7 +81,7 @@ test("maps xsd:integer and xsd:boolean datatypes to number and boolean", async (
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Recipe a sh:NodeShape ;
@@ -112,7 +112,7 @@ test("maps a sh:datatype SHACL list of xsd:string and rdf:langString to string",
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
         @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 
@@ -137,7 +137,7 @@ test("generates one type per node shape, keyed by local name", async () => {
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Recipe a sh:NodeShape ;
@@ -158,7 +158,7 @@ test("honors sh:codeIdentifier over the shape's local name", async () => {
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:codeIdentifier "ChickenSoupRecipe" .
@@ -176,7 +176,7 @@ test("falls back to sh:name when sh:codeIdentifier is absent", async () => {
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
 
         ex:Recipe a sh:NodeShape ;
             sh:name "RecipeType" .
@@ -194,7 +194,7 @@ test("falls back to the local name of a hash-delimited shape IRI", async () => {
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/vocab#> .
+        @prefix ex: <http://example.org/vocab#> .
 
         ex:Recipe a sh:NodeShape .
     `,
@@ -210,7 +210,7 @@ test("renders sh:or as a union of the branches' object types", async () => {
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Recipe a sh:NodeShape ;
@@ -234,7 +234,7 @@ test("groups multiple properties within a single sh:or branch into one object ty
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Person a sh:NodeShape ;
@@ -261,7 +261,7 @@ test("intersects plain properties with a sh:or union on the same node shape", as
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Recipe a sh:NodeShape ;
@@ -286,7 +286,7 @@ test("renders sh:xone as a mutually-exclusive union, unlike sh:or", async () => 
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Recipe a sh:NodeShape ;
@@ -310,7 +310,7 @@ test("marks every sibling key as never for each branch of a three-way sh:xone", 
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Recipe a sh:NodeShape ;
@@ -338,7 +338,7 @@ test("renders a sh:or branch declared via sh:node the same as one declared via s
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Person a sh:NodeShape ;
@@ -367,7 +367,7 @@ test("intersects a branch's own properties with a further sh:or nested inside it
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix ex: <http://example.com/> .
+        @prefix ex: <http://example.org/> .
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
         ex:Recipe a sh:NodeShape ;

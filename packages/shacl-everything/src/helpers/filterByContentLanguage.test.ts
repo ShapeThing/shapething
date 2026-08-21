@@ -31,7 +31,7 @@ test("filterByContentLanguage - always keeps language-less literals", () => {
 });
 
 test("filterByContentLanguage - always keeps non-literal terms", () => {
-  const iri = factory.namedNode("http://example.com/a");
+  const iri = factory.namedNode("http://example.org/a");
   const nl = factory.literal("Kat", "nl");
 
   expect(filterByContentLanguage([iri, nl], "en")).toEqual([iri]);

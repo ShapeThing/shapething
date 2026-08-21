@@ -4,8 +4,8 @@ import { deleteLiteralsByLanguage } from "@/helpers/deleteLiteralsByLanguage.ts"
 import { factory } from "@/helpers/factory.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 
-const subject = factory.namedNode("http://example.com/data");
-const predicate = factory.namedNode("http://example.com/label");
+const subject = factory.namedNode("http://example.org/data");
+const predicate = factory.namedNode("http://example.org/label");
 
 function storeOf(...literals: string[][]): RdfStore {
   const store = RdfStore.createDefault();
@@ -42,7 +42,7 @@ test("deleteLiteralsByLanguage - is case-insensitive", () => {
 test("deleteLiteralsByLanguage - leaves language-less literals and non-literal terms untouched", () => {
   const store = RdfStore.createDefault();
   const plain = factory.quad(subject, predicate, factory.literal("42"));
-  const iri = factory.quad(subject, predicate, factory.namedNode("http://example.com/a"));
+  const iri = factory.quad(subject, predicate, factory.namedNode("http://example.org/a"));
   const nl = factory.quad(subject, predicate, factory.literal("Kat", "nl"));
   store.addQuad(plain);
   store.addQuad(iri);

@@ -30,6 +30,19 @@
   }
 }
 
+.st-button--primary {
+  border: 2px solid var(--st-primary-color);
+  color: var(--st-primary-color);
+  font-weight: bold;
+
+  &:hover,
+  &:focus {
+    color: white;
+    outline: 2px solid var(--st-primary-color);
+    background-color: var(--st-primary-color);
+  }
+}
+
 .st-button--text {
   background: none;
   border-color: transparent;

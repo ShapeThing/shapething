@@ -9,7 +9,7 @@ import type { SearchResult } from "@/outputs/render/hooks/query.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
-export default function AutoCompleteEditor({ shape, term, setTerm }: WidgetProps) {
+export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
   const existingObjects = useDataGraphObjects(shape);
 
   const [mode, setMode] = useState<"view" | "edit">(term.value ? "view" : "edit");
@@ -102,6 +102,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm }: WidgetProps
           aria-activedescendant={
             activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
           }
+          aria-labelledby={labelledBy}
           value={search}
           onChange={(event) => setSearch(event.target.value)}
           onBlur={closeEditor}
