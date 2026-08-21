@@ -297,7 +297,7 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
       </div>
 
       {isOpen && (
-        <div className="st-subclass__panel" data-block-fly-out>
+        <div className="st-subclass__panel">
           <div className="st-subclass-tree" role={inputType === "radio" ? "radiogroup" : "group"}>
             {filteredTree ? (
               <SubClassTreeNode

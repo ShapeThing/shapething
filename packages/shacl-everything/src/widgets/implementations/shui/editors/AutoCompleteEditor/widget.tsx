@@ -100,7 +100,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
   }
 
   return (
-    <div className="st-autocomplete" data-block-fly-out>
+    <div className="st-autocomplete">
       <Localized id="autocomplete-search-placeholder" attrs={{ placeholder: true }}>
         <input
           ref={inputRef}

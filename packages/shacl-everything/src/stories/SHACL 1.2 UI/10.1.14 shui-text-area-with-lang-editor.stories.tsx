@@ -13,16 +13,46 @@ export default {
 };
 
 export const shuiTextAreaWithLangEditor: Story = {
-  name: "Multi-line rdf:langString value with a language selector",
+  name: "Multi-line rdf:langString value with global language selector",
   args: argsByTestFile("10.1.14 shui-text-area-with-lang-editor.ttl", import.meta.url),
 };
 
 export const shuiTextAreaWithLangEditorMultipleLanguages: Story = {
-  name: "Multiple existing translations (en, nl)",
+  name: "Multiple existing translations (en, nl) with global language selector",
   args: argsByTestFile("10.1.14.a shui-text-area-with-lang-editor.ttl", import.meta.url),
 };
 
 export const shuiTextAreaWithLangEditorMissingTranslation: Story = {
-  name: "A language declared on the shape (fr) with no translation yet",
+  name: "A language declared on the shape (fr) with no translation yet with global language selector",
   args: argsByTestFile("10.1.14.b shui-text-area-with-lang-editor.ttl", import.meta.url),
+};
+
+const env = {
+  ...minimalEnvironment,
+  languageMode: "individual" as const,
+  enableContentLanguageCreation: true,
+};
+
+export const shuiTextAreaWithLangEditorInline: Story = {
+  name: "Multi-line rdf:langString value with inline language selector",
+  args: {
+    ...argsByTestFile("10.1.14 shui-text-area-with-lang-editor.ttl", import.meta.url),
+    ...env,
+  },
+};
+
+export const shuiTextAreaWithLangEditorMultipleLanguagesInline: Story = {
+  name: "Multiple existing translations (en, nl) with inline language selector",
+  args: {
+    ...argsByTestFile("10.1.14.a shui-text-area-with-lang-editor.ttl", import.meta.url),
+    ...env,
+  },
+};
+
+export const shuiTextAreaWithLangEditorMissingTranslationInline: Story = {
+  name: "A language declared on the shape (fr) with no translation yet with inline language selector",
+  args: {
+    ...argsByTestFile("10.1.14.b shui-text-area-with-lang-editor.ttl", import.meta.url),
+    ...env,
+  },
 };

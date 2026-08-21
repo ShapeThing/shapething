@@ -106,16 +106,15 @@ function findModalInput(canvasElement: HTMLElement): HTMLInputElement {
   return input;
 }
 
+// Not a real <form> (see CreateLanguageModal - it's nested inside the page's own edit <form>,
+// and a real nested <form> makes browsers mishandle which one a submit resolves to), so there's
+// no button[type=submit] to key off - identify the two actions by their accessible name instead.
 function findModalSubmitButton(canvasElement: HTMLElement): HTMLButtonElement {
-  const button = findModal(canvasElement).querySelector<HTMLButtonElement>("button[type=submit]");
-  if (!button) throw new Error("Could not find the modal's submit button");
-  return button;
+  return within(findModal(canvasElement)).getByRole("button", { name: "Add" });
 }
 
 function findModalCancelButton(canvasElement: HTMLElement): HTMLButtonElement {
-  const button = findModal(canvasElement).querySelector<HTMLButtonElement>("button[type=button]");
-  if (!button) throw new Error("Could not find the modal's cancel button");
-  return button;
+  return within(findModal(canvasElement)).getByRole("button", { name: "Cancel" });
 }
 
 export const creatingANewContentLanguageAddsItToTheSwitcher: Story = {

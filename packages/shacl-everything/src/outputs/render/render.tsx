@@ -53,13 +53,5 @@ const modesComponents: Record<Environment["mode"], React.ComponentType> = {
 function ShaclRendererInner() {
   const { mode } = useEnvironment();
   const ModeComponent = modesComponents[mode];
-  return (
-    <>
-      <header className="st-header">
-        <InterfaceLanguageSwitcher />
-        <ContentLanguageSwitcher />
-      </header>
-      <ModeComponent />
-    </>
-  );
+  return <ModeComponent />;
 }

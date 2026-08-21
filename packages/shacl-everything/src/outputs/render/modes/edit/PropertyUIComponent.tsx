@@ -117,9 +117,11 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
         label && activeLanguage && isRdfLangString ? (
           <>
             {label}{" "}
-            <span className="st-property-language-tag">
-              ({Object.values(languageLabels([activeLanguage], activeInterfaceLanguage))})
-            </span>
+            {languageMode === "switcher" && (
+              <span className="st-property-language-tag">
+                ({Object.values(languageLabels([activeLanguage], activeInterfaceLanguage))})
+              </span>
+            )}
           </>
         ) : (
           label

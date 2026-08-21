@@ -50,8 +50,10 @@ export type Environment = {
   enableWidgetSwitching?: boolean;
   // When a property has sh:or/sh:xone branches, allow switching between them. If false, the first matching branch will be used and no switching will be possible.
   enableLogicalBranchSwitching?: boolean;
-  // When true, ContentLanguageSwitcher offers an option to create a brand new BCP47 content
-  // language at runtime, in addition to the ones supplied via `languages`/found in the graphs.
+  // When true, ContentLanguageSwitcher (languageMode "switcher") and each value's own
+  // ValueLanguageSelect (languageMode "individual") offer an option to create a brand new BCP47
+  // language at runtime, in addition to the ones supplied via `languages`/found in the graphs/
+  // declared via sh:languageIn.
   enableContentLanguageCreation?: boolean;
   // When true, the predicate of a property will be included in the label's title attribute. This is useful for debugging and for users who want to see the underlying data model.
   enableShPathInLabelTitle?: boolean;
@@ -65,13 +67,11 @@ export type Environment = {
 // still be an unparsed/undereferenced RdfSource rather than a ready RdfStore. RdfStore is itself
 // a valid RdfSource, so a fully-resolved Environment already satisfies this type - preprocessors
 // don't need a different type per stage of the chain.
-export type RawEnvironment =
-  & Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph">
-  & {
-    shapesGraph: RdfSource;
-    dataGraph: RdfSource;
-    scoresGraph: RdfSource;
-  };
+export type RawEnvironment = Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph"> & {
+  shapesGraph: RdfSource;
+  dataGraph: RdfSource;
+  scoresGraph: RdfSource;
+};
 
 export const defaultEnvironment: Environment = {
   shapesGraph: RdfStore.createDefault(),
@@ -93,10 +93,7 @@ export const defaultEnvironment: Environment = {
   enableFullLanguageRemoval: true,
 };
 
-export const minimalEnvironment: Omit<
-  Environment,
-  "scoresGraph" | "shapesGraph" | "dataGraph"
-> = {
+export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph" | "dataGraph"> = {
   focusNode: ex("focusNode"),
   nodeShapes: [],
   mode: "edit",

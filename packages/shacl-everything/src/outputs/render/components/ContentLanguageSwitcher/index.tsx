@@ -1,7 +1,7 @@
 import { useId, useMemo, useState } from "react";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
-import CreateLanguageModal from "@/outputs/render/components/ContentLanguageSwitcher/CreateLanguageModal.tsx";
+import CreateLanguageModal from "@/outputs/render/components/CreateLanguageModal/index.tsx";
 import DeleteLanguageModal from "@/outputs/render/components/ContentLanguageSwitcher/DeleteLanguageModal.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
@@ -16,7 +16,8 @@ import "./style.css";
 export default function ContentLanguageSwitcher() {
   const { languageMode, enableContentLanguageCreation, enableFullLanguageRemoval, dataGraph } =
     useEnvironment();
-  const { languages, activeLanguage, setActiveLanguage, removeLanguage } = useContentLanguage();
+  const { languages, activeLanguage, setActiveLanguage, addLanguage, removeLanguage } =
+    useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [languageToDelete, setLanguageToDelete] = useState<BCP47>();
@@ -63,9 +64,7 @@ export default function ContentLanguageSwitcher() {
           )}
           renderOption={(language, close) => (
             <>
-              <span className="st-content-language-switcher__option-label">
-                {labels[language]}
-              </span>
+              <span className="st-content-language-switcher__option-label">{labels[language]}</span>
               {enableFullLanguageRemoval && (
                 <Localized
                   id="content-language-delete-option"
@@ -74,6 +73,7 @@ export default function ContentLanguageSwitcher() {
                 >
                   <button
                     type="button"
+                    disabled={languages.length <= 1}
                     // Reachable by mouse only (see the trigger's Delete-key handling above) -
                     // a real focusable button nested inside a row would otherwise stop Tab
                     // here instead of leaving the listbox in one hop, breaking the roving,
@@ -98,18 +98,24 @@ export default function ContentLanguageSwitcher() {
           extraRow={
             showCreateOption
               ? {
-                  content: (
-                    <Localized id="content-language-create-option">Add language…</Localized>
-                  ),
+                  content: <Localized id="content-language-create-option">Add language…</Localized>,
                   onActivate: () => setCreateModalOpen(true),
                 }
               : undefined
           }
-          onDeleteKey={(language) => setLanguageToDelete(language)}
+          onDeleteKey={(language) => {
+            if (languages.length <= 1) return;
+            setLanguageToDelete(language);
+          }}
         />
       </FormElement>
       {showCreateOption && (
-        <CreateLanguageModal open={createModalOpen} onClose={() => setCreateModalOpen(false)} />
+        <CreateLanguageModal
+          open={createModalOpen}
+          onClose={() => setCreateModalOpen(false)}
+          languages={languages}
+          onAdd={addLanguage}
+        />
       )}
       <DeleteLanguageModal
         language={languageToDelete}
@@ -126,4 +132,3 @@ export default function ContentLanguageSwitcher() {
     </>
   );
 }
-

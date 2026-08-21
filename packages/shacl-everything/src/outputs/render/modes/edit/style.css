@@ -63,8 +63,8 @@
 
 .st-property-object__fly-out {
   position: absolute;
-  top: calc(100% + var(--size-3));
-  left: 0;
+  bottom: calc(100% + var(--size-3));
+  right: 0;
   padding: var(--size-2);
   border-radius: var(--radius-2);
   box-shadow: var(--shadow-3);
@@ -84,26 +84,26 @@
     --size: calc(var(--size-2) + 1px);
     content: "";
     position: absolute;
-    top: calc(-1 * var(--size) - 1px);
-    left: calc(var(--size-2) - 1px);
+    bottom: calc(-1 * var(--size) - 1px);
+    right: calc(var(--size-2) - 1px);
     width: 0;
     height: 0;
     border-left: var(--size) solid transparent;
     border-right: var(--size) solid transparent;
-    border-bottom: var(--size) solid var(--st-color-border);
+    border-top: var(--size) solid var(--st-color-border);
   }
 
   &::after {
     --size: var(--size-2);
     content: "";
     position: absolute;
-    top: calc(-1 * var(--size));
-    left: var(--size-2);
+    bottom: calc(-1 * var(--size));
+    right: var(--size-2);
     width: 0;
     height: 0;
     border-left: var(--size) solid transparent;
     border-right: var(--size) solid transparent;
-    border-bottom: var(--size) solid var(--st-primary-color-lighter);
+    border-top: var(--size) solid var(--st-primary-color-lighter);
   }
 }
 

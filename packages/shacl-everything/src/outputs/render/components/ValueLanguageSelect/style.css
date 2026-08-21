@@ -1,0 +1,7 @@
+/* Combined with .st-listbox__wrapper (see wrapperClassName in ValueLanguageSelect) - that base
+   class already sets display/width/position, this just narrows it and keeps it top-aligned next
+   to a multi-line textarea. */
+.st-value-language-select {
+  max-width: 160px;
+  margin-bottom: auto;
+}
