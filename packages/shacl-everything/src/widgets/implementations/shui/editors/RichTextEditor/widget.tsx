@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, type ReactNode } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -7,13 +7,13 @@ import { rdf } from "@/helpers/namespaces.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
-type ToolbarButton = { label: string; title: string; active: boolean; onClick: () => void };
+type ToolbarButton = { label: ReactNode; title: string; active: boolean; onClick: () => void };
 
 function ToolbarBtn({ label, title, active, onClick }: ToolbarButton) {
   return (
     <button
       type="button"
-      className={`st-button st-button--text st-rte-btn${active ? " is-active" : ""}`}
+      className={`st-icon-button ${active ? " is-active" : ""}`}
       // preventDefault keeps editor focus when clicking toolbar buttons
       onMouseDown={(e) => {
         e.preventDefault();
@@ -28,20 +28,20 @@ function ToolbarBtn({ label, title, active, onClick }: ToolbarButton) {
 }
 
 function Toolbar({ editor }: { editor: Editor }) {
-  const btn = (label: string, title: string, active: boolean, onClick: () => void) => (
+  const btn = (label: ReactNode, title: string, active: boolean, onClick: () => void) => (
     <ToolbarBtn key={title} label={label} title={title} active={active} onClick={onClick} />
   );
   return (
     <div className="st-rte-toolbar" aria-label="Text formatting">
       {btn("B", "Bold", editor.isActive("bold"), () => editor.chain().focus().toggleBold().run())}
-      {btn("I", "Italic", editor.isActive("italic"), () =>
+      {btn(<em>I</em>, "Italic", editor.isActive("italic"), () =>
         editor.chain().focus().toggleItalic().run(),
       )}
       <span className="st-rte-toolbar__sep" />
-      {btn("• List", "Bullet list", editor.isActive("bulletList"), () =>
+      {btn("•", "Bullet list", editor.isActive("bulletList"), () =>
         editor.chain().focus().toggleBulletList().run(),
       )}
-      {btn("1. List", "Ordered list", editor.isActive("orderedList"), () =>
+      {btn("1.", "Ordered list", editor.isActive("orderedList"), () =>
         editor.chain().focus().toggleOrderedList().run(),
       )}
       <span className="st-rte-toolbar__sep" />

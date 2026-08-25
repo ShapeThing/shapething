@@ -1,0 +1,45 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Recipe ;
+
+    sh:property [
+        sh:name "Steps"@en ;
+        sh:path ex:steps ;
+        sh:memberShape [
+            sh:node <#stepShape> ;
+            shui:editor shui:DetailsEditor ;
+        ] ;
+    ] ;
+    .
+
+<#stepShape>
+    a sh:NodeShape ;
+    sh:property [
+        sh:name "Instruction"@en ;
+        sh:path ex:instruction ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:name "Duration (minutes)"@en ;
+        sh:path ex:duration ;
+        sh:datatype xsd:integer ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+<#data>
+    a schema:Recipe ;
+    schema:name "Pancakes" ;
+    ex:steps (
+        [ ex:instruction "Mix the batter" ; ex:duration 5 ]
+        [ ex:instruction "Heat the pan" ; ex:duration 2 ]
+        [ ex:instruction "Cook each pancake" ; ex:duration 10 ]
+    ) ;
+    .

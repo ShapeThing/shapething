@@ -19,3 +19,8 @@ export const shMemberShapeB: Story = {
   name: "Violated (150 exceeds maxInclusive 100)",
   args: argsByTestFile("7.5.1.b sh-member-shape.ttl", import.meta.url),
 };
+
+export const shMemberShapeObjects: Story = {
+  name: "Object-shaped members (ordered recipe steps)",
+  args: argsByTestFile("7.5.1.c sh-member-shape.ttl", import.meta.url),
+};

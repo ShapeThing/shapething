@@ -1,0 +1,32 @@
+.st-blank-node-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+  flex: 1;
+}
+
+.st-blank-node-editor__label {
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text-muted);
+}
+
+.st-blank-node-editor__assign,
+.st-blank-node-editor__identifier {
+  align-self: flex-start;
+}
+
+.st-blank-node-editor__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+}
+
+.st-blank-node-editor__values {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+}
+
+.st-blank-node-editor__ref-value {
+  color: var(--st-color-text-muted);
+}

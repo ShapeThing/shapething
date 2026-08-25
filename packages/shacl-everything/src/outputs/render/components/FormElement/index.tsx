@@ -59,7 +59,12 @@ export default function FormElement({
                   {/* Sits before the field itself in the DOM, so a normal tab stop here would
                       interrupt Tab from the label reaching the field - it's still reachable by
                       mouse/touch, and by keyboard once the field itself is focused. */}
-                  <button type="button" className="st-icon-button" aria-label="Help" tabIndex={-1}>
+                  <button
+                    type="button"
+                    className="st-icon-button st-icon-button--help"
+                    aria-label="Help"
+                    tabIndex={-1}
+                  >
                     <Help />
                   </button>
                 </Localized>

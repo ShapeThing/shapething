@@ -2,6 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState, type RefObject } from "rea
 import { Localized } from "@fluent/react";
 import type { NamedNode, Term } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
+import { highlightMatches } from "@/helpers/highlightMatches.tsx";
 import { rdfs, sh } from "@/helpers/namespaces.ts";
 import { propertyLabel } from "@/resolution/label.ts";
 import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
@@ -44,8 +45,9 @@ function buildHierarchy(
 
 // Keeps a node whose own label matches `query` together with its whole subtree (so a category hit
 // still shows what's under it), or - failing that - keeps it anyway if some descendant matches, but
-// trimmed down to only the matching branches. This is what surfaces a match's ancestor chain (e.g.
-// searching "Dog" still shows Animal > Mammal above it) instead of flattening the result to hits alone.
+// trimmed down to only the matching branches. A non-matching node kept this way renders no row of
+// its own (see SubClassTreeNode's `matches` check) - it's only a structural carrier so its matching
+// descendants stay reachable in the tree, rather than the whole branch being pruned away.
 function filterTree(node: ClassNode, query: string): ClassNode | undefined {
   if (node.label.toLowerCase().includes(query)) return node;
 
@@ -56,14 +58,20 @@ function filterTree(node: ClassNode, query: string): ClassNode | undefined {
   return filteredChildren.length > 0 ? { ...node, children: filteredChildren } : undefined;
 }
 
-// Pre-order flattening of the (possibly filtered) tree - the order rows actually appear in the DOM
-// top to bottom, used as the roving keyboard-nav index (see activeIndex below).
-function flattenTree(node: ClassNode): ClassNode[] {
-  return [node, ...node.children.flatMap(flattenTree)];
+// Pre-order list of the rows actually rendered as a selectable option - the order they appear in
+// the DOM top to bottom, used as the roving keyboard-nav index (see activeIndex below). While
+// searching, a node whose own label doesn't match `query` renders no row of its own (see
+// SubClassTreeNode below), so it's excluded here too; its children are still walked, since one of
+// them may match on its own even though this ancestor didn't.
+function flattenVisible(node: ClassNode, query: string): ClassNode[] {
+  const matches = !query || node.label.toLowerCase().includes(query);
+  const childItems = node.children.flatMap((child) => flattenVisible(child, query));
+  return matches ? [node, ...childItems] : childItems;
 }
 
 function SubClassTreeNode({
   node,
+  query,
   inputType,
   groupName,
   isChecked,
@@ -72,6 +80,7 @@ function SubClassTreeNode({
   onToggle,
 }: {
   node: ClassNode;
+  query: string;
   inputType: "checkbox" | "radio";
   groupName: string;
   isChecked: (term: NamedNode) => boolean;
@@ -79,42 +88,54 @@ function SubClassTreeNode({
   rowRefs: RefObject<Map<string, HTMLLabelElement>>;
   onToggle: (term: NamedNode, checked: boolean) => void;
 }) {
+  // filterTree keeps a non-matching node around when some descendant of it matches, purely as a
+  // tree-structure carrier - it renders no row of its own while searching, only whichever of its
+  // descendants actually match (see flattenVisible above, which the keyboard nav and rowRefs stay
+  // in sync with by applying this same check).
+  const matches = !query || node.label.toLowerCase().includes(query);
+
   return (
     <div className="st-subclass-tree__node">
-      <label
-        ref={(el) => {
-          if (el) rowRefs.current.set(node.term.value, el);
-          else rowRefs.current.delete(node.term.value);
-        }}
-        className={`st-option ${node.term.value === activeTerm ? "st-option--active" : ""}`}
-        // Keeps focus on the search input during the click, exactly like AutoCompleteEditor's and
-        // EnumSelectEditor's own result rows - without this, the mousedown shifts focus onto this
-        // label/input first, which fires the container's onBlur and closes the panel before the
-        // click that follows ever reaches this row, so the click intermittently does nothing. For
-        // the checkbox (multi-value) case, it also keeps the panel open across several picks -
-        // there's nowhere else for focus to land that onBlur would treat as "outside".
-        onMouseDown={(event) => event.preventDefault()}
-      >
-        <input
-          type={inputType}
-          className="st-checkbox"
-          name={inputType === "radio" ? groupName : undefined}
-          checked={isChecked(node.term)}
-          onChange={(event) => onToggle(node.term, event.target.checked)}
-          // Keyboard nav is entirely driven by the search input above (arrow keys/enter, see
-          // onKeyDown below) - mirrors AutoCompleteEditor/EnumSelectEditor, whose result rows
-          // aren't part of the tab order either, and sidesteps radio groups' native arrow-key
-          // behaviour, which would otherwise apply a value the moment it's merely arrowed past.
-          tabIndex={-1}
-        />
-        {node.label}
-      </label>
+      {matches && (
+        <label
+          ref={(el) => {
+            if (el) rowRefs.current.set(node.term.value, el);
+            else rowRefs.current.delete(node.term.value);
+          }}
+          className={`st-option ${node.term.value === activeTerm ? "st-option--active" : ""}`}
+          // Keeps focus on the search input during the click, exactly like AutoCompleteEditor's and
+          // EnumSelectEditor's own result rows - without this, the mousedown shifts focus onto this
+          // label/input first, which fires the container's onBlur and closes the panel before the
+          // click that follows ever reaches this row, so the click intermittently does nothing. For
+          // the checkbox (multi-value) case, it also keeps the panel open across several picks -
+          // there's nowhere else for focus to land that onBlur would treat as "outside".
+          onMouseDown={(event) => event.preventDefault()}
+        >
+          <input
+            type={inputType}
+            className="st-checkbox"
+            name={inputType === "radio" ? groupName : undefined}
+            checked={isChecked(node.term)}
+            onChange={(event) => onToggle(node.term, event.target.checked)}
+            // Keyboard nav is entirely driven by the search input above (arrow keys/enter, see
+            // onKeyDown below) - mirrors AutoCompleteEditor/EnumSelectEditor, whose result rows
+            // aren't part of the tab order either, and sidesteps radio groups' native arrow-key
+            // behaviour, which would otherwise apply a value the moment it's merely arrowed past.
+            tabIndex={-1}
+          />
+          {/* A single wrapping element, not the highlightMatches() array directly - .st-option is a
+          flex container with a `gap`, which would otherwise land between every text/mark fragment
+          the array produces instead of just once between the checkbox and the label. */}
+          <span>{highlightMatches(node.label, query, "st-subclass-tree__match")}</span>
+        </label>
+      )}
       {node.children.length > 0 && (
         <div className="st-subclass-tree__children">
           {node.children.map((child) => (
             <SubClassTreeNode
               key={child.term.value}
               node={child}
+              query={query}
               inputType={inputType}
               groupName={groupName}
               isChecked={isChecked}
@@ -166,8 +187,8 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
     [tree, query],
   );
   const visibleItems = useMemo(
-    () => (filteredTree ? flattenTree(filteredTree) : []),
-    [filteredTree],
+    () => (filteredTree ? flattenVisible(filteredTree, query) : []),
+    [filteredTree, query],
   );
   const activeTerm = visibleItems[activeIndex]?.term.value;
 
@@ -212,10 +233,10 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
 
   // Single-valued: picking a class replaces this instance's own term and closes the panel, same as
   // ever. Multi-valued: toggling a box adds/removes right away and leaves the panel open for
-  // further picks. Closing is done via state directly rather than blurring the search input -
-  // clicking a row's label also activates its nested radio/checkbox, which the browser focuses as
-  // part of that same click, so by the time this runs the search input may already not be the
-  // focused element and a blur() call on it would silently do nothing.
+  // further picks - refocusing the search input afterwards (same as removeChip below) undoes the
+  // browser's own focus move onto the checkbox that was just clicked, so typing continues right
+  // away without a click back into the input. Single-valued skips that: it already closes the panel
+  // via state, and refocusing the input would only fire its onFocus (openPanel) and reopen it.
   const toggle = (candidate: NamedNode, checked: boolean) => {
     if (!isMultiValued) {
       setTerm(candidate);
@@ -225,6 +246,7 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
     }
     if (checked) shape.addObject(candidate);
     else shape.removeObject(candidate);
+    searchRef.current?.focus();
   };
 
   return (
@@ -302,6 +324,7 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
             {filteredTree ? (
               <SubClassTreeNode
                 node={filteredTree}
+                query={query}
                 inputType={inputType}
                 groupName={groupName}
                 isChecked={isChecked}

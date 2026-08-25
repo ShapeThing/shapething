@@ -62,6 +62,11 @@
   overflow-y: auto;
 }
 
+.st-subclass-tree__match {
+  font-weight: bold;
+  background-color: transparent;
+}
+
 .st-subclass-tree__empty {
   display: flex;
   align-items: center;

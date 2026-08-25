@@ -18,7 +18,7 @@ export default function NodeUIComponent() {
   );
 
   return (
-    <div>
+    <div className="st-node-ui-component">
       <NodeUIElementChildren nodeUiElement={nodeUiElement} />
     </div>
   );

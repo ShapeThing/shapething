@@ -11,6 +11,11 @@
         sh:path schema:address ;
         sh:nodeKind sh:BlankNode ;
         shui:editor shui:BlankNodeEditor ;
+
+        sh:property [
+            sh:path schema:postalCode ;
+            sh:name "Postal Code"@en ; 
+         ] ;
     ] ;
     .
 
