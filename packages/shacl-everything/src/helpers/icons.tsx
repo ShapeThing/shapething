@@ -8,6 +8,8 @@ import LinkIcon from "~icons/ic/round-link";
 import CloseIcon from "~icons/ic/round-close";
 import HelpIcon from "~icons/ic/round-help";
 import DeleteIcon from "~icons/ic/round-delete-outline";
+import SearchIcon from "~icons/ic/round-search";
+import DragHandleIcon from "~icons/ic/round-drag-indicator";
 
 export const Loading = LoadingTwotoneLoopIcon;
 export const Plus = PlusIcon;
@@ -19,3 +21,5 @@ export const Link = LinkIcon;
 export const Close = CloseIcon;
 export const Help = HelpIcon;
 export const Delete = DeleteIcon;
+export const Search = SearchIcon;
+export const DragHandle = DragHandleIcon;

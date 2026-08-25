@@ -9,7 +9,11 @@ shui:blankNodeEditorScore40
     a shui:WidgetScore ;
     shui:widget shui:BlankNodeEditor ;
     shui:score 40 ;
-    shui:dataGraphShape shui:isBlankNode ;
+    # isIRIOrBlankNode, not isBlankNode: an explicit shui:editor preference for this widget must
+    # keep winning once its own "change nested node to node with identifier" button has turned
+    # the value from a blank node into a NamedNode - otherwise the nested sub-form it was showing
+    # would vanish behind whichever plain IRI widget scores next.
+    shui:dataGraphShape shui:isIRIOrBlankNode ;
     shui:shapesGraphShape shui:prefersBlankNodeEditor ;
 .
 

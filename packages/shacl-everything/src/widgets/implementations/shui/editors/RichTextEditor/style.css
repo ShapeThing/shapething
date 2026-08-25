@@ -21,13 +21,10 @@
     position: absolute;
     inset-inline: 0;
     bottom: 0;
-    height: var(--st-rte-toolbar-height);
     display: flex;
     align-items: center;
     gap: var(--size-1);
-    padding-inline: var(--size-2);
-    background: var(--gray-1);
-    border-top: 1px solid var(--gray-3);
+    padding: var(--size-2);
   }
 
   .st-rte-toolbar__sep {
@@ -35,25 +32,6 @@
     height: 1.2em;
     background: var(--gray-4);
     margin-inline: var(--size-1);
-  }
-
-  .st-rte-btn {
-    font-size: 0.8rem;
-    padding: var(--size-1) var(--size-2);
-    min-width: var(--size-7);
-    justify-content: center;
-
-    &.is-active {
-      color: var(--st-primary-color);
-      background: color-mix(in srgb, var(--st-primary-color) 10%, transparent);
-    }
-
-    &[title="Bold"] {
-      font-weight: bold;
-    }
-    &[title="Italic"] {
-      font-style: italic;
-    }
   }
 
   .tiptap {

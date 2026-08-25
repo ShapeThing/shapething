@@ -44,3 +44,9 @@
   align-content: center;
   justify-items: center;
 }
+
+.st-node-ui-component {
+  .st-form-element + .st-form-element {
+    margin-top: var(--size-5);
+  }
+}

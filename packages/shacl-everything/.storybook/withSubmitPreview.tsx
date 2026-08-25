@@ -2,11 +2,13 @@ import type { Decorator } from "@storybook/react-vite";
 import { action } from "storybook/actions";
 import { addons } from "storybook/preview-api";
 import { write } from "@jeswr/pretty-turtle";
-import type { NamedNode, Quad } from "@rdfjs/types";
+import type { DatasetCore, NamedNode, Quad } from "@rdfjs/types";
 import { ResourceFetcher } from "@shapething/resource-fetcher";
 import { QueryEngine } from "@comunica/query-sparql";
-import type { SubmitResult } from "@/environment.ts";
+import { RdfStore } from "rdf-stores";
+import type { RawEnvironment, SubmitResult } from "@/environment.ts";
 import { prefixes } from "@/helpers/namespaces.ts";
+import { resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
 import { SUBMIT_PREVIEW_EVENT } from "./addons/submit-preview/constants.ts";
 
 // Every story's edit mode form already has an onSubmit slot (see environment.ts) - rather than
@@ -19,19 +21,25 @@ import { SUBMIT_PREVIEW_EVENT } from "./addons/submit-preview/constants.ts";
 // the preview on top.
 const logSubmit = action("onSubmit");
 
-// Scopes dataGraph down to just the triples reachable from focusNode (following blank nodes, the
-// Concise Bounded Description this package extends - see resource-fetcher's README) purely so the
-// preview is readable - dataGraph itself may hold plenty of triples unrelated to the resource being
-// edited (e.g. autocomplete/search results loaded along the way). No shapesPointer is passed: this
-// is a display convenience, not part of the actual submit contract, so a plain CBD walk from
-// focusNode is enough - no need to parse the story's shapesGraph args here too.
+// Scopes dataGraph down to just the resource's own shape-guided description - dataGraph itself may
+// hold plenty of triples unrelated to the resource being edited (e.g. autocomplete/search results
+// loaded along the way). Passing shapesGraph + shapeIris (rather than a plain CBD walk with no
+// shape at all) matters once a nested value's shape declares sh:node: a bare CBD walk only follows
+// blank nodes, so it would otherwise stop at a nested value the moment it gets its own identifier
+// (e.g. via BlankNodeEditor's "change to node with identifier" button) and make the preview look
+// like that value's data silently vanished.
 async function resourceOnlyQuads(
   dataGraph: SubmitResult["dataGraph"],
   focusNode: NamedNode,
+  shapesGraph: DatasetCore,
+  shapeIris: NamedNode[],
 ): Promise<Quad[]> {
   const engine = new QueryEngine();
+  console.log(shapeIris);
   const fetcher = new ResourceFetcher({
     resourceIri: focusNode,
+    shapesGraph,
+    shapeIris,
     // dataGraph's quads live in the default graph (there's no named-graph structure to a locally
     // parsed/edited store) - unionDefaultGraph makes Comunica's GRAPH ?g pattern (which
     // ResourceFetcher's generated queries always use) see it too, since GRAPH ?g otherwise only
@@ -61,19 +69,35 @@ export const withSubmitPreview: Decorator = (Story, context) => {
     existingOnSubmit?.(result);
     logSubmit(`${result.additions.length} addition(s), ${result.deletions.length} deletion(s)`);
 
+    // The story's own shapesGraph arg is still an unresolved RdfSource (a URL, most commonly) -
+    // resolveRdfSources() is the same parsing/default-nodeShapes-detection the real app runs, reused
+    // here purely to get shapesGraph/nodeShapes read for the preview. Its resolved dataGraph is
+    // discarded: result.dataGraph (the live, already-edited store) is what queries run against.
     const resourceQuads = focusNode
-      ? resourceOnlyQuads(result.dataGraph, focusNode)
+      ? resolveRdfSources({
+          ...(context.args as RawEnvironment),
+          scoresGraph:
+            (context.args as { scoresGraph?: RawEnvironment["scoresGraph"] }).scoresGraph ??
+            RdfStore.createDefault(),
+        }).then((resolved) =>
+          resourceOnlyQuads(
+            result.dataGraph,
+            focusNode,
+            resolved.shapesGraph.asDataset(),
+            resolved.nodeShapes.filter((term): term is NamedNode => term.termType === "NamedNode"),
+          ),
+        )
       : Promise.resolve(result.dataGraph.getQuads());
 
     resourceQuads
-      .then((quads) =>
+      .then((quads: Quad[]) =>
         Promise.all([
           write(quads, writeOptions),
           write(result.additions, writeOptions),
           write(result.deletions, writeOptions),
         ]),
       )
-      .then(([dataGraph, additions, deletions]) => {
+      .then(([dataGraph, additions, deletions]: [string, string, string]) => {
         addons
           .getChannel()
           .emit(SUBMIT_PREVIEW_EVENT, { storyId, dataGraph, additions, deletions });

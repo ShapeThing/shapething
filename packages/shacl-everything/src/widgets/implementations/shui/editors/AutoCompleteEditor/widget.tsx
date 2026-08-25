@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
-import { Edit, Loading } from "@/helpers/icons.tsx";
+import { Edit, Loading, Search } from "@/helpers/icons.tsx";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useInstanceSearch } from "@/outputs/render/hooks/useInstanceSearch.tsx";
@@ -92,7 +92,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
             aria-label="Edit"
             onClick={() => setMode("edit")}
           >
-            <Edit />
+            <Search />
           </button>
         </Localized>
       </div>

@@ -1,6 +1,7 @@
 import type { Bindings, DatasetCore, NamedNode, Quad, Quad_Subject } from "@rdfjs/types";
 import type { QuerySourceUnidentified } from "@comunica/types";
 import { allShapeSubShapes } from "./helpers/allShapeSubShapes.ts";
+import { createShapesPointer } from "./helpers/createShapesPointer.ts";
 import { sh } from "./helpers/namespaces.ts";
 import parsePath, { type Path } from "./core/parsePath.ts";
 import { Branch, type BranchSnapshot, type QueryPattern } from "./core/Branch.ts";
@@ -63,6 +64,8 @@ export class ResourceFetcher {
     recursionStepMultiplier = 3,
     queryBindings,
     shapesPointer,
+    shapesGraph,
+    shapeIris,
     debug,
     maxNodeShapeDepth = 2,
     graph,
@@ -71,15 +74,29 @@ export class ResourceFetcher {
     recursionStepMultiplier?: number;
     queryBindings: QueryBindings;
     sources?: QuerySourceUnidentified[];
+    // Advanced/internal: a pre-built graph pointer (see helpers/Grapoi.ts) - grapoi is not part of
+    // this package's public surface, so most callers should use shapesGraph + shapeIris instead.
     shapesPointer?: Grapoi;
+    // A plain RDF/JS dataset holding the SHACL shapes, together with the IRI(s) of the root node
+    // shape(s) to fetch against - the constructor builds the shapesPointer from these itself, so
+    // callers never need a dependency on grapoi just to drive shape-guided fetching.
+    shapesGraph?: DatasetCore;
+    shapeIris?: NamedNode | NamedNode[];
     debug?: boolean | ((event: DebugEvent) => void);
     maxNodeShapeDepth?: number;
     graph?: string;
   }) {
+    if ((shapesGraph === undefined) !== (shapeIris === undefined)) {
+      throw new Error("shapesGraph and shapeIris must be provided together");
+    }
+
     this.#resourceIri = resourceIri;
     this.#recursionStepMultiplier = recursionStepMultiplier;
     this.#queryBindings = queryBindings;
-    this.#shapesPointer = shapesPointer;
+    this.#shapesPointer =
+      shapesPointer ?? (shapesGraph && shapeIris
+        ? createShapesPointer(shapesGraph, shapeIris)
+        : undefined);
     this.#accumulatedDataset = datasetFactory.dataset<OurQuad>();
     if (debug) {
       if (typeof debug === "function") {
