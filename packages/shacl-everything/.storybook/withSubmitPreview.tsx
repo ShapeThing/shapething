@@ -35,7 +35,6 @@ async function resourceOnlyQuads(
   shapeIris: NamedNode[],
 ): Promise<Quad[]> {
   const engine = new QueryEngine();
-  console.log(shapeIris);
   const fetcher = new ResourceFetcher({
     resourceIri: focusNode,
     shapesGraph,
@@ -73,7 +72,8 @@ export const withSubmitPreview: Decorator = (Story, context) => {
     // resolveRdfSources() is the same parsing/default-nodeShapes-detection the real app runs, reused
     // here purely to get shapesGraph/nodeShapes read for the preview. Its resolved dataGraph is
     // discarded: result.dataGraph (the live, already-edited store) is what queries run against.
-    const resourceQuads = focusNode
+    // Resource-only is only meaningful once there's a focusNode to scope the description to.
+    const resourceOnlyPromise: Promise<Quad[] | undefined> = focusNode
       ? resolveRdfSources({
           ...(context.args as RawEnvironment),
           scoresGraph:
@@ -87,21 +87,18 @@ export const withSubmitPreview: Decorator = (Story, context) => {
             resolved.nodeShapes.filter((term): term is NamedNode => term.termType === "NamedNode"),
           ),
         )
-      : Promise.resolve(result.dataGraph.getQuads());
+      : Promise.resolve(undefined);
 
-    resourceQuads
-      .then((quads: Quad[]) =>
-        Promise.all([
-          write(quads, writeOptions),
-          write(result.additions, writeOptions),
-          write(result.deletions, writeOptions),
-        ]),
-      )
-      .then(([dataGraph, additions, deletions]: [string, string, string]) => {
-        addons
-          .getChannel()
-          .emit(SUBMIT_PREVIEW_EVENT, { storyId, dataGraph, additions, deletions });
-      });
+    Promise.all([
+      write(result.dataGraph.getQuads(), writeOptions),
+      resourceOnlyPromise.then((quads) => (quads ? write(quads, writeOptions) : undefined)),
+      write(result.additions, writeOptions),
+      write(result.deletions, writeOptions),
+    ]).then(([dataGraph, resourceOnly, additions, deletions]) => {
+      addons
+        .getChannel()
+        .emit(SUBMIT_PREVIEW_EVENT, { storyId, dataGraph, resourceOnly, additions, deletions });
+    });
   };
 
   return Story({ args: { ...context.args, onSubmit } });

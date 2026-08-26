@@ -13,6 +13,9 @@ type Props = {
 export const SubmitPreviewPanel = ({ active }: Props) => {
   const { storyId } = useStorybookState();
   const [payloadsByStory, setPayloadsByStory] = useState<Record<string, SubmitPreviewPayload>>({});
+  // Only meaningful once a payload with resourceOnly text exists, but kept independent of that so
+  // flipping stories doesn't silently reset the reviewer's chosen mode.
+  const [showResourceOnly, setShowResourceOnly] = useState(false);
 
   useChannel({
     [SUBMIT_PREVIEW_EVENT]: (payload: SubmitPreviewPayload) => {
@@ -23,12 +26,20 @@ export const SubmitPreviewPanel = ({ active }: Props) => {
   if (!active) return null;
 
   const payload = payloadsByStory[storyId];
+  const hasResourceOnly = payload?.resourceOnly !== undefined;
+  const dataGraphMode = showResourceOnly && hasResourceOnly ? "resourceOnly" : "full";
 
   const sections = payload
     ? [
-        { title: "Data graph", accent: "#0550ae", text: payload.dataGraph },
-        { title: "Additions", accent: "#116329", text: payload.additions },
-        { title: "Deletions", accent: "#cf222e", text: payload.deletions },
+        {
+          key: "dataGraph",
+          title: undefined,
+          accent: "#0550ae",
+          text:
+            dataGraphMode === "resourceOnly" ? (payload.resourceOnly as string) : payload.dataGraph,
+        },
+        { key: "additions", title: "Additions", accent: "#116329", text: payload.additions },
+        { key: "deletions", title: "Deletions", accent: "#cf222e", text: payload.deletions },
       ].map((section) => ({ ...section, ...splitPrefixes(section.text) }))
     : [];
 
@@ -37,7 +48,10 @@ export const SubmitPreviewPanel = ({ active }: Props) => {
   // the panel shows a single prefix declaration list instead of three near-identical ones.
   const prefixLines = new Set<string>();
   sections.forEach((section) => {
-    section.prefixText.split("\n").filter(Boolean).forEach((line) => prefixLines.add(line));
+    section.prefixText
+      .split("\n")
+      .filter(Boolean)
+      .forEach((line) => prefixLines.add(line));
   });
   const combinedPrefixText = [...prefixLines].sort().join("\n");
   const prefixMap = parsePrefixMap(combinedPrefixText);
@@ -75,8 +89,22 @@ export const SubmitPreviewPanel = ({ active }: Props) => {
               </pre>
             </details>
           )}
-          {sections.map(({ title, accent, bodyText }) => (
-            <TurtleSection key={title} title={title} accent={accent} text={bodyText} prefixes={prefixMap} />
+          {sections.map(({ key, title, accent, bodyText }) => (
+            <TurtleSection
+              key={key}
+              accent={accent}
+              text={bodyText}
+              prefixes={prefixMap}
+              heading={
+                title ?? (
+                  <DataGraphModeToggle
+                    mode={dataGraphMode}
+                    disabled={!hasResourceOnly}
+                    onChange={setShowResourceOnly}
+                  />
+                )
+              }
+            />
           ))}
         </>
       )}
@@ -96,18 +124,18 @@ const preStyle: React.CSSProperties = {
 };
 
 const TurtleSection = ({
-  title,
+  heading,
   accent,
   text,
   prefixes,
 }: {
-  title: string;
+  heading: React.ReactNode;
   accent: string;
   text: string;
   prefixes: Record<string, string>;
 }) => (
   <section>
-    <h3 style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 600, color: accent }}>{title}</h3>
+    <h3 style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 600, color: accent }}>{heading}</h3>
     {text.trim() ? (
       <pre style={preStyle}>
         <TurtleCode text={text} prefixes={prefixes} />
@@ -116,4 +144,47 @@ const TurtleSection = ({
       <p style={{ opacity: 0.6, fontSize: 12, margin: 0 }}>(none)</p>
     )}
   </section>
+);
+
+// Replaces the old static "Data graph" heading: lets the reviewer flip between the full submitted
+// dataGraph and the same resource-fetcher-scoped description the real app renders (see
+// resourceOnlyQuads in withSubmitPreview.tsx). Disabled when the story has no focusNode, since
+// there's nothing to scope a resource-only description to.
+const DataGraphModeToggle = ({
+  mode,
+  disabled,
+  onChange,
+}: {
+  mode: "full" | "resourceOnly";
+  disabled: boolean;
+  onChange: (showResourceOnly: boolean) => void;
+}) => (
+  <span style={{ display: "inline-flex", gap: 2 }}>
+    {(
+      [
+        { value: "full", label: "Data graph" },
+        { value: "resourceOnly", label: "Resource only" },
+      ] as const
+    ).map(({ value, label }) => (
+      <button
+        key={value}
+        type="button"
+        disabled={disabled}
+        onClick={() => onChange(value === "resourceOnly")}
+        style={{
+          font: "inherit",
+          fontWeight: 600,
+          fontSize: 13,
+          padding: "2px 8px",
+          borderRadius: 4,
+          border: "1px solid rgba(128, 128, 128, 0.4)",
+          background: mode === value ? "#0550ae" : "transparent",
+          color: disabled ? "rgba(128, 128, 128, 0.6)" : mode === value ? "#fff" : "#0550ae",
+          cursor: disabled ? "not-allowed" : "pointer",
+        }}
+      >
+        {label}
+      </button>
+    ))}
+  </span>
 );
