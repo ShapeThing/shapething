@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Code"@en ;
+        sh:name "Code"@en, "Code"@nl ;
         sh:path ex:code ;
         shui:viewer shui:LiteralViewer ;
     ] ;

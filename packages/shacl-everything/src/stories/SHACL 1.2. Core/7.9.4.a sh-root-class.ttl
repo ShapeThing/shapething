@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Holds"@en ;
+        sh:name "Holds"@en, "Heeft"@nl ;
         sh:path ex:holds ;
         sh:rootClass ex:Animal ;
     ] ;

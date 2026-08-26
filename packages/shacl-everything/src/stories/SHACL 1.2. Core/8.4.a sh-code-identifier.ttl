@@ -6,7 +6,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Parent's email"@en ;
+        sh:name "Parent's email"@en, "E-mailadres van ouder"@nl ;
         sh:path ( schema:parent schema:email ) ;
         sh:codeIdentifier "parentEmail" ;
     ] ;

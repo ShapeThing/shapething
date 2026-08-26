@@ -1,0 +1,36 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Occupation"@en, "Beroep"@nl ;
+        sh:path schema:hasOccupation ;
+        sh:class ex:Occupation ;
+        sh:nodeKind sh:IRI ;
+        sh:node [
+            sh:property ex:Label ;
+        ] ;
+    ] ;
+    .
+
+ex:Label a sh:PropertyShape ;
+    sh:path skos:prefLabel ;
+    shui:propertyRole shui:LabelRole ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    schema:hasOccupation ex:softwareEngineer ;
+    .
+
+ex:softwareEngineer a ex:Occupation ;
+    skos:prefLabel "Software Engineer"@en, "Softwareontwikkelaar"@nl ;
+    .

@@ -15,7 +15,7 @@
   sh:ignoredProperties (rdf:type) ;
 
   sh:property [
-    sh:name "Cook method"@en ;
+    sh:name "Cook method"@en, "Bereidingswijze"@nl ;
     sh:path schema:cookMethod ;
     shui:editor shui:SubClassEditor ;
     owl:imports <./cooking-methods.ttl> ;

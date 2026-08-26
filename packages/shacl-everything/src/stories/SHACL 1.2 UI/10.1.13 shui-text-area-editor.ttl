@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Description"@en ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
         sh:path ex:description ;
         sh:datatype xsd:string ;
         sh:singleLine false ;

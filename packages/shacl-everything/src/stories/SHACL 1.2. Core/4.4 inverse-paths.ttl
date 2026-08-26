@@ -6,7 +6,7 @@
     a sh:NodeShape ;
     sh:targetClass schema:Person ;
     sh:property [
-        sh:name "Parent"@en ;
+        sh:name "Parent"@en, "Ouder"@nl ;
         sh:path [
             sh:inversePath schema:isParentOf ;
         ] ;

@@ -9,7 +9,7 @@
     sh:agentInstruction "Do not guess a person's given name from their email address."@en ;
 
     sh:property [
-        sh:name "Given name"@en ;
+        sh:name "Given name"@en, "Voornaam"@nl ;
         sh:path schema:givenName ;
     ] ;
     .

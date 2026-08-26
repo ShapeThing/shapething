@@ -66,8 +66,8 @@ ex:PersonShape a sh:NodeShape ;
         sh:maxCount 1 ;
         sh:order 1;
         sh:group <#person> ;
-        sh:name "Full Name" ;
-        sh:description "The full name of the person." ;
+        sh:name "Full Name"@en, "Volledige naam"@nl ;
+        sh:description "The full name of the person."@en, "De volledige naam van de persoon."@nl ;
     ] ;
     sh:property [
         sh:path foaf:mbox ;
@@ -75,8 +75,8 @@ ex:PersonShape a sh:NodeShape ;
         sh:maxCount 1 ;
         sh:group <#person> ;
         sh:order 2;
-        sh:name "Email Address" ;
-        sh:description "A contact email." ;
+        sh:name "Email Address"@en, "E-mailadres"@nl ;
+        sh:description "A contact email."@en, "Een contact-e-mailadres."@nl ;
     ] ;
 
     sh:property [
@@ -86,22 +86,22 @@ ex:PersonShape a sh:NodeShape ;
         sh:group <#person> ;
         sh:datatype xsd:string ;
         sh:order 3;
-        sh:name "Gender" ;
-        sh:description "Select gender." ;
+        sh:name "Gender"@en, "Geslacht"@nl ;
+        sh:description "Select gender."@en, "Selecteer geslacht."@nl ;
     ] ;
 .
 
 
 <#person>
-    sh:name "Person"@en ;
-    sh:description "All about the person"@en;
+    sh:name "Person"@en, "Persoon"@nl ;
+    sh:description "All about the person"@en, "Alles over de persoon"@nl;
 	a sh:PropertyGroup ;
 	sh:order 1 .
 
 
 <#academic>
-    sh:description "Academic achievements and external links"@en;
-    sh:name "Academic"@en ;
+    sh:description "Academic achievements and external links"@en, "Academische prestaties en externe links"@nl;
+    sh:name "Academic"@en, "Academisch"@nl ;
 	a sh:PropertyGroup ;
 	sh:order 2 .
 
@@ -115,15 +115,15 @@ ex:ResearcherShape a sh:NodeShape ;
         sh:datatype xsd:string ;
         sh:group <#person> ;
         sh:order 4;
-        sh:name "Job Title" ;
+        sh:name "Job Title"@en, "Functietitel"@nl ;
     ] ;
     sh:property [
         sh:path ( schema:affiliation [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
         sh:class schema:Organization ;
         sh:group <#academic> ;
         sh:order 5;
-        sh:name "Affiliated Organization" ;
-        sh:description "Choose the institution where the researcher works." ;
+        sh:name "Affiliated Organization"@en, "Aangesloten organisatie"@nl ;
+        sh:description "Choose the institution where the researcher works."@en, "Kies de instelling waar de onderzoeker werkt."@nl ;
     ] ;
     sh:property [
         sh:path schema:nationality ;
@@ -169,7 +169,7 @@ ex:ResearcherShape a sh:NodeShape ;
                 sh:minCount 1 ;
                 sh:datatype xsd:string ;
                 sh:maxCount 1 ;
-                sh:name "Country Name" ;
+                sh:name "Country Name"@en, "Landnaam"@nl ;
                 shui:propertyRole shui:LabelRole ;
             ] ;
 
@@ -177,15 +177,15 @@ ex:ResearcherShape a sh:NodeShape ;
                 sh:path dbo:thumbnail ;
                 sh:minCount 1 ;
                 sh:maxCount 1 ;
-                sh:name "Country flag" ;
+                sh:name "Country flag"@en, "Vlag van het land"@nl ;
                 shui:propertyRole shui:DepictionRole ;
             ] ;
         ] ;
         sh:nodeKind sh:IRI ;
         sh:group <#person> ;
         sh:order 6;
-        sh:name "Nationality" ;
-        sh:description "Link to a country IRI (e.g., ISO 3166 vocabulary)." ;
+        sh:name "Nationality"@en, "Nationaliteit"@nl ;
+        sh:description "Link to a country IRI (e.g., ISO 3166 vocabulary)."@en, "Link naar een land-IRI (bijv. ISO 3166-vocabulaire)."@nl ;
     ] ;
 
     sh:property [
@@ -194,7 +194,7 @@ ex:ResearcherShape a sh:NodeShape ;
         sh:nodeKind sh:IRI ;
         sh:class bibo:Document ;
         sh:group <#academic> ;
-        sh:name "Publications" ;
+        sh:name "Publications"@en, "Publicaties"@nl ;
     ] ;
 
     sh:property [
@@ -202,8 +202,8 @@ ex:ResearcherShape a sh:NodeShape ;
         sh:maxCount 3 ;
         sh:group <#academic> ;
         sh:order 7;
-        sh:name "External Profile URLs" ;
-        sh:description "Links to ORCID, Google Scholar, etc." ;
+        sh:name "External Profile URLs"@en, "Externe profiel-URL's"@nl ;
+        sh:description "Links to ORCID, Google Scholar, etc."@en, "Links naar ORCID, Google Scholar, enz."@nl ;
     ] ;
 .
 
@@ -214,34 +214,34 @@ ex:PublicationShape a sh:NodeShape ;
         sh:path dc:title ;
         sh:datatype xsd:string ;
         sh:minCount 1 ;
-        sh:name "Title" ;
+        sh:name "Title"@en, "Titel"@nl ;
     ] ;
     sh:property [
         sh:path dc:date ;
         sh:datatype xsd:date ;
-        sh:name "Publication Date" ;
+        sh:name "Publication Date"@en, "Publicatiedatum"@nl ;
     ] ;
     sh:property [
         sh:path bibo:doi ;
         sh:datatype xsd:string ;
-        sh:name "DOI" ;
+        sh:name "DOI"@en, "DOI"@nl ;
     ] ;
     sh:property [
         sh:path bibo:abstract ;
         dash:singleLine false ;
         sh:datatype xsd:string ;
-        sh:name "Abstract" ;
+        sh:name "Abstract"@en, "Samenvatting"@nl ;
     ] ;
     sh:property [
         sh:path bibo:DocumentType ;
         sh:in ("journal" "conference" "thesis" "book" "other") ;
         sh:datatype xsd:string ;
-        sh:name "Type" ;
+        sh:name "Type"@en, "Type"@nl ;
     ] ;
     sh:property [
         sh:path schema:author ;
         sh:class schema:Person ;
-        sh:name "Author(s)" ;
+        sh:name "Author(s)"@en, "Auteur(s)"@nl ;
     ] .
 
 ### Organization Shape
@@ -251,18 +251,18 @@ ex:OrganizationShape a sh:NodeShape ;
         sh:path schema:name ;
         sh:datatype xsd:string ;
         sh:maxCount 1 ;
-        sh:name "Organization Name" ;
+        sh:name "Organization Name"@en, "Organisatienaam"@nl ;
     ] ;
     sh:property [
         sh:path schema:location ;
         sh:datatype xsd:string ;
         sh:maxCount 1 ;
-        sh:name "Location" ;
+        sh:name "Location"@en, "Locatie"@nl ;
     ] ;
     sh:property [
         sh:path schema:identifier ;
         sh:datatype xsd:string ;
-        sh:name "Org ID" ;
+        sh:name "Org ID"@en, "Org-ID"@nl ;
         sh:maxCount 1 ;
     ] ;
     sh:property [
@@ -271,5 +271,5 @@ ex:OrganizationShape a sh:NodeShape ;
         sh:datatype xsd:string ;
         sh:maxCount 1 ;
         sh:minCount 1 ;
-        sh:name "Type of Organization" ;
+        sh:name "Type of Organization"@en, "Type organisatie"@nl ;
     ] .

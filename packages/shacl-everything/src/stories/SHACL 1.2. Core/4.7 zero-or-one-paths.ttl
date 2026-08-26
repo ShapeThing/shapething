@@ -6,7 +6,7 @@
     a sh:NodeShape ;
     sh:targetClass schema:Person ;
     sh:property [
-        sh:name "Self or parent"@en ;
+        sh:name "Self or parent"@en, "Zichzelf of ouder"@nl ;
         sh:path [
             sh:zeroOrOnePath schema:parent ;
         ] ;

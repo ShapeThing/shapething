@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Home country"@en ;
+        sh:name "Home country"@en, "Land van herkomst"@nl ;
         sh:path ex:homeCountry ;
         sh:class ex:Country ;
         shui:editor shui:InstancesSelectEditor ;

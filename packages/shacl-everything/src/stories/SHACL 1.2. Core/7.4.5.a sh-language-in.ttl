@@ -7,7 +7,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Name"@en ;
+        sh:name "Name"@en, "Naam"@nl ;
         sh:path schema:name ;
         sh:datatype rdf:langString ;
         sh:languageIn ( "en" "nl" ) ;

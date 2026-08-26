@@ -16,3 +16,10 @@ export type BCP47 =
   | `${LanguageSubtag}-${ScriptSubtag}`
   | `${LanguageSubtag}-${RegionSubtag}`
   | `${LanguageSubtag}-${ScriptSubtag}-${RegionSubtag}`;
+
+// Everywhere a caller's own preferred languages meet shui:languagePreference (spec 3.4/8.1): the
+// global config list may contain "" to mean "no language" (a plain literal with Literal.language
+// === ""), which BCP47 itself cannot express - LanguageRange is the widened type used only where
+// that merged/config-sourced list flows through (bestByLanguage, language(), get()'s language
+// overload). Caller-supplied language arrays (e.g. [activeInterfaceLanguage]) stay typed BCP47[].
+export type LanguageRange = BCP47 | "";

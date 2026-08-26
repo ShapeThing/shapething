@@ -67,9 +67,13 @@ export const distillLanguages = ((environment) => {
 
 // Every language available for the interface (chrome) to switch to: the shipped/overridden
 // Fluent locales (see l10n/locales.ts), unioned with whatever language sh:name/sh:description
-// happen to be authored in across the shapes graph - so e.g. a form whose property shapes carry
-// Frisian sh:name literals can be switched to even without a Frisian .ftl bundle (chrome text then
-// just falls back to the default locale - see loadBundles' resolveLocale).
+// happen to be authored in across the shapes graph - but only when
+// enableInterfaceLanguageWithShapesLabelsOnly is set. Without it, interfaceLanguages is exactly
+// the .ftl locale set, so removing a built-in locale (e.g. `interfaceLocales: { "nl-NL": null }`)
+// actually removes it from the switcher rather than having it silently reappear because some
+// shape happens to carry a label in that language. With the flag on, a form whose property shapes
+// carry Frisian sh:name literals can be switched to even without a Frisian .ftl bundle (chrome
+// text then just falls back to the default locale - see loadBundles' resolveLocale).
 //
 // Deduped by primary subtag rather than the exact tag, so a bare "nl" found on some sh:name
 // doesn't sit alongside the "nl-NL" .ftl locale as a second, redundant "Dutch" entry - the .ftl
@@ -77,13 +81,19 @@ export const distillLanguages = ((environment) => {
 // shapes graph (matching resolveLocale's own primary-subtag fallback for loading its bundle, and
 // bestByLanguage's for picking a label in it).
 export const distillInterfaceLanguages = ((environment) => {
+  const { enableInterfaceLanguageWithShapesLabelsOnly } = environment;
   const seen = new Set<string>();
   const interfaceLanguages: BCP47[] = [];
+
+  const shapeLanguages = usedLanguages(
+    environment.shapesGraph as RdfStore,
+    LABEL_PREDICATES,
+  );
 
   for (
     const language of [
       ...Object.keys(mergeLocaleLoaders(environment.interfaceLocales)),
-      ...usedLanguages(environment.shapesGraph as RdfStore, LABEL_PREDICATES),
+      ...enableInterfaceLanguageWithShapesLabelsOnly ? shapeLanguages : [],
     ] as BCP47[]
   ) {
     const key = primarySubtag(language);

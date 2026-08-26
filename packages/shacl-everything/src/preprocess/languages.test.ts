@@ -118,7 +118,7 @@ test("distillInterfaceLanguages - includes the built-in .ftl locales", () => {
   expect(result.interfaceLanguages).toEqual(["en-GB", "nl-NL"]);
 });
 
-test("distillInterfaceLanguages - adds languages found on sh:name/sh:description in the shapes graph", () => {
+test("distillInterfaceLanguages - adds languages found on sh:name/sh:description in the shapes graph (enableInterfaceLanguageWithShapesLabelsOnly is on by default)", () => {
   const shapesGraph = RdfStore.createDefault();
   shapesGraph.addQuad(
     factory.quad(ex("aShape"), sh("name"), factory.literal("Naam", "fy")),
@@ -153,6 +153,29 @@ test("distillInterfaceLanguages - merges a bare shapes-graph tag into a .ftl loc
   expect(result.interfaceLanguages).toEqual(["en-GB", "nl-NL"]);
 });
 
+test("distillInterfaceLanguages - with enableInterfaceLanguageWithShapesLabelsOnly off, ignores languages found on sh:name/sh:description in the shapes graph", () => {
+  const shapesGraph = RdfStore.createDefault();
+  shapesGraph.addQuad(
+    factory.quad(ex("aShape"), sh("name"), factory.literal("Naam", "fy")),
+  );
+  shapesGraph.addQuad(
+    factory.quad(
+      ex("aShape"),
+      sh("description"),
+      factory.literal("Un nom", "fr"),
+    ),
+  );
+
+  const result = distillInterfaceLanguages(
+    rawEnvironment({
+      shapesGraph,
+      enableInterfaceLanguageWithShapesLabelsOnly: false,
+    }),
+  );
+
+  expect(result.interfaceLanguages).toEqual(["en-GB", "nl-NL"]);
+});
+
 test("distillInterfaceLanguages - ignores language-tagged literals on other predicates and in the data graph", () => {
   const shapesGraph = RdfStore.createDefault();
   shapesGraph.addQuad(
@@ -170,7 +193,7 @@ test("distillInterfaceLanguages - ignores language-tagged literals on other pred
   expect(result.interfaceLanguages).toEqual(["en-GB", "nl-NL"]);
 });
 
-test("distillInterfaceLanguages - removing a built-in locale via interfaceLocales still allows it back in via sh:name", () => {
+test("distillInterfaceLanguages - removing a built-in locale via interfaceLocales still allows it back in via sh:name (enableInterfaceLanguageWithShapesLabelsOnly is on by default)", () => {
   const shapesGraph = RdfStore.createDefault();
   shapesGraph.addQuad(
     factory.quad(ex("aShape"), sh("name"), factory.literal("Naam", "nl-NL")),
@@ -181,4 +204,21 @@ test("distillInterfaceLanguages - removing a built-in locale via interfaceLocale
   );
 
   expect(result.interfaceLanguages).toEqual(["en-GB", "nl-NL"]);
+});
+
+test("distillInterfaceLanguages - with enableInterfaceLanguageWithShapesLabelsOnly off, removing a built-in locale via interfaceLocales removes it for good, even if a shape carries a label in it (matches minimalEnvironment)", () => {
+  const shapesGraph = RdfStore.createDefault();
+  shapesGraph.addQuad(
+    factory.quad(ex("aShape"), sh("name"), factory.literal("Naam", "nl-NL")),
+  );
+
+  const result = distillInterfaceLanguages(
+    rawEnvironment({
+      shapesGraph,
+      interfaceLocales: { "nl-NL": null },
+      enableInterfaceLanguageWithShapesLabelsOnly: false,
+    }),
+  );
+
+  expect(result.interfaceLanguages).toEqual(["en-GB"]);
 });

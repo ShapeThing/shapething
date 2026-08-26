@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Scores"@en ;
+        sh:name "Scores"@en, "Scores"@nl ;
         sh:path ex:scores ;
         sh:memberShape [
             sh:datatype xsd:integer ;

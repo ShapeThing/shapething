@@ -7,7 +7,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Address"@en ;
+        sh:name "Address"@en, "Adres"@nl ;
         sh:path schema:address ;
         sh:nodeKind sh:BlankNode ;
         shui:viewer shui:BlankNodeViewer ;

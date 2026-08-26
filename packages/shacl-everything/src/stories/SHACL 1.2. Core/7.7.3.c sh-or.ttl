@@ -9,15 +9,15 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Contact"@en ;
+        sh:name "Contact"@en, "Contact"@nl ;
         sh:path ex:contact ;
         sh:or (
             [ 
-                sh:name "Contact as string"@en ;
+                sh:name "Contact as string"@en, "Contact als tekst"@nl ;
                 sh:datatype xsd:string 
             ]
             [ 
-                sh:name "Contact as language string"@en ;
+                sh:name "Contact as language string"@en, "Contact als taalstring"@nl ;
                 sh:datatype rdf:langString 
             ]
         ) ;

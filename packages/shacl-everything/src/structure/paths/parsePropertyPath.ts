@@ -21,7 +21,7 @@ export function parsePropertyPath(propertyShape: Term, shapesGraph: RdfStore): P
   return parsePathNode(pathQuads[0].object, shapesGraph);
 }
 
-function parsePathNode(pathNode: Term, shapesGraph: RdfStore): PropertyPath {
+export function parsePathNode(pathNode: Term, shapesGraph: RdfStore): PropertyPath {
   if (pathNode.termType === "Literal") {
     throw new Error(
       `Invalid path node: ${pathNode.value} is a literal, expected a NamedNode or BlankNode`,

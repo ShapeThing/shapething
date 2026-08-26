@@ -6,7 +6,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Nickname"@en ;
+        sh:name "Nickname"@en, "Bijnaam"@nl ;
         sh:path schema:alternateName ;
         sh:maxCount 3 ;
     ] ;

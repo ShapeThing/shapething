@@ -6,8 +6,8 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Given name"@en ;
-        sh:description "The person's first name."@en ;
+        sh:name "Given name"@en, "Voornaam"@nl ;
+        sh:description "The person's first name."@en, "De voornaam van de persoon."@nl ;
         sh:path schema:givenName ;
     ] ;
     .

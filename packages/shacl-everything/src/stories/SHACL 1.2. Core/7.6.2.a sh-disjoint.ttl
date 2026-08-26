@@ -7,7 +7,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Preferred label"@en ;
+        sh:name "Preferred label"@en, "Voorkeursnaam"@nl ;
         sh:path ex:prefLabel ;
         sh:disjoint ex:altLabel ;
     ] ;

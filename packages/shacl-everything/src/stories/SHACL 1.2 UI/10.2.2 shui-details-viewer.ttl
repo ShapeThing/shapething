@@ -7,16 +7,16 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Address"@en ;
+        sh:name "Address"@en, "Adres"@nl ;
         sh:path schema:address ;
         shui:viewer shui:DetailsViewer ;
         sh:node [
             sh:property [
-                sh:name "Street"@en ;
+                sh:name "Street"@en, "Straat"@nl ;
                 sh:path schema:streetAddress ;
             ] ;
             sh:property [
-                sh:name "Postal code"@en ;
+                sh:name "Postal code"@en, "Postcode"@nl ;
                 sh:path schema:postalCode ;
             ] ;
         ] ;

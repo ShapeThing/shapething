@@ -1,0 +1,41 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Home country"@en, "Land van herkomst"@nl ;
+        sh:path ex:homeCountry ;
+        sh:class ex:Country ;
+        shui:editor shui:InstancesSelectEditor ;
+    ] ;
+    .
+
+<#countryShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Country ;
+    sh:property [
+        sh:path skos:prefLabel ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:homeCountry ex:Netherlands ;
+    .
+
+ex:Netherlands a ex:Country ;
+    skos:prefLabel "Netherlands"@en, "Nederland"@nl ;
+    .
+
+ex:Germany a ex:Country ;
+    skos:prefLabel "Germany"@en, "Duitsland"@nl ;
+    .

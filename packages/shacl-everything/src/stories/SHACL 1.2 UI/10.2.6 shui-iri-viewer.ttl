@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "See also"@en ;
+        sh:name "See also"@en, "Zie ook"@nl ;
         sh:path rdfs:seeAlso ;
         sh:nodeKind sh:IRI ;
         shui:viewer shui:IRIViewer ;

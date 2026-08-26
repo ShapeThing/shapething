@@ -10,7 +10,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Favourite philosopher"@en ;
+        sh:name "Favourite philosopher"@en, "Favoriete filosoof"@nl ;
         sh:path ex:favouritePhilosopher ;
         sh:class dbo:Philosopher ;
         sh:nodeKind sh:IRI ;

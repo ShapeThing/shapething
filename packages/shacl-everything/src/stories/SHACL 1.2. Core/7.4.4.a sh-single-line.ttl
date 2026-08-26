@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Label"@en ;
+        sh:name "Label"@en, "Label"@nl ;
         sh:path ex:label ;
         sh:datatype xsd:string ;
         sh:singleLine true ;

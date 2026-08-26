@@ -9,7 +9,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Favorite animal category"@en ;
+        sh:name "Favorite animal category"@en, "Favoriete dierencategorie"@nl ;
         sh:path ex:favoriteAnimalCategory ;
         sh:rootClass ex:Animal ;
         shui:editor shui:SubClassEditor ;

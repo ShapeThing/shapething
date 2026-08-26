@@ -5,7 +5,7 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
 import { selectQueryFor } from "@/widgets/implementations/shui/editors/EnumSelectEditor/selectQuery.ts";
-import { useEnvironment } from "./useEnvironment.tsx";
+import { useInterfaceLanguage } from "./useInterfaceLanguage.tsx";
 import { extractServiceEndpoint, fetchOptions, type SearchResult } from "./query.ts";
 
 /**
@@ -19,7 +19,7 @@ import { extractServiceEndpoint, fetchOptions, type SearchResult } from "./query
  * re-hydrated on mount) would resolve to nothing every time.
  */
 export function useOptionLookups(shape: PropertyUIElement, iris: NamedNode[]): SearchResult[] {
-  const { interfaceLanguage } = useEnvironment();
+  const { activeInterfaceLanguage } = useInterfaceLanguage();
   const endpoint = useMemo(() => {
     const federatedQuery = searchQueryFor(shape) ?? selectQueryFor(shape);
     return federatedQuery ? extractServiceEndpoint(federatedQuery) : undefined;
@@ -31,10 +31,10 @@ export function useOptionLookups(shape: PropertyUIElement, iris: NamedNode[]): S
       shape.propertyShapes.map((s) => s.value),
       iris.map((iri) => iri.value),
       endpoint,
-      interfaceLanguage,
+      activeInterfaceLanguage,
     ],
     queryFn: () =>
-      fetchOptions(shape, iris, { uiLanguage: interfaceLanguage, endpoint }).catch((cause) => {
+      fetchOptions(shape, iris, { uiLanguage: activeInterfaceLanguage, endpoint }).catch((cause) => {
         console.error("[shacl-everything] option lookup failed", cause);
         return [];
       }),

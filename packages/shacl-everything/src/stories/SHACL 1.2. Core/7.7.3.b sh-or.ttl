@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Contact"@en ;
+        sh:name "Contact"@en, "Contact"@nl ;
         sh:path ex:contact ;
         sh:or (
             [ sh:datatype xsd:string ]
