@@ -34,8 +34,8 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   const memberShapeNodes = propertyUIElement.get(sh("memberShape"));
 
   const labelId = useId();
-  const label = propertyUIElement.label([activeInterfaceLanguage])?.value;
-  const description = propertyUIElement.getOne(sh("description"), [activeInterfaceLanguage])?.value;
+  const label = propertyUIElement.label([activeInterfaceLanguage]);
+  const description = propertyUIElement.get(sh("description"), [activeInterfaceLanguage])?.value;
 
   // sh:minCount isn't met yet - the shape's sh:severity (sh:Violation, the spec default, when
   // absent) describes how serious that unmet constraint is, for the caller to style as it sees fit.
