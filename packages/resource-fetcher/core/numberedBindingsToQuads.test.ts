@@ -51,3 +51,35 @@ rf:subject rdf:first rf:node1 ;
   rdf:rest (rf:node2 rf:node3) .
 `);
 });
+
+test("it preserves binding order for a list of numeric literals", async () => {
+  // A plain object keyed by item value would re-sort integer-like keys ("88", "42", "100")
+  // into ascending numeric order per the ECMAScript spec, discarding the real list order -
+  // this reproduces that scenario with a shuffled (non-ascending) binding order.
+  const values = [88, 42, 100];
+  const bindings = values.map((value) =>
+    BF.fromRecord({
+      node_0: rf("subject"),
+      predicate_0: rf("predicate"),
+      node_list_1: dataFactory.literal(
+        String(value),
+        dataFactory.namedNode("http://www.w3.org/2001/XMLSchema#integer"),
+      ),
+    }),
+  );
+  const quads = numberedBindingsToQuads(bindings);
+  const output = await write([...quads], {
+    prefixes: {
+      rf: "https://resource-fetcher.shapething.com/#",
+      rdf: "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+      xsd: "http://www.w3.org/2001/XMLSchema#",
+    },
+  });
+  expect(output).toEqual(`@prefix rf: <https://resource-fetcher.shapething.com/#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+rf:subject rdf:first 88 ;
+  rdf:rest (42 100) .
+`);
+});

@@ -30,7 +30,7 @@ export const numberedBindingsToQuads = (
 
   const lists: Map<
     string,
-    { firstListNode: Term; items: Record<string, Term> }
+    { firstListNode: Term; items: Map<string, Term> }
   > = new Map();
 
   // Generate all the lists.
@@ -43,9 +43,13 @@ export const numberedBindingsToQuads = (
       if (subject && listObject && previousPredicate) {
         const listKey = subject.value;
         if (!lists.has(listKey)) {
-          lists.set(listKey, { firstListNode: subject, items: {} });
+          lists.set(listKey, { firstListNode: subject, items: new Map() });
         }
-        lists.get(listKey)!.items[listObject.value] = listObject;
+        // A Map preserves insertion (i.e. query result) order regardless of key shape - a plain
+        // object would silently re-sort integer-like keys (e.g. numeric literal values "42", "88")
+        // into ascending numeric order per the ECMAScript OwnPropertyKeys spec, discarding the
+        // actual rdf:list order.
+        lists.get(listKey)!.items.set(listObject.value, listObject);
       }
     }
   }
@@ -53,9 +57,9 @@ export const numberedBindingsToQuads = (
   // Now convert lists to quads
   for (const listData of lists.values()) {
     const { firstListNode, items: originalItems } = listData;
-    const items = Object.values(originalItems);
+    const items = [...originalItems.values()];
 
-    if (Object.keys(items).length === 0) continue;
+    if (items.length === 0) continue;
 
     // Create RDF list structure
     let currentListNode: Term = firstListNode;
