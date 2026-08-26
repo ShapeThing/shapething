@@ -7,7 +7,7 @@
     a sh:NodeShape ;
     sh:targetClass schema:Person ;
     sh:property [
-        sh:name "Given name"@en ;
+        sh:name "Given name"@en, "Voornaam"@nl ;
         sh:path [
             sh:alternativePath (schema:givenName foaf:name) ;
         ] ;

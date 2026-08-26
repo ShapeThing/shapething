@@ -4,7 +4,7 @@ import type { NamedNode, Term } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
 import { rdfs, sh } from "@/helpers/namespaces.ts";
-import { propertyLabel } from "@/resolution/label.ts";
+import { valueNodeLabel } from "@/resolution/label.ts";
 import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
@@ -22,6 +22,8 @@ type ClassNode = {
 // Walks rdfs:subClassOf downward from `root`, the same relation keepMostSpecificClasses in
 // PropertyUIElement.ts reads upward - both look for it on shapesGraph, since that's where this
 // codebase's fixtures declare ontology structure (rdfs:subClassOf, rdfs:label) alongside shapes.
+// Each class is itself a candidate/selected value of this property (see the chips row below), so
+// its label is a value node label (8.2.3) - checked in dataGraph before shapesGraph, same order.
 // `seen` guards against a cyclical subClassOf graph, which would otherwise recurse forever.
 function buildHierarchy(
   shape: PropertyUIElement,
@@ -38,7 +40,7 @@ function buildHierarchy(
 
   return {
     term: root,
-    label: propertyLabel({ term: root, propertyShape: shape, languages }),
+    label: valueNodeLabel({ term: root, propertyShape: shape, languages }).value,
     children,
   };
 }
@@ -267,11 +269,11 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
             term={chip}
             label={
               chip.termType === "NamedNode"
-                ? propertyLabel({
+                ? valueNodeLabel({
                     term: chip,
                     propertyShape: shape,
                     languages: [activeInterfaceLanguage],
-                  })
+                  }).value
                 : chip.value
             }
             onRemove={() => {

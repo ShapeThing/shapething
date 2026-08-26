@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Last visit time"@en ;
+        sh:name "Last visit time"@en, "Laatste bezoektijd"@nl ;
         sh:path ex:lastVisitTime ;
         sh:datatype xsd:dateTime ;
     ] ;

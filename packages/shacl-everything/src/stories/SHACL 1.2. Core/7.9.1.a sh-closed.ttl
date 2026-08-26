@@ -8,7 +8,7 @@
     sh:closed true ;
     sh:ignoredProperties ( rdf:type ) ;
     sh:property [
-        sh:name "Given name"@en ;
+        sh:name "Given name"@en, "Voornaam"@nl ;
         sh:path schema:givenName ;
     ] ;
     .

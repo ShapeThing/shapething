@@ -3,7 +3,7 @@
 @prefix schema: <http://schema.org/>.
 @prefix sh: <http://www.w3.org/ns/shacl#>.
 
-ex:familyName rdfs:label "Family name"@en .
+ex:familyName rdfs:label "Family name"@en, "Achternaam"@nl .
 
 <#shape>
     a sh:NodeShape ;

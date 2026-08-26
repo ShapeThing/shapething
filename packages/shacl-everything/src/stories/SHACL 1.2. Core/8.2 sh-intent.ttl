@@ -9,7 +9,7 @@
     sh:intent "Age values are compared in years using the same reference date."@en ;
 
     sh:property [
-        sh:name "Given name"@en ;
+        sh:name "Given name"@en, "Voornaam"@nl ;
         sh:path schema:givenName ;
     ] ;
     .

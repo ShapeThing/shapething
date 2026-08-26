@@ -3,6 +3,7 @@ import "./style.css";
 import { useState } from "react";
 import { Link } from "@/helpers/icons.tsx";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
+import { localName } from "@/helpers/localName.ts";
 
 type Props = {
   term: Term;
@@ -14,7 +15,7 @@ type Props = {
 
 export default function AutoCompleteOption({ term, label, subLabel, depiction, highlight }: Props) {
   const [hasError, setHasError] = useState<boolean | undefined>(undefined);
-  const displayLabel = label ?? term.value.split(/\/|#/g).pop() ?? "";
+  const displayLabel = label ?? localName(term) ?? term.value;
   const isDirectRenderable =
     depiction?.value.includes(".svg") || depiction?.value.includes("data:");
 

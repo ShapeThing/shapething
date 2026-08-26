@@ -7,7 +7,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Photo"@en ;
+        sh:name "Photo"@en, "Foto"@nl ;
         sh:path schema:image ;
         sh:nodeKind sh:IRI ;
         shui:viewer shui:ImageViewer ;

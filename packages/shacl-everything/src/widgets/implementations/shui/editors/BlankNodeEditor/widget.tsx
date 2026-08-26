@@ -7,7 +7,6 @@ import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.ts
 import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
-import { valueNodeLabel } from "@/resolution/label.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 

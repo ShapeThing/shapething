@@ -7,7 +7,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Pets"@en ;
+        sh:name "Pets"@en, "Huisdieren"@nl ;
         sh:path ex:pet ;
         sh:someValue [
             sh:class ex:Duck ;

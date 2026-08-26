@@ -27,15 +27,15 @@ export default function DetailsEditor({ shape, term, flyOut }: WidgetProps) {
     [shape, term, nodeShapes],
   );
 
-  // A fresh BlankNode has no data to derive a label from yet - valueNodeLabel() falls all the way
-  // back to the term's own opaque id in that case (e.g. "_:b0"), which is meaningless to show, so
-  // this widget prefers the outer property's own name (e.g. "Address") until there's real data.
+  // A fresh BlankNode has no data to derive a label from yet - valueNodeLabel() falls back to an
+  // empty placeholder in that case, which is meaningless to show, so this widget prefers the outer
+  // property's own name (e.g. "Address") until there's real data.
   const label = useReactiveRead(
     shape.dataGraph,
     `details-editor-label@${term.value}@${activeLanguage}@${activeInterfaceLanguage}`,
     () => {
       const rawLabel = valueNodeLabel({ term, propertyShape: shape, languages: [activeLanguage] });
-      return term.termType === "BlankNode" && rawLabel.value === term.value
+      return term.termType === "BlankNode" && rawLabel.value === ""
         ? shape.label([activeInterfaceLanguage])
         : rawLabel.value;
     },

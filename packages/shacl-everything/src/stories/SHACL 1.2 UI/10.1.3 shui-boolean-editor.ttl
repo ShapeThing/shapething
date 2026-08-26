@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Married"@en ;
+        sh:name "Married"@en, "Getrouwd"@nl ;
         sh:path ex:married ;
         sh:datatype xsd:boolean ;
         sh:minCount 1 ;

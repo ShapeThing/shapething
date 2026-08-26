@@ -6,12 +6,12 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Parent"@en ;
+        sh:name "Parent"@en, "Ouder"@nl ;
         sh:path schema:parent ;
         sh:nodeKind sh:BlankNodeOrIRI ;
         sh:node [
             sh:property [
-                sh:name "Given name"@en ;
+                sh:name "Given name"@en, "Voornaam"@nl ;
                 sh:path schema:givenName ;
                 sh:minCount 1 ;
             ] ;

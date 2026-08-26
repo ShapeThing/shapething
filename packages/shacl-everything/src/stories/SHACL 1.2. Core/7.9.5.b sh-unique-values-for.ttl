@@ -7,7 +7,7 @@
     sh:targetClass schema:Person ;
     sh:uniqueValuesFor ex:email ;
     sh:property [
-        sh:name "Email"@en ;
+        sh:name "Email"@en, "E-mail"@nl ;
         sh:path ex:email ;
         sh:minCount 1 ;
         sh:maxCount 1 ;

@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Min age"@en ;
+        sh:name "Min age"@en, "Minimumleeftijd"@nl ;
         sh:path ex:minAge ;
         sh:datatype xsd:integer ;
         sh:lessThanOrEquals ex:maxAge ;

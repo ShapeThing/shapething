@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Username"@en ;
+        sh:name "Username"@en, "Gebruikersnaam"@nl ;
         sh:path ex:username ;
         sh:datatype xsd:string ;
         sh:minLength 3 ;

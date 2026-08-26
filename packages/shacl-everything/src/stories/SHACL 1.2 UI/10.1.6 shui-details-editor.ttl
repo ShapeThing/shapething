@@ -7,19 +7,19 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Address"@en ;
+        sh:name "Address"@en, "Adres"@nl ;
         sh:path schema:address ;
         sh:nodeKind sh:BlankNode ;
         shui:editor shui:DetailsEditor ;
         sh:node [
             sh:property [
-                sh:name "Street"@en ;
+                sh:name "Street"@en, "Straat"@nl ;
                 sh:path schema:streetAddress ;
                 sh:minCount 1 ;
                 shui:propertyRole shui:LabelRole ;
             ] ;
             sh:property [
-                sh:name "Postal code"@en ;
+                sh:name "Postal code"@en, "Postcode"@nl ;
                 sh:path schema:postalCode ;
                 sh:minCount 1 ;
             ] ;

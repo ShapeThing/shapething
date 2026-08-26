@@ -7,7 +7,7 @@
     a sh:NodeShape ;
     sh:targetClass schema:Resource ;
     sh:property [
-        sh:name "Label"@en ;
+        sh:name "Label"@en, "Label"@nl ;
         sh:path (skosXL:prefLabel skosXL:literalForm) ;
         sh:minCount 1 ;
         sh:datatype xsd:string ;

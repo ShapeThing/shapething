@@ -15,7 +15,7 @@
   sh:ignoredProperties (rdf:type) ;
 
   sh:property [
-    sh:name "Main cook method"@en ;
+    sh:name "Main cook method"@en, "Belangrijkste bereidingswijze"@nl ;
     sh:path schema:cookMethod ;
     sh:maxCount 1 ;
     shui:editor shui:SubClassEditor ;

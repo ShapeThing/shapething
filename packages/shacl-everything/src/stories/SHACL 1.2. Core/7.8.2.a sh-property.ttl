@@ -6,12 +6,12 @@
     a sh:NodeShape ;
     sh:targetClass schema:Person ;
     sh:property [
-        sh:name "Given name"@en ;
+        sh:name "Given name"@en, "Voornaam"@nl ;
         sh:path schema:givenName ;
         sh:minCount 1 ;
     ] ;
     sh:property [
-        sh:name "Family name"@en ;
+        sh:name "Family name"@en, "Achternaam"@nl ;
         sh:path ex:familyName ;
         sh:minCount 1 ;
     ] ;

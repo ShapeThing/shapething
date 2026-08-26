@@ -10,7 +10,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Likes Philosopher"@en ;
+        sh:name "Likes Philosopher"@en, "Favoriete filosoof"@nl ;
         sh:path ex:likesPhilosopher ;
         sh:node <#philosopherShape> ;
         sh:in [

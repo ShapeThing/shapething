@@ -6,10 +6,7 @@ import { factory } from "@/helpers/factory.ts";
 import { ex, queryPrefixes, sh, shui } from "@/helpers/namespaces.ts";
 
 const createElement = async (turtle: string, propertyShapes: NamedNode[]) => {
-  const shapesGraph = await parseRdf(
-    `${queryPrefixes}\n\n${turtle}`,
-    "text/turtle",
-  );
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${turtle}`, "text/turtle");
   const dataGraph = await parseRdf("", "text/turtle");
   return new PropertyUIElement({
     shapesGraph,
@@ -20,9 +17,7 @@ const createElement = async (turtle: string, propertyShapes: NamedNode[]) => {
 };
 
 test("get() returns an empty array when the predicate is absent", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
-    ex("property1"),
-  ]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
   expect(element.get(sh("minCount"))).toBeUndefined();
 });
 
@@ -31,9 +26,7 @@ test("get() passes a single value through unchanged for predicates without a res
     `ex:property1 a sh:PropertyShape ; ex:customPredicate "hello" .`,
     [ex("property1")],
   );
-  expect(element.get(ex("customPredicate")).map((term) => term.value)).toEqual([
-    "hello",
-  ]);
+  expect(element.get(ex("customPredicate")).map((term) => term.value)).toEqual(["hello"]);
 });
 
 test("sh:class keeps only the most specific classes across shapes", async () => {
@@ -84,9 +77,7 @@ test("sh:nodeKind intersects across shapes, including list-form values", async (
     [ex("property1"), ex("property2"), ex("property3")],
   );
 
-  expect(element.get(sh("nodeKind")).map((term) => term.value)).toEqual([
-    sh("IRI").value,
-  ]);
+  expect(element.get(sh("nodeKind")).map((term) => term.value)).toEqual([sh("IRI").value]);
 });
 
 test("sh:nodeKind throws when there is no intersection", async () => {
@@ -98,9 +89,7 @@ test("sh:nodeKind throws when there is no intersection", async () => {
     [ex("property1"), ex("property2")],
   );
 
-  expect(() => element.get(sh("nodeKind"))).toThrow(
-    /No intersection found for sh:nodeKind/,
-  );
+  expect(() => element.get(sh("nodeKind"))).toThrow(/No intersection found for sh:nodeKind/);
 });
 
 test("sh:minCount and sh:maxCount combine across shapes to the tightest bound", async () => {
@@ -143,12 +132,9 @@ test("sh:pattern combines differing patterns so a value must match all of them",
 });
 
 test("sh:pattern keeps a single value unchanged", async () => {
-  const element = await createElement(
-    `ex:property1 a sh:PropertyShape ; sh:pattern "^[A-Z]" .`,
-    [
-      ex("property1"),
-    ],
-  );
+  const element = await createElement(`ex:property1 a sh:PropertyShape ; sh:pattern "^[A-Z]" .`, [
+    ex("property1"),
+  ]);
   expect(element.get(sh("pattern"))?.source).toBe("^[A-Z]");
 });
 
@@ -161,9 +147,7 @@ test("sh:languageIn intersects the declared lists", async () => {
     [ex("property1"), ex("property2")],
   );
 
-  expect(element.get(sh("languageIn")).map((term) => term.value)).toEqual([
-    "nl",
-  ]);
+  expect(element.get(sh("languageIn")).map((term) => term.value)).toEqual(["nl"]);
 });
 
 test("sh:in with a single list still returns the expanded items, not the list node", async () => {
@@ -188,12 +172,11 @@ test("sh:ignoredProperties merges lists across shapes into a deduplicated set", 
     [ex("property1"), ex("property2")],
   );
 
-  expect(element.get(sh("ignoredProperties")).map((term) => term.value))
-    .toEqual([
-      ex("a").value,
-      ex("b").value,
-      ex("c").value,
-    ]);
+  expect(element.get(sh("ignoredProperties")).map((term) => term.value)).toEqual([
+    ex("a").value,
+    ex("b").value,
+    ex("c").value,
+  ]);
 });
 
 test("sh:equals resolves when every shape targets the same path", async () => {
@@ -217,9 +200,7 @@ test("sh:equals throws when shapes target different paths", async () => {
     [ex("property1"), ex("property2")],
   );
 
-  expect(() => element.get(sh("equals"))).toThrow(
-    /Conflicting values for property/,
-  );
+  expect(() => element.get(sh("equals"))).toThrow(/Conflicting values for property/);
 });
 
 test("sh:disjoint keeps every distinct value in declaration order, deduplicated", async () => {
@@ -299,9 +280,7 @@ test("sh:severity keeps a single declared value unchanged", async () => {
 });
 
 test("sh:severity is empty when absent, leaving the spec default of sh:Violation to the caller", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
-    ex("property1"),
-  ]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
   expect(element.get(sh("severity"))).toBeUndefined();
 });
 
@@ -330,9 +309,7 @@ test("get() returns the first declared value by sh:order", async () => {
 });
 
 test("get() returns undefined when the predicate is absent", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
-    ex("property1"),
-  ]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
   expect(element.get(sh("name"))).toBeUndefined();
 });
 
@@ -436,21 +413,29 @@ test("label() falls back to the property shape's own local name for an alternati
   expect(element.label()).toBe("property1");
 });
 
-test("label() falls back to the ontology term's local name when neither sh:name nor an rdfs:label exists", async () => {
+test("label() honors a globally configured shui:languagePreference when no explicit languages are passed", async () => {
   const element = await createElement(
-    `ex:property1 a sh:PropertyShape ; sh:path ex:givenName .`,
-    [
-      ex("property1"),
-    ],
+    `
+        ex:config a shui:Configuration ; shui:languagePreference ( "nl" "en" ) .
+        ex:property1 a sh:PropertyShape ; sh:path ex:givenName .
+        ex:givenName rdfs:label "Given name"@en, "Gegeven naam"@nl .
+    `,
+    [ex("property1")],
   );
+
+  expect(element.label()).toBe("Gegeven naam");
+});
+
+test("label() falls back to the ontology term's local name when neither sh:name nor an rdfs:label exists", async () => {
+  const element = await createElement(`ex:property1 a sh:PropertyShape ; sh:path ex:givenName .`, [
+    ex("property1"),
+  ]);
 
   expect(element.label()).toBe("givenName");
 });
 
 test("widget() returns undefined when scoresGraph has no matching widget score", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
-    ex("property1"),
-  ]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
   expect(
     await element.widget({
       widgetPredicate: shui("editor"),
@@ -620,9 +605,7 @@ test("getObjects() walks this element's path through the data graph from this.fo
 });
 
 test("getObjects() returns an empty array when the property shape has no sh:path", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
-    ex("property1"),
-  ]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
   expect(element.getObjects()).toEqual([]);
 });
 
@@ -662,8 +645,7 @@ test("addObject() writes onto a BlankNode this.focusNode too, not just a NamedNo
     `${queryPrefixes}\n\n _:address ex:street "Dam 1" .`,
     "text/turtle",
   );
-  const focusNode = dataGraph.getQuads(null, ex("street"))[0]
-    .subject as BlankNode;
+  const focusNode = dataGraph.getQuads(null, ex("street"))[0].subject as BlankNode;
 
   const element = new PropertyUIElement({
     shapesGraph,
@@ -683,9 +665,7 @@ test("addObject() writes onto a BlankNode this.focusNode too, not just a NamedNo
 });
 
 test("addObject() does nothing when the property shape has no sh:path", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
-    ex("property1"),
-  ]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
   element.addObject(factory.literal("hello"));
   expect(element.getObjects()).toEqual([]);
 });
@@ -713,9 +693,7 @@ test("replaceObject() swaps an existing value on this.focusNode via this element
 });
 
 test("replaceObject() does nothing when the property shape has no sh:path", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
-    ex("property1"),
-  ]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
   element.replaceObject(factory.literal("hello"), factory.literal("world"));
   expect(element.getObjects()).toEqual([]);
 });
@@ -743,9 +721,7 @@ test("removeObject() removes an existing value from this.focusNode via this elem
 });
 
 test("removeObject() does nothing when the property shape has no sh:path", async () => {
-  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
-    ex("property1"),
-  ]);
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
   element.removeObject(factory.literal("hello"));
   expect(element.getObjects()).toEqual([]);
 });

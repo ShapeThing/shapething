@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Address"@en ;
+        sh:name "Address"@en, "Adres"@nl ;
         sh:path schema:address ;
         sh:minCount 1 ;
         sh:node [

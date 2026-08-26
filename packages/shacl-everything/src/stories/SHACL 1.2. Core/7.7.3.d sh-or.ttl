@@ -9,15 +9,15 @@
     sh:targetClass schema:Thing ;
 
     sh:property [
-        sh:name "Thing"@en ;
+        sh:name "Thing"@en, "Ding"@nl ;
         sh:path ex:bla ;
         sh:or (
             [ 
-                sh:name "As string"@en ;
+                sh:name "As string"@en, "Als tekst"@nl ;
                 sh:datatype xsd:string 
             ]
             [ 
-                sh:name "As boolean"@en ;
+                sh:name "As boolean"@en, "Als boolean"@nl ;
                 sh:datatype xsd:boolean 
             ]
         ) ;

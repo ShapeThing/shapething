@@ -38,27 +38,53 @@ test("bestByLanguage - honors the order of the preferred languages", () => {
   expect(bestByLanguage([en, nl], ["en", "nl"])).toEqual(en);
 });
 
-test("bestByLanguage - falls back to a matching primary subtag when there is no exact match", () => {
+test("bestByLanguage - a language-only preference (e.g. 'en') matches a region-qualified tag (e.g. 'en-US') per RFC4647 basic filtering", () => {
   const enUS = factory.literal("Color", "en-US");
-  expect(bestByLanguage([enUS], ["en-GB"])).toEqual(enUS);
+  expect(bestByLanguage([enUS], ["en"])).toEqual(enUS);
 });
 
-test("bestByLanguage - prefers an exact match over a primary-subtag-only match", () => {
+test("bestByLanguage - a region-qualified preference does NOT match a different region's tag", () => {
+  const enGB = factory.literal("Colour", "en-GB");
+  const enUS = factory.literal("Color", "en-US");
+  expect(bestByLanguage([enGB, enUS], ["en-US"])).toEqual(enUS);
+  expect(bestByLanguage([enUS, enGB], ["en-GB"])).toEqual(enGB);
+});
+
+test("bestByLanguage - a region-qualified preference also matches a plain, unqualified tag (matching is symmetric - most content only ever carries a plain tag, while a live preference often carries a region)", () => {
+  const fr = factory.literal("Bonjour", "fr");
+  const en = factory.literal("Hello", "en");
+  expect(bestByLanguage([fr, en], ["en-US"])).toEqual(en);
+});
+
+test("bestByLanguage - prefers an exact match over a broader prefix match", () => {
   const enGB = factory.literal("Colour", "en-GB");
   const enUS = factory.literal("Color", "en-US");
   expect(bestByLanguage([enUS, enGB], ["en-GB"])).toEqual(enGB);
 });
 
-test("bestByLanguage - prefers a primary-subtag match on an earlier-ranked language over one on a later-ranked language, regardless of value order", () => {
+test("bestByLanguage - a plain-language preference's regional match wins over a later-ranked preference, regardless of value order", () => {
   const deDE = factory.literal("Farbe", "de-DE");
   const enUS = factory.literal("Color", "en-US");
-  expect(bestByLanguage([deDE, enUS], ["en-GB", "de-CH"])).toEqual(enUS);
+  expect(bestByLanguage([enUS, deDE], ["de", "en"])).toEqual(deDE);
 });
 
-test("bestByLanguage - an exact match on a lower-ranked language still beats a primary-subtag match on a higher-ranked language", () => {
+test("bestByLanguage - an exact match on a lower-ranked language wins when a higher-ranked language matches nothing at all", () => {
   const nl = factory.literal("Kleur", "nl");
   const enUS = factory.literal("Color", "en-US");
   expect(bestByLanguage([nl, enUS], ["en-GB", "nl"])).toEqual(nl);
+});
+
+test("bestByLanguage - an empty-string preference matches a language-less literal, ranked by its position in the list", () => {
+  const fr = factory.literal("Bonjour", "fr");
+  const plain = factory.literal("Plain");
+  expect(bestByLanguage([fr, plain], ["", "fr"])).toEqual(plain);
+  expect(bestByLanguage([fr, plain], ["fr", ""])).toEqual(fr);
+});
+
+test("bestByLanguage - an empty-string preference also matches a non-Literal term (nothing has a language at all)", () => {
+  const fr = factory.literal("Bonjour", "fr");
+  const iri = factory.namedNode("http://example.org/Alice");
+  expect(bestByLanguage([fr, iri], ["", "fr"])).toEqual(iri);
 });
 
 test("bestByLanguage - falls back to a language-less literal when no preferred language matches", () => {

@@ -6,7 +6,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Parent"@en ;
+        sh:name "Parent"@en, "Ouder"@nl ;
         sh:path schema:parent ;
         sh:class schema:Person ;
         sh:minCount 2 ;

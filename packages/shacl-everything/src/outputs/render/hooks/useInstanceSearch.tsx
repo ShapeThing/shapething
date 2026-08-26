@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
-import { useEnvironment } from "./useEnvironment.tsx";
+import { useInterfaceLanguage } from "./useInterfaceLanguage.tsx";
 import {
   runFederatedQuery,
   searchInstances,
@@ -58,7 +58,7 @@ export function useInstanceSearch(shape: PropertyUIElement): {
   error: unknown;
   reset: () => void;
 } {
-  const { interfaceLanguage } = useEnvironment();
+  const { activeInterfaceLanguage } = useInterfaceLanguage();
   const searchQuery = useMemo(() => searchQueryFor(shape), [shape]);
   const [search, setSearch] = useState<string>();
   const [debounced, setDebounced] = useState<string>();
@@ -70,10 +70,16 @@ export function useInstanceSearch(shape: PropertyUIElement): {
   }, [search]);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ["instance-search", shape.propertyShapes.map((s) => s.value), searchQuery, debounced],
+    queryKey: [
+      "instance-search",
+      shape.propertyShapes.map((s) => s.value),
+      searchQuery,
+      debounced,
+      activeInterfaceLanguage,
+    ],
     queryFn: () =>
       (searchQuery
-        ? runSearchQuery(shape, searchQuery, debounced ?? "", interfaceLanguage)
+        ? runSearchQuery(shape, searchQuery, debounced ?? "", activeInterfaceLanguage)
         : searchInstances(shape, debounced ?? "")
       ).catch((cause) => {
         console.error("[shacl-everything] instance search failed", cause);

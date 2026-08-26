@@ -9,7 +9,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Bio"@en ;
+        sh:name "Bio"@en, "Biografie"@nl ;
         sh:path ex:bio ;
         sh:datatype rdf:HTML ;
         shui:viewer shui:HTMLViewer ;

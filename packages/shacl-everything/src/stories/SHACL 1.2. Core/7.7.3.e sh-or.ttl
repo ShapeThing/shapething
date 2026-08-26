@@ -9,42 +9,42 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Address"@en ;
+        sh:name "Address"@en, "Adres"@nl ;
         sh:path schema:address ;
         sh:or (
             [
-                sh:name "As free text"@en ;
+                sh:name "As free text"@en, "Als vrije tekst"@nl ;
                 sh:datatype xsd:string ;
                 sh:singleLine false ;
             ]
             [
-                sh:name "As structured fields"@en ;
+                sh:name "As structured fields"@en, "Als gestructureerde velden"@nl ;
                 shui:editor shui:DetailsEditor ;
                 sh:nodeKind sh:BlankNodeOrIRI ;
                 sh:node [
                     sh:property [
-                        sh:name "Street"@en ;
+                        sh:name "Street"@en, "Straat"@nl ;
                         sh:path schema:streetAddress ;
                         sh:datatype xsd:string ;
                         sh:minCount 1 ;
                         sh:maxCount 1 ;
                     ] ;
                     sh:property [
-                        sh:name "House number"@en ;
+                        sh:name "House number"@en, "Huisnummer"@nl ;
                         sh:path ex:houseNumber ;
                         sh:datatype xsd:string ;
                         sh:minCount 1 ;
                         sh:maxCount 1 ;
                     ] ;
                     sh:property [
-                        sh:name "Postal code"@en ;
+                        sh:name "Postal code"@en, "Postcode"@nl ;
                         sh:path schema:postalCode ;
                         sh:datatype xsd:string ;
                         sh:minCount 1 ;
                         sh:maxCount 1 ;
                     ] ;
                     sh:property [
-                        sh:name "City"@en ;
+                        sh:name "City"@en, "Stad"@nl ;
                         sh:path schema:addressLocality ;
                         sh:datatype xsd:string ;
                         sh:minCount 1 ;

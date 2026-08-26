@@ -61,17 +61,27 @@ export type Environment = {
   enableFullLanguageRemoval?: boolean;
   // Called when the edit mode form is submitted. See SubmitResult.
   onSubmit?: (result: SubmitResult) => void;
+  // When true, languages detected on sh:name/sh:description in the shapes graph but not covered
+  // by an interface locale are also offered in the interface language switcher - useful when the
+  // shapes graph contains labels in a language the library doesn't ship a translation for. When
+  // false, interfaceLanguages is exactly the .ftl locale set, so removing a built-in locale via
+  // `interfaceLocales` (e.g. `{ "nl-NL": null }`) actually removes it rather than having it
+  // reappear because some shape happens to carry a label in that language. true in
+  // defaultEnvironment, false in minimalEnvironment.
+  enableInterfaceLanguageWithShapesLabelsOnly?: boolean;
 };
 
 // What flows through the preprocessor chain before it's fully resolved: the graph fields may
 // still be an unparsed/undereferenced RdfSource rather than a ready RdfStore. RdfStore is itself
 // a valid RdfSource, so a fully-resolved Environment already satisfies this type - preprocessors
 // don't need a different type per stage of the chain.
-export type RawEnvironment = Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph"> & {
-  shapesGraph: RdfSource;
-  dataGraph: RdfSource;
-  scoresGraph: RdfSource;
-};
+export type RawEnvironment =
+  & Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph">
+  & {
+    shapesGraph: RdfSource;
+    dataGraph: RdfSource;
+    scoresGraph: RdfSource;
+  };
 
 export const defaultEnvironment: Environment = {
   shapesGraph: RdfStore.createDefault(),
@@ -91,9 +101,13 @@ export const defaultEnvironment: Environment = {
   enableContentLanguageCreation: true,
   enableShPathInLabelTitle: true,
   enableFullLanguageRemoval: true,
+  enableInterfaceLanguageWithShapesLabelsOnly: true,
 };
 
-export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph" | "dataGraph"> = {
+export const minimalEnvironment: Omit<
+  Environment,
+  "scoresGraph" | "shapesGraph" | "dataGraph"
+> = {
   focusNode: ex("focusNode"),
   nodeShapes: [],
   mode: "edit",
@@ -110,6 +124,7 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableContentLanguageCreation: false,
   enableShPathInLabelTitle: false,
   enableFullLanguageRemoval: false,
+  enableInterfaceLanguageWithShapesLabelsOnly: false,
 };
 
 export const minimalEnvironmentWithContentLanguages: Omit<

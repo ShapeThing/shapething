@@ -7,7 +7,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "First name"@en ;
+        sh:name "First name"@en, "Voornaam"@nl ;
         sh:path ex:firstName ;
         sh:equals schema:givenName ;
     ] ;

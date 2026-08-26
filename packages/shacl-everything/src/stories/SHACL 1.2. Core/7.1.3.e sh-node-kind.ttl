@@ -6,7 +6,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Note"@en ;
+        sh:name "Note"@en, "Notitie"@nl ;
         sh:path schema:comment ;
         sh:nodeKind sh:BlankNodeOrLiteral ;
     ] ;

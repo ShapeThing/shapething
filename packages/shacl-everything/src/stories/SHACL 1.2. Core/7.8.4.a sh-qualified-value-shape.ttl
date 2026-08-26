@@ -7,7 +7,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Parent"@en ;
+        sh:name "Parent"@en, "Ouder"@nl ;
         sh:path ex:parent ;
         sh:minCount 2 ;
         sh:maxCount 2 ;

@@ -1,62 +1,104 @@
 import { factory } from "@/helpers/factory.ts";
 import { localName } from "@/helpers/localName.ts";
 import { rdfs, sh, shui } from "@/helpers/namespaces.ts";
-import language from "@/resolution/language.ts";
-import {
-  parsePropertyPath,
-  type PropertyPath,
-} from "@/structure/paths/parsePropertyPath.ts";
+import language, { configuredLanguages, effectiveLanguages } from "@/resolution/language.ts";
+import { getLabelPreference } from "@/resolution/globalConfiguration.ts";
+import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 import type { Literal, NamedNode, Term } from "@rdfjs/types";
+import type { RdfStore } from "rdf-stores";
 
 type PropertyLabelOptions = {
   term: Term;
   propertyShape: PropertyUIElement;
   languages?: BCP47[];
+  // Gates 8.2.2 step 1 (the property shape's own configured label-predicate value, e.g. sh:name).
+  // True only when `term` IS propertyShape's own sh:path terminal predicate (see
+  // PropertyUIElement.label()). Other callers (e.g. WidgetSwitcher labeling widget IRIs,
+  // SubClassEditor labeling class/root nodes and chip values) reuse propertyLabel purely for steps
+  // 2-5 - term/graph label lookup + local-name fallback - using propertyShape only as graph/language
+  // context; folding step 1 in unconditionally there would incorrectly surface the enclosing
+  // property's own sh:name instead of `term`'s.
+  isPropertyPath?: boolean;
 };
 
-// Resolves a display label for any term hung off `propertyShape` - a widget IRI, an ontology
-// class, etc. rdfs:label conventionally lives in shapesGraph alongside whatever declared the
-// term, but it can also surface in dataGraph (e.g. a class labelled alongside instance data) or
-// scoresGraph (e.g. a widget registry entry) - checked in that order, each graph only consulted
-// if the previous one had nothing.
-export function propertyLabel(
-  { term, propertyShape, languages }: PropertyLabelOptions,
-) {
+type LabelPreferenceContext = "propertyShape" | "term";
+
+// Label property resolution (8.2.1): shui:labelPreference, when configured, is applied uniformly
+// across every step that consults it. The *default* (when unconfigured) is context-dependent -
+// sh:name for a property shape's own metadata (propertyLabel step 1, and branchLabel's equivalent),
+// rdfs:label for describing a predicate/value-node IRI's own vocabulary term (propertyLabel steps
+// 2-3, valueNodeLabel steps 3-4).
+function effectiveLabelPredicates(
+  shapesGraph: RdfStore,
+  context: LabelPreferenceContext,
+): PropertyPath[] {
+  const configured = getLabelPreference(shapesGraph);
+  if (configured.length > 0) return configured;
+  return context === "propertyShape"
+    ? [{ type: "predicate", predicate: sh("name") }]
+    : [{ type: "predicate", predicate: rdfs("label") }];
+}
+
+// 8.2.2 Property Labels
+export function propertyLabel({
+  term,
+  propertyShape,
+  languages,
+  isPropertyPath,
+}: PropertyLabelOptions): string {
   const { scoresGraph, shapesGraph, dataGraph } = propertyShape;
+  // Chrome (a label), not content - deliberately excludes sh:languageIn, see configuredLanguages.
+  const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
 
-  const labelQuadViaShapes = language(
-    shapesGraph.getQuads(term, rdfs("label")).map(({ object }) =>
-      object as Literal
-    ),
-    languages,
-  );
-  if (labelQuadViaShapes) {
-    return labelQuadViaShapes.value;
+  // 1. The property shape's own configured label-predicate value(s) - shape-local metadata, so only
+  // "predicate"-typed configured paths apply (a complex path can't be read as direct shape metadata).
+  if (isPropertyPath) {
+    for (const path of effectiveLabelPredicates(shapesGraph, "propertyShape")) {
+      if (path.type !== "predicate") continue;
+      const value = propertyShape.get(path.predicate, effLanguages);
+      if (value) return value.value;
+    }
   }
 
-  const labelQuadViaData = language(
-    dataGraph.getQuads(term, rdfs("label")).map(({ object }) =>
-      object as Literal
-    ),
-    languages,
-  );
-  if (labelQuadViaData) {
-    return labelQuadViaData.value;
+  const termLabelPaths = effectiveLabelPredicates(shapesGraph, "term");
+
+  // 2. DATA graph, subject P, configured label path(s) - checked before the shapes graph (order
+  // matters, per 8.2.2). Predicate-list-then-language-select: the first configured path with ANY
+  // matching literal wins, rather than merging every path's candidates before language-selecting
+  // across all of them - a higher-priority label predicate (e.g. skos:prefLabel) should win even if
+  // only available in a non-preferred language, rather than losing to a lower-priority predicate
+  // that happens to have a better-matching language.
+  for (const path of termLabelPaths) {
+    const literal = language(
+      walkPropertyPath(path, term, dataGraph).filter((v): v is Literal => v.termType === "Literal"),
+      effLanguages,
+    );
+    if (literal) return literal.value;
   }
 
-  const labelQuadViaScores = language(
-    scoresGraph.getQuads(term, rdfs("label")).map(({ object }) =>
-      object as Literal
-    ),
-    languages,
-  );
-  if (labelQuadViaScores) {
-    return labelQuadViaScores.value;
+  // 3. SHAPES graph, subject P, configured label path(s).
+  for (const path of termLabelPaths) {
+    const literal = language(
+      walkPropertyPath(path, term, shapesGraph).filter(
+        (v): v is Literal => v.termType === "Literal",
+      ),
+      effLanguages,
+    );
+    if (literal) return literal.value;
   }
 
+  // Non-spec extension: scoresGraph (e.g. a widget registry entry's own rdfs:label) - tried after
+  // the spec's own data/shapes-graph steps, before falling back to the local name.
+  const scoresLabel = language(
+    scoresGraph.getQuads(term, rdfs("label")).map(({ object }) => object as Literal),
+    effLanguages,
+  );
+  if (scoresLabel) return scoresLabel.value;
+
+  // 4/5. Local-name resolution of P (or, for a non-IRI/complex term, its own value).
   return localName(term) ?? term.value;
 }
 
@@ -68,18 +110,15 @@ type ValueNodeLabelOptions = {
 
 // The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
 // node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole `role`.
-function propertyPathsByRole(
-  propertyShape: PropertyUIElement,
-  role: NamedNode,
-): PropertyPath[] {
+function propertyPathsByRole(propertyShape: PropertyUIElement, role: NamedNode): PropertyPath[] {
   const { shapesGraph } = propertyShape;
 
   const explicitNodes = propertyShape.get(sh("node"));
-  const classNodes = propertyShape.get(sh("class")).flatMap((classIri) =>
-    shapesGraph
-      .getQuads(null, sh("targetClass"), classIri)
-      .map(({ subject }) => subject)
-  );
+  const classNodes = propertyShape
+    .get(sh("class"))
+    .flatMap((classIri) =>
+      shapesGraph.getQuads(null, sh("targetClass"), classIri).map(({ subject }) => subject),
+    );
 
   return [...explicitNodes, ...classNodes].flatMap((node) =>
     shapesGraph
@@ -89,7 +128,7 @@ function propertyPathsByRole(
           shapesGraph.getQuads(property, shui("propertyRole"), role).length > 0,
       )
       .map(({ object: property }) => parsePropertyPath(property, shapesGraph))
-      .filter((path): path is PropertyPath => path !== null)
+      .filter((path): path is PropertyPath => path !== null),
   );
 }
 
@@ -100,9 +139,7 @@ function propertyPathsByRole(
  * valueNodeLabel (walks the path per value) and anything that instead needs the path itself, e.g.
  * to build a SPARQL query (see structure/paths/toSparql.ts).
  */
-export function labelRolePropertyPaths(
-  propertyShape: PropertyUIElement,
-): PropertyPath[] {
+export function labelRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
   return propertyPathsByRole(propertyShape, shui("LabelRole"));
 }
 
@@ -112,9 +149,7 @@ export function labelRolePropertyPaths(
  * shui:DepictionRole - i.e. what to walk from a value node to find an image representing it.
  * Mirrors labelRolePropertyPaths.
  */
-export function depictionRolePropertyPaths(
-  propertyShape: PropertyUIElement,
-): PropertyPath[] {
+export function depictionRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
   return propertyPathsByRole(propertyShape, shui("DepictionRole"));
 }
 
@@ -124,46 +159,54 @@ export function depictionRolePropertyPaths(
  * shui:SubLabelRole - secondary, disambiguating text shown alongside the main LabelRole label
  * (e.g. a pseudonym next to a person's name). Mirrors labelRolePropertyPaths.
  */
-export function subLabelRolePropertyPaths(
-  propertyShape: PropertyUIElement,
-): PropertyPath[] {
+export function subLabelRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
   return propertyPathsByRole(propertyShape, shui("SubLabelRole"));
 }
 
-// 8.2.2 Value Node Labels
-export function valueNodeLabel(
-  { term, propertyShape, languages }: ValueNodeLabelOptions,
-): Literal {
-  const { dataGraph } = propertyShape;
+// 8.2.3 Value Node Labels
+export function valueNodeLabel({ term, propertyShape, languages }: ValueNodeLabelOptions): Literal {
+  const { shapesGraph, dataGraph } = propertyShape;
 
-  //  1. If V is a literal, use its lexical form as the label.
+  // 1. If V is a literal, use its lexical form as the label.
   if (term.termType === "Literal") {
     return term;
   }
 
-  // 2. If the applicable node shape for V contains a property shape whose sh:path is annotated with shui:propertyRole shui:LabelRole,
-  // retrieve the values of that path from the data graph for subject V. Select the best matching value using language resolution.
-  // If a match is found, use that literal as the label.
+  const effLanguages = effectiveLanguages(propertyShape, languages ?? []);
+
+  // 2. shui:LabelRole-annotated path(s) from V, walked in the data graph.
   const labelsViaPropertyRoles = labelRolePropertyPaths(propertyShape)
     .flatMap((path) => walkPropertyPath(path, term, dataGraph))
     .filter((value): value is Literal => value.termType === "Literal");
+  const viaRoles = language(labelsViaPropertyRoles, effLanguages);
+  if (viaRoles) return viaRoles;
 
-  if (labelsViaPropertyRoles.length > 0) {
-    return language(labelsViaPropertyRoles, languages);
+  const labelPaths = effectiveLabelPredicates(shapesGraph, "term");
+
+  // 3. DATA graph, subject V, configured label path(s) (default rdfs:label).
+  for (const path of labelPaths) {
+    const literal = language(
+      walkPropertyPath(path, term, dataGraph).filter((v): v is Literal => v.termType === "Literal"),
+      effLanguages,
+    );
+    if (literal) return literal;
   }
 
-  // 3. If V is an IRI, try to find its rdfs:label in the data graph. If found, use that literal as the label.
-  if (term.termType === "NamedNode") {
-    const labelQuads = dataGraph.getQuads(term, rdfs("label"));
-    if (labelQuads.length > 0) {
-      return language(
-        labelQuads.map(({ object }) => object as Literal),
-        languages,
-      );
-    }
+  // 4. SHAPES graph, subject V, configured label path(s).
+  for (const path of labelPaths) {
+    const literal = language(
+      walkPropertyPath(path, term, shapesGraph).filter(
+        (v): v is Literal => v.termType === "Literal",
+      ),
+      effLanguages,
+    );
+    if (literal) return literal;
   }
 
-  return factory.literal(term.value);
+  // 5. If V is an IRI, use local-name resolution of V.
+  // 6. If V is a blank node, use an implementation-specific placeholder (empty string).
+  if (term.termType === "BlankNode") return factory.literal("");
+  return factory.literal(localName(term) ?? term.value);
 }
 
 type ValueNodeSubLabelOptions = {
@@ -176,7 +219,8 @@ type ValueNodeSubLabelOptions = {
  * Secondary, disambiguating text for V: the best-language literal from a shui:SubLabelRole-
  * annotated path from V in the data graph (e.g. a pseudonym alongside a person's name). Unlike
  * valueNodeLabel there is no rdfs:label or lexical-value fallback - a value simply has no sub-label
- * when nothing matches.
+ * when nothing matches. Not part of the spec; a project-specific extension mirroring valueNodeLabel's
+ * step 2 only.
  */
 export function valueNodeSubLabel({
   term,
@@ -186,11 +230,12 @@ export function valueNodeSubLabel({
   if (term.termType === "Literal") return undefined;
 
   const { dataGraph } = propertyShape;
+  const effLanguages = effectiveLanguages(propertyShape, languages ?? []);
   const subLabels = subLabelRolePropertyPaths(propertyShape)
     .flatMap((path) => walkPropertyPath(path, term, dataGraph))
     .filter((value): value is Literal => value.termType === "Literal");
 
-  return subLabels.length > 0 ? language(subLabels, languages) : undefined;
+  return subLabels.length > 0 ? language(subLabels, effLanguages) : undefined;
 }
 
 type ValueNodeDepictionOptions = {

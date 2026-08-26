@@ -6,7 +6,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Website"@en ;
+        sh:name "Website"@en, "Website"@nl ;
         sh:path schema:url ;
         sh:nodeKind sh:IRI ;
         sh:minCount 1 ;

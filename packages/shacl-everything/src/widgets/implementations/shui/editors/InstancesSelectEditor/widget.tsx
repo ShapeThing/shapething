@@ -4,11 +4,11 @@ import type { WidgetProps } from "@/widgets/types.ts";
 import { valueNodeLabel } from "@/resolution/label.ts";
 import { Localized } from "@fluent/react/esm/localized.js";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
-import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
+import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
 
 export default function InstancesSelectEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
-  const { activeLanguage } = useContentLanguage();
+  const { activeInterfaceLanguage } = useInterfaceLanguage();
   const shClasses = shape.get(sh("class"));
   const classesMap = new Map(
     shClasses.flatMap((shClass) =>
@@ -36,7 +36,7 @@ export default function InstancesSelectEditor({ shape, term, setTerm, labelledBy
           valueNodeLabel({
             term: factory.namedNode(v),
             propertyShape: shape,
-            languages: [activeLanguage],
+            languages: [activeInterfaceLanguage],
           }).value
         ) : (
           <Localized id="select-an-option" />
@@ -46,7 +46,7 @@ export default function InstancesSelectEditor({ shape, term, setTerm, labelledBy
         valueNodeLabel({
           term: factory.namedNode(v),
           propertyShape: shape,
-          languages: [activeLanguage],
+          languages: [activeInterfaceLanguage],
         }).value
       }
     />

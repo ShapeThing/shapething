@@ -11,7 +11,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Born in"@en ;
+        sh:name "Born in"@en, "Geboren in"@nl ;
         sh:path ex:bornIn ;
         sh:class ex:Country ;
         sh:nodeKind sh:IRI ;
@@ -28,11 +28,11 @@
 
 ex:Netherlands a ex:Country ; 
     foaf:depiction <https://upload.wikimedia.org/wikipedia/commons/2/20/Flag_of_the_Netherlands.svg> ;
-    rdfs:label "Netherlands"@en .
+    rdfs:label "Netherlands"@en, "Nederland"@nl .
 
 ex:Germany a ex:Country ; 
     foaf:depiction <https://upload.wikimedia.org/wikipedia/en/b/ba/Flag_of_Germany.svg> ;
-    rdfs:label "Germany"@en .
+    rdfs:label "Germany"@en, "Duitsland"@nl .
 
 <#countryShape>
     a sh:NodeShape ;

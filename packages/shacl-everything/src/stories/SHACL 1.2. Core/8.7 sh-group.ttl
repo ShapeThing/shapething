@@ -7,25 +7,25 @@
     a sh:NodeShape ;
     sh:targetClass schema:Person ;
     sh:property [
-        sh:name "Given name"@en ;
+        sh:name "Given name"@en, "Voornaam"@nl ;
         sh:path schema:givenName ;
         sh:order 0 ;
         sh:group <#nameGroup> ;
     ] ;
     sh:property [
-        sh:name "Family name"@en ;
+        sh:name "Family name"@en, "Achternaam"@nl ;
         sh:path ex:familyName ;
         sh:order 1 ;
         sh:group <#nameGroup> ;
     ] ;
     sh:property [
-        sh:name "Street address"@en ;
+        sh:name "Street address"@en, "Straatadres"@nl ;
         sh:path schema:streetAddress ;
         sh:order 0 ;
         sh:group <#addressGroup> ;
     ] ;
     sh:property [
-        sh:name "Postal code"@en ;
+        sh:name "Postal code"@en, "Postcode"@nl ;
         sh:path schema:postalCode ;
         sh:order 1 ;
         sh:group <#addressGroup> ;
@@ -35,13 +35,13 @@
 <#nameGroup>
     a sh:PropertyGroup ;
     sh:order 0 ;
-    rdfs:label "Name"@en ;
+    rdfs:label "Name"@en, "Naam"@nl ;
     .
 
 <#addressGroup>
     a sh:PropertyGroup ;
     sh:order 1 ;
-    rdfs:label "Address"@en ;
+    rdfs:label "Address"@en, "Adres"@nl ;
     .
 
 

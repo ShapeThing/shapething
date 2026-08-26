@@ -8,7 +8,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Product code"@en ;
+        sh:name "Product code"@en, "Productcode"@nl ;
         sh:path ex:productCode ;
         sh:datatype xsd:string ;
         sh:pattern "^[A-Z]{2}[0-9]{4}$" ;

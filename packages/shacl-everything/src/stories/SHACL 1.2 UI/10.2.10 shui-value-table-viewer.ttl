@@ -15,14 +15,14 @@
 ex:Concept-narrower
     a sh:PropertyShape ;
     sh:path [ sh:inversePath skos:broader ] ;
-    sh:name "Narrower concepts (table)"@en ;
+    sh:name "Narrower concepts (table)"@en, "Specifiekere concepten (tabel)"@nl ;
     shui:viewer shui:ValueTableViewer ;
     sh:node ex:ConceptTableShape ;
     .
 
 ex:ConceptTableShape
     a sh:NodeShape ;
-    rdfs:label "Concept table shape"@en ;
+    rdfs:label "Concept table shape"@en, "Conceptentabelvorm"@nl ;
     sh:property ex:ConceptTableShape-self ;
     sh:property ex:ConceptTableShape-type ;
     sh:property ex:ConceptTableShape-altLabel ;
@@ -31,7 +31,7 @@ ex:ConceptTableShape
 ex:ConceptTableShape-self
     a sh:PropertyShape ;
     sh:path ex:self ;
-    sh:name "narrower concept"@en ;
+    sh:name "narrower concept"@en, "specifieker concept"@nl ;
     sh:nodeKind sh:IRI ;
     sh:order 0 ;
     sh:values sh:this ;
@@ -40,7 +40,7 @@ ex:ConceptTableShape-self
 ex:ConceptTableShape-type
     a sh:PropertyShape ;
     sh:path rdf:type ;
-    sh:name "type"@en ;
+    sh:name "type"@en, "type"@nl ;
     sh:nodeKind sh:IRI ;
     sh:order 1 ;
     .
@@ -48,7 +48,7 @@ ex:ConceptTableShape-type
 ex:ConceptTableShape-altLabel
     a sh:PropertyShape ;
     sh:path skos:altLabel ;
-    sh:name "alt labels"@en ;
+    sh:name "alt labels"@en, "alternatieve labels"@nl ;
     sh:order 2 ;
     .
 

@@ -6,7 +6,7 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Logo"@en ;
+        sh:name "Logo"@en, "Logo"@nl ;
         sh:path schema:logo ;
         sh:nodeKind sh:IRIOrLiteral ;
         sh:minCount 1 ;
