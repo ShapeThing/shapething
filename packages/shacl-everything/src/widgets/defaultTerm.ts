@@ -55,9 +55,7 @@ export function coerceTermToBranch(
   branchProperty: PropertyUIElement,
   context: CreateTermContext,
 ): Term {
-  const datatype = branchProperty.getOne(sh("datatype")) as
-    | NamedNode
-    | undefined;
+  const datatype = branchProperty.get(sh("datatype")) as NamedNode | undefined;
   if (term.termType === "Literal" && datatype) {
     // rdf:langString literals are identified by their language tag, not an explicit datatype -
     // factory.literal(value, aNamedNode) sets the datatype directly instead, which for

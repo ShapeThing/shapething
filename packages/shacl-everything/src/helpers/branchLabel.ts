@@ -7,7 +7,7 @@ import type { BCP47 } from "@/types/BCP47.ts";
 
 // Branches (sh:or/sh:xone list members, at either the property or node level) are constraint-only
 // shape nodes, not PropertyUIElements, so their sh:name is read straight off shapesGraph rather
-// than through PropertyUIElement.getOne() (which would resolve the outer property's own sh:name
+// than through PropertyUIElement.get() (which would resolve the outer property's own sh:name
 // instead, once merged in via withBranch()).
 export function branchLabel(branchShape: Term, shapesGraph: RdfStore, languages: BCP47[]): string {
   const names = shapesGraph.getQuads(branchShape, sh("name")).map((quad) => quad.object);

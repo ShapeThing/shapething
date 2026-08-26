@@ -36,7 +36,7 @@ export default function DetailsEditor({ shape, term, flyOut }: WidgetProps) {
     () => {
       const rawLabel = valueNodeLabel({ term, propertyShape: shape, languages: [activeLanguage] });
       return term.termType === "BlankNode" && rawLabel.value === term.value
-        ? (shape.label([activeInterfaceLanguage])?.value ?? rawLabel.value)
+        ? shape.label([activeInterfaceLanguage])
         : rawLabel.value;
     },
   );

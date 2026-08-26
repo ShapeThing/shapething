@@ -317,7 +317,7 @@ test("sh:order resolves to the lowest declared order across shapes", async () =>
   expect(element.get(sh("order"))).toBe(1);
 });
 
-test("getOne() returns the first declared value by sh:order", async () => {
+test("get() returns the first declared value by sh:order", async () => {
   const element = await createElement(
     `
         ex:property1 a sh:PropertyShape ; sh:order 2 ; sh:name "Second" .
@@ -326,14 +326,14 @@ test("getOne() returns the first declared value by sh:order", async () => {
     [ex("property1"), ex("property2")],
   );
 
-  expect(element.getOne(sh("name"))?.value).toBe("First");
+  expect(element.get(sh("name"))?.value).toBe("First");
 });
 
-test("getOne() returns undefined when the predicate is absent", async () => {
+test("get() returns undefined when the predicate is absent", async () => {
   const element = await createElement(`ex:property1 a sh:PropertyShape .`, [
     ex("property1"),
   ]);
-  expect(element.getOne(sh("name"))).toBeUndefined();
+  expect(element.get(sh("name"))).toBeUndefined();
 });
 
 test("get() with a language preference prefers the matching sh:name over other languages", async () => {
@@ -342,8 +342,8 @@ test("get() with a language preference prefers the matching sh:name over other l
     [ex("property1")],
   );
 
-  expect(element.getOne(sh("name"), ["nl-NL"])?.value).toBe("Gegeven naam");
-  expect(element.getOne(sh("name"), ["en-GB"])?.value).toBe("Given name");
+  expect(element.get(sh("name"), ["nl-NL"])?.value).toBe("Gegeven naam");
+  expect(element.get(sh("name"), ["en-GB"])?.value).toBe("Given name");
 });
 
 test("get() with a language preference falls back to a shared primary subtag", async () => {
@@ -352,7 +352,7 @@ test("get() with a language preference falls back to a shared primary subtag", a
     [ex("property1")],
   );
 
-  expect(element.getOne(sh("name"), ["nl-BE"])?.value).toBe("Gegeven naam");
+  expect(element.get(sh("name"), ["nl-BE"])?.value).toBe("Gegeven naam");
 });
 
 test("get() with a language preference falls back to any value when nothing matches", async () => {
@@ -361,7 +361,7 @@ test("get() with a language preference falls back to any value when nothing matc
     [ex("property1")],
   );
 
-  expect(element.getOne(sh("name"), ["nl-NL"])?.value).toBe("Given name");
+  expect(element.get(sh("name"), ["nl-NL"])?.value).toBe("Given name");
 });
 
 test("get() picks the lowest-order shape's name once narrowed to one language", async () => {
@@ -373,7 +373,7 @@ test("get() picks the lowest-order shape's name once narrowed to one language", 
     [ex("property1"), ex("property2")],
   );
 
-  expect(element.getOne(sh("name"), ["nl-NL"])?.value).toBe("First name");
+  expect(element.get(sh("name"), ["nl-NL"])?.value).toBe("First name");
 });
 
 test("get() without a language preference is unaffected by language tags", async () => {
@@ -394,7 +394,7 @@ test("label() prefers sh:name over the ontology's rdfs:label", async () => {
     [ex("property1")],
   );
 
-  expect(element.label()?.value).toBe("Given name");
+  expect(element.label()).toBe("Given name");
 });
 
 test("label() falls back to the ontology's rdfs:label when sh:name is absent", async () => {
@@ -406,8 +406,8 @@ test("label() falls back to the ontology's rdfs:label when sh:name is absent", a
     [ex("property1")],
   );
 
-  expect(element.label()?.value).toBe("Given name");
-  expect(element.label(["nl-NL"])?.value).toBe("Gegeven naam");
+  expect(element.label()).toBe("Given name");
+  expect(element.label(["nl-NL"])).toBe("Gegeven naam");
 });
 
 test("label() uses the terminal predicate's rdfs:label for a sequence path", async () => {
@@ -420,10 +420,10 @@ test("label() uses the terminal predicate's rdfs:label for a sequence path", asy
     [ex("property1")],
   );
 
-  expect(element.label()?.value).toBe("City");
+  expect(element.label()).toBe("City");
 });
 
-test("label() has no ontology fallback for an alternative path", async () => {
+test("label() falls back to the property shape's own local name for an alternative path", async () => {
   const element = await createElement(
     `
         ex:property1 a sh:PropertyShape ; sh:path [ sh:alternativePath ( ex:givenName ex:familyName ) ] .
@@ -433,10 +433,10 @@ test("label() has no ontology fallback for an alternative path", async () => {
     [ex("property1")],
   );
 
-  expect(element.label()).toBeUndefined();
+  expect(element.label()).toBe("property1");
 });
 
-test("label() returns undefined when neither sh:name nor an ontology rdfs:label exists", async () => {
+test("label() falls back to the ontology term's local name when neither sh:name nor an rdfs:label exists", async () => {
   const element = await createElement(
     `ex:property1 a sh:PropertyShape ; sh:path ex:givenName .`,
     [
@@ -444,7 +444,7 @@ test("label() returns undefined when neither sh:name nor an ontology rdfs:label 
     ],
   );
 
-  expect(element.label()).toBeUndefined();
+  expect(element.label()).toBe("givenName");
 });
 
 test("widget() returns undefined when scoresGraph has no matching widget score", async () => {
