@@ -15,7 +15,7 @@ export const SubmitPreviewPanel = ({ active }: Props) => {
   const [payloadsByStory, setPayloadsByStory] = useState<Record<string, SubmitPreviewPayload>>({});
   // Only meaningful once a payload with resourceOnly text exists, but kept independent of that so
   // flipping stories doesn't silently reset the reviewer's chosen mode.
-  const [showResourceOnly, setShowResourceOnly] = useState(false);
+  const [showResourceOnly, setShowResourceOnly] = useState(true);
 
   useChannel({
     [SUBMIT_PREVIEW_EVENT]: (payload: SubmitPreviewPayload) => {
@@ -162,8 +162,8 @@ const DataGraphModeToggle = ({
   <span style={{ display: "inline-flex", gap: 2 }}>
     {(
       [
-        { value: "full", label: "Data graph" },
         { value: "resourceOnly", label: "Resource only" },
+        { value: "full", label: "Data graph" },
       ] as const
     ).map(({ value, label }) => (
       <button

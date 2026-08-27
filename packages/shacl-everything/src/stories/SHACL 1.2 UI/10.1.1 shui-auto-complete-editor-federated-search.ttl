@@ -17,19 +17,16 @@
         sh:node <#philosopherShape> ;
         shui:editor shui:AutoCompleteEditor ;
         sh:in [
-            # shui:searchQuery lets this shape hand a fulltext search straight to the renderer
-            # instead of relying on its default IRI/LabelRole substring search (which can only ever
-            # see already-loaded local data). This deliberately uses a plain CONTAINS/LCASE filter
-            # rather than Virtuoso's bif:contains fulltext-index predicate: bif:contains is a
-            # syntax-level magic predicate that Virtuoso only recognizes when the query text itself
-            # says `bif:contains` - but Comunica parses this query into SPARQL algebra and
-            # re-serializes it before sending it over SERVICE, which normalizes `bif:contains` into
-            # its resolved-IRI form `<bif:contains>` and silently defeats the magic predicate (it
-            # then matches literally nothing, since no real triple has that predicate). CONTAINS/
-            # LCASE are standard SPARQL 1.1, survive that round trip unchanged, and work against any
-            # endpoint - not just Virtuoso.
-            # ?searchTerm/?uiLanguage are substituted by the renderer at execution time; the LIMIT the
-            # spec forbids here is added by the renderer instead (see query.ts).
+            # Not used in the UI, only when shui:searchQuery is not there.
+            sh:select """
+                PREFIX dbo: <http://dbpedia.org/ontology/>
+                SELECT DISTINCT ?value1 WHERE {
+                    SERVICE <https://dbpedia.org/sparql> {
+                        ?value1 a dbo:Philosopher .
+                    }
+                }
+            """ ;
+
             shui:searchQuery """
                 PREFIX dbo: <http://dbpedia.org/ontology/>
                 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -38,11 +35,6 @@
                         ?value a dbo:Philosopher .
                         ?value rdfs:label ?searchLabel .
                         FILTER(CONTAINS(LCASE(?searchLabel), LCASE(?searchTerm)))
-                        # dbpedia tags its plain-language labels with a bare primary subtag ("en"),
-                        # not a full BCP47 tag ("en-GB") - LANGMATCHES only matches when the label's
-                        # tag is at least as specific as the range, so matching against the full
-                        # ?uiLanguage as-is would reject every bare-tagged label. Truncate to the
-                        # primary subtag first (falling back to ?uiLanguage itself when it has none).
                         BIND(IF(CONTAINS(?uiLanguage, "-"), STRBEFORE(?uiLanguage, "-"), ?uiLanguage) AS ?uiPrimaryLanguage)
                         FILTER(LANGMATCHES(lang(?searchLabel), ?uiPrimaryLanguage))
                     }
