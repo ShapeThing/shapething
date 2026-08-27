@@ -17,21 +17,26 @@ export default function PropertyUIComponentObject({
   propertyUIElement,
   object,
   labelledBy,
+  onReplace,
   onTermSet,
   onRemove,
 }: {
   propertyUIElement: PropertyUIElement;
   object: Term;
   labelledBy: string;
+  onReplace: (oldTerm: Term, newTerm: Term) => void;
   onTermSet: () => void;
   onRemove: () => void;
 }) {
   const setTerm = useCallback(
     (newTerm: Term) => {
+      // Before the write, so the caller's display-order tracking already reflects the swap by
+      // the time that write's re-render reads it (see PropertyUIComponentValues.reconcileOrder).
+      onReplace(object, newTerm);
       propertyUIElement.replaceObject(object, newTerm);
       onTermSet();
     },
-    [propertyUIElement, object, onTermSet],
+    [propertyUIElement, object, onReplace, onTermSet],
   );
 
   const { activeInterfaceLanguage } = useInterfaceLanguage();

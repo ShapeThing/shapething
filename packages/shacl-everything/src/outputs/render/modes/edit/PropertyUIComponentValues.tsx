@@ -6,10 +6,38 @@ import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import PropertyUIComponentAdd from "@/outputs/render/modes/edit/PropertyUIComponentAdd.tsx";
 import PropertyUIComponentObject from "@/outputs/render/modes/edit/PropertyUIComponentObject.tsx";
 import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
+import { termKey } from "@/helpers/termKey.ts";
 import { shui } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { Suspense, useEffect, useRef, useState } from "react";
+import type { Term } from "@rdfjs/types";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { Loading } from "@/helpers/icons.tsx";
+
+/**
+ * RDF values have no inherent order, and rdf-stores moves a value to the end of its internal
+ * index on every edit (replaceObject() is a remove + re-add of the underlying quad, never an
+ * in-place update) - left alone, that reshuffles this property's whole value list on every
+ * keystroke. This keeps `previousOrder` (term keys, from the last render) stable across reads
+ * that reorder internally: values still present keep their slot, and only genuinely new/removed
+ * values change the order - removed ones drop out, added ones append at the end sorted among
+ * themselves (so first render is a deterministic alphabetical order rather than whatever the
+ * store's iteration order happens to be). An edited value looks identical to "old value removed,
+ * new value added" from here, so it still lands at the end unless replaceInOrder() below has
+ * already patched previousOrder in place for it.
+ */
+function reconcileOrder(
+  previousOrder: string[],
+  current: Term[],
+): { order: string[]; objects: Term[] } {
+  const byKey = new Map(current.map((term) => [termKey(term), term]));
+  const retained = previousOrder.filter((key) => byKey.has(key));
+  const retainedKeys = new Set(retained);
+  const added = current
+    .filter((term) => !retainedKeys.has(termKey(term)))
+    .sort((a, b) => a.value.localeCompare(b.value));
+  const order = [...retained, ...added.map(termKey)];
+  return { order, objects: order.map((key) => byKey.get(key)!) };
+}
 
 /**
  * The ordinary per-value rendering path: one widget instance per existing value (plus a trailing
@@ -34,10 +62,25 @@ export default function PropertyUIComponentValues({
   // matching the currently active content language - values with no language tag, and non-literal
   // values, are unaffected. Skipped entirely in "individual" mode, where every translation renders
   // side by side instead of one at a time.
-  const languageFilteredObjects =
+  const unorderedLanguageFilteredObjects =
     languageMode === "individual"
       ? existingObjects
       : filterByContentLanguage(existingObjects, activeLanguage);
+  // See reconcileOrder() above - keeps this property's values from reshuffling on every edit.
+  const orderRef = useRef<string[]>([]);
+  const { order, objects: languageFilteredObjects } = reconcileOrder(
+    orderRef.current,
+    unorderedLanguageFilteredObjects,
+  );
+  orderRef.current = order;
+  // setTerm (PropertyUIComponentObject) already knows exactly which old value became which new
+  // one - patching orderRef here means an edit keeps its slot instead of looking, to
+  // reconcileOrder on the next render, like an unrelated value disappearing and a new one
+  // appearing at the end.
+  const replaceInOrder = useCallback((oldTerm: Term, newTerm: Term) => {
+    const index = orderRef.current.indexOf(termKey(oldTerm));
+    if (index !== -1) orderRef.current[index] = termKey(newTerm);
+  }, []);
   const [showEmptyWidget, setShowEmptyWidget] = useState(languageFilteredObjects.length === 0);
 
   // Switching the active language can leave this property with no existing value in the newly
@@ -110,6 +153,7 @@ export default function PropertyUIComponentValues({
               propertyUIElement={propertyUIElement}
               object={object}
               labelledBy={labelId}
+              onReplace={replaceInOrder}
               onTermSet={syncShowEmptyWidget}
               // Removing a value can leave a single-valued field (its "+" always hidden, and now
               // its "-" no longer hidden either) with none left and no other way back to an
