@@ -69,6 +69,8 @@ export type Environment = {
   // reappear because some shape happens to carry a label in that language. true in
   // defaultEnvironment, false in minimalEnvironment.
   enableInterfaceLanguageWithShapesLabelsOnly?: boolean;
+  // Enables the "Edit in place" button on shui:EnumSelectEditor when the selected value is a sh:node. When false, the button will not be shown and the user will have to navigate to the linked resource to edit it.
+  enableEditInPlace?: boolean;
 };
 
 // What flows through the preprocessor chain before it's fully resolved: the graph fields may
@@ -102,6 +104,7 @@ export const defaultEnvironment: Environment = {
   enableShPathInLabelTitle: true,
   enableFullLanguageRemoval: true,
   enableInterfaceLanguageWithShapesLabelsOnly: true,
+  enableEditInPlace: true,
 };
 
 export const minimalEnvironment: Omit<
@@ -125,6 +128,7 @@ export const minimalEnvironment: Omit<
   enableShPathInLabelTitle: false,
   enableFullLanguageRemoval: false,
   enableInterfaceLanguageWithShapesLabelsOnly: false,
+  enableEditInPlace: false,
 };
 
 export const minimalEnvironmentWithContentLanguages: Omit<

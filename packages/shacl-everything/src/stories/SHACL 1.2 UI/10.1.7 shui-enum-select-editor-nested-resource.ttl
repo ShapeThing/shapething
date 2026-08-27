@@ -1,0 +1,60 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix ex: <http://example.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Favourite book"@en, "Favoriete boek"@nl ;
+        sh:path ex:favouriteBook ;
+        sh:in ( ex:PrideAndPrejudice ex:MobyDick ) ;
+        sh:nodeKind sh:IRI ;
+        # sh:node is what tells AutoCompleteOption a shape is available for the selected value, so
+        # it offers opening it for editing in a modal instead of only linking out to its IRI.
+        sh:node <#bookShape> ;
+        shui:editor shui:EnumSelectEditor ;
+    ] ;
+    .
+
+<#bookShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Book ;
+    sh:property [
+        sh:name "Title"@en, "Titel"@nl ;
+        sh:path rdfs:label ;
+        # No sh:datatype/sh:maxCount here - rdfs:label carries a language-tagged value per language
+        # (rdf:langString, not xsd:string), and ex:PrideAndPrejudice below has two of them.
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:name "Author"@en, "Auteur"@nl ;
+        sh:path schema:author ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        shui:propertyRole shui:SubLabelRole ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:favouriteBook ex:PrideAndPrejudice ;
+    .
+
+ex:PrideAndPrejudice
+    a ex:Book ;
+    rdfs:label "Pride and Prejudice"@en, "Trots en vooroordeel"@nl ;
+    schema:author "Jane Austen" ;
+    .
+
+ex:MobyDick
+    a ex:Book ;
+    rdfs:label "Moby-Dick"@en ;
+    schema:author "Herman Melville" ;
+    .

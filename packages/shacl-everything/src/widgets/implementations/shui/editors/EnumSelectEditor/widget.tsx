@@ -1,9 +1,10 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
-import type { NamedNode } from "@rdfjs/types";
+import type { NamedNode, Quad_Subject } from "@rdfjs/types";
 import { Loading } from "@/helpers/icons.tsx";
 import { sh } from "@/helpers/namespaces.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import { useSelectOptions, type ResolvedOption } from "@/outputs/render/hooks/useSelectOptions.tsx";
 import type { WidgetProps } from "@/widgets/types.ts";
@@ -11,8 +12,14 @@ import { selectQueryFor } from "./selectQuery.ts";
 import "./style.css";
 
 export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
+  const { enableEditInPlace } = useEnvironment();
   const options = useMemo(() => shape.get(sh("in")), [shape]);
   const selectQuery = useMemo(() => selectQueryFor(shape), [shape]);
+  // The property shape's own sh:node - when present (and enableEditInPlace hasn't turned the
+  // feature off), the currently selected value can be opened and edited in place (see
+  // AutoCompleteOption's resourceEditor prop). Not used for the dropdown options themselves, only
+  // the closed trigger's current value.
+  const nodeShapes = useMemo(() => shape.get(sh("node")) as Quad_Subject[], [shape]);
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
 
@@ -162,6 +169,16 @@ export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: W
           label={current?.label}
           subLabel={current?.subLabel}
           depiction={current?.depiction}
+          resourceEditor={
+            enableEditInPlace
+              ? {
+                  shapesGraph: shape.shapesGraph,
+                  dataGraph: shape.dataGraph,
+                  scoresGraph: shape.scoresGraph,
+                  nodeShapes,
+                }
+              : undefined
+          }
         />
         <span className="st-enum-select__arrow" aria-hidden="true" />
       </button>

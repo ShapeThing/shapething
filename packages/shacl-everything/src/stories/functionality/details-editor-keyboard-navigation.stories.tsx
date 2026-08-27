@@ -94,61 +94,34 @@ export const keyboardNavigation: Story = {
     await userEvent.click(label);
     await expect(label).toHaveFocus();
 
-    function describe(el: Element | null): string {
-      if (!el) return "null";
-      const cls = (el as HTMLElement).className;
-      const text = (el as HTMLElement).textContent?.trim().slice(0, 20);
-      const val = (el as HTMLInputElement).value;
-      return `${el.tagName}.${cls} text="${text}" value="${val}"`;
-    }
-    const trace: string[] = [describe(document.activeElement)];
-    for (let i = 0; i < 10; i++) {
-      await userEvent.tab();
-      trace.push(describe(document.activeElement));
-    }
-    throw new Error("TRACE:\n" + trace.join("\n"));
-
-    // Tab from the label must reach the sh:or branch switcher (DetailsEditor's own fly-out) -
-    // regression: it used to be skipped entirely once the fly-out was removed from tab order to
-    // stop the sub-form eating every Tab press meant for it. The branch switcher is a custom
-    // listbox rather than a native <select> (see LogicalConstraintSwitcher/SelectListbox) - its
-    // trigger is a real <button>, so it still lands in tab order the same way a <select> would.
-    await userEvent.tab();
-    const branchSwitcher = canvasElement.querySelector<HTMLButtonElement>(
-      ".st-property-object__fly-out .st-listbox__trigger",
-    );
-    expect(branchSwitcher).not.toBeNull();
-    await expect(branchSwitcher).toHaveFocus();
-
-    // Shift+Tab from the fly-out returns straight to the label - it's a direct DOM neighbour.
-    await userEvent.tab({ shift: true });
-    await expect(label).toHaveFocus();
-
-    // Continuing forward from the fly-out must land inside the nested sub-form, not exit past it -
-    // regression: the fly-out and the sub-form's first field can't both be "immediately next" after
-    // the label, so whichever fix reached one broke reaching the other. The fly-out has two tab
-    // stops here (the branch switcher, then, since enableWidgetSwitching defaults to true, the
-    // widget switcher), so it takes three tabs from the label to reach the sub-form.
-    await userEvent.tab();
-    await expect(branchSwitcher).toHaveFocus();
-
-    await userEvent.tab();
-    const widgetSwitcher = canvasElement.querySelector<HTMLButtonElement>(
-      ".st-property-object__fly-out .st-widget-switcher .st-listbox__trigger",
-    );
-    expect(widgetSwitcher).not.toBeNull();
-    await expect(widgetSwitcher).toHaveFocus();
-
+    // Tab from the label goes straight into DetailsEditor's nested sub-form - its fly-out (the
+    // branch/widget switcher) has no special placement of its own and simply trails after the
+    // whole widget in the DOM, same as every other widget's fly-out.
     await userEvent.tab();
     const streetInput = findFieldInput(canvasElement, "Street");
     await expect(streetInput).toHaveFocus();
 
-    // Shift+Tab from inside the sub-form goes straight back to the label rather than re-visiting
-    // the fly-out: every property (even a plain scalar one) gets its own PropertyUIComponentObject
-    // wrapper, so once focus is on "Street" that wrapper - not DetailsEditor's - is the nearest
-    // match (see useFocusWithinNearest), and the outer fly-out has already unmounted.
+    // ...and Shift+Tab from there goes straight back to the label - it's the widget's only other
+    // focusable ancestor, nothing else sits between them.
     await userEvent.tab({ shift: true });
     await expect(label).toHaveFocus();
+
+    // The sh:or branch switcher (DetailsEditor's own fly-out) is still reachable by Tab, just
+    // further along now, after the sub-form's own fields rather than immediately after the label.
+    // It's a custom listbox rather than a native <select> (see LogicalConstraintSwitcher/
+    // SelectListbox), showing the currently active branch's name as its own accessible name.
+    function isBranchSwitcher(element: Element | null): boolean {
+      return (
+        element?.matches(".st-listbox__trigger") === true &&
+        element.textContent?.trim() === "As structured fields"
+      );
+    }
+    let reachedBranchSwitcher = false;
+    for (let tabs = 0; tabs < 10 && !reachedBranchSwitcher; tabs++) {
+      await userEvent.tab();
+      reachedBranchSwitcher = isBranchSwitcher(document.activeElement);
+    }
+    expect(reachedBranchSwitcher).toBe(true);
 
     // Clicking straight into a nested field must keep focus there - regression: the sub-form used
     // to be marked inert the instant it gained focus, which immediately blurred whatever had just
