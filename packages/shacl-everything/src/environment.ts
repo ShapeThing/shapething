@@ -4,6 +4,7 @@ import { ex } from "@/helpers/namespaces.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
 import type { LocaleLoaderOverrides } from "@/l10n/locales.ts";
+import type { Widgets } from "@/widgets/types.ts";
 
 // What the edit mode form hands back on submit: a fresh RdfStore containing a copy of every quad
 // currently in dataGraph (not the live, reactive dataGraph itself), plus the quads added/removed
@@ -18,6 +19,13 @@ export type Environment = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
   scoresGraph: RdfStore;
+  // The pluggable widget set to resolve editors/viewers/groups from (see widgets/types.ts's
+  // Widgets, widgets/registry.ts's defaultWidgets). Left unset here - same convention as
+  // scoresGraph starting empty - and filled in by preprocess/widgets.ts's resolveWidgets, which
+  // defaults to defaultWidgets only when the caller supplies nothing at all: any value given here,
+  // even a partial replacement built by spreading defaultWidgets, means the bundled widgets never
+  // load.
+  widgets?: Widgets;
   focusNode: NamedNode;
   nodeShapes: Quad_Subject[];
   mode: "edit" | "view" | "facet";
@@ -77,13 +85,11 @@ export type Environment = {
 // still be an unparsed/undereferenced RdfSource rather than a ready RdfStore. RdfStore is itself
 // a valid RdfSource, so a fully-resolved Environment already satisfies this type - preprocessors
 // don't need a different type per stage of the chain.
-export type RawEnvironment =
-  & Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph">
-  & {
-    shapesGraph: RdfSource;
-    dataGraph: RdfSource;
-    scoresGraph: RdfSource;
-  };
+export type RawEnvironment = Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph"> & {
+  shapesGraph: RdfSource;
+  dataGraph: RdfSource;
+  scoresGraph: RdfSource;
+};
 
 export const defaultEnvironment: Environment = {
   shapesGraph: RdfStore.createDefault(),
@@ -107,10 +113,7 @@ export const defaultEnvironment: Environment = {
   enableEditInPlace: true,
 };
 
-export const minimalEnvironment: Omit<
-  Environment,
-  "scoresGraph" | "shapesGraph" | "dataGraph"
-> = {
+export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph" | "dataGraph"> = {
   focusNode: ex("focusNode"),
   nodeShapes: [],
   mode: "edit",

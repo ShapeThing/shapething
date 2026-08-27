@@ -4,6 +4,7 @@ import { sh } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { toSparql } from "@/structure/paths/toSparql.ts";
+import type { Widgets } from "@/widgets/types.ts";
 
 export function propertiesForShape(
   shapesGraph: RdfStore,
@@ -11,6 +12,7 @@ export function propertiesForShape(
   shape: Term,
   focusNode: Quad_Subject,
   scoresGraph?: RdfStore,
+  widgets?: Widgets,
 ): PropertyUIElement[] {
   const propertyShapeQuads = shapesGraph.getQuads(shape, sh("property"));
   const groupedPropertyShapes = new Map<string, NamedNode[]>();
@@ -27,6 +29,13 @@ export function propertiesForShape(
 
   return [...groupedPropertyShapes.values()].map(
     (propertyShapes) =>
-      new PropertyUIElement({ shapesGraph, dataGraph, scoresGraph, focusNode, propertyShapes }),
+      new PropertyUIElement({
+        shapesGraph,
+        dataGraph,
+        scoresGraph,
+        widgetRegistry: widgets,
+        focusNode,
+        propertyShapes,
+      }),
   );
 }

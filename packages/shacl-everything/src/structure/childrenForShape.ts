@@ -5,6 +5,7 @@ import { sh } from "@/helpers/namespaces.ts";
 import { CHOICE_CONNECTIVES, ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { propertiesForShape } from "@/structure/propertiesForShape.ts";
+import type { Widgets } from "@/widgets/types.ts";
 
 /**
  * Expands `shape` (a node shape, or a shape reached via sh:and/sh:or/sh:xone/sh:node - never a
@@ -20,22 +21,25 @@ export function childrenForShape(
   shape: Term,
   focusNode: Quad_Subject,
   scoresGraph?: RdfStore,
+  widgets?: Widgets,
 ): (PropertyUIElement | ChoiceElement)[] {
   const elements: (PropertyUIElement | ChoiceElement)[] = [];
 
-  elements.push(...propertiesForShape(shapesGraph, dataGraph, shape, focusNode, scoresGraph));
+  elements.push(
+    ...propertiesForShape(shapesGraph, dataGraph, shape, focusNode, scoresGraph, widgets),
+  );
 
   for (const listQuad of shapesGraph.getQuads(shape, sh("and"))) {
     for (const branchShape of getRdfList(listQuad.object, shapesGraph)) {
       elements.push(
-        ...childrenForShape(shapesGraph, dataGraph, branchShape, focusNode, scoresGraph),
+        ...childrenForShape(shapesGraph, dataGraph, branchShape, focusNode, scoresGraph, widgets),
       );
     }
   }
 
   for (const nodeQuad of shapesGraph.getQuads(shape, sh("node"))) {
     elements.push(
-      ...childrenForShape(shapesGraph, dataGraph, nodeQuad.object, focusNode, scoresGraph),
+      ...childrenForShape(shapesGraph, dataGraph, nodeQuad.object, focusNode, scoresGraph, widgets),
     );
   }
 
@@ -50,6 +54,7 @@ export function childrenForShape(
           connective,
           listQuad.object,
           scoresGraph,
+          widgets,
         ),
       );
     }

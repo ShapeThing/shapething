@@ -21,6 +21,7 @@ export default function DetailsEditor({ shape, term }: WidgetProps) {
         shapesGraph: shape.shapesGraph,
         dataGraph: shape.dataGraph,
         scoresGraph: shape.scoresGraph,
+        widgetRegistry: shape.widgetRegistry,
         focusNode: term as Quad_Subject,
         nodeShapes,
       }),

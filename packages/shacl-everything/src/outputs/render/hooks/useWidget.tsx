@@ -49,8 +49,8 @@ export function useWidget(
 
   if (!widget || widget.termType !== "NamedNode" || mode === "facet") return undefined;
   return {
-    Widget: getWidgetComponent(mode, widget)!,
-    meta: getWidgetMeta(widget),
+    Widget: getWidgetComponent(mode, widget, property.widgetRegistry)!,
+    meta: getWidgetMeta(widget, property.widgetRegistry),
     iri: widget,
     isPlaceholderData,
   };

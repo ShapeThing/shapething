@@ -175,6 +175,7 @@ export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: W
                   shapesGraph: shape.shapesGraph,
                   dataGraph: shape.dataGraph,
                   scoresGraph: shape.scoresGraph,
+                  widgetRegistry: shape.widgetRegistry,
                   nodeShapes,
                 }
               : undefined

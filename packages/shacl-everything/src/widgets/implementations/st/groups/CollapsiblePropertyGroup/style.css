@@ -1,0 +1,25 @@
+.st-collapsible-property-group {
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+  padding: var(--size-3);
+}
+
+.st-collapsible-property-group__title {
+  cursor: pointer;
+  font-size: var(--st-font-size-small);
+  font-weight: 600;
+  font-family: var(--st-font-family);
+  color: var(--st-color-text);
+}
+
+.st-collapsible-property-group__title:focus-visible {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: 2px;
+}
+
+.st-collapsible-property-group__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+  margin-top: var(--size-3);
+}

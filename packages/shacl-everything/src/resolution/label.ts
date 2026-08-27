@@ -42,6 +42,36 @@ function effectiveLabelPredicates(
     : [{ type: "predicate", predicate: rdfs("label") }];
 }
 
+type GroupLabelOptions = {
+  node: Term;
+  shapesGraph: RdfStore;
+  languages?: BCP47[];
+};
+
+/**
+ * A sh:PropertyGroup node's own label: its configured label-predicate value(s) (sh:name by
+ * default, or shui:labelPreference), best-matching language, falling back to its local name - the
+ * group equivalent of propertyLabel's steps 1/4/5. A group is shape metadata only, not an ontology
+ * property/value-node with data-graph labels of its own, so there's no data-graph step to run here.
+ */
+export function groupLabel({ node, shapesGraph, languages }: GroupLabelOptions): string {
+  const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
+
+  for (const path of effectiveLabelPredicates(shapesGraph, "propertyShape")) {
+    if (path.type !== "predicate") continue;
+    const literal = language(
+      shapesGraph
+        .getQuads(node, path.predicate)
+        .map((quad) => quad.object)
+        .filter((value): value is Literal => value.termType === "Literal"),
+      effLanguages,
+    );
+    if (literal) return literal.value;
+  }
+
+  return localName(node) ?? node.value;
+}
+
 // 8.2.2 Property Labels
 export function propertyLabel({
   term,

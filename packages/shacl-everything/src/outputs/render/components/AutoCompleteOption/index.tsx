@@ -15,6 +15,7 @@ import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
+import type { Widgets } from "@/widgets/types.ts";
 
 // A throwaway, never-written-to store - stands in for `resourceEditor.dataGraph` in the
 // useReactiveRead call below when this option can't offer resource editing at all, so that hook
@@ -26,6 +27,7 @@ export type ResourceEditor = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
   scoresGraph?: RdfStore;
+  widgetRegistry?: Widgets;
   // The NodeShape(s) (typically a property shape's sh:node) describing `term`'s own properties -
   // an empty array means no shape is known for it, so there's nothing to render an editor with.
   nodeShapes: Quad_Subject[];
@@ -86,6 +88,7 @@ export default function AutoCompleteOption({
       shapesGraph: resourceEditor.shapesGraph,
       dataGraph: staging.dataGraph,
       scoresGraph: resourceEditor.scoresGraph,
+      widgetRegistry: resourceEditor.widgetRegistry,
       focusNode: term,
       nodeShapes: resourceEditor.nodeShapes,
     });

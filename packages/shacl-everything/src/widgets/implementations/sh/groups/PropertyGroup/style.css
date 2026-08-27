@@ -1,0 +1,22 @@
+.st-property-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-3);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.st-property-group__title {
+  padding: 0;
+  font-size: var(--st-font-size-small);
+  font-weight: 600;
+  color: var(--st-color-text);
+  font-family: var(--st-font-family);
+}
+
+.st-property-group__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+}
