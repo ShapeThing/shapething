@@ -3,7 +3,7 @@ import { useActiveBranch } from "@/outputs/render/hooks/useActiveBranch.tsx";
 import { useFocusWithinNearest } from "@/outputs/render/hooks/useFocusWithinNearest.tsx";
 import { logicalBranches, withBranch, type LogicalBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import type { Term } from "@rdfjs/types";
+import type { NamedNode, Term } from "@rdfjs/types";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { sh, shui } from "@/helpers/namespaces.ts";
 import WidgetSwitcher from "@/outputs/render/modes/edit/WidgetSwitcher.tsx";
@@ -58,8 +58,13 @@ export default function WidgetSlot({
     ? withBranch(propertyUIElement, activeBranch.shape)
     : propertyUIElement;
 
-  const { Widget, isPlaceholderData } = useWidget(shui("editor"), effectiveProperty, object) ?? {};
+  const {
+    Widget,
+    iri: resolvedWidgetIri,
+    isPlaceholderData,
+  } = useWidget(shui("editor"), effectiveProperty, object) ?? {};
   const [ActiveWidget, setActiveWidget] = useState<typeof Widget | undefined>(undefined);
+  const [activeWidgetIri, setActiveWidgetIri] = useState<NamedNode | undefined>(undefined);
   const ref = useRef<HTMLDivElement>(null);
 
   // A nested value's own widget (e.g. DetailsEditor's inline sub-form) renders its properties'
@@ -80,9 +85,10 @@ export default function WidgetSlot({
     const branchChanged = syncedBranchKeyRef.current !== activeBranchKey;
     if (!ActiveWidget || branchChanged) {
       setActiveWidget(() => Widget);
+      setActiveWidgetIri(resolvedWidgetIri as NamedNode);
       syncedBranchKeyRef.current = activeBranchKey;
     }
-  }, [Widget, ActiveWidget, activeBranchKey, isPlaceholderData]);
+  }, [Widget, ActiveWidget, activeBranchKey, isPlaceholderData, resolvedWidgetIri]);
 
   const unit = propertyUIElement.get(sh("unit"))[0]?.value;
 
@@ -96,8 +102,11 @@ export default function WidgetSlot({
         onBranchSelected={(branch: LogicalBranch) => setPinnedBranchKey(branch.shape.value)}
       />
       <WidgetSwitcher
-        ActiveWidget={ActiveWidget}
-        setActiveWidget={setActiveWidget}
+        activeWidgetIri={activeWidgetIri}
+        setActiveWidget={(iri, widgetFn) => {
+          setActiveWidget(widgetFn);
+          setActiveWidgetIri(iri);
+        }}
         shape={effectiveProperty}
       />
     </div>

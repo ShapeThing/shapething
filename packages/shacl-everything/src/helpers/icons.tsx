@@ -1,4 +1,5 @@
 import LoadingTwotoneLoopIcon from "~icons/line-md/loading-twotone-loop";
+import EditTwotoneLoopIcon from "~icons/ic/round-zoom-in";
 import PlusIcon from "~icons/ic/round-add";
 import MinusIcon from "~icons/ic/round-remove";
 import ArrowDropDown from "~icons/ic/round-arrow-drop-down";
@@ -15,6 +16,7 @@ import WarningIcon from "~icons/ic/round-warning";
 import InfoIcon from "~icons/ic/round-info";
 
 export const Loading = LoadingTwotoneLoopIcon;
+export const EditNested = EditTwotoneLoopIcon;
 export const Plus = PlusIcon;
 export const Minus = MinusIcon;
 export const SelectArrow = ArrowDropDown;

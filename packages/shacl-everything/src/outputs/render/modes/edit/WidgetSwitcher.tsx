@@ -1,4 +1,5 @@
 import { useId } from "react";
+import type { NamedNode } from "@rdfjs/types";
 import { shui } from "@/helpers/namespaces.ts";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
@@ -11,12 +12,12 @@ import type { WidgetComponent } from "@/widgets/types.ts";
 import { Localized } from "@fluent/react";
 
 export default function WidgetSwitcher({
-  ActiveWidget,
+  activeWidgetIri,
   setActiveWidget,
   shape,
 }: {
-  ActiveWidget: WidgetComponent | undefined;
-  setActiveWidget: (widget: () => WidgetComponent | undefined) => void;
+  activeWidgetIri: NamedNode | undefined;
+  setActiveWidget: (iri: NamedNode, widget: () => WidgetComponent | undefined) => void;
   shape: PropertyUIElement;
 }) {
   const { enableWidgetSwitching } = useEnvironment();
@@ -24,9 +25,6 @@ export default function WidgetSwitcher({
   const selectId = useId();
 
   const widgets = useWidgets(shui("editor"), shape);
-  const activeWidgetIri = ActiveWidget
-    ? widgets.find(({ Widget }) => Widget === ActiveWidget)?.iri
-    : undefined;
 
   return enableWidgetSwitching ? (
     <FormElement
@@ -40,7 +38,10 @@ export default function WidgetSwitcher({
         triggerId={selectId}
         value={activeWidgetIri?.value ?? ""}
         options={widgets.map(({ iri }) => iri.value)}
-        onChange={(v) => setActiveWidget(() => widgets.find(({ iri }) => iri.value === v)?.Widget)}
+        onChange={(v) => {
+          const found = widgets.find(({ iri }) => iri.value === v);
+          if (found) setActiveWidget(found.iri as NamedNode, () => found.Widget);
+        }}
         renderTriggerContent={(v) => {
           const w = widgets.find(({ iri }) => iri.value === v);
           if (!w) return v;

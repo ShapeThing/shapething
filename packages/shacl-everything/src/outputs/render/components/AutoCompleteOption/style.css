@@ -10,19 +10,33 @@
   white-space: nowrap;
 }
 
-.st-autocomplete-option__iri {
+.st-autocomplete-option__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  margin-inline-start: auto;
+  margin-inline-end: var(--size-1);
+}
+
+.st-autocomplete-option__iri,
+.st-autocomplete-option__edit {
   color: var(--st-color-text-muted);
   display: flex;
   align-items: center;
-  margin-inline-start: auto;
-  margin-inline-end: var(--size-1);
-  margin-block: -1px;
   font-size: var(--st-font-size-small);
 
   &:focus,
   &:hover {
     color: var(--st-primary-color);
   }
+}
+
+.st-autocomplete-option__iri {
+  margin-block: -1px;
+}
+
+.st-autocomplete-option__edit {
+  cursor: pointer;
 }
 
 .st-autocomplete-option__sub-label {
@@ -46,4 +60,30 @@
 .st-autocomplete-option__depiction-spacer {
   padding-inline-start: var(--size-2);
   height: 2rem;
+}
+
+.st-autocomplete-option__resource-form {
+  display: flex;
+  flex-direction: column;
+
+  .st-form-element + .st-form-element {
+    margin-top: var(--size-5);
+  }
+}
+
+.st-autocomplete-option__resource-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--size-5);
+}
+
+.st-autocomplete-option__discard-modal p {
+  margin: 0;
+}
+
+.st-autocomplete-option__discard-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--size-2);
+  margin-top: var(--size-4);
 }

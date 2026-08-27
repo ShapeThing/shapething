@@ -2,6 +2,7 @@ import { useRef, type FormEvent } from "react";
 import { Localized } from "@fluent/react";
 import type { Quad } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
+import { diffQuads } from "@/helpers/diffQuads.ts";
 import NodeUIComponent from "@/outputs/render/modes/edit/NodeUIComponent.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
@@ -31,20 +32,10 @@ export default function EditModeWrapper({ children }: Props) {
     event.preventDefault();
     const originalQuads = originalQuadsRef.current!;
     const finalQuads = dataGraph.getQuads();
-
-    const originalStore = RdfStore.createDefault();
-    for (const quad of originalQuads) originalStore.addQuad(quad);
+    const { additions, deletions } = diffQuads(originalQuads, finalQuads);
 
     const store = RdfStore.createDefault();
     for (const quad of finalQuads) store.addQuad(quad);
-
-    const additions = finalQuads.filter(
-      (quad) =>
-        originalStore.getQuads(quad.subject, quad.predicate, quad.object, quad.graph).length === 0,
-    );
-    const deletions = originalQuads.filter(
-      (quad) => store.getQuads(quad.subject, quad.predicate, quad.object, quad.graph).length === 0,
-    );
 
     onSubmit?.({ dataGraph: store, additions, deletions });
   };
