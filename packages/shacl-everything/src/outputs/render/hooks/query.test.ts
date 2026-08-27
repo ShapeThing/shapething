@@ -2,7 +2,7 @@ import { expect, test } from "vite-plus/test";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { fetchOptions, searchInstances } from "./query.ts";
+import { fetchOptions, searchInstances, substituteSearchParameters } from "./query.ts";
 
 const createShape = async (shapesTurtle: string, dataTurtle: string) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${shapesTurtle}`, "text/turtle");
@@ -80,4 +80,30 @@ test("fetchOptions() returns nothing for an empty iri list", async () => {
   const shape = await createShape(`ex:property1 a sh:PropertyShape ; sh:class ex:Person .`, ``);
 
   expect(await fetchOptions(shape, [])).toEqual([]);
+});
+
+test("substituteSearchParameters() replaces both $-prefixed and ?-prefixed forms of the same query", () => {
+  const dollarForm = substituteSearchParameters(
+    "SELECT ?value WHERE { ?value rdfs:label $searchTerm, $uiLanguage }",
+    "hello",
+    "en-GB",
+  );
+  expect(dollarForm).toContain('"hello"');
+  expect(dollarForm).toContain('"en-GB"');
+
+  const questionMarkForm = substituteSearchParameters(
+    "SELECT ?value WHERE { ?value rdfs:label ?searchTerm, ?uiLanguage }",
+    "hello",
+    "en-GB",
+  );
+  expect(questionMarkForm).toContain('"hello"');
+  expect(questionMarkForm).toContain('"en-GB"');
+
+  const mixedForm = substituteSearchParameters(
+    "SELECT ?value WHERE { ?value rdfs:label ?searchTerm, $uiLanguage }",
+    "hello",
+    "en-GB",
+  );
+  expect(mixedForm).toContain('"hello"');
+  expect(mixedForm).toContain('"en-GB"');
 });

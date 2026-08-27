@@ -9,6 +9,8 @@ export type ChoiceConnective = "or" | "xone";
 export const CHOICE_CONNECTIVES: ChoiceConnective[] = ["or", "xone"];
 
 export class ChoiceElement {
+  // See PropertyUIElement.kind: a tag survives HMR module reloads where `instanceof` doesn't.
+  public readonly kind = "choice" as const;
   public shapesGraph: RdfStore;
   public dataGraph: RdfStore;
   public scoresGraph: RdfStore;

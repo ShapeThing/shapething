@@ -1,0 +1,24 @@
+@prefix schema: <http://schema.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Nickname"@en, "Bijnaam"@nl ;
+        sh:path schema:additionalName ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:pattern "^[A-Z]" ;
+        sh:severity sh:Warning ;
+        sh:message "Should start with a capital letter"@en, "Moet met een hoofdletter beginnen"@nl ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:additionalName "robin" ;
+    .

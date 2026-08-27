@@ -19,3 +19,11 @@ export const shuiAutoCompleteEditorFederatedSearch: Story = {
   name: "Federated search (shui:searchQuery)",
   args: argsByTestFile("10.1.1 shui-auto-complete-editor-federated-search.ttl", import.meta.url),
 };
+
+export const shuiAutoCompleteEditorInvalidSearchResults: Story = {
+  name: "Search results outside sh:in are filtered out (spec §10.2)",
+  args: argsByTestFile(
+    "10.1.1 shui-auto-complete-editor-invalid-search-results.ttl",
+    import.meta.url,
+  ),
+};

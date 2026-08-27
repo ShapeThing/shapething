@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import ChoiceElementComponent from "@/outputs/render/modes/edit/ChoiceElementComponent.tsx";
 import PropertyUIElementComponent from "@/outputs/render/modes/edit/PropertyUIComponent.tsx";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
-import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 
 export default function UIElementChildren({
   elements,
@@ -13,7 +13,7 @@ export default function UIElementChildren({
     <>
       {elements.map((element, index) => (
         <Fragment key={index}>
-          {element instanceof PropertyUIElement ? (
+          {element.kind === "property" ? (
             <PropertyUIElementComponent propertyUIElement={element} />
           ) : (
             <ChoiceElementComponent choiceElement={element} />

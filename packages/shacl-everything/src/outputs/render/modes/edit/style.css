@@ -11,6 +11,13 @@
   width: 100%;
 }
 
+.st-property-object-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+  width: 100%;
+}
+
 .st-property-object {
   display: flex;
   align-items: center;
@@ -20,9 +27,43 @@
   justify-content: space-between;
 }
 
+.st-property-object-main {
+  flex: 1;
+  gap: var(--size-1);
+  display: flex;
+  flex-direction: column;
+}
+
 .st-property-object > *:has(+ .st-property-object__unit) {
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+}
+
+/* data-severity is this specific value's own worst validation result (see
+   PropertyUIComponentObject) - scoped to just its own input/select, so a violation on one value
+   in a multi-value field (e.g. sh:pattern failing on a newly-added value) doesn't bleed onto a
+   sibling value's input that's valid on its own. */
+.st-property-object[data-severity="Violation"] :is(.st-input, .st-select) {
+  border-color: var(--st-severity-error);
+}
+
+.st-property-object[data-severity="Warning"] :is(.st-input, .st-select) {
+  border-color: var(--st-severity-warning);
+}
+
+.st-property-object[data-severity="Info"] :is(.st-input, .st-select) {
+  border-color: var(--st-severity-info);
+}
+
+/* The widget-switcher's "Pick a widget" select and the logical-constraint-switcher's "Pick an
+   option" select are each a nested .st-form-element sitting inside this value's severity-flagged
+   wrapper, so the rules above would color them too - reset them back to the default border. Higher
+   specificity than those rules (an extra class) wins regardless of source order or which severity
+   is set. */
+.st-property-object[data-severity]
+  :is(.st-widget-switcher, .st-logical-constraint-switcher)
+  :is(.st-input, .st-select) {
+  border-color: var(--gray-5);
 }
 
 .st-property-add-button {
@@ -43,7 +84,7 @@
 
 .st-property-object > *:hover + .st-property-object__unit,
 .st-property-object > *:focus + .st-property-object__unit {
-  outline: 2px solid var(--st-primary-color);
+  outline: 1px solid var(--st-primary-color);
   box-shadow: none;
 }
 
@@ -61,49 +102,50 @@
   gap: var(--size-3);
 }
 
-.st-property-object__fly-out {
-  position: absolute;
-  bottom: calc(100% + var(--size-3));
-  right: 0;
-  padding: var(--size-2);
-  border-radius: var(--radius-2);
-  box-shadow: var(--shadow-3);
-  z-index: var(--st-z-index-flyout);
-  border: 1px solid var(--st-color-border);
-  background-color: var(--st-primary-color-lighter);
-  display: flex;
-  flex-wrap: wrap;
-  z-index: 10;
-  gap: var(--size-4);
-
-  &:empty {
-    display: none;
-  }
-
-  &::before {
-    --size: calc(var(--size-2) + 1px);
-    content: "";
+@layer flyout {
+  .st-property-object__fly-out {
     position: absolute;
-    bottom: calc(-1 * var(--size) - 1px);
-    right: calc(var(--size-2) - 1px);
-    width: 0;
-    height: 0;
-    border-left: var(--size) solid transparent;
-    border-right: var(--size) solid transparent;
-    border-top: var(--size) solid var(--st-color-border);
-  }
+    bottom: calc(100% + var(--size-3));
+    right: 0;
+    padding: var(--size-2);
+    border-radius: var(--radius-2);
+    box-shadow: var(--shadow-3);
+    z-index: var(--st-z-flyout);
+    border: 1px solid var(--st-color-border);
+    background-color: var(--st-primary-color-lighter);
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--size-4);
 
-  &::after {
-    --size: var(--size-2);
-    content: "";
-    position: absolute;
-    bottom: calc(-1 * var(--size));
-    right: var(--size-2);
-    width: 0;
-    height: 0;
-    border-left: var(--size) solid transparent;
-    border-right: var(--size) solid transparent;
-    border-top: var(--size) solid var(--st-primary-color-lighter);
+    &:empty {
+      display: none;
+    }
+
+    &::before {
+      --size: calc(var(--size-2) + 1px);
+      content: "";
+      position: absolute;
+      bottom: calc(-1 * var(--size) - 1px);
+      right: calc(var(--size-2) - 1px);
+      width: 0;
+      height: 0;
+      border-left: var(--size) solid transparent;
+      border-right: var(--size) solid transparent;
+      border-top: var(--size) solid var(--st-color-border);
+    }
+
+    &::after {
+      --size: var(--size-2);
+      content: "";
+      position: absolute;
+      bottom: calc(-1 * var(--size));
+      right: var(--size-2);
+      width: 0;
+      height: 0;
+      border-left: var(--size) solid transparent;
+      border-right: var(--size) solid transparent;
+      border-top: var(--size) solid var(--st-primary-color-lighter);
+    }
   }
 }
 
@@ -145,17 +187,19 @@
   margin-inline-start: auto;
 }
 
-.st-edit-mode--actions {
-  position: sticky;
-  bottom: var(--size-4);
-  display: flex;
-  gap: var(--size-2);
-  margin-top: var(--size-6);
-  align-items: center;
-  justify-content: flex-end;
-  z-index: 10;
+@layer actions {
+  .st-edit-mode--actions {
+    position: sticky;
+    bottom: var(--size-4);
+    display: flex;
+    gap: var(--size-2);
+    margin-top: var(--size-6);
+    align-items: center;
+    justify-content: flex-end;
+    z-index: var(--st-z-actions);
 
-  > *:not(:hover):not(:focus) {
-    background-color: white !important;
+    > *:not(:hover):not(:focus) {
+      background-color: white !important;
+    }
   }
 }

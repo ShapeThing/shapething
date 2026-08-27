@@ -18,7 +18,7 @@
   border: 1px solid var(--gray-5);
   width: 100%;
   position: relative;
-  z-index: 2;
+  z-index: var(--st-z-raised);
   appearance: none;
   display: flex;
   align-items: center;
@@ -40,7 +40,7 @@
   translate: 0 -50%;
   width: 1.6rem;
   height: 1.6rem;
-  z-index: 3;
+  z-index: var(--st-z-raised-accent);
   pointer-events: none;
   background-color: var(--gray-8);
   mask-image: var(--select-arrow-icon);

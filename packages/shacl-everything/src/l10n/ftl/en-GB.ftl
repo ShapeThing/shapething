@@ -50,3 +50,6 @@ member-shape-list-remove-item =
     .aria-label = Remove item
 member-shape-list-reorder-item =
     .aria-label = Reorder item
+validation-severity-violation = Error:
+validation-severity-warning = Warning:
+validation-severity-info = Info:

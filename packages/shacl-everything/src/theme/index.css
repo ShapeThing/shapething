@@ -1,9 +1,11 @@
-@import "open-props/open-props.min.css";
-@import "./button.css";
-@import "./input.css";
-@import "./select.css";
-@import "./checkbox.css";
-@import "./listbox.css";
+@layer reset, components, actions, flyout, overlay;
+
+@import "open-props/open-props.min.css" layer(reset);
+@import "./button.css" layer(components);
+@import "./input.css" layer(components);
+@import "./select.css" layer(components);
+@import "./checkbox.css" layer(components);
+@import "./listbox.css" layer(overlay);
 
 :root {
   /* Open props overrides */
@@ -19,6 +21,15 @@
   --st-severity-warning: var(--yellow-6);
   --st-severity-error: var(--red-6);
   --st-severity-info: var(--blue-6);
+
+  /* z-index scale — named cascade layers (declared above) keep these tiers
+     from being silently out-cascaded by a more specific or later-loaded rule;
+     the values themselves still define paint order within a stacking context. */
+  --st-z-raised: 2; /* inputs/buttons/selects self-raising on hover/focus */
+  --st-z-raised-accent: 3; /* an element above an already-raised sibling: select arrow, button outline */
+  --st-z-actions: 5; /* sticky form-actions bar - above raised fields it scrolls over, below every flyout/dropdown */
+  --st-z-flyout: 10; /* widget-selector fly-out */
+  --st-z-overlay: 20; /* dropdown/listbox/results panels */
 
   /* ShapeThing derived */
   --st-primary-color-lighter: hsl(from var(--st-primary-color) h s calc(l + 42));

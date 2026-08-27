@@ -1,0 +1,21 @@
+@prefix schema: <http://schema.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Given name"@en, "Voornaam"@nl ;
+        sh:path schema:givenName ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:message "A given name is required"@en, "Een voornaam is verplicht"@nl ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    .

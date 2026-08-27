@@ -16,8 +16,14 @@ import "./style.css";
 export default function ContentLanguageSwitcher() {
   const { languageMode, enableContentLanguageCreation, enableFullLanguageRemoval, dataGraph } =
     useEnvironment();
-  const { languages, activeLanguage, setActiveLanguage, addLanguage, removeLanguage } =
-    useContentLanguage();
+  const {
+    languages,
+    activeLanguage,
+    setActiveLanguage,
+    addLanguage,
+    removeLanguage,
+    hasLanguageSwitcherWidget,
+  } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const [createModalOpen, setCreateModalOpen] = useState(false);
   const [languageToDelete, setLanguageToDelete] = useState<BCP47>();
@@ -39,7 +45,10 @@ export default function ContentLanguageSwitcher() {
   const showCreateOption = enabled && Boolean(enableContentLanguageCreation);
   // The dropdown is worth showing even with only one language, as long as it can grow via the
   // "add language" row below - otherwise there'd be nowhere to trigger creation from at all.
-  const showSelect = enabled && (languages.length > 1 || showCreateOption);
+  // Also worthless if nothing currently rendered would actually respond to it (e.g. a form with
+  // no rdf:langString properties at all) - see useRegisterContentLanguageSwitcherWidget.
+  const showSelect =
+    enabled && hasLanguageSwitcherWidget && (languages.length > 1 || showCreateOption);
 
   if (!showSelect) return null;
 

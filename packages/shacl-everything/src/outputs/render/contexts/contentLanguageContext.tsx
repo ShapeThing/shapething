@@ -15,6 +15,14 @@ export type ContentLanguageContextValue = {
   // every value in it - see deleteLiteralsByLanguage) - if it was the active language, falls back
   // to whatever's left, or leaves it as-is if that was the last one.
   removeLanguage: (language: BCP47) => void;
+  // Called on mount by a widget that actually reads/writes activeLanguage (e.g.
+  // TextFieldWithLangEditor, TextAreaWithLangEditor - see useRegisterContentLanguageSwitcherWidget)
+  // - returns the matching unregister to call on unmount.
+  registerLanguageSwitcherWidget: () => () => void;
+  // True while at least one such widget is currently mounted - lets ContentLanguageSwitcher hide
+  // itself when nothing on screen would actually respond to it (e.g. a form with no langString
+  // properties at all).
+  hasLanguageSwitcherWidget: boolean;
 };
 
 export const contentLanguageContext = createContext<ContentLanguageContextValue | undefined>(

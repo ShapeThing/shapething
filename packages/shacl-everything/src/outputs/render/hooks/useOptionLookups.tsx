@@ -13,8 +13,9 @@ import { extractServiceEndpoint, fetchOptions, type SearchResult } from "./query
  * query (see fetchOptions) - the shared "hydrate a fixed set of already-known values" mechanism
  * behind both EnumSelectEditor's sh:in options/currently applied value and AutoCompleteEditor's
  * currently applied value, so neither issues one query per value. When `shape` declares a
- * federated `shui:searchQuery` or `sh:in [ sh:select ... ]` (see searchQueryFor/selectQueryFor),
- * `iris` are resolved against that same remote endpoint instead of the local dataGraph - otherwise
+ * federated `shui:searchQuery` (asserted directly on the property shape) or `sh:in [ sh:select
+ * ... ]` (see searchQueryFor/selectQueryFor), `iris` are resolved against that same remote
+ * endpoint instead of the local dataGraph - otherwise
  * a value whose roles only exist remotely (e.g. either editor's currently applied value,
  * re-hydrated on mount) would resolve to nothing every time.
  */
@@ -34,10 +35,12 @@ export function useOptionLookups(shape: PropertyUIElement, iris: NamedNode[]): S
       activeInterfaceLanguage,
     ],
     queryFn: () =>
-      fetchOptions(shape, iris, { uiLanguage: activeInterfaceLanguage, endpoint }).catch((cause) => {
-        console.error("[shacl-everything] option lookup failed", cause);
-        return [];
-      }),
+      fetchOptions(shape, iris, { uiLanguage: activeInterfaceLanguage, endpoint }).catch(
+        (cause) => {
+          console.error("[shacl-everything] option lookup failed", cause);
+          return [];
+        },
+      ),
     enabled: iris.length > 0,
     ...noRefetch,
   });

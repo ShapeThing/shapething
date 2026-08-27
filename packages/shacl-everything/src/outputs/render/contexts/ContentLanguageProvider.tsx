@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useCallback, useState, type ReactNode } from "react";
 import { contentLanguageContext } from "@/outputs/render/contexts/contentLanguageContext.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { primarySubtag } from "@/helpers/bestByLanguage.ts";
@@ -46,9 +46,25 @@ export default function ContentLanguageProvider({ children }: { children: ReactN
     if (activeLanguage === language) setActiveLanguage(remaining[0] ?? language);
   };
 
+  // Ref-counted rather than a Set of ids - callers don't have a stable identity to key by, and
+  // "how many" is all ContentLanguageSwitcher needs (see hasLanguageSwitcherWidget below).
+  const [languageSwitcherWidgetCount, setLanguageSwitcherWidgetCount] = useState(0);
+  const registerLanguageSwitcherWidget = useCallback(() => {
+    setLanguageSwitcherWidgetCount((count) => count + 1);
+    return () => setLanguageSwitcherWidgetCount((count) => count - 1);
+  }, []);
+
   return (
     <contentLanguageContext.Provider
-      value={{ activeLanguage, setActiveLanguage, languages, addLanguage, removeLanguage }}
+      value={{
+        activeLanguage,
+        setActiveLanguage,
+        languages,
+        addLanguage,
+        removeLanguage,
+        registerLanguageSwitcherWidget,
+        hasLanguageSwitcherWidget: languageSwitcherWidgetCount > 0,
+      }}
     >
       {children}
     </contentLanguageContext.Provider>
