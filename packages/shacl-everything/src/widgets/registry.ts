@@ -13,7 +13,7 @@ import type {
 import widgetScoringTtl from "@/scoring/widget-scoring.ttl?raw";
 
 const shuiEditorScoringGraphs = import.meta.glob(
-  "@/widgets/implementations/shui/editors/*/score.ttl",
+  "/src/widgets/implementations/shui/editors/*/score.ttl",
   {
     eager: true,
     query: "?raw",
@@ -21,7 +21,7 @@ const shuiEditorScoringGraphs = import.meta.glob(
   },
 ) as Record<string, string>;
 const shuiViewerScoringGraphs = import.meta.glob(
-  "@/widgets/implementations/shui/viewers/*/score.ttl",
+  "/src/widgets/implementations/shui/viewers/*/score.ttl",
   {
     eager: true,
     query: "?raw",
@@ -30,14 +30,14 @@ const shuiViewerScoringGraphs = import.meta.glob(
 ) as Record<string, string>;
 
 const shuiEditorComponents = import.meta.glob(
-  "@/widgets/implementations/shui/editors/*/widget.tsx",
+  "/src/widgets/implementations/shui/editors/*/widget.tsx",
   {
     eager: true,
     import: "default",
   },
 ) as Record<string, WidgetComponent>;
 const shuiViewerComponents = import.meta.glob(
-  "@/widgets/implementations/shui/viewers/*/widget.tsx",
+  "/src/widgets/implementations/shui/viewers/*/widget.tsx",
   {
     eager: true,
     import: "default",
@@ -46,7 +46,7 @@ const shuiViewerComponents = import.meta.glob(
 
 // Only editors ever produce a fresh/empty term for a property, so meta.ts (and createTerm)
 // is an editor-only concept - viewers have nothing to create.
-const shuiEditorMeta = import.meta.glob("@/widgets/implementations/shui/editors/*/meta.ts", {
+const shuiEditorMeta = import.meta.glob("/src/widgets/implementations/shui/editors/*/meta.ts", {
   eager: true,
   import: "default",
 }) as Record<string, WidgetMeta>;
@@ -55,7 +55,7 @@ const shuiEditorMeta = import.meta.glob("@/widgets/implementations/shui/editors/
 // and st/groups/CollapsiblePropertyGroup live side by side - so the glob is namespace-agnostic
 // (a single `*` matches exactly one path segment) and each folder's namespace segment is resolved
 // against this map to build its widget's real IRI.
-const groupComponents = import.meta.glob("@/widgets/implementations/*/groups/*/widget.tsx", {
+const groupComponents = import.meta.glob("/src/widgets/implementations/*/groups/*/widget.tsx", {
   eager: true,
   import: "default",
 }) as Record<string, GroupWidgetComponent>;
