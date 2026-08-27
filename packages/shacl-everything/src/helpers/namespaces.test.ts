@@ -11,6 +11,7 @@ import {
   sh,
   shui,
   skos,
+  st,
   xsd,
 } from "@/helpers/namespaces.ts";
 
@@ -25,6 +26,9 @@ test("namespaces - build IRIs by appending the local name to the base IRI", () =
   expect(owl("Class").value).toEqual("http://www.w3.org/2002/07/owl#Class");
   expect(faker("name").value).toEqual("https://fakerjs.dev/name");
   expect(skos("Concept").value).toEqual("http://www.w3.org/2004/02/skos/core#Concept");
+  expect(st("CollapsiblePropertyGroup").value).toEqual(
+    "http://shapething/CollapsiblePropertyGroup",
+  );
 });
 
 test("namespaces - produces named nodes", () => {
@@ -43,6 +47,7 @@ test("prefixes - maps every namespace alias to its base IRI", () => {
     faker: "https://fakerjs.dev/",
     skos: "http://www.w3.org/2004/02/skos/core#",
     shui: "http://www.w3.org/ns/shacl-ui/",
+    st: "http://shapething/",
     foaf: "http://xmlns.com/foaf/0.1/",
     dc: "http://purl.org/dc/elements/1.1/",
     dcterms: "http://purl.org/dc/terms/",

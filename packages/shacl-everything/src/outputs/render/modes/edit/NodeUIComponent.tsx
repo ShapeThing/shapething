@@ -4,17 +4,18 @@ import { useMemo } from "react";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 
 export default function NodeUIComponent() {
-  const { focusNode, shapesGraph, dataGraph, scoresGraph, nodeShapes } = useEnvironment();
+  const { focusNode, shapesGraph, dataGraph, scoresGraph, widgets, nodeShapes } = useEnvironment();
   const nodeUiElement = useMemo(
     () =>
       new NodeUIElement({
         shapesGraph,
         dataGraph,
         scoresGraph,
+        widgetRegistry: widgets,
         focusNode,
         nodeShapes,
       }),
-    [shapesGraph, dataGraph, scoresGraph, focusNode, nodeShapes],
+    [shapesGraph, dataGraph, scoresGraph, widgets, focusNode, nodeShapes],
   );
 
   return (

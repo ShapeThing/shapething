@@ -38,7 +38,7 @@ export function createDefaultTerm(
   shape: PropertyUIElement,
   context: CreateTermContext,
 ): Term {
-  const createTerm = getWidgetMeta(widget)?.createTerm;
+  const createTerm = getWidgetMeta(widget, shape.widgetRegistry)?.createTerm;
   return createTerm ? createTerm(context, shape) : defaultTermFromShape(shape);
 }
 

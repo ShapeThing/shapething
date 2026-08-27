@@ -3,6 +3,8 @@ import { RdfStore } from "rdf-stores";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
+import type { Widgets } from "@/widgets/types.ts";
 
 export type ChoiceConnective = "or" | "xone";
 
@@ -14,6 +16,7 @@ export class ChoiceElement {
   public shapesGraph: RdfStore;
   public dataGraph: RdfStore;
   public scoresGraph: RdfStore;
+  public widgetRegistry: Widgets;
   public focusNode: Quad_Subject;
   public shape: Term;
   public connective: ChoiceConnective;
@@ -27,10 +30,12 @@ export class ChoiceElement {
     connective: ChoiceConnective,
     list: Term,
     scoresGraph?: RdfStore,
+    widgetRegistry?: Widgets,
   ) {
     this.shapesGraph = shapesGraph;
     this.dataGraph = dataGraph;
     this.scoresGraph = scoresGraph ?? RdfStore.createDefault();
+    this.widgetRegistry = widgetRegistry ?? defaultWidgets;
     this.focusNode = focusNode;
     this.shape = shape;
     this.connective = connective;
@@ -45,6 +50,7 @@ export class ChoiceElement {
         branchShape,
         this.focusNode,
         this.scoresGraph,
+        this.widgetRegistry,
       ),
     );
   }

@@ -11,6 +11,8 @@ import { replacePropertyPath } from "@/structure/paths/replacePropertyPath.ts";
 import { removePropertyPath } from "@/structure/paths/removePropertyPath.ts";
 import { score, select, type WidgetScoreResult } from "@/scoring/score.ts";
 import { createDefaultTerm } from "@/widgets/defaultTerm.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
+import type { Widgets } from "@/widgets/types.ts";
 import { toSparql } from "@/structure/paths/toSparql.ts";
 import { resolutions } from "@/structure/constraintResolutions.ts";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
@@ -20,6 +22,7 @@ export type PropertyUIElementOptions = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
   scoresGraph?: RdfStore;
+  widgetRegistry?: Widgets;
   focusNode: Quad_Subject;
   propertyShapes: NamedNode[];
 };
@@ -69,6 +72,7 @@ export class PropertyUIElement {
   public shapesGraph: RdfStore;
   public dataGraph: RdfStore;
   public scoresGraph: RdfStore;
+  public widgetRegistry: Widgets;
   public focusNode: Quad_Subject;
   public propertyShapes: NamedNode[];
 
@@ -76,6 +80,7 @@ export class PropertyUIElement {
     this.shapesGraph = options.shapesGraph;
     this.dataGraph = options.dataGraph;
     this.scoresGraph = options.scoresGraph ?? RdfStore.createDefault();
+    this.widgetRegistry = options.widgetRegistry ?? defaultWidgets;
     this.focusNode = options.focusNode;
     this.propertyShapes = options.propertyShapes;
   }

@@ -3,11 +3,14 @@ import { RdfStore } from "rdf-stores";
 import { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
+import type { Widgets } from "@/widgets/types.ts";
 
 export type NodeUIElementOptions = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
   scoresGraph?: RdfStore;
+  widgetRegistry?: Widgets;
   focusNode: Quad_Subject;
   nodeShapes: Quad_Subject[];
 };
@@ -16,6 +19,7 @@ export class NodeUIElement {
   public shapesGraph: RdfStore;
   public dataGraph: RdfStore;
   public scoresGraph: RdfStore;
+  public widgetRegistry: Widgets;
   public focusNode: Quad_Subject;
   public nodeShapes: Quad_Subject[];
 
@@ -23,6 +27,7 @@ export class NodeUIElement {
     this.shapesGraph = options.shapesGraph;
     this.dataGraph = options.dataGraph;
     this.scoresGraph = options.scoresGraph ?? RdfStore.createDefault();
+    this.widgetRegistry = options.widgetRegistry ?? defaultWidgets;
     this.focusNode = options.focusNode;
     this.nodeShapes = options.nodeShapes;
   }
@@ -35,6 +40,7 @@ export class NodeUIElement {
         nodeShape,
         this.focusNode,
         this.scoresGraph,
+        this.widgetRegistry,
       ),
     );
   }

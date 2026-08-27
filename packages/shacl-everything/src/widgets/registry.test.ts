@@ -1,6 +1,12 @@
 import { expect, test } from "vite-plus/test";
-import { getScoringGraph, getWidgetComponent, getWidgetMeta } from "@/widgets/registry.ts";
-import { rdf, sh, shui } from "@/helpers/namespaces.ts";
+import {
+  defaultWidgets,
+  getGroupWidget,
+  getScoringGraph,
+  getWidgetComponent,
+  getWidgetMeta,
+} from "@/widgets/registry.ts";
+import { ex, rdf, sh, shui, st } from "@/helpers/namespaces.ts";
 import { score } from "@/scoring/score.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
@@ -87,4 +93,78 @@ test("getWidgetMeta resolves a createTerm override where one is declared", () =>
 
 test("getWidgetMeta returns a meta with no createTerm for widgets whose value shape is shape-derived", () => {
   expect(getWidgetMeta(shui("TextFieldEditor"))?.createTerm).toBeUndefined();
+});
+
+test("defaultWidgets.groups contains the bundled sh:PropertyGroup and st:CollapsiblePropertyGroup entries", () => {
+  expect(
+    Object.values(defaultWidgets.groups).some((entry) => entry.widget.equals(sh("PropertyGroup"))),
+  ).toBe(true);
+  expect(
+    Object.values(defaultWidgets.groups).some((entry) =>
+      entry.widget.equals(st("CollapsiblePropertyGroup")),
+    ),
+  ).toBe(true);
+});
+
+test("getGroupWidget matches sh:PropertyGroup alone", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        ex:nameGroup a sh:PropertyGroup .
+    `,
+    "text/turtle",
+  );
+
+  expect(getGroupWidget(ex("nameGroup"), shapesGraph)?.widget).toEqual(sh("PropertyGroup"));
+});
+
+test("getGroupWidget prefers a more specific registered type (st:CollapsiblePropertyGroup) over the sh:PropertyGroup default", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix st: <http://shapething/> .
+        @prefix ex: <http://example.org/> .
+        ex:nameGroup a sh:PropertyGroup, st:CollapsiblePropertyGroup .
+    `,
+    "text/turtle",
+  );
+
+  expect(getGroupWidget(ex("nameGroup"), shapesGraph)?.widget).toEqual(
+    st("CollapsiblePropertyGroup"),
+  );
+});
+
+test("getGroupWidget returns undefined for a type with no registered group widget", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix ex: <http://example.org/> .
+        ex:nameGroup a ex:SomeOtherType .
+    `,
+    "text/turtle",
+  );
+
+  expect(getGroupWidget(ex("nameGroup"), shapesGraph)).toBeUndefined();
+});
+
+test("getGroupWidget respects a custom widgets object that omits a bundled group entry", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        ex:nameGroup a sh:PropertyGroup .
+    `,
+    "text/turtle",
+  );
+
+  const customWidgets = { ...defaultWidgets, groups: {} };
+  expect(getGroupWidget(ex("nameGroup"), shapesGraph, customWidgets)).toBeUndefined();
+});
+
+test("getWidgetComponent returns undefined for a bundled widget removed from a custom widgets object", () => {
+  const { TextFieldEditor: _removed, ...remainingEditors } = defaultWidgets.editors;
+  const customWidgets = { ...defaultWidgets, editors: remainingEditors };
+
+  expect(getWidgetComponent("edit", shui("TextFieldEditor"), customWidgets)).toBeUndefined();
+  expect(getWidgetComponent("edit", shui("TextFieldEditor"))).toBeDefined();
 });

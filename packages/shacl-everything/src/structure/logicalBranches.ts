@@ -41,6 +41,7 @@ export function withBranch(element: PropertyUIElement, branch: Term): PropertyUI
     shapesGraph: element.shapesGraph,
     dataGraph: element.dataGraph,
     scoresGraph: element.scoresGraph,
+    widgetRegistry: element.widgetRegistry,
     focusNode: element.focusNode,
     propertyShapes: [...element.propertyShapes, branch as NamedNode],
   });

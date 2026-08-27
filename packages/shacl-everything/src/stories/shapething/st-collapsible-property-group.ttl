@@ -1,0 +1,52 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Given name"@en ;
+        sh:path schema:givenName ;
+        sh:order 0 ;
+        sh:group <#nameGroup> ;
+    ] ;
+    sh:property [
+        sh:name "Family name"@en ;
+        sh:path ex:familyName ;
+        sh:order 1 ;
+        sh:group <#nameGroup> ;
+    ] ;
+    sh:property [
+        sh:name "Street address"@en ;
+        sh:path schema:streetAddress ;
+        sh:order 0 ;
+        sh:group <#addressGroup> ;
+    ] ;
+    .
+
+<#personalDetails>
+    a sh:PropertyGroup, st:CollapsiblePropertyGroup ;
+    sh:name "Personal details"@en ;
+    .
+
+<#nameGroup>
+    a sh:PropertyGroup ;
+    sh:name "Name"@en ;
+    sh:group <#personalDetails> ;
+    sh:order 0 ;
+    .
+
+<#addressGroup>
+    a sh:PropertyGroup ;
+    sh:name "Address"@en ;
+    sh:group <#personalDetails> ;
+    sh:order 1 ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:familyName "Jansen" ;
+    schema:streetAddress "Dam 1" .

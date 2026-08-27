@@ -53,8 +53,8 @@ export function useWidgets(
       // is the first one since score() already yields in descending-score order.
       .filter(({ widget }) => (seen.has(widget.value) ? false : (seen.add(widget.value), true)))
       .map(({ widget, score }) => ({
-        Widget: getWidgetComponent(mode, widget as NamedNode)!,
-        meta: getWidgetMeta(widget as NamedNode),
+        Widget: getWidgetComponent(mode, widget as NamedNode, property.widgetRegistry)!,
+        meta: getWidgetMeta(widget as NamedNode, property.widgetRegistry),
         iri: widget,
         score,
       }))

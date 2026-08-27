@@ -65,6 +65,7 @@ export default function MemberShapeList({
         shapesGraph: propertyUIElement.shapesGraph,
         dataGraph: propertyUIElement.dataGraph,
         scoresGraph: propertyUIElement.scoresGraph,
+        widgetRegistry: propertyUIElement.widgetRegistry,
         focusNode: propertyUIElement.focusNode,
         propertyShapes: memberShapeNodes as NamedNode[],
       }),

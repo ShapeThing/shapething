@@ -1,6 +1,7 @@
 import type { ComponentType } from "react";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import type { Term } from "@rdfjs/types";
+import type { GroupUIElement } from "@/structure/GroupUIElement.ts";
+import type { NamedNode, Term } from "@rdfjs/types";
 import type { BCP47 } from "@/types/BCP47.ts";
 
 export type WidgetProps = {
@@ -37,4 +38,45 @@ export type WidgetMeta = {
   // TextFieldWithLangEditor, TextAreaWithLangEditor) - lets ContentLanguageSwitcher hide itself
   // when nothing in the current form would actually respond to it.
   needsLanguageSwitcher?: boolean;
+};
+
+export type GroupWidgetProps = { group: GroupUIElement };
+export type GroupWidgetComponent = ComponentType<GroupWidgetProps>;
+
+/**
+ * One entry in the pluggable widget registry (see widgets/registry.ts's defaultWidgets /
+ * Environment.widgets). `widget` is the entry's own IRI - the source of truth used for matching -
+ * not whatever key it happens to be stored under in a Widgets record (that key is purely a
+ * human-readable label for override purposes, e.g. `{ ...defaultWidgets.editors, TextFieldEditor:
+ * MyWidget }`).
+ */
+export type WidgetRegistryEntry = {
+  widget: NamedNode;
+  Component: WidgetComponent;
+  meta?: WidgetMeta;
+  // Raw turtle shui:WidgetScore rules for this widget (see scoring/score.ts) - omit for a widget
+  // declared only via an explicit shui:editor/shui:viewer value on the shape, with no scoring
+  // rules of its own (see prepareScoringGraph's synthesized default-score fallback).
+  scoringGraph?: string;
+};
+
+/**
+ * A group widget is selected by simple, direct rdf:type matching (see registry.ts's
+ * getGroupWidget) - no scoring system, so there's no scoringGraph here.
+ */
+export type GroupWidgetRegistryEntry = {
+  widget: NamedNode;
+  Component: GroupWidgetComponent;
+};
+
+/**
+ * The complete pluggable widget set a render tree resolves widgets from. `Environment.widgets`
+ * defaults to `defaultWidgets` (registry.ts) when the caller supplies none at all; supplying any
+ * value here - even a partial replacement built by spreading `defaultWidgets` - means the bundled
+ * widgets never load, full stop (see preprocess/widgets.ts's resolveWidgets).
+ */
+export type Widgets = {
+  editors: Record<string, WidgetRegistryEntry>;
+  viewers: Record<string, WidgetRegistryEntry>;
+  groups: Record<string, GroupWidgetRegistryEntry>;
 };
