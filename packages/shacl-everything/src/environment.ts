@@ -59,8 +59,6 @@ export type Environment = {
   enableShPathInLabelTitle?: boolean;
   // When true, shows a trash icon inside the content language switcher.
   enableFullLanguageRemoval?: boolean;
-  // Called when the edit mode form is submitted. See SubmitResult.
-  onSubmit?: (result: SubmitResult) => void;
   // When true, languages detected on sh:name/sh:description in the shapes graph but not covered
   // by an interface locale are also offered in the interface language switcher - useful when the
   // shapes graph contains labels in a language the library doesn't ship a translation for. When
@@ -71,6 +69,8 @@ export type Environment = {
   enableInterfaceLanguageWithShapesLabelsOnly?: boolean;
   // Enables the "Edit in place" button on shui:EnumSelectEditor when the selected value is a sh:node. When false, the button will not be shown and the user will have to navigate to the linked resource to edit it.
   enableEditInPlace?: boolean;
+  // Called when the edit mode form is submitted. See SubmitResult.
+  onSubmit?: (result: SubmitResult) => void;
 };
 
 // What flows through the preprocessor chain before it's fully resolved: the graph fields may
