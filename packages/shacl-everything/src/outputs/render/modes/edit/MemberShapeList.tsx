@@ -14,10 +14,12 @@ import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-ki
 import { Localized } from "@fluent/react";
 import { getRdfListCells, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { Plus } from "@/helpers/icons.tsx";
-import { rdf, sh } from "@/helpers/namespaces.ts";
+import { rdf, sh, shui } from "@/helpers/namespaces.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
+import { useRegisterContentLanguageSwitcherWidget } from "@/outputs/render/hooks/useRegisterContentLanguageSwitcherWidget.tsx";
+import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import MemberShapeListItem from "@/outputs/render/modes/edit/MemberShapeListItem.tsx";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import "./style.css";
@@ -68,6 +70,12 @@ export default function MemberShapeList({
       }),
     [propertyUIElement, memberShapeNodes],
   );
+
+  // Resolved on memberElement's shape alone (no valueNode), same reasoning as
+  // PropertyUIComponent's own registration - every item shares this one resolution regardless of
+  // how many currently exist or are mid-async-default-resolution.
+  const memberWidget = useWidget(shui("editor"), memberElement);
+  useRegisterContentLanguageSwitcherWidget(Boolean(memberWidget?.meta?.needsLanguageSwitcher));
 
   const minListLength = propertyUIElement.get(sh("minListLength")) ?? 0;
   const maxListLength = propertyUIElement.get(sh("maxListLength")) ?? Infinity;

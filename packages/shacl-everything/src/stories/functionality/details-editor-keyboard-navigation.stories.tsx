@@ -94,6 +94,20 @@ export const keyboardNavigation: Story = {
     await userEvent.click(label);
     await expect(label).toHaveFocus();
 
+    function describe(el: Element | null): string {
+      if (!el) return "null";
+      const cls = (el as HTMLElement).className;
+      const text = (el as HTMLElement).textContent?.trim().slice(0, 20);
+      const val = (el as HTMLInputElement).value;
+      return `${el.tagName}.${cls} text="${text}" value="${val}"`;
+    }
+    const trace: string[] = [describe(document.activeElement)];
+    for (let i = 0; i < 10; i++) {
+      await userEvent.tab();
+      trace.push(describe(document.activeElement));
+    }
+    throw new Error("TRACE:\n" + trace.join("\n"));
+
     // Tab from the label must reach the sh:or branch switcher (DetailsEditor's own fly-out) -
     // regression: it used to be skipped entirely once the fly-out was removed from tab order to
     // stop the sub-form eating every Tab press meant for it. The branch switcher is a custom

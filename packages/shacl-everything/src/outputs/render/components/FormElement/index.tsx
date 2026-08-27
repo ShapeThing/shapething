@@ -14,7 +14,6 @@ type Props = {
   // those controls point back at it via aria-labelledby, since htmlFor/id only pairs one-to-one.
   labelId?: string;
   actions?: ReactNode;
-  severity?: string;
   description?: string;
   children?: ReactNode;
   className?: string;
@@ -29,7 +28,6 @@ export default function FormElement({
   labelTitle,
   htmlFor,
   labelId,
-  severity,
   description,
   children,
   actions,
@@ -39,7 +37,7 @@ export default function FormElement({
   size = "medium",
 }: Props) {
   return (
-    <div className={clsx("st-form-element", className)} data-severity={severity} data-size={size}>
+    <div className={clsx("st-form-element", className)} data-size={size}>
       <header className="st-form-element__header">
         {label && (
           <label

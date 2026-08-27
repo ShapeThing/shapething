@@ -4,7 +4,7 @@
   border: 1px solid var(--gray-5);
   flex: 1;
   position: relative;
-  z-index: 2;
+  z-index: var(--st-z-raised);
   appearance: none;
   resize: vertical;
   font-family: var(--st-font-family);

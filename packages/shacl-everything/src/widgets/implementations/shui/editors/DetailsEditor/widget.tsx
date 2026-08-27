@@ -10,7 +10,7 @@ import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChil
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
-export default function DetailsEditor({ shape, term, flyOut }: WidgetProps) {
+export default function DetailsEditor({ shape, term }: WidgetProps) {
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const nodeShapes = useMemo(() => shape.get(sh("node")) as Quad_Subject[], [shape]);
@@ -46,17 +46,9 @@ export default function DetailsEditor({ shape, term, flyOut }: WidgetProps) {
       <button type="button" className="st-details-editor__label">
         {label}
       </button>
-      {flyOut}
       <div className="st-details-editor__body">
         <NodeUIElementChildren nodeUiElement={nodeUiElement} />
       </div>
     </div>
   );
 }
-
-// Placed between the label and the nested sub-form (see PropertyUIComponentObject) rather than
-// trailing after the sub-form's own fields - every field in the sub-form is itself wrapped in its
-// own ".st-property-object__widget" by PropertyUIComponentObject, so Tab from the label needs the
-// fly-out to sit right there in the DOM to reach it at all, and to fall through into the sub-form's
-// own first field afterwards, instead of exiting the whole widget the moment focus leaves the label.
-DetailsEditor.placesOwnFlyOut = true;

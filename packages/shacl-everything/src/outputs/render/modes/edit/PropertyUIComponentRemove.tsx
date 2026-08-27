@@ -5,7 +5,7 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
 import { Localized } from "@fluent/react";
 import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
-import type { Severity } from "@/types/severity.ts";
+import { severityFromTerm } from "@/helpers/severityFromTerm.ts";
 
 /**
  * A component that renders a button to remove a value from a property UI element, if allowed.
@@ -29,8 +29,8 @@ export default function PropertyUIComponentRemove({
 }) {
   const existingObjects = useDataGraphObjects(propertyUIElement);
   const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
-  const canRemove = existingObjects.length > minCount;
-  const severity = propertyUIElement.get(sh("severity"))?.value as Severity | undefined;
+  const canRemove = minCount === 0 || existingObjects.length > minCount;
+  const severity = severityFromTerm(propertyUIElement.get(sh("severity")));
 
   const removeValue = () => {
     if (clearAll) {

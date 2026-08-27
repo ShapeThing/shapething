@@ -16,8 +16,24 @@
         sh:nodeKind sh:IRI ;
         sh:node <#philosopherShape> ;
         shui:editor shui:AutoCompleteEditor ;
+        # shui:searchQuery is asserted directly on the property shape (spec §10.1), independent of
+        # sh:in below - it's what the AutoCompleteEditor actually queries as the user types.
+        shui:searchQuery """
+            PREFIX dbo: <http://dbpedia.org/ontology/>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            SELECT distinct ?value WHERE {
+                SERVICE <https://dbpedia.org/sparql> {
+                    ?value a dbo:Philosopher .
+                    ?value rdfs:label ?searchLabel .
+                    FILTER(CONTAINS(LCASE(?searchLabel), LCASE($searchTerm)))
+                    BIND(IF(CONTAINS($uiLanguage, "-"), STRBEFORE($uiLanguage, "-"), $uiLanguage) AS ?uiPrimaryLanguage)
+                    FILTER(LANGMATCHES(lang(?searchLabel), ?uiPrimaryLanguage))
+                }
+            }
+        """ ;
         sh:in [
-            # Not used in the UI, only when shui:searchQuery is not there.
+            # The baseline/fallback query (spec §10.1): used instead of shui:searchQuery only by a
+            # renderer that doesn't support shui:searchQuery but does support Dynamic SHACL.
             sh:select """
                 PREFIX dbo: <http://dbpedia.org/ontology/>
                 SELECT DISTINCT ?value1 WHERE {
@@ -26,20 +42,6 @@
                     }
                 }
             """ ;
-
-            shui:searchQuery """
-                PREFIX dbo: <http://dbpedia.org/ontology/>
-                PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-                SELECT distinct ?value WHERE {
-                    SERVICE <https://dbpedia.org/sparql> {
-                        ?value a dbo:Philosopher .
-                        ?value rdfs:label ?searchLabel .
-                        FILTER(CONTAINS(LCASE(?searchLabel), LCASE(?searchTerm)))
-                        BIND(IF(CONTAINS(?uiLanguage, "-"), STRBEFORE(?uiLanguage, "-"), ?uiLanguage) AS ?uiPrimaryLanguage)
-                        FILTER(LANGMATCHES(lang(?searchLabel), ?uiPrimaryLanguage))
-                    }
-                }
-            """
         ] ;
     ] ;
     .

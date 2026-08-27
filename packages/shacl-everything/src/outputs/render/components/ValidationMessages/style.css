@@ -1,0 +1,75 @@
+.st-validation-messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.st-validation-message {
+  display: flex;
+  align-items: stretch;
+  border-radius: var(--radius-2);
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text);
+  width: fit-content;
+}
+
+.st-validation-message-icon {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--size-6);
+  border-top-left-radius: var(--radius-2);
+  border-bottom-left-radius: var(--radius-2);
+  color: white;
+}
+
+.st-validation-message-text {
+  padding: var(--size-2) var(--size-2);
+}
+
+/* Property-wide messages (PropertyUIComponent.tsx) sit directly under the label, above the
+   value widgets - a bit more padding keeps the text from crowding the label above. */
+.st-validation-messages--property .st-validation-message-text {
+  padding: var(--size-2) var(--size-2);
+}
+
+.st-validation-message-icon svg {
+  width: var(--size-3);
+  height: var(--size-3);
+}
+
+.st-validation-message-severity {
+  margin-right: var(--size-1);
+  font-weight: bold;
+}
+
+.st-validation-message[data-severity="Violation"] {
+  border-color: var(--st-severity-error);
+  background: color-mix(in srgb, var(--st-severity-error) 8%, white);
+}
+
+.st-validation-message[data-severity="Violation"] .st-validation-message-icon {
+  background: color-mix(in srgb, var(--st-severity-error) 80%, black);
+}
+
+.st-validation-message[data-severity="Warning"] {
+  border-color: var(--st-severity-warning);
+  background: color-mix(in srgb, var(--st-severity-warning) 8%, white);
+}
+
+.st-validation-message[data-severity="Warning"] .st-validation-message-icon {
+  background: color-mix(in srgb, var(--st-severity-warning) 80%, black);
+}
+
+.st-validation-message[data-severity="Info"] {
+  border-color: var(--st-severity-info);
+  background: color-mix(in srgb, var(--st-severity-info) 8%, white);
+}
+
+.st-validation-message[data-severity="Info"] .st-validation-message-icon {
+  background: color-mix(in srgb, var(--st-severity-info) 80%, black);
+}

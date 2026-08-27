@@ -156,6 +156,14 @@ shui:hasInConstraint
     ] ;
 .
 
+shui:hasSearchQueryConstraint
+    a sh:NodeShape ;
+    sh:property [
+        sh:path shui:searchQuery ;
+        sh:minCount 1 ;
+    ] ;
+.
+
 shui:hasClassConstraint
     a sh:NodeShape ;
     sh:property [

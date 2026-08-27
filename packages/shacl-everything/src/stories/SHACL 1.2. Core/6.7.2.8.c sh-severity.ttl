@@ -1,0 +1,24 @@
+@prefix schema: <http://schema.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Bio"@en, "Bio"@nl ;
+        sh:path schema:description ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:maxLength 10 ;
+        sh:severity sh:Info ;
+        sh:message "Longer than the recommended 10 characters"@en, "Langer dan de aanbevolen 10 tekens"@nl ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:description "This bio is quite long" ;
+    .

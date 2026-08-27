@@ -18,7 +18,7 @@
   position: absolute;
   top: calc(100% + var(--size-2));
   left: 0;
-  z-index: 20;
+  z-index: var(--st-z-overlay);
   min-width: 100%;
   max-height: 16rem;
   overflow-y: auto;

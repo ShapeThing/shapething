@@ -1,12 +1,16 @@
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
-import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
+import ValidationMessages from "@/outputs/render/components/ValidationMessages/index.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
+import { useRegisterContentLanguageSwitcherWidget } from "@/outputs/render/hooks/useRegisterContentLanguageSwitcherWidget.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { usePropertyValidationResults } from "@/outputs/render/hooks/usePropertyValidationResults.tsx";
+import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import MemberShapeList from "@/outputs/render/modes/edit/MemberShapeList.tsx";
 import PropertyUIComponentValues from "@/outputs/render/modes/edit/PropertyUIComponentValues.tsx";
 import { localName } from "@/helpers/localName.ts";
-import { rdf, sh } from "@/helpers/namespaces.ts";
+import { rdf, sh, shui } from "@/helpers/namespaces.ts";
+import language, { configuredLanguages } from "@/resolution/language.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import "./style.css";
 import { useId } from "react";
@@ -21,11 +25,11 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const isRdfLangString = propertyUIElement.get(sh("datatype"))?.equals(rdf("langString"));
-  // Reads this.dataGraph reactively, same as PropertyUIComponentValues/MemberShapeList's own
-  // reads below - only used here for the minCount/severity check, which is meaningful either way
-  // ("does this property have a value at all" is a different question from a memberShape list's
-  // own sh:minListLength).
-  const existingObjects = useDataGraphObjects(propertyUIElement);
+  // Resolved on the property shape alone (no valueNode) so this stays stable across a value's own
+  // async default-term resolution and per-value add/remove, rather than tracking whichever widget
+  // instance happens to be mounted right now - see useRegisterContentLanguageSwitcherWidget.
+  const widget = useWidget(shui("editor"), propertyUIElement);
+  useRegisterContentLanguageSwitcherWidget(Boolean(widget?.meta?.needsLanguageSwitcher));
   // sh:memberShape means this property's value is an rdf:List head, not a plain value (or set of
   // values) to render one widget instance per - MemberShapeList owns that rendering entirely,
   // resolving each list item's own widget generically rather than PropertyUIComponentValues'
@@ -37,13 +41,16 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   const label = propertyUIElement.label([activeInterfaceLanguage]);
   const description = propertyUIElement.get(sh("description"), [activeInterfaceLanguage])?.value;
 
-  // sh:minCount isn't met yet - the shape's sh:severity (sh:Violation, the spec default, when
-  // absent) describes how serious that unmet constraint is, for the caller to style as it sees fit.
-  const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
-  const isMissingRequiredValue = existingObjects.length < minCount;
-  const severity = isMissingRequiredValue
-    ? (localName(propertyUIElement.get(sh("severity"))) ?? "Violation")
-    : undefined;
+  // Real SHACL validation results for this property (see ValidationContextProvider) - both
+  // property-wide (e.g. sh:minCount, no `value`) and per-value (e.g. sh:pattern tied to one
+  // specific value, shown instead by PropertyUIComponentObject to avoid reporting it twice).
+  const validationResults = usePropertyValidationResults(propertyUIElement);
+  const propertyWideResults = validationResults.filter((result) => !result.value);
+  // sh:message is chrome (like sh:name/sh:description), so it's resolved the same way - one
+  // best-matching language-tagged literal, not every language variant concatenated together.
+  const messageLanguages = configuredLanguages(propertyUIElement.shapesGraph, [
+    activeInterfaceLanguage,
+  ]);
 
   return (
     <FormElement
@@ -64,8 +71,14 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
       labelTitle={propertyUIElement.pathAsSparql()}
       labelId={labelId}
       description={description}
-      severity={severity}
     >
+      <ValidationMessages
+        className="st-validation-messages--property"
+        messages={propertyWideResults.map((result) => ({
+          severity: localName(result.severity) ?? "Violation",
+          message: result.message.length ? language(result.message, messageLanguages).value : "",
+        }))}
+      />
       {memberShapeNodes.length > 0 ? (
         <MemberShapeList
           propertyUIElement={propertyUIElement}

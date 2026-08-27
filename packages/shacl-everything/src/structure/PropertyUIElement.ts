@@ -60,6 +60,12 @@ export type PredicateReturn<Iri extends string> = Iri extends NumberPredicates
         : Term[];
 
 export class PropertyUIElement {
+  // A tag, not just a class to `instanceof`-check against: Vite HMR can reload this module (or one
+  // it depends on) while an already-constructed instance is still sitting in memoized React state,
+  // leaving that instance's prototype pointing at the *old* PropertyUIElement class. `instanceof`
+  // against the newly re-imported class then returns false, so callers discriminating the
+  // PropertyUIElement | ChoiceElement union must switch on `kind`, not `instanceof`.
+  public readonly kind = "property" as const;
   public shapesGraph: RdfStore;
   public dataGraph: RdfStore;
   public scoresGraph: RdfStore;

@@ -1,0 +1,66 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+# Demonstrates spec §10.2 (Validation of Search Query Results): sh:in [ sh:select ... ] here is
+# the real constraint, resolved entirely locally via Comunica (no SERVICE clause at all), while
+# shui:searchQuery is deliberately written more broadly than that constraint - it matches every
+# ex:Country by label, not just the ex:AllowedCountry ones sh:in restricts values to. A renderer
+# implementing §10.2 filters shui:searchQuery's results back down to sh:in's set before offering
+# them, so searching "Atlantis" (a real ex:Country, but not an ex:AllowedCountry) should yield an
+# empty AutoCompleteEditor list, while searching "Netherlands" (which is both) still resolves.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Born in"@en, "Geboren in"@nl ;
+        sh:path ex:bornIn ;
+        sh:class ex:Country ;
+        sh:nodeKind sh:IRI ;
+        shui:editor shui:AutoCompleteEditor ;
+        sh:in [
+            sh:select """
+                PREFIX ex: <http://example.org/>
+                SELECT ?value WHERE {
+                    ?value a ex:AllowedCountry .
+                }
+            """ ;
+        ] ;
+        shui:searchQuery """
+            PREFIX ex: <http://example.org/>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            SELECT DISTINCT ?value WHERE {
+                ?value a ex:Country .
+                ?value rdfs:label ?label .
+                FILTER(CONTAINS(LCASE(STR(?label)), LCASE($searchTerm)))
+            }
+        """ ;
+    ] ;
+    .
+
+<#countryShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Country ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:datatype xsd:string ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:bornIn ex:Netherlands ;
+    .
+
+ex:Netherlands a ex:Country, ex:AllowedCountry ;
+    rdfs:label "Netherlands"@en, "Nederland"@nl .
+
+ex:Atlantis a ex:Country ;
+    rdfs:label "Atlantis"@en, "Atlantis"@nl .

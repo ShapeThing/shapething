@@ -7,6 +7,7 @@ import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import ContentLanguageSwitcher from "@/outputs/render/components/ContentLanguageSwitcher/index.tsx";
 import InterfaceLanguageSwitcher from "@/outputs/render/components/InterfaceLanguageSwitcher/index.tsx";
+import ValidationContextProvider from "@/outputs/render/contexts/ValidationContextProvider.tsx";
 
 type Props = {
   children?: React.ReactNode;
@@ -49,7 +50,7 @@ export default function EditModeWrapper({ children }: Props) {
   };
 
   return (
-    <>
+    <ValidationContextProvider>
       <form onSubmit={handleSubmit} className="st-edit-mode">
         <header className="st-header">
           <InterfaceLanguageSwitcher />
@@ -68,6 +69,6 @@ export default function EditModeWrapper({ children }: Props) {
           </button>
         </div>
       </form>
-    </>
+    </ValidationContextProvider>
   );
 }

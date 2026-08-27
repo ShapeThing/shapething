@@ -13,7 +13,7 @@
   &:focus {
     outline: 2px solid var(--st-primary-color);
     box-shadow: none;
-    z-index: 3;
+    z-index: var(--st-z-raised-accent);
     color: var(--st-primary-color);
   }
 
@@ -59,6 +59,18 @@
     color: white;
     outline: 2px solid var(--st-severity-error);
     background-color: hsl(from var(--st-severity-error) h s calc(l - 8));
+  }
+}
+
+.st-button--severity {
+  border: 1px solid var(--color);
+  color: var(--color);
+
+  &:hover,
+  &:focus {
+    color: white;
+    outline: 2px solid var(--color);
+    background-color: var(--color);
   }
 }
 

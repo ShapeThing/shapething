@@ -10,6 +10,9 @@ import HelpIcon from "~icons/ic/round-help";
 import DeleteIcon from "~icons/ic/round-delete-outline";
 import SearchIcon from "~icons/ic/round-search";
 import DragHandleIcon from "~icons/ic/round-drag-indicator";
+import ViolationIcon from "~icons/ic/round-error";
+import WarningIcon from "~icons/ic/round-warning";
+import InfoIcon from "~icons/ic/round-info";
 
 export const Loading = LoadingTwotoneLoopIcon;
 export const Plus = PlusIcon;
@@ -23,3 +26,6 @@ export const Help = HelpIcon;
 export const Delete = DeleteIcon;
 export const Search = SearchIcon;
 export const DragHandle = DragHandleIcon;
+export const Violation = ViolationIcon;
+export const Warning = WarningIcon;
+export const Info = InfoIcon;
