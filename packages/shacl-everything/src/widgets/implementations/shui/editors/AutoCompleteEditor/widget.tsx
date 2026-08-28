@@ -1,16 +1,39 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
-import { Edit, Loading, Search } from "@/helpers/icons.tsx";
+import type { NamedNode, Quad } from "@rdfjs/types";
+import { RdfStore } from "rdf-stores";
+import { factory } from "@/helpers/factory.ts";
+import { Edit, Loading, Plus, Search } from "@/helpers/icons.tsx";
+import { rdf, sh } from "@/helpers/namespaces.ts";
+import { diffQuads } from "@/helpers/diffQuads.ts";
+import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
+import Modal from "@/outputs/render/components/Modal/index.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInstanceSearch } from "@/outputs/render/hooks/useInstanceSearch.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import type { SearchResult } from "@/outputs/render/hooks/query.ts";
+import { valueNodeShapes } from "@/resolution/label.ts";
+import { NodeUIElement } from "@/structure/NodeUIElement.ts";
+import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
+// Mirrors AutoCompleteOption's own edit-in-place staging (see InstancesSelectEditor, whose
+// createNew this mirrors too): the new instance is built up against its own scratch copy of the
+// whole graph, not `shape.dataGraph` directly, so nothing real is written until Done is clicked.
+type Staging = { dataGraph: RdfStore; originalQuads: Quad[] };
+
 export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
   const existingObjects = useDataGraphObjects(shape);
+  const { enableCreateInPlace } = useEnvironment();
+  const shClasses = useMemo(() => shape.get(sh("class")), [shape]);
+  // The shape describing a newly created instance's own fields - see InstancesSelectEditor, whose
+  // createNew this mirrors.
+  const nodeShapes = useMemo(() => valueNodeShapes(shape), [shape]);
+  const [creating, setCreating] = useState<NamedNode | undefined>(undefined);
+  const [staging, setStaging] = useState<Staging | undefined>(undefined);
 
   const [mode, setMode] = useState<"view" | "edit">(term.value ? "view" : "edit");
   const { search, setSearch, results, isLoading, error, reset } = useInstanceSearch(shape);
@@ -67,11 +90,91 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
     setMode("view");
   };
 
+  // Mints a fresh, randomly-identified instance of this property's sh:class(es) - mirrors
+  // InstancesSelectEditor's own createNew (see there for why identity is a random IRI for now
+  // rather than something the user assigns).
+  const createNew = () => {
+    if (shClasses.length === 0) return;
+    const subject = factory.namedNode(`urn:uuid:${crypto.randomUUID()}`);
+    // No field-editing modal to stage against - nothing to defer, so create and select it directly.
+    if (nodeShapes.length === 0) {
+      for (const shClass of shClasses) {
+        shape.dataGraph.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
+      }
+      setTerm(subject);
+      reset();
+      setMode("view");
+      return;
+    }
+    const originalQuads = shape.dataGraph.getQuads();
+    const stagingDataGraph = makeReactive(RdfStore.createDefault());
+    for (const quad of originalQuads) stagingDataGraph.addQuad(quad);
+    for (const shClass of shClasses) {
+      stagingDataGraph.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
+    }
+    setStaging({ dataGraph: stagingDataGraph, originalQuads });
+    setCreating(subject);
+  };
+
+  // Applies the staged edits - including the new subject's own rdf:type - as real additions to
+  // `shape.dataGraph` only now, then adopts it as this property's value.
+  const submitCreate = () => {
+    if (creating && staging) {
+      const { additions, deletions } = diffQuads(
+        staging.originalQuads,
+        staging.dataGraph.getQuads(),
+      );
+      for (const quad of deletions) shape.dataGraph.removeQuad(quad);
+      for (const quad of additions) shape.dataGraph.addQuad(quad);
+      setTerm(creating);
+      reset();
+      setMode("view");
+    }
+    setCreating(undefined);
+    setStaging(undefined);
+  };
+
+  // Every other way of dismissing the modal (header close, backdrop, Escape) throws the staged
+  // graph away untouched - `shape.dataGraph` was never written to, so there's nothing to undo.
+  const cancelCreate = () => {
+    setCreating(undefined);
+    setStaging(undefined);
+  };
+
   // Values already used elsewhere for this (possibly multi-valued) property shouldn't be offered
   // again, other than the one this widget instance currently holds - mirrors InstancesSelectEditor.
   const options = (results ?? []).filter(
     (result) =>
       !existingObjects.some((obj) => obj.value === result.iri.value && obj.value !== term.value),
+  );
+
+  // Rendered from both modes below - creating stays in "edit" mode until the modal is submitted
+  // (see submitCreate), so the modal has to stay reachable from the "edit" mode search UI that
+  // triggers it, not just from "view".
+  const createModal = creating && staging && (
+    <Modal
+      open
+      onClose={cancelCreate}
+      title={<Localized id="create-new-reference-title">New item</Localized>}
+    >
+      <NodeUIElementChildren
+        nodeUiElement={
+          new NodeUIElement({
+            shapesGraph: shape.shapesGraph,
+            dataGraph: staging.dataGraph,
+            scoresGraph: shape.scoresGraph,
+            widgetRegistry: shape.widgetRegistry,
+            focusNode: creating,
+            nodeShapes,
+          })
+        }
+      />
+      <div className="st-autocomplete__create-actions">
+        <button type="button" className="st-button st-button--primary" onClick={submitCreate}>
+          <Localized id="create-new-reference-done">Done</Localized>
+        </button>
+      </div>
+    </Modal>
   );
 
   if (mode === "view") {
@@ -95,6 +198,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
             <Search />
           </button>
         </Localized>
+        {createModal}
       </div>
     );
   }
@@ -141,6 +245,20 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
         />
       </Localized>
 
+      {enableCreateInPlace && shClasses.length > 0 && (
+        <button
+          type="button"
+          className="st-create-option st-autocomplete__create"
+          // Keeps focus on the input during the click, same as every result row below - onClick
+          // still runs normally afterwards.
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={createNew}
+        >
+          <Plus />
+          <Localized id="create-new-reference-option">Create new…</Localized>
+        </button>
+      )}
+
       {results !== undefined && (
         <div id={listboxId} className="st-autocomplete__results" role="listbox">
           {error ? (
@@ -185,6 +303,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
           )}
         </div>
       )}
+      {createModal}
     </div>
   );
 }

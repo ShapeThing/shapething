@@ -1,0 +1,70 @@
+.st-view-mode {
+  display: flex;
+  flex-direction: column;
+}
+
+.st-property-language-tag {
+  font-weight: normal;
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text-muted);
+}
+
+.st-property-items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-3);
+  width: 100%;
+}
+
+.st-property-object-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+  width: 100%;
+}
+
+.st-property-object {
+  display: flex;
+  align-items: start;
+  gap: var(--size-2);
+  flex: 1;
+}
+
+.st-property-object-main {
+  flex: 1;
+  gap: var(--size-1);
+  display: flex;
+  flex-direction: column;
+}
+
+.st-property-object__widget {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+}
+
+.st-property-object__unit {
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text-muted);
+}
+
+.st-choice-element {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-3);
+}
+
+.st-member-shape-list__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.st-member-shape-list__item {
+  display: flex;
+  align-items: start;
+}

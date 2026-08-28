@@ -1,5 +1,9 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Engine as ShaclEngine, type ValidateResult } from "shacl-engine";
+import {
+  constraints as sparqlConstraints,
+  functions as sparqlFunctions,
+} from "shacl-engine/sparql.js";
 import { factory } from "@/helpers/factory.ts";
 import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
@@ -37,7 +41,11 @@ export default function ValidationContextProvider({ children }: { children: Reac
   // single Validator compiled from it up front stays valid for every subsequent revalidation -
   // same one-engine-per-shapesGraph reasoning as score.ts's own getShaclEngine/shaclEngineCache.
   const engineRef = useRef<ShaclEngine | null>(null);
-  engineRef.current ??= new ShaclEngine(shapesGraph.asDataset(), { factory });
+  engineRef.current ??= new ShaclEngine(shapesGraph.asDataset(), {
+    factory,
+    functions: sparqlFunctions,
+    constraints: sparqlConstraints,
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -52,13 +60,14 @@ export default function ValidationContextProvider({ children }: { children: Reac
         );
         if (!cancelled) setResults(flattenResults(report.results));
       } catch (error) {
-        // A shui:-only extension construct shacl-engine can't evaluate as real SHACL (e.g. a
-        // dynamic sh:in [ sh:select "..." ] - see AutoCompleteEditor/validateSearchResults.ts,
-        // which already guards its own separate shacl-engine call the same way) throws instead of
-        // being silently inert - failing the whole live-validation pass for one such property
-        // would otherwise take down the validation UI for every other, perfectly valid property on
-        // the same node. Leaves `results` as whatever the last successful run produced rather than
-        // clearing it, since a crashed run has no actual conformance information to report.
+        // The engine is constructed with shacl-engine/sparql.js's functions/constraints (see the
+        // shacl-engine patch swapping its Comunica dependency for real SERVICE support), so a
+        // dynamic sh:in [ sh:select "..." ] is genuinely evaluated rather than crashing. This stays
+        // defensive for real failures instead (e.g. an unreachable SERVICE endpoint) - failing the
+        // whole live-validation pass for one bad property would otherwise take down the validation
+        // UI for every other, perfectly valid property on the same node. Leaves `results` as
+        // whatever the last successful run produced rather than clearing it, since a crashed run
+        // has no actual conformance information to report.
         console.warn("[shacl-everything] SHACL validation failed:", error);
       } finally {
         if (!cancelled) setIsValidating(false);

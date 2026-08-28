@@ -3,6 +3,7 @@ import { Plus } from "@/helpers/icons.tsx";
 import { sh, shui } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { Localized } from "@fluent/react";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import { severityFromTerm } from "@/helpers/severityFromTerm.ts";
 import "./style.css";
@@ -32,21 +33,27 @@ export default function PropertyUIComponentAdd({
   // rendered at all in that case. A Warning or Info severity still lets the user add past it (e.g.
   // a deprecated field they may still have a reason to override), relying on validation to flag
   // the result afterwards instead of blocking the action outright.
-  const hardBlockedByMaxCount =
-    maxCountReached && (severity === undefined || severity === "error");
+  const hardBlockedByMaxCount = maxCountReached && (severity === undefined || severity === "error");
 
-  let disabled = showEmptyWidget;
+  const disabled = showEmptyWidget;
 
   const { meta } = useWidget(shui("editor"), propertyUIElement) ?? {};
+  const { enableCreateInPlace } = useEnvironment();
 
-  if (meta?.canAddMore) {
-    const canAddMore = meta.canAddMore(propertyUIElement);
-    if (canAddMore === false) disabled = true;
-  }
+  // A widget's own "no more values possible" signal (e.g. InstancesSelectEditor once every
+  // instance is already in use) is a hard, structural block like sh:maxCount above, not a
+  // transient one like showEmptyWidget - so it hides the button too, rather than showing a
+  // permanently-disabled control the user can't do anything about. But when enableCreateInPlace is
+  // on, that widget offers its own always-visible "Create new" option once opened (see
+  // InstancesSelectEditor/AutoCompleteEditor), so "no existing instances left to pick" is no longer
+  // a dead end and shouldn't block adding another value at all.
+  const noOptionsAvailable =
+    !enableCreateInPlace && meta?.canAddMore?.(propertyUIElement) === false;
 
   return (
     !fieldIsSingleValued &&
-    !hardBlockedByMaxCount && (
+    !hardBlockedByMaxCount &&
+    !noOptionsAvailable && (
       <Localized id="property-add-value" attrs={{ "aria-label": true }}>
         <button
           disabled={disabled}

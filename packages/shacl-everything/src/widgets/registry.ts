@@ -164,14 +164,18 @@ export function getWidgetComponent(
 }
 
 /**
- * Resolves an editor widget IRI to its meta.ts (see WidgetMeta) - `undefined` both when the
- * widget has no meta.ts and when it has one that declares no createTerm override.
+ * Resolves a widget IRI to its meta.ts (see WidgetMeta) - `undefined` both when the widget has no
+ * meta.ts and when it has one that declares no overrides. `createTerm` is only ever populated for
+ * an editor (see WidgetMeta's own doc), but `singleUnifiedWidget` applies just as well to a viewer
+ * (e.g. ValueTableViewer, which renders every value itself rather than once per value) - so both
+ * categories are searched, by IRI equality, without needing to know which one a caller's widget
+ * came from.
  */
 export function getWidgetMeta(
   widget: NamedNode,
   widgets: Widgets = defaultWidgets,
 ): WidgetMeta | undefined {
-  return findWidget(widgets.editors, widget)?.meta;
+  return findWidget(widgets.editors, widget)?.meta ?? findWidget(widgets.viewers, widget)?.meta;
 }
 
 /**

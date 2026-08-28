@@ -1,0 +1,10 @@
+diff --git a/lib/features/sparql/sparql.js b/lib/features/sparql/sparql.js
+index 6c56cb5927e54af4fe662419e565e1c8f4e0fcdd..4fb3f083c12d986e6f2849587d58c6a4346df8b3 100644
+--- a/lib/features/sparql/sparql.js
++++ b/lib/features/sparql/sparql.js
+@@ -1,4 +1,4 @@
+-import { QueryEngine } from '@comunica/query-sparql-rdfjs-lite'
++import { QueryEngine } from '@comunica/query-sparql'
+ import { Generator } from '@traqula/generator-sparql-1-2'
+ import { Parser } from '@traqula/parser-sparql-1-2'
+ import { AstTransformer, AstFactory } from '@traqula/rules-sparql-1-2'

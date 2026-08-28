@@ -65,6 +65,25 @@
   }
 }
 
+.st-autocomplete__create {
+  padding-inline: var(--size-2);
+  font: inherit;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--st-color-border);
+  cursor: pointer;
+
+  &:hover {
+    background-color: var(--st-primary-color-lighter);
+  }
+}
+
+.st-autocomplete__create-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--size-3);
+}
+
 .st-autocomplete__empty {
   display: flex;
   align-items: center;

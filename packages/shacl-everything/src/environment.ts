@@ -77,6 +77,13 @@ export type Environment = {
   enableInterfaceLanguageWithShapesLabelsOnly?: boolean;
   // Enables the "Edit in place" button on shui:EnumSelectEditor when the selected value is a sh:node. When false, the button will not be shown and the user will have to navigate to the linked resource to edit it.
   enableEditInPlace?: boolean;
+  // Enables a "Create new" option on reference-picking widgets (shui:InstancesSelectEditor,
+  // shui:AutoCompleteEditor) for properties whose value is a resource (sh:class), in addition to
+  // picking one of the resources already in dataGraph. Mints a fresh instance and opens it for
+  // editing right away (see valueNodeShapes) - the sibling feature to enableEditInPlace, for
+  // creating rather than editing a referenced resource. When false, only existing instances can be
+  // picked, same as before this option existed.
+  enableCreateInPlace?: boolean;
   // Called when the edit mode form is submitted. See SubmitResult.
   onSubmit?: (result: SubmitResult) => void;
 };
@@ -111,6 +118,7 @@ export const defaultEnvironment: Environment = {
   enableFullLanguageRemoval: true,
   enableInterfaceLanguageWithShapesLabelsOnly: true,
   enableEditInPlace: true,
+  enableCreateInPlace: true,
 };
 
 export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph" | "dataGraph"> = {
@@ -132,6 +140,7 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableFullLanguageRemoval: false,
   enableInterfaceLanguageWithShapesLabelsOnly: false,
   enableEditInPlace: false,
+  enableCreateInPlace: false,
 };
 
 export const minimalEnvironmentWithContentLanguages: Omit<
