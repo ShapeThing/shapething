@@ -6,7 +6,7 @@ type Story = StoryObj<ShaclRendererProps>;
 
 export default {
   title:
-    "Shacl Renderer/SHACL 1.2 Core/7. Core Constraint Components/7.8 Shape-based Constraint Components/7.8.1 sh:node",
+    "SHACL 1.2 Core/7. Core Constraint Components/7.8 Shape-based Constraint Components/7.8.1 sh:node",
   component: ShaclRenderer,
 };
 

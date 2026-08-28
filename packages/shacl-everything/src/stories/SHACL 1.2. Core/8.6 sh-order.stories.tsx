@@ -5,7 +5,7 @@ import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/SHACL 1.2 Core/8. Non-Validating Shape Characteristics/8.6 sh:order",
+  title: "SHACL 1.2 Core/8. Non-Validating Shape Characteristics/8.6 sh:order",
   component: ShaclRenderer,
 };
 

@@ -5,7 +5,7 @@ import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/SHACL 1.2 UI/11. Property Roles/11.3 Built-in Property Roles/11.3.1 shui:LabelRole",
+  title: "SHACL 1.2 UI/11. Property Roles/11.3 Built-in Property Roles/11.3.1 shui:LabelRole",
   component: ShaclRenderer,
 };
 

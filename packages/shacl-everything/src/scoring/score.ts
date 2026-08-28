@@ -1,6 +1,6 @@
 import type { NamedNode, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
-import { Validator as ShaclEngine } from "shacl-engine";
+import { Engine as ShaclEngine } from "shacl-engine";
 import { factory } from "@/helpers/factory.ts";
 import { rdf, sh, shui, xsd } from "@/helpers/namespaces.ts";
 
@@ -118,7 +118,11 @@ function isShapeNode(node: Term, shapesGraph: RdfStore): boolean {
     [sh("targetSubjectsOf"), null],
     [sh("targetObjectsOf"), null],
   ] as const;
-  if (ownMarkers.some(([predicate, object]) => shapesGraph.getQuads(node, predicate, object).length > 0)) {
+  if (
+    ownMarkers.some(
+      ([predicate, object]) => shapesGraph.getQuads(node, predicate, object).length > 0,
+    )
+  ) {
     return true;
   }
 
@@ -359,7 +363,7 @@ export function accept({
 }
 
 // Compiling a ShaclEngine parses every shape in shapesGraph up front (see shacl-engine's
-// Validator constructor), which is wasted work when repeated for the same shapesGraph - as
+// Engine constructor), which is wasted work when repeated for the same shapesGraph - as
 // happens here, since matcher() always validates against the same scoringGraph, once or twice
 // per candidate widget. Keyed by object identity (scoringGraph is a stable, cached instance per
 // registry.ts), so this never serves a stale engine for a graph that's actually changed.

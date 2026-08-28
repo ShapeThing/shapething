@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { Validator as ShaclEngine, type ValidateResult } from "shacl-engine";
+import { Engine as ShaclEngine, type ValidateResult } from "shacl-engine";
 import { factory } from "@/helpers/factory.ts";
 import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
@@ -51,6 +51,15 @@ export default function ValidationContextProvider({ children }: { children: Reac
           nodeShapes.map((nodeShape) => ({ terms: [nodeShape] })),
         );
         if (!cancelled) setResults(flattenResults(report.results));
+      } catch (error) {
+        // A shui:-only extension construct shacl-engine can't evaluate as real SHACL (e.g. a
+        // dynamic sh:in [ sh:select "..." ] - see AutoCompleteEditor/validateSearchResults.ts,
+        // which already guards its own separate shacl-engine call the same way) throws instead of
+        // being silently inert - failing the whole live-validation pass for one such property
+        // would otherwise take down the validation UI for every other, perfectly valid property on
+        // the same node. Leaves `results` as whatever the last successful run produced rather than
+        // clearing it, since a crashed run has no actual conformance information to report.
+        console.warn("[shacl-everything] SHACL validation failed:", error);
       } finally {
         if (!cancelled) setIsValidating(false);
       }

@@ -6,7 +6,7 @@ import { ex } from "@/helpers/namespaces.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/Showcases",
+  title: "Showcases",
   component: ShaclRenderer,
 };
 

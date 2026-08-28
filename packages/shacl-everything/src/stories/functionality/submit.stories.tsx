@@ -7,7 +7,7 @@ import type { SubmitResult } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/Functionality/Submitting the edit form",
+  title: "Interaction/Submitting the edit form",
   component: ShaclRenderer,
 };
 

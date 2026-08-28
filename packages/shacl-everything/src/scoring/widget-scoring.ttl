@@ -185,111 +185,248 @@ shui:hasRootClassConstraint
     ] ;
 .
 
+# sh:datatype and sh:nodeKind can, per SHACL 1.2, hold either a plain IRI or a SHACL list of IRIs
+# (e.g. `sh:datatype ( xsd:string xsd:langString )`) - a plain `sh:path sh:datatype ; sh:hasValue
+# ...` can only ever see the list's head blank node, never its members (spec issue #1179). Every
+# shape below that inspects sh:datatype/sh:nodeKind is therefore an sh:or of the direct-value case
+# (unchanged) and a second branch walking the list via `sh:datatype/rdf:rest*/rdf:first` - written
+# as the sequence path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) since shacl-engine's
+# path parser doesn't support nesting a compound sub-path inside sh:zeroOrOnePath/sh:alternativePath.
+
 shui:hasCustomDatatype
     a sh:NodeShape ;
     sh:property [
         sh:path sh:datatype ;
         sh:minCount 1 ;
     ] ;
-    sh:not [
-        sh:property [
-            sh:path sh:datatype ;
-            sh:minCount 1 ;
-            sh:pattern "^http://www.w3.org/2001/XMLSchema#|^http://www.w3.org/1999/02/22-rdf-syntax-ns#" ;
-        ] ;
-    ] ;
+    sh:or (
+        [
+            # Direct case: exactly one value node, so a plain "does it fail to match the
+            # well-known-prefix pattern" check is safe. sh:nodeKind sh:IRI excludes a SHACL list's
+            # head blank node (which would otherwise also trivially fail the pattern match and be
+            # mistaken for "custom") - list-valued sh:datatype is handled by the second branch only.
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:nodeKind sh:IRI ;
+            ] ;
+            sh:not [
+                sh:property [
+                    sh:path sh:datatype ;
+                    sh:minCount 1 ;
+                    sh:pattern "^http://www.w3.org/2001/XMLSchema#|^http://www.w3.org/1999/02/22-rdf-syntax-ns#" ;
+                ] ;
+            ] ;
+        ]
+        [
+            # List case: an existential "at least one member is custom" check, via
+            # sh:qualifiedValueShape - a plain sh:pattern here would instead require *every* member
+            # to be custom, wrongly rejecting a list that mixes well-known and custom datatypes.
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:qualifiedValueShape [
+                    sh:not [
+                        sh:pattern "^http://www.w3.org/2001/XMLSchema#|^http://www.w3.org/1999/02/22-rdf-syntax-ns#" ;
+                    ] ;
+                ] ;
+                sh:qualifiedMinCount 1 ;
+            ] ;
+        ]
+    ) ;
 .
 
 shui:hasNodeKindIRIConstraint
     a sh:NodeShape ;
-    sh:property [
-        sh:path sh:nodeKind ;
-        sh:minCount 1 ;
-        sh:hasValue sh:IRI ;
-    ] ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:nodeKind ;
+                sh:minCount 1 ;
+                sh:hasValue sh:IRI ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:nodeKind [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue sh:IRI ;
+            ] ;
+        ]
+    ) ;
 .
 
 shui:hasNodeKindLiteralConstraint
     a sh:NodeShape ;
-    sh:property [
-        sh:path sh:nodeKind ;
-        sh:minCount 1 ;
-        sh:hasValue sh:Literal ;
-    ] ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:nodeKind ;
+                sh:minCount 1 ;
+                sh:hasValue sh:Literal ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:nodeKind [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue sh:Literal ;
+            ] ;
+        ]
+    ) ;
 .
 
 shui:hasDatatypeStringConstraint
     a sh:NodeShape ;
-    sh:property [
-        sh:path sh:datatype ;
-        sh:minCount 1 ;
-        sh:hasValue xsd:string ;
-    ] ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:hasValue xsd:string ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue xsd:string ;
+            ] ;
+        ]
+    ) ;
 .
 
 shui:hasDatatypeLangStringConstraint
     a sh:NodeShape ;
-    sh:property [
-        sh:path sh:datatype ;
-        sh:minCount 1 ;
-        sh:hasValue rdf:langString ;
-    ] ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:hasValue rdf:langString ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue rdf:langString ;
+            ] ;
+        ]
+    ) ;
 .
 
 shui:hasDatatypeBooleanConstraint
     a sh:NodeShape ;
-    sh:property [
-        sh:path sh:datatype ;
-        sh:minCount 1 ;
-        sh:hasValue xsd:boolean ;
-    ] ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:hasValue xsd:boolean ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue xsd:boolean ;
+            ] ;
+        ]
+    ) ;
 .
 
 shui:hasDatatypeDateConstraint
     a sh:NodeShape ;
-    sh:property [
-        sh:path sh:datatype ;
-        sh:minCount 1 ;
-        sh:hasValue xsd:date ;
-    ] ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:hasValue xsd:date ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue xsd:date ;
+            ] ;
+        ]
+    ) ;
 .
 
 shui:hasDatatypeDateTimeConstraint
     a sh:NodeShape ;
-    sh:property [
-        sh:path sh:datatype ;
-        sh:minCount 1 ;
-        sh:hasValue xsd:dateTime ;
-    ] ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:hasValue xsd:dateTime ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue xsd:dateTime ;
+            ] ;
+        ]
+    ) ;
 .
 
 shui:hasDatatypeHTMLConstraint
     a sh:NodeShape ;
-    sh:property [
-        sh:path sh:datatype ;
-        sh:minCount 1 ;
-        sh:hasValue rdf:HTML ;
-    ] ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:hasValue rdf:HTML ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue rdf:HTML ;
+            ] ;
+        ]
+    ) ;
 .
 
 shui:hasDatatypeNumericConstraint
     a sh:NodeShape ;
-    sh:property [
-        sh:path sh:datatype ;
-        sh:minCount 1 ;
-        sh:or (
-            [
-                sh:hasValue xsd:decimal ;
-            ]
-            [
-                sh:hasValue xsd:integer ;
-            ]
-            [
-                sh:hasValue xsd:double ;
-            ]
-            [
-                sh:hasValue xsd:float ;
-            ]
-        ) ;
-    ] ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:or (
+                    [ sh:hasValue xsd:decimal ]
+                    [ sh:hasValue xsd:integer ]
+                    [ sh:hasValue xsd:double ]
+                    [ sh:hasValue xsd:float ]
+                ) ;
+            ] ;
+        ]
+        [
+            # List case: sh:or nested in a property shape is a per-value-node (universal) check,
+            # not an existential one like sh:hasValue - it would wrongly require *every* list
+            # member to be numeric. sh:qualifiedValueShape gives the "at least one member is
+            # numeric" semantics actually wanted here, same as hasCustomDatatype's list branch.
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:qualifiedValueShape [
+                    sh:or (
+                        [ sh:hasValue xsd:decimal ]
+                        [ sh:hasValue xsd:integer ]
+                        [ sh:hasValue xsd:double ]
+                        [ sh:hasValue xsd:float ]
+                    ) ;
+                ] ;
+                sh:qualifiedMinCount 1 ;
+            ] ;
+        ]
+    ) ;
 .

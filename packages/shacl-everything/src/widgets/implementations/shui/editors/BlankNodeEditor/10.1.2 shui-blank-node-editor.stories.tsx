@@ -6,13 +6,12 @@ import { minimalEnvironment } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title:
-    "Shacl Renderer/SHACL 1.2 UI/10. Built-in Widgets/10.1 Editors/10.1.15 shui:TextFieldEditor",
+  title: "SHACL 1.2 UI/10. Built-in Widgets/10.1 Editors/10.1.2 shui:BlankNodeEditor",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };
 
-export const shuiTextFieldEditor: Story = {
-  name: "xsd:string value",
-  args: argsByTestFile("10.1.15 shui-text-field-editor.ttl", import.meta.url),
+export const shuiBlankNodeEditor: Story = {
+  name: "Read-only display of a blank node value",
+  args: argsByTestFile("10.1.2 shui-blank-node-editor.ttl", import.meta.url),
 };

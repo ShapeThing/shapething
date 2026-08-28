@@ -7,10 +7,6 @@ import { copyStoryFixtures } from "./copyStoryFixtures.ts";
 function getAbsolutePath(value: string) {
   return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
 }
-const storiesDir = join(
-  dirname(fileURLToPath(import.meta.url)),
-  "../src/stories",
-);
 
 const config: StorybookConfig = {
   stories: [
@@ -27,10 +23,7 @@ const config: StorybookConfig = {
   async viteFinal(config) {
     const srcDir = join(dirname(fileURLToPath(import.meta.url)), "../src");
     config.plugins ??= [];
-    config.plugins.push(
-      checkBannedContent(srcDir),
-      copyStoryFixtures(storiesDir),
-    );
+    config.plugins.push(checkBannedContent(srcDir), copyStoryFixtures(srcDir));
     return config;
   },
 };

@@ -5,7 +5,7 @@ import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/SHACL 1.2 UI/11. Property Roles/11.2 Qualified Role Annotation",
+  title: "SHACL 1.2 UI/11. Property Roles/11.2 Qualified Role Annotation",
   component: ShaclRenderer,
 };
 

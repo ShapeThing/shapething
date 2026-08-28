@@ -431,8 +431,8 @@ importers:
         specifier: ^6.1.2
         version: 6.1.2(react@19.2.7)
       shacl-engine:
-        specifier: ^1.1.2
-        version: 1.1.2
+        specifier: github:rdf-ext/shacl-engine#1d111fc772a71ec2118eed2974709c2b04f47510
+        version: https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510
       string-to-stream:
         specifier: ^3.0.1
         version: 3.0.1
@@ -8411,6 +8411,9 @@ packages:
   grapoi@1.2.0:
     resolution: {integrity: sha512-oK+qPeiYugQKEm57IlgmedU6NrZMz0nA5g8MJ6db5afOp//isTC1P0zqwSlwfDJrUt+2TEGIoQlW7C8/a2QalQ==}
 
+  grapoi@1.3.0:
+    resolution: {integrity: sha512-hV/rM/7a5MqzpdI7Zc0muQdD+njoOxMVjEf9U2Y79Uv/lfVNn68NZKU2MHlxlAKdkqEcAOBbQbBS1cdVHbfFoQ==}
+
   h3@1.15.11:
     resolution: {integrity: sha512-L3THSe2MPeBwgIZVSH5zLdBBU90TOxarvhK9d04IDY2AmVS8j2Jz2LIWtwsGOU3lu2I5jCN7FNvVfY2+XyF+mg==}
 
@@ -10424,6 +10427,10 @@ packages:
 
   shacl-engine@1.1.2:
     resolution: {integrity: sha512-ypclUwHJ6KPYUZb8ggslN7BSOwza9vgIwQgLY0oey0Xbzla6B7cRWroeDvfkntYzU1HnERgGvC/qsKge3a6s1Q==}
+
+  shacl-engine@https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510:
+    resolution: {gitHosted: true, integrity: sha512-xDf8f7kNUF9peeKJqXDaS3zjeSqZFHip73DbNkGlYy/Q6OHiNVDJXepl0A94O2XDOkETSv1SI0pPZkcgQf1Leg==, tarball: https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510}
+    version: 1.0.2
 
   shaclc-parse@1.4.3:
     resolution: {integrity: sha512-MQJWVFjfzzMUvieFO0STWjIo49ywy63UkVSsr0e8+8xHUns6X+i3yWYxNKd+GtSEJjBNZxxrUubog+hnd7PvRA==}
@@ -24897,6 +24904,11 @@ snapshots:
       '@rdfjs/namespace': 2.0.1
       '@rdfjs/term-set': 2.0.3
 
+  grapoi@1.3.0:
+    dependencies:
+      '@rdfjs/namespace': 2.0.1
+      '@rdfjs/term-set': 2.0.3
+
   h3@1.15.11:
     dependencies:
       cookie-es: 1.2.3
@@ -27915,6 +27927,24 @@ snapshots:
       '@rdfjs/term-set': 2.0.3
       '@rdfjs/to-ntriples': 3.0.1
       grapoi: 1.2.0
+      lodash: 4.18.1
+      rdf-literal: 2.0.0
+      rdf-validation: 0.1.1
+      readable-stream: 4.7.0
+    transitivePeerDependencies:
+      - encoding
+
+  shacl-engine@https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510:
+    dependencies:
+      '@comunica/query-sparql-rdfjs-lite': 5.2.3
+      '@rdfjs/namespace': 2.0.1
+      '@rdfjs/term-map': 2.0.2
+      '@rdfjs/term-set': 2.0.3
+      '@rdfjs/to-ntriples': 3.0.1
+      '@traqula/generator-sparql-1-2': 1.1.6
+      '@traqula/parser-sparql-1-2': 1.1.6
+      '@traqula/rules-sparql-1-2': 1.1.6
+      grapoi: 1.3.0
       lodash: 4.18.1
       rdf-literal: 2.0.0
       rdf-validation: 0.1.1

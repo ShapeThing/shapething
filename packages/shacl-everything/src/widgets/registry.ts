@@ -1,7 +1,8 @@
 import type { NamedNode, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
+import { factory } from "@/helpers/factory.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
-import { rdf, sh, shui, st } from "@/helpers/namespaces.ts";
+import { prefixes, rdf, sh } from "@/helpers/namespaces.ts";
 import type {
   GroupWidgetComponent,
   GroupWidgetRegistryEntry,
@@ -12,62 +13,42 @@ import type {
 } from "@/widgets/types.ts";
 import widgetScoringTtl from "@/scoring/widget-scoring.ttl?raw";
 
-const shuiEditorScoringGraphs = import.meta.glob(
-  "/src/widgets/implementations/shui/editors/*/score.ttl",
-  {
-    eager: true,
-    query: "?raw",
-    import: "default",
-  },
-) as Record<string, string>;
-const shuiViewerScoringGraphs = import.meta.glob(
-  "/src/widgets/implementations/shui/viewers/*/score.ttl",
-  {
-    eager: true,
-    query: "?raw",
-    import: "default",
-  },
-) as Record<string, string>;
+// Every widget implementation lives at implementations/<namespace>/<category>/<Name>/ - e.g.
+// shui/editors/TextFieldEditor or st/groups/CollapsiblePropertyGroup. `category` is which of
+// Widgets' three buckets (editors/viewers/groups) the widget registers under; `namespace` is
+// which RDF vocabulary its IRI belongs to. Neither is fixed to one value up front (editors/viewers
+// aren't hardcoded to shui: any more than groups are hardcoded to sh:/st:) - both are read off the
+// path generically, so a new namespace or category folder under implementations/ is picked up
+// without touching this file. The namespace folder name must be a prefix registered in
+// helpers/namespaces.ts's `prefixes` (its own alias, e.g. "sh"/"shui"/"st") - that's the single
+// source of truth for which IRI a namespace folder resolves to.
+const components = import.meta.glob("/src/widgets/implementations/*/*/*/widget.tsx", {
+  eager: true,
+  import: "default",
+}) as Record<string, WidgetComponent | GroupWidgetComponent>;
 
-const shuiEditorComponents = import.meta.glob(
-  "/src/widgets/implementations/shui/editors/*/widget.tsx",
-  {
-    eager: true,
-    import: "default",
-  },
-) as Record<string, WidgetComponent>;
-const shuiViewerComponents = import.meta.glob(
-  "/src/widgets/implementations/shui/viewers/*/widget.tsx",
-  {
-    eager: true,
-    import: "default",
-  },
-) as Record<string, WidgetComponent>;
+const scoringGraphs = import.meta.glob("/src/widgets/implementations/*/*/*/score.ttl", {
+  eager: true,
+  query: "?raw",
+  import: "default",
+}) as Record<string, string>;
 
-// Only editors ever produce a fresh/empty term for a property, so meta.ts (and createTerm)
-// is an editor-only concept - viewers have nothing to create.
-const shuiEditorMeta = import.meta.glob("/src/widgets/implementations/shui/editors/*/meta.ts", {
+// Only editors ever produce a fresh/empty term for a property, so meta.ts (and createTerm) is an
+// editor-only concept in practice - viewers/groups have nothing to create - but is discovered the
+// same generic way; a meta.ts under a viewers/groups folder would simply never be looked up.
+const meta = import.meta.glob("/src/widgets/implementations/*/*/*/meta.ts", {
   eager: true,
   import: "default",
 }) as Record<string, WidgetMeta>;
 
-// Groups aren't all under one namespace like editors/viewers are (shui:) - sh/groups/PropertyGroup
-// and st/groups/CollapsiblePropertyGroup live side by side - so the glob is namespace-agnostic
-// (a single `*` matches exactly one path segment) and each folder's namespace segment is resolved
-// against this map to build its widget's real IRI.
-const groupComponents = import.meta.glob("/src/widgets/implementations/*/groups/*/widget.tsx", {
-  eager: true,
-  import: "default",
-}) as Record<string, GroupWidgetComponent>;
-
-const groupNamespaces: Record<string, (localName: string) => NamedNode> = {
-  sh: (name) => sh(name),
-  st: (name) => st(name),
-};
-
 // e.g. "/src/widgets/implementations/shui/editors/TextFieldEditor/widget.tsx" -> "TextFieldEditor"
 function folderName(path: string): string {
   return path.split("/").at(-2)!;
+}
+
+// e.g. "/src/widgets/implementations/shui/editors/TextFieldEditor/widget.tsx" -> "editors"
+function categorySegment(path: string): string {
+  return path.split("/").at(-3)!;
 }
 
 // e.g. "/src/widgets/implementations/sh/groups/PropertyGroup/widget.tsx" -> "sh"
@@ -75,17 +56,24 @@ function namespaceSegment(path: string): string {
   return path.split("/").at(-4)!;
 }
 
-function buildEntries(
-  components: Record<string, WidgetComponent>,
-  scoringGraphs: Record<string, string>,
-  meta: Record<string, WidgetMeta>,
-): Record<string, WidgetRegistryEntry> {
+function widgetIri(path: string): NamedNode {
+  const segment = namespaceSegment(path);
+  const prefix = prefixes[segment];
+  if (!prefix) {
+    throw new Error(
+      `Unknown widget namespace "${segment}" for ${path} - add it to helpers/namespaces.ts's prefixes`,
+    );
+  }
+  return factory.namedNode(`${prefix}${folderName(path)}`);
+}
+
+function buildEntries(category: "editors" | "viewers"): Record<string, WidgetRegistryEntry> {
   const entries: Record<string, WidgetRegistryEntry> = {};
   for (const [path, Component] of Object.entries(components)) {
-    const name = folderName(path);
-    entries[name] = {
-      widget: shui(name),
-      Component,
+    if (categorySegment(path) !== category) continue;
+    entries[folderName(path)] = {
+      widget: widgetIri(path),
+      Component: Component as WidgetComponent,
       meta: meta[path.replace(/widget\.tsx$/, "meta.ts")],
       scoringGraph: scoringGraphs[path.replace(/widget\.tsx$/, "score.ttl")],
     };
@@ -93,15 +81,14 @@ function buildEntries(
   return entries;
 }
 
-function buildGroupEntries(
-  components: Record<string, GroupWidgetComponent>,
-): Record<string, GroupWidgetRegistryEntry> {
+function buildGroupEntries(): Record<string, GroupWidgetRegistryEntry> {
   const entries: Record<string, GroupWidgetRegistryEntry> = {};
   for (const [path, Component] of Object.entries(components)) {
-    const name = folderName(path);
-    const buildNamespace = groupNamespaces[namespaceSegment(path)];
-    if (!buildNamespace) throw new Error(`Unknown group widget namespace for ${path}`);
-    entries[name] = { widget: buildNamespace(name), Component };
+    if (categorySegment(path) !== "groups") continue;
+    entries[folderName(path)] = {
+      widget: widgetIri(path),
+      Component: Component as GroupWidgetComponent,
+    };
   }
   return entries;
 }
@@ -114,9 +101,9 @@ function buildGroupEntries(
  * e.g. `{ ...defaultWidgets, editors: { ...defaultWidgets.editors, TextFieldEditor: MyWidget } }`.
  */
 export const defaultWidgets: Widgets = {
-  editors: buildEntries(shuiEditorComponents, shuiEditorScoringGraphs, shuiEditorMeta),
-  viewers: buildEntries(shuiViewerComponents, shuiViewerScoringGraphs, {}),
-  groups: buildGroupEntries(groupComponents),
+  editors: buildEntries("editors"),
+  viewers: buildEntries("viewers"),
+  groups: buildGroupEntries(),
 };
 
 export type WidgetMode = "edit" | "view";

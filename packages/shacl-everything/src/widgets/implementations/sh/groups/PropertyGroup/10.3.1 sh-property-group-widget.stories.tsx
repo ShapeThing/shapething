@@ -7,7 +7,7 @@ import { minimalEnvironment } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/SHACL 1.2 UI/10. Built-in Widgets/10.3 Groups/10.3.1 sh:PropertyGroup",
+  title: "SHACL 1.2 UI/10. Built-in Widgets/10.3 Groups/10.3.1 sh:PropertyGroup",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };

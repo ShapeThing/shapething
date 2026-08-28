@@ -4,7 +4,7 @@ declare module "shacl-engine" {
   type ValidateData = {
     dataset: DatasetCore;
     // A missing/undefined term means "no specific focus node" - the validator falls back to
-    // resolving every shape's own sh:target* declarations instead (see Validator.js's validate()).
+    // resolving every shape's own sh:target* declarations instead (see Engine.js's validate()).
     terms?: (Term | undefined)[];
   };
 
@@ -22,9 +22,9 @@ declare module "shacl-engine" {
     terms: Term[];
   };
 
-  // See node_modules/shacl-engine's lib/Result.js - no published types exist for this package.
-  // Exported so callers (e.g. ValidationContextProvider) can type the raw `report.results` they
-  // read off Validator#validate's return value.
+  // See node_modules/shacl-engine's lib/validation/Result.js - no published types exist for this
+  // package. Exported so callers (e.g. ValidationContextProvider) can type the raw
+  // `report.results` they read off Engine#validate's return value.
   export type ValidateResult = {
     focusNode: Pointer;
     // The specific offending value, when the violated constraint concerns one (e.g.
@@ -40,7 +40,7 @@ declare module "shacl-engine" {
     results: ValidateResult[];
   };
 
-  export class Validator {
+  export class Engine {
     constructor(shapes: DatasetCore, options?: { factory?: DataFactory });
     validate(data: ValidateData, shapes?: ShapeRef[]): Promise<ValidateReport>;
   }

@@ -6,7 +6,7 @@ type Story = StoryObj<ShaclRendererProps>;
 
 export default {
   title:
-    "Shacl Renderer/SHACL 1.2 Core/6. Validation and Graphs/6.7 Validation Report/6.7.2 Validation Result/6.7.2.8 sh:resultSeverity",
+    "SHACL 1.2 Core/6. Validation and Graphs/6.7 Validation Report/6.7.2 Validation Result/6.7.2.8 sh:resultSeverity",
   component: ShaclRenderer,
 };
 

@@ -6,7 +6,7 @@ type Story = StoryObj<ShaclRendererProps>;
 
 export default {
   title:
-    "Shacl Renderer/SHACL 1.2 Core/7. Core Constraint Components/7.7 Logical Constraint Components/7.7.4 sh:xone",
+    "SHACL 1.2 Core/7. Core Constraint Components/7.7 Logical Constraint Components/7.7.4 sh:xone",
   component: ShaclRenderer,
   args: { enableLogicalBranchSwitching: true },
 };
