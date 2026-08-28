@@ -7,7 +7,8 @@ import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePro
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
-import type { Literal, NamedNode, Term } from "@rdfjs/types";
+import { shapesTargetingClass } from "@/resolution/targets.ts";
+import type { Literal, NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 
 type PropertyLabelOptions = {
@@ -138,19 +139,29 @@ type ValueNodeLabelOptions = {
   languages?: BCP47[];
 };
 
-// The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
-// node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole `role`.
+/**
+ * The node shape(s) describing a property's value: its own explicit sh:node, unioned with any
+ * node shape in shapesGraph that targets its sh:class via sh:targetClass (see resolution/
+ * targets.ts's shapesTargetingClass) - so a property that only declares sh:class still resolves to
+ * a real shape to render/label a referenced value against, without redundantly restating sh:node.
+ * Shared by propertyPathsByRole below and anything else that needs to know which shape governs a
+ * referenced resource's own fields (e.g. editInPlace/createInPlace).
+ */
+export function valueNodeShapes(propertyShape: PropertyUIElement): Quad_Subject[] {
+  const { shapesGraph } = propertyShape;
+  const explicitNodes = propertyShape.get(sh("node")) as Quad_Subject[];
+  const classNodes = propertyShape
+    .get(sh("class"))
+    .flatMap((classIri) => shapesTargetingClass(classIri, shapesGraph));
+  return [...explicitNodes, ...classNodes];
+}
+
+// The property paths (sh:path) of every property shape on one of propertyShape's valueNodeShapes
+// that's annotated shui:propertyRole `role`.
 function propertyPathsByRole(propertyShape: PropertyUIElement, role: NamedNode): PropertyPath[] {
   const { shapesGraph } = propertyShape;
 
-  const explicitNodes = propertyShape.get(sh("node"));
-  const classNodes = propertyShape
-    .get(sh("class"))
-    .flatMap((classIri) =>
-      shapesGraph.getQuads(null, sh("targetClass"), classIri).map(({ subject }) => subject),
-    );
-
-  return [...explicitNodes, ...classNodes].flatMap((node) =>
+  return valueNodeShapes(propertyShape).flatMap((node) =>
     shapesGraph
       .getQuads(node, sh("property"))
       .filter(

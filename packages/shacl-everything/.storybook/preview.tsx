@@ -17,6 +17,10 @@ const withArgsKeyRemount: Decorator = (Story, context) => (
   <React.Fragment key={JSON.stringify(context.args)}>{Story()}</React.Fragment>
 );
 
+const withMaxWidth: Decorator = (Story) => (
+  <div style={{ maxWidth: 600, marginInline: "auto" }}>{Story()}</div>
+);
+
 type RdfTerm = { termType: string; value: string };
 
 const isRdfTerm = (value: unknown): value is RdfTerm =>
@@ -59,7 +63,7 @@ const friendlyArgDisplay: ArgTypesEnhancer = (context) => {
 };
 
 const preview: Preview = {
-  decorators: [withArgsKeyRemount, withGraphInspector, withSubmitPreview],
+  decorators: [withArgsKeyRemount, withGraphInspector, withSubmitPreview, withMaxWidth],
   argTypesEnhancers: [friendlyArgDisplay],
   parameters: {
     controls: {

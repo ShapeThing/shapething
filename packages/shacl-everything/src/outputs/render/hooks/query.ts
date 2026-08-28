@@ -10,7 +10,7 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 
 // Caps how many candidate values a single search-as-you-type or shui:searchQuery round trip
 // returns.
-const SEARCH_RESULT_LIMIT = 50;
+const SEARCH_RESULT_LIMIT = 100;
 
 // A label match beats an IRI match; an instance matching on both outscores either alone.
 const LABEL_MATCH_WEIGHT = 2;
@@ -39,14 +39,21 @@ export type SearchResult = {
 // paths for "local" vs "federated" queries, just different query text run against the same one.
 // Dynamically imported and cached so nothing pays for Comunica's SPARQL-over-HTTP machinery until
 // a query actually runs.
-let enginePromise: Promise<import("@comunica/query-sparql").QueryEngine> | undefined;
+let enginePromise:
+  | Promise<import("@comunica/query-sparql").QueryEngine>
+  | undefined;
 function getEngine() {
-  enginePromise ??= import("@comunica/query-sparql").then(({ QueryEngine }) => new QueryEngine());
+  enginePromise ??= import("@comunica/query-sparql").then(({ QueryEngine }) =>
+    new QueryEngine()
+  );
   return enginePromise;
 }
 
 function escapeSparqlLiteral(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(
+    /\n/g,
+    "\\n",
+  );
 }
 
 // dbpedia-style data tags literals with a bare language subtag ("en"), not a full BCP47 tag
@@ -78,8 +85,12 @@ function toResolvedTerms(bindings: Bindings[]): ResolvedTerm[] {
       {
         term,
         label: labelTerm?.termType === "Literal" ? labelTerm.value : undefined,
-        subLabel: subLabelTerm?.termType === "Literal" ? subLabelTerm.value : undefined,
-        depiction: depictionTerm?.termType === "NamedNode" ? depictionTerm : undefined,
+        subLabel: subLabelTerm?.termType === "Literal"
+          ? subLabelTerm.value
+          : undefined,
+        depiction: depictionTerm?.termType === "NamedNode"
+          ? depictionTerm
+          : undefined,
       },
     ];
   });
@@ -90,7 +101,7 @@ function toResolvedTerms(bindings: Bindings[]): ResolvedTerm[] {
 // than a filter that could drop real results.
 function toSearchResults(results: ResolvedTerm[]): SearchResult[] {
   return results.flatMap(({ term, ...rest }): SearchResult[] =>
-    term.termType === "NamedNode" ? [{ iri: term, ...rest }] : [],
+    term.termType === "NamedNode" ? [{ iri: term, ...rest }] : []
   );
 }
 
@@ -125,18 +136,18 @@ export function buildSearchQuery(
   search: string,
 ): string {
   const needle = escapeSparqlLiteral(search.trim().toLowerCase());
-  const labelPattern =
-    labelPaths.length > 0 ? `optional { ?value ${labelPaths.join("|")} ?iriLabel }` : "";
-  const labelScoreExpression =
-    labelPaths.length > 0
-      ? `if(bound(?iriLabel) && contains(lcase(str(?iriLabel)), "${needle}"), ${LABEL_MATCH_WEIGHT}, 0)`
-      : "0";
-  const subLabelPattern =
-    subLabelPaths.length > 0 ? `optional { ?value ${subLabelPaths.join("|")} ?iriSubLabel }` : "";
-  const depictionPattern =
-    depictionPaths.length > 0
-      ? `optional { ?value ${depictionPaths.join("|")} ?iriDepiction }`
-      : "";
+  const labelPattern = labelPaths.length > 0
+    ? `optional { ?value ${labelPaths.join("|")} ?iriLabel }`
+    : "";
+  const labelScoreExpression = labelPaths.length > 0
+    ? `if(bound(?iriLabel) && contains(lcase(str(?iriLabel)), "${needle}"), ${LABEL_MATCH_WEIGHT}, 0)`
+    : "0";
+  const subLabelPattern = subLabelPaths.length > 0
+    ? `optional { ?value ${subLabelPaths.join("|")} ?iriSubLabel }`
+    : "";
+  const depictionPattern = depictionPaths.length > 0
+    ? `optional { ?value ${depictionPaths.join("|")} ?iriDepiction }`
+    : "";
 
   return `
     ${queryPrefixes}
@@ -177,24 +188,31 @@ function buildRoleLookupQuery(
 ): string {
   const languageFilter = uiLanguage
     ? (variable: string) => {
-        const language = primaryLanguageSubtag(uiLanguage);
-        return ` . filter(lang(${variable}) = "${language}" || lang(${variable}) = "")`;
-      }
+      const language = primaryLanguageSubtag(uiLanguage);
+      return ` . filter(lang(${variable}) = "${language}" || lang(${variable}) = "")`;
+    }
     : () => "";
 
   const patterns = [
     labelPaths.length > 0 &&
-      `optional { ?value ${labelPaths.join("|")} ?roleLabel${languageFilter("?roleLabel")} }`,
+    `optional { ?value ${labelPaths.join("|")} ?roleLabel${
+      languageFilter("?roleLabel")
+    } }`,
     subLabelPaths.length > 0 &&
-      `optional { ?value ${subLabelPaths.join("|")} ?roleSubLabel${languageFilter(
+    `optional { ?value ${subLabelPaths.join("|")} ?roleSubLabel${
+      languageFilter(
         "?roleSubLabel",
-      )} }`,
-    depictionPaths.length > 0 && `optional { ?value ${depictionPaths.join("|")} ?roleDepiction }`,
+      )
+    } }`,
+    depictionPaths.length > 0 &&
+    `optional { ?value ${depictionPaths.join("|")} ?roleDepiction }`,
   ]
     .filter((pattern): pattern is string => Boolean(pattern))
     .join("\n");
 
-  const valuesClause = `values ?value { ${values.map((value) => `<${value.value}>`).join(" ")} }`;
+  const valuesClause = `values ?value { ${
+    values.map((value) => `<${value.value}>`).join(" ")
+  } }`;
   const where = endpoint
     ? `service <${endpoint}> { ${valuesClause} ${patterns} }`
     : `${valuesClause} ${patterns}`;
@@ -225,7 +243,9 @@ async function resolveRoles(
 
   const labelPaths = labelRolePropertyPaths(propertyShape).map(toSparql);
   const subLabelPaths = subLabelRolePropertyPaths(propertyShape).map(toSparql);
-  const depictionPaths = depictionRolePropertyPaths(propertyShape).map(toSparql);
+  const depictionPaths = depictionRolePropertyPaths(propertyShape).map(
+    toSparql,
+  );
 
   if (labelPaths.length + subLabelPaths.length + depictionPaths.length === 0) {
     return values.map((term) => ({ term }));
@@ -240,7 +260,9 @@ async function resolveRoles(
     options.endpoint,
   );
   const resolved = await runQuery(query, propertyShape);
-  const resolvedByValue = new Map(resolved.map((result) => [result.term.value, result]));
+  const resolvedByValue = new Map(
+    resolved.map((result) => [result.term.value, result]),
+  );
 
   return values.map((term) => ({ term, ...resolvedByValue.get(term.value) }));
 }
@@ -261,7 +283,13 @@ export async function searchInstances(
   const labelPaths = labelRolePropertyPaths(shape).map(toSparql);
   const subLabelPaths = subLabelRolePropertyPaths(shape).map(toSparql);
   const depictionPaths = depictionRolePropertyPaths(shape).map(toSparql);
-  const query = buildSearchQuery(classIri, labelPaths, subLabelPaths, depictionPaths, search);
+  const query = buildSearchQuery(
+    classIri,
+    labelPaths,
+    subLabelPaths,
+    depictionPaths,
+    search,
+  );
 
   return toSearchResults(await runQuery(query, shape));
 }

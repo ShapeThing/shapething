@@ -1,0 +1,17 @@
+.st-value-table-viewer {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--st-font-size-small);
+}
+
+.st-value-table-viewer th,
+.st-value-table-viewer td {
+  padding: var(--size-2);
+  text-align: start;
+  border-bottom: 1px solid var(--st-color-border);
+}
+
+.st-value-table-viewer th {
+  color: var(--st-color-text-muted);
+  font-weight: 600;
+}

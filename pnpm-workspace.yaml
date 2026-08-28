@@ -7,3 +7,9 @@ allowBuilds:
   esbuild: true
   msgpackr-extract: true
   sharp: true
+packageExtensions:
+  shacl-engine@1.0.2:
+    dependencies:
+      '@comunica/query-sparql': ^4.5.0
+patchedDependencies:
+  shacl-engine@1.0.2: patches/shacl-engine@1.0.2.patch

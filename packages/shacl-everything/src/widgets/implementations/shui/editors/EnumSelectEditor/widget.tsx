@@ -1,12 +1,13 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
-import type { NamedNode, Quad_Subject } from "@rdfjs/types";
+import type { NamedNode } from "@rdfjs/types";
 import { Loading } from "@/helpers/icons.tsx";
 import { sh } from "@/helpers/namespaces.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import { useSelectOptions, type ResolvedOption } from "@/outputs/render/hooks/useSelectOptions.tsx";
+import { valueNodeShapes } from "@/resolution/label.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import { selectQueryFor } from "./selectQuery.ts";
 import "./style.css";
@@ -15,11 +16,12 @@ export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: W
   const { enableEditInPlace } = useEnvironment();
   const options = useMemo(() => shape.get(sh("in")), [shape]);
   const selectQuery = useMemo(() => selectQueryFor(shape), [shape]);
-  // The property shape's own sh:node - when present (and enableEditInPlace hasn't turned the
-  // feature off), the currently selected value can be opened and edited in place (see
-  // AutoCompleteOption's resourceEditor prop). Not used for the dropdown options themselves, only
-  // the closed trigger's current value.
-  const nodeShapes = useMemo(() => shape.get(sh("node")) as Quad_Subject[], [shape]);
+  // The shape describing the currently selected value (its own sh:node, or - failing that - any
+  // node shape targeting its sh:class via sh:targetClass, see valueNodeShapes) - when present (and
+  // enableEditInPlace hasn't turned the feature off), the value can be opened and edited in place
+  // (see AutoCompleteOption's resourceEditor prop). Not used for the dropdown options themselves,
+  // only the closed trigger's current value.
+  const nodeShapes = useMemo(() => valueNodeShapes(shape), [shape]);
   const [open, setOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
 

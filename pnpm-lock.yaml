@@ -4,6 +4,11 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+packageExtensionsChecksum: sha256-nXA2UtMDOwG/J5lvfKG7Npp86tPYwxTrxiMtqyZlum8=
+
+patchedDependencies:
+  shacl-engine@1.0.2: c074d840216d2fbe01b6c027a051d6af59ddc3c83c9efbaaf56d523c6debc41a
+
 importers:
 
   .:
@@ -432,7 +437,7 @@ importers:
         version: 6.1.2(react@19.2.7)
       shacl-engine:
         specifier: github:rdf-ext/shacl-engine#1d111fc772a71ec2118eed2974709c2b04f47510
-        version: https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510
+        version: https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510(patch_hash=c074d840216d2fbe01b6c027a051d6af59ddc3c83c9efbaaf56d523c6debc41a)
       string-to-stream:
         specifier: ^3.0.1
         version: 3.0.1
@@ -27934,8 +27939,9 @@ snapshots:
     transitivePeerDependencies:
       - encoding
 
-  shacl-engine@https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510:
+  shacl-engine@https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510(patch_hash=c074d840216d2fbe01b6c027a051d6af59ddc3c83c9efbaaf56d523c6debc41a):
     dependencies:
+      '@comunica/query-sparql': 4.5.0
       '@comunica/query-sparql-rdfjs-lite': 5.2.3
       '@rdfjs/namespace': 2.0.1
       '@rdfjs/term-map': 2.0.2

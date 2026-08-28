@@ -44,3 +44,19 @@
     background-color: var(--st-primary-color-lighter);
   }
 }
+
+.st-create-option {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  width: 100%;
+  min-height: 2.5rem;
+  font-weight: bold;
+  color: var(--st-primary-color);
+  border-top: 1px solid var(--st-color-border);
+
+  svg {
+    width: 1em;
+    height: 1em;
+  }
+}

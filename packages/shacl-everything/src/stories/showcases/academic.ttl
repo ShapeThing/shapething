@@ -114,6 +114,7 @@ ex:ResearcherShape a sh:NodeShape ;
         sh:path schema:jobTitle ;
         sh:datatype xsd:string ;
         sh:group <#person> ;
+        sh:maxCount 1 ;
         sh:order 4;
         sh:name "Job Title"@en, "Functietitel"@nl ;
     ] ;
@@ -121,6 +122,7 @@ ex:ResearcherShape a sh:NodeShape ;
         sh:path ( schema:affiliation [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
         sh:class schema:Organization ;
         sh:group <#academic> ;
+        sh:minCount 1 ;
         sh:order 5;
         sh:name "Affiliated Organization"@en, "Aangesloten organisatie"@nl ;
         sh:description "Choose the institution where the researcher works."@en, "Kies de instelling waar de onderzoeker werkt."@nl ;
@@ -184,6 +186,7 @@ ex:ResearcherShape a sh:NodeShape ;
         sh:nodeKind sh:IRI ;
         sh:group <#person> ;
         sh:order 6;
+        sh:minCount 1 ;
         sh:name "Nationality"@en, "Nationaliteit"@nl ;
         sh:description "Link to a country IRI (e.g., ISO 3166 vocabulary)."@en, "Link naar een land-IRI (bijv. ISO 3166-vocabulaire)."@nl ;
     ] ;
@@ -199,7 +202,6 @@ ex:ResearcherShape a sh:NodeShape ;
 
     sh:property [
         sh:path schema:sameAs ;
-        sh:maxCount 3 ;
         sh:group <#academic> ;
         sh:order 7;
         sh:name "External Profile URLs"@en, "Externe profiel-URL's"@nl ;
@@ -214,21 +216,25 @@ ex:PublicationShape a sh:NodeShape ;
         sh:path dc:title ;
         sh:datatype xsd:string ;
         sh:minCount 1 ;
+        sh:maxCount 1 ;
         sh:name "Title"@en, "Titel"@nl ;
     ] ;
     sh:property [
         sh:path dc:date ;
         sh:datatype xsd:date ;
+        sh:maxCount 1 ;
         sh:name "Publication Date"@en, "Publicatiedatum"@nl ;
     ] ;
     sh:property [
         sh:path bibo:doi ;
         sh:datatype xsd:string ;
+        sh:maxCount 1 ;
         sh:name "DOI"@en, "DOI"@nl ;
     ] ;
     sh:property [
         sh:path bibo:abstract ;
         dash:singleLine false ;
+        sh:maxCount 1 ;
         sh:datatype xsd:string ;
         sh:name "Abstract"@en, "Samenvatting"@nl ;
     ] ;
@@ -236,11 +242,13 @@ ex:PublicationShape a sh:NodeShape ;
         sh:path bibo:DocumentType ;
         sh:in ("journal" "conference" "thesis" "book" "other") ;
         sh:datatype xsd:string ;
+        sh:maxCount 1 ;
         sh:name "Type"@en, "Type"@nl ;
     ] ;
     sh:property [
         sh:path schema:author ;
         sh:class schema:Person ;
+        sh:minCount 1 ; 
         sh:name "Author(s)"@en, "Auteur(s)"@nl ;
     ] .
 

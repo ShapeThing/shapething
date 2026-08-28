@@ -1,5 +1,6 @@
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { useValidation } from "@/outputs/render/hooks/useValidation.tsx";
+import { useSubmitAttempt } from "@/outputs/render/hooks/useSubmitAttempt.tsx";
 import type { ValidationResult } from "@/outputs/render/contexts/validationContext.tsx";
 
 /**
@@ -22,10 +23,15 @@ export function matchesProperty(
  * Every validation result for `propertyUIElement`, both property-wide (e.g. sh:minCount, which
  * has no `value`) and per-value (e.g. sh:pattern/sh:datatype tied to one specific value) - callers
  * filter further by `value` as needed (see PropertyUIComponent.tsx/PropertyUIComponentObject.tsx).
+ * Withheld (returns []) until the form's first submit attempt (see EditModeWrapper in
+ * modes/edit/index.tsx), so an untouched field's e.g. sh:minCount violation doesn't display as an
+ * error before the user has tried to submit.
  */
 export function usePropertyValidationResults(
   propertyUIElement: PropertyUIElement,
 ): ValidationResult[] {
   const { results } = useValidation();
+  const { hasAttemptedSubmit } = useSubmitAttempt();
+  if (!hasAttemptedSubmit) return [];
   return results.filter((result) => matchesProperty(result, propertyUIElement));
 }
