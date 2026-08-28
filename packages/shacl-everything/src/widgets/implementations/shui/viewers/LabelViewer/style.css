@@ -1,0 +1,13 @@
+.st-label-viewer {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-1);
+}
+
+.st-label-viewer__depiction {
+  height: 1.25em;
+  width: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--radius-1);
+}

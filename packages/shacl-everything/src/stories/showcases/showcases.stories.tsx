@@ -17,3 +17,13 @@ export const academic: Story = {
     nodeShapes: [ex("ResearcherShape"), ex("PublicationShape")],
   },
 };
+
+export const academicView: Story = {
+  name: "Academic (view)",
+  args: {
+    ...argsByTestFile("academic.ttl", import.meta.url),
+    nodeShapes: [ex("ResearcherShape")],
+    mode: "view",
+    viewModeLabelLayout: "inline",
+  },
+};

@@ -54,6 +54,14 @@ export type Environment = {
   // opposite: every existing translation renders side by side, each with its own per-value
   // language <select> to pick/change its language, and there is no global switcher at all.
   languageMode: "switcher" | "individual";
+  // How a property's label is positioned relative to its value in VIEW MODE ONLY (edit mode
+  // always stacks the label above the value, unaffected by this): "block" (the default) stacks
+  // the label above the value, same as edit mode; "inline" places it beside the value on the same
+  // line instead. A single global setting for now - not read from shapes - though a preprocessor
+  // could later derive it per-property/per-shape and fold it in here before render, the same way
+  // scoresGraph etc. get resolved. See FormElement's own labelLayout prop, applied in view mode's
+  // PropertyUIComponent.
+  viewModeLabelLayout: "block" | "inline";
   // When multiple widgets are available for a property, allow switching between them. If false, the first widget will be used and no switching will be possible.
   enableWidgetSwitching?: boolean;
   // When a property has sh:or/sh:xone branches, allow switching between them. If false, the first matching branch will be used and no switching will be possible.
@@ -111,6 +119,7 @@ export const defaultEnvironment: Environment = {
   contentLanguage: "en-GB",
   contentLanguages: [],
   languageMode: "switcher",
+  viewModeLabelLayout: "block",
   enableWidgetSwitching: true,
   enableLogicalBranchSwitching: true,
   enableContentLanguageCreation: true,
@@ -133,6 +142,7 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   contentLanguage: "en-GB",
   contentLanguages: [],
   languageMode: "switcher",
+  viewModeLabelLayout: "block",
   enableWidgetSwitching: false,
   enableLogicalBranchSwitching: false,
   enableContentLanguageCreation: false,

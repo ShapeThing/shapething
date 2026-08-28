@@ -22,6 +22,29 @@
   color: var(--gray-7);
 }
 
+.st-form-element[data-label-layout="inline"] {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+
+.st-form-element[data-label-layout="inline"] .st-form-element__header {
+  width: auto;
+}
+
+.st-form-element[data-label-layout="inline"] .st-form-element__label {
+  white-space: nowrap;
+}
+
+/* A caller's children (e.g. view mode's .st-property-items) commonly declares its own
+   width: 100% for the normal block layout - left alone, that still fills the whole row and
+   wraps onto its own line below the label, looking identical to block. Resetting it here (every
+   direct child except the header, which is already sized above) is what actually lets it sit
+   beside the label instead of just underneath it. */
+.st-form-element[data-label-layout="inline"] > :not(.st-form-element__header) {
+  width: auto;
+}
+
 .st-form-element__description {
   margin: 0;
   font-size: var(--st-font-size-small);
@@ -30,7 +53,7 @@
 
 .st-form-element__header {
   display: flex;
-  gap: var(--size-2);
+  gap: var(--size-1);
   width: 100%;
   align-items: center;
   justify-content: space-between;
@@ -49,4 +72,16 @@
   .st-form-element + .st-form-element {
     margin-top: var(--size-5);
   }
+}
+
+/* This margin is edit-mode-only - view mode (.st-view-mode, see ViewModeWrapper) zeroes it back
+   out between consecutive top-level properties. */
+.st-view-mode .st-node-ui-component {
+  .st-form-element + .st-form-element {
+    margin-top: 0;
+  }
+}
+
+.st-form-element__label-colon {
+  font-weight: bold;
 }

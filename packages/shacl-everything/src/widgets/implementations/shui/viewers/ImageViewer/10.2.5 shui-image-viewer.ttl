@@ -18,5 +18,5 @@
 <#data>
     a schema:Person ;
     schema:givenName "Hendrik" ;
-    schema:image <https://example.org/hendrik.jpg> ;
+    schema:image <./hendrik.svg> ;
     .

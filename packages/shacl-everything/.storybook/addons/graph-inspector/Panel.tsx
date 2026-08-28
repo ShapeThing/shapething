@@ -107,12 +107,22 @@ const GraphSection = ({ title, graph }: { title: string; graph?: GraphText }) =>
                 {prefixCount} prefix declaration{prefixCount === 1 ? "" : "s"}
               </summary>
               <pre style={{ ...preStyle, maxHeight: 200 }}>
-                <TurtleCode text={prefixText} prefixes={prefixMap} idPrefix={`${sectionSlug}-prefixes`} />
+                <TurtleCode
+                  text={prefixText}
+                  prefixes={prefixMap}
+                  idPrefix={`${sectionSlug}-prefixes`}
+                  baseHref={graph.href}
+                />
               </pre>
             </details>
           )}
           <pre style={{ ...preStyle, flex: 1, minHeight: 0 }}>
-            <TurtleCode text={bodyText} prefixes={prefixMap} idPrefix={`${sectionSlug}-body`} />
+            <TurtleCode
+              text={bodyText}
+              prefixes={prefixMap}
+              idPrefix={`${sectionSlug}-body`}
+              baseHref={graph.href}
+            />
           </pre>
         </div>
       ) : (

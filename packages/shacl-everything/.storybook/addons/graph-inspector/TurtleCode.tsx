@@ -5,6 +5,8 @@ type Props = {
   prefixes?: Record<string, string>;
   /** Scopes generated anchor ids so multiple TurtleCode instances on one page don't collide. */
   idPrefix?: string;
+  /** The document's own fetch URL, used to resolve relative `<...>` IRIs into real, clickable links. */
+  baseHref?: string;
 };
 
 const ABSOLUTE_SCHEME_PATTERN = /^[A-Za-z][A-Za-z0-9+.-]*:/;
@@ -40,10 +42,17 @@ const hrefForToken = (
   groupName: string | undefined,
   token: string,
   prefixes: Record<string, string> | undefined,
+  baseHref: string | undefined,
 ): string | undefined => {
   if (groupName === "iri") {
     const iri = token.slice(1, -1);
-    return ABSOLUTE_SCHEME_PATTERN.test(iri) ? iri : undefined;
+    if (ABSOLUTE_SCHEME_PATTERN.test(iri)) return iri;
+    if (baseHref === undefined) return undefined;
+    try {
+      return new URL(iri, baseHref).href;
+    } catch {
+      return undefined;
+    }
   }
 
   if (groupName === "prefixedName" && prefixes) {
@@ -71,8 +80,10 @@ const tokenize = (text: string): TokenInfo[] => {
   return tokens;
 };
 
-// A relative IRI (no scheme, e.g. "#philosopherShape") has no external href, but the same
-// token text elsewhere in this document identifies the same node - track that instead.
+// A relative IRI (no scheme, e.g. "#philosopherShape") that's also used as a subject elsewhere
+// in this document identifies the same node - prefer scrolling to that definition over resolving
+// it to an external href (findDefinitions below). One with no such definition (e.g. "./image.svg")
+// still gets a real href, resolved against baseHref by hrefForToken.
 const relativeIriKey = (groupName: string | undefined, token: string): string | undefined => {
   if (groupName !== "iri") return undefined;
   const iri = token.slice(1, -1);
@@ -119,7 +130,7 @@ const flashElement = (el: HTMLElement) => {
   }, 1000);
 };
 
-export const TurtleCode = ({ text, prefixes, idPrefix = "turtle" }: Props) => {
+export const TurtleCode = ({ text, prefixes, idPrefix = "turtle", baseHref }: Props) => {
   const tokens = useMemo(() => tokenize(text), [text]);
   const definitions = useMemo(() => findDefinitions(tokens), [tokens]);
 
@@ -163,7 +174,7 @@ export const TurtleCode = ({ text, prefixes, idPrefix = "turtle" }: Props) => {
         </a>,
       );
     } else {
-      const href = hrefForToken(groupName, token, prefixes);
+      const href = hrefForToken(groupName, token, prefixes, baseHref);
       nodes.push(
         href !== undefined ? (
           <a

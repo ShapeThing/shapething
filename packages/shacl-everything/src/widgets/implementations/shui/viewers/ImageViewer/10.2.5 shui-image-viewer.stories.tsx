@@ -1,12 +1,14 @@
 import type { StoryObj } from "@storybook/react-vite";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
+import { minimalEnvironment } from "@/environment.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
   title: "SHACL 1.2 UI/10. Built-in Widgets/10.2 Viewers/10.2.5 shui:ImageViewer",
   component: ShaclRenderer,
+  args: minimalEnvironment,
 };
 
 export const shuiImageViewer: Story = {

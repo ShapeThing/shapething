@@ -4,8 +4,6 @@ import { type Preprocessor } from "@/preprocess/index.ts";
 import EnvironmentContextProvider from "@/outputs/render/contexts/EnvironmentContextProvider.tsx";
 import L10nProvider from "@/outputs/render/contexts/L10nProvider.tsx";
 import InterfaceLanguageProvider from "@/outputs/render/contexts/InterfaceLanguageProvider.tsx";
-import ContentLanguageSwitcher from "@/outputs/render/components/ContentLanguageSwitcher/index.tsx";
-import InterfaceLanguageSwitcher from "@/outputs/render/components/InterfaceLanguageSwitcher/index.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { lazy, useId, useState } from "react";
 import { ErrorBoundary, getErrorMessage } from "react-error-boundary";

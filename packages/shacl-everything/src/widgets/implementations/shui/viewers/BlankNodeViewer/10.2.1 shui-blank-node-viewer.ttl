@@ -1,3 +1,4 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
 @prefix schema: <http://schema.org/>.
 @prefix sh: <http://www.w3.org/ns/shacl#>.
 @prefix shui: <http://www.w3.org/ns/shacl-ui/>.
@@ -19,6 +20,7 @@
     a schema:Person ;
     schema:givenName "Hendrik" ;
     schema:address [
+        rdfs:label "Dam 1, 1012 AB Amsterdam"@en, "Dam 1, 1012 AB Amsterdam"@nl ;
         schema:postalCode "1012 AB" ;
     ] ;
     .

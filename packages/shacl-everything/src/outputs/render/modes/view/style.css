@@ -3,6 +3,27 @@
   flex-direction: column;
 }
 
+/* Top-level children are a mix of plain properties (.st-form-element) and sh:group sections
+   (.st-property-group, a <fieldset> - see PropertyGroup's widget) - FormElement's own
+   `.st-form-element + .st-form-element` spacing (zeroed out for view mode, just below) only
+   ever covers the first case, leaving no gap around a group's fieldset. A flex gap on the
+   shared parent spaces every child uniformly regardless of which kind it is. */
+.st-view-mode .st-node-ui-component {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-5);
+}
+
+/* View mode never passes FormElement its `actions` prop - only ever `tooltip` (see
+   PropertyUIComponent) - so the header never needs the edit-mode-oriented
+   width:100%/space-between that keeps an actions button pinned to the far edge. Without this,
+   a block-layout property (a list of values, always block - see PropertyUIComponent's `isList`)
+   pushes its help icon all the way to the row's right edge, disconnected from its label. */
+.st-view-mode .st-form-element__header {
+  width: auto;
+  justify-content: flex-start;
+}
+
 .st-property-language-tag {
   font-weight: normal;
   font-size: var(--st-font-size-small);
