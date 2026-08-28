@@ -33,15 +33,16 @@ export class NodeUIElement {
   }
 
   children(): (PropertyUIElement | ChoiceElement)[] {
-    return this.nodeShapes.flatMap((nodeShape) =>
-      childrenForShape(
-        this.shapesGraph,
-        this.dataGraph,
-        nodeShape,
-        this.focusNode,
-        this.scoresGraph,
-        this.widgetRegistry,
-      ),
+    // One call across the whole list (not a flatMap per shape) so property shapes on the same
+    // path declared by two different nodeShapes entries - not just the same shape reached twice -
+    // still merge into a single PropertyUIElement; see childrenForShape's own doc comment.
+    return childrenForShape(
+      this.shapesGraph,
+      this.dataGraph,
+      this.nodeShapes,
+      this.focusNode,
+      this.scoresGraph,
+      this.widgetRegistry,
     );
   }
 }

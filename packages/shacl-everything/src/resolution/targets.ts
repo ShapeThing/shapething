@@ -122,3 +122,32 @@ export function targetsOfShape(
 
   return dedupeTerms(targets);
 }
+
+/**
+ * Reverse lookup of targetsOfShape: every shape node in `shapesGraph` whose target set (3.1.3)
+ * includes `node` - i.e. every shape that already applies to this one known node, rather than
+ * "what does this shape apply to". Used by LabelViewer's Environment.enableViewInPlace to decide
+ * whether an IRI value has a shape to render read-only in a modal, before bothering to build a
+ * NodeUIElement for it.
+ *
+ * Candidate shapes are gathered from every SHACL Core predicate that can declare a target
+ * (typing a shape sh:NodeShape/sh:PropertyShape alone doesn't - a shape only actually targets
+ * something via one of these), then each candidate's full target set is checked for `node`.
+ */
+export function shapesTargetingNode(
+  node: Term,
+  shapesGraph: RdfStore,
+  dataGraph: RdfStore,
+): Quad_Subject[] {
+  const candidateShapes = dedupeTerms([
+    ...shapesGraph.getQuads(null, sh("targetClass")).map((quad) => quad.subject),
+    ...shapesGraph.getQuads(null, sh("targetNode")).map((quad) => quad.subject),
+    ...shapesGraph.getQuads(null, sh("targetSubjectsOf")).map((quad) => quad.subject),
+    ...shapesGraph.getQuads(null, sh("targetObjectsOf")).map((quad) => quad.subject),
+    ...dataGraph.getQuads(null, sh("shape")).map((quad) => quad.object),
+  ]) as Quad_Subject[];
+
+  return candidateShapes.filter((shapeNode) =>
+    targetsOfShape(shapeNode, shapesGraph, dataGraph).some((target) => target.equals(node)),
+  );
+}

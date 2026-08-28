@@ -3,7 +3,7 @@
   flex-direction: column;
   align-items: flex-start;
   font-family: var(--st-font-family);
-  gap: var(--size-2);
+  padding-block-end: var(--size-3);
 }
 
 .st-form-element__label {
@@ -24,7 +24,9 @@
 
 .st-form-element[data-label-layout="inline"] {
   flex-direction: row;
+  gap: var(--size-2);
   flex-wrap: wrap;
+  padding-block-end: 0;
   align-items: baseline;
 }
 

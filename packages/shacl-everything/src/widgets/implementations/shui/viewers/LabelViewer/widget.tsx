@@ -1,6 +1,13 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { Quad_Subject } from "@rdfjs/types";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { useResolvedValueNode } from "@/outputs/render/hooks/useResolvedValueNode.tsx";
+import Modal from "@/outputs/render/components/Modal/index.tsx";
+import NodeUIElementChildren from "@/outputs/render/modes/view/NodeUIElementChildren.tsx";
+import { shapesTargetingNode } from "@/resolution/targets.ts";
+import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
@@ -16,14 +23,48 @@ import "./style.css";
  * flag) - the same depiction AutoCompleteOption already shows while editing this same value, so
  * view mode doesn't lose it. A broken/slow-to-load depiction just hides itself (onError) rather
  * than leaving a broken-image icon next to a label that's otherwise perfectly fine to show.
+ *
+ * When Environment.enableViewInPlace is on and the value both already exists in dataGraph and is
+ * targeted by at least one shape in shapesGraph (resolution/targets.ts's shapesTargetingNode),
+ * clicking the link opens that resource read-only in a Modal instead of navigating away - a plain
+ * ctrl/cmd/middle click still follows the href as a normal external link. A value with no shape
+ * targeting it (or not yet in dataGraph) has nothing to render inside a modal, so it keeps the
+ * plain external-link behavior unconditionally.
  */
 export default function LabelViewer({ shape, term }: WidgetProps) {
   const { activeLanguage } = useContentLanguage();
+  const { enableViewInPlace } = useEnvironment();
   const [hasImageError, setHasImageError] = useState(false);
+  const [open, setOpen] = useState(false);
   const { label, depiction } = useResolvedValueNode(shape, term, [activeLanguage]);
   // SVGs/data URIs render directly; anything else goes through wsrv.nl to resize a (typically
   // much larger) hotlinked source image down to icon size - same reasoning as AutoCompleteOption.
-  const isDirectRenderable = depiction?.value.includes(".svg") || depiction?.value.includes("data:");
+  const isDirectRenderable =
+    depiction?.value.includes(".svg") || depiction?.value.includes("data:");
+
+  const nodeShapes = useReactiveRead(
+    shape.dataGraph,
+    `label-viewer-view-in-place@${term.value}`,
+    () => {
+      if (!enableViewInPlace || term.termType !== "NamedNode") return [];
+      const existsInDataGraph = shape.dataGraph.getQuads(term, null, null).length > 0;
+      if (!existsInDataGraph) return [];
+      return shapesTargetingNode(term, shape.shapesGraph, shape.dataGraph);
+    },
+  );
+  const canViewInPlace = term.termType === "NamedNode" && nodeShapes.length > 0;
+
+  const nodeUiElement = useMemo(() => {
+    if (!open || !canViewInPlace || term.termType !== "NamedNode") return undefined;
+    return new NodeUIElement({
+      shapesGraph: shape.shapesGraph,
+      dataGraph: shape.dataGraph,
+      scoresGraph: shape.scoresGraph,
+      widgetRegistry: shape.widgetRegistry,
+      focusNode: term as Quad_Subject,
+      nodeShapes,
+    });
+  }, [open, canViewInPlace, shape, term, nodeShapes]);
 
   const image = depiction && !hasImageError && (
     <img
@@ -49,9 +90,41 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
   }
 
   return (
-    <a className="st-label-viewer" href={term.value} target="_blank" rel="noopener noreferrer">
-      {image}
-      {label}
-    </a>
+    <>
+      <a
+        className="st-label-viewer"
+        href={term.value}
+        target={canViewInPlace ? undefined : "_blank"}
+        rel="noopener noreferrer"
+        aria-haspopup={canViewInPlace ? "dialog" : undefined}
+        onClick={
+          canViewInPlace
+            ? (event) => {
+                // A modifier click (open in new tab/window) or middle click still follows href as
+                // a normal link - only a plain left click is intercepted to open the modal.
+                if (
+                  event.button !== 0 ||
+                  event.metaKey ||
+                  event.ctrlKey ||
+                  event.shiftKey ||
+                  event.altKey
+                ) {
+                  return;
+                }
+                event.preventDefault();
+                setOpen(true);
+              }
+            : undefined
+        }
+      >
+        {image}
+        {label}
+      </a>
+      {canViewInPlace && (
+        <Modal open={open} onClose={() => setOpen(false)} title={label}>
+          {nodeUiElement && <NodeUIElementChildren nodeUiElement={nodeUiElement} />}
+        </Modal>
+      )}
+    </>
   );
 }
