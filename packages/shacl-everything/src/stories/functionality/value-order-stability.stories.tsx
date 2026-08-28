@@ -6,7 +6,7 @@ import { factory } from "@/helpers/factory.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/Functionality/Value order stability",
+  title: "Interaction/Value order stability",
   component: ShaclRenderer,
 };
 

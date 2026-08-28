@@ -6,7 +6,7 @@ import { factory } from "@/helpers/factory.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/Functionality/DetailsEditor keyboard navigation",
+  title: "Interaction/DetailsEditor keyboard navigation",
   component: ShaclRenderer,
 };
 

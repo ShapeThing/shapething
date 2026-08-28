@@ -5,11 +5,11 @@ import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/SHACL 1.2 UI/10. Built-in Widgets/10.2 Viewers/10.2.5 shui:ImageViewer",
+  title: "SHACL 1.2 UI/10. Built-in Widgets/10.2 Viewers/10.2.9 shui:LiteralViewer",
   component: ShaclRenderer,
 };
 
-export const shuiImageViewer: Story = {
-  name: "Image URL rendered as an <img>",
-  args: { ...argsByTestFile("10.2.5 shui-image-viewer.ttl", import.meta.url), mode: "view" },
+export const shuiLiteralViewer: Story = {
+  name: "Lexical form of a plain literal value",
+  args: { ...argsByTestFile("10.2.9 shui-literal-viewer.ttl", import.meta.url), mode: "view" },
 };

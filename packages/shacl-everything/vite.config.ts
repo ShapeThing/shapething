@@ -72,7 +72,7 @@ export default defineConfig({
           storybookTest({
             configDir: path.join(dirname, ".storybook"),
           }),
-          serveAbsoluteStoryFixtures(path.join(dirname, "src/stories")),
+          serveAbsoluteStoryFixtures(path.join(dirname, "src")),
         ],
         test: {
           name: "storybook",

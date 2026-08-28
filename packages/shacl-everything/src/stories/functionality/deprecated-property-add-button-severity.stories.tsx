@@ -6,7 +6,7 @@ import { factory } from "@/helpers/factory.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/Functionality/Add button severity",
+  title: "Interaction/Add button severity",
   component: ShaclRenderer,
 };
 

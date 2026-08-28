@@ -6,7 +6,7 @@ import { factory } from "@/helpers/factory.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/Functionality/Content language deletion",
+  title: "Interaction/Content language deletion",
   component: ShaclRenderer,
 };
 

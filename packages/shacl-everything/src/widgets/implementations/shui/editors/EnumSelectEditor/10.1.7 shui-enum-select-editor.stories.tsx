@@ -7,8 +7,7 @@ import { minimalEnvironment } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title:
-    "Shacl Renderer/SHACL 1.2 UI/10. Built-in Widgets/10.1 Editors/10.1.7 shui:EnumSelectEditor",
+  title: "SHACL 1.2 UI/10. Built-in Widgets/10.1 Editors/10.1.7 shui:EnumSelectEditor",
   component: ShaclRenderer,
   args: {
     ...minimalEnvironment,

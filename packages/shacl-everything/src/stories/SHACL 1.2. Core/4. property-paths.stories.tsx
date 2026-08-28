@@ -5,7 +5,7 @@ import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/SHACL 1.2 Core/4. SHACL Property Paths",
+  title: "SHACL 1.2 Core/4. SHACL Property Paths",
   component: ShaclRenderer,
 };
 

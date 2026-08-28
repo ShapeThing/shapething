@@ -6,13 +6,12 @@ import { minimalEnvironment } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title:
-    "Shacl Renderer/SHACL 1.2 UI/10. Built-in Widgets/10.1 Editors/10.1.2 shui:BlankNodeEditor",
+  title: "SHACL 1.2 UI/10. Built-in Widgets/10.1 Editors/10.1.6 shui:DetailsEditor",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };
 
-export const shuiBlankNodeEditor: Story = {
-  name: "Read-only display of a blank node value",
-  args: argsByTestFile("10.1.2 shui-blank-node-editor.ttl", import.meta.url),
+export const shuiDetailsEditor: Story = {
+  name: "Nested inline form for a blank node value",
+  args: argsByTestFile("10.1.6 shui-details-editor.ttl", import.meta.url),
 };

@@ -1,6 +1,6 @@
 import type { NamedNode, Quad_Object, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
-import { Validator as ShaclEngine } from "shacl-engine";
+import { Engine as ShaclEngine } from "shacl-engine";
 import { factory } from "@/helpers/factory.ts";
 import { rdf, sh } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -25,10 +25,7 @@ import { type ResolvedTerm, runQuery } from "@/outputs/render/hooks/query.ts";
 //    single HTTP request, however many candidates there are - instead of Comunica's join planner
 //    materializing one remote request per candidate (a bind join).
 
-const CARDINALITY_PREDICATES: Set<string> = new Set([
-  sh("minCount").value,
-  sh("maxCount").value,
-]);
+const CARDINALITY_PREDICATES: Set<string> = new Set([sh("minCount").value, sh("maxCount").value]);
 
 /**
  * A per-candidate conformance check for `shape`'s own local constraints (sh:class, sh:node,
@@ -64,8 +61,7 @@ function buildLocalConstraintChecker(
   const [firstPropertyShape] = shape.propertyShapes;
   if (!firstPropertyShape) return undefined;
 
-  const pathTerm = shape.shapesGraph.getQuads(firstPropertyShape, sh("path"))[0]
-    ?.object;
+  const pathTerm = shape.shapesGraph.getQuads(firstPropertyShape, sh("path"))[0]?.object;
   if (!pathTerm || pathTerm.termType !== "NamedNode") return undefined;
   const path: NamedNode = pathTerm;
 
@@ -75,7 +71,8 @@ function buildLocalConstraintChecker(
 
   const isolatedShapesGraph = RdfStore.createDefault();
   for (const quad of shape.shapesGraph.getQuads()) {
-    const isOwnCardinality = propertyShapeValues.has(quad.subject.value) &&
+    const isOwnCardinality =
+      propertyShapeValues.has(quad.subject.value) &&
       CARDINALITY_PREDICATES.has(quad.predicate.value);
     if (isOwnCardinality) continue;
 
@@ -83,13 +80,9 @@ function buildLocalConstraintChecker(
   }
 
   const nodeShapeNode = factory.blankNode();
-  isolatedShapesGraph.addQuad(
-    factory.quad(nodeShapeNode, rdf("type"), sh("NodeShape")),
-  );
+  isolatedShapesGraph.addQuad(factory.quad(nodeShapeNode, rdf("type"), sh("NodeShape")));
   for (const propertyShape of shape.propertyShapes) {
-    isolatedShapesGraph.addQuad(
-      factory.quad(nodeShapeNode, sh("property"), propertyShape),
-    );
+    isolatedShapesGraph.addQuad(factory.quad(nodeShapeNode, sh("property"), propertyShape));
   }
 
   const shaclEngine = new ShaclEngine(isolatedShapesGraph.asDataset(), {
@@ -114,10 +107,7 @@ function buildLocalConstraintChecker(
       );
       return report.conforms;
     } catch (error) {
-      console.warn(
-        "[shacl-everything] shui:searchQuery result validation failed",
-        error,
-      );
+      console.warn("[shacl-everything] shui:searchQuery result validation failed", error);
       return false;
     } finally {
       dataGraph.removeQuad(syntheticQuad);
@@ -130,8 +120,7 @@ function buildLocalConstraintChecker(
 // the first projected variable, so sh:select queries need not name it ?value"), but as a text-level
 // parse rather than a binding-level one, since here the point is to inject a same-named VALUES
 // clause into the query text itself, before it's ever run.
-const FIRST_PROJECTED_VARIABLE =
-  /select\s+(?:distinct\s+|reduced\s+)?[?$](\w+)/i;
+const FIRST_PROJECTED_VARIABLE = /select\s+(?:distinct\s+|reduced\s+)?[?$](\w+)/i;
 
 // Matches a query's first SERVICE block's opening brace, so a VALUES clause can be inserted right
 // after it - mirrors query.ts's extractServiceEndpoint (only the first SERVICE clause matters).
@@ -151,16 +140,10 @@ const SERVICE_OPEN_BRACE = /\bSERVICE\s*(?:SILENT\s+)?<[^>]+>\s*\{/i;
  * approach over the query shapes this renderer actually needs to support (PREFIX declarations
  * plus a single SELECT/WHERE, optionally with one SERVICE block).
  */
-export function insertValuesClause(
-  query: string,
-  variable: string,
-  values: NamedNode[],
-): string {
-  const valuesClause = `VALUES ?${variable} { ${
-    values
-      .map((value) => `<${value.value}>`)
-      .join(" ")
-  } } `;
+export function insertValuesClause(query: string, variable: string, values: NamedNode[]): string {
+  const valuesClause = `VALUES ?${variable} { ${values
+    .map((value) => `<${value.value}>`)
+    .join(" ")} } `;
 
   const serviceMatch = query.match(SERVICE_OPEN_BRACE);
   if (serviceMatch?.index !== undefined) {
@@ -170,8 +153,7 @@ export function insertValuesClause(
 
   const braceIndex = query.indexOf("{");
   if (braceIndex === -1) return query;
-  return query.slice(0, braceIndex + 1) + valuesClause +
-    query.slice(braceIndex + 1);
+  return query.slice(0, braceIndex + 1) + valuesClause + query.slice(braceIndex + 1);
 }
 
 /**
@@ -198,8 +180,7 @@ async function filterByInSelectMembership(
   // a literal in <...> - AutoCompleteEditor discards non-NamedNode results downstream regardless
   // (see useInstanceSearch.tsx's runSearchQuery), so this never changes real behavior.
   const namedNodeResults = results.filter(
-    (result): result is ResolvedTerm & { term: NamedNode } =>
-      result.term.termType === "NamedNode",
+    (result): result is ResolvedTerm & { term: NamedNode } => result.term.termType === "NamedNode",
   );
   if (namedNodeResults.length === 0) return [];
 
@@ -209,13 +190,9 @@ async function filterByInSelectMembership(
     namedNodeResults.map((result) => result.term),
   );
   const conforming = await runQuery(rewritten, shape);
-  const conformingValues = new Set(
-    conforming.map((result) => result.term.value),
-  );
+  const conformingValues = new Set(conforming.map((result) => result.term.value));
 
-  return namedNodeResults.filter((result) =>
-    conformingValues.has(result.term.value)
-  );
+  return namedNodeResults.filter((result) => conformingValues.has(result.term.value));
 }
 
 /**

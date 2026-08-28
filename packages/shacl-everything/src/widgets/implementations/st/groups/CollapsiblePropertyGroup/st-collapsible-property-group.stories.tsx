@@ -11,7 +11,7 @@ type Story = StoryObj<ShaclRendererProps>;
 // 10.3.1 story) - it lives in its own stories folder rather than alongside the spec-conformance
 // suite.
 export default {
-  title: "Shacl Renderer/ShapeThing/Groups/st:CollapsiblePropertyGroup",
+  title: "ShapeThing/Groups/st:CollapsiblePropertyGroup",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };

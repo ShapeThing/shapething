@@ -5,8 +5,7 @@ import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title:
-    "Shacl Renderer/SHACL 1.2 UI/10. Built-in Widgets/10.2 Viewers/10.2.1 shui:BlankNodeViewer",
+  title: "SHACL 1.2 UI/10. Built-in Widgets/10.2 Viewers/10.2.1 shui:BlankNodeViewer",
   component: ShaclRenderer,
 };
 

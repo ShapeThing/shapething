@@ -5,7 +5,7 @@
 @prefix sh: <http://www.w3.org/ns/shacl#>.
 @prefix shui: <http://www.w3.org/ns/shacl-ui/>.
 
-# Demonstrates spec §10.2 (Validation of Search Query Results): sh:in [ sh:select ... ] here is
+# Demonstrates spec §10.2 (PR not yet in) (Validation of Search Query Results): sh:in [ sh:select ... ] here is
 # the real constraint, resolved entirely locally via Comunica (no SERVICE clause at all), while
 # shui:searchQuery is deliberately written more broadly than that constraint - it matches every
 # ex:Country by label, not just the ex:AllowedCountry ones sh:in restricts values to. A renderer

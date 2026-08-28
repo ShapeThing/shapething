@@ -7,7 +7,7 @@ import type { SubmitResult } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/Functionality/Value language creation",
+  title: "Interaction/Value language creation",
   component: ShaclRenderer,
 };
 

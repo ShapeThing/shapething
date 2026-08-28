@@ -6,7 +6,7 @@ type Story = StoryObj<ShaclRendererProps>;
 
 export default {
   title:
-    "Shacl Renderer/SHACL 1.2 Core/7. Core Constraint Components/7.5 List Constraint Components/7.5.2 sh:minListLength",
+    "SHACL 1.2 Core/7. Core Constraint Components/7.5 List Constraint Components/7.5.2 sh:minListLength",
   component: ShaclRenderer,
 };
 

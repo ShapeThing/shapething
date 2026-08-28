@@ -6,7 +6,7 @@ import { factory } from "@/helpers/factory.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Shacl Renderer/Functionality/Language mode (switcher vs individual)",
+  title: "Interaction/Language mode (switcher vs individual)",
   component: ShaclRenderer,
 };
 
