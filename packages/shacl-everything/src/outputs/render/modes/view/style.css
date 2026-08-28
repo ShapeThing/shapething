@@ -33,7 +33,7 @@
 .st-property-items {
   display: flex;
   flex-direction: column;
-  gap: var(--size-3);
+  gap: var(--size-1);
   width: 100%;
 }
 

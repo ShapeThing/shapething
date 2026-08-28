@@ -133,11 +133,12 @@ test("propertyUiElements keeps distinct paths as separate elements", async () =>
   expect(node.children()).toHaveLength(2);
 });
 
-test("propertyUiElements does not dedupe an equal path declared on separate node shapes", async () => {
-  // Grouping happens per node shape (each sh:property list gets its own
-  // Map), so the same path repeated across two node shapes that both
-  // apply to the focus node - e.g. two branches of a sh:or - still
-  // produces one PropertyUIElement per node shape rather than one overall.
+test("propertyUiElements merges an equal path declared on separate node shapes into one element", async () => {
+  // MeatRecipe and VeganRecipe both apply to the same focus node and each independently declares
+  // its own property shape on ex:ingredient - two distinct sh:PropertyShape nodes, but the same
+  // SPARQL path. SHACL treats co-path property shapes as conjunctive constraints on one logical
+  // property regardless of which applicable shape declares them, so these must render as a single
+  // field (both minCounts folded together), not two separate widgets editing the same triples.
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
@@ -161,7 +162,45 @@ test("propertyUiElements does not dedupe an equal path declared on separate node
     nodeShapes: [ex("MeatRecipe"), ex("VeganRecipe")],
   });
 
-  expect(node.children()).toHaveLength(2);
+  const elements = node.children();
+  expect(elements).toHaveLength(1);
+  expect((elements[0] as PropertyUIElement).propertyShapes).toHaveLength(2);
+});
+
+test("does not duplicate properties when a nodeShape is listed both directly and via another listed shape's sh:node", async () => {
+  // Mirrors the academic showcase: ResearcherShape pulls in PersonShape via sh:node (its own
+  // "inherits" mechanism), but callers may also list PersonShape directly in nodeShapes (e.g.
+  // because the focus node's rdf:type independently matches it) - that shouldn't double the
+  // shared properties.
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+
+        ex:PersonShape a sh:NodeShape ;
+            sh:property [ sh:path ex:name ] .
+
+        ex:ResearcherShape a sh:NodeShape ;
+            sh:node ex:PersonShape ;
+            sh:property [ sh:path ex:jobTitle ] .
+    `,
+    "text/turtle",
+  );
+
+  const dataGraph = await parseRdf("", "text/turtle");
+
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    nodeShapes: [ex("ResearcherShape"), ex("PersonShape")],
+  });
+
+  const elements = node.children() as PropertyUIElement[];
+  expect(elements).toHaveLength(2);
+  expect(elements.map((element) => element.pathAsSparql()).sort()).toEqual(
+    ["<http://example.org/jobTitle>", "<http://example.org/name>"].sort(),
+  );
 });
 
 test("propertyUiElements exposes sh:or as a ChoiceElement alongside plain properties", async () => {

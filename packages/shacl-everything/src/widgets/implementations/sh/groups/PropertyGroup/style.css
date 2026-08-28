@@ -18,5 +18,4 @@
 .st-property-group__body {
   display: flex;
   flex-direction: column;
-  gap: var(--size-2);
 }

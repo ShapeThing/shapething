@@ -85,6 +85,11 @@ export type Environment = {
   enableInterfaceLanguageWithShapesLabelsOnly?: boolean;
   // Enables the "Edit in place" button on shui:EnumSelectEditor when the selected value is a sh:node. When false, the button will not be shown and the user will have to navigate to the linked resource to edit it.
   enableEditInPlace?: boolean;
+  // Enables shui:LabelViewer opening an IRI value read-only in a modal (via resolution/targets.ts's
+  // shapesTargetingNode) when that value both already exists in dataGraph and is targeted by a
+  // shape in shapesGraph, instead of only ever linking out to it. When false (or when the value
+  // has no shape to render), the link behaves as a plain external link.
+  enableViewInPlace?: boolean;
   // Enables a "Create new" option on reference-picking widgets (shui:InstancesSelectEditor,
   // shui:AutoCompleteEditor) for properties whose value is a resource (sh:class), in addition to
   // picking one of the resources already in dataGraph. Mints a fresh instance and opens it for
@@ -127,6 +132,7 @@ export const defaultEnvironment: Environment = {
   enableFullLanguageRemoval: true,
   enableInterfaceLanguageWithShapesLabelsOnly: true,
   enableEditInPlace: true,
+  enableViewInPlace: true,
   enableCreateInPlace: true,
 };
 
@@ -150,6 +156,7 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableFullLanguageRemoval: false,
   enableInterfaceLanguageWithShapesLabelsOnly: false,
   enableEditInPlace: false,
+  enableViewInPlace: false,
   enableCreateInPlace: false,
 };
 

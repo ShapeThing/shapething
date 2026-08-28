@@ -1,0 +1,39 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Employer"@en, "Werkgever"@nl ;
+        sh:path ex:employer ;
+        sh:class schema:Organization ;
+        shui:viewer shui:LabelViewer ;
+    ] ;
+    .
+
+<#organizationShape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Organization ;
+
+    sh:property [
+        sh:name "Email"@en, "E-mail"@nl ;
+        sh:path schema:email ;
+        sh:datatype xsd:string ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:employer ex:acme ;
+    .
+
+ex:acme a schema:Organization ;
+    rdfs:label "ACME Corp"@en, "ACME Corp"@nl ;
+    schema:email "info@acme.example" .
