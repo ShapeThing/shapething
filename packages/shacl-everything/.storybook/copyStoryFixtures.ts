@@ -11,11 +11,14 @@ import type { Plugin } from "vite";
 //
 // Fixtures aren't confined to src/stories/ - widget-specific ones are colocated with their
 // widget (src/widgets/implementations/.../<Name>/), alongside that widget's own score.ttl. A
-// fixture is a .ttl file that sits next to a *.stories.tsx AND isn't literally named score.ttl -
-// score.ttl is a reserved widget-scoring filename (registry.ts glob-imports it directly via
-// `?raw`, already inlined into the JS bundle) that happens to share a directory with the moved
-// story but was never meant to be served as a standalone asset; every widget has one, so
-// including it would collide on the same flattened `assets/score.ttl` output name.
+// fixture is a .ttl (or media asset a fixture references, e.g. ImageViewer's own hendrik.svg)
+// that sits next to a *.stories.tsx AND isn't literally named score.ttl - score.ttl is a reserved
+// widget-scoring filename (registry.ts glob-imports it directly via `?raw`, already inlined into
+// the JS bundle) that happens to share a directory with the moved story but was never meant to be
+// served as a standalone asset; every widget has one, so including it would collide on the same
+// flattened `assets/score.ttl` output name.
+const FIXTURE_EXTENSIONS = new Set([".ttl", ".svg", ".jpg", ".jpeg", ".png", ".gif", ".webp"]);
+
 export function copyStoryFixtures(srcDir: string): Plugin {
   return {
     name: "copy-story-fixtures",
@@ -27,7 +30,7 @@ export function copyStoryFixtures(srcDir: string): Plugin {
       );
       const fixtures = files.filter(
         (file) =>
-          extname(file) === ".ttl" &&
+          FIXTURE_EXTENSIONS.has(extname(file)) &&
           basename(file) !== "score.ttl" &&
           storyDirs.has(dirname(file)),
       );

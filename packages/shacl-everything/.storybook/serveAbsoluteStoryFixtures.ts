@@ -1,6 +1,19 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
-import { basename, dirname } from "node:path";
+import { basename, dirname, extname } from "node:path";
 import type { Plugin } from "vite";
+
+// Kept in sync with copyStoryFixtures.ts's FIXTURE_EXTENSIONS - same "what counts as a served
+// fixture" rule, just also needing a Content-Type per extension here since this middleware (unlike
+// a build-time emitted asset) answers the HTTP request directly.
+const FIXTURE_CONTENT_TYPES: Record<string, string> = {
+  ".ttl": "text/turtle; charset=utf-8",
+  ".svg": "image/svg+xml",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".gif": "image/gif",
+  ".webp": "image/webp",
+};
 
 // argsByTestFile.ts resolves fixtures with `new URL(filename, import.meta.url)`. Under
 // `storybook dev`'s own Vite server this works because Vite serves src/ files verbatim at their
@@ -11,8 +24,9 @@ import type { Plugin } from "vite";
 // `new URL(".ttl fixture", import.meta.url)` call resolves to
 // http://localhost:PORT/absolute/fs/path/to/fixture.ttl - a request shape Vite's default static
 // middleware doesn't recognise (it's neither root-relative nor /@fs/-prefixed), so it 404s.
-// This serves any such request whose decoded path exists on disk as a .ttl file inside `srcDir`
-// AND sits next to a *.stories.tsx AND isn't literally named score.ttl (i.e. is an
+// This serves any such request whose decoded path exists on disk as a fixture file (a .ttl, or a
+// media asset a .ttl fixture references via a relative IRI, e.g. ImageViewer's own hendrik.svg)
+// inside `srcDir` AND sits next to a *.stories.tsx AND isn't literally named score.ttl (i.e. is an
 // argsByTestFile() fixture, not a widget's own reserved scoring file - see copyStoryFixtures.ts),
 // so those fixtures resolve the same way under `vp test` as they already do in a real browser or
 // a built Storybook.
@@ -23,14 +37,15 @@ export function serveAbsoluteStoryFixtures(srcDir: string): Plugin {
       server.middlewares.use((req, res, next) => {
         if (!req.url) return next();
         const pathname = decodeURIComponent(req.url.split("?")[0] ?? "");
-        if (!pathname.endsWith(".ttl") || !pathname.startsWith(srcDir)) return next();
+        const contentType = FIXTURE_CONTENT_TYPES[extname(pathname)];
+        if (!contentType || !pathname.startsWith(srcDir)) return next();
         if (basename(pathname) === "score.ttl") return next();
         if (!existsSync(pathname) || !statSync(pathname).isFile()) return next();
         const hasSiblingStory = readdirSync(dirname(pathname)).some((entry) =>
           entry.endsWith(".stories.tsx"),
         );
         if (!hasSiblingStory) return next();
-        res.setHeader("Content-Type", "text/turtle; charset=utf-8");
+        res.setHeader("Content-Type", contentType);
         res.end(readFileSync(pathname));
       });
     },

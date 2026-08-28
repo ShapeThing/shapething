@@ -218,6 +218,7 @@ ex:PublicationShape a sh:NodeShape ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:name "Title"@en, "Titel"@nl ;
+        shui:propertyRole shui:LabelRole ;
     ] ;
     sh:property [
         sh:path dc:date ;
@@ -260,6 +261,7 @@ ex:OrganizationShape a sh:NodeShape ;
         sh:datatype xsd:string ;
         sh:maxCount 1 ;
         sh:name "Organization Name"@en, "Organisatienaam"@nl ;
+        shui:propertyRole shui:LabelRole ;
     ] ;
     sh:property [
         sh:path schema:location ;

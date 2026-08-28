@@ -24,7 +24,7 @@ type PropertyUIComponentProps = {
  * values to show renders nothing at all rather than an empty field waiting to be filled in.
  */
 export default function PropertyUIComponent({ propertyUIElement }: PropertyUIComponentProps) {
-  const { languageMode } = useEnvironment();
+  const { languageMode, viewModeLabelLayout } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const isRdfLangString = propertyUIElement.get(sh("datatype"))?.equals(rdf("langString"));
@@ -57,6 +57,13 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   // sh:memberShape branch below - a list property with no head triple yet has nothing to walk.
   if (objects.length === 0) return null;
 
+  // "inline" only reads well for a single value sitting beside its label - a list of values (or
+  // a singleUnifiedWidget like ValueTableViewer, inherently block-level) instead drops to its own
+  // line below the label, same as "block", regardless of the global viewModeLabelLayout setting.
+  const isList =
+    memberShapeNodes.length > 0 || isSingleUnifiedWidget || languageFilteredObjects.length > 1;
+  const labelLayout = isList ? "block" : viewModeLabelLayout;
+
   return (
     <FormElement
       label={
@@ -70,12 +77,14 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
             )}
           </>
         ) : (
-          label
+          `${label}`
         )
       }
+      showColon={true}
       labelTitle={propertyUIElement.pathAsSparql()}
       labelId={labelId}
-      description={description}
+      tooltip={description}
+      labelLayout={labelLayout}
     >
       {memberShapeNodes.length > 0 ? (
         <MemberShapeList

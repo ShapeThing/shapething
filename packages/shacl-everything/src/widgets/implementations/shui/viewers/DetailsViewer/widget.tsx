@@ -1,11 +1,10 @@
 import { useMemo } from "react";
 import type { Quad_Subject } from "@rdfjs/types";
-import { sh } from "@/helpers/namespaces.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import NodeUIElementChildren from "@/outputs/render/modes/view/NodeUIElementChildren.tsx";
-import { valueNodeLabel } from "@/resolution/label.ts";
+import { valueNodeLabel, valueNodeShapes } from "@/resolution/label.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
@@ -13,7 +12,10 @@ import "./style.css";
 export default function DetailsViewer({ shape, term }: WidgetProps) {
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
-  const nodeShapes = useMemo(() => shape.get(sh("node")) as Quad_Subject[], [shape]);
+  // 10.2.2: the applicable shape may come from sh:node explicitly or be inferred via sh:class -
+  // valueNodeShapes already unions both (see resolution/label.ts), same as valueNodeLabel's own
+  // shui:LabelRole path resolution does for the property's value node.
+  const nodeShapes = useMemo(() => valueNodeShapes(shape), [shape]);
 
   const nodeUiElement = useMemo(
     () =>
@@ -42,11 +44,11 @@ export default function DetailsViewer({ shape, term }: WidgetProps) {
   );
 
   return (
-    <details className="st-details-viewer">
-      <summary className="st-details-viewer__label">{label}</summary>
+    <div className="st-details-viewer">
+      <div className="st-details-viewer__label">{label}</div>
       <div className="st-details-viewer__body">
         <NodeUIElementChildren nodeUiElement={nodeUiElement} />
       </div>
-    </details>
+    </div>
   );
 }

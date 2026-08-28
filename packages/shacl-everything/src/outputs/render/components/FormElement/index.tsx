@@ -20,7 +20,12 @@ type Props = {
   tooltip?: ReactNode;
   // Preferred side for the tooltip - see Tooltip's own `placement` prop.
   tooltipPlacement?: Placement;
+  showColon?: boolean;
   size?: "small" | "medium";
+  // "block" (default) stacks the label above children, same as always. "inline" instead places
+  // the label beside children on one line - view mode only, driven by
+  // Environment.viewModeLabelLayout (see view mode's PropertyUIComponent).
+  labelLayout?: "block" | "inline";
 };
 
 export default function FormElement({
@@ -35,9 +40,15 @@ export default function FormElement({
   tooltip,
   tooltipPlacement,
   size = "medium",
+  showColon = false,
+  labelLayout = "block",
 }: Props) {
   return (
-    <div className={clsx("st-form-element", className)} data-size={size}>
+    <div
+      className={clsx("st-form-element", className)}
+      data-size={size}
+      data-label-layout={labelLayout}
+    >
       <header className="st-form-element__header">
         {label && (
           <label
@@ -70,6 +81,11 @@ export default function FormElement({
             )}
             {actions}
           </div>
+        )}
+        {showColon && label && (
+          <span className="st-form-element__label-colon" aria-hidden>
+            :
+          </span>
         )}
       </header>
       {description && <p className="st-form-element__description">{description}</p>}

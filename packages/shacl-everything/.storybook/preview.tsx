@@ -62,9 +62,31 @@ const friendlyArgDisplay: ArgTypesEnhancer = (context) => {
   return { ...context.argTypes, ...enhanced };
 };
 
+// Environment fields with a closed set of string values (see environment.ts) render as a free-text
+// Controls input by default, since no story declares an argTypes entry for them. Force a select
+// dropdown instead so Controls can't be used to type an invalid value.
+const ENUM_ARG_OPTIONS: Record<string, readonly string[]> = {
+  mode: ["edit", "view", "facet"],
+  languageMode: ["switcher", "individual"],
+  viewModeLabelLayout: ["block", "inline"],
+};
+
+const selectControlsForEnumArgs: ArgTypesEnhancer = (context) => {
+  const enhanced: Record<string, unknown> = {};
+
+  for (const key of Object.keys(context.initialArgs)) {
+    const options = ENUM_ARG_OPTIONS[key];
+    if (options) {
+      enhanced[key] = { control: { type: "select" }, options };
+    }
+  }
+
+  return { ...context.argTypes, ...enhanced };
+};
+
 const preview: Preview = {
   decorators: [withArgsKeyRemount, withGraphInspector, withSubmitPreview, withMaxWidth],
-  argTypesEnhancers: [friendlyArgDisplay],
+  argTypesEnhancers: [friendlyArgDisplay, selectControlsForEnumArgs],
   parameters: {
     controls: {
       matchers: {
