@@ -1,6 +1,8 @@
 node-ui-property-element = Property UI Element
 node-ui-submit-create = Create
 node-ui-submit-update = Update
+facet-mode-apply = Apply filters
+facet-type-selector-label = Type
 loading = Loading
 property-add-value =
     .aria-label = Add value

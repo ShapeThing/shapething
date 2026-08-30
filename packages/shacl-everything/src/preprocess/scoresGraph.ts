@@ -4,13 +4,12 @@ import { getScoringGraph } from "@/widgets/registry.ts";
 import type { Widgets } from "@/widgets/types.ts";
 
 // Callers only need to supply scoresGraph explicitly when they want to override the built-in
-// shui widget scoring rules - otherwise it's derived from the environment's own (bundled or
-// custom, see resolveWidgets) editors/viewers for the environment's mode. Facet mode has no
-// scoring rules of its own yet, so it's left untouched.
+// shui/st widget scoring rules - otherwise it's derived from the environment's own (bundled or
+// custom, see resolveWidgets) editors/viewers/facets for the environment's mode.
 export const resolveScoresGraph: Preprocessor = async (environment) => {
   const hasScoresGraph =
     environment.scoresGraph instanceof RdfStore && environment.scoresGraph.size > 0;
-  if (environment.mode === "facet" || hasScoresGraph) {
+  if (hasScoresGraph) {
     return environment;
   }
 

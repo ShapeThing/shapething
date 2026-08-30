@@ -9,9 +9,11 @@
 
 .st-property-group__title {
   padding: 0;
-  font-size: var(--st-font-size-small);
+  font-size: var(--st-font-size-big);
+  margin-block-end: var(--size-3);
   font-weight: 600;
-  color: var(--st-color-text);
+  color: var(--st-color-text-muted);
+  font-style: italic;
   font-family: var(--st-font-family);
 }
 

@@ -1,0 +1,21 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Category"@en ;
+        sh:path schema:category ;
+        sh:class ex:Category ;
+    ] ;
+    .
+
+ex:Electronics a ex:Category ; rdfs:label "Electronics"@en .
+ex:Books a ex:Category ; rdfs:label "Books"@en .
+
+<#data> a schema:Product ; schema:name "Widget" ; schema:category ex:Electronics .
+<#product2> a schema:Product ; schema:name "Novel" ; schema:category ex:Books .
+<#product3> a schema:Product ; schema:name "Gadget" ; schema:category ex:Electronics .

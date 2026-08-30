@@ -4,6 +4,8 @@ import { factory } from "@/helpers/factory.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { prefixes, rdf, sh } from "@/helpers/namespaces.ts";
 import type {
+  FacetWidgetComponent,
+  FacetWidgetRegistryEntry,
   GroupWidgetComponent,
   GroupWidgetRegistryEntry,
   WidgetComponent,
@@ -25,7 +27,7 @@ import widgetScoringTtl from "@/scoring/widget-scoring.ttl?raw";
 const components = import.meta.glob("/src/widgets/implementations/*/*/*/widget.tsx", {
   eager: true,
   import: "default",
-}) as Record<string, WidgetComponent | GroupWidgetComponent>;
+}) as Record<string, WidgetComponent | GroupWidgetComponent | FacetWidgetComponent>;
 
 const scoringGraphs = import.meta.glob("/src/widgets/implementations/*/*/*/score.ttl", {
   eager: true,
@@ -81,6 +83,21 @@ function buildEntries(category: "editors" | "viewers"): Record<string, WidgetReg
   return entries;
 }
 
+// Facets have no meta.ts concept (see WidgetMeta's doc - createTerm/canAddMore/singleUnifiedWidget
+// are all editor/viewer-only) - just widget + scoringGraph, same as buildEntries above minus meta.
+function buildFacetEntries(): Record<string, FacetWidgetRegistryEntry> {
+  const entries: Record<string, FacetWidgetRegistryEntry> = {};
+  for (const [path, Component] of Object.entries(components)) {
+    if (categorySegment(path) !== "facets") continue;
+    entries[folderName(path)] = {
+      widget: widgetIri(path),
+      Component: Component as FacetWidgetComponent,
+      scoringGraph: scoringGraphs[path.replace(/widget\.tsx$/, "score.ttl")],
+    };
+  }
+  return entries;
+}
+
 function buildGroupEntries(): Record<string, GroupWidgetRegistryEntry> {
   const entries: Record<string, GroupWidgetRegistryEntry> = {};
   for (const [path, Component] of Object.entries(components)) {
@@ -104,9 +121,16 @@ export const defaultWidgets: Widgets = {
   editors: buildEntries("editors"),
   viewers: buildEntries("viewers"),
   groups: buildGroupEntries(),
+  facets: buildFacetEntries(),
 };
 
-export type WidgetMode = "edit" | "view";
+export type WidgetMode = "edit" | "view" | "facet";
+
+function categoryFor(mode: WidgetMode, widgets: Widgets) {
+  if (mode === "edit") return widgets.editors;
+  if (mode === "view") return widgets.viewers;
+  return widgets.facets;
+}
 
 // widget-scoring.ttl and every score.ttl are static bundle contents - parsing them into an
 // RdfStore is pure and (mode, widgets)-scoped, so repeat calls (one per property, on every render)
@@ -118,8 +142,8 @@ export type WidgetMode = "edit" | "view";
 const scoringGraphCache = new WeakMap<Widgets, Map<WidgetMode, Promise<RdfStore>>>();
 
 /**
- * Combines the shared widget-scoring.ttl shape definitions with every editor/viewer's own
- * scoringGraph (see Widgets) for the given mode into a single scoring graph. Groups never
+ * Combines the shared widget-scoring.ttl shape definitions with every editor's/viewer's/facet's
+ * own scoringGraph (see Widgets) for the given mode into a single scoring graph. Groups never
  * contribute here - group widget selection doesn't score at all (see getGroupWidget).
  */
 export function getScoringGraph(
@@ -132,7 +156,7 @@ export function getScoringGraph(
   const cached = modeCache.get(mode);
   if (cached) return cached;
 
-  const categoryEntries = Object.values(mode === "edit" ? widgets.editors : widgets.viewers);
+  const categoryEntries = Object.values(categoryFor(mode, widgets));
   const turtle = [
     widgetScoringTtl,
     ...categoryEntries.map((entry) => entry.scoringGraph ?? ""),
@@ -151,16 +175,18 @@ function findWidget<T extends { widget: NamedNode }>(
 }
 
 /**
- * Resolves a shui:widget IRI (as picked by PropertyUIElement.widget()) to the React component
- * implementing it, matched against the active `widgets`' own `editors`/`viewers` entries by IRI
- * equality (not by folder path - `widgets` need not be the bundled `defaultWidgets` at all).
+ * Resolves a shui:widget/st:widget IRI (as picked by PropertyUIElement.widget()) to the React
+ * component implementing it, matched against the active `widgets`' own editors/viewers/facets
+ * entries (by `mode`) by IRI equality (not by folder path - `widgets` need not be the bundled
+ * `defaultWidgets` at all). The return type follows `mode`: callers that know their mode statically
+ * (e.g. useWidget's own generic parameter) can narrow past the union themselves.
  */
 export function getWidgetComponent(
   mode: WidgetMode,
   widget: NamedNode,
   widgets: Widgets = defaultWidgets,
-): WidgetComponent | undefined {
-  return findWidget(mode === "edit" ? widgets.editors : widgets.viewers, widget)?.Component;
+): WidgetComponent | FacetWidgetComponent | undefined {
+  return findWidget(categoryFor(mode, widgets), widget)?.Component;
 }
 
 /**

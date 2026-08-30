@@ -2,11 +2,7 @@ import { expect, test } from "vite-plus/test";
 import { factory } from "@/helpers/factory.ts";
 import { ex, rdf, sh, xsd } from "@/helpers/namespaces.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
-import {
-  detectActiveBranch,
-  logicalBranches,
-  withBranch,
-} from "@/structure/logicalBranches.ts";
+import { detectActiveBranch, logicalBranches, withBranch } from "@/structure/logicalBranches.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 
 async function contactShapesGraph() {
@@ -64,20 +60,16 @@ test("withBranch merges a branch's own constraints (e.g. sh:datatype) into the p
   expect(element.get(sh("datatype"))).toBeUndefined();
 
   const [stringBranch, langStringBranch] = logicalBranches(element);
-  expect(withBranch(element, stringBranch.shape).get(sh("datatype"))?.value)
-    .toBe(
-      xsd("string").value,
-    );
-  expect(withBranch(element, langStringBranch.shape).get(sh("datatype"))?.value)
-    .toBe(
-      rdf("langString").value,
-    );
+  expect(withBranch(element, stringBranch.shape).get(sh("datatype"))?.value).toBe(
+    xsd("string").value,
+  );
+  expect(withBranch(element, langStringBranch.shape).get(sh("datatype"))?.value).toBe(
+    rdf("langString").value,
+  );
 
   // The outer property's own sh:name should still win over a branch's - withBranch() shouldn't
   // change which label the property itself displays.
-  expect(withBranch(element, stringBranch.shape).get(sh("name"))?.value).toBe(
-    "Contact",
-  );
+  expect(withBranch(element, stringBranch.shape).get(sh("name"))?.value).toBe("Contact");
 });
 
 test("detectActiveBranch picks the branch a literal's datatype already conforms to", async () => {
@@ -97,21 +89,11 @@ test("detectActiveBranch picks the branch a literal's datatype already conforms 
   const plainString = factory.literal("hendrik@example.org", xsd("string"));
   const languageString = factory.literal("hendrik@example.org", "en");
 
-  const detectedForString = await detectActiveBranch(
-    element,
-    plainString,
-    branches,
-  );
+  const detectedForString = await detectActiveBranch(element, plainString, branches);
   expect(detectedForString?.shape.equals(stringBranch.shape)).toBe(true);
 
-  const detectedForLangString = await detectActiveBranch(
-    element,
-    languageString,
-    branches,
-  );
-  expect(detectedForLangString?.shape.equals(langStringBranch.shape)).toBe(
-    true,
-  );
+  const detectedForLangString = await detectActiveBranch(element, languageString, branches);
+  expect(detectedForLangString?.shape.equals(langStringBranch.shape)).toBe(true);
 });
 
 test("detectActiveBranch returns undefined when no branch conforms", async () => {
@@ -128,8 +110,7 @@ test("detectActiveBranch returns undefined when no branch conforms", async () =>
   const branches = logicalBranches(element);
   const nonConforming = factory.literal("42", xsd("integer"));
 
-  expect(await detectActiveBranch(element, nonConforming, branches))
-    .toBeUndefined();
+  expect(await detectActiveBranch(element, nonConforming, branches)).toBeUndefined();
 });
 
 test("logicalBranches returns an empty array for a property with no sh:or/sh:xone", async () => {

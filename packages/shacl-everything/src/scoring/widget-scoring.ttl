@@ -2,6 +2,7 @@ PREFIX sh: <http://www.w3.org/ns/shacl#>
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 
 #####################
 # Data Graph Shapes #
@@ -182,6 +183,18 @@ shui:hasRootClassConstraint
     sh:property [
         sh:path sh:rootClass ;
         sh:minCount 1 ;
+    ] ;
+.
+
+# A property whose own path is exactly the skos:inScheme predicate (a direct predicate path, not a
+# compound one) - used by st:CategoryFacet to recognize a SKOS classification property even when it
+# declares no sh:class of its own (skos:Concept values are typically only reachable via
+# skos:inScheme, not typed as a class shapesGraph can see).
+shui:hasSkosInSchemePathConstraint
+    a sh:NodeShape ;
+    sh:property [
+        sh:path sh:path ;
+        sh:hasValue skos:inScheme ;
     ] ;
 .
 

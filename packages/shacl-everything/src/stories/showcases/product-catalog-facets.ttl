@@ -1,0 +1,72 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#productShape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Search"@en ;
+        sh:path [ sh:alternativePath ( schema:name schema:description ) ] ;
+        sh:order 0 ;
+    ] ;
+    sh:property [
+        sh:name "Category"@en ;
+        sh:path schema:category ;
+        sh:class ex:Category ;
+        sh:order 1 ;
+    ] ;
+    sh:property [
+        sh:name "Price"@en ;
+        sh:path schema:price ;
+        sh:datatype xsd:decimal ;
+        sh:order 2 ;
+    ] ;
+    sh:property [
+        sh:name "Release date"@en ;
+        sh:path schema:releaseDate ;
+        sh:datatype xsd:date ;
+        sh:order 3 ;
+    ] ;
+    .
+
+<#personShape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Given name"@en ;
+        sh:path schema:givenName ;
+        sh:datatype xsd:string ;
+    ] ;
+    .
+
+ex:Electronics a ex:Category ; rdfs:label "Electronics"@en .
+ex:Books a ex:Category ; rdfs:label "Books"@en .
+
+<#data>
+    a schema:Product ;
+    schema:name "Widget" ;
+    schema:description "A useful little widget" ;
+    schema:category ex:Electronics ;
+    schema:price 19.99 ;
+    schema:releaseDate "2024-01-15"^^xsd:date .
+
+<#product2>
+    a schema:Product ;
+    schema:name "Gadget" ;
+    schema:description "Does gadget things" ;
+    schema:category ex:Electronics ;
+    schema:price 42.50 ;
+    schema:releaseDate "2025-06-01"^^xsd:date .
+
+<#product3>
+    a schema:Product ;
+    schema:name "Novel" ;
+    schema:description "A gripping story" ;
+    schema:category ex:Books ;
+    schema:price 12.00 ;
+    schema:releaseDate "2023-09-10"^^xsd:date .
+
+<#alice> a schema:Person ; schema:givenName "Alice" .

@@ -7,7 +7,7 @@ import {
   getWidgetMeta,
 } from "@/widgets/registry.ts";
 import { ex, rdf, sh, shui, st } from "@/helpers/namespaces.ts";
-import { score } from "@/scoring/score.ts";
+import { prepareScoringGraph, score, select } from "@/scoring/score.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
 
@@ -78,13 +78,100 @@ test("getScoringGraph + score picks the BooleanEditor for a plain boolean proper
   expect(best[0]?.widget).toEqual(shui("BooleanEditor"));
 });
 
+test("getScoringGraph combines the shared widget-scoring.ttl shapes with every facet score.ttl", async () => {
+  const scoringGraph = await getScoringGraph("facet");
+
+  expect(
+    scoringGraph.getQuads(null, shui("widget"), st("NumberRangeFacet")).length,
+  ).toBeGreaterThan(0);
+
+  // Editor/viewer-only widgets should not be present in the facet graph.
+  expect(scoringGraph.getQuads(null, shui("widget"), shui("BooleanEditor"))).toHaveLength(0);
+});
+
+test("facet scoring picks st:NumberRangeFacet for a plain numeric property, using the real widget scoring rules", async () => {
+  const scoringGraph = await getScoringGraph("facet");
+
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+        @prefix ex: <http://example.org/> .
+        ex:ageShape a sh:PropertyShape ;
+            sh:path ex:age ;
+            sh:datatype xsd:integer .
+    `,
+    "text/turtle",
+  );
+
+  const best = await Array.fromAsync(
+    score({
+      dataGraph: await parseRdf("", "text/turtle"),
+      shapeNode: ex("ageShape"),
+      shapesGraph,
+      scoringGraph,
+      widgetPredicate: st("facet"),
+    }),
+  );
+
+  expect(best[0]?.widget).toEqual(st("NumberRangeFacet"));
+});
+
+test("st:facet hard-wires a specific facet widget, same as shui:editor/shui:viewer do for edit/view", async () => {
+  const scoringGraph = prepareScoringGraph({
+    shapesGraph: await parseRdf(
+      `
+          @prefix sh: <http://www.w3.org/ns/shacl#> .
+          @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+          @prefix ex: <http://example.org/> .
+          @prefix st: <http://shapething/> .
+          ex:ageShape a sh:PropertyShape ;
+              sh:path ex:age ;
+              sh:datatype xsd:integer ;
+              st:facet st:CategoryFacet .
+      `,
+      "text/turtle",
+    ),
+    scoringGraph: await getScoringGraph("facet"),
+  });
+
+  const [widget] = await Array.fromAsync(
+    select({
+      best: true,
+      dataGraph: await parseRdf("", "text/turtle"),
+      shapeNode: ex("ageShape"),
+      shapesGraph: await parseRdf(
+        `
+            @prefix sh: <http://www.w3.org/ns/shacl#> .
+            @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+            @prefix ex: <http://example.org/> .
+            @prefix st: <http://shapething/> .
+            ex:ageShape a sh:PropertyShape ;
+                sh:path ex:age ;
+                sh:datatype xsd:integer ;
+                st:facet st:CategoryFacet .
+        `,
+        "text/turtle",
+      ),
+      scoringGraph,
+      widgetPredicate: st("facet"),
+    }),
+  );
+
+  // Would otherwise score as st:NumberRangeFacet (see the test above) - the explicit declaration
+  // wins outright, without even needing st:CategoryFacet's own score.ttl rules to match.
+  expect(widget).toEqual(st("CategoryFacet"));
+});
+
 test("getWidgetComponent resolves a widget IRI to its component for the given mode", () => {
   expect(getWidgetComponent("edit", shui("BooleanEditor"))).toBeDefined();
   expect(getWidgetComponent("view", shui("LiteralViewer"))).toBeDefined();
+  expect(getWidgetComponent("facet", st("NumberRangeFacet"))).toBeDefined();
 
-  // An editor-only widget shouldn't resolve when asked for view mode, and vice versa.
+  // An editor-only widget shouldn't resolve when asked for view/facet mode, and vice versa.
   expect(getWidgetComponent("view", shui("BooleanEditor"))).toBeUndefined();
   expect(getWidgetComponent("edit", shui("LiteralViewer"))).toBeUndefined();
+  expect(getWidgetComponent("edit", st("NumberRangeFacet"))).toBeUndefined();
 });
 
 test("getWidgetMeta resolves a createTerm override where one is declared", () => {

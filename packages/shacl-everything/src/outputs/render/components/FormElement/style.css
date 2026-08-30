@@ -48,17 +48,16 @@
 }
 
 .st-form-element__description {
-  margin: 0;
+  margin-inline: 0;
+  margin-block: var(--size-1) var(--size-2);
   font-size: var(--st-font-size-small);
   color: var(--st-color-text-muted);
 }
 
 .st-form-element__header {
   display: flex;
-  gap: var(--size-1);
   width: 100%;
   align-items: center;
-  justify-content: space-between;
 }
 
 .st-form-element__actions {
@@ -68,11 +67,15 @@
   justify-content: center;
   align-content: center;
   justify-items: center;
+  /* Pushed to the far end of the header on its own, rather than via the header's own
+     justify-content - the label+colon (rendered before this in the DOM, see index.tsx) always
+     stay packed together at the start regardless of whether this element exists at all. */
+  margin-inline-start: auto;
 }
 
 .st-node-ui-component {
   .st-form-element + .st-form-element {
-    margin-top: var(--size-5);
+    margin-top: var(--size-3);
   }
 }
 

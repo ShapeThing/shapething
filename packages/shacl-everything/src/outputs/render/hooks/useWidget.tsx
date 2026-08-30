@@ -3,25 +3,31 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { getWidgetComponent, getWidgetMeta } from "@/widgets/registry.ts";
-import type { WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
+import type { FacetWidgetComponent, WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 
 /**
  * Resolves the highest-scoring widget component for a property, per the environment's
- * scoresGraph and mode. Facet mode has no widget scoring rules yet, so it never resolves one.
+ * scoresGraph and mode (edit/view/facet all score the same way - see scoring/score.ts).
  *
  * `valueNode` additionally scores the property's actual value against each rule's
  * shui:dataGraphShape (e.g. picking a different widget for a URL than for plain text sharing the
- * same property) - omit it to score on the property shape(s) alone.
+ * same property) - omit it to score on the property shape(s) alone. Facet mode never has a single
+ * value to pass here (see structure/facetValues.ts) - it always scores on the property shape(s)
+ * alone.
+ *
+ * `T` lets a facet-mode caller narrow `Widget`'s type to `FacetWidgetComponent` instead of the
+ * default `WidgetComponent` (edit/view's shape), since which one `mode` actually resolves to isn't
+ * something registry.ts's return type alone can express - see useFacetWidget's own wrapper below.
  */
-export function useWidget(
+export function useWidget<T extends WidgetComponent | FacetWidgetComponent = WidgetComponent>(
   widgetPredicate: Term,
   property: PropertyUIElement,
   valueNode?: Term,
 ):
   | {
-      Widget: WidgetComponent;
+      Widget: T;
       iri: Term;
       meta: WidgetMeta | undefined;
       // True while `Widget` is still the previous query key's result (via keepPreviousData),
@@ -47,9 +53,9 @@ export function useWidget(
     ...noRefetch,
   });
 
-  if (!widget || widget.termType !== "NamedNode" || mode === "facet") return undefined;
+  if (!widget || widget.termType !== "NamedNode") return undefined;
   return {
-    Widget: getWidgetComponent(mode, widget, property.widgetRegistry)!,
+    Widget: getWidgetComponent(mode, widget, property.widgetRegistry) as T,
     meta: getWidgetMeta(widget, property.widgetRegistry),
     iri: widget,
     isPlaceholderData,

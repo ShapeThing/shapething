@@ -17,6 +17,26 @@ export type WidgetProps = {
 
 export type WidgetComponent = ComponentType<WidgetProps>;
 
+/**
+ * Facet mode has no single focus node, so a facet widget's props look nothing like an editor's/
+ * viewer's term+setTerm: `shape` is still the (possibly synthetic, see the root type/category
+ * selector) PropertyUIElement metadata comes from, `values` is every value found for this
+ * property across every target instance (see structure/facetValues.ts's aggregateFacetValues -
+ * used to derive range bounds/option lists, not a single current value), and
+ * getConstraint/setConstraint read/write this property's own constraint node on the live,
+ * generated filterShape (see structure/filterShape.ts) - the facet-mode analogue of term/setTerm.
+ * setConstraint(predicate, undefined) removes that predicate's current value(s) entirely.
+ */
+export type FacetWidgetProps = {
+  shape: PropertyUIElement;
+  values: Term[];
+  getConstraint: (predicate: NamedNode) => Term[];
+  setConstraint: (predicate: NamedNode, value: Term | Term[] | undefined) => void;
+  labelledBy?: string;
+};
+
+export type FacetWidgetComponent = ComponentType<FacetWidgetProps>;
+
 export type CreateTermContext = {
   contentLanguage: BCP47;
 };
@@ -61,6 +81,17 @@ export type WidgetRegistryEntry = {
 };
 
 /**
+ * A facets-category registry entry (see Widgets.facets) - same scoring-graph/explicit-declaration
+ * story as an editor/viewer (see registry.ts's buildEntries, prepareScoringGraph's st:facet
+ * handling), just a different Component prop shape (FacetWidgetProps, not WidgetProps).
+ */
+export type FacetWidgetRegistryEntry = {
+  widget: NamedNode;
+  Component: FacetWidgetComponent;
+  scoringGraph?: string;
+};
+
+/**
  * A group widget is selected by simple, direct rdf:type matching (see registry.ts's
  * getGroupWidget) - no scoring system, so there's no scoringGraph here.
  */
@@ -79,4 +110,5 @@ export type Widgets = {
   editors: Record<string, WidgetRegistryEntry>;
   viewers: Record<string, WidgetRegistryEntry>;
   groups: Record<string, GroupWidgetRegistryEntry>;
+  facets: Record<string, FacetWidgetRegistryEntry>;
 };

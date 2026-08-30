@@ -1,0 +1,65 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+st:TextSearchFacet rdfs:label "Text Search"@en, "Tekst zoeken"@nl .
+
+st:textSearchFacetScore40
+    a shui:WidgetScore ;
+    shui:widget st:TextSearchFacet ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:prefersTextSearchFacet ;
+.
+
+# shui:searchQuery is a strong "this property is meant to be searched" signal even though it's
+# edit mode's own federated-autocomplete predicate (see AutoCompleteEditor) - a facet author who
+# already declared it for editing gets a matching text-search facet for free, no extra annotation.
+st:textSearchFacetScore30
+    a shui:WidgetScore ;
+    shui:widget st:TextSearchFacet ;
+    shui:score 30 ;
+    shui:shapesGraphShape shui:hasSearchQueryConstraint ;
+.
+
+st:textSearchFacetScoreString
+    a shui:WidgetScore ;
+    shui:widget st:TextSearchFacet ;
+    shui:score 10 ;
+    shui:shapesGraphShape shui:hasDatatypeStringConstraint ;
+.
+
+st:textSearchFacetScoreLangString
+    a shui:WidgetScore ;
+    shui:widget st:TextSearchFacet ;
+    shui:score 10 ;
+    shui:shapesGraphShape shui:hasDatatypeLangStringConstraint ;
+.
+
+# A property whose path is sh:alternativePath across several other properties - the pattern this
+# plan's own author documented for "many text properties, one text search facet" - declares no
+# single sh:datatype/sh:class of its own to score on otherwise, so it needs its own signal: does
+# the property's own sh:path value have an sh:alternativePath at all (regardless of what its
+# branches are).
+st:textSearchFacetScoreAlternativePath
+    a shui:WidgetScore ;
+    shui:widget st:TextSearchFacet ;
+    shui:score 10 ;
+    shui:shapesGraphShape st:hasAlternativePathConstraint ;
+.
+
+st:prefersTextSearchFacet
+    a sh:NodeShape ;
+    sh:property [
+        sh:path st:facet ;
+        sh:hasValue st:TextSearchFacet ;
+    ] ;
+.
+
+st:hasAlternativePathConstraint
+    a sh:NodeShape ;
+    sh:property [
+        sh:path ( sh:path sh:alternativePath ) ;
+        sh:minCount 1 ;
+    ] ;
+.

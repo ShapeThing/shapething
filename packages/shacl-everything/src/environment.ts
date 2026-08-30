@@ -26,6 +26,10 @@ export type Environment = {
   // even a partial replacement built by spreading defaultWidgets, means the bundled widgets never
   // load.
   widgets?: Widgets;
+  // Ignored in facet mode except for one thing: modes/facet/index.tsx reuses it (when set to
+  // anything other than the default placeholder) as the IRI of the generated filter shape itself
+  // - see structure/filterShape.ts's createFilterShape. Facet mode has no single focus node to
+  // render, so there's nothing else this field could otherwise mean there.
   focusNode: NamedNode;
   nodeShapes: Quad_Subject[];
   mode: "edit" | "view" | "facet";
@@ -97,8 +101,16 @@ export type Environment = {
   // creating rather than editing a referenced resource. When false, only existing instances can be
   // picked, same as before this option existed.
   enableCreateInPlace?: boolean;
-  // Called when the edit mode form is submitted. See SubmitResult.
+  // Called when the edit mode form is submitted - or, in facet mode, with the generated filter
+  // shape (see structure/filterShape.ts and facetChangeMode below). Both hand back the same
+  // SubmitResult shape (a fresh, non-reactive RdfStore plus its additions/deletions since the
+  // session started empty), so a caller doesn't need mode-specific handling to consume either.
   onSubmit?: (result: SubmitResult) => void;
+  // Facet mode only. "live" (the default) calls onSubmit continuously, debounced, every time
+  // interacting with a facet changes the generated filter shape - matching typical faceted-search
+  // UX (results update as you refine). "submit" instead withholds every call until an explicit
+  // apply action (facet mode then renders its own <form>/submit button, mirroring edit mode's).
+  facetChangeMode?: "live" | "submit";
 };
 
 // What flows through the preprocessor chain before it's fully resolved: the graph fields may
@@ -134,6 +146,7 @@ export const defaultEnvironment: Environment = {
   enableEditInPlace: true,
   enableViewInPlace: true,
   enableCreateInPlace: true,
+  facetChangeMode: "live",
 };
 
 export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph" | "dataGraph"> = {
@@ -158,6 +171,7 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableEditInPlace: false,
   enableViewInPlace: false,
   enableCreateInPlace: false,
+  facetChangeMode: "live",
 };
 
 export const minimalEnvironmentWithContentLanguages: Omit<

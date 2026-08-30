@@ -28,13 +28,22 @@ export default function Modal({ open, onClose, title, children }: Props) {
       ref={dialogRef}
       className="st-modal"
       aria-labelledby={titleId}
-      onClose={onClose}
+      // "close" and "cancel" don't natively bubble, but React simulates bubbling for them through
+      // the *React* tree regardless (not the DOM tree, so portaling this component wouldn't help
+      // either) - when a Modal is opened from inside another Modal's content (e.g. LabelViewer's
+      // view-in-place drilling into a nested IRI), the inner dialog's own native event would
+      // otherwise also invoke the outer Modal's onClose/onCancel. Guard on the real event target,
+      // exactly like the backdrop-click check below, so each Modal only reacts to its own dialog.
+      onClose={(event) => {
+        if (event.target === dialogRef.current) onClose();
+      }}
       // Escape's native default action is to close the dialog immediately, then fire "close" -
       // by then `onClose` would run after the fact, too late for a caller that wants a chance to
       // block the close (e.g. to confirm discarding unsaved changes) the same way it already can
       // for the header button/backdrop below. Preventing "cancel" stops that default action, so
       // Escape instead funnels through the exact same pre-close `onClose` call as the other two.
       onCancel={(event) => {
+        if (event.target !== dialogRef.current) return;
         event.preventDefault();
         onClose();
       }}
