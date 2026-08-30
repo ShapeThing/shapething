@@ -85,17 +85,12 @@ export const distillInterfaceLanguages = ((environment) => {
   const seen = new Set<string>();
   const interfaceLanguages: BCP47[] = [];
 
-  const shapeLanguages = usedLanguages(
-    environment.shapesGraph as RdfStore,
-    LABEL_PREDICATES,
-  );
+  const shapeLanguages = usedLanguages(environment.shapesGraph as RdfStore, LABEL_PREDICATES);
 
-  for (
-    const language of [
-      ...Object.keys(mergeLocaleLoaders(environment.interfaceLocales)),
-      ...enableInterfaceLanguageWithShapesLabelsOnly ? shapeLanguages : [],
-    ] as BCP47[]
-  ) {
+  for (const language of [
+    ...Object.keys(mergeLocaleLoaders(environment.interfaceLocales)),
+    ...(enableInterfaceLanguageWithShapesLabelsOnly ? shapeLanguages : []),
+  ] as BCP47[]) {
     const key = primarySubtag(language);
     if (!seen.has(key)) {
       seen.add(key);

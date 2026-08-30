@@ -68,6 +68,7 @@
 
 .st-property-add-button {
   margin-inline-start: auto;
+  margin-block-start: var(--size-1);
 }
 
 .st-property-object__unit {

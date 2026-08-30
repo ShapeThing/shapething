@@ -1,0 +1,28 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+st:DateTimeRangeFacet rdfs:label "Date & Time Range"@en, "Datum- en tijdbereik"@nl .
+
+st:dateTimeRangeFacetScore40
+    a shui:WidgetScore ;
+    shui:widget st:DateTimeRangeFacet ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:prefersDateTimeRangeFacet ;
+.
+
+st:dateTimeRangeFacetScore10
+    a shui:WidgetScore ;
+    shui:widget st:DateTimeRangeFacet ;
+    shui:score 10 ;
+    shui:shapesGraphShape shui:hasDatatypeDateTimeConstraint ;
+.
+
+st:prefersDateTimeRangeFacet
+    a sh:NodeShape ;
+    sh:property [
+        sh:path st:facet ;
+        sh:hasValue st:DateTimeRangeFacet ;
+    ] ;
+.

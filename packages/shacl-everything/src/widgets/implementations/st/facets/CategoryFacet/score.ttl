@@ -1,0 +1,42 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+st:CategoryFacet rdfs:label "Category"@en, "Categorie"@nl .
+
+st:categoryFacetScore40
+    a shui:WidgetScore ;
+    shui:widget st:CategoryFacet ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:prefersCategoryFacet ;
+.
+
+st:categoryFacetScoreIn
+    a shui:WidgetScore ;
+    shui:widget st:CategoryFacet ;
+    shui:score 20 ;
+    shui:shapesGraphShape shui:hasInConstraint ;
+.
+
+st:categoryFacetScoreSkosInScheme
+    a shui:WidgetScore ;
+    shui:widget st:CategoryFacet ;
+    shui:score 15 ;
+    shui:shapesGraphShape shui:hasSkosInSchemePathConstraint ;
+.
+
+st:categoryFacetScoreClass
+    a shui:WidgetScore ;
+    shui:widget st:CategoryFacet ;
+    shui:score 10 ;
+    shui:shapesGraphShape shui:hasClassConstraint ;
+.
+
+st:prefersCategoryFacet
+    a sh:NodeShape ;
+    sh:property [
+        sh:path st:facet ;
+        sh:hasValue st:CategoryFacet ;
+    ] ;
+.

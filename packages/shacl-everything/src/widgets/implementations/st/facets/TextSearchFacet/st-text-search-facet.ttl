@@ -1,0 +1,18 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Search"@en ;
+        # A property shape with no sh:datatype/sh:class of its own - just an alternative path
+        # across several text properties - is meant to be filtered by a single free-text search
+        # box, not a per-property facet each; see st:TextSearchFacet's own doc comment.
+        sh:path [ sh:alternativePath ( schema:name schema:description ) ] ;
+    ] ;
+    .
+
+<#data> a schema:Product ; schema:name "Widget" ; schema:description "A useful little widget" .
+<#product2> a schema:Product ; schema:name "Gadget" ; schema:description "Does gadget things" .

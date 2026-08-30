@@ -1,0 +1,9 @@
+.st-date-range-facet {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+}
+
+.st-date-range-facet__separator {
+  color: var(--gray-6);
+}

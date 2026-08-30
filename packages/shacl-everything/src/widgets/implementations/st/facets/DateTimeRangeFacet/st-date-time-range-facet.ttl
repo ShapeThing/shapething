@@ -1,0 +1,17 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Event ;
+    sh:property [
+        sh:name "Starts at"@en ;
+        sh:path schema:startDate ;
+        sh:datatype xsd:dateTime ;
+    ] ;
+    .
+
+<#data> a schema:Event ; schema:name "Kickoff" ; schema:startDate "2026-03-01T09:00:00"^^xsd:dateTime .
+<#event2> a schema:Event ; schema:name "Conference" ; schema:startDate "2026-05-15T14:00:00"^^xsd:dateTime .

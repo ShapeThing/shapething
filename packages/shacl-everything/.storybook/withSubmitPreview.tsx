@@ -18,7 +18,9 @@ import { SUBMIT_PREVIEW_EVENT } from "./addons/submit-preview/constants.ts";
 // (whose dataGraph has a real internal cycle) can't be displayed as-is - see friendlyArgDisplay in
 // preview.tsx for the same issue with story args. A story that sets its own onSubmit (e.g. to
 // assert on the submitted result in a play() function) still gets called first - this only adds
-// the preview on top.
+// the preview on top. Facet mode (see modes/facet/index.tsx) calls this exact same callback with
+// its generated filter shape, so it gets this preview for free too, with no facet-specific code
+// here at all - "resourceOnly" below is simply never meaningful there (no focusNode to scope to).
 const logSubmit = action("onSubmit");
 
 // Scopes dataGraph down to just the resource's own shape-guided description - dataGraph itself may

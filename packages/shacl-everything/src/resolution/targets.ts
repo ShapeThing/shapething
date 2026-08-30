@@ -151,3 +151,41 @@ export function shapesTargetingNode(
     targetsOfShape(shapeNode, shapesGraph, dataGraph).some((target) => target.equals(node)),
   );
 }
+
+/**
+ * Every "root" shape in `shapesGraph` - every shape declaring an explicit target (3.1.3.1/.2/.4/.5)
+ * plus every implicit class-shape (3.1.3.3: a node that's both a shape and a class, or typed
+ * sh:ShapeClass) - regardless of whether any actual data conforms to it yet. Facet mode's entry
+ * point (unlike edit/view, which always start from one known focusNode) has no focus node to
+ * discover shapes *from* - it instead needs every shape a dataset COULD be filtered by, found by
+ * walking the whole shapes graph once up front. Deliberately excludes 3.1.3.7 (sh:shape, declared
+ * per data-graph node) - that describes one existing node's own shape, not a standalone "kind of
+ * thing" worth offering as a facetable root.
+ */
+export function facetableRootShapes(shapesGraph: RdfStore): Quad_Subject[] {
+  const explicitTargetShapes = [
+    ...shapesGraph.getQuads(null, sh("targetClass")).map((quad) => quad.subject),
+    ...shapesGraph.getQuads(null, sh("targetNode")).map((quad) => quad.subject),
+    ...shapesGraph.getQuads(null, sh("targetSubjectsOf")).map((quad) => quad.subject),
+    ...shapesGraph.getQuads(null, sh("targetObjectsOf")).map((quad) => quad.subject),
+  ];
+
+  const implicitClassShapes = shapesGraph
+    .getQuads(null, rdf("type"), rdfs("Class"))
+    .map((quad) => quad.subject)
+    .filter(
+      (node) =>
+        shapesGraph.getQuads(node, rdf("type"), sh("NodeShape")).length > 0 ||
+        shapesGraph.getQuads(node, rdf("type"), sh("PropertyShape")).length > 0,
+    );
+
+  const shapeClasses = shapesGraph
+    .getQuads(null, rdf("type"), sh("ShapeClass"))
+    .map((quad) => quad.subject);
+
+  return dedupeTerms([
+    ...explicitTargetShapes,
+    ...implicitClassShapes,
+    ...shapeClasses,
+  ]) as Quad_Subject[];
+}

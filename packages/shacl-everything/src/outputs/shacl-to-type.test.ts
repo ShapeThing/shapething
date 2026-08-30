@@ -393,3 +393,82 @@ test("intersects a branch's own properties with a further sh:or nested inside it
       "{ servings: number } & ({ veganCertification: string } | { halalCertification: string });\n",
   );
 });
+
+test("renders a sh:memberShape scalar list as an array of the member's datatype", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+        ex:Person a sh:NodeShape ;
+            sh:property [
+                sh:path ex:scores ;
+                sh:memberShape [
+                    sh:datatype xsd:integer ;
+                    sh:minInclusive 0 ;
+                    sh:maxInclusive 100 ;
+                ] ;
+            ] .
+    `,
+    "text/turtle",
+  );
+
+  const types = shaclToType({ shapesGraph });
+
+  const person = types.get("Person") as string;
+  expect(person).toContain("scores?: number[];");
+});
+
+test("marks a sh:memberShape property required when sh:minListLength is above 0", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+        ex:Person a sh:NodeShape ;
+            sh:property [
+                sh:path ex:scores ;
+                sh:minListLength 1 ;
+                sh:memberShape [ sh:datatype xsd:integer ] ;
+            ] .
+    `,
+    "text/turtle",
+  );
+
+  const types = shaclToType({ shapesGraph });
+
+  const person = types.get("Person") as string;
+  expect(person).toContain("scores: number[];");
+  expect(person).not.toContain("scores?:");
+});
+
+test("renders a sh:memberShape object list (via sh:node) as an array of its own object type", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+        ex:Recipe a sh:NodeShape ;
+            sh:property [
+                sh:path ex:steps ;
+                sh:memberShape [ sh:node ex:StepShape ] ;
+            ] .
+
+        ex:StepShape a sh:NodeShape ;
+            sh:property [ sh:path ex:instruction ; sh:datatype xsd:string ; sh:maxCount 1 ] ;
+            sh:property [ sh:path ex:duration ; sh:datatype xsd:integer ; sh:maxCount 1 ] .
+    `,
+    "text/turtle",
+  );
+
+  const types = shaclToType({ shapesGraph, nodeShapes: undefined });
+
+  const recipe = types.get("Recipe") as string;
+  expect(recipe).toBe(
+    "export type Recipe = {\n  steps?: {\n  instruction?: string;\n  duration?: number;\n}[];\n}" +
+      ";\n",
+  );
+});

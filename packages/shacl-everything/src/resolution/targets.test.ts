@@ -2,6 +2,7 @@ import { expect, test } from "vite-plus/test";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import {
+  facetableRootShapes,
   shaclInstancesOfClass,
   shapesTargetingClass,
   targetsOfShape,
@@ -122,4 +123,48 @@ test("targetsOfShape 3.1.3.7: explicit shape targets (sh:shape, declared in the 
 
   const targets = targetsOfShape(ex("PersonShape"), shapesGraph, dataGraph);
   expect(targets.map((t) => t.value)).toEqual([ex("Alice").value]);
+});
+
+test("facetableRootShapes: finds every explicit target declaration", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `
+      ex:PersonShape a sh:NodeShape ; sh:targetClass ex:Person .
+      ex:AliceShape a sh:NodeShape ; sh:targetNode ex:Alice .
+      ex:KnowsShape a sh:NodeShape ; sh:targetSubjectsOf ex:knows .
+      ex:KnownByShape a sh:NodeShape ; sh:targetObjectsOf ex:knows .
+    `,
+  });
+
+  const roots = facetableRootShapes(shapesGraph);
+  expect(new Set(roots.map((t) => t.value))).toEqual(
+    new Set([
+      ex("PersonShape").value,
+      ex("AliceShape").value,
+      ex("KnowsShape").value,
+      ex("KnownByShape").value,
+    ]),
+  );
+});
+
+test("facetableRootShapes: finds implicit class-shapes (3.1.3.3) and sh:ShapeClass shapes", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `
+      ex:Person a rdfs:Class, sh:NodeShape .
+      ex:Organization a sh:ShapeClass .
+      ex:NotAShape a rdfs:Class .
+    `,
+  });
+
+  const roots = facetableRootShapes(shapesGraph);
+  expect(new Set(roots.map((t) => t.value))).toEqual(
+    new Set([ex("Person").value, ex("Organization").value]),
+  );
+});
+
+test("facetableRootShapes: no targets declared at all yields an empty list", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `ex:PlainShape a sh:NodeShape ; sh:property [ sh:path ex:name ] .`,
+  });
+
+  expect(facetableRootShapes(shapesGraph)).toEqual([]);
 });

@@ -41,3 +41,41 @@ export const shuiLabelViewerViewInPlace: Story = {
     await waitFor(() => expect(canvasElement.querySelector("dialog.st-modal[open]")).toBeNull());
   },
 };
+
+export const shuiLabelViewerNestedViewInPlace: Story = {
+  name: "closing a modal opened from inside another view-in-place modal only closes that one",
+  args: {
+    ...argsByTestFile("10.2.7 shui-label-viewer-nested-view-in-place.ttl", import.meta.url),
+    mode: "view",
+    enableViewInPlace: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const employerLink = await canvas.findByRole("link", { name: /ACME Corp/i });
+    await userEvent.click(employerLink);
+
+    // ex:acme's own modal (Modal isn't portaled, so it renders nested inside canvasElement) shows
+    // a "CEO" property that's itself a shui:LabelViewer - clicking it drills into a *second*,
+    // nested Modal rendered as a DOM+React descendant of the first one's content.
+    const outerDialog = await canvas.findByRole("dialog");
+    const ceoLink = await within(outerDialog).findByRole("link", { name: /Jane Doe/i });
+    await userEvent.click(ceoLink);
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll("dialog.st-modal[open]")).toHaveLength(2),
+    );
+
+    // Closing the inner (topmost) modal must only close that one. <dialog>'s "close"/"cancel"
+    // events don't natively bubble, but React simulates bubbling for them through the React tree
+    // regardless - without Modal's target guard, the inner dialog's own close event would also
+    // fire the outer Modal's onClose, since the outer LabelViewer's Modal is its React ancestor.
+    const dialogs = canvas.getAllByRole("dialog");
+    const innerDialog = dialogs[dialogs.length - 1];
+    const innerCloseButton = within(innerDialog).getByRole("button", { name: /close/i });
+    await userEvent.click(innerCloseButton);
+
+    await waitFor(() =>
+      expect(canvasElement.querySelectorAll("dialog.st-modal[open]")).toHaveLength(1),
+    );
+    await expect(canvas.findByText("info@acme.example")).resolves.toBeVisible();
+  },
+};

@@ -890,7 +890,10 @@ test("prepareScoringGraph - is idempotent when applied to an already-prepared sc
     "text/turtle",
   );
 
-  const once = prepareScoringGraph({ shapesGraph, scoringGraph: await parseRdf("", "text/turtle") });
+  const once = prepareScoringGraph({
+    shapesGraph,
+    scoringGraph: await parseRdf("", "text/turtle"),
+  });
   const twice = prepareScoringGraph({ shapesGraph, scoringGraph: once });
 
   expect(twice.getQuads(null, rdf("type"), shui("WidgetScore"))).toHaveLength(1);

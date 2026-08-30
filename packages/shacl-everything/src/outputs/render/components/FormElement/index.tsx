@@ -60,6 +60,11 @@ export default function FormElement({
             {label}
           </label>
         )}
+        {showColon && label && (
+          <span className="st-form-element__label-colon" aria-hidden>
+            :
+          </span>
+        )}
         {(actions || tooltip) && (
           <div className="st-form-element__actions">
             {tooltip && (
@@ -81,11 +86,6 @@ export default function FormElement({
             )}
             {actions}
           </div>
-        )}
-        {showColon && label && (
-          <span className="st-form-element__label-colon" aria-hidden>
-            :
-          </span>
         )}
       </header>
       {description && <p className="st-form-element__description">{description}</p>}

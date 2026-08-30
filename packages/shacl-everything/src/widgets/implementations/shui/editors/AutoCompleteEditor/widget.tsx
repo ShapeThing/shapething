@@ -29,6 +29,9 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
   const existingObjects = useDataGraphObjects(shape);
   const { enableCreateInPlace } = useEnvironment();
   const shClasses = useMemo(() => shape.get(sh("class")), [shape]);
+  // Whether the "Create new…" row (rendered as the last item of the results dropdown, see below)
+  // is offered at all.
+  const canCreate = enableCreateInPlace && shClasses.length > 0;
   // The shape describing a newly created instance's own fields - see InstancesSelectEditor, whose
   // createNew this mirrors.
   const nodeShapes = useMemo(() => valueNodeShapes(shape), [shape]);
@@ -39,6 +42,11 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
   const { search, setSearch, results, isLoading, error, reset } = useInstanceSearch(shape);
   const [selected, setSelected] = useState<SearchResult>();
   const [activeIndex, setActiveIndex] = useState(-1);
+  // Mirrors EnumSelectEditor's own `open` state: the results dropdown (including the create row)
+  // is only shown while the input actually has focus, not merely whenever canCreate is true - an
+  // empty field stays in "edit" mode permanently (see the effect below), so without this the
+  // dropdown would never close on blur.
+  const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const listboxId = useId();
@@ -77,6 +85,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
 
   const closeEditor = () => {
     reset();
+    setFocused(false);
     setMode(term.value ? "view" : "edit");
   };
 
@@ -147,6 +156,10 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
     (result) =>
       !existingObjects.some((obj) => obj.value === result.iri.value && obj.value !== term.value),
   );
+  // The create row (when offered) is appended after every search result as one more navigable
+  // row of the same listbox - see the dropdown markup below.
+  const rowCount = options.length + (canCreate ? 1 : 0);
+  const dropdownOpen = focused && (results !== undefined || canCreate);
 
   // Rendered from both modes below - creating stays in "edit" mode until the modal is submitted
   // (see submitCreate), so the modal has to stay reachable from the "edit" mode search UI that
@@ -212,7 +225,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
           className="st-input"
           placeholder="Search…"
           role="combobox"
-          aria-expanded={results !== undefined}
+          aria-expanded={dropdownOpen}
           aria-autocomplete="list"
           aria-controls={listboxId}
           aria-activedescendant={
@@ -221,45 +234,36 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
           aria-labelledby={labelledBy}
           value={search}
           onChange={(event) => setSearch(event.target.value)}
+          onFocus={() => setFocused(true)}
           onBlur={closeEditor}
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               inputRef.current?.blur();
-            } else if (event.key === "ArrowDown" && options.length > 0) {
+            } else if (event.key === "ArrowDown" && rowCount > 0) {
               event.preventDefault();
-              setActiveIndex((current) => (current + 1) % options.length);
-            } else if (event.key === "ArrowUp" && options.length > 0) {
+              setActiveIndex((current) => (current + 1) % rowCount);
+            } else if (event.key === "ArrowUp" && rowCount > 0) {
               event.preventDefault();
-              setActiveIndex((current) => (current - 1 + options.length) % options.length);
-            } else if (event.key === "Home" && options.length > 0) {
+              setActiveIndex((current) => (current - 1 + rowCount) % rowCount);
+            } else if (event.key === "Home" && rowCount > 0) {
               event.preventDefault();
               setActiveIndex(0);
-            } else if (event.key === "End" && options.length > 0) {
+            } else if (event.key === "End" && rowCount > 0) {
               event.preventDefault();
-              setActiveIndex(options.length - 1);
+              setActiveIndex(rowCount - 1);
             } else if (event.key === "Enter") {
-              const target = options[activeIndex] ?? options[0];
-              if (target) apply(target);
+              if (activeIndex >= options.length && canCreate) {
+                createNew();
+              } else {
+                const target = options[activeIndex] ?? options[0];
+                if (target) apply(target);
+              }
             }
           }}
         />
       </Localized>
 
-      {enableCreateInPlace && shClasses.length > 0 && (
-        <button
-          type="button"
-          className="st-create-option st-autocomplete__create"
-          // Keeps focus on the input during the click, same as every result row below - onClick
-          // still runs normally afterwards.
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={createNew}
-        >
-          <Plus />
-          <Localized id="create-new-reference-option">Create new…</Localized>
-        </button>
-      )}
-
-      {results !== undefined && (
+      {dropdownOpen && (
         <div id={listboxId} className="st-autocomplete__results" role="listbox">
           {error ? (
             <div className="st-autocomplete__empty" role="alert">
@@ -278,7 +282,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
                 ref={(el) => {
                   optionRefs.current[index] = el;
                 }}
-                className={`st-autocomplete__result ${index === activeIndex && "st-autocomplete__result--active"}`}
+                className={`st-autocomplete__result ${index === activeIndex ? "st-autocomplete__result--active" : ""}`}
                 role="option"
                 aria-selected={result.iri.value === term.value}
                 // Keeps focus on the input during the click so onBlur above never fires for it -
@@ -296,9 +300,30 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
                 />
               </div>
             ))
-          ) : (
+          ) : results !== undefined ? (
             <div className="st-autocomplete__empty">
               <Localized id="autocomplete-no-results">No results found</Localized>
+            </div>
+          ) : null}
+          {canCreate && (
+            <div
+              id={`${listboxId}-option-${options.length}`}
+              ref={(el) => {
+                optionRefs.current[options.length] = el;
+              }}
+              className={`st-autocomplete__result st-autocomplete__result--create ${options.length === activeIndex ? "st-autocomplete__result--active" : ""}`}
+              role="option"
+              aria-selected={false}
+              // Keeps focus on the input during the click, same as every result row above - onClick
+              // still runs normally afterwards.
+              onMouseDown={(event) => event.preventDefault()}
+              onMouseEnter={() => setActiveIndex(options.length)}
+              onClick={createNew}
+            >
+              <span className="st-create-option">
+                <Plus />
+                <Localized id="create-new-reference-option">Create new…</Localized>
+              </span>
             </div>
           )}
         </div>

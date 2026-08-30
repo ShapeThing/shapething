@@ -65,17 +65,10 @@
   }
 }
 
-.st-autocomplete__create {
-  padding-inline: var(--size-2);
-  font: inherit;
-  background: none;
-  border: none;
-  border-top: 1px solid var(--st-color-border);
-  cursor: pointer;
-
-  &:hover {
-    background-color: var(--st-primary-color-lighter);
-  }
+.st-autocomplete__result--create {
+  /* Every other row gets its left inset from AutoCompleteOption's own depiction/spacer - this row
+     renders st-create-option directly instead, so it needs the same inset applied here. */
+  padding-inline-start: var(--size-2);
 }
 
 .st-autocomplete__create-actions {

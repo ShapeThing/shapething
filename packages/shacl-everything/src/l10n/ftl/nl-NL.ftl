@@ -1,6 +1,8 @@
 node-ui-property-element = Eigenschap UI-element
 node-ui-submit-create = Aanmaken
 node-ui-submit-update = Bijwerken
+facet-mode-apply = Filters toepassen
+facet-type-selector-label = Type
 loading = Laden
 property-add-value =
     .aria-label = Waarde toevoegen

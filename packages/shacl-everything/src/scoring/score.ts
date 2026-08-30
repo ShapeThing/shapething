@@ -2,7 +2,7 @@ import type { NamedNode, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { Engine as ShaclEngine } from "shacl-engine";
 import { factory } from "@/helpers/factory.ts";
-import { rdf, sh, shui, xsd } from "@/helpers/namespaces.ts";
+import { rdf, sh, shui, st, xsd } from "@/helpers/namespaces.ts";
 
 type SelectProps = {
   // A boolean flag; if true, return only the first matching result.
@@ -39,11 +39,14 @@ const DEFAULT_DECLARED_WIDGET_SCORE = 40;
 
 /**
  * Scoring Graph Preparation (spec §4.3). MUST be called on a scoring graph before it is passed
- * to score()/select() - without it, a widget attached to a shape only via shui:editor/shui:viewer,
- * with no shui:WidgetScore of its own (e.g. a third-party widget shipped without a score.ttl), is
- * never returned. A widget scoringGraph already scores is left untouched even if that scoring
- * doesn't itself cover the declared case - see the shui:editor score.ttl-authoring convention
- * instead (a dedicated band-40 rule whose shapesGraphShape alone tests for the declaration).
+ * to score()/select() - without it, a widget attached to a shape only via
+ * shui:editor/shui:viewer/st:facet, with no shui:WidgetScore of its own (e.g. a third-party widget
+ * shipped without a score.ttl), is never returned. A widget scoringGraph already scores is left
+ * untouched even if that scoring doesn't itself cover the declared case - see the shui:editor
+ * score.ttl-authoring convention instead (a dedicated band-40 rule whose shapesGraphShape alone
+ * tests for the declaration). st:facet (facet mode's own explicit-declaration predicate, e.g.
+ * `<propertyShape> st:facet st:NumberRangeFacet`) lives in the st: namespace rather than shui:,
+ * since facets are ShapeThing's own concept - there is no SHACL-UI spec clause for them.
  *
  * Depends only on shapesGraph and scoringGraph, not on any particular focus/shape node - callers
  * should run this once per environment (see preprocess/scoringGraphPreparation.ts) and reuse the
@@ -69,7 +72,7 @@ export function prepareScoringGraph({
       .map((quad) => scoringGraph.getQuads(quad.subject, shui("widget"))[0]?.object.value),
   );
 
-  for (const widgetPredicate of [shui("editor"), shui("viewer")]) {
+  for (const widgetPredicate of [shui("editor"), shui("viewer"), st("facet")]) {
     const declaredWidgets = new Set(
       shapesGraph
         .getQuads(null, widgetPredicate)
