@@ -381,6 +381,9 @@ importers:
       '@effect/experimental':
         specifier: ^0.60.0
         version: 0.60.0(@effect/platform@0.96.2(effect@3.21.4))(effect@3.21.4)
+      '@faker-js/faker':
+        specifier: ^10.5.0
+        version: 10.5.0
       '@fluent/bundle':
         specifier: ^0.19.1
         version: 0.19.1
