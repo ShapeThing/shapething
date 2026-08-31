@@ -5,9 +5,11 @@ import { castDataTypeTermToJs } from "@/helpers/castDataTypeTermToJs.ts";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 import { factory } from "@/helpers/factory.ts";
 import { getCodeIdentifier } from "@/helpers/getCodeIdentifier.ts";
-import { faker, sh, xsd } from "@/helpers/namespaces.ts";
+import { faker, sh, shui, xsd } from "@/helpers/namespaces.ts";
 import { termToJsValue } from "@/helpers/termToJsValue.ts";
 import { jsToRdf } from "@/outputs/js-to-rdf.ts";
+import { runFederatedQuery, substituteSearchParameters } from "@/outputs/render/hooks/query.ts";
+import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { choiceBranchShapes } from "@/structure/choiceBranches.ts";
@@ -44,10 +46,14 @@ export interface GenerateOptions {
  * faker:generator annotation (see generateFromFakerAnnotation); or, with no annotation at all, a
  * default derived from sh:datatype plus a keyword guess from the property's own name (see
  * generateDefaultValue) - so a shape with no faker: vocabulary usage whatsoever still fakes
- * sensibly. A plain resource reference (sh:class, no sh:node/sh:in/sh:hasValue) can't be
- * fabricated meaningfully and is left unset.
+ * sensibly. A plain resource reference (sh:class, no sh:node/sh:in/sh:hasValue) can't be invented
+ * out of nothing, so it's instead resolved against something real - the property's own
+ * shui:searchQuery if declared, else any existing sh:class instance already in `dataGraph` (see
+ * generateMatchingResource) - and only left unset when neither turns up a candidate. That lookup
+ * is why generate() is async in the first place: everything else here is synchronous faker.js
+ * calls.
  */
-export function generate(options: GenerateOptions): RdfStore {
+export async function generate(options: GenerateOptions): Promise<RdfStore> {
   if (options.seed !== undefined) fakerLibrary.seed(options.seed);
 
   // date.anytime()-style generators pick a duration relative to "now" by default, which would
@@ -55,6 +61,13 @@ export function generate(options: GenerateOptions): RdfStore {
   // alongside the seeded RNG. Only pinned when a seed is given, so unseeded calls stay genuinely
   // "now"-relative.
   const fakerSettings = options.seed !== undefined ? { refDate: "2020-01-01" } : {};
+  const contentLanguage = options.contentLanguage ?? "en";
+
+  // The same store jsToRdf below merges the generated data into - reused as the search space for
+  // generateMatchingResource, so a resource-reference property can be pointed at a real instance
+  // already present in a caller-supplied dataGraph (an empty freshly-created one otherwise, same
+  // as jsToRdf's own default, so there's simply nothing to match yet).
+  const existingDataGraph = options.dataGraph ?? RdfStore.createDefault();
 
   const node = new NodeUIElement({
     shapesGraph: options.shapesGraph,
@@ -63,15 +76,20 @@ export function generate(options: GenerateOptions): RdfStore {
     nodeShapes: options.nodeShapes,
   });
 
-  const data = generateChildren(node.children(), { fakerSettings, depth: 0 });
+  const data = await generateChildren(node.children(), {
+    fakerSettings,
+    depth: 0,
+    existingDataGraph,
+    contentLanguage,
+  });
 
   return jsToRdf({
     shapesGraph: options.shapesGraph,
-    dataGraph: options.dataGraph,
+    dataGraph: existingDataGraph,
     focusNode: options.focusNode,
     nodeShapes: options.nodeShapes,
     data,
-    contentLanguage: options.contentLanguage ?? "en",
+    contentLanguage,
   });
 }
 
@@ -80,6 +98,8 @@ type FakerValue = string | number | boolean | Date;
 type GenerationContext = {
   fakerSettings: Record<string, unknown>;
   depth: number;
+  existingDataGraph: RdfStore;
+  contentLanguage: BCP47;
 };
 
 // A guard against infinite recursion for a self-referential shape (e.g. a Person shape whose
@@ -92,26 +112,33 @@ const MAX_EMBED_DEPTH = 6;
 // small rather than defaulting to some arbitrarily large count.
 const DEFAULT_MAX_COUNT = 3;
 
-function generateChildren(
+async function generateChildren(
   children: (PropertyUIElement | ChoiceElement)[],
   context: GenerationContext,
-): Record<string, unknown> {
+): Promise<Record<string, unknown>> {
   const result: Record<string, unknown> = {};
 
+  // Sequential, not Promise.all - faker.js's RNG is a single shared, seeded stream, so values
+  // must be drawn in a fixed order for a given seed to stay reproducible (see the "deterministic
+  // for a given seed" test); concurrent generation would let network-bound lookups (see
+  // generateMatchingResource) resolve in a data-dependent order instead.
   for (const child of children) {
     if (child.kind === "property") {
-      const value = generateProperty(child, context);
+      const value = await generateProperty(child, context);
       if (value === undefined) continue;
       result[getCodeIdentifier(child.shapesGraph, child.propertyShapes[0])] = value;
     } else {
-      Object.assign(result, generateChoice(child, context));
+      Object.assign(result, await generateChoice(child, context));
     }
   }
 
   return result;
 }
 
-function generateProperty(property: PropertyUIElement, context: GenerationContext): unknown {
+async function generateProperty(
+  property: PropertyUIElement,
+  context: GenerationContext,
+): Promise<unknown> {
   const memberShapeNodes = property.get(sh("memberShape"));
   if (memberShapeNodes.length > 0) {
     return generateMemberShapeValues(property, memberShapeNodes, context);
@@ -131,7 +158,7 @@ function generateProperty(property: PropertyUIElement, context: GenerationContex
 
   const values: unknown[] = [];
   for (let index = 0; index < count; index++) {
-    const value = generateValue(effective, context);
+    const value = await generateValue(effective, context);
     if (value !== undefined) values.push(value);
   }
   if (values.length === 0) return undefined;
@@ -139,11 +166,11 @@ function generateProperty(property: PropertyUIElement, context: GenerationContex
   return (maxCount ?? Infinity) > 1 ? values : values[0];
 }
 
-function generateMemberShapeValues(
+async function generateMemberShapeValues(
   property: PropertyUIElement,
   memberShapeNodes: Term[],
   context: GenerationContext,
-): unknown[] {
+): Promise<unknown[]> {
   const minCount = property.get(sh("minCount")) ?? 0;
   const maxCount = property.get(sh("maxCount"));
   const count = fakerLibrary.number.int({ min: minCount, max: maxCount ?? Math.max(minCount, DEFAULT_MAX_COUNT) });
@@ -157,13 +184,16 @@ function generateMemberShapeValues(
 
   const values: unknown[] = [];
   for (let index = 0; index < count; index++) {
-    const value = generateValue(memberElement, context);
+    const value = await generateValue(memberElement, context);
     if (value !== undefined) values.push(value);
   }
   return values;
 }
 
-function generateChoice(choice: ChoiceElement, context: GenerationContext): Record<string, unknown> {
+async function generateChoice(
+  choice: ChoiceElement,
+  context: GenerationContext,
+): Promise<Record<string, unknown>> {
   const branchShapes = choiceBranchShapes(choice);
   if (branchShapes.length === 0) return {};
 
@@ -178,7 +208,7 @@ function generateChoice(choice: ChoiceElement, context: GenerationContext): Reco
   return generateChildren(children, context);
 }
 
-function generateValue(property: PropertyUIElement, context: GenerationContext): unknown {
+async function generateValue(property: PropertyUIElement, context: GenerationContext): Promise<unknown> {
   const hasValue = property.get(sh("hasValue"));
   if (hasValue) return termToPlainValue(hasValue);
 
@@ -191,14 +221,17 @@ function generateValue(property: PropertyUIElement, context: GenerationContext):
   const annotated = generateFromFakerAnnotation(property, context.fakerSettings);
   if (annotated !== undefined) return annotated;
 
+  const matchedResource = await generateMatchingResource(property, context);
+  if (matchedResource !== undefined) return matchedResource;
+
   return generateDefaultValue(property, context.fakerSettings);
 }
 
-function generateEmbeddedObject(
+async function generateEmbeddedObject(
   shapesGraph: RdfStore,
   nodeShapes: Term[],
   context: GenerationContext,
-): Record<string, unknown> | undefined {
+): Promise<Record<string, unknown> | undefined> {
   if (context.depth >= MAX_EMBED_DEPTH) return undefined;
 
   const children = childrenForShape(shapesGraph, RdfStore.createDefault(), nodeShapes, factory.blankNode());
@@ -271,10 +304,54 @@ const STRING_GENERATORS: [RegExp, () => string][] = [
 
 const FLOAT_DATATYPES = new Set([xsd("decimal").value, xsd("double").value, xsd("float").value]);
 
+/**
+ * A pure resource-reference property (sh:class, no sh:datatype - sh:node/sh:in/sh:hasValue are
+ * already handled earlier in generateValue) can't be fabricated out of nothing the way a literal
+ * can, so it's instead pointed at something real: the property's own shui:searchQuery (spec
+ * §10.1), run the same way AutoCompleteEditor would (empty search term, so a class-scoped query
+ * returns its whole candidate set rather than nothing); or, when there's no searchQuery or it
+ * turns up nothing, any existing instance of sh:class already present in the dataGraph being
+ * generated into (see resolution/targets.ts's shaclInstancesOfClass, which also walks the shapes
+ * graph's own rdfs:subClassOf hierarchy so a subclass instance still counts as a match). Returns
+ * undefined - left for generateDefaultValue's own "leave unset" fallback - when neither source has
+ * a candidate, e.g. a brand-new dataGraph with nothing of that class in it yet.
+ */
+async function generateMatchingResource(
+  property: PropertyUIElement,
+  context: GenerationContext,
+): Promise<string | undefined> {
+  if (property.get(sh("datatype"))) return undefined;
+  const classIri = property.get(sh("class"))[0] as NamedNode | undefined;
+  if (!classIri) return undefined;
+
+  const searchQuery = property.get(shui("searchQuery"))[0];
+  if (searchQuery?.termType === "Literal") {
+    // property.dataGraph is generate()'s own empty structural scratch store, not the real
+    // dataGraph being generated into - a non-federated shui:searchQuery would otherwise always
+    // find nothing to match against. A federated one (wrapped in its own SERVICE clause) ignores
+    // this source anyway, so swapping it in is safe either way.
+    const queryable = new PropertyUIElement({
+      shapesGraph: property.shapesGraph,
+      dataGraph: context.existingDataGraph,
+      focusNode: property.focusNode,
+      propertyShapes: property.propertyShapes,
+    });
+    const substituted = substituteSearchParameters(searchQuery.value, "", context.contentLanguage);
+    const results = await runFederatedQuery(substituted, queryable, context.contentLanguage);
+    if (results.length > 0) return pickRandom(results).term.value;
+  }
+
+  const existing = shaclInstancesOfClass(classIri, context.existingDataGraph, property.shapesGraph);
+  if (existing.length > 0) return pickRandom(existing).value;
+
+  return undefined;
+}
+
 // No faker:generator declared at all - fall back to sh:datatype (defaulting to a string, same as
 // jsToRdf's own untyped-property fallback) plus, for strings, a keyword guess. A pure resource
-// reference (sh:class with neither sh:node, sh:in nor sh:hasValue) has no meaningful value to
-// invent and is left unset.
+// reference (sh:class with neither sh:node, sh:in nor sh:hasValue) that generateMatchingResource
+// also couldn't resolve to a real instance has no meaningful value left to invent and is left
+// unset.
 function generateDefaultValue(
   property: PropertyUIElement,
   fakerSettings: Record<string, unknown>,

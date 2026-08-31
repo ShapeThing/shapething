@@ -12,7 +12,7 @@ import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { choiceBranchShapes } from "@/structure/choiceBranches.ts";
-import { logicalBranches, withBranch } from "@/structure/logicalBranches.ts";
+import { resolveNodeShapes } from "@/structure/logicalBranches.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 
 export interface JsToRdfOptions {
@@ -104,7 +104,7 @@ function jsValueToPropertyTerm(
   contentLanguage: BCP47 | undefined,
 ): Term {
   if (isPlainObject(value)) {
-    const nodeShapes = resolveEmbeddedNodeShapes(property);
+    const nodeShapes = resolveNodeShapes(property);
     const blankNode = factory.blankNode();
     if (nodeShapes.length > 0) {
       const nested = new NodeUIElement({
@@ -145,25 +145,6 @@ function jsValueToPropertyTerm(
   }
 
   return jsValueToTerm(value as string | number | boolean | Date, xsd("string"));
-}
-
-// A plain-object value's own sh:node is usually declared directly on the property, but a
-// property-level sh:or/sh:xone (structure/logicalBranches.ts) can instead put it on just one
-// branch (e.g. "either a nested address object, or a plain address string") - since a plain
-// object was given, the object-shaped branch is the one that must have been intended. Picks the
-// first branch (in declaration order) that declares an sh:node, same as detectActiveBranch's own
-// first-match convention; ambiguous between two object-shaped branches, but that's no different a
-// case than a plain value matching more than one scalar branch.
-function resolveEmbeddedNodeShapes(property: PropertyUIElement): Term[] {
-  const direct = property.get(sh("node")) as Term[];
-  if (direct.length > 0) return direct;
-
-  for (const branch of logicalBranches(property)) {
-    const branchNodeShapes = withBranch(property, branch.shape).get(sh("node")) as Term[];
-    if (branchNodeShapes.length > 0) return branchNodeShapes;
-  }
-
-  return [];
 }
 
 // SHACL 1.2 lets sh:datatype hold a list of alternatives (any one of which may hold) rather than a

@@ -48,6 +48,29 @@ export function withBranch(element: PropertyUIElement, branch: Term): PropertyUI
 }
 
 /**
+ * A plain-object value's own sh:node is usually declared directly on the property, but a
+ * property-level sh:or/sh:xone can instead put it on just one branch (e.g. "either a nested
+ * address object, or a plain address string") - since the caller already knows it's holding (or
+ * building) an object-shaped value, the object-shaped branch is the one that must have been
+ * intended. Picks the first branch (in declaration order) that declares an sh:node, same as
+ * detectActiveBranch's own first-match convention; ambiguous between two object-shaped branches,
+ * but that's no different a case than a plain value matching more than one scalar branch. Shared
+ * by jsToRdf (writing a plain object) and rdfToJs (reading a BlankNode value) so the two stay in
+ * sync about where an embedded object's shape comes from.
+ */
+export function resolveNodeShapes(property: PropertyUIElement): Term[] {
+  const direct = property.get(sh("node")) as Term[];
+  if (direct.length > 0) return direct;
+
+  for (const branch of logicalBranches(property)) {
+    const branchNodeShapes = withBranch(property, branch.shape).get(sh("node")) as Term[];
+    if (branchNodeShapes.length > 0) return branchNodeShapes;
+  }
+
+  return [];
+}
+
+/**
  * Which of `branches` the given value already conforms to - used to pre-select the dropdown for
  * a property that already has a value, without needing to persist "which branch was chosen"
  * anywhere: the data itself already conforms to exactly one branch (when the shape is well-formed).

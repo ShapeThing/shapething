@@ -29,9 +29,6 @@ type GenerateDemoProps = {
 // internal reference cycle crashing Storybook's Controls-panel diffing.
 function GenerateDemo({ shapesGraph, focusNode, nodeShapes, contentLanguage, seed }: GenerateDemoProps) {
   const [output, setOutput] = useState<string>();
-  // Bumped by the "Regenerate" button below to re-run generate() on demand - useEffect otherwise
-  // only reruns when a prop actually changes, and a story with a fixed `seed` arg never does.
-  const [run, setRun] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -52,23 +49,17 @@ function GenerateDemo({ shapesGraph, focusNode, nodeShapes, contentLanguage, see
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shapesGraph, focusNode, nodeShapes, contentLanguage, seed, run]);
+  }, [shapesGraph, focusNode, nodeShapes, contentLanguage, seed]);
 
   return (
-    <div>
-      <button type="button" onClick={() => setRun((n) => n + 1)}>
-        Regenerate
-      </button>
-      <SyntaxHighlighter
-        language="turtle"
-        style={oneLight}
-        wrapLongLines
-        codeTagProps={{ style: { overflowWrap: "anywhere" } }}
-      >
-        {output ?? "Generating…"}
-      </SyntaxHighlighter>
-    </div>
+    <SyntaxHighlighter
+      language="turtle"
+      style={oneLight}
+      wrapLongLines
+      codeTagProps={{ style: { overflowWrap: "anywhere" } }}
+    >
+      {output ?? "Generating…"}
+    </SyntaxHighlighter>
   );
 }
 

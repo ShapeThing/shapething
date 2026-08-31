@@ -18,7 +18,7 @@ test("generate - fakes values via faker:generator annotations, respecting sh:min
     "text/turtle",
   );
 
-  const dataGraph = generate({
+  const dataGraph = await generate({
     shapesGraph,
     focusNode: ex("person1"),
     nodeShapes: [ex("Person")],
@@ -52,7 +52,7 @@ test("generate - composes a faker:generator rdf:List of calls and literal separa
     "text/turtle",
   );
 
-  const dataGraph = generate({
+  const dataGraph = await generate({
     shapesGraph,
     focusNode: ex("recipe1"),
     nodeShapes: [ex("Recipe")],
@@ -86,7 +86,7 @@ test("generate - fakes sensible values from sh:datatype and a property-name keyw
     "text/turtle",
   );
 
-  const dataGraph = generate({
+  const dataGraph = await generate({
     shapesGraph,
     focusNode: ex("person1"),
     nodeShapes: [ex("Person")],
@@ -117,7 +117,7 @@ test("generate - picks a random value from sh:in", async () => {
     "text/turtle",
   );
 
-  const dataGraph = generate({
+  const dataGraph = await generate({
     shapesGraph,
     focusNode: ex("person1"),
     nodeShapes: [ex("Person")],
@@ -145,7 +145,7 @@ test("generate - embeds a fresh blank node via sh:node and fakes its own propert
     "text/turtle",
   );
 
-  const dataGraph = generate({
+  const dataGraph = await generate({
     shapesGraph,
     focusNode: ex("recipe1"),
     nodeShapes: [ex("Recipe")],
@@ -176,7 +176,7 @@ test("generate - fakes a sh:memberShape scalar array as an rdf:List", async () =
     "text/turtle",
   );
 
-  const dataGraph = generate({
+  const dataGraph = await generate({
     shapesGraph,
     focusNode: ex("person1"),
     nodeShapes: [ex("Person")],
@@ -214,7 +214,7 @@ test("generate - picks one branch of a node-level sh:or and fakes only that bran
     "text/turtle",
   );
 
-  const dataGraph = generate({
+  const dataGraph = await generate({
     shapesGraph,
     focusNode: ex("recipe1"),
     nodeShapes: [ex("Recipe")],
@@ -251,7 +251,7 @@ test("generate - picks one branch of a property-level sh:or (embedded object vs.
     "text/turtle",
   );
 
-  const dataGraph = generate({
+  const dataGraph = await generate({
     shapesGraph,
     focusNode: ex("recipe1"),
     nodeShapes: [ex("Recipe")],
@@ -281,8 +281,8 @@ test("generate - is deterministic for a given seed", async () => {
     "text/turtle",
   );
 
-  const first = generate({ shapesGraph, focusNode: ex("person1"), nodeShapes: [ex("Person")], seed: 42 });
-  const second = generate({ shapesGraph, focusNode: ex("person1"), nodeShapes: [ex("Person")], seed: 42 });
+  const first = await generate({ shapesGraph, focusNode: ex("person1"), nodeShapes: [ex("Person")], seed: 42 });
+  const second = await generate({ shapesGraph, focusNode: ex("person1"), nodeShapes: [ex("Person")], seed: 42 });
 
   expect(first.getQuads(ex("person1"), ex("givenName"))[0].object.value).toEqual(
     second.getQuads(ex("person1"), ex("givenName"))[0].object.value,
@@ -306,7 +306,7 @@ test("generate - leaves a plain resource reference unset when it can't be fabric
     "text/turtle",
   );
 
-  const dataGraph = generate({
+  const dataGraph = await generate({
     shapesGraph,
     focusNode: ex("recipe1"),
     nodeShapes: [ex("Recipe")],
@@ -315,4 +315,82 @@ test("generate - leaves a plain resource reference unset when it can't be fabric
 
   expect(dataGraph.getQuads(ex("recipe1"), ex("title"))).toHaveLength(1);
   expect(dataGraph.getQuads(ex("recipe1"), ex("author"))).toHaveLength(0);
+});
+
+test("generate - resolves a plain resource reference to an existing sh:class instance already in dataGraph", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+        ex:Recipe a sh:NodeShape ;
+            sh:property [ sh:path ex:title ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] ;
+            sh:property [ sh:path ex:author ; sh:class ex:Person ; sh:minCount 1 ; sh:maxCount 1 ] .
+    `,
+    "text/turtle",
+  );
+
+  const dataGraph = await parseRdf(
+    `
+        @prefix ex: <http://example.org/> .
+        ex:alice a ex:Person .
+        ex:bob a ex:Person .
+    `,
+    "text/turtle",
+  );
+
+  const result = await generate({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("recipe1"),
+    nodeShapes: [ex("Recipe")],
+    seed: 1,
+  });
+
+  const [author] = result.getQuads(ex("recipe1"), ex("author"));
+  expect(author).toBeDefined();
+  expect([ex("alice").value, ex("bob").value]).toContain(author.object.value);
+});
+
+test("generate - resolves a plain resource reference via shui:searchQuery, not just any sh:class instance", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+
+        ex:Recipe a sh:NodeShape ;
+            sh:property [
+                sh:path ex:author ;
+                sh:class ex:Person ;
+                sh:minCount 1 ;
+                sh:maxCount 1 ;
+                shui:searchQuery "PREFIX ex: <http://example.org/> SELECT ?value WHERE { ?value a ex:Person ; ex:featured true }" ;
+            ] .
+    `,
+    "text/turtle",
+  );
+
+  // Both alice and bob are ex:Person instances - a plain shaclInstancesOfClass lookup couldn't
+  // tell them apart, but the shui:searchQuery restricts the match to just the featured one.
+  const dataGraph = await parseRdf(
+    `
+        @prefix ex: <http://example.org/> .
+        ex:alice a ex:Person ; ex:featured true .
+        ex:bob a ex:Person .
+    `,
+    "text/turtle",
+  );
+
+  const result = await generate({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("recipe1"),
+    nodeShapes: [ex("Recipe")],
+    seed: 1,
+  });
+
+  const [author] = result.getQuads(ex("recipe1"), ex("author"));
+  expect(author.object.value).toEqual(ex("alice").value);
 });

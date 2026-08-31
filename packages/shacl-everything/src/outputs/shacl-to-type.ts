@@ -100,16 +100,37 @@ function propertyUIElement(property: PropertyUIElement): string {
   const maxCount = property.get(sh("maxCount")) ?? Infinity;
   const required = minCount > 0;
   const multiple = maxCount > 1;
-  const datatype = resolveDatatype(property);
-  const isUnion = datatype.includes(" | ");
+  const datatype = resolveType(property);
+  // Only a bare object literal binds tightly enough to precede `[]` unparenthesized (mirrors
+  // memberShapeProperty's own isPureObject/needsParens below) - a scalar datatype union or a
+  // sh:node'd object intersected with its own nested sh:or (via resolveType's childrenType call)
+  // does not.
+  const isPureObject = datatype.startsWith("{") && datatype.endsWith("}");
+  const needsParens = !isPureObject && (datatype.includes(" | ") || datatype.includes(" & "));
 
   const propertyType: string[] = [codeIdentifier];
   if (!required) propertyType.push("?");
   propertyType.push(": ");
-  propertyType.push(multiple && isUnion ? `(${datatype})` : datatype);
+  propertyType.push(multiple && needsParens ? `(${datatype})` : datatype);
   if (multiple) propertyType.push(`[]`);
   propertyType.push(";");
   return propertyType.join("");
+}
+
+// sh:node embeds another node shape's own object type directly, the same way generate.ts/
+// jsToRdf/rdfToJs all treat a sh:node-declared property's value as a nested object rather than a
+// scalar - resolveDatatype's sh:datatype-based resolution only kicks in once sh:node is absent.
+function resolveType(property: PropertyUIElement): string {
+  const nodeShapes = property.get(sh("node")) as Term[];
+  if (nodeShapes.length === 0) return resolveDatatype(property);
+
+  const node = new NodeUIElement({
+    shapesGraph: property.shapesGraph,
+    dataGraph: RdfStore.createDefault(),
+    focusNode: property.focusNode,
+    nodeShapes: nodeShapes as Quad_Subject[],
+  });
+  return childrenType(node.children());
 }
 
 // sh:datatype normally holds a single IRI, but this renderer also accepts an rdf:List of
