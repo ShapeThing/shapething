@@ -10,6 +10,7 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { choiceBranchShapes, detectActiveChoiceBranch } from "@/structure/choiceBranches.ts";
+import { resolveNodeShapes } from "@/structure/logicalBranches.ts";
 import type { LanguageRange } from "@/types/BCP47.ts";
 
 export interface RdfToJsOptions {
@@ -87,7 +88,8 @@ async function propertyToJs(
 // A property's actual value term - Literal (coerced via termToJsValue), NamedNode (its IRI, as a
 // plain string - never expanded into a nested object, so a reference to another resource can't
 // recurse into a cycle), or BlankNode (recursed into a nested object, via this property's own
-// sh:node - the shape describing what such a nested value looks like).
+// sh:node - the shape describing what such a nested value looks like, via resolveNodeShapes so a
+// property-level sh:or/sh:xone's own sh:node branch is found too, same as jsToRdf's write side).
 async function termToJs(
   term: Term,
   property: PropertyUIElement,
@@ -96,7 +98,7 @@ async function termToJs(
   if (term.termType === "Literal") return termToJsValue(term);
   if (term.termType === "NamedNode") return term.value;
 
-  const nodeShapes = property.get(sh("node")) as Term[];
+  const nodeShapes = resolveNodeShapes(property);
   if (nodeShapes.length === 0) return {};
 
   const nested = new NodeUIElement({
