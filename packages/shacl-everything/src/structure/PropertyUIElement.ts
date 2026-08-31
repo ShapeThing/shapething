@@ -166,6 +166,21 @@ export class PropertyUIElement {
     removePropertyPath(path, this.focusNode, this.dataGraph, value);
   }
 
+  /**
+   * True when `value` is also reachable by walking this element's own path through
+   * `readOnlyGraph` - the same walk getObjects() does over dataGraph, just against a different
+   * graph. Used by edit mode to render a value's viewer instead of its editor (see
+   * outputs/render/modes/edit/WidgetSlot.tsx) - purely graph-membership-driven, e.g. for an
+   * embedder that materializes inferred/derived triples into dataGraph and also hands them back
+   * here to mark them non-editable. Takes readOnlyGraph as a parameter rather than storing it on
+   * the instance, keeping this layer decoupled from Environment.
+   */
+  isReadOnly(value: Term, readOnlyGraph: RdfStore): boolean {
+    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    if (!path) return false;
+    return walkPropertyPath(path, this.focusNode, readOnlyGraph).some((term) => term.equals(value));
+  }
+
   pathAsSparql(): string | undefined {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return undefined;
@@ -213,6 +228,7 @@ export class PropertyUIElement {
         shapesGraph,
         scoringGraph: this.scoresGraph,
         widgetPredicate,
+        widgets: this.widgetRegistry,
       }),
     );
 
@@ -235,6 +251,7 @@ export class PropertyUIElement {
         shapesGraph,
         scoringGraph: this.scoresGraph,
         widgetPredicate,
+        widgets: this.widgetRegistry,
       }),
     );
   }

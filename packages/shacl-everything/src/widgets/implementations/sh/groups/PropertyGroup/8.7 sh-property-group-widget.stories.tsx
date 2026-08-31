@@ -7,14 +7,14 @@ import { minimalEnvironment } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "SHACL 1.2 UI/10. Built-in Widgets/10.3 Groups/10.3.1 sh:PropertyGroup",
+  title: "SHACL 1.2 Core/8. Non-Validating Shape Characteristics/8.7 sh:group",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };
 
 export const shPropertyGroup: Story = {
   name: "Properties grouped under the default sh:PropertyGroup widget",
-  args: argsByTestFile("10.3.1 sh-property-group-widget.ttl", import.meta.url),
+  args: argsByTestFile("8.7 sh-property-group-widget.ttl", import.meta.url),
   play: async ({ canvasElement }) => {
     // sh:PropertyGroup renders as a native <fieldset>/<legend> - a <fieldset> gets an implicit
     // ARIA "group" role, named by its <legend>.

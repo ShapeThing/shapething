@@ -36,9 +36,10 @@ export class GroupUIElement {
   }
 
   /**
-   * This group's own sh:name/rdfs:label (or configured shui:labelPreference), falling back to its
-   * local name - a group is shape metadata only, so there are no data-graph label steps to run
-   * here (see resolution/label.ts's groupLabel).
+   * This group's own rdfs:label (per spec 8.7), then sh:name as an out-of-spec fallback (or
+   * configured shui:labelPreference), falling back to its local name - a group is shape metadata
+   * only, so there are no data-graph label steps to run here (see resolution/label.ts's
+   * groupLabel).
    */
   label(languages?: BCP47[]): string {
     return groupLabel({ node: this.node, shapesGraph: this.shapesGraph, languages });

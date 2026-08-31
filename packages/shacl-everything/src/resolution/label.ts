@@ -25,22 +25,28 @@ type PropertyLabelOptions = {
   isPropertyPath?: boolean;
 };
 
-type LabelPreferenceContext = "propertyShape" | "term";
+type LabelPreferenceContext = "propertyShape" | "term" | "group";
 
 // Label property resolution (8.2.1): shui:labelPreference, when configured, is applied uniformly
 // across every step that consults it. The *default* (when unconfigured) is context-dependent -
 // sh:name for a property shape's own metadata (propertyLabel step 1, and branchLabel's equivalent),
 // rdfs:label for describing a predicate/value-node IRI's own vocabulary term (propertyLabel steps
-// 2-3, valueNodeLabel steps 3-4).
+// 2-3, valueNodeLabel steps 3-4). A sh:PropertyGroup's label is spec'd (8.7) as rdfs:label, checked
+// first, but sh:name is tried as a second fallback since shapes in the wild commonly (if
+// out-of-spec) reuse sh:name on a group the way they do on a property shape.
 function effectiveLabelPredicates(
   shapesGraph: RdfStore,
   context: LabelPreferenceContext,
 ): PropertyPath[] {
   const configured = getLabelPreference(shapesGraph);
   if (configured.length > 0) return configured;
-  return context === "propertyShape"
-    ? [{ type: "predicate", predicate: sh("name") }]
-    : [{ type: "predicate", predicate: rdfs("label") }];
+  if (context === "propertyShape") return [{ type: "predicate", predicate: sh("name") }];
+  if (context === "group")
+    return [
+      { type: "predicate", predicate: rdfs("label") },
+      { type: "predicate", predicate: sh("name") },
+    ];
+  return [{ type: "predicate", predicate: rdfs("label") }];
 }
 
 type GroupLabelOptions = {
@@ -50,15 +56,16 @@ type GroupLabelOptions = {
 };
 
 /**
- * A sh:PropertyGroup node's own label: its configured label-predicate value(s) (sh:name by
- * default, or shui:labelPreference), best-matching language, falling back to its local name - the
- * group equivalent of propertyLabel's steps 1/4/5. A group is shape metadata only, not an ontology
- * property/value-node with data-graph labels of its own, so there's no data-graph step to run here.
+ * A sh:PropertyGroup node's own label: its configured label-predicate value(s) (rdfs:label per
+ * spec 8.7, then sh:name as an out-of-spec fallback, or shui:labelPreference if configured),
+ * best-matching language, falling back to its local name - the group equivalent of propertyLabel's
+ * steps 1/4/5. A group is shape metadata only, not an ontology property/value-node with data-graph
+ * labels of its own, so there's no data-graph step to run here.
  */
 export function groupLabel({ node, shapesGraph, languages }: GroupLabelOptions): string {
   const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
 
-  for (const path of effectiveLabelPredicates(shapesGraph, "propertyShape")) {
+  for (const path of effectiveLabelPredicates(shapesGraph, "group")) {
     if (path.type !== "predicate") continue;
     const literal = language(
       shapesGraph

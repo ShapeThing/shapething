@@ -2,7 +2,7 @@ import type { NamedNode, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
-import { prefixes, rdf, sh } from "@/helpers/namespaces.ts";
+import { prefixes, rdf, sh, shui, st } from "@/helpers/namespaces.ts";
 import type {
   FacetWidgetComponent,
   FacetWidgetRegistryEntry,
@@ -126,10 +126,23 @@ export const defaultWidgets: Widgets = {
 
 export type WidgetMode = "edit" | "view" | "facet";
 
-function categoryFor(mode: WidgetMode, widgets: Widgets) {
+export function categoryFor(mode: WidgetMode, widgets: Widgets) {
   if (mode === "edit") return widgets.editors;
   if (mode === "view") return widgets.viewers;
   return widgets.facets;
+}
+
+// The inverse of categoryFor: which WidgetMode's pool a given shui:editor/shui:viewer/st:facet
+// widgetPredicate resolves widgets from. Lets a caller (useWidget, score()'s category filter)
+// derive the right mode straight from the predicate it's already scoring/resolving against,
+// instead of trusting the ambient Environment.mode - the two usually coincide (edit mode always
+// scores shui:editor, view always shui:viewer), but edit mode's read-only rendering deliberately
+// resolves a shui:viewer widget while Environment.mode stays "edit", so they can't be conflated.
+export function widgetModeForPredicate(widgetPredicate: Term): WidgetMode | undefined {
+  if (widgetPredicate.equals(shui("editor"))) return "edit";
+  if (widgetPredicate.equals(shui("viewer"))) return "view";
+  if (widgetPredicate.equals(st("facet"))) return "facet";
+  return undefined;
 }
 
 // widget-scoring.ttl and every score.ttl are static bundle contents - parsing them into an

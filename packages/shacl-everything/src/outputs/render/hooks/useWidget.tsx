@@ -2,7 +2,7 @@ import type { Term } from "@rdfjs/types";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { getWidgetComponent, getWidgetMeta } from "@/widgets/registry.ts";
+import { getWidgetComponent, getWidgetMeta, widgetModeForPredicate } from "@/widgets/registry.ts";
 import type { FacetWidgetComponent, WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { noRefetch } from "@/helpers/noRefetch.ts";
@@ -19,7 +19,15 @@ import { noRefetch } from "@/helpers/noRefetch.ts";
  *
  * `T` lets a facet-mode caller narrow `Widget`'s type to `FacetWidgetComponent` instead of the
  * default `WidgetComponent` (edit/view's shape), since which one `mode` actually resolves to isn't
- * something registry.ts's return type alone can express - see useFacetWidget's own wrapper below.
+ * something registry.ts's return type alone can express - see TypeSelector/FacetPropertyComponent.
+ *
+ * The mode used for both the query key and component-pool lookup is derived from `widgetPredicate`
+ * itself (via widgetModeForPredicate), not read off the ambient Environment - every existing call
+ * site already passes a predicate matching its own render tree's mode 1:1 (edit -> shui:editor,
+ * view -> shui:viewer, facet -> st:facet), so this changes nothing for them. It's what lets edit
+ * mode's WidgetSlot resolve a real shui:viewer widget for a read-only value while
+ * Environment.mode stays "edit" - it gets `mode === "view"` here automatically, and a distinct
+ * query-key namespace from the property's normal editor-widget query for the very same value.
  */
 export function useWidget<T extends WidgetComponent | FacetWidgetComponent = WidgetComponent>(
   widgetPredicate: Term,
@@ -37,7 +45,8 @@ export function useWidget<T extends WidgetComponent | FacetWidgetComponent = Wid
       isPlaceholderData: boolean;
     }
   | undefined {
-  const { mode } = useEnvironment();
+  const { mode: environmentMode } = useEnvironment();
+  const mode = widgetModeForPredicate(widgetPredicate) ?? environmentMode;
 
   const { data: widget, isPlaceholderData } = useQuery({
     queryKey: [

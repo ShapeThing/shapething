@@ -18,6 +18,7 @@ export default function PropertyUIComponentRemove({
   object,
   onRemove,
   clearAll = false,
+  disabled = false,
 }: {
   propertyUIElement: PropertyUIElement;
   object: Term;
@@ -26,6 +27,11 @@ export default function PropertyUIComponentRemove({
   // value at once rather than just `object` - so its "-" clears the whole set instead of the one
   // value this instance happens to have been handed.
   clearAll?: boolean;
+  // True for a value also present in Environment.readOnlyGraph (see PropertyUIElement.isReadOnly()
+  // / outputs/render/modes/edit/WidgetSlot.tsx) - unlike hardBlockedByMinCount below, this still
+  // renders the button (so the row's layout matches its editable siblings) but disables it, since
+  // an inferred/read-only triple can't be removed through the form.
+  disabled?: boolean;
 }) {
   const existingObjects = useDataGraphObjects(propertyUIElement);
   const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
@@ -37,7 +43,8 @@ export default function PropertyUIComponentRemove({
   // hardBlockedByMaxCount), rather than shown disabled - a permanently-disabled control (e.g. a
   // required single value) is just noise the user learns to ignore. A Warning or Info severity
   // still lets the user remove past it, relying on validation to flag the result afterwards
-  // instead of blocking the action outright.
+  // instead of blocking the action outright. `disabled` (read-only values) overrides this hiding -
+  // that case is shown-but-disabled instead, not hidden.
   const hardBlockedByMinCount = minCountReached && (severity === undefined || severity === "error");
 
   const removeValue = () => {
@@ -52,7 +59,7 @@ export default function PropertyUIComponentRemove({
   };
 
   return (
-    !hardBlockedByMinCount && (
+    (disabled || !hardBlockedByMinCount) && (
       <Localized id="property-remove-value" attrs={{ "aria-label": true }}>
         <button
           className={clsx(
@@ -61,6 +68,7 @@ export default function PropertyUIComponentRemove({
           )}
           type="button"
           aria-label="Remove value"
+          disabled={disabled}
           onClick={removeValue}
         >
           <Minus />

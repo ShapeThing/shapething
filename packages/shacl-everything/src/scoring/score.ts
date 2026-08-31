@@ -3,6 +3,8 @@ import { RdfStore } from "rdf-stores";
 import { Engine as ShaclEngine } from "shacl-engine";
 import { factory } from "@/helpers/factory.ts";
 import { rdf, sh, shui, st, xsd } from "@/helpers/namespaces.ts";
+import { categoryFor, widgetModeForPredicate, type WidgetMode } from "@/widgets/registry.ts";
+import type { Widgets } from "@/widgets/types.ts";
 
 type SelectProps = {
   // A boolean flag; if true, return only the first matching result.
@@ -19,6 +21,16 @@ type SelectProps = {
   scoringGraph: RdfStore;
 
   widgetPredicate: Term;
+
+  // Excludes score()'s ranking (see below) from any candidate positively known to be registered
+  // under a *different* category than widgetPredicate's own (e.g. a shui:viewer when resolving a
+  // shui:editor) - needed once a single scoringGraph can hold more than one category's
+  // shui:WidgetScore rules at once (see preprocess/scoresGraph.ts). A candidate `widgets` simply
+  // doesn't know about at all (e.g. a unit test's synthetic widget IRI) is left alone rather than
+  // excluded. Optional - omit when scoringGraph is already known to hold just one category's rules;
+  // PropertyUIElement.widget()/widgets() (the real render-path callers) always pass their own
+  // widgetRegistry here.
+  widgets?: Widgets;
 };
 
 export type WidgetScoreResult = {
@@ -169,13 +181,52 @@ type ScoreProps = {
   scoringGraph: RdfStore;
 
   widgetPredicate: Term;
+
+  // See SelectProps' own widgets doc above - identical purpose, just threaded to score() directly
+  // rather than only via select()'s pass-through.
+  widgets?: Widgets;
 };
+
+const ALL_WIDGET_MODES: WidgetMode[] = ["edit", "view", "facet"];
+
+// Widget IRIs positively known to belong to some *other* category than widgetPredicate's own
+// (see widgets/registry.ts's widgetModeForPredicate/categoryFor) - e.g. a shui:viewer registered
+// under `widgets.viewers` when widgetPredicate is shui:editor. Deliberately *not* "every widget
+// not registered under my own category": a scoringGraph is allowed to reference a widget IRI
+// `widgets` doesn't know about at all (e.g. a unit test's synthetic widget with no real
+// implementation) - that candidate has no known category to conflict with, so it's left alone
+// rather than excluded. Only excludes when the IRI is registered under a *different* category,
+// which is the actual failure mode a single scoringGraph spanning more than one category creates
+// (see preprocess/scoresGraph.ts's resolveScoresGraph). Undefined (no filtering at all) when
+// `widgets` wasn't supplied, or widgetPredicate doesn't map to a known category.
+function otherCategoryWidgetValues(
+  widgetPredicate: Term,
+  widgets?: Widgets,
+): Set<string> | undefined {
+  if (!widgets) return undefined;
+  const ownMode = widgetModeForPredicate(widgetPredicate);
+  if (!ownMode) return undefined;
+
+  const ownValues = new Set(
+    Object.values(categoryFor(ownMode, widgets)).map((entry) => entry.widget.value),
+  );
+  const excluded = new Set<string>();
+  for (const otherMode of ALL_WIDGET_MODES) {
+    if (otherMode === ownMode) continue;
+    for (const entry of Object.values(categoryFor(otherMode, widgets))) {
+      if (!ownValues.has(entry.widget.value)) excluded.add(entry.widget.value);
+    }
+  }
+  return excluded;
+}
 
 /**
  *  The score function used to find the best widget or an ordered list of matches.
  */
 export async function* score(props: ScoreProps): AsyncGenerator<WidgetScoreResult> {
-  const { scoringGraph } = props;
+  const { scoringGraph, widgetPredicate, widgets } = props;
+  const excluded = otherCategoryWidgetValues(widgetPredicate, widgets);
+
   const widgetScores = [...scoringGraph.getQuads(null, rdf("type"), shui("WidgetScore"))]
     .map((quad) => {
       const widgetScore = quad.subject;
@@ -191,6 +242,7 @@ export async function* score(props: ScoreProps): AsyncGenerator<WidgetScoreResul
 
       return { widgetScore, widget, score };
     })
+    .filter((entry) => !excluded?.has(entry.widget.value))
     .sort((a, b) => {
       if (a.score === b.score) {
         if (a.widget.value === b.widget.value) return 0;

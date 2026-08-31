@@ -137,10 +137,11 @@ const resolveRdfSource = async (
 
 export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environment> => {
   const quadCache = new Map<string, Promise<Quad[]>>();
-  const [shapesGraph, dataGraph, scoresGraph] = await Promise.all([
+  const [shapesGraph, dataGraph, scoresGraph, readOnlyGraph] = await Promise.all([
     resolveRdfSource(raw.shapesGraph, quadCache),
     resolveRdfSource(raw.dataGraph, quadCache),
     resolveRdfSource(raw.scoresGraph, quadCache),
+    raw.readOnlyGraph !== undefined ? resolveRdfSource(raw.readOnlyGraph, quadCache) : undefined,
   ]);
 
   let nodeShapes: Quad_Subject[] = [];
@@ -155,6 +156,7 @@ export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environmen
     shapesGraph,
     dataGraph,
     scoresGraph,
+    readOnlyGraph,
     nodeShapes: raw.nodeShapes?.length ? raw.nodeShapes : nodeShapes,
   };
 };
