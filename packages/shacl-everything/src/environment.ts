@@ -19,6 +19,15 @@ export type Environment = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
   scoresGraph: RdfStore;
+  // Existing triples also present here render read-only in edit mode - their shui:viewer widget
+  // instead of their shui:editor, with no remove control - found by walking a property's own path
+  // through this graph the same way getObjects() walks dataGraph (see
+  // PropertyUIElement.isReadOnly()). Driven purely by graph membership, nothing else: there is no
+  // per-shape/per-widget declarative opt-in (yet) - the motivating case is an embedder materializing
+  // inferred/derived triples into dataGraph alongside the user's own asserted ones, which shouldn't
+  // be directly editable. Unset (the default) means nothing is read-only, same as before this field
+  // existed. Ignored outside mode "edit".
+  readOnlyGraph?: RdfStore;
   // The pluggable widget set to resolve editors/viewers/groups from (see widgets/types.ts's
   // Widgets, widgets/registry.ts's defaultWidgets). Left unset here - same convention as
   // scoresGraph starting empty - and filled in by preprocess/widgets.ts's resolveWidgets, which
@@ -117,10 +126,14 @@ export type Environment = {
 // still be an unparsed/undereferenced RdfSource rather than a ready RdfStore. RdfStore is itself
 // a valid RdfSource, so a fully-resolved Environment already satisfies this type - preprocessors
 // don't need a different type per stage of the chain.
-export type RawEnvironment = Omit<Environment, "shapesGraph" | "dataGraph" | "scoresGraph"> & {
+export type RawEnvironment = Omit<
+  Environment,
+  "shapesGraph" | "dataGraph" | "scoresGraph" | "readOnlyGraph"
+> & {
   shapesGraph: RdfSource;
   dataGraph: RdfSource;
   scoresGraph: RdfSource;
+  readOnlyGraph?: RdfSource;
 };
 
 export const defaultEnvironment: Environment = {

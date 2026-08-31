@@ -1,4 +1,5 @@
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { usePropertyValidationResults } from "@/outputs/render/hooks/usePropertyValidationResults.tsx";
 import PropertyUIComponentRemove from "@/outputs/render/modes/edit/PropertyUIComponentRemove.tsx";
@@ -38,6 +39,12 @@ export default function PropertyUIComponentObject({
     },
     [propertyUIElement, object, onReplace, onTermSet],
   );
+
+  // A value also present in readOnlyGraph (e.g. an inferred triple) can't be removed through the
+  // form - its remove button still renders (see below), just disabled, rather than disappearing -
+  // see WidgetSlot's own identical check, which is what actually swaps its widget.
+  const { readOnlyGraph } = useEnvironment();
+  const isReadOnly = readOnlyGraph ? propertyUIElement.isReadOnly(object, readOnlyGraph) : false;
 
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   // sh:message is chrome (like sh:name/sh:description), so it's resolved the same way - one
@@ -88,6 +95,7 @@ export default function PropertyUIComponentObject({
           propertyUIElement={propertyUIElement}
           object={object}
           clearAll={meta?.singleUnifiedWidget?.(propertyUIElement) === true}
+          disabled={isReadOnly}
         />
       </div>
     </div>

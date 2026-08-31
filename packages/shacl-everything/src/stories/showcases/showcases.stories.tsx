@@ -13,7 +13,7 @@ export default {
 };
 
 export const academic: Story = {
-  name: "Academic",
+  name: "Academic (edit)",
   args: {
     ...argsByTestFile("academic.ttl", import.meta.url),
     nodeShapes: [ex("ResearcherShape"), ex("PersonShape")],

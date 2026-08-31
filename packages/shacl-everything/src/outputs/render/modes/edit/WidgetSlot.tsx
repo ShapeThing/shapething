@@ -1,5 +1,6 @@
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import { useActiveBranch } from "@/outputs/render/hooks/useActiveBranch.tsx";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useFocusWithinNearest } from "@/outputs/render/hooks/useFocusWithinNearest.tsx";
 import { logicalBranches, withBranch, type LogicalBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -8,6 +9,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { sh, shui } from "@/helpers/namespaces.ts";
 import WidgetSwitcher from "@/outputs/render/modes/edit/WidgetSwitcher.tsx";
 import LogicalConstraintSwitcher from "@/outputs/render/modes/edit/LogicalConstraintSwitcher.tsx";
+
+// A read-only value (see Environment.readOnlyGraph) still gets a setTerm prop - a no-op mirrors
+// view mode's own WidgetSlot, keeping every widget implementation's setTerm always callable.
+const noop = () => {};
 
 /**
  * Resolves and renders whichever widget currently scores highest for `(propertyUIElement, object)`
@@ -58,11 +63,19 @@ export default function WidgetSlot({
     ? withBranch(propertyUIElement, activeBranch.shape)
     : propertyUIElement;
 
+  // Just before scoring: a value also present in readOnlyGraph (e.g. an inferred triple - see
+  // Environment.readOnlyGraph) renders through its viewer instead of its editor. withBranch()
+  // never changes propertyShapes[0], so this is branch-independent - checking on effectiveProperty
+  // vs. propertyUIElement makes no difference here, effectiveProperty is just what's already at
+  // hand.
+  const { readOnlyGraph } = useEnvironment();
+  const isReadOnly = readOnlyGraph ? effectiveProperty.isReadOnly(object, readOnlyGraph) : false;
+
   const {
     Widget,
     iri: resolvedWidgetIri,
     isPlaceholderData,
-  } = useWidget(shui("editor"), effectiveProperty, object) ?? {};
+  } = useWidget(isReadOnly ? shui("viewer") : shui("editor"), effectiveProperty, object) ?? {};
   const [ActiveWidget, setActiveWidget] = useState<typeof Widget | undefined>(undefined);
   const [activeWidgetIri, setActiveWidgetIri] = useState<NamedNode | undefined>(undefined);
   const ref = useRef<HTMLDivElement>(null);
@@ -92,25 +105,27 @@ export default function WidgetSlot({
 
   const unit = propertyUIElement.get(sh("unit"))[0]?.value;
 
-  const flyOut = currentlyFocused ? (
-    <div className="st-property-object__fly-out">
-      <LogicalConstraintSwitcher
-        shape={propertyUIElement}
-        term={object}
-        setTerm={setTerm}
-        activeBranch={activeBranch}
-        onBranchSelected={(branch: LogicalBranch) => setPinnedBranchKey(branch.shape.value)}
-      />
-      <WidgetSwitcher
-        activeWidgetIri={activeWidgetIri}
-        setActiveWidget={(iri, widgetFn) => {
-          setActiveWidget(widgetFn);
-          setActiveWidgetIri(iri);
-        }}
-        shape={effectiveProperty}
-      />
-    </div>
-  ) : null;
+  // Nothing to switch on a fixed, read-only value - no widget-picker, no branch switcher.
+  const flyOut =
+    !isReadOnly && currentlyFocused ? (
+      <div className="st-property-object__fly-out">
+        <LogicalConstraintSwitcher
+          shape={propertyUIElement}
+          term={object}
+          setTerm={setTerm}
+          activeBranch={activeBranch}
+          onBranchSelected={(branch: LogicalBranch) => setPinnedBranchKey(branch.shape.value)}
+        />
+        <WidgetSwitcher
+          activeWidgetIri={activeWidgetIri}
+          setActiveWidget={(iri, widgetFn) => {
+            setActiveWidget(widgetFn);
+            setActiveWidgetIri(iri);
+          }}
+          shape={effectiveProperty}
+        />
+      </div>
+    ) : null;
 
   return (
     <>
@@ -119,7 +134,7 @@ export default function WidgetSlot({
           <ActiveWidget
             shape={effectiveProperty}
             term={object}
-            setTerm={setTerm}
+            setTerm={isReadOnly ? noop : setTerm}
             labelledBy={labelledBy}
           />
           {flyOut}

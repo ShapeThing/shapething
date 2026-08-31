@@ -1,0 +1,20 @@
+.st-shacl-ui-application {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.st-shacl-ui-application__item {
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-3);
+  padding: var(--size-4);
+}
+
+.st-shacl-ui-application__loading {
+  display: flex;
+  justify-content: center;
+  padding: var(--size-5);
+}

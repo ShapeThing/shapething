@@ -1,0 +1,47 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix ex: <http://example.org/>.
+
+### People
+ex:alice a foaf:Person ;
+    foaf:givenName "Alice" ;
+    foaf:familyName "Anderson" ;
+    foaf:mbox "alice@example.org" .
+
+ex:bob a foaf:Person ;
+    foaf:givenName "Bob" ;
+    foaf:familyName "Baker" ;
+    foaf:mbox "bob@example.org" .
+
+ex:carol a foaf:Person ;
+    foaf:givenName "Carol" ;
+    foaf:familyName "Chen" ;
+    foaf:mbox "carol@example.org" .
+
+### Person Shape
+ex:PersonShape a sh:NodeShape ;
+    sh:targetClass foaf:Person ;
+    sh:property [
+        sh:path foaf:givenName ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 1 ;
+        sh:name "Given name"@en, "Voornaam"@nl ;
+    ] ;
+    sh:property [
+        sh:path foaf:familyName ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 2 ;
+        sh:name "Family name"@en, "Achternaam"@nl ;
+    ] ;
+    sh:property [
+        sh:path foaf:mbox ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 3 ;
+        sh:name "Email"@en, "E-mail"@nl ;
+    ] .
