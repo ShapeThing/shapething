@@ -51,7 +51,9 @@ const onSubmit = (result: SubmitResult) => {
 // full, working facet sidebar - text search (sh:alternativePath), category (sh:class, options
 // derived from the data), number range, and date range - purely from ordinary SHACL constraints,
 // plus a type selector since this shapes graph declares two target classes (schema:Product and
-// schema:Person).
+// schema:Person). See src/stories/functionality/facet-*.stories.tsx for coverage of specific facet
+// mode behaviors/regressions (type union, option counts, shared predicates, checkbox reactivity) -
+// this one stays a realistic, single end-to-end demo.
 export const productCatalogFacets: Story = {
   name: "Product catalog (facets)",
   args: {
@@ -102,7 +104,14 @@ export const productCatalogFacets: Story = {
     await userEvent.click(personRadio);
     await waitFor(() => expect(personRadio.checked).toBe(true));
     expect(productRadio.checked).toBe(false);
-    await canvas.findByLabelText("Given name");
+    const givenName = (await canvas.findByLabelText("Given name")) as HTMLInputElement;
+
+    // Both "Search" (Product) and "Given name" (Person) resolve to the same TextSearchFacet
+    // widget, which buffers what's typed as its own local component state rather than deriving it
+    // from the filter shape's store - an index-keyed remount would let React reuse that same
+    // widget instance (and its stale "widget" text) across the type switch, even though it's now a
+    // completely different property. See NodeUIComponent's own key comment for the fix.
+    expect(givenName.value).toBe("");
 
     await waitFor(() => {
       const listHead = productCatalogSubmitResult!.dataGraph.getQuads(null, sh("in"))[0]?.object;

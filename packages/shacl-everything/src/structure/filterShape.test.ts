@@ -1,15 +1,18 @@
 import { expect, test } from "vite-plus/test";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
+import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import { ex, queryPrefixes, rdf, sh, xsd } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import {
   createFilterShape,
+  findFilterConstraintNode,
   getFilterConstraintNode,
   pathSparqlFor,
   removeFilterConstraintsForPaths,
   setFilterConstraint,
+  setFilterConstraintForProperty,
 } from "@/structure/filterShape.ts";
 
 async function propertyFor(pathTurtle: string) {
@@ -111,6 +114,51 @@ test("setFilterConstraint: writes a multi-valued constraint as a fresh SHACL lis
   ]);
 });
 
+test("setFilterConstraint: clearing a facet's only constraint prunes the whole sh:property entry", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:category .`);
+  const filterShape = createFilterShape();
+  const node = getFilterConstraintNode(filterShape, property);
+
+  setFilterConstraint(filterShape, node, sh("in"), [ex("Electronics")]);
+  setFilterConstraint(filterShape, node, sh("in"), undefined);
+
+  // No vacuous sh:property [ sh:path ... ] left behind once the last value is cleared - a facet
+  // rendered but never given input, or given input and then cleared back out, look identical.
+  expect(filterShape.store.getQuads(filterShape.rootNode, sh("property"))).toEqual([]);
+  expect(filterShape.store.getQuads(node)).toEqual([]);
+});
+
+test("setFilterConstraint: clearing one of two constraints on the same node keeps the node", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:price .`);
+  const filterShape = createFilterShape();
+  const node = getFilterConstraintNode(filterShape, property);
+
+  setFilterConstraint(filterShape, node, sh("minInclusive"), factory.literal("10", xsd("integer")));
+  setFilterConstraint(filterShape, node, sh("maxInclusive"), factory.literal("20", xsd("integer")));
+  setFilterConstraint(filterShape, node, sh("minInclusive"), undefined);
+
+  // maxInclusive is still set, so the sh:property entry must survive.
+  expect(filterShape.store.getQuads(filterShape.rootNode, sh("property")).length).toBe(1);
+  expect(filterShape.store.getQuads(node, sh("path")).length).toBe(1);
+  expect(filterShape.store.getQuads(node, sh("maxInclusive"))[0]?.object.value).toEqual("20");
+});
+
+test("setFilterConstraint: clearing a list-valued constraint deletes the old list's own cells", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:type .`);
+  const filterShape = createFilterShape();
+  const node = getFilterConstraintNode(filterShape, property);
+
+  setFilterConstraint(filterShape, node, sh("in"), [ex("Cat"), ex("Dog")]);
+  const listHead = filterShape.store.getQuads(node, sh("in"))[0]?.object;
+
+  setFilterConstraint(filterShape, node, sh("in"), undefined);
+
+  // Not just the constraintNode -> sh:in -> listHead link: the list's own rdf:first/rdf:rest
+  // cells must be gone too, not orphaned in the store forever.
+  expect(getRdfList(listHead!, filterShape.store)).toEqual([]);
+  expect(filterShape.store.getQuads(null, rdf("first"))).toEqual([]);
+});
+
 test("setFilterConstraint: rewriting a list-valued constraint cleans up the old list's cells", async () => {
   const property = await propertyFor(`ex:property1 sh:path ex:type .`);
   const filterShape = createFilterShape();
@@ -125,6 +173,61 @@ test("setFilterConstraint: rewriting a list-valued constraint cleans up the old 
   ]);
   // Exactly one sh:in triple should remain pointing at the (rebuilt) list.
   expect(filterShape.store.getQuads(node, sh("in")).length).toBe(1);
+});
+
+test("setFilterConstraintForProperty: a brand-new node's own value is visible to a wildcard subscriber the moment it's linked in, not one write later", async () => {
+  // Reproduces exactly what useReactiveRead does: a sibling facet subscribes to the wildcard
+  // "something was added under rootNode's sh:property" pattern, the same way every FacetPropertyComponent
+  // does, to notice a brand-new constraint appearing anywhere. Before setFilterConstraintForProperty
+  // existed, getFilterConstraintNode linked a still-empty node in *before* setFilterConstraint wrote
+  // its value - so this exact subscriber would have observed (and, under React's
+  // useSyncExternalStore, permanently cached) a property with no value yet. A checkbox/search box/
+  // number range never reflecting its own first input was the real, user-visible symptom.
+  const property = await propertyFor(`ex:property1 sh:path ex:category .`);
+  const filterShape = createFilterShape();
+  const reactivity = getReactivity(filterShape.store)!;
+
+  const { patterns } = reactivity.track(() => {
+    filterShape.store.getQuads(filterShape.rootNode, sh("property"));
+  });
+
+  let valuesSeenAtNotifyTime: string[] | undefined;
+  reactivity.subscribe(patterns, () => {
+    const node = findFilterConstraintNode(filterShape, property);
+    const listHead = node ? filterShape.store.getQuads(node, sh("in"))[0]?.object : undefined;
+    valuesSeenAtNotifyTime = listHead
+      ? getRdfList(listHead, filterShape.store).map((term) => term.value)
+      : undefined;
+  });
+
+  setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("Electronics")]);
+
+  expect(valuesSeenAtNotifyTime).toEqual([ex("Electronics").value]);
+});
+
+test("setFilterConstraintForProperty: routes to the ordinary find-and-write path once a node already exists", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:category .`);
+  const filterShape = createFilterShape();
+
+  setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("Electronics")]);
+  setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("Electronics"), ex("Books")]);
+
+  expect(filterShape.store.getQuads(filterShape.rootNode, sh("property")).length).toBe(1);
+  const node = findFilterConstraintNode(filterShape, property)!;
+  const listHead = filterShape.store.getQuads(node, sh("in"))[0]?.object;
+  expect(getRdfList(listHead!, filterShape.store).map((term) => term.value)).toEqual([
+    ex("Electronics").value,
+    ex("Books").value,
+  ]);
+});
+
+test("setFilterConstraintForProperty: clearing with nothing to clear is a no-op", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:category .`);
+  const filterShape = createFilterShape();
+
+  setFilterConstraintForProperty(filterShape, property, sh("in"), undefined);
+
+  expect(filterShape.store.getQuads(filterShape.rootNode, sh("property"))).toEqual([]);
 });
 
 test("removeFilterConstraintsForPaths: drops only the constraints whose path is in the given set", async () => {

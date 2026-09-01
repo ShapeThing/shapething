@@ -120,6 +120,37 @@ export type Environment = {
   // UX (results update as you refine). "submit" instead withholds every call until an explicit
   // apply action (facet mode then renders its own <form>/submit button, mirroring edit mode's).
   facetChangeMode?: "live" | "submit";
+  // Facet mode only, and only relevant when more than one facetable root shape was discovered
+  // (see resolution/targets.ts's facetableRootShapes). When false (the default), NodeUIComponent
+  // shows an explicit TypeSelector and renders only the currently-selected type's own properties -
+  // switching type prunes constraints that belonged only to the previous one.
+  //
+  // When true, TypeSelector is dropped entirely and every discovered root shape's properties
+  // render together instead, deduplicated by canonical path the same way a single shape's own
+  // co-path property shapes already are (see structure/childrenForShape.ts, which already accepts
+  // an array of shapes for exactly this). There is no synthetic rdf:type facet in this mode - each
+  // ordinary facet becomes an *implicit* type selector on its own: setting a constraint on a
+  // property only one type actually has can only ever match instances of that type, without ever
+  // needing to say so explicitly. Facets belonging to different types can be set at the same time,
+  // which naturally narrows results to their intersection - instances satisfying every constraint
+  // given, however many types those constraints happen to be drawn from - rather than forcing a
+  // choice of exactly one type up front.
+  enableFacetTypeUnion?: boolean;
+  // Facet mode only. When true, an ordinary facet (CategoryFacet's options, a range facet's
+  // min/max once at least one bound is filled in, or TextSearchFacet once something is typed)
+  // shows a "(n)" count - how many target instances currently qualify (see
+  // structure/facetValues.ts's aggregateFacetValueCounts/countFacetInstancesInRange/
+  // countFacetInstancesMatchingPattern). This is a *live, re-narrowing* count: it excludes instances that
+  // fail any *other* currently-active facet constraint (see structure/filterShape.ts's
+  // instancesMatchingOtherConstraints), so selecting a value in one facet updates the counts shown
+  // on every other facet - typical faceted-search behavior. A facet's own constraint is excluded
+  // from narrowing its own counts, so multi-selecting within the same sh:in (an OR) doesn't shrink
+  // its sibling options' counts against each other. The option list itself (which values/range
+  // exist at all) is unaffected - only the count next to them narrows, so a currently-zero option
+  // stays visible rather than disappearing. TypeSelector's own root-shape counts ("Product (n)")
+  // are the one exception: they stay a static per-type instance count, not narrowed by other active
+  // facets. When false (the default), no count is shown at all, same as before this option existed.
+  enableFacetOptionCounts?: boolean;
 };
 
 // What flows through the preprocessor chain before it's fully resolved: the graph fields may
@@ -160,6 +191,8 @@ export const defaultEnvironment: Environment = {
   enableViewInPlace: true,
   enableCreateInPlace: true,
   facetChangeMode: "live",
+  enableFacetTypeUnion: false,
+  enableFacetOptionCounts: false,
 };
 
 export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph" | "dataGraph"> = {
@@ -185,6 +218,8 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableViewInPlace: false,
   enableCreateInPlace: false,
   facetChangeMode: "live",
+  enableFacetTypeUnion: false,
+  enableFacetOptionCounts: false,
 };
 
 export const minimalEnvironmentWithContentLanguages: Omit<

@@ -130,7 +130,12 @@ export default function WidgetSlot({
   return (
     <>
       {ActiveWidget && (
-        <div className="st-property-object__widget" ref={ref} data-widget={ActiveWidget?.name}>
+        <div
+          className="st-property-object__widget"
+          ref={ref}
+          data-widget={ActiveWidget?.name}
+          data-read-only={isReadOnly || undefined}
+        >
           <ActiveWidget
             shape={effectiveProperty}
             term={object}

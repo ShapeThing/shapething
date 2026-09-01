@@ -10,8 +10,9 @@ import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import {
-  getFilterConstraintNode,
-  setFilterConstraint,
+  findFilterConstraintNode,
+  pathSparqlFor,
+  setFilterConstraintForProperty,
   type FilterShape,
 } from "@/structure/filterShape.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -26,6 +27,11 @@ type Props = {
   filterShape: FilterShape;
   selectedRootShape: Quad_Subject;
   onSelectRootShape: (rootShape: Quad_Subject) => void;
+  // Only given when Environment.enableFacetOptionCounts is on (see NodeUIComponent, which is the
+  // one that actually has shapesGraph in hand to compute it) - keyed by termKey(classFor(rootShape))
+  // the same way CategoryFacet keys its own valueCounts, since a root shape's "value" here is its
+  // own class term.
+  valueCounts?: Map<string, number>;
 };
 
 /**
@@ -47,6 +53,7 @@ export default function TypeSelector({
   filterShape,
   selectedRootShape,
   onSelectRootShape,
+  valueCounts,
 }: Props) {
   const placeholderFocusNode = useMemo(() => factory.blankNode(), []);
 
@@ -73,17 +80,20 @@ export default function TypeSelector({
   }, [rootShapes, classFor, dataGraph, scoresGraph, widgets, placeholderFocusNode]);
 
   const widget = useWidget<FacetWidgetComponent>(st("facet"), property);
-  const constraintNode = useMemo(
-    () => getFilterConstraintNode(filterShape, property),
-    [filterShape, property],
-  );
   const labelId = useId();
 
   // Reactive - see FacetPropertyComponent's identical use of this; without it the widget's own
   // setConstraint write wouldn't re-render it to reflect its own change (e.g. a controlled radio
-  // button's `checked` prop going stale the instant it's clicked).
-  const constraintQuads = useReactiveRead(filterShape.store, constraintNode.value, () =>
-    filterShape.store.getQuads(constraintNode),
+  // button's `checked` prop going stale the instant it's clicked). Tracking the find itself (not
+  // just a resolved node's quads) means no type gets pre-selected in the submitted shape until the
+  // user actually picks one - see setConstraint below.
+  const constraintQuads = useReactiveRead(
+    filterShape.store,
+    `${filterShape.rootNode.value}|${pathSparqlFor(property) ?? ""}`,
+    () => {
+      const node = findFilterConstraintNode(filterShape, property);
+      return node ? filterShape.store.getQuads(node) : [];
+    },
   );
 
   if (!widget) return null;
@@ -94,8 +104,12 @@ export default function TypeSelector({
       .filter((quad) => quad.predicate.equals(predicate))
       .flatMap((quad) => expandListOrTerm(quad.object, filterShape.store));
 
+  // Only auto-vivifies this facet's sh:property/sh:path node on an actual selection - see
+  // setFilterConstraintForProperty's own doc comment for why it (not getFilterConstraintNode +
+  // setFilterConstraint as two separate calls) is what keeps a freshly-picked radio from ever
+  // rendering as unselected because its own reactive read raced the write.
   const setConstraint = (predicate: NamedNode, value: Term | Term[] | undefined) => {
-    setFilterConstraint(filterShape, constraintNode, predicate, value);
+    setFilterConstraintForProperty(filterShape, property, predicate, value);
     if (!predicate.equals(sh("in")) || !Array.isArray(value) || value.length === 0) return;
 
     const chosen = value[0];
@@ -114,6 +128,7 @@ export default function TypeSelector({
         values={[]}
         getConstraint={getConstraint}
         setConstraint={setConstraint}
+        valueCounts={valueCounts}
         labelledBy={labelId}
       />
     </FormElement>
