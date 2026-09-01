@@ -7,3 +7,7 @@
 .st-date-range-facet__separator {
   color: var(--gray-6);
 }
+
+.st-date-range-facet__count {
+  color: var(--st-color-text-muted);
+}

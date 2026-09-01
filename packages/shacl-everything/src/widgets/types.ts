@@ -26,12 +26,38 @@ export type WidgetComponent = ComponentType<WidgetProps>;
  * getConstraint/setConstraint read/write this property's own constraint node on the live,
  * generated filterShape (see structure/filterShape.ts) - the facet-mode analogue of term/setTerm.
  * setConstraint(predicate, undefined) removes that predicate's current value(s) entirely.
+ *
+ * `valueCounts` is only given when Environment.enableFacetOptionCounts is on (see
+ * structure/facetValues.ts's aggregateFacetValueCounts) - keyed by termKey, "how many target
+ * instances have this value, given every other currently-active facet constraint" (a live,
+ * re-narrowing count - see structure/filterShape.ts's instancesMatchingOtherConstraints, which
+ * FacetPropertyComponent applies before counting). Option-based widgets (CategoryFacet) use it to
+ * show a "(n)" count next to each option; a widget with no notion of discrete options
+ * (TextSearchFacet, the range facets) simply ignores it.
+ *
+ * `rangeMatchCount` is only given when Environment.enableFacetOptionCounts is on *and* at least
+ * one of sh:minInclusive/sh:maxInclusive is currently set on this property's filterShape
+ * constraint (see structure/facetValues.ts's countFacetInstancesInRange) - "how many target
+ * instances (again narrowed by every other active facet constraint) have a value inside the
+ * currently-entered range", the range-facet analogue of `valueCounts`. A range widget
+ * (NumberRangeFacet/DateRangeFacet/DateTimeRangeFacet) shows it once a bound is filled in; an
+ * option-based widget (CategoryFacet) simply ignores it.
+ *
+ * `searchMatchCount` is only given when Environment.enableFacetOptionCounts is on *and*
+ * sh:pattern is currently set on this property's filterShape constraint (see
+ * structure/facetValues.ts's countFacetInstancesMatchingPattern) - "how many target instances
+ * (again narrowed by every other active facet constraint) have a value matching the
+ * currently-entered search text", the text-search analogue of `valueCounts`/`rangeMatchCount`.
+ * TextSearchFacet shows it once something is typed; every other widget simply ignores it.
  */
 export type FacetWidgetProps = {
   shape: PropertyUIElement;
   values: Term[];
   getConstraint: (predicate: NamedNode) => Term[];
   setConstraint: (predicate: NamedNode, value: Term | Term[] | undefined) => void;
+  valueCounts?: Map<string, number>;
+  rangeMatchCount?: number;
+  searchMatchCount?: number;
   labelledBy?: string;
 };
 

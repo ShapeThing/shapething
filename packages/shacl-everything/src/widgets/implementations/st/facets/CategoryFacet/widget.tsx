@@ -16,13 +16,15 @@ import "./style.css";
  * (`values`, see structure/facetValues.ts). `sh:maxCount 1` renders as single-select (used by
  * TypeSelector's own synthetic root-shape picker) - every other cardinality renders multi-select
  * checkboxes, since picking more than one category value is an ordinary OR-filter (sh:in already
- * means "any of these").
+ * means "any of these"). `valueCounts`, only given when Environment.enableFacetOptionCounts is on,
+ * shows a "(n)" count after each option's label.
  */
 export default function CategoryFacet({
   shape,
   values,
   getConstraint,
   setConstraint,
+  valueCounts,
   labelledBy,
 }: FacetWidgetProps) {
   const { activeLanguage } = useContentLanguage();
@@ -68,6 +70,12 @@ export default function CategoryFacet({
               onChange={(event) => toggle(option, event.target.checked)}
             />
             {label}
+            {valueCounts && (
+              <span className="st-category-facet__count">
+                {" "}
+                ({valueCounts.get(termKey(option)) ?? 0})
+              </span>
+            )}
           </label>
         );
       })}

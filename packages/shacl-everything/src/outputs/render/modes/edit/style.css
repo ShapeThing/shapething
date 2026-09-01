@@ -97,6 +97,19 @@
   gap: var(--size-2);
 }
 
+/* A read-only value's widget (see Environment.readOnlyGraph) is a shui:viewer - typically bare
+   text with none of .st-input/.st-button's own padding+border, so at this row's own
+   align-items: start it would sit pinned to the top instead of level with its sibling remove
+   button. Reserving the exact same padding+border box (transparent, since it isn't actually an
+   input) - not switching to align-items: center - keeps every *other* widget's alignment (e.g. a
+   multi-line textarea, whose remove button should stay level with its first line, not float at
+   its vertical center) untouched. */
+.st-property-object__widget[data-read-only] {
+  padding: var(--size-2);
+  border: 1px solid transparent;
+  border-radius: var(--radius-2);
+}
+
 .st-choice-element {
   display: flex;
   flex-direction: column;

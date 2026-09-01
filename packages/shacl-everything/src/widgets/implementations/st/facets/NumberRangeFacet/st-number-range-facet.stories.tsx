@@ -53,3 +53,35 @@ export const stNumberRangeFacet: Story = {
     });
   },
 };
+
+// The native <input min>/<max> attributes above are only enforced by the browser at form
+// submission - and facet mode's default "live" facetChangeMode never submits a form - so an
+// out-of-bounds value typed here would otherwise sit there unenforced. Clamped on blur instead,
+// to the nearest known data bound (5 - 42.5), so typing itself is never fought mid-value.
+export const clampsOutOfBoundsOnBlur: Story = {
+  name: "clamps an out-of-bounds value to the nearest known bound on blur",
+  args: { ...argsByTestFile("st-number-range-facet.ttl", import.meta.url), onSubmit },
+  play: async ({ canvasElement }) => {
+    submitResult = undefined;
+    const canvas = within(canvasElement);
+    const [minInput, maxInput] = await canvas.findAllByRole("spinbutton");
+
+    await userEvent.type(minInput, "999");
+    await userEvent.tab();
+    expect(minInput).toHaveValue(42.5);
+
+    await userEvent.type(maxInput, "-5");
+    await userEvent.tab();
+    expect(maxInput).toHaveValue(5);
+
+    await waitFor(() => {
+      if (!submitResult) throw new Error("onSubmit has not fired yet");
+      expect(
+        submitResult.dataGraph.getQuads(null, sh("minInclusive")).map((quad) => quad.object.value),
+      ).toEqual(["42.5"]);
+      expect(
+        submitResult.dataGraph.getQuads(null, sh("maxInclusive")).map((quad) => quad.object.value),
+      ).toEqual(["5"]);
+    });
+  },
+};

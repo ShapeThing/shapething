@@ -14,6 +14,7 @@ type Props = FacetWidgetProps & {
 // DateTimePickerEditor delegates to DatePickerEditor's sibling TextFieldEditor.
 export default function DateRangeFacet({
   setConstraint,
+  rangeMatchCount,
   labelledBy,
   type = "date",
   datatype = xsd("date"),
@@ -54,6 +55,9 @@ export default function DateRangeFacet({
           );
         }}
       />
+      {rangeMatchCount !== undefined && (
+        <span className="st-date-range-facet__count"> ({rangeMatchCount})</span>
+      )}
     </div>
   );
 }
