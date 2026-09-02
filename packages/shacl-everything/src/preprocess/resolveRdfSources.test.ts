@@ -99,6 +99,34 @@ test("an import cycle terminates instead of looping forever", async () => {
   );
 });
 
+test("a dead owl:imports URL is skipped instead of failing the whole resolve", async () => {
+  fixtures["http://example.org/a.ttl"] = `
+    @prefix owl: <http://www.w3.org/2002/07/owl#> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://example.org/dead.ttl> .
+    ex:a owl:imports <http://example.org/b.ttl> .
+    ex:a ex:name "A" .
+  `;
+  fixtures["http://example.org/b.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:b ex:name "B" .
+  `;
+  // "http://example.org/dead.ttl" is deliberately absent from fixtures, so the stubbed fetch
+  // above throws for it on every attempt (including retries) - simulating a permanently dead URL.
+
+  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }),
+  );
+
+  expect(environment.dataGraph.getQuads(ex("a"), ex("name")).length).toBe(1);
+  expect(environment.dataGraph.getQuads(ex("b"), ex("name")).length).toBe(1);
+  expect(warnSpy).toHaveBeenCalled();
+
+  warnSpy.mockRestore();
+});
+
 test("the same import reached from multiple sources is only fetched once", async () => {
   fixtures["http://example.org/shapes.ttl"] = `
     @prefix owl: <http://www.w3.org/2002/07/owl#> .

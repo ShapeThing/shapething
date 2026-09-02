@@ -13,3 +13,9 @@
 .st-category-facet__count {
   color: var(--st-color-text-muted);
 }
+
+.st-category-facet__empty {
+  display: flex;
+  align-items: center;
+  gap: var(--size-1);
+}

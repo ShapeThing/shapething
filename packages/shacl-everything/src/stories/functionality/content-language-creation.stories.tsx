@@ -1,7 +1,7 @@
 import type { StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
-import { factory } from "@/helpers/factory.ts";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
@@ -13,35 +13,8 @@ export default {
 // Same shape of fixture as content-language-switching.stories.tsx, but with only the two
 // languages the graphs actually declare - enableContentLanguageCreation is what grows the list
 // here, not sh:languageIn/sh:name declaring a third language up front.
-const shapesAndData = `
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
-@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
-@prefix schema: <http://schema.org/>.
-@prefix sh: <http://www.w3.org/ns/shacl#>.
-@prefix ex: <http://example.org/>.
-
-ex:shape
-    a sh:NodeShape ;
-    sh:targetClass schema:Person ;
-    sh:property [
-        sh:name "Preferred label"@en, "Voorkeursnaam"@nl ;
-        sh:path skos:prefLabel ;
-        sh:datatype rdf:langString ;
-        sh:languageIn ( "en" "nl" ) ;
-    ] ;
-    .
-
-ex:data
-    a schema:Person ;
-    skos:prefLabel "Redhead"@en, "Roodharige"@nl ;
-    .
-`;
-
 const args: ShaclRendererProps = {
-  shapesGraph: shapesAndData,
-  dataGraph: shapesAndData,
-  nodeShapes: [factory.namedNode("http://example.org/shape")],
-  focusNode: factory.namedNode("http://example.org/data"),
+  ...argsByTestFile("content-language-creation.ttl", import.meta.url),
   enableContentLanguageCreation: true,
 };
 

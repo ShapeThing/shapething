@@ -1,0 +1,43 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Category"@en ;
+        sh:path schema:category ;
+        sh:node <#categoryShape> ;
+        sh:in [
+            # No SERVICE clause - this queries the same local source shapesGraph/dataGraph already
+            # share in this fixture, exercising the exact same federated-query code path a
+            # SERVICE-wrapped remote sh:select would (Comunica treats a local RDF/JS source and a
+            # remote endpoint identically), without a real network dependency. See
+            # EnumSelectEditor's own federated-data.ttl fixture for the real-SERVICE form, which has
+            # no automated play() test for that same reason.
+            sh:select """
+                PREFIX ex: <http://example.org/>
+                SELECT DISTINCT ?value WHERE {
+                    ?value a ex:Category .
+                }
+            """
+        ] ;
+    ] ;
+    .
+
+<#categoryShape>
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+    ] .
+
+ex:Electronics a ex:Category ; rdfs:label "Electronics"@en .
+ex:Books a ex:Category ; rdfs:label "Books"@en .
+ex:Toys a ex:Category ; rdfs:label "Toys"@en .
+
+<#data> a schema:Product ; schema:name "Widget" ; schema:category ex:Electronics .
+<#product2> a schema:Product ; schema:name "Novel" ; schema:category ex:Books .
+<#product3> a schema:Product ; schema:name "Gadget" ; schema:category ex:Electronics .

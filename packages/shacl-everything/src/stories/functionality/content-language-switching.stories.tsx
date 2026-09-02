@@ -1,7 +1,7 @@
 import type { StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
-import { factory } from "@/helpers/factory.ts";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
@@ -13,39 +13,7 @@ export default {
 // A single-line rdf:langString property with two existing translations (en, nl) and a third
 // language (fr) declared via sh:languageIn/sh:name but with no value yet - covers both "switch
 // between existing translations" and "switch to a language that needs a brand new translation".
-// Absolute ex:-prefixed IRIs throughout, rather than <#...> fragments, since parseRdfText (see
-// preprocess/resolveRdfSources.ts) parses this inline turtle with no baseIRI to resolve against.
-const shapesAndData = `
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
-@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
-@prefix schema: <http://schema.org/>.
-@prefix sh: <http://www.w3.org/ns/shacl#>.
-@prefix ex: <http://example.org/>.
-
-ex:shape
-    a sh:NodeShape ;
-    sh:targetClass schema:Person ;
-    sh:property [
-        sh:name "Preferred label"@en, "Voorkeursnaam"@nl, "Nom préféré"@fr ;
-        sh:path skos:prefLabel ;
-        sh:datatype rdf:langString ;
-        sh:languageIn ( "en" "nl" "fr" ) ;
-    ] ;
-    .
-
-ex:data
-    a schema:Person ;
-    schema:givenName "Hendrik" ;
-    skos:prefLabel "Redhead"@en, "Roodharige"@nl ;
-    .
-`;
-
-const args: ShaclRendererProps = {
-  shapesGraph: shapesAndData,
-  dataGraph: shapesAndData,
-  nodeShapes: [factory.namedNode("http://example.org/shape")],
-  focusNode: factory.namedNode("http://example.org/data"),
-};
+const args: ShaclRendererProps = argsByTestFile("content-language-switching.ttl", import.meta.url);
 
 // FormElement's own <label> isn't wired up with htmlFor, so accessible-name queries can't see
 // it - this finds a property's <input> by its visible field label instead, same helper as

@@ -1,7 +1,7 @@
 import type { StoryObj } from "@storybook/react-vite";
 import { expect, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
-import { factory } from "@/helpers/factory.ts";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
@@ -14,7 +14,7 @@ type Story = StoryObj<ShaclRendererProps>;
 // membership - the motivating case is an embedder materializing inferred/derived triples into
 // dataGraph alongside the user's own asserted ones.
 export default {
-  title: "Drafts/Read-only inferred values",
+  title: "Drafts/Read-only inferred values #1180",
   component: ShaclRenderer,
 };
 
@@ -22,45 +22,18 @@ export default {
 // functionality/value-order-stability.stories.tsx, plus a single-valued schema:name, so the
 // per-triple (not per-property) granularity is obvious: only one of the three ex:tag values is
 // read-only, while its sibling values and schema:name stay editable.
-const shapesAndData = `
-@prefix schema: <http://schema.org/>.
-@prefix sh: <http://www.w3.org/ns/shacl#>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix ex: <http://example.org/>.
+const baseArgs: ShaclRendererProps = argsByTestFile(
+  "readonly-inferred-values.ttl",
+  import.meta.url,
+);
 
-ex:shape
-    a sh:NodeShape ;
-    sh:targetClass schema:Product ;
-    sh:property [
-        sh:name "Name"@en ;
-        sh:path schema:name ;
-        sh:datatype xsd:string ;
-    ], [
-        sh:name "Tag"@en ;
-        sh:path ex:tag ;
-        sh:datatype xsd:string ;
-    ] .
-
-ex:data
-    a schema:Product ;
-    schema:name "Widget" ;
-    ex:tag "Alpha", "Bravo", "Inferred" .
-`;
-
-// Just the one ex:tag value a reasoner would have derived - everything else in ex:data was
-// asserted by hand and stays editable.
-const readOnlyGraph = `
-@prefix ex: <http://example.org/>.
-
-ex:data ex:tag "Inferred" .
-`;
-
-const baseArgs: ShaclRendererProps = {
-  shapesGraph: shapesAndData,
-  dataGraph: shapesAndData,
-  nodeShapes: [factory.namedNode("http://example.org/shape")],
-  focusNode: factory.namedNode("http://example.org/data"),
-};
+// readonly-inferred-values.readonly.ttl holds just the one ex:tag value a reasoner would have
+// derived - everything else in the data fixture was asserted by hand and stays editable.
+const readOnlyArgs: ShaclRendererProps = argsByTestFile(
+  "readonly-inferred-values.ttl",
+  import.meta.url,
+  "readonly-inferred-values.readonly.ttl",
+);
 
 function widgetsNamed(canvasElement: HTMLElement, widgetName: string): HTMLElement[] {
   return Array.from(canvasElement.querySelectorAll<HTMLElement>(`[data-widget="${widgetName}"]`));
@@ -86,7 +59,7 @@ export const allEditable: Story = {
 
 export const oneInferredTagIsReadOnly: Story = {
   name: "With readOnlyGraph, only the one inferred ex:tag value renders read-only",
-  args: { ...baseArgs, readOnlyGraph },
+  args: readOnlyArgs,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const timeout = { timeout: 5000 };

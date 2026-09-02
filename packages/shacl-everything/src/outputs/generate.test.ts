@@ -154,8 +154,12 @@ test("generate - embeds a fresh blank node via sh:node and fakes its own propert
 
   const [addressQuad] = dataGraph.getQuads(ex("recipe1"), ex("address"));
   expect(addressQuad.object.termType).toEqual("BlankNode");
-  expect(dataGraph.getQuads(addressQuad.object, ex("street"))[0].object.value.length).toBeGreaterThan(0);
-  expect(dataGraph.getQuads(addressQuad.object, ex("city"))[0].object.value.length).toBeGreaterThan(0);
+  expect(
+    dataGraph.getQuads(addressQuad.object, ex("street"))[0].object.value.length,
+  ).toBeGreaterThan(0);
+  expect(dataGraph.getQuads(addressQuad.object, ex("city"))[0].object.value.length).toBeGreaterThan(
+    0,
+  );
 });
 
 test("generate - fakes a sh:memberShape scalar array as an rdf:List", async () => {
@@ -261,7 +265,9 @@ test("generate - picks one branch of a property-level sh:or (embedded object vs.
   const [address] = dataGraph.getQuads(ex("recipe1"), ex("address"));
   expect(address).toBeDefined();
   if (address.object.termType === "BlankNode") {
-    expect(dataGraph.getQuads(address.object, ex("street"))[0].object.value.length).toBeGreaterThan(0);
+    expect(dataGraph.getQuads(address.object, ex("street"))[0].object.value.length).toBeGreaterThan(
+      0,
+    );
   } else {
     expect(address.object.value.length).toBeGreaterThan(0);
   }
@@ -281,8 +287,18 @@ test("generate - is deterministic for a given seed", async () => {
     "text/turtle",
   );
 
-  const first = await generate({ shapesGraph, focusNode: ex("person1"), nodeShapes: [ex("Person")], seed: 42 });
-  const second = await generate({ shapesGraph, focusNode: ex("person1"), nodeShapes: [ex("Person")], seed: 42 });
+  const first = await generate({
+    shapesGraph,
+    focusNode: ex("person1"),
+    nodeShapes: [ex("Person")],
+    seed: 42,
+  });
+  const second = await generate({
+    shapesGraph,
+    focusNode: ex("person1"),
+    nodeShapes: [ex("Person")],
+    seed: 42,
+  });
 
   expect(first.getQuads(ex("person1"), ex("givenName"))[0].object.value).toEqual(
     second.getQuads(ex("person1"), ex("givenName"))[0].object.value,

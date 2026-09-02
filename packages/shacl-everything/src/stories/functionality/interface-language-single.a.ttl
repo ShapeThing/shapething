@@ -1,0 +1,22 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix ex: <http://example.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Preferred label"@en, "Voorkeursnaam"@nl ;
+        sh:path skos:prefLabel ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    skos:prefLabel "Redhead"@en, "Roodharige"@nl ;
+    .

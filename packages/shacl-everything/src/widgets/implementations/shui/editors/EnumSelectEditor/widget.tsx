@@ -8,8 +8,8 @@ import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import { useSelectOptions, type ResolvedOption } from "@/outputs/render/hooks/useSelectOptions.tsx";
 import { valueNodeShapes } from "@/resolution/label.ts";
+import { selectQueryFor } from "@/structure/selectQuery.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
-import { selectQueryFor } from "./selectQuery.ts";
 import "./style.css";
 
 export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {

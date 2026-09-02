@@ -12,7 +12,7 @@ import { ex } from "@/helpers/namespaces.ts";
 type Story = StoryObj<ShaclUIApplicationProps>;
 
 export default {
-  title: "Drafts/SHACL UI Application",
+  title: "Drafts/SHACL UI Application #1118",
   component: ShaclUIApplication,
 };
 

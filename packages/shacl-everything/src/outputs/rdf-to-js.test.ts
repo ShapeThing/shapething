@@ -45,7 +45,10 @@ test("rdfToJs - omits a property with no value entirely", async () => {
     `,
     "text/turtle",
   );
-  const dataGraph = await parseRdf(`@prefix ex: <http://example.org/> . ex:recipe1 a ex:Recipe .`, "text/turtle");
+  const dataGraph = await parseRdf(
+    `@prefix ex: <http://example.org/> . ex:recipe1 a ex:Recipe .`,
+    "text/turtle",
+  );
 
   const result = await rdfToJs({
     shapesGraph,

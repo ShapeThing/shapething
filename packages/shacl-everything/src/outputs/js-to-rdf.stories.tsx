@@ -28,7 +28,13 @@ type JsToRdfDemoProps = {
 // Kept as plain strings/a plain JS object, never a parsed RdfStore - see this package's CLAUDE.md
 // on RdfStore's own internal reference cycle crashing Storybook's Controls-panel diffing, and
 // .storybook/withSubmitPreview.tsx for the same write()-to-Turtle-string approach used here.
-function JsToRdfDemo({ shapesGraph, focusNode, nodeShapes, data, contentLanguage }: JsToRdfDemoProps) {
+function JsToRdfDemo({
+  shapesGraph,
+  focusNode,
+  nodeShapes,
+  data,
+  contentLanguage,
+}: JsToRdfDemoProps) {
   const [output, setOutput] = useState<string>();
 
   useEffect(() => {

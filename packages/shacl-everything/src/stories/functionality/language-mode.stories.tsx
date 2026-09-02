@@ -1,7 +1,7 @@
 import type { StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
-import { factory } from "@/helpers/factory.ts";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
@@ -12,37 +12,7 @@ export default {
 
 // Same shape as content-language-switching.stories.tsx: two existing translations (en, nl) plus
 // a third language (fr) declared via sh:languageIn/sh:name but with no value yet.
-const shapesAndData = `
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
-@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
-@prefix schema: <http://schema.org/>.
-@prefix sh: <http://www.w3.org/ns/shacl#>.
-@prefix ex: <http://example.org/>.
-
-ex:shape
-    a sh:NodeShape ;
-    sh:targetClass schema:Person ;
-    sh:property [
-        sh:name "Preferred label"@en, "Voorkeursnaam"@nl, "Nom préféré"@fr ;
-        sh:path skos:prefLabel ;
-        sh:datatype rdf:langString ;
-        sh:languageIn ( "en" "nl" "fr" ) ;
-    ] ;
-    .
-
-ex:data
-    a schema:Person ;
-    schema:givenName "Hendrik" ;
-    skos:prefLabel "Redhead"@en, "Roodharige"@nl ;
-    .
-`;
-
-const baseArgs = {
-  shapesGraph: shapesAndData,
-  dataGraph: shapesAndData,
-  nodeShapes: [factory.namedNode("http://example.org/shape")],
-  focusNode: factory.namedNode("http://example.org/data"),
-};
+const baseArgs = argsByTestFile("language-mode.ttl", import.meta.url);
 
 function findAllFieldInputs(canvasElement: HTMLElement): HTMLInputElement[] {
   return Array.from(

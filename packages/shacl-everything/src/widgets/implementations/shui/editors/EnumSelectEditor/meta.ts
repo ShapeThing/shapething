@@ -1,7 +1,7 @@
 import { factory } from "@/helpers/factory.ts";
 import { sh } from "@/helpers/namespaces.ts";
+import { selectQueryFor } from "@/structure/selectQuery.ts";
 import type { WidgetMeta } from "@/widgets/types.ts";
-import { selectQueryFor } from "./selectQuery.ts";
 
 export default {
   // Whether an sh:in option is a NamedNode or a Literal is only known by inspecting its actual

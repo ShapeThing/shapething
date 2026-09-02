@@ -106,11 +106,21 @@ const resolveOwlImports = async (
 
   for (const href of importUrls) visitedImports.add(href);
 
-  const importedStores = await Promise.all(
-    [...importUrls].map((href) => dereferenceUrl(new URL(href), quadCache)),
+  // owl:imports targets are frequently third-party ontology URLs outside this app's control, and
+  // dead/unreachable ones are common in practice (moved docs, expired domains, etc). A single dead
+  // import must not fail the whole environment - it's supplementary vocabulary, not the actual
+  // shapes/data being rendered - so each import is resolved independently and a failure is only
+  // logged, not thrown.
+  const hrefs = [...importUrls];
+  const importedStores = await Promise.allSettled(
+    hrefs.map((href) => dereferenceUrl(new URL(href), quadCache)),
   );
-  for (const importedStore of importedStores) {
-    for (const quad of importedStore.getQuads()) store.addQuad(quad);
+  for (const [index, result] of importedStores.entries()) {
+    if (result.status === "rejected") {
+      console.warn(`[shacl-everything] Failed to resolve owl:imports <${hrefs[index]}>:`, result.reason);
+      continue;
+    }
+    for (const quad of result.value.getQuads()) store.addQuad(quad);
   }
 
   await resolveOwlImports(store, quadCache, visitedImports);

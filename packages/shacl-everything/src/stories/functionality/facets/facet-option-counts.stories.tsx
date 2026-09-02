@@ -1,6 +1,7 @@
 import type { StoryObj } from "@storybook/react-vite";
 import { expect, fireEvent, userEvent, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
@@ -11,69 +12,7 @@ export default {
 
 // 3 products (2 Electronics, 1 Books) and 1 person - prices 19.99 (Widget), 42.50 (Gadget), 12.00
 // (Novel); release dates 2024-01-15 (Widget), 2025-06-01 (Gadget), 2023-09-10 (Novel).
-const shapesAndData = `
-@prefix ex: <http://example.org/>.
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix schema: <http://schema.org/>.
-@prefix sh: <http://www.w3.org/ns/shacl#>.
-
-ex:productShape
-    a sh:NodeShape ;
-    sh:targetClass schema:Product ;
-    sh:property [
-        sh:name "Category"@en ;
-        sh:path schema:category ;
-        sh:class ex:Category ;
-        sh:order 0 ;
-    ] ;
-    sh:property [
-        sh:name "Price"@en ;
-        sh:path schema:price ;
-        sh:datatype xsd:decimal ;
-        sh:order 1 ;
-    ] ;
-    sh:property [
-        sh:name "Release date"@en ;
-        sh:path schema:releaseDate ;
-        sh:datatype xsd:date ;
-        sh:order 2 ;
-    ] ;
-    .
-
-ex:personShape
-    a sh:NodeShape ;
-    sh:targetClass schema:Person ;
-    sh:property [
-        sh:name "Given name"@en ;
-        sh:path schema:givenName ;
-        sh:datatype xsd:string ;
-    ] ;
-    .
-
-ex:Electronics a ex:Category ; rdfs:label "Electronics"@en .
-ex:Books a ex:Category ; rdfs:label "Books"@en .
-
-ex:data
-    a schema:Product ;
-    schema:category ex:Electronics ;
-    schema:price 19.99 ;
-    schema:releaseDate "2024-01-15"^^xsd:date .
-
-ex:product2
-    a schema:Product ;
-    schema:category ex:Electronics ;
-    schema:price 42.50 ;
-    schema:releaseDate "2025-06-01"^^xsd:date .
-
-ex:product3
-    a schema:Product ;
-    schema:category ex:Books ;
-    schema:price 12.00 ;
-    schema:releaseDate "2023-09-10"^^xsd:date .
-
-ex:alice a schema:Person ; schema:givenName "Alice" .
-`;
+const { shapesGraph, dataGraph } = argsByTestFile("facet-option-counts.ttl", import.meta.url);
 
 // Environment.enableFacetOptionCounts: every option-based facet (CategoryFacet, and TypeSelector's
 // own root-shape picker, which resolves to the very same widget) shows a "(n)" count next to each
@@ -81,8 +20,8 @@ ex:alice a schema:Person ; schema:givenName "Alice" .
 export const categoryAndTypeSelectorShowCounts: Story = {
   name: "CategoryFacet and TypeSelector show a count next to each option",
   args: {
-    shapesGraph: shapesAndData,
-    dataGraph: shapesAndData,
+    shapesGraph,
+    dataGraph,
     mode: "facet",
     enableFacetOptionCounts: true,
   },
@@ -101,8 +40,8 @@ export const categoryAndTypeSelectorShowCounts: Story = {
 export const rangeFacetsShowALiveMatchCountOnceFilled: Story = {
   name: "Number/date range facets show a live match count once a bound is filled in",
   args: {
-    shapesGraph: shapesAndData,
-    dataGraph: shapesAndData,
+    shapesGraph,
+    dataGraph,
     mode: "facet",
     enableFacetOptionCounts: true,
   },
@@ -162,8 +101,8 @@ export const rangeFacetsShowALiveMatchCountOnceFilled: Story = {
 export const countsNarrowAcrossFacets: Story = {
   name: "Selecting a value in one facet narrows the counts shown on every other facet",
   args: {
-    shapesGraph: shapesAndData,
-    dataGraph: shapesAndData,
+    shapesGraph,
+    dataGraph,
     mode: "facet",
     enableFacetOptionCounts: true,
   },

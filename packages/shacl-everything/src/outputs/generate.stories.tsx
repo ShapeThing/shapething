@@ -27,7 +27,13 @@ type GenerateDemoProps = {
 
 // Kept as plain strings, never a parsed RdfStore - see this package's CLAUDE.md on RdfStore's own
 // internal reference cycle crashing Storybook's Controls-panel diffing.
-function GenerateDemo({ shapesGraph, focusNode, nodeShapes, contentLanguage, seed }: GenerateDemoProps) {
+function GenerateDemo({
+  shapesGraph,
+  focusNode,
+  nodeShapes,
+  contentLanguage,
+  seed,
+}: GenerateDemoProps) {
   const [output, setOutput] = useState<string>();
 
   useEffect(() => {

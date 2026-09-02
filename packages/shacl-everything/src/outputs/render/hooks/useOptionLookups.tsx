@@ -3,8 +3,8 @@ import { useQuery } from "@tanstack/react-query";
 import type { NamedNode } from "@rdfjs/types";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { noRefetch } from "@/helpers/noRefetch.ts";
+import { selectQueryFor } from "@/structure/selectQuery.ts";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
-import { selectQueryFor } from "@/widgets/implementations/shui/editors/EnumSelectEditor/selectQuery.ts";
 import { useInterfaceLanguage } from "./useInterfaceLanguage.tsx";
 import { extractServiceEndpoint, fetchOptions, type SearchResult } from "./query.ts";
 

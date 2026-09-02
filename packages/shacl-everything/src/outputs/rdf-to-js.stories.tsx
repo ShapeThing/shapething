@@ -26,7 +26,13 @@ type RdfToJsDemoProps = {
 // Kept as plain strings/arrays, never a parsed RdfStore - see this package's CLAUDE.md on
 // RdfStore's own internal reference cycle crashing Storybook's Controls-panel diffing if one is
 // ever passed as a literal story arg.
-function RdfToJsDemo({ shapesGraph, dataGraph, focusNode, nodeShapes, languages }: RdfToJsDemoProps) {
+function RdfToJsDemo({
+  shapesGraph,
+  dataGraph,
+  focusNode,
+  nodeShapes,
+  languages,
+}: RdfToJsDemoProps) {
   const [output, setOutput] = useState<string>();
 
   useEffect(() => {

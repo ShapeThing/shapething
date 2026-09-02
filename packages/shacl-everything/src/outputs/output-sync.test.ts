@@ -34,7 +34,13 @@ async function assertReadWriteReadFixedPoint(options: {
 
   const data = await rdfToJs({ shapesGraph, dataGraph, focusNode, nodeShapes, languages });
   const rewritten = jsToRdf({ shapesGraph, focusNode, nodeShapes, data, contentLanguage });
-  const dataAgain = await rdfToJs({ shapesGraph, dataGraph: rewritten, focusNode, nodeShapes, languages });
+  const dataAgain = await rdfToJs({
+    shapesGraph,
+    dataGraph: rewritten,
+    focusNode,
+    nodeShapes,
+    languages,
+  });
 
   expect(dataAgain).toEqual(data);
   return data;
@@ -67,7 +73,12 @@ test("jsToRdf <-> rdfToJs - a property-level sh:or's sh:node branch survives a w
   );
 
   const data = { address: { street: "Main St" } };
-  const dataGraph = jsToRdf({ shapesGraph, focusNode: ex("recipe1"), nodeShapes: [ex("Recipe")], data });
+  const dataGraph = jsToRdf({
+    shapesGraph,
+    focusNode: ex("recipe1"),
+    nodeShapes: [ex("Recipe")],
+    data,
+  });
 
   const result = await rdfToJs({
     shapesGraph,
@@ -104,7 +115,12 @@ test("jsToRdf <-> rdfToJs - a property-level sh:or's plain-datatype branch round
   );
 
   const data = { address: "123 Main St" };
-  const dataGraph = jsToRdf({ shapesGraph, focusNode: ex("recipe1"), nodeShapes: [ex("Recipe")], data });
+  const dataGraph = jsToRdf({
+    shapesGraph,
+    focusNode: ex("recipe1"),
+    nodeShapes: [ex("Recipe")],
+    data,
+  });
 
   const result = await rdfToJs({
     shapesGraph,
@@ -134,7 +150,12 @@ test("jsToRdf <-> rdfToJs - a node-level sh:or's chosen branch round-trips", asy
   );
 
   const data = { title: "Beef Stew", meatType: "Beef" };
-  const dataGraph = jsToRdf({ shapesGraph, focusNode: ex("recipe1"), nodeShapes: [ex("Recipe")], data });
+  const dataGraph = jsToRdf({
+    shapesGraph,
+    focusNode: ex("recipe1"),
+    nodeShapes: [ex("Recipe")],
+    data,
+  });
 
   const result = await rdfToJs({
     shapesGraph,
@@ -160,7 +181,12 @@ test("jsToRdf <-> rdfToJs - a sh:memberShape scalar array round-trips through th
   );
 
   const data = { scores: [10, 20, 30] };
-  const dataGraph = jsToRdf({ shapesGraph, focusNode: ex("person1"), nodeShapes: [ex("Person")], data });
+  const dataGraph = jsToRdf({
+    shapesGraph,
+    focusNode: ex("person1"),
+    nodeShapes: [ex("Person")],
+    data,
+  });
 
   const result = await rdfToJs({
     shapesGraph,
@@ -189,7 +215,12 @@ test("jsToRdf <-> rdfToJs - a sh:memberShape object array (via sh:node) round-tr
   );
 
   const data = { steps: [{ instruction: "Boil water" }, { instruction: "Add pasta" }] };
-  const dataGraph = jsToRdf({ shapesGraph, focusNode: ex("recipe1"), nodeShapes: [ex("Recipe")], data });
+  const dataGraph = jsToRdf({
+    shapesGraph,
+    focusNode: ex("recipe1"),
+    nodeShapes: [ex("Recipe")],
+    data,
+  });
 
   const result = await rdfToJs({
     shapesGraph,
