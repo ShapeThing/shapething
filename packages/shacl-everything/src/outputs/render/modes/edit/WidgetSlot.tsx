@@ -1,6 +1,7 @@
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import { useActiveBranch } from "@/outputs/render/hooks/useActiveBranch.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { useFocusWithin } from "@/outputs/render/hooks/useFocusWithin.tsx";
 import { useFocusWithinNearest } from "@/outputs/render/hooks/useFocusWithinNearest.tsx";
 import { logicalBranches, withBranch, type LogicalBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -80,12 +81,17 @@ export default function WidgetSlot({
   const [activeWidgetIri, setActiveWidgetIri] = useState<NamedNode | undefined>(undefined);
   const ref = useRef<HTMLDivElement>(null);
 
-  // A nested value's own widget (e.g. DetailsEditor's inline sub-form) renders its properties'
-  // .st-property-object__widget wrappers *inside* this one, so a plain ref.contains() would match
-  // every ancestor at once when a deeply nested field is focused - each rendering its own
-  // absolutely-positioned fly-out on top of the others. useFocusWithinNearest instead finds only
-  // the nearest wrapper the focus is actually inside, so just that one property's fly-out shows.
-  const currentlyFocused = useFocusWithinNearest(ref, ".st-property-object__widget");
+  // LogicalConstraintSwitcher (the sh:or/sh:xone branch switcher) belongs to this property as a
+  // whole, not to whichever nested field currently has focus, so it must stay mounted - and
+  // Tab-reachable - for as long as focus is anywhere within this widget's own subtree, including
+  // a nested value's own widget (e.g. DetailsEditor's inline sub-form, which renders its
+  // properties' .st-property-object__widget wrappers *inside* this one). WidgetSwitcher is the
+  // opposite: a per-value "which widget renders this" choice that only makes sense for whichever
+  // wrapper is actually innermost-focused - showing it here too while a nested field has focus
+  // would duplicate the nested field's own WidgetSwitcher onscreen at the same time, so it stays
+  // gated on the narrower "nearest wrapper" check instead.
+  const currentlyFocused = useFocusWithin(ref);
+  const nearestFocused = useFocusWithinNearest(ref, ".st-property-object__widget");
 
   // Re-sync ActiveWidget when the sh:or/sh:xone branch changes underneath it - not just on first
   // resolve - otherwise switching branches (e.g. boolean -> string) leaves the old branch's widget
@@ -116,14 +122,16 @@ export default function WidgetSlot({
           activeBranch={activeBranch}
           onBranchSelected={(branch: LogicalBranch) => setPinnedBranchKey(branch.shape.value)}
         />
-        <WidgetSwitcher
-          activeWidgetIri={activeWidgetIri}
-          setActiveWidget={(iri, widgetFn) => {
-            setActiveWidget(widgetFn);
-            setActiveWidgetIri(iri);
-          }}
-          shape={effectiveProperty}
-        />
+        {nearestFocused && (
+          <WidgetSwitcher
+            activeWidgetIri={activeWidgetIri}
+            setActiveWidget={(iri, widgetFn) => {
+              setActiveWidget(widgetFn);
+              setActiveWidgetIri(iri);
+            }}
+            shape={effectiveProperty}
+          />
+        )}
       </div>
     ) : null;
 

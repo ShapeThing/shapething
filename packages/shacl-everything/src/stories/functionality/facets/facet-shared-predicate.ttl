@@ -1,0 +1,90 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+
+ex:bookShape
+    a sh:NodeShape ;
+    sh:targetClass schema:Book ;
+    sh:property [
+        sh:name "Name"@en ;
+        sh:path schema:name ;
+        sh:datatype xsd:string ;
+        sh:order 0 ;
+    ] ;
+    sh:property [
+        sh:name "Author"@en ;
+        sh:path schema:author ;
+        sh:datatype xsd:string ;
+        sh:order 1 ;
+    ] ;
+    sh:property [
+        sh:name "Genre"@en ;
+        sh:path schema:genre ;
+        sh:class ex:Genre ;
+        sh:order 2 ;
+    ] ;
+    .
+
+ex:movieShape
+    a sh:NodeShape ;
+    sh:targetClass schema:Movie ;
+    sh:property [
+        sh:name "Name"@en ;
+        sh:path schema:name ;
+        sh:datatype xsd:string ;
+        sh:order 0 ;
+    ] ;
+    sh:property [
+        sh:name "Director"@en ;
+        sh:path schema:director ;
+        sh:datatype xsd:string ;
+        sh:order 1 ;
+    ] ;
+    sh:property [
+        sh:name "Genre"@en ;
+        sh:path schema:genre ;
+        sh:class ex:Genre ;
+        sh:order 2 ;
+    ] ;
+    .
+
+ex:ScienceFiction a ex:Genre ; rdfs:label "Science Fiction"@en .
+ex:Romance a ex:Genre ; rdfs:label "Romance"@en .
+
+ex:data
+    a schema:Book ;
+    schema:name "Dune" ;
+    schema:author "Frank Herbert" ;
+    schema:genre ex:ScienceFiction .
+
+ex:book2
+    a schema:Book ;
+    schema:name "Foundation" ;
+    schema:author "Isaac Asimov" ;
+    schema:genre ex:ScienceFiction .
+
+ex:book3
+    a schema:Book ;
+    schema:name "Pride and Prejudice" ;
+    schema:author "Jane Austen" ;
+    schema:genre ex:Romance .
+
+ex:movie1
+    a schema:Movie ;
+    schema:name "Dune" ;
+    schema:director "Denis Villeneuve" ;
+    schema:genre ex:ScienceFiction .
+
+ex:movie2
+    a schema:Movie ;
+    schema:name "Arrival" ;
+    schema:director "Denis Villeneuve" ;
+    schema:genre ex:ScienceFiction .
+
+ex:movie3
+    a schema:Movie ;
+    schema:name "La La Land" ;
+    schema:director "Damien Chazelle" ;
+    schema:genre ex:Romance .

@@ -23,9 +23,7 @@ test("termToJsValue - parses numeric datatypes to number", () => {
 });
 
 test("termToJsValue - parses xsd:date and xsd:dateTime to Date", () => {
-  expect(termToJsValue(factory.literal("2024-03-15", xsd("date")))).toEqual(
-    new Date("2024-03-15"),
-  );
+  expect(termToJsValue(factory.literal("2024-03-15", xsd("date")))).toEqual(new Date("2024-03-15"));
   expect(termToJsValue(factory.literal("2024-03-15T10:30:00Z", xsd("dateTime")))).toEqual(
     new Date("2024-03-15T10:30:00Z"),
   );

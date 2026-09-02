@@ -1,7 +1,7 @@
 import type { StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
-import { factory } from "@/helpers/factory.ts";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
@@ -13,59 +13,6 @@ export default {
 // An sh:or between a free-text string and a nested sh:node (rendered via shui:DetailsEditor) -
 // this is what actually exercises DetailsEditor's own fly-out (the branch switcher), unlike a
 // plain sh:node property, which has nothing to switch and so never renders one.
-const shapesAndData = `
-@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
-@prefix ex: <http://example.org/>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix schema: <http://schema.org/>.
-@prefix sh: <http://www.w3.org/ns/shacl#>.
-
-ex:shape
-    a sh:NodeShape ;
-    sh:targetClass schema:Person ;
-    sh:property [
-        sh:name "Address"@en ;
-        sh:path schema:address ;
-        sh:or (
-            [
-                sh:name "As free text"@en ;
-                sh:datatype xsd:string ;
-                sh:singleLine false ;
-            ]
-            [
-                sh:name "As structured fields"@en ;
-                shui:editor shui:DetailsEditor ;
-                sh:nodeKind sh:BlankNodeOrIRI ;
-                sh:node [
-                    sh:property [
-                        sh:name "Street"@en ;
-                        sh:path schema:streetAddress ;
-                        sh:datatype xsd:string ;
-                        sh:minCount 1 ;
-                        sh:maxCount 1 ;
-                    ] ;
-                    sh:property [
-                        sh:name "Postal code"@en ;
-                        sh:path schema:postalCode ;
-                        sh:datatype xsd:string ;
-                        sh:minCount 1 ;
-                        sh:maxCount 1 ;
-                    ] ;
-                ] ;
-            ]
-        ) ;
-    ] ;
-    .
-
-ex:data
-    a schema:Person ;
-    schema:givenName "Hendrik" ;
-    schema:address [
-        schema:streetAddress "Dam 1" ;
-        schema:postalCode "1012 AB" ;
-    ] ;
-    .
-`;
 
 // Finds a property's <input> by its visible field label rather than by role/label association -
 // FormElement's own <label> isn't wired up with htmlFor, so accessible-name queries can't see it.
@@ -81,10 +28,7 @@ function findFieldInput(canvasElement: HTMLElement, name: string): HTMLInputElem
 export const keyboardNavigation: Story = {
   name: "Tab reaches the branch switcher and the nested fields, in either direction",
   args: {
-    shapesGraph: shapesAndData,
-    dataGraph: shapesAndData,
-    nodeShapes: [factory.namedNode("http://example.org/shape")],
-    focusNode: factory.namedNode("http://example.org/data"),
+    ...argsByTestFile("details-editor-keyboard-navigation.ttl", import.meta.url),
     enableLogicalBranchSwitching: true,
   },
   play: async ({ canvasElement }) => {

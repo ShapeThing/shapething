@@ -37,12 +37,8 @@ test("jsValueToTerm - formats xsd:dateTime as a full ISO string", () => {
 
 test("jsValueToTerm - formats xsd:gYear/gYearMonth/gMonthDay/gDay from their UTC anchors", () => {
   expect(jsValueToTerm(new Date(Date.UTC(2024, 0, 1)), xsd("gYear")).value).toEqual("2024");
-  expect(jsValueToTerm(new Date(Date.UTC(2024, 2, 1)), xsd("gYearMonth")).value).toEqual(
-    "2024-03",
-  );
-  expect(jsValueToTerm(new Date(Date.UTC(1970, 2, 15)), xsd("gMonthDay")).value).toEqual(
-    "--03-15",
-  );
+  expect(jsValueToTerm(new Date(Date.UTC(2024, 2, 1)), xsd("gYearMonth")).value).toEqual("2024-03");
+  expect(jsValueToTerm(new Date(Date.UTC(1970, 2, 15)), xsd("gMonthDay")).value).toEqual("--03-15");
   expect(jsValueToTerm(new Date(Date.UTC(1970, 0, 15)), xsd("gDay")).value).toEqual("---15");
 });
 

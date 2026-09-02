@@ -1,7 +1,7 @@
 import type { StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
-import { factory } from "@/helpers/factory.ts";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
@@ -14,36 +14,11 @@ export default {
 // on every edit (an edit is a remove + re-add of the underlying quad, never an in-place update) -
 // left unhandled, that reshuffles a multi-valued property's whole list on every keystroke (see
 // PropertyUIComponentValues.reconcileOrder). A plain multi-valued xsd:string with three existing
-// values, declared out of alphabetical order in the fixture below, exercises both halves of the
-// fix: the initial render still has to impose *some* deterministic order (alphabetical) rather
-// than expose the store's raw iteration order, and edits/adds/removes after that must not disturb
-// it further.
-const shapesAndData = `
-@prefix schema: <http://schema.org/>.
-@prefix sh: <http://www.w3.org/ns/shacl#>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix ex: <http://example.org/>.
-
-ex:shape
-    a sh:NodeShape ;
-    sh:targetClass schema:Product ;
-    sh:property [
-        sh:name "Tag"@en ;
-        sh:path ex:tag ;
-        sh:datatype xsd:string ;
-    ] .
-
-ex:data
-    a schema:Product ;
-    ex:tag "Charlie", "Alpha", "Bravo" .
-`;
-
-const args: ShaclRendererProps = {
-  shapesGraph: shapesAndData,
-  dataGraph: shapesAndData,
-  nodeShapes: [factory.namedNode("http://example.org/shape")],
-  focusNode: factory.namedNode("http://example.org/data"),
-};
+// values, declared out of alphabetical order in the fixture, exercises both halves of the fix:
+// the initial render still has to impose *some* deterministic order (alphabetical) rather than
+// expose the store's raw iteration order, and edits/adds/removes after that must not disturb it
+// further.
+const args: ShaclRendererProps = argsByTestFile("value-order-stability.ttl", import.meta.url);
 
 function tagInputs(canvasElement: HTMLElement): HTMLInputElement[] {
   return Array.from(canvasElement.querySelectorAll<HTMLInputElement>(".st-property-items input"));

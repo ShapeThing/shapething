@@ -2,6 +2,7 @@ import type { StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { sh } from "@/helpers/namespaces.ts";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import type { SubmitResult } from "@/environment.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
@@ -11,30 +12,7 @@ export default {
   component: ShaclRenderer,
 };
 
-const shapesAndData = `
-@prefix ex: <http://example.org/>.
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix schema: <http://schema.org/>.
-@prefix sh: <http://www.w3.org/ns/shacl#>.
-
-ex:productShape
-    a sh:NodeShape ;
-    sh:targetClass schema:Product ;
-    sh:property [
-        sh:name "Category"@en ;
-        sh:path schema:category ;
-        sh:class ex:Category ;
-    ] ;
-    .
-
-ex:Electronics a ex:Category ; rdfs:label "Electronics"@en .
-ex:Books a ex:Category ; rdfs:label "Books"@en .
-
-ex:data a schema:Product ; schema:category ex:Electronics .
-ex:product2 a schema:Product ; schema:category ex:Electronics .
-ex:product3 a schema:Product ; schema:category ex:Books .
-`;
+const { shapesGraph, dataGraph } = argsByTestFile("facet-checkbox-reactivity.ttl", import.meta.url);
 
 // Facet mode calls the very same onSubmit callback edit mode uses (see modes/facet/index.tsx).
 let submitResult: SubmitResult | undefined;
@@ -50,7 +28,7 @@ const onSubmit = (result: SubmitResult) => {
 // only moment a node gets created), not just steady-state toggling.
 export const categoryCheckboxStaysInSyncWithItsOwnClick: Story = {
   name: "A category checkbox reflects its own click on the very first selection",
-  args: { shapesGraph: shapesAndData, dataGraph: shapesAndData, mode: "facet", onSubmit },
+  args: { shapesGraph, dataGraph, mode: "facet", onSubmit },
   play: async ({ canvasElement }) => {
     submitResult = undefined;
     const canvas = within(canvasElement);

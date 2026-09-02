@@ -4,7 +4,7 @@ import { Engine as ShaclEngine } from "shacl-engine";
 import { factory } from "@/helpers/factory.ts";
 import { rdf, sh } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { selectQueryFor } from "@/widgets/implementations/shui/editors/EnumSelectEditor/selectQuery.ts";
+import { selectQueryFor } from "@/structure/selectQuery.ts";
 import { type ResolvedTerm, runQuery } from "@/outputs/render/hooks/query.ts";
 
 // Spec §10.2: a renderer MAY re-validate shui:searchQuery's results against the surrounding

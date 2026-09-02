@@ -1,7 +1,7 @@
 import type { StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
-import { factory } from "@/helpers/factory.ts";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import type { SubmitResult } from "@/environment.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
@@ -13,29 +13,6 @@ export default {
 
 // Same fixture as language-mode.stories.tsx: two existing translations (en, nl) on a property
 // that also declares a third language (fr) via sh:languageIn, but with no value in it yet.
-const shapesAndData = `
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
-@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
-@prefix schema: <http://schema.org/>.
-@prefix sh: <http://www.w3.org/ns/shacl#>.
-@prefix ex: <http://example.org/>.
-
-ex:shape
-    a sh:NodeShape ;
-    sh:targetClass schema:Person ;
-    sh:property [
-        sh:name "Preferred label"@en, "Voorkeursnaam"@nl, "Nom préféré"@fr ;
-        sh:path skos:prefLabel ;
-        sh:datatype rdf:langString ;
-        sh:languageIn ( "en" "nl" "fr" ) ;
-    ] ;
-    .
-
-ex:data
-    a schema:Person ;
-    skos:prefLabel "Redhead"@en, "Roodharige"@nl ;
-    .
-`;
 
 // A plain closure rather than storybook/test's fn() - see submit.stories.tsx for why (a raw
 // RdfStore has a real internal cycle that crashes fn()'s Actions-panel serialisation).
@@ -45,10 +22,7 @@ const onSubmit = (_result: SubmitResult) => {
 };
 
 const args: ShaclRendererProps = {
-  shapesGraph: shapesAndData,
-  dataGraph: shapesAndData,
-  nodeShapes: [factory.namedNode("http://example.org/shape")],
-  focusNode: factory.namedNode("http://example.org/data"),
+  ...argsByTestFile("value-language-creation.ttl", import.meta.url),
   languageMode: "individual",
   enableContentLanguageCreation: true,
   onSubmit,

@@ -1,0 +1,17 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Tag"@en ;
+        sh:path ex:tag ;
+        sh:datatype xsd:string ;
+    ] .
+
+<#data>
+    a schema:Product ;
+    ex:tag "Charlie", "Alpha", "Bravo" .

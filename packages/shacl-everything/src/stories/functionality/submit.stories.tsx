@@ -2,6 +2,7 @@ import type { StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { factory } from "@/helpers/factory.ts";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import type { SubmitResult } from "@/environment.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
@@ -11,29 +12,7 @@ export default {
   component: ShaclRenderer,
 };
 
-const shapesAndData = `
-@prefix ex: <http://example.org/>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix schema: <http://schema.org/>.
-@prefix sh: <http://www.w3.org/ns/shacl#>.
-
-ex:shape
-    a sh:NodeShape ;
-    sh:targetClass schema:Person ;
-    sh:property [
-        sh:name "Given name"@en ;
-        sh:path schema:givenName ;
-        sh:datatype xsd:string ;
-        sh:minCount 1 ;
-        sh:maxCount 1 ;
-    ] ;
-    .
-
-ex:data
-    a schema:Person ;
-    schema:givenName "Hendrik" ;
-    .
-`;
+const args = argsByTestFile("submit.ttl", import.meta.url);
 
 // Every story already gets a turtle log of its submission in the Actions panel for free (see
 // withSubmitPreview.tsx), so this doesn't need its own preview UI - just something for play() to
@@ -49,13 +28,7 @@ const onSubmit = (result: SubmitResult) => {
 
 export const submittingHandsBackTheDataGraphAsANewStore: Story = {
   name: "Submitting the form hands back the data graph's quads in a fresh store",
-  args: {
-    shapesGraph: shapesAndData,
-    dataGraph: shapesAndData,
-    nodeShapes: [factory.namedNode("http://example.org/shape")],
-    focusNode: factory.namedNode("http://example.org/data"),
-    onSubmit,
-  },
+  args: { ...args, onSubmit },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     submittedResult = undefined;
@@ -74,10 +47,7 @@ export const submittingHandsBackTheDataGraphAsANewStore: Story = {
     // a different constructor (see makeReactive's Proxy in reactiveRdfStore.ts).
     expect(
       result.dataGraph
-        .getQuads(
-          factory.namedNode("http://example.org/data"),
-          factory.namedNode("http://schema.org/givenName"),
-        )
+        .getQuads(args.focusNode, factory.namedNode("http://schema.org/givenName"))
         .map((quad) => quad.object.value),
     ).toEqual(["Hendrik"]);
 

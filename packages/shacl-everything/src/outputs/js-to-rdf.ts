@@ -154,7 +154,10 @@ function jsValueToPropertyTerm(
 function resolveWriteDatatype(alternatives: NamedNode[], value: unknown): NamedNode {
   if (alternatives.length === 1) return alternatives[0];
   const jsType = value instanceof Date ? "Date" : typeof value;
-  return alternatives.find((alternative) => castDataTypeTermToJs(alternative) === jsType) ?? alternatives[0];
+  return (
+    alternatives.find((alternative) => castDataTypeTermToJs(alternative) === jsType) ??
+    alternatives[0]
+  );
 }
 
 // The write-side counterpart to rdf-to-js.ts's memberShapeToJs: rebuilds the property's rdf:List

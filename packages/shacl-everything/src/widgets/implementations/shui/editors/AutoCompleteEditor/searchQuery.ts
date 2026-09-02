@@ -6,7 +6,7 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
  * hand the renderer a concrete fulltext-search query (e.g. against a vendor's own text index)
  * instead of the renderer's own local IRI/LabelRole search (see query.ts's searchInstances).
  * Asserted directly on the property shape (spec §10.1) - independent of sh:in, unlike
- * EnumSelectEditor/selectQuery.ts's selectQueryFor, which reads sh:in's own sh:select off the
+ * structure/selectQuery.ts's selectQueryFor, which reads sh:in's own sh:select off the
  * sh:in blank node itself.
  */
 export function searchQueryFor(shape: PropertyUIElement): string | undefined {

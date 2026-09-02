@@ -156,9 +156,7 @@ test("jsToRdf - embeds a plain object value as a fresh blank node via the proper
   const [addressQuad] = dataGraph.getQuads(ex("recipe1"), ex("address"));
   expect(addressQuad.object.termType).toEqual("BlankNode");
   expect(dataGraph.getQuads(addressQuad.object, ex("street"))[0].object.value).toEqual("Main St");
-  expect(dataGraph.getQuads(addressQuad.object, ex("city"))[0].object.value).toEqual(
-    "Springfield",
-  );
+  expect(dataGraph.getQuads(addressQuad.object, ex("city"))[0].object.value).toEqual("Springfield");
 });
 
 test("jsToRdf - writes an rdf:langString value tagged with the given contentLanguage", async () => {

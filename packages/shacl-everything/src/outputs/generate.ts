@@ -153,7 +153,10 @@ async function generateProperty(
 
   const minCount = effective.get(sh("minCount")) ?? 0;
   const maxCount = effective.get(sh("maxCount"));
-  const count = fakerLibrary.number.int({ min: minCount, max: maxCount ?? Math.max(minCount, DEFAULT_MAX_COUNT) });
+  const count = fakerLibrary.number.int({
+    min: minCount,
+    max: maxCount ?? Math.max(minCount, DEFAULT_MAX_COUNT),
+  });
   if (count === 0) return undefined;
 
   const values: unknown[] = [];
@@ -173,7 +176,10 @@ async function generateMemberShapeValues(
 ): Promise<unknown[]> {
   const minCount = property.get(sh("minCount")) ?? 0;
   const maxCount = property.get(sh("maxCount"));
-  const count = fakerLibrary.number.int({ min: minCount, max: maxCount ?? Math.max(minCount, DEFAULT_MAX_COUNT) });
+  const count = fakerLibrary.number.int({
+    min: minCount,
+    max: maxCount ?? Math.max(minCount, DEFAULT_MAX_COUNT),
+  });
 
   const memberElement = new PropertyUIElement({
     shapesGraph: property.shapesGraph,
@@ -208,12 +214,16 @@ async function generateChoice(
   return generateChildren(children, context);
 }
 
-async function generateValue(property: PropertyUIElement, context: GenerationContext): Promise<unknown> {
+async function generateValue(
+  property: PropertyUIElement,
+  context: GenerationContext,
+): Promise<unknown> {
   const hasValue = property.get(sh("hasValue"));
   if (hasValue) return termToPlainValue(hasValue);
 
   const nodeShapes = property.get(sh("node")) as Term[];
-  if (nodeShapes.length > 0) return generateEmbeddedObject(property.shapesGraph, nodeShapes, context);
+  if (nodeShapes.length > 0)
+    return generateEmbeddedObject(property.shapesGraph, nodeShapes, context);
 
   const inValues = property.get(sh("in")) as Term[];
   if (inValues.length > 0) return termToPlainValue(pickRandom(inValues));
@@ -234,7 +244,12 @@ async function generateEmbeddedObject(
 ): Promise<Record<string, unknown> | undefined> {
   if (context.depth >= MAX_EMBED_DEPTH) return undefined;
 
-  const children = childrenForShape(shapesGraph, RdfStore.createDefault(), nodeShapes, factory.blankNode());
+  const children = childrenForShape(
+    shapesGraph,
+    RdfStore.createDefault(),
+    nodeShapes,
+    factory.blankNode(),
+  );
   return generateChildren(children, { ...context, depth: context.depth + 1 });
 }
 
@@ -261,16 +276,20 @@ function generateFromFakerAnnotation(
   if (!declared) return undefined;
 
   const parts = expandListOrTerm(declared, property.shapesGraph);
-  const rendered = parts.map((part): FakerValue =>
-    part.termType === "Literal"
-      ? part.value
-      : callFakerGenerator(part.value.slice(FAKER_BASE.length), fakerSettings),
+  const rendered = parts.map(
+    (part): FakerValue =>
+      part.termType === "Literal"
+        ? part.value
+        : callFakerGenerator(part.value.slice(FAKER_BASE.length), fakerSettings),
   );
 
   return rendered.length === 1 ? rendered[0] : rendered.map(String).join("");
 }
 
-function callFakerGenerator(dotSeparatedPath: string, options: Record<string, unknown>): FakerValue {
+function callFakerGenerator(
+  dotSeparatedPath: string,
+  options: Record<string, unknown>,
+): FakerValue {
   let pointer: unknown = fakerLibrary;
   for (const part of dotSeparatedPath.split(".")) {
     pointer = (pointer as Record<string, unknown> | undefined)?.[part];

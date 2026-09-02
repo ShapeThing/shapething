@@ -2,6 +2,7 @@ import type { StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { rdf, sh } from "@/helpers/namespaces.ts";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import type { SubmitResult } from "@/environment.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
@@ -11,50 +12,7 @@ export default {
   component: ShaclRenderer,
 };
 
-const shapesAndData = `
-@prefix ex: <http://example.org/>.
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
-@prefix schema: <http://schema.org/>.
-@prefix sh: <http://www.w3.org/ns/shacl#>.
-
-ex:productShape
-    a sh:NodeShape ;
-    sh:targetClass schema:Product ;
-    sh:property [
-        sh:name "Search"@en ;
-        sh:path [ sh:alternativePath ( schema:name schema:description ) ] ;
-        sh:order 0 ;
-    ] ;
-    sh:property [
-        sh:name "Category"@en ;
-        sh:path schema:category ;
-        sh:class ex:Category ;
-        sh:order 1 ;
-    ] ;
-    .
-
-ex:personShape
-    a sh:NodeShape ;
-    sh:targetClass schema:Person ;
-    sh:property [
-        sh:name "Given name"@en ;
-        sh:path schema:givenName ;
-        sh:datatype xsd:string ;
-    ] ;
-    .
-
-ex:Electronics a ex:Category ; rdfs:label "Electronics"@en .
-ex:Books a ex:Category ; rdfs:label "Books"@en .
-
-ex:data
-    a schema:Product ;
-    schema:name "Widget" ;
-    schema:description "A useful little widget" ;
-    schema:category ex:Electronics .
-
-ex:alice a schema:Person ; schema:givenName "Alice" .
-`;
+const { shapesGraph, dataGraph } = argsByTestFile("facet-type-union.ttl", import.meta.url);
 
 let submitResult: SubmitResult | undefined;
 const onSubmit = (result: SubmitResult) => {
@@ -70,8 +28,8 @@ const onSubmit = (result: SubmitResult) => {
 export const unionModeShowsEveryTypesFacetsAtOnce: Story = {
   name: "Every discovered type's facets render together, with no type picker",
   args: {
-    shapesGraph: shapesAndData,
-    dataGraph: shapesAndData,
+    shapesGraph,
+    dataGraph,
     mode: "facet",
     enableFacetTypeUnion: true,
     onSubmit,

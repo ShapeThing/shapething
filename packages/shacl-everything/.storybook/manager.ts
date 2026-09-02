@@ -6,5 +6,7 @@ import "./addons/submit-preview/register.tsx";
 addons.setConfig({
   layout: {
     navSize: 400,
+    rightPanelWidth: 800,
+    panelPosition: "right",
   },
 });
