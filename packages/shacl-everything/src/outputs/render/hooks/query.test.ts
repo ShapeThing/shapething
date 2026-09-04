@@ -87,6 +87,35 @@ test("fetchOptions() returns nothing for an empty iri list", async () => {
   expect(await fetchOptions(shape, [])).toEqual([]);
 });
 
+test("fetchOptions() keeps concurrent calls on the same shape scoped to their own requested iris", async () => {
+  const shape = await createShape(
+    `
+      ex:property1 a sh:PropertyShape ; sh:class ex:Person ; sh:node ex:PersonShape .
+      ex:PersonShape sh:property ex:nameProperty .
+      ex:nameProperty sh:path ex:name ; shui:propertyRole shui:LabelRole .
+    `,
+    `
+      ex:p1 a ex:Person ; ex:name "Ali" .
+      ex:p2 a ex:Person ; ex:name "Bob" .
+      ex:p3 a ex:Person ; ex:name "Carol" .
+      ex:p4 a ex:Person ; ex:name "Dee" .
+    `,
+  );
+
+  // Two calls issued back to back (no await between them) on the same shape fall into the same
+  // ROLE_LOOKUP_BATCH_DELAY_MS window and get merged into one query - each call must still resolve
+  // to exactly its own requested iris, never the other call's.
+  const [first, second] = await Promise.all([
+    fetchOptions(shape, [ex("p1"), ex("p2")]),
+    fetchOptions(shape, [ex("p3"), ex("p4")]),
+  ]);
+
+  expect(first.map((result) => result.iri.value)).toEqual([ex("p1").value, ex("p2").value]);
+  expect(first.map((result) => result.label)).toEqual(["Ali", "Bob"]);
+  expect(second.map((result) => result.iri.value)).toEqual([ex("p3").value, ex("p4").value]);
+  expect(second.map((result) => result.label)).toEqual(["Carol", "Dee"]);
+});
+
 test("substituteSearchParameters() replaces both $-prefixed and ?-prefixed forms of the same query", () => {
   const dollarForm = substituteSearchParameters(
     "SELECT ?value WHERE { ?value rdfs:label $searchTerm, $uiLanguage }",
