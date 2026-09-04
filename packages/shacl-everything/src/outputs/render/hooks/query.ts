@@ -84,6 +84,48 @@ export function extractServiceEndpoint(query: string): string | undefined {
   return query.match(/\bSERVICE\s*(?:SILENT\s+)?<([^>]+)>/i)?.[1];
 }
 
+// Matches a SELECT clause's first projected variable, e.g. "?value1" in "SELECT DISTINCT ?value1
+// WHERE" or "?value" in "SELECT ?value {" - mirrors toResolvedTerms's own convention ("Use the
+// first projected variable, so sh:select queries need not name it ?value"), but as a text-level
+// parse rather than a binding-level one, since here the point is to inject a same-named VALUES
+// clause into the query text itself, before it's ever run.
+export const FIRST_PROJECTED_VARIABLE: RegExp = /select\s+(?:distinct\s+|reduced\s+)?[?$](\w+)/i;
+
+// Matches a query's first SERVICE block's opening brace, so a VALUES clause can be inserted right
+// after it - mirrors extractServiceEndpoint (only the first SERVICE clause matters).
+const SERVICE_OPEN_BRACE = /\bSERVICE\s*(?:SILENT\s+)?<[^>]+>\s*\{/i;
+
+/**
+ * Rewrites `query` (an sh:in [ sh:select ] body, or any other sh:select-shaped query) to pre-bind
+ * its first projected `variable` to exactly `values`, via an injected VALUES clause - so running
+ * the rewritten query returns only the subset of `values` the query's own pattern actually
+ * accepts, without ever pulling its full, independently-sized baseline result set (e.g. every
+ * dbo:Philosopher on DBpedia, to check whether just one already-known IRI is a member). Inserted
+ * right inside the first SERVICE block's braces when there is one (so it's evaluated as part of
+ * that single remote request, not bind-joined against it locally), otherwise right inside the
+ * outermost `{` (covering both `WHERE {` and the `WHERE`-less `SELECT ?value { ... }` form).
+ *
+ * Text-level insertion, not a full SPARQL parse - consistent with extractServiceEndpoint/
+ * substituteSearchParameters above, which take the same lightweight-regex approach over the query
+ * shapes this renderer actually needs to support (PREFIX declarations plus a single SELECT/WHERE,
+ * optionally with one SERVICE block).
+ */
+export function insertValuesClause(query: string, variable: string, values: NamedNode[]): string {
+  const valuesClause = `VALUES ?${variable} { ${values
+    .map((value) => `<${value.value}>`)
+    .join(" ")} } `;
+
+  const serviceMatch = query.match(SERVICE_OPEN_BRACE);
+  if (serviceMatch?.index !== undefined) {
+    const insertAt = serviceMatch.index + serviceMatch[0].length;
+    return query.slice(0, insertAt) + valuesClause + query.slice(insertAt);
+  }
+
+  const braceIndex = query.indexOf("{");
+  if (braceIndex === -1) return query;
+  return query.slice(0, braceIndex + 1) + valuesClause + query.slice(braceIndex + 1);
+}
+
 function toResolvedTerms(bindings: Bindings[]): ResolvedTerm[] {
   return bindings.flatMap((binding): ResolvedTerm[] => {
     // Use the first projected variable, so sh:select queries need not name it ?value.

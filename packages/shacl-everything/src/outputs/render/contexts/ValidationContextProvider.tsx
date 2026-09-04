@@ -6,7 +6,9 @@ import {
 } from "shacl-engine/sparql.js";
 import { factory } from "@/helpers/factory.ts";
 import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
+import { shapesGraphWithoutDynamicIn } from "@/structure/shapesGraphWithoutDynamicIn.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { validateDynamicInProperties } from "@/outputs/render/contexts/validateDynamicInProperties.ts";
 import {
   validationContext,
   type ValidationResult,
@@ -33,15 +35,19 @@ function flattenResults(results: ValidateResult[]): ValidationResult[] {
  * parent node shape, so scoping to just `nodeShapes` here still covers the whole edited subtree.
  */
 export default function ValidationContextProvider({ children }: { children: ReactNode }) {
-  const { shapesGraph, dataGraph, focusNode, nodeShapes } = useEnvironment();
+  const { shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl } = useEnvironment();
   const [results, setResults] = useState<ValidationResult[]>([]);
   const [isValidating, setIsValidating] = useState(true);
 
   // shapesGraph is read-only for the lifetime of an Environment (see preprocess/index.ts), so a
   // single Validator compiled from it up front stays valid for every subsequent revalidation -
   // same one-engine-per-shapesGraph reasoning as score.ts's own getShaclEngine/shaclEngineCache.
+  // Built from shapesGraphWithoutDynamicIn's filtered copy, not the raw shapesGraph, so a dynamic
+  // sh:in [ sh:select ] is never evaluated here - that would pull its entire (possibly enormous)
+  // remote baseline set just to check one value's membership; validateDynamicInProperties below
+  // checks those properties itself instead, scoped to just their own current value(s).
   const engineRef = useRef<ShaclEngine | null>(null);
-  engineRef.current ??= new ShaclEngine(shapesGraph.asDataset(), {
+  engineRef.current ??= new ShaclEngine(shapesGraphWithoutDynamicIn(shapesGraph).asDataset(), {
     factory,
     functions: sparqlFunctions,
     constraints: sparqlConstraints,
@@ -58,16 +64,25 @@ export default function ValidationContextProvider({ children }: { children: Reac
           { dataset: dataGraph.asDataset(), terms: [focusNode] },
           nodeShapes.map((nodeShape) => ({ terms: [nodeShape] })),
         );
-        if (!cancelled) setResults(flattenResults(report.results));
+        const dynamicInResults = await validateDynamicInProperties(
+          shapesGraph,
+          dataGraph,
+          nodeShapes,
+          focusNode,
+          corsProxyUrl,
+        );
+        if (!cancelled) setResults([...flattenResults(report.results), ...dynamicInResults]);
       } catch (error) {
         // The engine is constructed with shacl-engine/sparql.js's functions/constraints (see the
-        // shacl-engine patch swapping its Comunica dependency for real SERVICE support), so a
-        // dynamic sh:in [ sh:select "..." ] is genuinely evaluated rather than crashing. This stays
-        // defensive for real failures instead (e.g. an unreachable SERVICE endpoint) - failing the
-        // whole live-validation pass for one bad property would otherwise take down the validation
-        // UI for every other, perfectly valid property on the same node. Leaves `results` as
-        // whatever the last successful run produced rather than clearing it, since a crashed run
-        // has no actual conformance information to report.
+        // shacl-engine patch swapping its Comunica dependency for real SERVICE support), so e.g. a
+        // dynamic sh:sparql/sh:expression constraint is genuinely evaluated rather than crashing
+        // (a dynamic sh:in [ sh:select ] specifically never reaches this engine at all - see
+        // shapesGraphWithoutDynamicIn/validateDynamicInProperties above). This stays defensive for
+        // real failures instead (e.g. an unreachable SERVICE endpoint) - failing the whole
+        // live-validation pass for one bad property would otherwise take down the validation UI for
+        // every other, perfectly valid property on the same node. Leaves `results` as whatever the
+        // last successful run produced rather than clearing it, since a crashed run has no actual
+        // conformance information to report.
         console.warn("[shacl-everything] SHACL validation failed:", error);
       } finally {
         if (!cancelled) setIsValidating(false);
@@ -89,7 +104,7 @@ export default function ValidationContextProvider({ children }: { children: Reac
       clearTimeout(timeout);
       unsubscribe?.();
     };
-  }, [dataGraph, focusNode, nodeShapes]);
+  }, [shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl]);
 
   return (
     <validationContext.Provider value={{ results, isValidating }}>
