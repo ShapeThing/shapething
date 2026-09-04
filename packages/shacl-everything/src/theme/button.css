@@ -6,8 +6,11 @@
   display: inline-flex;
   align-items: center;
   color: var(--gray-8);
-  border: 1px solid var(--gray-3);
+  border: 1px solid var(--st-color-border);
   border-radius: var(--radius-2);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-1);
 
   &:hover,
   &:focus {

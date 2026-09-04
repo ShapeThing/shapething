@@ -14,7 +14,7 @@
   flex: 1;
   min-width: 0;
   padding-inline-end: var(--size-2);
-  border: 1px solid var(--gray-3);
+  border: 1px solid var(--st-color-border);
   border-radius: var(--radius-2);
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;

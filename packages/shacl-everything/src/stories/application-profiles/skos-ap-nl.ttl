@@ -873,3 +873,89 @@ skosapnl:OrphanConcept
       }
     }""" ;
   sh:severity sh:Info .
+
+## example data (for Storybook demos)
+
+<#data>
+  a skos:Concept ;
+  skos:inScheme <#dataScheme> ;
+  skos:topConceptOf <#dataScheme> ;
+  skos:prefLabel "boom"@nl, "tree"@en ;
+  skos:altLabel "houtgewas"@nl ;
+  skos:hiddenLabel "boeom"@nl ;
+  rdfs:label "boom"@nl ;
+  rdfs:comment
+    "Bomen komen voor in bijna elk landecosysteem en leveren hout, zuurstof en leefgebied."@nl ,
+    "Trees occur in almost every terrestrial ecosystem and provide wood, oxygen and habitat."@en ;
+  skos:definition
+    "Een houtachtige meerjarige plant met doorgaans één stam die hoger uitgroeit dan de omringende vegetatie."@nl ,
+    "A perennial woody plant, typically with a single stem, that grows taller than the surrounding vegetation."@en ;
+  skos:example "De treurwilg langs de gracht is een boom."@nl ;
+  skos:scopeNote "Struiken worden in dit begrippenkader niet als boom aangemerkt."@nl ;
+  skos:historyNote "Tot in de 19e eeuw werden ook grote struiken vaak boom genoemd."@nl ;
+  skos:changeNote "Definitie in 2023 aangescherpt om struiken uit te sluiten."@nl ;
+  skos:editorialNote "Nagaan of naaldboom en loofboom als afzonderlijke begrippen moeten worden toegevoegd."@nl ;
+  skos:notation "1.2.3" ;
+  skos:narrower <#eik> , <#beuk> ;
+  skos:related <#plant> ;
+  <http://purl.org/iso25964/skos-thes#broaderGeneric> <https://identifier.overheid.nl/tooi/def/thes/kern/c_dd451365> ;
+  <http://purl.org/iso25964/skos-thes#broaderInstantial> <https://identifier.overheid.nl/tooi/def/thes/kern/c_3f0370ae> ;
+  <http://purl.org/iso25964/skos-thes#broaderPartitive> <https://identifier.overheid.nl/tooi/def/thes/kern/c_82c523bf> ;
+  <http://purl.org/iso25964/skos-thes#narrowerGeneric> <https://identifier.overheid.nl/tooi/def/thes/kern/c_82c523bf> ;
+  <http://purl.org/iso25964/skos-thes#narrowerInstantial> <https://identifier.overheid.nl/tooi/def/thes/kern/c_7ab92a02> ;
+  <http://purl.org/iso25964/skos-thes#narrowerPartitive> <https://identifier.overheid.nl/tooi/def/thes/kern/c_8ec8e5e7> ;
+  skos:broadMatch <https://identifier.overheid.nl/tooi/def/thes/upl/c_jyrci82q> ;
+  skos:closeMatch <https://identifier.overheid.nl/tooi/def/thes/kern/c_3f0370ae> ;
+  skos:exactMatch <https://identifier.overheid.nl/tooi/def/thes/kern/c_232d2da9> ;
+  skos:narrowMatch <https://identifier.overheid.nl/tooi/def/thes/kern/c_81c05ccd> ;
+  skos:relatedMatch <https://identifier.overheid.nl/tooi/def/thes/kern/c_3f0370ae> ;
+
+  dct:source [
+    a skosapnl:SourceDocument ;
+    dct:title "Van Dale Groot woordenboek van de Nederlandse taal"@nl ;
+    rdfs:comment "Naslagwerk met definities van Nederlandse woorden."@nl ;
+    foaf:page <https://www.vandale.nl/gratis-woordenboek/nederlands/betekenis/boom> ;
+    dct:bibliographicCitation "Van Dale (2023). Boom. Geraadpleegd op 4 september 2026." ;
+  ] .
+
+<#eik>
+  a skos:Concept ;
+  skos:inScheme <#dataScheme> ;
+  skos:prefLabel "eik"@nl, "oak"@en ;
+  skos:definition
+    "Een loofboom met gelobde bladeren en eikels als vrucht."@nl ,
+    "A deciduous tree with lobed leaves and acorns as its fruit."@en ;
+  skos:broader <#data> .
+
+<#beuk>
+  a skos:Concept ;
+  skos:inScheme <#dataScheme> ;
+  skos:prefLabel "beuk"@nl, "beech"@en ;
+  skos:definition
+    "Een loofboom met een gladde grijze stam en een dichte kroon."@nl ,
+    "A deciduous tree with a smooth grey trunk and a dense crown."@en ;
+  skos:broader <#data> .
+
+<#plant>
+  a skos:Concept ;
+  skos:inScheme <#dataScheme> ;
+  skos:prefLabel "plant"@nl, "plant"@en ;
+  skos:definition
+    "Een meercellig organisme dat door fotosynthese in zijn eigen voedsel voorziet."@nl ,
+    "A multicellular organism that produces its own food through photosynthesis."@en .
+
+<#dataScheme>
+  a skos:ConceptScheme ;
+  dct:title "Begrippenkader natuur en landschap"@nl, "Nature and landscape concept scheme"@en ;
+  rdfs:comment
+    "Begrippen over de Nederlandse natuur, landschapstypen en de organismen die daarin voorkomen."@nl ,
+    "Concepts about Dutch nature, landscape types and the organisms found in them."@en ;
+  skos:hasTopConcept <#data> .
+
+<#dataCollection>
+  a skos:Collection ;
+  skos:prefLabel "Boomsoorten"@nl, "Tree species"@en ;
+  rdfs:comment
+    "Een selectie van boomsoorten die in het begrippenkader zijn opgenomen."@nl ,
+    "A selection of tree species included in the concept scheme."@en ;
+  skos:member <#eik> , <#beuk> .

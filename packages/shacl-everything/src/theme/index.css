@@ -14,7 +14,7 @@
   /* ShapeThing */
   --st-font-family: var(--font-rounded-sans);
   --st-primary-color: var(--indigo-9);
-  --st-color-border: var(--gray-5);
+  --st-color-border: var(--gray-4);
   --st-color-text: var(--gray-9);
   --st-color-text-muted: var(--gray-6);
   --st-font-size-small: var(--font-size-0);

@@ -24,7 +24,11 @@ export default {
 // The Semantische relaties group's federated search (against the real TOOI government thesaurus)
 // lives in this separate fixture, merged into the same shapesGraph rather than edited into
 // skos-ap-nl.ttl itself - see skos-ap-nl-tooi-federation.ttl for why.
-const federatedFiles = ["skos-ap-nl.ttl", "skos-ap-nl-tooi-federation.ttl"];
+const federatedFiles = [
+  "skos-ap-nl.ttl",
+  "skos-ap-nl-tooi-federation.ttl",
+  "skos-ap-nl-configuration.ttl",
+];
 
 export const concept: Story = {
   name: "Concept (with federation)",
@@ -35,9 +39,13 @@ export const concept: Story = {
 };
 
 export const conceptScheme: Story = {
-  name: "ConceptScheme (with federation)",
+  name: "ConceptScheme",
   args: {
     ...argsByTestFile(federatedFiles, import.meta.url),
+    // skos-ap-nl.ttl's own demo data can't reuse the shared <#data> focus node here - one node
+    // can't be both a skos:Concept and a skos:ConceptScheme (skosapnl:DisjointConceptAndConceptScheme
+    // forbids it) - so this story points at the dedicated demo scheme instance instead.
+    focusNode: factory.namedNode(new URL("skos-ap-nl.ttl#dataScheme", import.meta.url).href),
     nodeShapes: [factory.namedNode("http://nlbegrip.nl/def/skosapnl#ConceptScheme")],
   },
 };
@@ -46,6 +54,7 @@ export const collection: Story = {
   name: "Collection",
   args: {
     ...argsByTestFile("skos-ap-nl.ttl", import.meta.url),
+    focusNode: factory.namedNode(new URL("skos-ap-nl.ttl#dataCollection", import.meta.url).href),
     nodeShapes: [factory.namedNode("http://nlbegrip.nl/def/skosapnl#Collection")],
   },
 };

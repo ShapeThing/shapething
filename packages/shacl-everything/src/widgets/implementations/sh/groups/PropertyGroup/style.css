@@ -35,11 +35,14 @@
 .st-property-group__title {
   font-size: var(--st-font-size-big);
   font-weight: 600;
-  color: var(--st-color-text-muted);
+  color: var(--st-primary-color);
 }
 
 .st-property-group__description {
-  margin-bottom: 0;
+  margin-bottom: var(--size-8);
+  margin-top: 0;
+  color: var(--st-primary-color);
+  font-family: var(--st-font-family);
 }
 
 .st-property-group__body {

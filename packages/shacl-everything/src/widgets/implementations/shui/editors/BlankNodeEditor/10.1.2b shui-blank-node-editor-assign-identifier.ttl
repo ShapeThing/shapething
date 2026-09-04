@@ -7,13 +7,13 @@
     sh:targetClass schema:Person ;
 
     sh:property [
-        sh:name "Address"@en, "Adres"@nl ;
+        sh:name "Address"@en ;
         sh:path schema:address ;
-        sh:nodeKind sh:BlankNode ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
 
         sh:property [
             sh:path schema:postalCode ;
-            sh:name "Postal Code"@en, "Postcode"@nl ; 
+            sh:name "Postal Code"@en ;
          ] ;
     ] ;
     .

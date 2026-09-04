@@ -1,0 +1,13 @@
+@prefix dct: <http://purl.org/dc/terms/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix skosapnl: <http://nlbegrip.nl/def/skosapnl#> .
+
+# dcat-ap-nl-LBL.ttl carries this profile's own rdfs:label translations (including Dutch) on each
+# property shape - these should win over dcat-ap-nl-SHACL.ttl's built-in sh:name (English only),
+# and over the wider DCAT/DCTERMS/PROV/VCard vocabularies' own rdfs:label (which cover many EU
+# languages but not reliably English or Dutch for every term - see resolution/label.ts's ontology
+# fallback steps). sh:name stays second in case a property shape has no rdfs:label of its own.
+skosapnl:configuration a shui:Configuration ;
+    shui:labelPreference ( rdfs:label sh:name dct:title ) .

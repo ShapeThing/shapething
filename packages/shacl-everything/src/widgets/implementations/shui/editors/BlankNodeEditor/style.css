@@ -1,7 +1,8 @@
 .st-blank-node-editor {
   display: flex;
-  flex-direction: column;
   gap: var(--size-2);
+  align-items: stretch;
+  justify-content: space-between;
   flex: 1;
 }
 
@@ -10,9 +11,35 @@
   color: var(--st-color-text-muted);
 }
 
-.st-blank-node-editor__assign,
-.st-blank-node-editor__identifier {
+.st-blank-node-editor__assign {
   align-self: flex-start;
+  background-color: white;
+}
+
+.st-blank-node-editor__identifier {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--size-2);
+  flex: 1;
+  border-radius: var(--radius-2);
+  background-color: var(--gray-1);
+  gap: var(--size-1);
+}
+
+/* Matches .st-icon-button's own square geometry (same height as a .st-input/.st-button row) -
+   filled light gray rather than transparent, since this badge marks a value nothing can be done
+   with here (sh:nodeKind forbids assigning an identifier), not a clickable action. */
+.st-blank-node-editor__locked {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  height: 2rem;
+  aspect-ratio: 1;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--gray-3);
+  background-color: var(--gray-2);
+  color: var(--st-color-text-muted);
 }
 
 .st-blank-node-editor__body {

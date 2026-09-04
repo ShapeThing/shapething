@@ -3,6 +3,7 @@ import { Link } from "@/helpers/icons.tsx";
 import { sh } from "@/helpers/namespaces.ts";
 import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
+import "./style.css";
 
 export default function IRIEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
   const pattern = shape.get(sh("pattern"))?.source;
