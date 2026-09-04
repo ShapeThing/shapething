@@ -47,6 +47,16 @@ shui:textFieldEditorScore0Literal
     shui:shapesGraphShape shui:hasNodeKindLiteralConstraint ;
 .
 
+# A property declaring no value-type signal at all (no sh:datatype/sh:nodeKind/sh:class) would
+# otherwise score nothing pre-value from any editor - a bare text field is the least-wrong generic
+# fallback, scored below every rule above so it only wins when nothing else applies.
+shui:textFieldEditorScoreFallback
+    a shui:WidgetScore ;
+    shui:widget shui:TextFieldEditor ;
+    shui:score 1 ;
+    shui:shapesGraphShape shui:hasNoTypeConstraint ;
+.
+
 shui:prefersTextFieldEditor
     a sh:NodeShape ;
     sh:property [

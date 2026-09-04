@@ -127,6 +127,51 @@ test("a dead owl:imports URL is skipped instead of failing the whole resolve", a
   warnSpy.mockRestore();
 });
 
+test("an array of sources is merged into a single graph", async () => {
+  fixtures["http://example.org/a.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:a ex:name "A" .
+  `;
+  fixtures["http://example.org/b.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:b ex:name "B" .
+  `;
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({
+      dataGraph: [new URL("http://example.org/a.ttl"), new URL("http://example.org/b.ttl")],
+    }),
+  );
+
+  expect(environment.dataGraph.getQuads(ex("a"), ex("name")).length).toBe(1);
+  expect(environment.dataGraph.getQuads(ex("b"), ex("name")).length).toBe(1);
+});
+
+test("a merged array of sources still resolves each source's own owl:imports", async () => {
+  fixtures["http://example.org/a.ttl"] = `
+    @prefix owl: <http://www.w3.org/2002/07/owl#> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://example.org/imported.ttl> .
+  `;
+  fixtures["http://example.org/imported.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:imported ex:name "imported" .
+  `;
+  fixtures["http://example.org/b.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:b ex:name "B" .
+  `;
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({
+      dataGraph: [new URL("http://example.org/a.ttl"), new URL("http://example.org/b.ttl")],
+    }),
+  );
+
+  expect(environment.dataGraph.getQuads(ex("imported"), ex("name")).length).toBe(1);
+  expect(environment.dataGraph.getQuads(ex("b"), ex("name")).length).toBe(1);
+});
+
 test("the same import reached from multiple sources is only fetched once", async () => {
   fixtures["http://example.org/shapes.ttl"] = `
     @prefix owl: <http://www.w3.org/2002/07/owl#> .

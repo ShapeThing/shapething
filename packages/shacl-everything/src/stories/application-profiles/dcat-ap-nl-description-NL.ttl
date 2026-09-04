@@ -1,0 +1,26 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix dcatapnl-sh: <http://modellen.geostandaarden.nl/dcat-ap-nl/id/shape/> .
+
+# Dutch sh:description translations for property shapes that currently only carry an @en one in
+# dcat-ap-nl-SHACL.ttl - added here (against the same shape IRIs) rather than editing that file
+# directly, the same "separate overlay" pattern dcat-ap-nl-LBL.ttl already uses for sh:name/labels.
+# Picked up by propertyDescription()'s default sh:description step (resolution/label.ts) - no
+# shui:descriptionPreference configuration needed for this one.
+
+dcatapnl-sh:DatasetShape_hvdCategory_nodeKind
+    sh:description "De HVD-categorie waartoe deze dataset behoort."@nl .
+
+dcatapnl-sh:DatasetShape_status_nodeKind
+    sh:description "De status van de dataset in het kader van de redactionele workflow van de dataset- en dataservicebeschrijvingen."@nl .
+
+dcatapnl-sh:DataServiceShape_hvdCategory_nodeKind
+    sh:description "De HVD-categorie waartoe deze dataservice behoort."@nl .
+
+dcatapnl-sh:DataServiceShape_rights_nodeKind
+    sh:description "Een verklaring die de rechten specificeert die aan de dataservice zijn verbonden."@nl .
+
+dcatapnl-sh:DataServiceShape_theme_nodeKind
+    sh:description "Een categorie van de dataservice."@nl .
+
+dcatapnl-sh:CatalogShape_contactPoint_nodeKind
+    sh:description "Contactgegevens die gebruikt kunnen worden voor het versturen van opmerkingen over de catalogus."@nl .

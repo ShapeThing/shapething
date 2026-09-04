@@ -1,11 +1,12 @@
+import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
 import { localName } from "@/helpers/localName.ts";
 import { rdfs, sh, shui } from "@/helpers/namespaces.ts";
 import language, { configuredLanguages, effectiveLanguages } from "@/resolution/language.ts";
-import { getLabelPreference } from "@/resolution/globalConfiguration.ts";
+import { getDescriptionPreference, getLabelPreference } from "@/resolution/globalConfiguration.ts";
 import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
-import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { orderedValues, type PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 import { shapesTargetingClass } from "@/resolution/targets.ts";
 import type { Literal, NamedNode, Quad_Subject, Term } from "@rdfjs/types";
@@ -93,11 +94,24 @@ export function propertyLabel({
 
   // 1. The property shape's own configured label-predicate value(s) - shape-local metadata, so only
   // "predicate"-typed configured paths apply (a complex path can't be read as direct shape metadata).
+  //
+  // Deliberate divergence from the spec's literal step order: a strict language match only (or a
+  // language-less value - see bestByLanguage's `strict` option), not PropertyUIElement.get()'s usual
+  // loose "fall back to whatever language is there" behavior. sh:name is authored per shape and often
+  // only translated into some languages, while the ontology's own rdfs:label (steps 2/3 below) may
+  // cover a language sh:name doesn't - silently accepting a wrong-language sh:name here would
+  // permanently hide a better-matching ontology label behind it. Any wrong-language value found here
+  // is kept as `fallbackPropertyShapeValue` and only used once the ontology has also had its chance
+  // (see the bottom of this function), so a translated ontology term still wins, but a shape that
+  // simply has no ontology label at all still shows *something* better than the raw local name.
+  let fallbackPropertyShapeValue: string | undefined;
   if (isPropertyPath) {
     for (const path of effectiveLabelPredicates(shapesGraph, "propertyShape")) {
       if (path.type !== "predicate") continue;
-      const value = propertyShape.get(path.predicate, effLanguages);
+      const values = orderedValues(propertyShape, path.predicate);
+      const value = bestByLanguage(values, effLanguages, { strict: true });
       if (value) return value.value;
+      fallbackPropertyShapeValue ??= bestByLanguage(values, effLanguages)?.value;
     }
   }
 
@@ -136,8 +150,81 @@ export function propertyLabel({
   );
   if (scoresLabel) return scoresLabel.value;
 
+  // The ontology (steps 2-4) had nothing in any language either - a wrong-language sh:name is still
+  // more useful than the raw local name, so restore the value step 1 set aside above.
+  if (fallbackPropertyShapeValue) return fallbackPropertyShapeValue;
+
   // 4/5. Local-name resolution of P (or, for a non-IRI/complex term, its own value).
   return localName(term) ?? term.value;
+}
+
+type PropertyDescriptionOptions = {
+  term: Term;
+  propertyShape: PropertyUIElement;
+  languages?: BCP47[];
+};
+
+// Not a spec clause - there is no "Property Descriptions" section the way 8.2.2 covers labels -
+// but shui:descriptionPreference (getDescriptionPreference) mirrors shui:labelPreference's own
+// shape, defaulting to sh:description for the property shape's own value and rdfs:comment for the
+// ontology property the path targets.
+function effectiveDescriptionPredicates(
+  shapesGraph: RdfStore,
+  context: "propertyShape" | "term",
+): PropertyPath[] {
+  const configured = getDescriptionPreference(shapesGraph);
+  if (configured.length > 0) return configured;
+  const predicate = context === "propertyShape" ? sh("description") : rdfs("comment");
+  return [{ type: "predicate", predicate }];
+}
+
+/**
+ * A property's description/help text, mirroring propertyLabel()'s own divergence from a literal
+ * spec step order: the property shape's own configured description value (sh:description by
+ * default) only if it has a value in the interface language being rendered, otherwise the ontology
+ * property the path targets (rdfs:comment by default), otherwise sh:description again in whatever
+ * language it does have. Unlike propertyLabel(), there's no local-name fallback - a property simply
+ * has no description when nothing matches, which is fine since callers only render it when truthy.
+ */
+export function propertyDescription({
+  term,
+  propertyShape,
+  languages,
+}: PropertyDescriptionOptions): string | undefined {
+  const { shapesGraph, dataGraph } = propertyShape;
+  // Chrome (a label), not content - deliberately excludes sh:languageIn, see configuredLanguages.
+  const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
+
+  let fallbackPropertyShapeValue: string | undefined;
+  for (const path of effectiveDescriptionPredicates(shapesGraph, "propertyShape")) {
+    if (path.type !== "predicate") continue;
+    const values = orderedValues(propertyShape, path.predicate);
+    const value = bestByLanguage(values, effLanguages, { strict: true });
+    if (value) return value.value;
+    fallbackPropertyShapeValue ??= bestByLanguage(values, effLanguages)?.value;
+  }
+
+  const termDescriptionPaths = effectiveDescriptionPredicates(shapesGraph, "term");
+
+  for (const path of termDescriptionPaths) {
+    const literal = language(
+      walkPropertyPath(path, term, dataGraph).filter((v): v is Literal => v.termType === "Literal"),
+      effLanguages,
+    );
+    if (literal) return literal.value;
+  }
+
+  for (const path of termDescriptionPaths) {
+    const literal = language(
+      walkPropertyPath(path, term, shapesGraph).filter(
+        (v): v is Literal => v.termType === "Literal",
+      ),
+      effLanguages,
+    );
+    if (literal) return literal.value;
+  }
+
+  return fallbackPropertyShapeValue;
 }
 
 type ValueNodeLabelOptions = {

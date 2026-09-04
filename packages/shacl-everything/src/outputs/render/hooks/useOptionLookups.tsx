@@ -5,6 +5,7 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import { selectQueryFor } from "@/structure/selectQuery.ts";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
+import { useEnvironment } from "./useEnvironment.tsx";
 import { useInterfaceLanguage } from "./useInterfaceLanguage.tsx";
 import { extractServiceEndpoint, fetchOptions, type SearchResult } from "./query.ts";
 
@@ -21,6 +22,7 @@ import { extractServiceEndpoint, fetchOptions, type SearchResult } from "./query
  */
 export function useOptionLookups(shape: PropertyUIElement, iris: NamedNode[]): SearchResult[] {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
+  const { corsProxyUrl } = useEnvironment();
   const endpoint = useMemo(() => {
     const federatedQuery = searchQueryFor(shape) ?? selectQueryFor(shape);
     return federatedQuery ? extractServiceEndpoint(federatedQuery) : undefined;
@@ -35,12 +37,14 @@ export function useOptionLookups(shape: PropertyUIElement, iris: NamedNode[]): S
       activeInterfaceLanguage,
     ],
     queryFn: () =>
-      fetchOptions(shape, iris, { uiLanguage: activeInterfaceLanguage, endpoint }).catch(
-        (cause) => {
-          console.error("[shacl-everything] option lookup failed", cause);
-          return [];
-        },
-      ),
+      fetchOptions(shape, iris, {
+        uiLanguage: activeInterfaceLanguage,
+        endpoint,
+        corsProxyUrl,
+      }).catch((cause) => {
+        console.error("[shacl-everything] option lookup failed", cause);
+        return [];
+      }),
     enabled: iris.length > 0,
     ...noRefetch,
   });

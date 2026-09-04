@@ -178,6 +178,35 @@ shui:hasNoClassConstraint
     sh:not shui:hasClassConstraint ;
 .
 
+shui:hasDatatypeConstraint
+    a sh:NodeShape ;
+    sh:property [
+        sh:path sh:datatype ;
+        sh:minCount 1 ;
+    ] ;
+.
+
+shui:hasNodeKindConstraint
+    a sh:NodeShape ;
+    sh:property [
+        sh:path sh:nodeKind ;
+        sh:minCount 1 ;
+    ] ;
+.
+
+# A property shape carrying no value-type signal whatsoever - no sh:datatype, sh:nodeKind or
+# sh:class (e.g. a shape that only states sh:minCount/sh:maxCount plus a human-readable sh:name,
+# common in profiles like DCAT-AP-NL that leave the value's exact type to be inferred from context
+# rather than declared). Every other editor's shapesGraphShape rule requires at least one of these
+# three to fire, so a property like this scores nothing at all pre-value - see
+# TextFieldEditor/score.ttl's own fallback rule, the one place this is used.
+shui:hasNoTypeConstraint
+    a sh:NodeShape ;
+    sh:not shui:hasDatatypeConstraint ;
+    sh:not shui:hasNodeKindConstraint ;
+    sh:not shui:hasClassConstraint ;
+.
+
 shui:hasRootClassConstraint
     a sh:NodeShape ;
     sh:property [
@@ -248,6 +277,15 @@ shui:hasCustomDatatype
     ) ;
 .
 
+#  sh:nodeKind sh:BlankNodeOrIRI is a distinct, legal sh:NodeKind value (not shorthand for a list
+#  of sh:IRI/sh:BlankNode) - treated as IRI-ish here too, since a property that only rules out
+#  plain literals is otherwise left with zero shape-only scoring signal at all (no candidate value
+#  exists yet to fall back on a dataGraphShape check either), leaving it without any widget until a
+#  value is first added by some other means. Each accepted value is its own sh:hasValue branch
+#  (existential "equals A or equals B"), not sh:in on one property shape (universal "every matched
+#  value must be A or B") - the list-walking path below can return more than one nodeKind member at
+#  once (e.g. sh:nodeKind ( sh:IRI sh:BlankNode )), and sh:in would then also demand the sh:BlankNode
+#  member be IRI-ish, which it isn't.
 shui:hasNodeKindIRIConstraint
     a sh:NodeShape ;
     sh:or (
@@ -260,9 +298,23 @@ shui:hasNodeKindIRIConstraint
         ]
         [
             sh:property [
+                sh:path sh:nodeKind ;
+                sh:minCount 1 ;
+                sh:hasValue sh:BlankNodeOrIRI ;
+            ] ;
+        ]
+        [
+            sh:property [
                 sh:path ( sh:nodeKind [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
                 sh:minCount 1 ;
                 sh:hasValue sh:IRI ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:nodeKind [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue sh:BlankNodeOrIRI ;
             ] ;
         ]
     ) ;

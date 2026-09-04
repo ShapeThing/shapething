@@ -7,6 +7,7 @@ import stringToStream from "string-to-stream";
 import type { Environment, RawEnvironment } from "@/environment.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
 import { owl, rdf, sh } from "@/helpers/namespaces.ts";
+import { withCorsProxy } from "@/helpers/corsProxy.ts";
 
 const storeFromStream = (stream: Stream<Quad>): Promise<RdfStore> => {
   const store = RdfStore.createDefault();
@@ -31,12 +32,21 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // with a short backoff before being treated as a real, permanent failure.
 const RETRY_DELAYS_MS = [100, 300, 800, 1500];
 
-const fetchText = async (url: URL): Promise<string> => {
+const fetchText = async (url: URL, corsProxyUrl: string | undefined): Promise<string> => {
   for (let attempt = 0; ; attempt++) {
     const response = await fetch(url).catch((error: Error) => error);
     if (response instanceof Response && response.ok) return response.text();
 
     if (attempt >= RETRY_DELAYS_MS.length) {
+      // Direct retries are exhausted - fall back to the configured CORS proxy once, rather than
+      // failing outright, before giving up and reporting the original direct-fetch failure.
+      if (corsProxyUrl) {
+        const proxied = await fetch(withCorsProxy(url.href, corsProxyUrl)).catch(
+          (error: Error) => error,
+        );
+        if (proxied instanceof Response && proxied.ok) return proxied.text();
+      }
+
       if (response instanceof Response) {
         throw new Error(
           `Failed to dereference ${url.href}: ${response.status} ${response.statusText}`,
@@ -59,13 +69,14 @@ const fetchText = async (url: URL): Promise<string> => {
 const dereferenceUrl = async (
   url: URL,
   quadCache: Map<string, Promise<Quad[]>>,
+  corsProxyUrl: string | undefined,
 ): Promise<RdfStore> => {
   const hashlessUrl = new URL(url.href.split("#")[0]);
 
   let quadsPromise = quadCache.get(hashlessUrl.href);
   if (!quadsPromise) {
     quadsPromise = (async () => {
-      const text = await fetchText(hashlessUrl);
+      const text = await fetchText(hashlessUrl, corsProxyUrl);
       const store = await storeFromStream(
         rdfParser.parse(stringToStream(text), {
           path: hashlessUrl.href,
@@ -95,6 +106,7 @@ const resolveOwlImports = async (
   store: RdfStore,
   quadCache: Map<string, Promise<Quad[]>>,
   visitedImports: Set<string>,
+  corsProxyUrl: string | undefined,
 ): Promise<void> => {
   const importUrls = new Set<string>();
   for (const quad of store.getQuads(null, owl("imports"), null, null)) {
@@ -113,45 +125,77 @@ const resolveOwlImports = async (
   // logged, not thrown.
   const hrefs = [...importUrls];
   const importedStores = await Promise.allSettled(
-    hrefs.map((href) => dereferenceUrl(new URL(href), quadCache)),
+    hrefs.map((href) => dereferenceUrl(new URL(href), quadCache, corsProxyUrl)),
   );
   for (const [index, result] of importedStores.entries()) {
     if (result.status === "rejected") {
-      console.warn(`[shacl-everything] Failed to resolve owl:imports <${hrefs[index]}>:`, result.reason);
+      console.warn(
+        `[shacl-everything] Failed to resolve owl:imports <${hrefs[index]}>:`,
+        result.reason,
+      );
       continue;
     }
     for (const quad of result.value.getQuads()) store.addQuad(quad);
   }
 
-  await resolveOwlImports(store, quadCache, visitedImports);
+  await resolveOwlImports(store, quadCache, visitedImports, corsProxyUrl);
 };
+
+// A literal Quad[] and a list of RdfSources to merge are both plain arrays, so they're
+// disambiguated by shape: an empty array is treated as (empty) quads, and a non-empty one is
+// treated as quads only if its first element actually looks like a Quad.
+const isQuad = (value: unknown): value is Quad =>
+  value !== null &&
+  typeof value === "object" &&
+  "subject" in value &&
+  "predicate" in value &&
+  "object" in value &&
+  "graph" in value;
+
+const isRdfSourceList = (source: RdfSource): source is readonly RdfSource[] =>
+  Array.isArray(source) && source.length > 0 && !isQuad(source[0]);
 
 const resolveRdfSource = async (
   source: RdfSource,
   quadCache: Map<string, Promise<Quad[]>>,
+  corsProxyUrl: string | undefined,
 ): Promise<RdfStore> => {
+  if (isRdfSourceList(source)) {
+    const stores = await Promise.all(
+      source.map((nestedSource) => resolveRdfSource(nestedSource, quadCache, corsProxyUrl)),
+    );
+    const merged = RdfStore.createDefault();
+    for (const store of stores) {
+      for (const quad of store.getQuads()) merged.addQuad(quad);
+    }
+    return merged;
+  }
+
   const store =
     source instanceof RdfStore
       ? source
       : source instanceof URL
-        ? await dereferenceUrl(source, quadCache)
+        ? await dereferenceUrl(source, quadCache, corsProxyUrl)
         : Array.isArray(source)
           ? storeFromQuads(source)
           : typeof source === "string"
             ? await parseRdfText(source)
             : storeFromQuads(source);
 
-  await resolveOwlImports(store, quadCache, new Set<string>());
+  await resolveOwlImports(store, quadCache, new Set<string>(), corsProxyUrl);
   return store;
 };
 
 export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environment> => {
   const quadCache = new Map<string, Promise<Quad[]>>();
+  const { corsProxyUrl } = raw;
   const [shapesGraph, dataGraph, scoresGraph, readOnlyGraph] = await Promise.all([
-    resolveRdfSource(raw.shapesGraph, quadCache),
-    resolveRdfSource(raw.dataGraph, quadCache),
-    resolveRdfSource(raw.scoresGraph, quadCache),
-    raw.readOnlyGraph !== undefined ? resolveRdfSource(raw.readOnlyGraph, quadCache) : undefined,
+    resolveRdfSource(raw.shapesGraph, quadCache, corsProxyUrl),
+    resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl),
+    resolveRdfSource(raw.scoresGraph, quadCache, corsProxyUrl),
+    raw.readOnlyGraph !== undefined
+      ? resolveRdfSource(raw.readOnlyGraph, quadCache, corsProxyUrl)
+      : undefined,
   ]);
 
   let nodeShapes: Quad_Subject[] = [];

@@ -26,7 +26,17 @@ function matchesRange(tag: string, range: string): boolean {
 // the caller's own selection, and shui:languagePreference, in that priority order by the caller) -
 // walked strictly in order, so an earlier-ranked preference with no match at all still loses to
 // nothing rather than falling through to a later-ranked preference's match on a different value.
-export function bestByLanguage(values: Term[], languages: LanguageRange[]): Term | undefined {
+//
+// `options.strict` suppresses only the very last resort (`values[0]`, an arbitrary value in whatever
+// language happens to come first) - a language-less value still matches even when strict, since it
+// carries no competing language of its own to be wrong about. Used by propertyLabel (resolution/
+// label.ts) to stop a property shape's own sh:name from masking a better-matching ontology rdfs:label
+// just because *some* language of sh:name happens to exist.
+export function bestByLanguage(
+  values: Term[],
+  languages: LanguageRange[],
+  options?: { strict?: boolean },
+): Term | undefined {
   if (values.length === 0) return undefined;
 
   for (const preference of languages) {
@@ -42,5 +52,6 @@ export function bestByLanguage(values: Term[], languages: LanguageRange[]): Term
     if (match) return match;
   }
 
-  return values.find(isLanguageless) ?? values[0];
+  const languageless = values.find(isLanguageless);
+  return languageless ?? (options?.strict ? undefined : values[0]);
 }

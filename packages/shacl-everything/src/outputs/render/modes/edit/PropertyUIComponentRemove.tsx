@@ -58,22 +58,22 @@ export default function PropertyUIComponentRemove({
     onRemove();
   };
 
-  return (
-    (disabled || !hardBlockedByMinCount) && (
-      <Localized id="property-remove-value" attrs={{ "aria-label": true }}>
-        <button
-          className={clsx(
-            "st-button",
-            minCountReached && severity && ["st-button--severity", `severity-${severity}`],
-          )}
-          type="button"
-          aria-label="Remove value"
-          disabled={disabled}
-          onClick={removeValue}
-        >
-          <Minus />
-        </button>
-      </Localized>
-    )
-  );
+  return disabled || (!hardBlockedByMinCount && existingObjects.length) ? (
+    <Localized id="property-remove-value" attrs={{ "aria-label": true }}>
+      <button
+        className={clsx(
+          "st-button",
+          existingObjects.length !== 0 &&
+            minCountReached &&
+            severity && ["st-button--severity", `severity-${severity}`],
+        )}
+        type="button"
+        aria-label="Remove value"
+        disabled={disabled || existingObjects.length === 0}
+        onClick={removeValue}
+      >
+        <Minus />
+      </button>
+    </Localized>
+  ) : null;
 }

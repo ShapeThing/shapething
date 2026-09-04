@@ -1,5 +1,6 @@
 import type { Bindings, NamedNode, Term } from "@rdfjs/types";
 import { queryPrefixes, sh } from "@/helpers/namespaces.ts";
+import { withCorsProxy } from "@/helpers/corsProxy.ts";
 import {
   depictionRolePropertyPaths,
   labelRolePropertyPaths,
@@ -43,6 +44,21 @@ let enginePromise: Promise<import("@comunica/query-sparql").QueryEngine> | undef
 function getEngine() {
   enginePromise ??= import("@comunica/query-sparql").then(({ QueryEngine }) => new QueryEngine());
   return enginePromise;
+}
+
+// Passed as Comunica's `context.fetch` when a corsProxyUrl is configured, so every HTTP request
+// Comunica makes for this query (e.g. a federated SERVICE endpoint) falls back to the proxy on a
+// failed direct attempt, the same "try direct first" fallback resolveRdfSources.ts applies to
+// shapesGraph/dataGraph/scoresGraph URLs. Left unset entirely when no corsProxyUrl is configured,
+// so Comunica's own default fetch behavior is unaffected.
+function fetchWithCorsProxyFallback(corsProxyUrl: string): typeof fetch {
+  return async (input, init) => {
+    const direct = await fetch(input, init).catch((error: Error) => error);
+    if (direct instanceof Response && direct.ok) return direct;
+
+    const url = input instanceof Request ? input.url : input.toString();
+    return fetch(withCorsProxy(url, corsProxyUrl), init);
+  };
 }
 
 function escapeSparqlLiteral(value: string): string {
@@ -97,10 +113,12 @@ function toSearchResults(results: ResolvedTerm[]): SearchResult[] {
 export async function runQuery(
   query: string,
   propertyShape: PropertyUIElement,
+  corsProxyUrl?: string,
 ): Promise<ResolvedTerm[]> {
   const engine = await getEngine();
   const bindingsStream = await engine.queryBindings(query, {
     sources: [propertyShape.dataGraph],
+    ...(corsProxyUrl ? { fetch: fetchWithCorsProxyFallback(corsProxyUrl) } : {}),
   });
   return toResolvedTerms(await bindingsStream.toArray());
 }
@@ -219,7 +237,7 @@ function buildRoleLookupQuery(
 async function resolveRoles(
   values: Term[],
   propertyShape: PropertyUIElement,
-  options: { uiLanguage?: string; endpoint?: string } = {},
+  options: { uiLanguage?: string; endpoint?: string; corsProxyUrl?: string } = {},
 ): Promise<ResolvedTerm[]> {
   if (values.length === 0) return [];
 
@@ -239,7 +257,7 @@ async function resolveRoles(
     options.uiLanguage,
     options.endpoint,
   );
-  const resolved = await runQuery(query, propertyShape);
+  const resolved = await runQuery(query, propertyShape, options.corsProxyUrl);
   const resolvedByValue = new Map(resolved.map((result) => [result.term.value, result]));
 
   return values.map((term) => ({ term, ...resolvedByValue.get(term.value) }));
@@ -254,6 +272,7 @@ async function resolveRoles(
 export async function searchInstances(
   shape: PropertyUIElement,
   search: string,
+  corsProxyUrl?: string,
 ): Promise<SearchResult[]> {
   const classIri = shape.get(sh("class"))[0] as NamedNode | undefined;
   if (!classIri) return [];
@@ -263,7 +282,7 @@ export async function searchInstances(
   const depictionPaths = depictionRolePropertyPaths(shape).map(toSparql);
   const query = buildSearchQuery(classIri, labelPaths, subLabelPaths, depictionPaths, search);
 
-  return toSearchResults(await runQuery(query, shape));
+  return toSearchResults(await runQuery(query, shape, corsProxyUrl));
 }
 
 /**
@@ -278,7 +297,7 @@ export async function searchInstances(
 export async function fetchOptions(
   shape: PropertyUIElement,
   iris: NamedNode[],
-  options: { uiLanguage?: string; endpoint?: string } = {},
+  options: { uiLanguage?: string; endpoint?: string; corsProxyUrl?: string } = {},
 ): Promise<SearchResult[]> {
   return toSearchResults(await resolveRoles(iris, shape, options));
 }
@@ -302,14 +321,15 @@ export async function runFederatedQuery(
   rawQuery: string,
   propertyShape: PropertyUIElement,
   uiLanguage: string,
+  corsProxyUrl?: string,
 ): Promise<ResolvedTerm[]> {
-  const values = await runQuery(rawQuery, propertyShape);
+  const values = await runQuery(rawQuery, propertyShape, corsProxyUrl);
   if (values.length === 0) return [];
 
   return resolveRoles(
     values.map(({ term }) => term),
     propertyShape,
-    { uiLanguage, endpoint: extractServiceEndpoint(rawQuery) },
+    { uiLanguage, endpoint: extractServiceEndpoint(rawQuery), corsProxyUrl },
   );
 }
 

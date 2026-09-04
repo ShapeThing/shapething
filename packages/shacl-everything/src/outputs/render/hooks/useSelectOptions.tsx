@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { noRefetch } from "@/helpers/noRefetch.ts";
+import { useEnvironment } from "./useEnvironment.tsx";
 import { useInterfaceLanguage } from "./useInterfaceLanguage.tsx";
 import { runFederatedQuery, type ResolvedTerm } from "./query.ts";
 
@@ -16,13 +17,16 @@ export function useSelectOptions(
   query: string | undefined,
 ): { options: ResolvedOption[] | undefined; isLoading: boolean; error: unknown } {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
+  const { corsProxyUrl } = useEnvironment();
   const { data, isLoading, error } = useQuery({
     queryKey: ["select-options", query, activeInterfaceLanguage],
     queryFn: () =>
-      runFederatedQuery(query as string, shape, activeInterfaceLanguage).catch((cause) => {
-        console.error("[shacl-everything] sh:select query failed", cause);
-        throw cause;
-      }),
+      runFederatedQuery(query as string, shape, activeInterfaceLanguage, corsProxyUrl).catch(
+        (cause) => {
+          console.error("[shacl-everything] sh:select query failed", cause);
+          throw cause;
+        },
+      ),
     enabled: query !== undefined,
     ...noRefetch,
   });

@@ -434,6 +434,95 @@ test("label() falls back to the ontology term's local name when neither sh:name 
   expect(element.label()).toBe("givenName");
 });
 
+test("label() prefers the ontology's rdfs:label in the interface language over sh:name in a different language", async () => {
+  const element = await createElement(
+    `
+        ex:property1 a sh:PropertyShape ; sh:path ex:givenName ; sh:name "Given name"@en .
+        ex:givenName rdfs:label "Gegeven naam"@nl .
+    `,
+    [ex("property1")],
+  );
+
+  expect(element.label(["nl-NL"])).toBe("Gegeven naam");
+  expect(element.label(["en-GB"])).toBe("Given name");
+});
+
+test("label() falls back to sh:name in a different language when the ontology has no label at all", async () => {
+  const element = await createElement(
+    `ex:property1 a sh:PropertyShape ; sh:path ex:givenName ; sh:name "Given name"@en .`,
+    [ex("property1")],
+  );
+
+  expect(element.label(["nl-NL"])).toBe("Given name");
+});
+
+test("label() still uses a language-less sh:name regardless of interface language", async () => {
+  const element = await createElement(
+    `
+        ex:property1 a sh:PropertyShape ; sh:path ex:givenName ; sh:name "Given name" .
+        ex:givenName rdfs:label "Gegeven naam"@nl .
+    `,
+    [ex("property1")],
+  );
+
+  expect(element.label(["nl-NL"])).toBe("Given name");
+});
+
+test("description() returns undefined when neither sh:description nor an rdfs:comment exists", async () => {
+  const element = await createElement(`ex:property1 a sh:PropertyShape ; sh:path ex:givenName .`, [
+    ex("property1"),
+  ]);
+
+  expect(element.description()).toBeUndefined();
+});
+
+test("description() prefers sh:description over the ontology's rdfs:comment", async () => {
+  const element = await createElement(
+    `
+        ex:property1 a sh:PropertyShape ; sh:path ex:givenName ; sh:description "A given name" .
+        ex:givenName rdfs:comment "The person's first name" .
+    `,
+    [ex("property1")],
+  );
+
+  expect(element.description()).toBe("A given name");
+});
+
+test("description() falls back to the ontology's rdfs:comment when sh:description is absent", async () => {
+  const element = await createElement(
+    `
+        ex:property1 a sh:PropertyShape ; sh:path ex:givenName .
+        ex:givenName rdfs:comment "A given name"@en, "Een voornaam"@nl .
+    `,
+    [ex("property1")],
+  );
+
+  expect(element.description(["en-GB"])).toBe("A given name");
+  expect(element.description(["nl-NL"])).toBe("Een voornaam");
+});
+
+test("description() prefers the ontology's rdfs:comment in the interface language over sh:description in a different language", async () => {
+  const element = await createElement(
+    `
+        ex:property1 a sh:PropertyShape ; sh:path ex:givenName ; sh:description "A given name"@en .
+        ex:givenName rdfs:comment "Een voornaam"@nl .
+    `,
+    [ex("property1")],
+  );
+
+  expect(element.description(["nl-NL"])).toBe("Een voornaam");
+  expect(element.description(["en-GB"])).toBe("A given name");
+});
+
+test("description() falls back to sh:description in a different language when the ontology has no comment at all", async () => {
+  const element = await createElement(
+    `ex:property1 a sh:PropertyShape ; sh:path ex:givenName ; sh:description "A given name"@en .`,
+    [ex("property1")],
+  );
+
+  expect(element.description(["nl-NL"])).toBe("A given name");
+});
+
 test("widget() returns undefined when scoresGraph has no matching widget score", async () => {
   const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
   expect(

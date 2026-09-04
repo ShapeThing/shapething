@@ -35,6 +35,15 @@ export type Environment = {
   // even a partial replacement built by spreading defaultWidgets, means the bundled widgets never
   // load.
   widgets?: Widgets;
+  // A CORS proxy URL prefix, used as a fallback whenever a network fetch this package makes fails
+  // directly - a shapesGraph/dataGraph/scoresGraph/readOnlyGraph URL, an owl:imports target, or a
+  // federated shui:searchQuery/sh:select SERVICE endpoint - typically because the remote server
+  // doesn't send permissive CORS headers. The direct URL is always tried first (with its own
+  // existing retries, where those already exist); only once that's exhausted is the request retried
+  // once more through `${corsProxyUrl}${encodeURIComponent(url)}` (e.g. "https://corsproxy.io/?url="
+  // or a self-hosted equivalent). Unset (the default) means no fallback - a direct-fetch failure is
+  // thrown/rejected the same as before this field existed.
+  corsProxyUrl?: string;
   // Ignored in facet mode except for one thing: modes/facet/index.tsx reuses it (when set to
   // anything other than the default placeholder) as the IRI of the generated filter shape itself
   // - see structure/filterShape.ts's createFilterShape. Facet mode has no single focus node to

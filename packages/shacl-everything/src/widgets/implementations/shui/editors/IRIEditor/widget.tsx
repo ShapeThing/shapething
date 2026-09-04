@@ -1,4 +1,5 @@
 import { factory } from "@/helpers/factory.ts";
+import { Link } from "@/helpers/icons.tsx";
 import { sh } from "@/helpers/namespaces.ts";
 import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
@@ -13,16 +14,24 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy }: WidgetPr
   );
 
   return (
-    <input
-      type="text"
-      className="st-input"
-      value={localValue}
-      onChange={onChange}
-      onBlur={onBlur}
-      pattern={pattern}
-      minLength={minLength}
-      maxLength={maxLength}
-      aria-labelledby={labelledBy}
-    />
+    <>
+      {/* <span className="st-input-prefix">
+        <Link />
+      </span> */}
+      <input
+        type="text"
+        className="st-input"
+        value={localValue}
+        onChange={onChange}
+        onBlur={onBlur}
+        pattern={pattern}
+        minLength={minLength}
+        maxLength={maxLength}
+        aria-labelledby={labelledBy}
+      />
+      <span className="st-input-suffix">
+        <Link />
+      </span>
+    </>
   );
 }

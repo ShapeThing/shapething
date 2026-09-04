@@ -38,30 +38,25 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
   const [creating, setCreating] = useState<NamedNode | undefined>(undefined);
   const [staging, setStaging] = useState<Staging | undefined>(undefined);
 
-  const [mode, setMode] = useState<"view" | "edit">(term.value ? "view" : "edit");
+  const [mode, setMode] = useState<"view" | "edit">("view");
   const { search, setSearch, results, isLoading, error, reset } = useInstanceSearch(shape);
   const [selected, setSelected] = useState<SearchResult>();
   const [activeIndex, setActiveIndex] = useState(-1);
   // Mirrors EnumSelectEditor's own `open` state: the results dropdown (including the create row)
-  // is only shown while the input actually has focus, not merely whenever canCreate is true - an
-  // empty field stays in "edit" mode permanently (see the effect below), so without this the
-  // dropdown would never close on blur.
+  // is only shown while the input actually has focus, not merely whenever canCreate is true -
+  // without this it would stay open even after closeEditor's blur handling switches back to view.
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const listboxId = useId();
 
+  // Only fires on an actual view->edit transition (the search icon clicked, or a value just
+  // cleared - see closeEditor/the empty-state view below), never on initial mount: `mode` always
+  // starts as "view" regardless of whether `term` already has a value, so a screen with several
+  // empty properties of this widget type doesn't turn into a race over which one ends up focused.
   useEffect(() => {
     if (mode === "edit") inputRef.current?.focus();
   }, [mode]);
-
-  // `term` can go from having a value to being empty without this widget remounting - e.g. the
-  // property row is keyed by index, so removing its only value swaps in a fresh empty term on the
-  // same instance (see PropertyUIComponent). Search mode should always be shown once that happens,
-  // not whatever mode was left over from before the value disappeared.
-  useEffect(() => {
-    if (!term.value) setMode("edit");
-  }, [term.value]);
 
   // A fresh set of results invalidates whatever the previous list had highlighted.
   useEffect(() => {
@@ -83,10 +78,13 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
   const lookups = useOptionLookups(shape, currentIris);
   const current = selected?.iri.value === term.value ? selected : lookups[0];
 
+  // Always back to "view" on blur, even with no value selected - the view render below has its
+  // own empty state for that case, so there's no need to keep the search box open just because
+  // nothing was picked.
   const closeEditor = () => {
     reset();
     setFocused(false);
-    setMode(term.value ? "view" : "edit");
+    setMode("view");
   };
 
   const apply = (result: SearchResult) => {
@@ -194,12 +192,18 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
     return (
       <div className="st-autocomplete">
         <span tabIndex={0} className="st-autocomplete__label">
-          <AutoCompleteOption
-            term={term}
-            label={current?.label}
-            subLabel={current?.subLabel}
-            depiction={current?.depiction}
-          />
+          {term.value ? (
+            <AutoCompleteOption
+              term={term}
+              label={current?.label}
+              subLabel={current?.subLabel}
+              depiction={current?.depiction}
+            />
+          ) : (
+            <span className="st-autocomplete__empty" onClick={() => setMode("edit")}>
+              <Localized id="select-an-option">- Select an option -</Localized>
+            </span>
+          )}
         </span>
         <Localized id="autocomplete-edit-value" attrs={{ "aria-label": true }}>
           <button

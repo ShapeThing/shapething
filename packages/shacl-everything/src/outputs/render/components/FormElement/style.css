@@ -17,6 +17,11 @@
   color: var(--st-color-text);
 }
 
+/* Correct casing can not be achieved in the browser without JS */
+.st-form-element__label::first-letter {
+  text-transform: uppercase;
+}
+
 .st-form-element[data-size="small"] .st-form-element__label {
   font-size: var(--st-font-size-small);
   color: var(--gray-7);

@@ -46,7 +46,7 @@ export default function FacetPropertyComponent({ property, filterShape, instance
 
   const labelId = useId();
   const label = property.label([activeInterfaceLanguage]);
-  const description = property.get(sh("description"), [activeInterfaceLanguage])?.value;
+  const description = property.description([activeInterfaceLanguage]);
 
   // Reactive (see helpers/reactiveRdfStore.ts) - a facet widget's own setConstraint call mutates
   // filterShape.store directly, not through React state, so without this the widget would never

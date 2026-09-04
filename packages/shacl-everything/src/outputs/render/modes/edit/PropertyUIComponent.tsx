@@ -39,7 +39,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
 
   const labelId = useId();
   const label = propertyUIElement.label([activeInterfaceLanguage]);
-  const description = propertyUIElement.get(sh("description"), [activeInterfaceLanguage])?.value;
+  const description = propertyUIElement.description([activeInterfaceLanguage]);
 
   // Real SHACL validation results for this property (see ValidationContextProvider) - both
   // property-wide (e.g. sh:minCount, no `value`) and per-value (e.g. sh:pattern tied to one
