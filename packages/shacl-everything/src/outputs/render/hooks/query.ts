@@ -21,6 +21,12 @@ const LABEL_MATCH_WEIGHT = 2;
 const IRI_MATCH_WEIGHT = 1;
 const EXACT_MATCH_WEIGHT = 100;
 
+// How long batchRoleLookup waits after its first call before running the merged query - long
+// enough that a form mounting many properties at once (each hydrating its own sh:in options/
+// current value via fetchOptions) piles its requests into the same window instead of firing one
+// HTTP round trip per property, short enough to be imperceptible as added latency.
+const ROLE_LOOKUP_BATCH_DELAY_MS = 100;
+
 export type ResolvedTerm = {
   term: Term;
   label?: string;
@@ -315,29 +321,29 @@ function buildRoleLookupQuery(
   `;
 }
 
-/**
- * Resolves every one of `values`' LabelRole/ClassificationRole/DepictionRole via a single batched query
- * (see buildRoleLookupQuery) - the shared "hydrate a fixed, already-known set of values" mechanism
- * behind fetchOptions (a local sh:in list or a property's current value) and runFederatedQuery's
- * second step (a federated sh:select/shui:searchQuery's results). Returns `values` unchanged (as
- * bare terms) without ever building or running a query when `propertyShape` declares none of those
- * roles, since the result would be identical either way.
- */
-async function resolveRoles(
+type RoleLookupOptions = { uiLanguage?: string; endpoint?: string; corsProxyUrl?: string };
+
+// Shared by resolveRoles and fetchOptions/batchRoleLookup so both compute the exact same set of
+// SPARQL path expressions for a given shape.
+function rolePathsFor(propertyShape: PropertyUIElement) {
+  return {
+    labelPaths: labelRolePropertyPaths(propertyShape).map(toSparql),
+    classificationPaths: classificationRolePropertyPaths(propertyShape).map(toSparql),
+    depictionPaths: depictionRolePropertyPaths(propertyShape).map(toSparql),
+  };
+}
+
+// The actual build-query/run-it/map-results-back-to-`values` step, shared by resolveRoles' direct
+// (unbatched) path and batchRoleLookup's merged one - the only difference between the two is which
+// `values` (and whose promise) this ends up resolving.
+async function runRoleLookupQuery(
   values: Term[],
   propertyShape: PropertyUIElement,
-  options: { uiLanguage?: string; endpoint?: string; corsProxyUrl?: string } = {},
+  labelPaths: string[],
+  classificationPaths: string[],
+  depictionPaths: string[],
+  options: RoleLookupOptions,
 ): Promise<ResolvedTerm[]> {
-  if (values.length === 0) return [];
-
-  const labelPaths = labelRolePropertyPaths(propertyShape).map(toSparql);
-  const classificationPaths = classificationRolePropertyPaths(propertyShape).map(toSparql);
-  const depictionPaths = depictionRolePropertyPaths(propertyShape).map(toSparql);
-
-  if (labelPaths.length + classificationPaths.length + depictionPaths.length === 0) {
-    return values.map((term) => ({ term }));
-  }
-
   const query = buildRoleLookupQuery(
     values,
     labelPaths,
@@ -350,6 +356,32 @@ async function resolveRoles(
   const resolvedByValue = new Map(resolved.map((result) => [result.term.value, result]));
 
   return values.map((term) => ({ term, ...resolvedByValue.get(term.value) }));
+}
+
+/**
+ * Resolves every one of `values`' LabelRole/ClassificationRole/DepictionRole via a single batched
+ * query (see buildRoleLookupQuery) - runFederatedQuery's dedicated "hydrate a fixed, already-known
+ * set of values" step for a federated sh:select/shui:searchQuery's results. Runs immediately,
+ * unbatched across calls - unlike fetchOptions/batchRoleLookup below, there's no cross-property
+ * mounting burst to coalesce here: this only ever runs after useInstanceSearch's own client-side
+ * debounce, on an interactive per-keystroke path where responsiveness matters more than round-trip
+ * count. Returns `values` unchanged (as bare terms) without ever building or running a query when
+ * `propertyShape` declares none of those roles, since the result would be identical either way.
+ */
+async function resolveRoles(
+  values: Term[],
+  propertyShape: PropertyUIElement,
+  options: RoleLookupOptions = {},
+): Promise<ResolvedTerm[]> {
+  if (values.length === 0) return [];
+
+  const { labelPaths, classificationPaths, depictionPaths } = rolePathsFor(propertyShape);
+
+  if (labelPaths.length + classificationPaths.length + depictionPaths.length === 0) {
+    return values.map((term) => ({ term }));
+  }
+
+  return runRoleLookupQuery(values, propertyShape, labelPaths, classificationPaths, depictionPaths, options);
 }
 
 /**
@@ -374,21 +406,145 @@ export async function searchInstances(
   return toSearchResults(await runQuery(query, shape, corsProxyUrl));
 }
 
+type RoleLookupBatchEntry = {
+  values: Map<string, Term>;
+  waiters: Array<{
+    values: Term[];
+    resolve: (result: ResolvedTerm[]) => void;
+    reject: (error: unknown) => void;
+  }>;
+};
+
+// Keyed on propertyShape.dataGraph first (an RdfStore, one per Environment, rebuilt fresh on every
+// mount - see EnvironmentContextProvider - so a WeakMap here can never coalesce two properties from
+// different renders/environments), then on a string of everything else that determines the query
+// text (role paths + language + endpoint + cors proxy) - two properties only share a batch when
+// their buildRoleLookupQuery call would otherwise be identical modulo `values`.
+const roleLookupBatches = new WeakMap<object, Map<string, RoleLookupBatchEntry>>();
+
+function roleLookupBatchKey(
+  labelPaths: string[],
+  classificationPaths: string[],
+  depictionPaths: string[],
+  options: RoleLookupOptions,
+): string {
+  return JSON.stringify([
+    labelPaths,
+    classificationPaths,
+    depictionPaths,
+    options.uiLanguage,
+    options.endpoint,
+    options.corsProxyUrl,
+  ]);
+}
+
+// Runs once per batch, ROLE_LOOKUP_BATCH_DELAY_MS after the batch's first call: queries every
+// value accumulated in the meantime and settles each waiter's own promise from the shared result -
+// or, if the query itself throws, rejects every waiter with that same error (see batchRoleLookup).
+async function runRoleLookupBatch(
+  entry: RoleLookupBatchEntry,
+  propertyShape: PropertyUIElement,
+  labelPaths: string[],
+  classificationPaths: string[],
+  depictionPaths: string[],
+  options: RoleLookupOptions,
+): Promise<void> {
+  try {
+    const resolved = await runRoleLookupQuery(
+      [...entry.values.values()],
+      propertyShape,
+      labelPaths,
+      classificationPaths,
+      depictionPaths,
+      options,
+    );
+    const resolvedByValue = new Map(resolved.map((result) => [result.term.value, result]));
+    for (const waiter of entry.waiters) {
+      waiter.resolve(waiter.values.map((term) => ({ term, ...resolvedByValue.get(term.value) })));
+    }
+  } catch (error) {
+    for (const waiter of entry.waiters) waiter.reject(error);
+  }
+}
+
+// Coalesces fetchOptions calls arriving within ROLE_LOOKUP_BATCH_DELAY_MS into one
+// runRoleLookupQuery - mounting a form with many properties (each hydrating its own sh:in
+// options/current value) would otherwise fire one HTTP round trip per property, even when several
+// share the same sh:node role paths and endpoint. Every caller still gets back a ResolvedTerm[]
+// matching exactly its own requested `values`, as if it had queried alone - callers can't tell the
+// difference except in round-trip count. If the merged query throws, every waiter in the batch
+// rejects together: everything sharing a batch key shares the same query, so a batch failing is a
+// shape/endpoint-level failure, not a per-value one - a real (if narrow) increase in blast radius
+// over calling runRoleLookupQuery directly, accepted for the round-trip savings.
+function batchRoleLookup(
+  values: Term[],
+  propertyShape: PropertyUIElement,
+  labelPaths: string[],
+  classificationPaths: string[],
+  depictionPaths: string[],
+  options: RoleLookupOptions,
+): Promise<ResolvedTerm[]> {
+  let batchesForGraph = roleLookupBatches.get(propertyShape.dataGraph);
+  if (!batchesForGraph) {
+    batchesForGraph = new Map();
+    roleLookupBatches.set(propertyShape.dataGraph, batchesForGraph);
+  }
+
+  const key = roleLookupBatchKey(labelPaths, classificationPaths, depictionPaths, options);
+  let entry = batchesForGraph.get(key);
+  if (!entry) {
+    entry = { values: new Map(), waiters: [] };
+    const newEntry = entry;
+    const graphBatches = batchesForGraph;
+    batchesForGraph.set(key, newEntry);
+    setTimeout(() => {
+      graphBatches.delete(key);
+      void runRoleLookupBatch(
+        newEntry,
+        propertyShape,
+        labelPaths,
+        classificationPaths,
+        depictionPaths,
+        options,
+      );
+    }, ROLE_LOOKUP_BATCH_DELAY_MS);
+  }
+
+  for (const term of values) entry.values.set(term.value, term);
+
+  const pendingEntry = entry;
+  return new Promise((resolve, reject) => {
+    pendingEntry.waiters.push({ values, resolve, reject });
+  });
+}
+
 /**
  * Resolves every one of `iris` (e.g. this property's currently applied value, or its sh:in options)
- * to its LabelRole label and DepictionRole image via resolveRoles, in a single batched query rather
- * than one per iri. Lets AutoCompleteOption stay a plain presentational component that never reads
- * the data graph itself. `endpoint`, when the shape's `sh:in` is itself federated (see
- * extractServiceEndpoint), resolves against that remote endpoint instead of the local dataGraph -
- * without it, an IRI whose roles only exist on a remote endpoint (e.g. a shui:searchQuery result
- * applied on a previous visit) would resolve to nothing every time it's re-hydrated on mount.
+ * to its LabelRole label and DepictionRole image via a batched query (see batchRoleLookup), rather
+ * than one per iri *or* one per property - callers within the same ROLE_LOOKUP_BATCH_DELAY_MS
+ * window that would otherwise run an identical query share a single request. Lets AutoCompleteOption
+ * stay a plain presentational component that never reads the data graph itself. `endpoint`, when the
+ * shape's `sh:in` is itself federated (see extractServiceEndpoint), resolves against that remote
+ * endpoint instead of the local dataGraph - without it, an IRI whose roles only exist on a remote
+ * endpoint (e.g. a shui:searchQuery result applied on a previous visit) would resolve to nothing
+ * every time it's re-hydrated on mount.
  */
 export async function fetchOptions(
   shape: PropertyUIElement,
   iris: NamedNode[],
-  options: { uiLanguage?: string; endpoint?: string; corsProxyUrl?: string } = {},
+  options: RoleLookupOptions = {},
 ): Promise<SearchResult[]> {
-  return toSearchResults(await resolveRoles(iris, shape, options));
+  if (iris.length === 0) return [];
+
+  const { labelPaths, classificationPaths, depictionPaths } = rolePathsFor(shape);
+
+  if (labelPaths.length + classificationPaths.length + depictionPaths.length === 0) {
+    return toSearchResults(iris.map((term) => ({ term })));
+  }
+
+  return toSearchResults(
+    await batchRoleLookup(iris, shape, labelPaths, classificationPaths, depictionPaths, options),
+  );
 }
 
 /**
