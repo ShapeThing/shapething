@@ -17,25 +17,36 @@
 }
 
 @layer actions {
-  .st-property-group__title {
+  .st-property-group__legend {
     padding: 0;
     position: sticky;
     top: 0;
-    font-size: var(--st-font-size-big);
     padding-top: var(--size-3);
     padding-bottom: var(--size-3);
     margin-bottom: var(--size-7);
-    font-weight: 600;
-    color: var(--st-color-text-muted);
-    font-family: var(--st-font-family);
     background-color: white;
     z-index: var(--st-z-actions);
     width: 100%;
     border-bottom: 1px solid var(--st-color-text-muted);
+    font-family: var(--st-font-family);
   }
+}
+
+.st-property-group__title {
+  font-size: var(--st-font-size-big);
+  font-weight: 600;
+  color: var(--st-color-text-muted);
+}
+
+.st-property-group__description {
+  margin-bottom: 0;
 }
 
 .st-property-group__body {
   display: flex;
   flex-direction: column;
+}
+
+.st-property-group__description {
+  font-size: var(--st-font-size-small);
 }

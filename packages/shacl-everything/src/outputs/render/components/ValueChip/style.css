@@ -47,6 +47,7 @@
 
 .st-value-chip--colored--2 {
   position: relative;
+  z-index: 0;
   background: none;
   border: none;
 

@@ -9,6 +9,7 @@ export default function PropertyGroup({ group }: GroupWidgetProps) {
   const { mode } = useEnvironment();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const label = group.label([activeInterfaceLanguage]);
+  const description = group.description([activeInterfaceLanguage]);
   // Groups are selected by direct rdf:type match, with no separate edit/view registration (see
   // getGroupWidget) - so the one registered component has to pick which mode's UIElementChildren
   // recurses into its own children, rather than always hard-coding edit's.
@@ -16,7 +17,10 @@ export default function PropertyGroup({ group }: GroupWidgetProps) {
 
   return (
     <fieldset className="st-property-group">
-      <legend className="st-property-group__title">{label}</legend>
+      <legend className="st-property-group__legend">
+        <span className="st-property-group__title">{label}</span>
+        {description && <p className="st-property-group__description">{description}</p>}
+      </legend>
       <div className="st-property-group__body">
         <UIElementChildren elements={group.children} />
       </div>

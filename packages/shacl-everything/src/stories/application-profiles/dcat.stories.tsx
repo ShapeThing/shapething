@@ -24,11 +24,6 @@ export default {
 const files = [
   "dcat-ap-nl-SHACL.ttl",
   "dcat-ap-eu-SHACL.ttl",
-  // "dcat.ttl",
-  // "dublin_core_terms.ttl",
-  // "prov.ttl",
-  // "vcard.ttl",
-  // "skos.rdf",
   "dcat-ap-nl-LBL.ttl",
   "dcat-ap-nl-configuration.ttl",
   "dcat-ap-nl-description-NL.ttl",
