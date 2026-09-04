@@ -1,4 +1,5 @@
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
+import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
 import ValidationMessages from "@/outputs/render/components/ValidationMessages/index.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useRegisterContentLanguageSwitcherWidget } from "@/outputs/render/hooks/useRegisterContentLanguageSwitcherWidget.tsx";
@@ -10,10 +11,13 @@ import MemberShapeList from "@/outputs/render/modes/edit/MemberShapeList.tsx";
 import PropertyUIComponentValues from "@/outputs/render/modes/edit/PropertyUIComponentValues.tsx";
 import { localName } from "@/helpers/localName.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
+import { Globe } from "@/helpers/icons.tsx";
 import language, { configuredLanguages } from "@/resolution/language.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
 import "./style.css";
 import { useId } from "react";
+import { Localized } from "@fluent/react";
 import { languageLabels } from "@/helpers/languageLabels.ts";
 
 type PropertyUIComponentProps = {
@@ -40,6 +44,8 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   const labelId = useId();
   const label = propertyUIElement.label([activeInterfaceLanguage]);
   const description = propertyUIElement.description([activeInterfaceLanguage]);
+  const showLanguageTag = Boolean(activeLanguage) && isRdfLangString && languageMode === "switcher";
+  const showSearchIcon = Boolean(searchQueryFor(propertyUIElement));
 
   // Real SHACL validation results for this property (see ValidationContextProvider) - both
   // property-wide (e.g. sh:minCount, no `value`) and per-value (e.g. sh:pattern tied to one
@@ -55,10 +61,32 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   return (
     <FormElement
       label={
-        label && activeLanguage && isRdfLangString ? (
+        label ? (
           <>
-            {label}{" "}
-            {languageMode === "switcher" && (
+            {label}
+            {showSearchIcon && (
+              <Tooltip
+                bare
+                enabled
+                tip={
+                  <Localized id="property-federated-search-tooltip">
+                    This field searches an external data source
+                  </Localized>
+                }
+              >
+                <Localized id="property-federated-search-label" attrs={{ "aria-label": true }}>
+                  <span
+                    className="st-property-search-icon"
+                    role="img"
+                    aria-label="Federated search"
+                    tabIndex={-1}
+                  >
+                    <Globe />
+                  </span>
+                </Localized>
+              </Tooltip>
+            )}
+            {showLanguageTag && (
               <span className="st-property-language-tag">
                 ({Object.values(languageLabels([activeLanguage], activeInterfaceLanguage))})
               </span>

@@ -37,7 +37,7 @@
         sh:datatype xsd:string ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        shui:propertyRole shui:SubLabelRole ;
+        shui:propertyRole shui:ClassificationRole ;
     ] ;
     .
 

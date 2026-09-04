@@ -291,11 +291,11 @@ export function depictionRolePropertyPaths(propertyShape: PropertyUIElement): Pr
 /**
  * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
  * node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole
- * shui:SubLabelRole - secondary, disambiguating text shown alongside the main LabelRole label
+ * shui:ClassificationRole - secondary, disambiguating text shown alongside the main LabelRole label
  * (e.g. a pseudonym next to a person's name). Mirrors labelRolePropertyPaths.
  */
-export function subLabelRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
-  return propertyPathsByRole(propertyShape, shui("SubLabelRole"));
+export function classificationRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
+  return propertyPathsByRole(propertyShape, shui("ClassificationRole"));
 }
 
 // 8.2.3 Value Node Labels
@@ -351,7 +351,7 @@ type ValueNodeSubLabelOptions = {
 };
 
 /**
- * Secondary, disambiguating text for V: the best-language literal from a shui:SubLabelRole-
+ * Secondary, disambiguating text for V: the best-language literal from a shui:ClassificationRole-
  * annotated path from V in the data graph (e.g. a pseudonym alongside a person's name). Unlike
  * valueNodeLabel there is no rdfs:label or lexical-value fallback - a value simply has no sub-label
  * when nothing matches. Not part of the spec; a project-specific extension mirroring valueNodeLabel's
@@ -366,7 +366,7 @@ export function valueNodeSubLabel({
 
   const { dataGraph } = propertyShape;
   const effLanguages = effectiveLanguages(propertyShape, languages ?? []);
-  const subLabels = subLabelRolePropertyPaths(propertyShape)
+  const subLabels = classificationRolePropertyPaths(propertyShape)
     .flatMap((path) => walkPropertyPath(path, term, dataGraph))
     .filter((value): value is Literal => value.termType === "Literal");
 

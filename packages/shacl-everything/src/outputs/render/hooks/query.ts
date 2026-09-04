@@ -2,9 +2,9 @@ import type { Bindings, NamedNode, Term } from "@rdfjs/types";
 import { queryPrefixes, sh } from "@/helpers/namespaces.ts";
 import { withCorsProxy } from "@/helpers/corsProxy.ts";
 import {
+  classificationRolePropertyPaths,
   depictionRolePropertyPaths,
   labelRolePropertyPaths,
-  subLabelRolePropertyPaths,
 } from "@/resolution/label.ts";
 import { toSparql } from "@/structure/paths/toSparql.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -177,7 +177,7 @@ export function buildSearchQuery(
 /**
  * A SPARQL query resolving every one of `values` (e.g. a set of sh:in options, a property's
  * current value, or the results of a federated sh:select/shui:searchQuery) to its LabelRole label,
- * SubLabelRole text and DepictionRole image in one round trip, via a single `values` clause instead
+ * ClassificationRole text and DepictionRole image in one round trip, via a single `values` clause instead
  * of one query per value. `uiLanguage` is optional - when given, a label/subLabel only counts if it
  * matches that language (or has none), the way a federated lookup needs to disambiguate a remote
  * endpoint's multi-language literals; local-only lookups leave it out and take whatever's there,
@@ -227,7 +227,7 @@ function buildRoleLookupQuery(
 }
 
 /**
- * Resolves every one of `values`' LabelRole/SubLabelRole/DepictionRole via a single batched query
+ * Resolves every one of `values`' LabelRole/ClassificationRole/DepictionRole via a single batched query
  * (see buildRoleLookupQuery) - the shared "hydrate a fixed, already-known set of values" mechanism
  * behind fetchOptions (a local sh:in list or a property's current value) and runFederatedQuery's
  * second step (a federated sh:select/shui:searchQuery's results). Returns `values` unchanged (as
@@ -242,7 +242,7 @@ async function resolveRoles(
   if (values.length === 0) return [];
 
   const labelPaths = labelRolePropertyPaths(propertyShape).map(toSparql);
-  const subLabelPaths = subLabelRolePropertyPaths(propertyShape).map(toSparql);
+  const subLabelPaths = classificationRolePropertyPaths(propertyShape).map(toSparql);
   const depictionPaths = depictionRolePropertyPaths(propertyShape).map(toSparql);
 
   if (labelPaths.length + subLabelPaths.length + depictionPaths.length === 0) {
@@ -278,7 +278,7 @@ export async function searchInstances(
   if (!classIri) return [];
 
   const labelPaths = labelRolePropertyPaths(shape).map(toSparql);
-  const subLabelPaths = subLabelRolePropertyPaths(shape).map(toSparql);
+  const subLabelPaths = classificationRolePropertyPaths(shape).map(toSparql);
   const depictionPaths = depictionRolePropertyPaths(shape).map(toSparql);
   const query = buildSearchQuery(classIri, labelPaths, subLabelPaths, depictionPaths, search);
 
@@ -305,7 +305,7 @@ export async function fetchOptions(
 /**
  * Runs a federated query (a `sh:in [ sh:select ]` body, or a `shui:searchQuery` body - the two are
  * asserted independently of each other, see searchQuery.ts) and resolves each
- * result's LabelRole/SubLabelRole/DepictionRole via `propertyShape`'s sh:node in a second request.
+ * result's LabelRole/ClassificationRole/DepictionRole via `propertyShape`'s sh:node in a second request.
  * The first projected variable is used as the value IRI - it need not be named `?value`.
  *
  * Labels always come from propertyRoles (resolveRoles), never from the query itself. When no roles

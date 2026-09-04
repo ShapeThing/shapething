@@ -13,6 +13,7 @@
   width: max-content;
   max-width: var(--size-14);
   min-width: var(--size-10);
+  white-space: normal;
   overflow-wrap: break-word;
   position-anchor: var(--tooltip-anchor);
   position-visibility: anchors-visible;
@@ -91,6 +92,8 @@
 }
 
 .tooltip-wrapper--bare {
+  display: inline-flex;
+  vertical-align: middle;
   border: none;
 
   &:hover,

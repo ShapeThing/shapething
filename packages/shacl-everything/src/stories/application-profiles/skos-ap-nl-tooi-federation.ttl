@@ -2,15 +2,27 @@
 @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix skosapnl: <http://nlbegrip.nl/def/skosapnl#> .
+@prefix isothes: <http://purl.org/iso25964/skos-thes#> .
 
 # Augments skos-ap-nl.ttl (loaded alongside it, never edited in place - see nl-sbb.stories.tsx)
-# with federated search for the "Semantische relaties" group, against the TOOI thesaurus
-# (Thesaurus en Ontologie Overheidsinformatie, https://standaarden.overheid.nl/tooi), a real
-# NL-SBB/SKOS-AP-NL compliant Dutch government concept vocabulary published with a public SPARQL
-# endpoint. Each property shape below shares its sh:path with the matching property shape already
-# declared in skos-ap-nl.ttl - SHACL (and this renderer's own childrenForShape/propertiesForShape,
-# see shacl-everything's own CLAUDE.md) treats co-path property shapes as one logical property, so
-# this only adds shui:searchQuery/sh:in/sh:node to that property rather than redefining it.
+# with federated search for the "Harmonisatierelaties"/Matching Relationships group, against the
+# TOOI thesaurus (Thesaurus en Ontologie Overheidsinformatie,
+# https://standaarden.overheid.nl/tooi), a real NL-SBB/SKOS-AP-NL compliant Dutch government
+# concept vocabulary published with a public SPARQL endpoint. Each property shape below shares its
+# sh:path with the matching property shape already declared in skos-ap-nl.ttl - SHACL (and this
+# renderer's own childrenForShape/propertiesForShape, see shacl-everything's own CLAUDE.md) treats
+# co-path property shapes as one logical property, so this only adds
+# shui:searchQuery/sh:in/sh:node to that property rather than redefining it.
+#
+# Federated here: the Matching Relationships group (skos:broadMatch/narrowMatch/relatedMatch/
+# closeMatch/exactMatch) and the isothes: (ISO 25964 skos-thes) generic/partitive/instantial
+# relations - not plain skos:broader/narrower/related. skos-ap-nl.ttl's own
+# skosapnl:MappingRelationsMisuse shape requires the Match properties to link concepts in
+# *different* schemes, which is exactly what federating them against an external vocabulary like
+# TOOI is for. skos-ap-nl.ttl itself groups the isothes: relations with plain broader/narrower
+# (skosapnl:SemanticRelations/DisjointConceptAndCollection treat them as ordinary same-scheme
+# relations, not cross-scheme like Match) - federating them here anyway is a deliberate choice to
+# let a user reach into TOOI for these more specific relation types too, not a spec requirement.
 #
 # shui:searchQuery drives as-you-type search; sh:in's sh:select is the Dynamic-SHACL fallback for
 # a renderer that doesn't support shui:searchQuery (spec §10.1). shui:editor is asserted
@@ -32,21 +44,13 @@ skosapnl:TooiConceptLabelShape
   ] ;
   sh:property [
     sh:path skos:definition ;
-    shui:propertyRole shui:SubLabelRole ;
+    shui:propertyRole shui:ClassificationRole ;
     sh:order 2 ;
   ] .
 
-skosapnl:TooiConceptSchemeLabelShape
-  a sh:NodeShape ;
-  sh:property [
-    sh:path skos:prefLabel ;
-    shui:propertyRole shui:LabelRole ;
-    sh:order 1 ;
-  ] .
-
-skosapnl:Concept-related-TooiFederated
+skosapnl:Concept-broadMatch-TooiFederated
   a sh:PropertyShape ;
-  sh:path skos:related ;
+  sh:path skos:broadMatch ;
   sh:node skosapnl:TooiConceptLabelShape ;
   shui:editor shui:AutoCompleteEditor ;
   shui:searchQuery """
@@ -73,9 +77,9 @@ skosapnl:Concept-related-TooiFederated
     """ ;
   ] .
 
-skosapnl:Concept-broader-TooiFederated
+skosapnl:Concept-narrowMatch-TooiFederated
   a sh:PropertyShape ;
-  sh:path skos:broader ;
+  sh:path skos:narrowMatch ;
   sh:node skosapnl:TooiConceptLabelShape ;
   shui:editor shui:AutoCompleteEditor ;
   shui:searchQuery """
@@ -102,9 +106,9 @@ skosapnl:Concept-broader-TooiFederated
     """ ;
   ] .
 
-skosapnl:Concept-narrower-TooiFederated
+skosapnl:Concept-relatedMatch-TooiFederated
   a sh:PropertyShape ;
-  sh:path skos:narrower ;
+  sh:path skos:relatedMatch ;
   sh:node skosapnl:TooiConceptLabelShape ;
   shui:editor shui:AutoCompleteEditor ;
   shui:searchQuery """
@@ -131,17 +135,17 @@ skosapnl:Concept-narrower-TooiFederated
     """ ;
   ] .
 
-skosapnl:Concept-topConceptOf-TooiFederated
+skosapnl:Concept-closeMatch-TooiFederated
   a sh:PropertyShape ;
-  sh:path skos:topConceptOf ;
-  sh:node skosapnl:TooiConceptSchemeLabelShape ;
+  sh:path skos:closeMatch ;
+  sh:node skosapnl:TooiConceptLabelShape ;
   shui:editor shui:AutoCompleteEditor ;
   shui:searchQuery """
     PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
     SELECT DISTINCT ?value WHERE {
       SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
-        ?value a skos:ConceptScheme ;
-          skos:prefLabel ?searchLabel .
+        ?value a skos:Concept ;
+          (skos:prefLabel|skos:altLabel) ?searchLabel .
         BIND(IF(CONTAINS($uiLanguage, "-"), STRBEFORE($uiLanguage, "-"), $uiLanguage) AS ?uiPrimaryLanguage)
         FILTER(LANGMATCHES(LANG(?searchLabel), ?uiPrimaryLanguage))
         FILTER(CONTAINS(LCASE(?searchLabel), LCASE($searchTerm)))
@@ -153,16 +157,190 @@ skosapnl:Concept-topConceptOf-TooiFederated
       PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
       SELECT DISTINCT ?value1 WHERE {
         SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
-          ?value1 a skos:ConceptScheme .
+          ?value1 a skos:Concept .
         }
       }
       LIMIT 100
     """ ;
   ] .
 
-skosapnl:ConceptScheme-hasTopConcept-TooiFederated
+skosapnl:Concept-exactMatch-TooiFederated
   a sh:PropertyShape ;
-  sh:path skos:hasTopConcept ;
+  sh:path skos:exactMatch ;
+  sh:node skosapnl:TooiConceptLabelShape ;
+  shui:editor shui:AutoCompleteEditor ;
+  shui:searchQuery """
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+    SELECT DISTINCT ?value WHERE {
+      SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+        ?value a skos:Concept ;
+          (skos:prefLabel|skos:altLabel) ?searchLabel .
+        BIND(IF(CONTAINS($uiLanguage, "-"), STRBEFORE($uiLanguage, "-"), $uiLanguage) AS ?uiPrimaryLanguage)
+        FILTER(LANGMATCHES(LANG(?searchLabel), ?uiPrimaryLanguage))
+        FILTER(CONTAINS(LCASE(?searchLabel), LCASE($searchTerm)))
+      }
+    }
+  """ ;
+  sh:in [
+    sh:select """
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT DISTINCT ?value1 WHERE {
+        SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+          ?value1 a skos:Concept .
+        }
+      }
+      LIMIT 100
+    """ ;
+  ] .
+
+skosapnl:Concept-broaderGeneric-TooiFederated
+  a sh:PropertyShape ;
+  sh:path isothes:broaderGeneric ;
+  sh:node skosapnl:TooiConceptLabelShape ;
+  shui:editor shui:AutoCompleteEditor ;
+  shui:searchQuery """
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+    SELECT DISTINCT ?value WHERE {
+      SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+        ?value a skos:Concept ;
+          (skos:prefLabel|skos:altLabel) ?searchLabel .
+        BIND(IF(CONTAINS($uiLanguage, "-"), STRBEFORE($uiLanguage, "-"), $uiLanguage) AS ?uiPrimaryLanguage)
+        FILTER(LANGMATCHES(LANG(?searchLabel), ?uiPrimaryLanguage))
+        FILTER(CONTAINS(LCASE(?searchLabel), LCASE($searchTerm)))
+      }
+    }
+  """ ;
+  sh:in [
+    sh:select """
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT DISTINCT ?value1 WHERE {
+        SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+          ?value1 a skos:Concept .
+        }
+      }
+      LIMIT 100
+    """ ;
+  ] .
+
+skosapnl:Concept-narrowerGeneric-TooiFederated
+  a sh:PropertyShape ;
+  sh:path isothes:narrowerGeneric ;
+  sh:node skosapnl:TooiConceptLabelShape ;
+  shui:editor shui:AutoCompleteEditor ;
+  shui:searchQuery """
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+    SELECT DISTINCT ?value WHERE {
+      SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+        ?value a skos:Concept ;
+          (skos:prefLabel|skos:altLabel) ?searchLabel .
+        BIND(IF(CONTAINS($uiLanguage, "-"), STRBEFORE($uiLanguage, "-"), $uiLanguage) AS ?uiPrimaryLanguage)
+        FILTER(LANGMATCHES(LANG(?searchLabel), ?uiPrimaryLanguage))
+        FILTER(CONTAINS(LCASE(?searchLabel), LCASE($searchTerm)))
+      }
+    }
+  """ ;
+  sh:in [
+    sh:select """
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT DISTINCT ?value1 WHERE {
+        SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+          ?value1 a skos:Concept .
+        }
+      }
+      LIMIT 100
+    """ ;
+  ] .
+
+skosapnl:Concept-broaderPartitive-TooiFederated
+  a sh:PropertyShape ;
+  sh:path isothes:broaderPartitive ;
+  sh:node skosapnl:TooiConceptLabelShape ;
+  shui:editor shui:AutoCompleteEditor ;
+  shui:searchQuery """
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+    SELECT DISTINCT ?value WHERE {
+      SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+        ?value a skos:Concept ;
+          (skos:prefLabel|skos:altLabel) ?searchLabel .
+        BIND(IF(CONTAINS($uiLanguage, "-"), STRBEFORE($uiLanguage, "-"), $uiLanguage) AS ?uiPrimaryLanguage)
+        FILTER(LANGMATCHES(LANG(?searchLabel), ?uiPrimaryLanguage))
+        FILTER(CONTAINS(LCASE(?searchLabel), LCASE($searchTerm)))
+      }
+    }
+  """ ;
+  sh:in [
+    sh:select """
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT DISTINCT ?value1 WHERE {
+        SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+          ?value1 a skos:Concept .
+        }
+      }
+      LIMIT 100
+    """ ;
+  ] .
+
+skosapnl:Concept-narrowerPartitive-TooiFederated
+  a sh:PropertyShape ;
+  sh:path isothes:narrowerPartitive ;
+  sh:node skosapnl:TooiConceptLabelShape ;
+  shui:editor shui:AutoCompleteEditor ;
+  shui:searchQuery """
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+    SELECT DISTINCT ?value WHERE {
+      SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+        ?value a skos:Concept ;
+          (skos:prefLabel|skos:altLabel) ?searchLabel .
+        BIND(IF(CONTAINS($uiLanguage, "-"), STRBEFORE($uiLanguage, "-"), $uiLanguage) AS ?uiPrimaryLanguage)
+        FILTER(LANGMATCHES(LANG(?searchLabel), ?uiPrimaryLanguage))
+        FILTER(CONTAINS(LCASE(?searchLabel), LCASE($searchTerm)))
+      }
+    }
+  """ ;
+  sh:in [
+    sh:select """
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT DISTINCT ?value1 WHERE {
+        SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+          ?value1 a skos:Concept .
+        }
+      }
+      LIMIT 100
+    """ ;
+  ] .
+
+skosapnl:Concept-broaderInstantial-TooiFederated
+  a sh:PropertyShape ;
+  sh:path isothes:broaderInstantial ;
+  sh:node skosapnl:TooiConceptLabelShape ;
+  shui:editor shui:AutoCompleteEditor ;
+  shui:searchQuery """
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+    SELECT DISTINCT ?value WHERE {
+      SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+        ?value a skos:Concept ;
+          (skos:prefLabel|skos:altLabel) ?searchLabel .
+        BIND(IF(CONTAINS($uiLanguage, "-"), STRBEFORE($uiLanguage, "-"), $uiLanguage) AS ?uiPrimaryLanguage)
+        FILTER(LANGMATCHES(LANG(?searchLabel), ?uiPrimaryLanguage))
+        FILTER(CONTAINS(LCASE(?searchLabel), LCASE($searchTerm)))
+      }
+    }
+  """ ;
+  sh:in [
+    sh:select """
+      PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+      SELECT DISTINCT ?value1 WHERE {
+        SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
+          ?value1 a skos:Concept .
+        }
+      }
+      LIMIT 100
+    """ ;
+  ] .
+
+skosapnl:Concept-narrowerInstantial-TooiFederated
+  a sh:PropertyShape ;
+  sh:path isothes:narrowerInstantial ;
   sh:node skosapnl:TooiConceptLabelShape ;
   shui:editor shui:AutoCompleteEditor ;
   shui:searchQuery """
@@ -190,9 +368,14 @@ skosapnl:ConceptScheme-hasTopConcept-TooiFederated
   ] .
 
 skosapnl:Concept sh:property
-  skosapnl:Concept-related-TooiFederated ,
-  skosapnl:Concept-broader-TooiFederated ,
-  skosapnl:Concept-narrower-TooiFederated ,
-  skosapnl:Concept-topConceptOf-TooiFederated .
-
-skosapnl:ConceptScheme sh:property skosapnl:ConceptScheme-hasTopConcept-TooiFederated .
+  skosapnl:Concept-broadMatch-TooiFederated ,
+  skosapnl:Concept-narrowMatch-TooiFederated ,
+  skosapnl:Concept-relatedMatch-TooiFederated ,
+  skosapnl:Concept-closeMatch-TooiFederated ,
+  skosapnl:Concept-exactMatch-TooiFederated ,
+  skosapnl:Concept-broaderGeneric-TooiFederated ,
+  skosapnl:Concept-narrowerGeneric-TooiFederated ,
+  skosapnl:Concept-broaderPartitive-TooiFederated ,
+  skosapnl:Concept-narrowerPartitive-TooiFederated ,
+  skosapnl:Concept-broaderInstantial-TooiFederated ,
+  skosapnl:Concept-narrowerInstantial-TooiFederated .

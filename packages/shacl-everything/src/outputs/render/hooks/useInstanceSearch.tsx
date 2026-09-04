@@ -18,7 +18,7 @@ const SEARCH_DEBOUNCE_MS = 200;
 /**
  * Runs `shape`'s `shui:searchQuery` (asserted directly on the property shape, independent of
  * sh:in - see searchQuery.ts) for `search`, substituting the spec's reserved $searchTerm/
- * $uiLanguage parameters and resolving LabelRole/SubLabelRole/DepictionRole via sh:node the same
+ * $uiLanguage parameters and resolving LabelRole/ClassificationRole/DepictionRole via sh:node the same
  * way a federated sh:select does (see useSelectOptions.tsx) - the fulltext-search counterpart to
  * searchInstances, for backends with their own text index. Results are then filtered down to only
  * the values that still conform to `shape`'s other constraints (see validateSearchResults.ts, spec

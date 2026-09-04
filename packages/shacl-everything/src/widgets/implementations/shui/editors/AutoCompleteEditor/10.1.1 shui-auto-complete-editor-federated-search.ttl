@@ -54,7 +54,7 @@
     ] ;
     sh:property [
         sh:path rdfs:comment ;
-        shui:propertyRole shui:SubLabelRole ;
+        shui:propertyRole shui:ClassificationRole ;
         sh:order 2 ;
     ] ;
     sh:property [

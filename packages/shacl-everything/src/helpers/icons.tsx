@@ -14,6 +14,7 @@ import DragHandleIcon from "~icons/ic/round-drag-indicator";
 import ViolationIcon from "~icons/ic/round-error";
 import WarningIcon from "~icons/ic/round-warning";
 import InfoIcon from "~icons/ic/round-info";
+import GlobeIcon from "~icons/ic/round-public";
 
 export const Loading = LoadingTwotoneLoopIcon;
 export const EditNested = EditTwotoneLoopIcon;
@@ -31,3 +32,4 @@ export const DragHandle = DragHandleIcon;
 export const Violation = ViolationIcon;
 export const Warning = WarningIcon;
 export const Info = InfoIcon;
+export const Globe = GlobeIcon;
