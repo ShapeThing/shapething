@@ -15,6 +15,15 @@ import {
 
 const SEARCH_DEBOUNCE_MS = 200;
 
+// Whether `result`'s label or IRI is a whole-string ("full text") match for `search`, rather than
+// just containing it somewhere - used to boost such results to the top, the same way
+// buildSearchQuery's SPARQL scoring (query.ts) does for the local sh:class search.
+function isExactMatch(result: SearchResult, search: string): boolean {
+  if (!search) return false;
+  const needle = search.trim().toLowerCase();
+  return result.label?.toLowerCase() === needle || result.iri.value.toLowerCase() === needle;
+}
+
 /**
  * Runs `shape`'s `shui:searchQuery` (asserted directly on the property shape, independent of
  * sh:in - see searchQuery.ts) for `search`, substituting the spec's reserved $searchTerm/
@@ -39,18 +48,30 @@ async function runSearchQuery(
     await runFederatedQuery(substituted, shape, uiLanguage, corsProxyUrl),
   );
 
-  return results.flatMap((result): SearchResult[] =>
-    result.term.termType === "NamedNode"
-      ? [
-          {
-            iri: result.term,
-            label: result.label,
-            classification: result.classification,
-            depiction: result.depiction,
-          },
-        ]
-      : [],
-  );
+  return results
+    .flatMap((result): SearchResult[] =>
+      result.term.termType === "NamedNode"
+        ? [
+            {
+              iri: result.term,
+              label: result.label,
+              classification: result.classification,
+              depiction: result.depiction,
+            },
+          ]
+        : [],
+    )
+    .toSorted((a, b) => {
+      const aExact = isExactMatch(a, search);
+      const bExact = isExactMatch(b, search);
+      if (aExact !== bExact) return aExact ? -1 : 1;
+
+      if (a.label && b.label) {
+        return a.label.localeCompare(b.label);
+      }
+
+      return a.iri.value.localeCompare(b.iri.value);
+    });
 }
 
 /**

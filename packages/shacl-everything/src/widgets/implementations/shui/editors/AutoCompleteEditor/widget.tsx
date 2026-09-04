@@ -3,7 +3,7 @@ import { Localized } from "@fluent/react";
 import type { NamedNode, Quad } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
-import { Edit, Loading, Plus, Search } from "@/helpers/icons.tsx";
+import { Loading, Plus, Search } from "@/helpers/icons.tsx";
 import { rdf, sh } from "@/helpers/namespaces.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
 import { makeReactive } from "@/helpers/reactiveRdfStore.ts";

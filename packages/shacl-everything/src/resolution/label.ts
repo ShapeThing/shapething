@@ -291,8 +291,10 @@ export function depictionRolePropertyPaths(propertyShape: PropertyUIElement): Pr
 /**
  * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
  * node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole
- * shui:ClassificationRole - secondary, disambiguating text shown alongside the main LabelRole label
- * (e.g. a pseudonym next to a person's name). Mirrors labelRolePropertyPaths.
+ * shui:ClassificationRole - secondary, disambiguating info shown alongside the main LabelRole label
+ * (e.g. a pseudonym next to a person's name, or a linked concept's own scheme). The path may end on
+ * a literal directly or on a resource - see valueNodeClassification for how the latter then gets
+ * its own label resolved. Mirrors labelRolePropertyPaths.
  */
 export function classificationRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
   return propertyPathsByRole(propertyShape, shui("ClassificationRole"));
@@ -351,30 +353,40 @@ type ValueNodeClassificationOptions = {
 };
 
 /**
- * Secondary, disambiguating text for V: the best-language literal from a shui:ClassificationRole-
- * annotated path from V in the data graph (e.g. a pseudonym alongside a person's name). Unlike
- * valueNodeLabel there is no rdfs:label or lexical-value fallback - a value simply has no
- * classification when nothing matches. Not part of the spec; a project-specific extension mirroring
- * valueNodeLabel's step 2 only. Returns both the resolved literal itself (`term` - e.g. for a
- * consumer that needs its identity, not just its text) and its lexical form (`label`), the same
- * term+label shape used for the value node's own label/depiction.
+ * Secondary, disambiguating info for V: the best-language match from a shui:ClassificationRole-
+ * annotated path from V in the data graph (e.g. a pseudonym alongside a person's name, or a linked
+ * concept's own scheme). The path's end can be either a literal directly (e.g. skos:definition) or
+ * a resource (e.g. skos:inScheme, landing on a skos:ConceptScheme) - a resource is kept as `term`
+ * as-is (so e.g. a chip can still link out to it), with `label` resolved via valueNodeLabel *again*,
+ * this time rooted at that resource rather than V - the same recursive "find this term's own label"
+ * step a resource's own LabelRole/rdfs:label would otherwise apply to V itself. Not part of the
+ * spec; a project-specific extension mirroring valueNodeLabel's step 2 only for the initial
+ * ClassificationRole hop.
  */
 export function valueNodeClassification({
   term,
   propertyShape,
   languages,
-}: ValueNodeClassificationOptions): { term: Literal; label: string } | undefined {
+}: ValueNodeClassificationOptions): { term: Term; label: string } | undefined {
   if (term.termType === "Literal") return undefined;
 
   const { dataGraph } = propertyShape;
   const effLanguages = effectiveLanguages(propertyShape, languages ?? []);
-  const classifications = classificationRolePropertyPaths(propertyShape)
-    .flatMap((path) => walkPropertyPath(path, term, dataGraph))
-    .filter((value): value is Literal => value.termType === "Literal");
+  const classifications = classificationRolePropertyPaths(propertyShape).flatMap((path) =>
+    walkPropertyPath(path, term, dataGraph),
+  );
 
   const classification =
     classifications.length > 0 ? language(classifications, effLanguages) : undefined;
-  return classification ? { term: classification, label: classification.value } : undefined;
+  if (!classification) return undefined;
+  if (classification.termType === "Literal") {
+    return { term: classification, label: classification.value };
+  }
+
+  return {
+    term: classification,
+    label: valueNodeLabel({ term: classification, propertyShape, languages }).value,
+  };
 }
 
 type ValueNodeDepictionOptions = {
