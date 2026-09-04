@@ -50,6 +50,10 @@
     border: 1px solid var(--st-color-border);
     border-radius: var(--radius-2);
     box-shadow: var(--shadow-3);
+
+    &:empty {
+      display: none;
+    }
   }
 }
 

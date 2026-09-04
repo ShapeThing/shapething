@@ -2,7 +2,7 @@ import type { Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { groupLabel } from "@/resolution/label.ts";
+import { groupDescription, groupLabel } from "@/resolution/label.ts";
 import { defaultWidgets, getGroupWidget } from "@/widgets/registry.ts";
 import type { GroupWidgetRegistryEntry, Widgets } from "@/widgets/types.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
@@ -42,7 +42,19 @@ export class GroupUIElement {
    * groupLabel).
    */
   label(languages?: BCP47[]): string {
-    return groupLabel({ node: this.node, shapesGraph: this.shapesGraph, languages });
+    return groupLabel({
+      node: this.node,
+      shapesGraph: this.shapesGraph,
+      languages,
+    });
+  }
+
+  description(languages?: BCP47[]): string | undefined {
+    return groupDescription({
+      node: this.node,
+      shapesGraph: this.shapesGraph,
+      languages,
+    });
   }
 
   /**

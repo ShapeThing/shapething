@@ -43,7 +43,7 @@ skosapnl:TooiConceptLabelShape
     sh:order 1 ;
   ] ;
   sh:property [
-    sh:path skos:definition ;
+    sh:path skos:inScheme ;
     shui:propertyRole shui:ClassificationRole ;
     sh:order 2 ;
   ] .

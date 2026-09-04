@@ -35,6 +35,7 @@
 <#nameGroup>
     a sh:PropertyGroup ;
     sh:order 0 ;
+    rdfs:comment "The name of the person"@en, "De naam van de persoon"@nl ;
     rdfs:label "Name"@en, "Naam"@nl ;
     .
 

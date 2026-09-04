@@ -5,15 +5,18 @@
   background-color: var(--gray-0);
   border-radius: var(--radius-2);
   padding: var(--size-3);
-  color: var(--gray-8);
+  color: var(--gray-8) !important;
   /* Sized to content rather than shrink-to-fit-to-available-space - the latter is what let the
      tooltip render right at min-width against a cramped side instead of ever being considered
      for a comfier one; see Tooltip/index.tsx's recompute(), which picks the side and relies on
      this being the tooltip's real size regardless of which side it ends up rendered on. */
   width: max-content;
+  font-size: var(--font-size-small);
+  line-height: 1.5;
   max-width: var(--size-14);
   min-width: var(--size-10);
   white-space: normal;
+  font-weight: 400;
   overflow-wrap: break-word;
   position-anchor: var(--tooltip-anchor);
   position-visibility: anchors-visible;

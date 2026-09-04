@@ -82,3 +82,9 @@
   gap: var(--size-2);
   margin-top: var(--size-4);
 }
+
+.st-autocomplete-option__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
