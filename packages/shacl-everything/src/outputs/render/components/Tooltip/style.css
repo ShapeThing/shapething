@@ -93,7 +93,6 @@
 
 .tooltip-wrapper--bare {
   display: inline-flex;
-  vertical-align: middle;
   border: none;
 
   &:hover,

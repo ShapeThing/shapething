@@ -70,7 +70,7 @@ export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: W
           return {
             term: option,
             label: match?.label,
-            subLabel: match?.subLabel,
+            classification: match?.classification,
             depiction: match?.depiction,
           };
         })
@@ -98,7 +98,7 @@ export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: W
       ? {
           term,
           label: currentValueLookups[0].label,
-          subLabel: currentValueLookups[0].subLabel,
+          classification: currentValueLookups[0].classification,
           depiction: currentValueLookups[0].depiction,
         }
       : undefined);
@@ -169,7 +169,7 @@ export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: W
         <AutoCompleteOption
           term={term}
           label={current?.label}
-          subLabel={current?.subLabel}
+          classification={current?.classification}
           depiction={current?.depiction}
           resourceEditor={
             enableEditInPlace
@@ -217,7 +217,7 @@ export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: W
               <AutoCompleteOption
                 term={option.term}
                 label={option.label}
-                subLabel={option.subLabel}
+                classification={option.classification}
                 depiction={option.depiction}
               />
             </div>

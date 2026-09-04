@@ -14,7 +14,7 @@
         sh:path ex:likesPhilosopher ;
         sh:node <#philosopherShape> ;
         sh:in [
-            # This sh:select only projects ?value - its label, sub-label and depiction are resolved
+            # This sh:select only projects ?value - its label, classification and depiction are resolved
             # by the renderer itself via sh:node's shui:propertyRole declarations below (see
             # "Using Dynamic SHACL and shui:propertyRole").
             sh:select """

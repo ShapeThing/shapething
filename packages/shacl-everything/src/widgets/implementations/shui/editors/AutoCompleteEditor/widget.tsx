@@ -196,7 +196,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
             <AutoCompleteOption
               term={term}
               label={current?.label}
-              subLabel={current?.subLabel}
+              classification={current?.classification}
               depiction={current?.depiction}
             />
           ) : (
@@ -298,7 +298,7 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
                 <AutoCompleteOption
                   term={result.iri}
                   label={result.label}
-                  subLabel={result.subLabel}
+                  classification={result.classification}
                   depiction={result.depiction}
                   highlight={search}
                 />

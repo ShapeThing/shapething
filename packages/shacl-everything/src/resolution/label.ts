@@ -344,7 +344,7 @@ export function valueNodeLabel({ term, propertyShape, languages }: ValueNodeLabe
   return factory.literal(localName(term) ?? term.value);
 }
 
-type ValueNodeSubLabelOptions = {
+type ValueNodeClassificationOptions = {
   term: Term;
   propertyShape: PropertyUIElement;
   languages?: BCP47[];
@@ -353,24 +353,28 @@ type ValueNodeSubLabelOptions = {
 /**
  * Secondary, disambiguating text for V: the best-language literal from a shui:ClassificationRole-
  * annotated path from V in the data graph (e.g. a pseudonym alongside a person's name). Unlike
- * valueNodeLabel there is no rdfs:label or lexical-value fallback - a value simply has no sub-label
- * when nothing matches. Not part of the spec; a project-specific extension mirroring valueNodeLabel's
- * step 2 only.
+ * valueNodeLabel there is no rdfs:label or lexical-value fallback - a value simply has no
+ * classification when nothing matches. Not part of the spec; a project-specific extension mirroring
+ * valueNodeLabel's step 2 only. Returns both the resolved literal itself (`term` - e.g. for a
+ * consumer that needs its identity, not just its text) and its lexical form (`label`), the same
+ * term+label shape used for the value node's own label/depiction.
  */
-export function valueNodeSubLabel({
+export function valueNodeClassification({
   term,
   propertyShape,
   languages,
-}: ValueNodeSubLabelOptions): Literal | undefined {
+}: ValueNodeClassificationOptions): { term: Literal; label: string } | undefined {
   if (term.termType === "Literal") return undefined;
 
   const { dataGraph } = propertyShape;
   const effLanguages = effectiveLanguages(propertyShape, languages ?? []);
-  const subLabels = classificationRolePropertyPaths(propertyShape)
+  const classifications = classificationRolePropertyPaths(propertyShape)
     .flatMap((path) => walkPropertyPath(path, term, dataGraph))
     .filter((value): value is Literal => value.termType === "Literal");
 
-  return subLabels.length > 0 ? language(subLabels, effLanguages) : undefined;
+  const classification =
+    classifications.length > 0 ? language(classifications, effLanguages) : undefined;
+  return classification ? { term: classification, label: classification.value } : undefined;
 }
 
 type ValueNodeDepictionOptions = {

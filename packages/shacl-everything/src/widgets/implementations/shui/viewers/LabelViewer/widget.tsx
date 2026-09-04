@@ -9,6 +9,7 @@ import NodeUIElementChildren from "@/outputs/render/modes/view/NodeUIElementChil
 import { shapesTargetingNode } from "@/resolution/targets.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
+import "@/outputs/render/components/ValueChip/style.css";
 import "./style.css";
 
 /**
@@ -24,6 +25,11 @@ import "./style.css";
  * view mode doesn't lose it. A broken/slow-to-load depiction just hides itself (onError) rather
  * than leaving a broken-image icon next to a label that's otherwise perfectly fine to show.
  *
+ * A shui:ClassificationRole, when one resolves, renders as a chip alongside the main label - the
+ * same secondary disambiguating text AutoCompleteOption/EnumSelectEditor already resolve for this
+ * same value while editing (see useResolvedValueNode), so view mode doesn't lose it either. Reuses
+ * ValueChip's own pill styling (not the component itself - there's nothing to remove here).
+ *
  * When Environment.enableViewInPlace is on and the value both already exists in dataGraph and is
  * targeted by at least one shape in shapesGraph (resolution/targets.ts's shapesTargetingNode),
  * clicking the link opens that resource read-only in a Modal instead of navigating away - a plain
@@ -36,7 +42,7 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
   const { enableViewInPlace } = useEnvironment();
   const [hasImageError, setHasImageError] = useState(false);
   const [open, setOpen] = useState(false);
-  const { label, depiction } = useResolvedValueNode(shape, term, [activeLanguage]);
+  const { label, classification, depiction } = useResolvedValueNode(shape, term, [activeLanguage]);
   // SVGs/data URIs render directly; anything else goes through wsrv.nl to resize a (typically
   // much larger) hotlinked source image down to icon size - same reasoning as AutoCompleteOption.
   const isDirectRenderable =
@@ -66,6 +72,12 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
     });
   }, [open, canViewInPlace, shape, term, nodeShapes]);
 
+  const classificationChip = classification && (
+    <span className="st-value-chip">
+      <span className="st-value-chip__label">{classification.label}</span>
+    </span>
+  );
+
   const image = depiction && !hasImageError && (
     <img
       loading="lazy"
@@ -85,6 +97,7 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
       <span className="st-label-viewer">
         {image}
         {label}
+        {classificationChip}
       </span>
     );
   }
@@ -120,6 +133,7 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
         {image}
         {label}
       </a>
+      {classificationChip}
       {canViewInPlace && (
         <Modal open={open} onClose={() => setOpen(false)} title={label}>
           {nodeUiElement && <NodeUIElementChildren nodeUiElement={nodeUiElement} />}

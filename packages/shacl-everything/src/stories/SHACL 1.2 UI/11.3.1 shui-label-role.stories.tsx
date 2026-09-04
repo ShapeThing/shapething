@@ -1,5 +1,5 @@
 import type { StoryObj } from "@storybook/react-vite";
-import { within } from "storybook/test";
+import { userEvent, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 
@@ -15,20 +15,54 @@ export const labelRole: Story = {
   args: argsByTestFile("11.3.1 shui-label-role.ttl", import.meta.url),
 };
 
-// A minimal skos:Concept, stripped down to just the field this demo is about: picking a
-// skos:ConceptScheme via shui:AutoCompleteEditor, showing its rdfs:label through shui:LabelRole -
-// skos:ConceptScheme is labelled via rdfs:label here (unlike skos:Concept itself, which SKOS
-// labels via skos:prefLabel - see 11.3.1 shui-label-role.ttl above). Local-only for now (searching
-// ConceptScheme instances already in this fixture's own dataGraph); a federated field
-// (skos:topConceptOf, against a real external SPARQL endpoint) follows the same pattern already
-// used by Application profiles/NL SBB's Concept story.
+// A minimal skos:Concept, stripped down to just the two fields this demo is about: picking
+// *another concept* via shui:AutoCompleteEditor (one field local, one federated against the real
+// TOOI thesaurus), each showing that concept's own skos:prefLabel as its main label and its
+// skos:ConceptScheme's own name as a shui:ClassificationRole chip - see <#conceptLabelShape>'s
+// sequence path (skos:inScheme (rdfs:label|skos:prefLabel)) in the .ttl.
 export const labelRoleAutoComplete: Story = {
-  name: "AutoCompleteEditor resolves a linked skos:ConceptScheme's rdfs:label via shui:LabelRole",
-  args: argsByTestFile("11.3.1 shui-label-role-autocomplete.ttl", import.meta.url),
+  name: "AutoCompleteEditor resolves a linked Concept's own ConceptScheme via shui:ClassificationRole",
+  args: {
+    ...argsByTestFile("11.3.1 shui-label-role-autocomplete.ttl", import.meta.url),
+    // TOOI only labels its concepts/schemes in Dutch (see the federated field's linked example) -
+    // matches Application profiles/NL SBB's own Concept story, which federates against the same
+    // endpoint.
+    interfaceLanguage: "nl-NL",
+    contentLanguage: "nl-NL",
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // <#data> already links skos:inScheme ex:transportScheme - the resolved rdfs:label must show
-    // immediately, with no search interaction needed.
-    await canvas.findByText("Means of transport");
+    // <#data> already links skos:broader ex:vervoermiddel - both its own prefLabel and its
+    // scheme's ClassificationRole label must resolve immediately, with no search interaction
+    // needed.
+    await canvas.findByText("Vervoermiddel");
+    await canvas.findByText("Vervoermiddelen");
+    // The federated field's own already-linked value (skos:broadMatch tooi:gemeente) - resolved
+    // over the network against the real TOOI endpoint, same as the local field above.
+    await canvas.findByText("gemeente", {}, { timeout: 10000 });
+    await canvas.findByText("Bestuurslagen", {}, { timeout: 10000 });
+
+    // Dropdown *search results*, not just the already-applied value, must resolve their
+    // ClassificationRole chip too - both for a local (dataGraph) search and a federated
+    // (shui:searchQuery, real TOOI endpoint) one.
+    const localField = (
+      await canvas.findByText("Breder begrip (lokaal)")
+    ).closest(".st-form-element") as HTMLElement;
+    await userEvent.click(localField.querySelector(".st-edit-button") as HTMLElement);
+    await userEvent.type(within(localField).getByRole("combobox"), "dier");
+    const localListbox = await within(localField).findByRole("listbox");
+    await within(localListbox).findByText("Dieren", {}, { timeout: 10000 });
+
+    const federatedField = (
+      await canvas.findByText("Bredere overeenkomst (gefedereerd, TOOI)")
+    ).closest(".st-form-element") as HTMLElement;
+    await userEvent.click(federatedField.querySelector(".st-edit-button") as HTMLElement);
+    await userEvent.type(within(federatedField).getByRole("combobox"), "gemeente");
+    const federatedListbox = await within(federatedField).findByRole(
+      "listbox",
+      {},
+      { timeout: 10000 },
+    );
+    await within(federatedListbox).findByText("Bestuurslagen", {}, { timeout: 15000 });
   },
 };

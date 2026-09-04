@@ -9,16 +9,28 @@
 .st-form-element__label {
   font-weight: bold;
   height: var(--size-6);
+  display: flex;
+  align-items: center;
   line-height: var(--size-6);
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 100%;
   color: var(--st-color-text);
 }
 
+/* The truncation - and the ::first-letter rule below - live on this inner span rather than
+   .st-form-element__label itself: first-letter can't target a flex container, only a block
+   container/list-item/table-cell, and the label above has to stay display:flex. As the label's
+   sole flex item this span gets CSS-blockified into a block box, which first-letter can target;
+   min-width:0 overrides the flex item's content-based minimum so it can actually shrink to
+   trigger the ellipsis. */
+.st-form-element__label-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
 /* Correct casing can not be achieved in the browser without JS */
-.st-form-element__label::first-letter {
+.st-form-element__label-text::first-letter {
   text-transform: uppercase;
 }
 

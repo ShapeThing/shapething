@@ -95,7 +95,7 @@ EditModeWrapper (modes/edit/index.tsx)        — <form>, wraps in ValidationCon
 
 ### Value-node label resolution (`resolution/`)
 
-`resolution/label.ts` implements the spec's "Value Node Labels" section: `valueNodeLabel`/`valueNodeSubLabel`/`valueNodeDepiction` find a property shape's `sh:node`, look for that node shape's own `sh:property` entries annotated `shui:propertyRole` (`shui:LabelRole`/`ClassificationRole`/`DepictionRole`), and walk that path (via `structure/paths/`) from the value term over `dataGraph` to find the best-language literal (or image IRI). `resolution/language.ts` + `resolution/globalConfiguration.ts` implement the spec's "8.1 Language Resolution" / "3.4 Global Configuration" clauses (a `shui:Configuration`/`sh:Graph` subject's `shui:languagePreference` ordered list, layered under the live UI-selected language). Don't hand-roll label/language lookup elsewhere — route through these.
+`resolution/label.ts` implements the spec's "Value Node Labels" section: `valueNodeLabel`/`valueNodeClassification`/`valueNodeDepiction` find a property shape's `sh:node`, look for that node shape's own `sh:property` entries annotated `shui:propertyRole` (`shui:LabelRole`/`ClassificationRole`/`DepictionRole`), and walk that path (via `structure/paths/`) from the value term over `dataGraph` to find the best-language literal (or image IRI). `resolution/language.ts` + `resolution/globalConfiguration.ts` implement the spec's "8.1 Language Resolution" / "3.4 Global Configuration" clauses (a `shui:Configuration`/`sh:Graph` subject's `shui:languagePreference` ordered list, layered under the live UI-selected language). Don't hand-roll label/language lookup elsewhere — route through these.
 
 ### Federated & local search (`outputs/render/hooks/query.ts`)
 

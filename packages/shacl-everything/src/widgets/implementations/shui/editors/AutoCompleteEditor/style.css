@@ -69,6 +69,9 @@
   /* Every other row gets its left inset from AutoCompleteOption's own depiction/spacer - this row
      renders st-create-option directly instead, so it needs the same inset applied here. */
   padding-inline-start: var(--size-2);
+  position: sticky;
+  bottom: 0;
+  background-color: white;
 }
 
 .st-autocomplete__create-actions {
