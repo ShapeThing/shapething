@@ -27,7 +27,7 @@ export default {
 const federatedFiles = ["skos-ap-nl.ttl", "skos-ap-nl-tooi-federation.ttl"];
 
 export const concept: Story = {
-  name: "Concept",
+  name: "Concept (with federation)",
   args: {
     ...argsByTestFile(federatedFiles, import.meta.url),
     nodeShapes: [factory.namedNode("http://nlbegrip.nl/def/skosapnl#Concept")],
@@ -35,7 +35,7 @@ export const concept: Story = {
 };
 
 export const conceptScheme: Story = {
-  name: "ConceptScheme",
+  name: "ConceptScheme (with federation)",
   args: {
     ...argsByTestFile(federatedFiles, import.meta.url),
     nodeShapes: [factory.namedNode("http://nlbegrip.nl/def/skosapnl#ConceptScheme")],

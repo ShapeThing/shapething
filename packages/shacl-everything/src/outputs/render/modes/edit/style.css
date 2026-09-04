@@ -2,6 +2,25 @@
   font-weight: normal;
   font-size: var(--st-font-size-small);
   color: var(--st-color-text-muted);
+  margin-inline-start: var(--size-1);
+}
+
+.st-property-search-icon {
+  display: inline-flex;
+  align-items: center;
+  margin-inline-start: var(--size-1);
+  color: var(--st-color-text-muted);
+  cursor: help;
+}
+
+.st-property-search-icon svg {
+  width: var(--size-3);
+  height: var(--size-3);
+}
+
+.st-property-search-icon:hover,
+.st-property-search-icon:focus {
+  color: var(--st-primary-color);
 }
 
 .st-property-items {

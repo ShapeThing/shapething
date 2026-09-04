@@ -18,7 +18,7 @@ import "./style.css";
  * selected values, an ordinary exact-match constraint. `sh:in` on the shape itself
  * (already spec-standard) supplies the option list directly when declared; a `sh:in [ sh:select ]`
  * (the same federated-query form EnumSelectEditor's own dropdown supports, see
- * structure/selectQuery.ts) resolves its options - and their LabelRole/SubLabelRole/DepictionRole
+ * structure/selectQuery.ts) resolves its options - and their LabelRole/ClassificationRole/DepictionRole
  * labels, see useSelectOptions - via Comunica instead; otherwise this falls back to every value
  * actually found in the data (`values`, see structure/facetValues.ts).
  *
