@@ -39,11 +39,6 @@
   cursor: pointer;
 }
 
-.st-autocomplete-option__sub-label {
-  color: var(--st-color-text-muted);
-  font-size: var(--st-font-size-small);
-}
-
 .st-autocomplete-option__match {
   font-weight: bold;
   background-color: transparent;

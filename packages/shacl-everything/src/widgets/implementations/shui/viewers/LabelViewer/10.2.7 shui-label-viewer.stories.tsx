@@ -17,6 +17,23 @@ export const shuiLabelViewer: Story = {
   args: { ...argsByTestFile("10.2.7 shui-label-viewer.ttl", import.meta.url), mode: "view" },
 };
 
+// ex:acme's schema:industry is annotated shui:ClassificationRole (see
+// <#organizationShape>) - secondary, disambiguating text shown as a chip alongside the main
+// rdfs:label, mirroring what AutoCompleteOption/EnumSelectEditor already show for this same role
+// while editing (see useResolvedValueNode).
+export const shuiLabelViewerClassificationRole: Story = {
+  name: "shui:ClassificationRole renders as a chip alongside the label",
+  args: {
+    ...argsByTestFile("10.2.7 shui-label-viewer-classification-role.ttl", import.meta.url),
+    mode: "view",
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText("ACME Corp");
+    await canvas.findByText("Manufacturing");
+  },
+};
+
 export const shuiLabelViewerViewInPlace: Story = {
   name: "Environment.enableViewInPlace opens a shaped, already-in-dataGraph value in a modal",
   args: {

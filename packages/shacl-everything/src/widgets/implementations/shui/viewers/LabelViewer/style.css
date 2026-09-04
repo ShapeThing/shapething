@@ -11,3 +11,9 @@
   object-fit: cover;
   border-radius: var(--radius-1);
 }
+
+/* The classification chip is a sibling, not a child, of .st-label-viewer (see widget.tsx) -
+   it renders outside the <a> so a shui:ClassificationRole badge is never part of the link. */
+.st-label-viewer + .st-value-chip {
+  margin-inline-start: var(--size-1);
+}

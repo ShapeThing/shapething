@@ -13,6 +13,7 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 500;
 }
 
 .st-value-chip__iri {
@@ -42,4 +43,34 @@
   &:focus {
     color: var(--st-primary-color);
   }
+}
+
+.st-value-chip--colored--2 {
+  position: relative;
+  background: none;
+  border: none;
+
+  &::after {
+    content: "";
+    position: absolute;
+    border-radius: var(--radius-2);
+    z-index: -1;
+    inset: 0;
+    opacity: 0.3;
+    background: linear-gradient(10deg, var(--color-0), var(--color-1));
+  }
+}
+
+.st-value-chip--small .st-value-chip__label {
+  font-size: calc(var(--size-3) * 0.7);
+  text-transform: lowercase;
+  letter-spacing: 0.05em;
+  font-style: italic;
+  color: var(--gray-8);
+}
+.st-value-chip--medium .st-value-chip__label {
+  font-size: var(--size-3);
+}
+.st-value-chip--large .st-value-chip__label {
+  font-size: calc(var(--size-3) * 1.3);
 }

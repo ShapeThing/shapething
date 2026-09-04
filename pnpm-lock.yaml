@@ -441,6 +441,9 @@ importers:
       shacl-engine:
         specifier: github:rdf-ext/shacl-engine#1d111fc772a71ec2118eed2974709c2b04f47510
         version: https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510(patch_hash=c074d840216d2fbe01b6c027a051d6af59ddc3c83c9efbaaf56d523c6debc41a)
+      string-to-color-gradient:
+        specifier: ^1.0.13
+        version: 1.0.13
       string-to-stream:
         specifier: ^3.0.1
         version: 3.0.1
@@ -7787,6 +7790,10 @@ packages:
     resolution: {integrity: sha512-r4ESw/IlusD17lgQi1O20Fa3qNnsckR126TdUuBgAu7GBYSIPvdNyONd3Zrxh0xCwA4+6w/TDArBPsMvhur+KQ==}
     engines: {node: '>= 0.10'}
 
+  crypto-js@4.2.0:
+    resolution: {integrity: sha512-KALDyEYgpY+Rlob/iriUtjV6d5Eq+Y191A5g4UqLAi8CyGP9N1+FdVbkc1SxKc2r4YAYqG8JzO2KGL+AizD70Q==}
+    deprecated: Active development of CryptoJS has been discontinued. This library is no longer maintained.
+
   css-select@5.2.2:
     resolution: {integrity: sha512-TizTzUddG/xYLA3NXodFM0fSbNizXjOKhqiQQwvhlspadZokn1KDy0NZFS0wuEubIYAV5/c1/lAr0TaaFXEXzw==}
 
@@ -10669,6 +10676,9 @@ packages:
     resolution: {integrity: sha512-aqD2Q0144Z+/RqG52NeHEkZauTAUWJO8c6yTftGJKO3Tja5tUgIfmIl6kExvhtxSDP7fXB6DvzkfMpCd/F3G+Q==}
     engines: {node: '>=0.6.19'}
 
+  string-to-color-gradient@1.0.13:
+    resolution: {integrity: sha512-xgkUYtTA2O0kmsZvCtXCxxJm9nnhlHoJbhAydWrRZMkkt+rYKERBbdC6zidjsCskCm1nBJRyJARIR/HIHhC8ZA==}
+
   string-to-stream@3.0.1:
     resolution: {integrity: sha512-Hl092MV3USJuUCC6mfl9sPzGloA3K5VwdIeJjYIkXY/8K+mUvaeEabWJgArp+xXrsWxCajeT2pc4axbVhIZJyg==}
 
@@ -10874,6 +10884,9 @@ packages:
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
+
+  tinycolor2@1.6.0:
+    resolution: {integrity: sha512-XPaBkWQJdsf3pLKJV9p4qN/S+fm2Oj8AIPo1BTUhg5oxkvm9+SVEGFdhyOz7tTdUTfvxMiAs4sp6/eZO2Ew+pw==}
 
   tinyexec@0.3.2:
     resolution: {integrity: sha512-KQQR9yN7R5+OSwaK0XQoj22pwHoTlgYqmUscPYoknOoWCWfj/5/ABTMRi69FrKU5ffPVh5QcFikpWJI/P1ocHA==}
@@ -24138,6 +24151,8 @@ snapshots:
       randombytes: 2.1.0
       randomfill: 1.0.4
 
+  crypto-js@4.2.0: {}
+
   css-select@5.2.2:
     dependencies:
       boolbase: 1.0.0
@@ -28292,6 +28307,11 @@ snapshots:
 
   string-argv@0.3.2: {}
 
+  string-to-color-gradient@1.0.13:
+    dependencies:
+      crypto-js: 4.2.0
+      tinycolor2: 1.6.0
+
   string-to-stream@3.0.1:
     dependencies:
       readable-stream: 3.6.2
@@ -28532,6 +28552,8 @@ snapshots:
   tiny-set-immediate@1.0.2: {}
 
   tinybench@2.9.0: {}
+
+  tinycolor2@1.6.0: {}
 
   tinyexec@0.3.2: {}
 

@@ -61,7 +61,7 @@ export default function FormElement({
             title={labelTitle}
             lang={activeInterfaceLanguage}
           >
-            {label}
+            <span className="st-form-element__label-text">{label}</span>
           </label>
         )}
         {showColon && label && (

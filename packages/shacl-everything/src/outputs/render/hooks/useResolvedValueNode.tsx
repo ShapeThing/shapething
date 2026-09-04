@@ -1,17 +1,17 @@
 import type { NamedNode, Term } from "@rdfjs/types";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
-import { valueNodeDepiction, valueNodeLabel, valueNodeSubLabel } from "@/resolution/label.ts";
+import { valueNodeClassification, valueNodeDepiction, valueNodeLabel } from "@/resolution/label.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 
 export type ResolvedValueNode = {
   label: string;
-  subLabel?: string;
+  classification?: { term: Term; label: string };
   depiction?: NamedNode;
 };
 
 /**
- * A value node's label/subLabel/depiction - same roles as valueNodeLabel/valueNodeSubLabel/
+ * A value node's label/classification/depiction - same roles as valueNodeLabel/valueNodeClassification/
  * valueNodeDepiction (resolution/label.ts), but also covering a value whose LabelRole/DepictionRole
  * only exist on a remote endpoint (e.g. a federated `sh:in [ sh:select ... ]` result like a
  * dbpedia country IRI, which has no local triples of its own to walk). Mirrors AutoCompleteEditor's
@@ -28,7 +28,7 @@ export function useResolvedValueNode(
   languages: BCP47[],
 ): ResolvedValueNode {
   const localLabel = valueNodeLabel({ term, propertyShape: shape, languages });
-  const localSubLabel = valueNodeSubLabel({ term, propertyShape: shape, languages });
+  const localClassification = valueNodeClassification({ term, propertyShape: shape, languages });
   const localDepiction = valueNodeDepiction({ term, propertyShape: shape });
 
   const remoteCandidates = term.termType === "NamedNode" ? [term] : [];
@@ -36,7 +36,7 @@ export function useResolvedValueNode(
 
   return {
     label: resolved?.label ?? localLabel.value,
-    subLabel: resolved?.subLabel ?? localSubLabel?.value,
+    classification: resolved?.classification ?? localClassification,
     depiction: resolved?.depiction ?? localDepiction,
   };
 }

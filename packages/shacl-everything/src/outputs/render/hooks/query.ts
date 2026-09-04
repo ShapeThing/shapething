@@ -20,7 +20,7 @@ const IRI_MATCH_WEIGHT = 1;
 export type ResolvedTerm = {
   term: Term;
   label?: string;
-  subLabel?: string;
+  classification?: { term: Term; label: string };
   depiction?: NamedNode;
 };
 
@@ -29,7 +29,7 @@ export type ResolvedTerm = {
 export type SearchResult = {
   iri: NamedNode;
   label?: string;
-  subLabel?: string;
+  classification?: { term: Term; label: string };
   depiction?: NamedNode;
 };
 
@@ -87,14 +87,17 @@ function toResolvedTerms(bindings: Bindings[]): ResolvedTerm[] {
     if (!term) return [];
 
     const labelTerm = binding.get("label");
-    const subLabelTerm = binding.get("subLabel");
+    const classificationTerm = binding.get("classification");
     const depictionTerm = binding.get("depiction");
 
     return [
       {
         term,
         label: labelTerm?.termType === "Literal" ? labelTerm.value : undefined,
-        subLabel: subLabelTerm?.termType === "Literal" ? subLabelTerm.value : undefined,
+        classification:
+          classificationTerm?.termType === "Literal"
+            ? { term: classificationTerm, label: classificationTerm.value }
+            : undefined,
         depiction: depictionTerm?.termType === "NamedNode" ? depictionTerm : undefined,
       },
     ];
@@ -130,15 +133,15 @@ export async function runQuery(
  * callers can rely on array order rather than re-sorting client-side. `labelPaths` are SPARQL
  * property path expressions (see toSparql.ts) from a candidate instance to its label literal(s) -
  * left out of the scoring entirely when there are none, so a class with no shui:LabelRole still
- * searches by IRI alone. `subLabelPaths` and `depictionPaths` are walked the same way to bind
- * `?subLabel`/`?depiction` alongside each result. Unlike sh:in's role resolution (see
+ * searches by IRI alone. `classificationPaths` and `depictionPaths` are walked the same way to bind
+ * `?classification`/`?depiction` alongside each result. Unlike sh:in's role resolution (see
  * buildRoleLookupQuery), these roles can't be split into a separate lookup afterwards - the label
  * match has to happen inside the ranking query itself, since it's what's being ranked on.
  */
 export function buildSearchQuery(
   classIri: NamedNode,
   labelPaths: string[],
-  subLabelPaths: string[],
+  classificationPaths: string[],
   depictionPaths: string[],
   search: string,
 ): string {
@@ -149,8 +152,10 @@ export function buildSearchQuery(
     labelPaths.length > 0
       ? `if(bound(?iriLabel) && contains(lcase(str(?iriLabel)), "${needle}"), ${LABEL_MATCH_WEIGHT}, 0)`
       : "0";
-  const subLabelPattern =
-    subLabelPaths.length > 0 ? `optional { ?value ${subLabelPaths.join("|")} ?iriSubLabel }` : "";
+  const classificationPattern =
+    classificationPaths.length > 0
+      ? `optional { ?value ${classificationPaths.join("|")} ?iriClassification }`
+      : "";
   const depictionPattern =
     depictionPaths.length > 0
       ? `optional { ?value ${depictionPaths.join("|")} ?iriDepiction }`
@@ -158,10 +163,10 @@ export function buildSearchQuery(
 
   return `
     ${queryPrefixes}
-    select ?value (sample(?iriLabel) as ?label) (sample(?iriSubLabel) as ?subLabel) (sample(?iriDepiction) as ?depiction) (max(?matchScore) as ?score) where {
+    select ?value (sample(?iriLabel) as ?label) (sample(?iriClassification) as ?classification) (sample(?iriDepiction) as ?depiction) (max(?matchScore) as ?score) where {
       ?value a <${classIri.value}> .
       ${labelPattern}
-      ${subLabelPattern}
+      ${classificationPattern}
       ${depictionPattern}
       bind(${labelScoreExpression} as ?labelScore)
       bind(if(contains(lcase(str(?value)), "${needle}"), ${IRI_MATCH_WEIGHT}, 0) as ?iriScore)
@@ -178,7 +183,7 @@ export function buildSearchQuery(
  * A SPARQL query resolving every one of `values` (e.g. a set of sh:in options, a property's
  * current value, or the results of a federated sh:select/shui:searchQuery) to its LabelRole label,
  * ClassificationRole text and DepictionRole image in one round trip, via a single `values` clause instead
- * of one query per value. `uiLanguage` is optional - when given, a label/subLabel only counts if it
+ * of one query per value. `uiLanguage` is optional - when given, a label/classification only counts if it
  * matches that language (or has none), the way a federated lookup needs to disambiguate a remote
  * endpoint's multi-language literals; local-only lookups leave it out and take whatever's there,
  * the same as `?value`'s own rdfs:label would. `endpoint`, when given, wraps the whole lookup in
@@ -188,7 +193,7 @@ export function buildSearchQuery(
 function buildRoleLookupQuery(
   values: Term[],
   labelPaths: string[],
-  subLabelPaths: string[],
+  classificationPaths: string[],
   depictionPaths: string[],
   uiLanguage: string | undefined,
   endpoint: string | undefined,
@@ -203,9 +208,9 @@ function buildRoleLookupQuery(
   const patterns = [
     labelPaths.length > 0 &&
       `optional { ?value ${labelPaths.join("|")} ?roleLabel${languageFilter("?roleLabel")} }`,
-    subLabelPaths.length > 0 &&
-      `optional { ?value ${subLabelPaths.join("|")} ?roleSubLabel${languageFilter(
-        "?roleSubLabel",
+    classificationPaths.length > 0 &&
+      `optional { ?value ${classificationPaths.join("|")} ?roleClassification${languageFilter(
+        "?roleClassification",
       )} }`,
     depictionPaths.length > 0 && `optional { ?value ${depictionPaths.join("|")} ?roleDepiction }`,
   ]
@@ -219,7 +224,7 @@ function buildRoleLookupQuery(
 
   return `
     ${queryPrefixes}
-    select ?value (sample(?roleLabel) as ?label) (sample(?roleSubLabel) as ?subLabel) (sample(?roleDepiction) as ?depiction) where {
+    select ?value (sample(?roleLabel) as ?label) (sample(?roleClassification) as ?classification) (sample(?roleDepiction) as ?depiction) where {
       ${where}
     }
     group by ?value
@@ -242,17 +247,17 @@ async function resolveRoles(
   if (values.length === 0) return [];
 
   const labelPaths = labelRolePropertyPaths(propertyShape).map(toSparql);
-  const subLabelPaths = classificationRolePropertyPaths(propertyShape).map(toSparql);
+  const classificationPaths = classificationRolePropertyPaths(propertyShape).map(toSparql);
   const depictionPaths = depictionRolePropertyPaths(propertyShape).map(toSparql);
 
-  if (labelPaths.length + subLabelPaths.length + depictionPaths.length === 0) {
+  if (labelPaths.length + classificationPaths.length + depictionPaths.length === 0) {
     return values.map((term) => ({ term }));
   }
 
   const query = buildRoleLookupQuery(
     values,
     labelPaths,
-    subLabelPaths,
+    classificationPaths,
     depictionPaths,
     options.uiLanguage,
     options.endpoint,
@@ -278,9 +283,9 @@ export async function searchInstances(
   if (!classIri) return [];
 
   const labelPaths = labelRolePropertyPaths(shape).map(toSparql);
-  const subLabelPaths = classificationRolePropertyPaths(shape).map(toSparql);
+  const classificationPaths = classificationRolePropertyPaths(shape).map(toSparql);
   const depictionPaths = depictionRolePropertyPaths(shape).map(toSparql);
-  const query = buildSearchQuery(classIri, labelPaths, subLabelPaths, depictionPaths, search);
+  const query = buildSearchQuery(classIri, labelPaths, classificationPaths, depictionPaths, search);
 
   return toSearchResults(await runQuery(query, shape, corsProxyUrl));
 }

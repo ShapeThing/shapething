@@ -61,6 +61,7 @@
     "react-dom": "^19.2.7",
     "react-error-boundary": "^6.1.2",
     "shacl-engine": "github:rdf-ext/shacl-engine#1d111fc772a71ec2118eed2974709c2b04f47510",
+    "string-to-color-gradient": "^1.0.13",
     "string-to-stream": "^3.0.1"
   },
   "devDependencies": {

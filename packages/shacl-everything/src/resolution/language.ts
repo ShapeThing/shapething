@@ -30,7 +30,7 @@ export function configuredLanguages(
 
 /**
  * 8.1 Language Resolution's priority order for a VALUE node's own label (valueNodeLabel/
- * valueNodeSubLabel): 1) sh:languageIn declared on `propertyShape` (already cross-shape-intersected
+ * valueNodeClassification): 1) sh:languageIn declared on `propertyShape` (already cross-shape-intersected
  * via PropertyUIElement.get()'s keepListIntersection resolution), 2) the caller-supplied `languages`,
  * 3) shui:languagePreference. Unlike configuredLanguages, sh:languageIn is included here - it's
  * exactly the axis that governs which language of this property's own content is preferred.

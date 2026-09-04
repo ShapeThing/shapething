@@ -16,6 +16,8 @@ import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 import type { Widgets } from "@/widgets/types.ts";
+import { stringToGradient } from "string-to-color-gradient";
+import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
 
 // A throwaway, never-written-to store - stands in for `resourceEditor.dataGraph` in the
 // useReactiveRead call below when this option can't offer resource editing at all, so that hook
@@ -41,7 +43,7 @@ type Staging = { dataGraph: RdfStore; originalQuads: Quad[] };
 type Props = {
   term: Term;
   label?: string;
-  subLabel?: string;
+  classification?: { term: Term; label: string };
   depiction?: NamedNode;
   highlight?: string;
   // Only passed for the currently selected value (never for a row in a dropdown list) - see
@@ -53,7 +55,7 @@ type Props = {
 export default function AutoCompleteOption({
   term,
   label,
-  subLabel,
+  classification,
   depiction,
   highlight,
   resourceEditor,
@@ -112,7 +114,7 @@ export default function AutoCompleteOption({
     for (const quad of additions) resourceEditor.dataGraph.addQuad(quad);
     setStaging(undefined);
     setConfirmDiscard(false);
-    // The edited resource's own label/subLabel/depiction (shown on the closed trigger and in the
+    // The edited resource's own label/classification/depiction (shown on the closed trigger and in the
     // dropdown) are resolved via react-query, not useReactiveRead - dataGraph's own reactivity has
     // no way to reach into that cache, so a commit wouldn't otherwise be reflected until something
     // unrelated happened to refetch it.
@@ -140,6 +142,10 @@ export default function AutoCompleteOption({
     setConfirmDiscard(false);
   };
 
+  const classificationGradient = stringToGradient(classification?.label ?? "", {
+    brightness: "light",
+  });
+
   return (
     <span className="st-autocomplete-option">
       {depiction && !hasError ? (
@@ -161,10 +167,13 @@ export default function AutoCompleteOption({
       <span className="st-autocomplete-option__label">
         {highlightMatches(displayLabel, highlight, "st-autocomplete-option__match")}
       </span>
-      {subLabel && (
-        <span className="st-autocomplete-option__sub-label">
-          {highlightMatches(subLabel, highlight, "st-autocomplete-option__match")}
-        </span>
+      {classification && (
+        <ValueChip
+          colors={classificationGradient}
+          label={classification.label}
+          size="small"
+          term={classification.term}
+        />
       )}
       {term.termType === "NamedNode" && (
         <span className="st-autocomplete-option__actions">

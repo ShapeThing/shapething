@@ -5,51 +5,61 @@
 @prefix ex: <http://example.org/>.
 
 # A deliberately minimal skos:Concept shape, showing just the two things this demo is about: a
-# local shui:AutoCompleteEditor field (skos:inScheme, searching skos:ConceptScheme instances
-# already present in the local dataGraph) and a federated one (skos:topConceptOf, searching the
-# real TOOI thesaurus over SPARQL - the same public endpoint skos-ap-nl-tooi-federation.ttl
-# federates skos:Concept lookups against). skos:ConceptScheme is labelled via rdfs:label in both -
-# unlike skos:Concept, which SKOS labels via skos:prefLabel - so the LabelRole below points at
-# rdfs:label rather than mirroring 11.3.1 shui-label-role.ttl's skos:prefLabel.
+# local shui:AutoCompleteEditor field (skos:broader, searching skos:Concept instances already
+# present in the local dataGraph) and a federated one (skos:broadMatch, searching the real TOOI
+# thesaurus over SPARQL - the same public endpoint and shui:searchQuery
+# skos-ap-nl-tooi-federation.ttl uses for the identical predicate). Each field links to another
+# *Concept*, not a scheme directly - <#conceptLabelShape> below shows that concept's own
+# skos:prefLabel as its LabelRole, and its skos:ConceptScheme's own name as a shui:ClassificationRole
+# (rendered as a chip by LabelViewer/AutoCompleteOption) via the sequence path
+# (skos:inScheme (rdfs:label|skos:prefLabel)) - the property-path algebra (structure/paths/) walks
+# straight through it, so ClassificationRole isn't limited to a single hop. The alternation matters
+# for the federated field specifically: TOOI isn't one uniform vocabulary but several thesauri
+# (upl/kern/...), and they don't agree on how a ConceptScheme names itself - upl's schemes use
+# rdfs:label (e.g. .../upl/Bestuurslagen), kern's use skos:prefLabel instead - so a real federated
+# search's result set (unlike the one already-linked, hand-picked <#data> example below) mixes
+# concepts from both; a single fixed predicate here would leave most of those rows without a chip.
 
-<#conceptSchemeLabelShape>
+<#conceptLabelShape>
   a sh:NodeShape ;
   sh:property [
-    sh:path rdfs:label ;
+    sh:path skos:prefLabel ;
     shui:propertyRole shui:LabelRole ;
+    sh:order 1 ;
+  ] ;
+  sh:property [
+    sh:path ( skos:inScheme [ sh:alternativePath ( rdfs:label skos:prefLabel ) ] ) ;
+    shui:propertyRole shui:ClassificationRole ;
+    sh:order 2 ;
   ] .
 
 <#shape>
   a sh:NodeShape ;
   sh:targetClass skos:Concept ;
   sh:property [
-    sh:name "In scheme (local)"@en, "In begrippenkader (lokaal)"@nl ;
-    sh:path skos:inScheme ;
-    sh:class skos:ConceptScheme ;
+    sh:name "Broader concept (local)"@en, "Breder begrip (lokaal)"@nl ;
+    sh:path skos:broader ;
+    sh:class skos:Concept ;
     sh:nodeKind sh:IRI ;
-    sh:node <#conceptSchemeLabelShape> ;
+    sh:node <#conceptLabelShape> ;
     shui:editor shui:AutoCompleteEditor ;
     sh:order 1 ;
   ] ;
   sh:property [
-    sh:name "Top concept of (federated, TOOI)"@en, "Topbegrip van (gefedereerd, TOOI)"@nl ;
-    sh:path skos:topConceptOf ;
-    sh:class skos:ConceptScheme ;
+    sh:name "Broad match (federated, TOOI)"@en, "Bredere overeenkomst (gefedereerd, TOOI)"@nl ;
+    sh:path skos:broadMatch ;
+    sh:class skos:Concept ;
     sh:nodeKind sh:IRI ;
-    sh:node <#conceptSchemeLabelShape> ;
+    sh:node <#conceptLabelShape> ;
     shui:editor shui:AutoCompleteEditor ;
-    # shui:searchQuery drives as-you-type search; sh:in's sh:select is the Dynamic-SHACL fallback
-    # for a renderer that doesn't support shui:searchQuery (spec §10.1) - mirrors
-    # skos-ap-nl-tooi-federation.ttl's own Concept-*-TooiFederated shapes, except querying
-    # rdfs:label rather than skos:prefLabel/skos:altLabel, since TOOI labels its ConceptSchemes
-    # (thesauri) that way, not with SKOS lexical labels.
+    # Mirrors skos-ap-nl-tooi-federation.ttl's own Concept-broadMatch-TooiFederated exactly - same
+    # endpoint, same searchQuery/sh:in shape.
     shui:searchQuery """
       PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
-      PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
       SELECT DISTINCT ?value WHERE {
         SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
-          ?value a skos:ConceptScheme ;
-            rdfs:label ?searchLabel .
+          ?value a skos:Concept ;
+            (skos:prefLabel|skos:altLabel) ?searchLabel .
           BIND(IF(CONTAINS($uiLanguage, "-"), STRBEFORE($uiLanguage, "-"), $uiLanguage) AS ?uiPrimaryLanguage)
           FILTER(LANGMATCHES(LANG(?searchLabel), ?uiPrimaryLanguage))
           FILTER(CONTAINS(LCASE(?searchLabel), LCASE($searchTerm)))
@@ -61,7 +71,7 @@
         PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
         SELECT DISTINCT ?value1 WHERE {
           SERVICE <https://standaarden.overheid.nl/tooi/sparql> {
-            ?value1 a skos:ConceptScheme .
+            ?value1 a skos:Concept .
           }
         }
         LIMIT 100
@@ -74,11 +84,21 @@
   a skos:Concept ;
   skos:prefLabel "Fiets"@nl, "Bicycle"@en ;
   skos:inScheme ex:transportScheme ;
-  # A real TOOI ConceptScheme (https://identifier.overheid.nl/tooi/def/thes/upl/Bestuurslagen,
-  # rdfs:label "Bestuurslagen"@nl - TOOI only labels its schemes in Dutch) - already linked so its
-  # label resolves live against the federated endpoint on load, with no search interaction needed.
-  skos:topConceptOf <https://identifier.overheid.nl/tooi/def/thes/upl/Bestuurslagen> .
+  skos:broader ex:vervoermiddel ;
+  # A real TOOI skos:Concept (https://identifier.overheid.nl/tooi/def/thes/upl/gemeente,
+  # skos:prefLabel "gemeente"@nl, skos:inScheme .../Bestuurslagen, rdfs:label "Bestuurslagen"@nl -
+  # TOOI only labels these in Dutch) - already linked so both its own label and its scheme's
+  # ClassificationRole label resolve live against the federated endpoint on load, with no search
+  # interaction needed.
+  skos:broadMatch <https://identifier.overheid.nl/tooi/def/thes/upl/gemeente> .
+
+ex:vervoermiddel a skos:Concept ;
+  skos:prefLabel "Vervoermiddel"@nl, "Vehicle"@en ;
+  skos:inScheme ex:transportScheme .
+
+ex:dier a skos:Concept ;
+  skos:prefLabel "Dier"@nl, "Animal"@en ;
+  skos:inScheme ex:animalsScheme .
 
 ex:transportScheme a skos:ConceptScheme ; rdfs:label "Vervoermiddelen"@nl, "Means of transport"@en .
 ex:animalsScheme a skos:ConceptScheme ; rdfs:label "Dieren"@nl, "Animals"@en .
-ex:foodScheme a skos:ConceptScheme ; rdfs:label "Voedsel"@nl, "Food"@en .
