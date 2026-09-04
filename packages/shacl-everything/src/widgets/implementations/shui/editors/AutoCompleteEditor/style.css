@@ -1,6 +1,7 @@
 .st-autocomplete {
   position: relative;
   flex: 1;
+  min-width: 0;
   width: 100%;
   display: flex;
 
@@ -18,6 +19,7 @@
   border-radius: var(--radius-2);
   border-top-right-radius: 0;
   border-bottom-right-radius: 0;
+  max-width: 100%;
   border-inline-end: none;
   position: relative;
 
@@ -34,6 +36,17 @@
 .st-autocomplete__label {
   .st-autocomplete-option__depiction {
     border-radius: var(--radius-2) 0 0 var(--radius-2);
+  }
+
+  /* Unlike a dropdown result row, the currently selected value has the whole field to itself, so a
+     long one wraps onto multiple lines here instead of ellipsis-truncating to one. */
+  .st-autocomplete-option,
+  .st-autocomplete-option__label {
+    overflow: visible;
+    text-overflow: clip;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
   }
 }
 

@@ -906,7 +906,7 @@ skosapnl:OrphanConcept
   <http://purl.org/iso25964/skos-thes#narrowerPartitive> <https://identifier.overheid.nl/tooi/def/thes/kern/c_8ec8e5e7> ;
   skos:broadMatch <https://identifier.overheid.nl/tooi/def/thes/upl/c_jyrci82q> ;
   skos:closeMatch <https://identifier.overheid.nl/tooi/def/thes/kern/c_3f0370ae> ;
-  skos:exactMatch <https://identifier.overheid.nl/tooi/def/thes/kern/c_232d2da9> ;
+  skos:exactMatch <https://identifier.overheid.nl/tooi/def/thes/sdg/c_243edd0b> ;
   skos:narrowMatch <https://identifier.overheid.nl/tooi/def/thes/kern/c_81c05ccd> ;
   skos:relatedMatch <https://identifier.overheid.nl/tooi/def/thes/kern/c_3f0370ae> ;
 

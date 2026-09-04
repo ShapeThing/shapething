@@ -3,6 +3,7 @@
   align-items: center;
   flex: 1;
   min-width: 0;
+  max-width: 100%;
   min-height: 2rem;
   gap: var(--size-2);
   overflow: hidden;
@@ -84,7 +85,9 @@
 }
 
 .st-autocomplete-option__label {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  padding-block: var(--size-2);
 }
