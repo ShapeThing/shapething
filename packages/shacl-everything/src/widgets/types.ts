@@ -13,6 +13,13 @@ export type WidgetProps = {
   // per value) under a single label, so this is a many-to-one aria-labelledby rather than a
   // one-to-one htmlFor/id pairing.
   labelledBy?: string;
+  // True for exactly the one widget instance that was just mounted by a "+"/"Add item" click (see
+  // PropertyUIComponentValues/MemberShapeList) - never true merely because a value is empty, so a
+  // form with several already-empty properties never races over which one steals focus. A widget
+  // with a single focusable control should focus it on mount when this is true (see
+  // useAutoFocusRef); a composite widget with no control of its own (DetailsEditor) forwards it
+  // into its nested form's first field instead (see NodeUIElementChildren's autoFocusFirst).
+  autoFocus?: boolean;
 };
 
 export type WidgetComponent = ComponentType<WidgetProps>;

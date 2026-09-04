@@ -1,5 +1,6 @@
 import { factory } from "@/helpers/factory.ts";
 import { sh, xsd } from "@/helpers/namespaces.ts";
+import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import type { NamedNode } from "@rdfjs/types";
@@ -25,6 +26,7 @@ export default function TextFieldEditor({
   setTerm,
   type = "text",
   labelledBy,
+  autoFocus,
 }: WidgetProps & { type?: HTMLInputElement["type"] }) {
   const pattern = shape.get(sh("pattern"))?.source;
   const minLength = shape.get(sh("minLength"));
@@ -33,9 +35,11 @@ export default function TextFieldEditor({
   const { localValue, onChange, onBlur } = useDeferredInput(term, (value: string) =>
     setTerm(factory.literal(value, dataTypesMapping[type])),
   );
+  const ref = useAutoFocusRef<HTMLInputElement>(autoFocus);
 
   return (
     <input
+      ref={ref}
       type={type}
       className="st-input"
       value={localValue}

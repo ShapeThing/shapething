@@ -22,9 +22,16 @@ import { languageLabels } from "@/helpers/languageLabels.ts";
 
 type PropertyUIComponentProps = {
   propertyUIElement: PropertyUIElement;
+  // See UIElementChildren - only ever true for the first element of a just-added nested form
+  // (DetailsEditor), forwarded on into whichever of MemberShapeList/PropertyUIComponentValues
+  // actually renders this property's values.
+  autoFocusFirst?: boolean;
 };
 
-export default function PropertyUIComponent({ propertyUIElement }: PropertyUIComponentProps) {
+export default function PropertyUIComponent({
+  propertyUIElement,
+  autoFocusFirst,
+}: PropertyUIComponentProps) {
   const { languageMode } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
@@ -112,9 +119,14 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
           propertyUIElement={propertyUIElement}
           memberShapeNodes={memberShapeNodes}
           labelledBy={labelId}
+          autoFocusFirst={autoFocusFirst}
         />
       ) : (
-        <PropertyUIComponentValues propertyUIElement={propertyUIElement} labelId={labelId} />
+        <PropertyUIComponentValues
+          propertyUIElement={propertyUIElement}
+          labelId={labelId}
+          autoFocusFirst={autoFocusFirst}
+        />
       )}
     </FormElement>
   );

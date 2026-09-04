@@ -77,6 +77,20 @@ export const addingAValueAppendsAtTheEnd: Story = {
   },
 };
 
+export const addingAValueFocusesTheNewInput: Story = {
+  name: "Clicking Add value moves focus straight into the newly-added input",
+  args,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await findAllThreeTags(canvasElement);
+
+    await userEvent.click(canvas.getByRole("button", { name: "Add value" }));
+    const emptyInput = tagInputs(canvasElement).at(-1)!;
+
+    expect(document.activeElement).toBe(emptyInput);
+  },
+};
+
 export const removingAValueKeepsTheRestInOrder: Story = {
   name: "Removing a value leaves the remaining ones in their original order",
   args,

@@ -20,6 +20,7 @@ export default function MemberShapeListItem({
   canRemove,
   onChange,
   onRemove,
+  autoFocus,
 }: {
   id: string;
   memberElement: PropertyUIElement;
@@ -28,6 +29,7 @@ export default function MemberShapeListItem({
   canRemove: boolean;
   onChange: (newValue: Term) => void;
   onRemove: () => void;
+  autoFocus?: boolean;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition };
@@ -51,6 +53,7 @@ export default function MemberShapeListItem({
           object={value}
           labelledBy={labelledBy}
           setTerm={onChange}
+          autoFocus={autoFocus}
         />
       </div>
       <Localized id="member-shape-list-remove-item" attrs={{ "aria-label": true }}>

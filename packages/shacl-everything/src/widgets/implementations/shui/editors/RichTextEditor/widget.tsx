@@ -52,7 +52,7 @@ function Toolbar({ editor }: { editor: Editor }) {
   );
 }
 
-export default function RichTextEditor({ term, setTerm, labelledBy }: WidgetProps) {
+export default function RichTextEditor({ term, setTerm, labelledBy, autoFocus }: WidgetProps) {
   const setTermRef = useRef(setTerm);
   setTermRef.current = setTerm;
 
@@ -72,6 +72,8 @@ export default function RichTextEditor({ term, setTerm, labelledBy }: WidgetProp
     extensions: [StarterKit],
     content: term.value,
     onUpdate,
+    // Tiptap's own mount-time focus option - see WidgetProps.autoFocus.
+    autofocus: autoFocus ? "end" : false,
   });
 
   // Push external value changes in without disturbing cursor position.

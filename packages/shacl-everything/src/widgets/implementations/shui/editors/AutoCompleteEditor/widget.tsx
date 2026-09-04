@@ -25,7 +25,13 @@ import "./style.css";
 // whole graph, not `shape.dataGraph` directly, so nothing real is written until Done is clicked.
 type Staging = { dataGraph: RdfStore; originalQuads: Quad[] };
 
-export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
+export default function AutoCompleteEditor({
+  shape,
+  term,
+  setTerm,
+  labelledBy,
+  autoFocus,
+}: WidgetProps) {
   const existingObjects = useDataGraphObjects(shape);
   const { enableCreateInPlace } = useEnvironment();
   const shClasses = useMemo(() => shape.get(sh("class")), [shape]);
@@ -38,7 +44,13 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
   const [creating, setCreating] = useState<NamedNode | undefined>(undefined);
   const [staging, setStaging] = useState<Staging | undefined>(undefined);
 
-  const [mode, setMode] = useState<"view" | "edit">("view");
+  // Normally always starts as "view" regardless of whether `term` already has a value, so a
+  // screen with several empty properties of this widget type doesn't turn into a race over which
+  // one ends up focused (see the mode effect below) - autoFocus is the one deliberate exception:
+  // it's only ever true for the one widget instance a "+" click just mounted (see WidgetProps),
+  // so starting that one instance straight in "edit" is exactly the same as if the user had
+  // clicked the search icon themselves the instant it appeared.
+  const [mode, setMode] = useState<"view" | "edit">(autoFocus ? "edit" : "view");
   const { search, setSearch, results, isLoading, error, reset } = useInstanceSearch(shape);
   const [selected, setSelected] = useState<SearchResult>();
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -50,10 +62,10 @@ export default function AutoCompleteEditor({ shape, term, setTerm, labelledBy }:
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const listboxId = useId();
 
-  // Only fires on an actual view->edit transition (the search icon clicked, or a value just
-  // cleared - see closeEditor/the empty-state view below), never on initial mount: `mode` always
-  // starts as "view" regardless of whether `term` already has a value, so a screen with several
-  // empty properties of this widget type doesn't turn into a race over which one ends up focused.
+  // Fires on an actual view->edit transition (the search icon clicked, or a value just cleared -
+  // see closeEditor/the empty-state view below) as well as on mount when autoFocus seeded "edit"
+  // above - both cases mean the same thing: this specific instance should have a focused input
+  // right now.
   useEffect(() => {
     if (mode === "edit") inputRef.current?.focus();
   }, [mode]);

@@ -21,6 +21,7 @@ export default function PropertyUIComponentObject({
   onReplace,
   onTermSet,
   onRemove,
+  autoFocus,
 }: {
   propertyUIElement: PropertyUIElement;
   object: Term;
@@ -28,6 +29,7 @@ export default function PropertyUIComponentObject({
   onReplace: (oldTerm: Term, newTerm: Term) => void;
   onTermSet: () => void;
   onRemove: () => void;
+  autoFocus?: boolean;
 }) {
   const setTerm = useCallback(
     (newTerm: Term) => {
@@ -79,6 +81,7 @@ export default function PropertyUIComponentObject({
             object={object}
             labelledBy={labelledBy}
             setTerm={setTerm}
+            autoFocus={autoFocus}
           />
 
           <ValidationMessages

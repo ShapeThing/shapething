@@ -24,7 +24,13 @@ import "./style.css";
 // (not even the new subject's own rdf:type) unless the user confirms via Done.
 type Staging = { dataGraph: RdfStore; originalQuads: Quad[] };
 
-export default function InstancesSelectEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
+export default function InstancesSelectEditor({
+  shape,
+  term,
+  setTerm,
+  labelledBy,
+  autoFocus,
+}: WidgetProps) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const { enableCreateInPlace } = useEnvironment();
   const shClasses = shape.get(sh("class"));
@@ -107,6 +113,7 @@ export default function InstancesSelectEditor({ shape, term, setTerm, labelledBy
     <>
       <SelectListbox
         ariaLabelledby={labelledBy}
+        autoFocus={autoFocus}
         value={term.value}
         options={subjects.map((s) => s.value)}
         onChange={(v) => setTerm(factory.namedNode(v))}
