@@ -51,7 +51,6 @@ export default function PropertyUIComponentAdd({
     !enableCreateInPlace && meta?.canAddMore?.(propertyUIElement) === false;
 
   return (
-    !showEmptyWidget &&
     !fieldIsSingleValued &&
     !hardBlockedByMaxCount &&
     !noOptionsAvailable && (

@@ -1,6 +1,6 @@
 .st-autocomplete-option {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   flex: 1;
   min-width: 0;
   max-width: 100%;
@@ -30,10 +30,6 @@
   &:hover {
     color: var(--st-primary-color);
   }
-}
-
-.st-autocomplete-option__iri {
-  margin-block: -1px;
 }
 
 .st-autocomplete-option__edit {
@@ -87,7 +83,12 @@
 .st-autocomplete-option__label {
   min-width: 0;
   overflow: hidden;
+  align-content: center;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-block: var(--size-2);
+  padding-block: 0.4rem;
+}
+
+.st-autocomplete-option__content {
+  padding-block: 0.4rem;
 }

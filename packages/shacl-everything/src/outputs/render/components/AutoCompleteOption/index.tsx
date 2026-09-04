@@ -167,123 +167,131 @@ export default function AutoCompleteOption({
       <span className="st-autocomplete-option__label">
         {highlightMatches(displayLabel, highlight, "st-autocomplete-option__match")}
       </span>
-      {classification && (
-        <ValueChip
-          colors={classificationGradient}
-          label={classification.label}
-          size="small"
-          term={classification.term}
-        />
-      )}
-      {term.termType === "NamedNode" && (
-        <span className="st-autocomplete-option__actions">
-          {canEditResource && enableEditInPlace && (
-            <Localized
-              id="autocomplete-option-edit-resource"
-              attrs={{ "aria-label": true }}
-              vars={{ label: displayLabel }}
-            >
-              {/* Not a real <button>: this option can itself be rendered inside another trigger
+      <span className="st-autocomplete-option__content">
+        {classification && (
+          <ValueChip
+            colors={classificationGradient}
+            label={classification.label}
+            size="small"
+            term={classification.term}
+          />
+        )}
+        {term.termType === "NamedNode" && (
+          <span className="st-autocomplete-option__actions">
+            {canEditResource && enableEditInPlace && (
+              <Localized
+                id="autocomplete-option-edit-resource"
+                attrs={{ "aria-label": true }}
+                vars={{ label: displayLabel }}
+              >
+                {/* Not a real <button>: this option can itself be rendered inside another trigger
                   button (EnumSelectEditor's own open/close control), and a nested <button> is
                   invalid HTML - a role="button" span gets the same semantics/keyboard support
                   without that. */}
-              <span
-                role="button"
-                tabIndex={0}
-                className="st-autocomplete-option__edit"
-                aria-label={`Edit ${displayLabel}`}
-                // Stops this from also toggling/closing whatever trigger this option is rendered
-                // inside - see the comment above.
-                onMouseDown={(event) => event.stopPropagation()}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  openEditor();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key !== "Enter" && event.key !== " ") return;
-                  event.preventDefault();
-                  event.stopPropagation();
-                  openEditor();
-                }}
+                <span
+                  role="button"
+                  tabIndex={0}
+                  className="st-autocomplete-option__edit"
+                  aria-label={`Edit ${displayLabel}`}
+                  // Stops this from also toggling/closing whatever trigger this option is rendered
+                  // inside - see the comment above.
+                  onMouseDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openEditor();
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key !== "Enter" && event.key !== " ") return;
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openEditor();
+                  }}
+                >
+                  <EditNested />
+                </span>
+              </Localized>
+            )}
+            {term.termType === "NamedNode" && (
+              <a
+                className="st-autocomplete-option__iri"
+                href={term.value}
+                target="_blank"
+                rel="noopener noreferrer"
               >
-                <EditNested />
-              </span>
-            </Localized>
-          )}
-          {term.termType === "NamedNode" && (
-            <a
-              className="st-autocomplete-option__iri"
-              href={term.value}
-              target="_blank"
-              rel="noopener noreferrer"
+                <Link />
+              </a>
+            )}
+          </span>
+        )}
+        {staging &&
+          // This option can itself be rendered inside another clickable trigger (EnumSelectEditor's
+          // own open/close button) - a <dialog>, and any interactive content inside it (e.g. Modal's
+          // own close button), can't validly nest inside a <button> at all, so this portals straight
+          // to <body> rather than rendering inline. A portal only changes where React mounts the
+          // DOM node, not which React tree it bubbles events through, so a click inside it would
+          // still reach that outer trigger's own onClick unless stopped here too.
+          createPortal(
+            <span
+              onMouseDown={(event) => event.stopPropagation()}
+              onClick={(event) => event.stopPropagation()}
             >
-              <Link />
-            </a>
-          )}
-        </span>
-      )}
-      {staging &&
-        // This option can itself be rendered inside another clickable trigger (EnumSelectEditor's
-        // own open/close button) - a <dialog>, and any interactive content inside it (e.g. Modal's
-        // own close button), can't validly nest inside a <button> at all, so this portals straight
-        // to <body> rather than rendering inline. A portal only changes where React mounts the
-        // DOM node, not which React tree it bubbles events through, so a click inside it would
-        // still reach that outer trigger's own onClick unless stopped here too.
-        createPortal(
-          <span
-            onMouseDown={(event) => event.stopPropagation()}
-            onClick={(event) => event.stopPropagation()}
-          >
-            <Modal open={true} onClose={requestCloseEditor} title={displayLabel}>
-              {/* A real <form>, not a plain div: unlike Modal's other consumers, this one is
+              <Modal open={true} onClose={requestCloseEditor} title={displayLabel}>
+                {/* A real <form>, not a plain div: unlike Modal's other consumers, this one is
                   portaled to <body>, so it's never actually nested inside the page's own edit
                   <form> - only wherever it renders in the React tree, which doesn't apply here. */}
-              <form
-                className="st-autocomplete-option__resource-form"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  commitEditor();
-                }}
+                <form
+                  className="st-autocomplete-option__resource-form"
+                  onSubmit={(event) => {
+                    event.preventDefault();
+                    commitEditor();
+                  }}
+                >
+                  {nodeUiElement && <NodeUIElementChildren nodeUiElement={nodeUiElement} />}
+                  <div className="st-autocomplete-option__resource-form-actions">
+                    <button type="submit" className="st-button st-button--primary">
+                      <Localized id="node-ui-submit-update">Update</Localized>
+                    </button>
+                  </div>
+                </form>
+              </Modal>
+              <Modal
+                open={confirmDiscard}
+                onClose={keepEditing}
+                title={
+                  <Localized id="autocomplete-option-discard-title">Discard changes?</Localized>
+                }
               >
-                {nodeUiElement && <NodeUIElementChildren nodeUiElement={nodeUiElement} />}
-                <div className="st-autocomplete-option__resource-form-actions">
-                  <button type="submit" className="st-button st-button--primary">
-                    <Localized id="node-ui-submit-update">Update</Localized>
-                  </button>
+                <div className="st-autocomplete-option__discard-modal">
+                  <p>
+                    <Localized
+                      id="autocomplete-option-discard-message"
+                      vars={{ label: displayLabel }}
+                    >
+                      {`Discard your changes to ${displayLabel}? This cannot be undone.`}
+                    </Localized>
+                  </p>
+                  <div className="st-autocomplete-option__discard-modal-actions">
+                    <button
+                      type="button"
+                      className="st-button st-button--text"
+                      onClick={keepEditing}
+                    >
+                      <Localized id="autocomplete-option-discard-cancel">Keep editing</Localized>
+                    </button>
+                    <button
+                      type="button"
+                      className="st-button st-button--danger"
+                      onClick={discardChanges}
+                    >
+                      <Localized id="autocomplete-option-discard-confirm">Discard</Localized>
+                    </button>
+                  </div>
                 </div>
-              </form>
-            </Modal>
-            <Modal
-              open={confirmDiscard}
-              onClose={keepEditing}
-              title={<Localized id="autocomplete-option-discard-title">Discard changes?</Localized>}
-            >
-              <div className="st-autocomplete-option__discard-modal">
-                <p>
-                  <Localized
-                    id="autocomplete-option-discard-message"
-                    vars={{ label: displayLabel }}
-                  >
-                    {`Discard your changes to ${displayLabel}? This cannot be undone.`}
-                  </Localized>
-                </p>
-                <div className="st-autocomplete-option__discard-modal-actions">
-                  <button type="button" className="st-button st-button--text" onClick={keepEditing}>
-                    <Localized id="autocomplete-option-discard-cancel">Keep editing</Localized>
-                  </button>
-                  <button
-                    type="button"
-                    className="st-button st-button--danger"
-                    onClick={discardChanges}
-                  >
-                    <Localized id="autocomplete-option-discard-confirm">Discard</Localized>
-                  </button>
-                </div>
-              </div>
-            </Modal>
-          </span>,
-          document.body,
-        )}
+              </Modal>
+            </span>,
+            document.body,
+          )}
+      </span>
     </span>
   );
 }

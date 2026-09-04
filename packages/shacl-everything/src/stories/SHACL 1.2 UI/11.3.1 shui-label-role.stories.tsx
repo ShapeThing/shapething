@@ -35,9 +35,12 @@ export const labelRoleAutoComplete: Story = {
     const canvas = within(canvasElement);
     // <#data> already links skos:broader ex:vervoermiddel - both its own prefLabel and its
     // scheme's ClassificationRole label must resolve immediately, with no search interaction
-    // needed.
-    await canvas.findByText("Vervoermiddel");
-    await canvas.findByText("Vervoermiddelen");
+    // needed. Even this local (non-federated) lookup goes through query.ts's lazily-constructed,
+    // per-module Comunica engine (see CLAUDE.md) - its cold-start cost under a full test-suite run
+    // (many browser test files each paying it once) can exceed the default 1000ms findByText
+    // timeout, so this is given the same generous timeout as the federated lookups below.
+    await canvas.findByText("Vervoermiddel", {}, { timeout: 10000 });
+    await canvas.findByText("Vervoermiddelen", {}, { timeout: 10000 });
     // The federated field's own already-linked value (skos:broadMatch tooi:gemeente) - resolved
     // over the network against the real TOOI endpoint, same as the local field above.
     await canvas.findByText("gemeente", {}, { timeout: 10000 });

@@ -37,7 +37,7 @@ export default function DetailsViewer({ shape, term }: WidgetProps) {
     `details-viewer-label@${term.value}@${activeLanguage}@${activeInterfaceLanguage}`,
     () => {
       const rawLabel = valueNodeLabel({ term, propertyShape: shape, languages: [activeLanguage] });
-      return term.termType === "BlankNode" && rawLabel.value === ""
+      return term.termType === "BlankNode" && rawLabel.value === term.value
         ? shape.label([activeInterfaceLanguage])
         : rawLabel.value;
     },

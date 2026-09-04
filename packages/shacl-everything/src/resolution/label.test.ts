@@ -200,12 +200,12 @@ test("valueNodeLabel falls back to the IRI's local name resolution when nothing 
   );
 });
 
-test("valueNodeLabel falls back to an empty placeholder for a blank node with no label data", async () => {
+test("valueNodeLabel falls back to the blank node's own identifier when there is no label data", async () => {
   const shape = await createShape({
     shapes: `ex:property1 a sh:PropertyShape .`,
     propertyShapes: [ex("property1")],
   });
   const blankNode = factory.blankNode();
 
-  expect(valueNodeLabel({ term: blankNode, propertyShape: shape }).value).toBe("");
+  expect(valueNodeLabel({ term: blankNode, propertyShape: shape }).value).toBe(blankNode.value);
 });

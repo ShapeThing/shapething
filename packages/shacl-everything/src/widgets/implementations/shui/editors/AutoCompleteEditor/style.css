@@ -112,3 +112,14 @@
     height: 1.2em;
   }
 }
+
+.st-autocomplete-option__content {
+  display: flex;
+  align-items: start;
+  gap: var(--size-2);
+  margin-left: auto;
+}
+
+.st-edit-button {
+  align-items: start;
+}
