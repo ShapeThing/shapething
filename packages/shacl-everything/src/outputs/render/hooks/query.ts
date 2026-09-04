@@ -1,5 +1,6 @@
 import type { Bindings, NamedNode, Term } from "@rdfjs/types";
 import { queryPrefixes, sh } from "@/helpers/namespaces.ts";
+import { localName } from "@/helpers/localName.ts";
 import { withCorsProxy } from "@/helpers/corsProxy.ts";
 import {
   classificationRolePropertyPaths,
@@ -13,9 +14,12 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 // returns.
 const SEARCH_RESULT_LIMIT = 100;
 
-// A label match beats an IRI match; an instance matching on both outscores either alone.
+// A label match beats an IRI match; an instance matching on both outscores either alone. An exact
+// (whole-string) match on either always outranks any combination of partial/substring matches -
+// LABEL_MATCH_WEIGHT + IRI_MATCH_WEIGHT can never exceed EXACT_MATCH_WEIGHT.
 const LABEL_MATCH_WEIGHT = 2;
 const IRI_MATCH_WEIGHT = 1;
+const EXACT_MATCH_WEIGHT = 100;
 
 export type ResolvedTerm = {
   term: Term;
@@ -88,16 +92,29 @@ function toResolvedTerms(bindings: Bindings[]): ResolvedTerm[] {
 
     const labelTerm = binding.get("label");
     const classificationTerm = binding.get("classification");
+    const classificationLabelTerm = binding.get("classificationLabel");
     const depictionTerm = binding.get("depiction");
 
     return [
       {
         term,
         label: labelTerm?.termType === "Literal" ? labelTerm.value : undefined,
-        classification:
-          classificationTerm?.termType === "Literal"
-            ? { term: classificationTerm, label: classificationTerm.value }
-            : undefined,
+        // classificationTerm is whatever the shape's ClassificationRole path ends on - a literal
+        // (e.g. skos:definition) or a linked resource (e.g. skos:inScheme). Kept as `term` either
+        // way so a chip can link out to it; `label` prefers that resource's own resolved label
+        // (classificationLabelTerm - see buildRoleLookupQuery/buildSearchQuery's second, nested
+        // lookup), then classificationTerm's own lexical form, then its local name.
+        classification: classificationTerm
+          ? {
+              term: classificationTerm,
+              label:
+                classificationLabelTerm?.termType === "Literal"
+                  ? classificationLabelTerm.value
+                  : classificationTerm.termType === "Literal"
+                    ? classificationTerm.value
+                    : localName(classificationTerm) ?? classificationTerm.value,
+            }
+          : undefined,
         depiction: depictionTerm?.termType === "NamedNode" ? depictionTerm : undefined,
       },
     ];
@@ -128,15 +145,20 @@ export async function runQuery(
 
 /**
  * A SPARQL query for every instance of `classIri` whose IRI or LabelRole label contains `search`
- * (case-insensitive), ranked by a ?score - a label match scores higher than an IRI match, and an
- * instance matching both outscores either alone. Results are ordered by descending score, so
+ * (case-insensitive), ranked by a ?score - a label match scores higher than an IRI match, an
+ * instance matching both outscores either alone, and a whole-string ("full text") match on either
+ * always outranks any partial/substring match. Results are ordered by descending score, so
  * callers can rely on array order rather than re-sorting client-side. `labelPaths` are SPARQL
  * property path expressions (see toSparql.ts) from a candidate instance to its label literal(s) -
  * left out of the scoring entirely when there are none, so a class with no shui:LabelRole still
  * searches by IRI alone. `classificationPaths` and `depictionPaths` are walked the same way to bind
  * `?classification`/`?depiction` alongside each result. Unlike sh:in's role resolution (see
  * buildRoleLookupQuery), these roles can't be split into a separate lookup afterwards - the label
- * match has to happen inside the ranking query itself, since it's what's being ranked on.
+ * match has to happen inside the ranking query itself, since it's what's being ranked on. When
+ * `?iriClassification` lands on a resource rather than a literal (e.g. skos:inScheme), a nested
+ * optional resolves *that* resource's own `?classificationLabel` too - via `labelPaths` (the same
+ * paths used for the candidate's own label) falling back to plain rdfs:label, mirroring
+ * valueNodeClassification's recursive valueNodeLabel call for the local (non-federated) case.
  */
 export function buildSearchQuery(
   classIri: NamedNode,
@@ -152,9 +174,16 @@ export function buildSearchQuery(
     labelPaths.length > 0
       ? `if(bound(?iriLabel) && contains(lcase(str(?iriLabel)), "${needle}"), ${LABEL_MATCH_WEIGHT}, 0)`
       : "0";
+  const exactScoreExpression = `if((${
+    labelPaths.length > 0 ? `bound(?iriLabel) && lcase(str(?iriLabel)) = "${needle}"` : "false"
+  }) || lcase(str(?value)) = "${needle}", ${EXACT_MATCH_WEIGHT}, 0)`;
+  const classificationLabelPaths = [...new Set([...labelPaths, "rdfs:label"])];
   const classificationPattern =
     classificationPaths.length > 0
-      ? `optional { ?value ${classificationPaths.join("|")} ?iriClassification }`
+      ? `optional {
+          ?value ${classificationPaths.join("|")} ?iriClassification .
+          optional { ?iriClassification ${classificationLabelPaths.join("|")} ?iriClassificationLabel }
+        }`
       : "";
   const depictionPattern =
     depictionPaths.length > 0
@@ -163,14 +192,15 @@ export function buildSearchQuery(
 
   return `
     ${queryPrefixes}
-    select ?value (sample(?iriLabel) as ?label) (sample(?iriClassification) as ?classification) (sample(?iriDepiction) as ?depiction) (max(?matchScore) as ?score) where {
+    select ?value (sample(?iriLabel) as ?label) (sample(?iriClassification) as ?classification) (sample(?iriClassificationLabel) as ?classificationLabel) (sample(?iriDepiction) as ?depiction) (max(?matchScore) as ?score) where {
       ?value a <${classIri.value}> .
       ${labelPattern}
       ${classificationPattern}
       ${depictionPattern}
       bind(${labelScoreExpression} as ?labelScore)
       bind(if(contains(lcase(str(?value)), "${needle}"), ${IRI_MATCH_WEIGHT}, 0) as ?iriScore)
-      bind(?labelScore + ?iriScore as ?matchScore)
+      bind(${exactScoreExpression} as ?exactScore)
+      bind(?labelScore + ?iriScore + ?exactScore as ?matchScore)
       filter(?matchScore > 0)
     }
     group by ?value
@@ -182,13 +212,20 @@ export function buildSearchQuery(
 /**
  * A SPARQL query resolving every one of `values` (e.g. a set of sh:in options, a property's
  * current value, or the results of a federated sh:select/shui:searchQuery) to its LabelRole label,
- * ClassificationRole text and DepictionRole image in one round trip, via a single `values` clause instead
- * of one query per value. `uiLanguage` is optional - when given, a label/classification only counts if it
- * matches that language (or has none), the way a federated lookup needs to disambiguate a remote
- * endpoint's multi-language literals; local-only lookups leave it out and take whatever's there,
- * the same as `?value`'s own rdfs:label would. `endpoint`, when given, wraps the whole lookup in
- * `SERVICE <endpoint>` so it stays a single HTTP request to that endpoint instead of something
- * Comunica's join planner could split further - see resolveRoles for why that matters.
+ * ClassificationRole info and DepictionRole image in one round trip, via a single `values` clause
+ * instead of one query per value. `uiLanguage` is optional - when given, a label/classification
+ * only counts if it matches that language (or has none), the way a federated lookup needs to
+ * disambiguate a remote endpoint's multi-language literals; local-only lookups leave it out and
+ * take whatever's there, the same as `?value`'s own rdfs:label would. `endpoint`, when given, wraps
+ * the whole lookup in `SERVICE <endpoint>` so it stays a single HTTP request to that endpoint
+ * instead of something Comunica's join planner could split further - see resolveRoles for why that
+ * matters.
+ *
+ * When `?roleClassification` lands on a resource rather than a literal (e.g. skos:inScheme, on a
+ * skos:ConceptScheme), a nested optional resolves *that* resource's own `?classificationLabel` too
+ * - via `labelPaths` (the same paths used for `?value`'s own label) falling back to plain
+ * rdfs:label, mirroring valueNodeClassification's recursive valueNodeLabel call for the local
+ * (non-federated) case.
  */
 function buildRoleLookupQuery(
   values: Term[],
@@ -205,13 +242,18 @@ function buildRoleLookupQuery(
       }
     : () => "";
 
+  const classificationLabelPaths = [...new Set([...labelPaths, "rdfs:label"])];
+
   const patterns = [
     labelPaths.length > 0 &&
       `optional { ?value ${labelPaths.join("|")} ?roleLabel${languageFilter("?roleLabel")} }`,
     classificationPaths.length > 0 &&
-      `optional { ?value ${classificationPaths.join("|")} ?roleClassification${languageFilter(
-        "?roleClassification",
-      )} }`,
+      `optional {
+        ?value ${classificationPaths.join("|")} ?roleClassification .
+        optional { ?roleClassification ${classificationLabelPaths.join(
+          "|",
+        )} ?roleClassificationLabel${languageFilter("?roleClassificationLabel")} }
+      }`,
     depictionPaths.length > 0 && `optional { ?value ${depictionPaths.join("|")} ?roleDepiction }`,
   ]
     .filter((pattern): pattern is string => Boolean(pattern))
@@ -224,7 +266,7 @@ function buildRoleLookupQuery(
 
   return `
     ${queryPrefixes}
-    select ?value (sample(?roleLabel) as ?label) (sample(?roleClassification) as ?classification) (sample(?roleDepiction) as ?depiction) where {
+    select ?value (sample(?roleLabel) as ?label) (sample(?roleClassification) as ?classification) (sample(?roleClassificationLabel) as ?classificationLabel) (sample(?roleDepiction) as ?depiction) where {
       ${where}
     }
     group by ?value

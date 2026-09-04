@@ -1,4 +1,4 @@
-import type { Literal } from "@rdfjs/types";
+import type { Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { sh } from "@/helpers/namespaces.ts";
@@ -6,8 +6,11 @@ import { getLanguagePreference } from "@/resolution/globalConfiguration.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
 
-export default function language(terms: Literal[], languages: LanguageRange[] = []): Literal {
-  return bestByLanguage(terms, languages) as Literal;
+// Generic over T so a caller picking among Literals gets a Literal back, while a caller picking
+// among arbitrary Terms (e.g. valueNodeClassification's IRI-or-literal candidates - a non-Literal
+// term is simply "languageless", see bestByLanguage) gets the same term type it passed in.
+export default function language<T extends Term>(terms: T[], languages: LanguageRange[] = []): T {
+  return bestByLanguage(terms, languages) as T;
 }
 
 /**

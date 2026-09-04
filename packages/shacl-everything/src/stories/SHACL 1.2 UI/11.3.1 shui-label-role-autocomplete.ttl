@@ -10,15 +10,16 @@
 # thesaurus over SPARQL - the same public endpoint and shui:searchQuery
 # skos-ap-nl-tooi-federation.ttl uses for the identical predicate). Each field links to another
 # *Concept*, not a scheme directly - <#conceptLabelShape> below shows that concept's own
-# skos:prefLabel as its LabelRole, and its skos:ConceptScheme's own name as a shui:ClassificationRole
-# (rendered as a chip by LabelViewer/AutoCompleteOption) via the sequence path
-# (skos:inScheme (rdfs:label|skos:prefLabel)) - the property-path algebra (structure/paths/) walks
-# straight through it, so ClassificationRole isn't limited to a single hop. The alternation matters
-# for the federated field specifically: TOOI isn't one uniform vocabulary but several thesauri
-# (upl/kern/...), and they don't agree on how a ConceptScheme names itself - upl's schemes use
-# rdfs:label (e.g. .../upl/Bestuurslagen), kern's use skos:prefLabel instead - so a real federated
-# search's result set (unlike the one already-linked, hand-picked <#data> example below) mixes
-# concepts from both; a single fixed predicate here would leave most of those rows without a chip.
+# skos:prefLabel as its LabelRole, and its skos:ConceptScheme itself (via the single-hop
+# skos:inScheme) as a shui:ClassificationRole (rendered as a chip by LabelViewer/AutoCompleteOption,
+# linking out to the scheme's own IRI). The scheme's *label* is then resolved as a second, separate
+# step (valueNodeClassification/buildRoleLookupQuery's own nested lookup) - first via the concept's
+# own LabelRole predicate (skos:prefLabel), falling back to plain rdfs:label - which is exactly what
+# the federated field needs: TOOI isn't one uniform vocabulary but several thesauri (upl/kern/...),
+# and they don't agree on how a ConceptScheme names itself - upl's schemes use rdfs:label (e.g.
+# .../upl/Bestuurslagen), kern's use skos:prefLabel instead - so a real federated search's result
+# set (unlike the one already-linked, hand-picked <#data> example below) mixes concepts from both;
+# a single fixed predicate here would leave most of those rows without a chip.
 
 <#conceptLabelShape>
   a sh:NodeShape ;
@@ -28,7 +29,7 @@
     sh:order 1 ;
   ] ;
   sh:property [
-    sh:path ( skos:inScheme [ sh:alternativePath ( rdfs:label skos:prefLabel ) ] ) ;
+    sh:path skos:inScheme ;
     shui:propertyRole shui:ClassificationRole ;
     sh:order 2 ;
   ] .

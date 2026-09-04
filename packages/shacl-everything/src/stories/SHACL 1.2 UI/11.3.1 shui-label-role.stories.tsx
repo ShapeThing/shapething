@@ -18,8 +18,9 @@ export const labelRole: Story = {
 // A minimal skos:Concept, stripped down to just the two fields this demo is about: picking
 // *another concept* via shui:AutoCompleteEditor (one field local, one federated against the real
 // TOOI thesaurus), each showing that concept's own skos:prefLabel as its main label and its
-// skos:ConceptScheme's own name as a shui:ClassificationRole chip - see <#conceptLabelShape>'s
-// sequence path (skos:inScheme (rdfs:label|skos:prefLabel)) in the .ttl.
+// skos:ConceptScheme itself as a shui:ClassificationRole chip, linking out to the scheme's own
+// IRI - see <#conceptLabelShape>'s single-hop skos:inScheme path in the .ttl, and query.ts's
+// buildRoleLookupQuery for how the scheme's own label is then resolved as a second step.
 export const labelRoleAutoComplete: Story = {
   name: "AutoCompleteEditor resolves a linked Concept's own ConceptScheme via shui:ClassificationRole",
   args: {
