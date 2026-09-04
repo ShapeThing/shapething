@@ -1,5 +1,5 @@
 import type { NamedNode, Term } from "@rdfjs/types";
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   closestCenter,
   DndContext,
@@ -15,6 +15,7 @@ import { Localized } from "@fluent/react";
 import { getRdfListCells, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { Plus } from "@/helpers/icons.tsx";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
+import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
@@ -36,10 +37,15 @@ export default function MemberShapeList({
   propertyUIElement,
   memberShapeNodes,
   labelledBy,
+  autoFocusFirst,
 }: {
   propertyUIElement: PropertyUIElement;
   memberShapeNodes: Term[];
   labelledBy: string;
+  // True when this property is the first field of a nested form (DetailsEditor) that was itself
+  // just added - see NodeUIElementChildren. A genuinely new nested node has no list items yet
+  // (see `head`/`currentHead` below), so there's nothing to focus but the "Add item" button.
+  autoFocusFirst?: boolean;
 }) {
   const { activeLanguage } = useContentLanguage();
   // getObjects() for a memberShape property returns at most one term: the list's head. `head` is
@@ -83,6 +89,18 @@ export default function MemberShapeList({
   const canRemove = cells.length > minListLength;
   const canAdd = cells.length < maxListLength;
 
+  // Set only by the "Add item" button's own click (addItem below) - reset after every render once
+  // it's been read into targetFocusIndex, so it can't leak into an unrelated later render (mirrors
+  // PropertyUIComponentValues' own justClickedAddRef).
+  const justClickedAddRef = useRef(false);
+  useEffect(() => {
+    justClickedAddRef.current = false;
+  });
+  const targetFocusIndex = justClickedAddRef.current ? cells.length - 1 : -1;
+  // autoFocusFirst only ever arrives for a freshly-created, still-empty list (see the doc above) -
+  // nothing in `cells` to focus yet, so the "Add item" button itself is the closest stand-in.
+  const addButtonRef = useAutoFocusRef<HTMLButtonElement>(autoFocusFirst && cells.length === 0);
+
   // Every mutation rebuilds the list skeleton from scratch and swaps the property's value to the
   // fresh head - see rebuildRdfList - which is also what keeps this reactive for free: the
   // property's own tracked read (focusNode -> path -> head) changes on every commit, so
@@ -111,6 +129,7 @@ export default function MemberShapeList({
   const addItem = async () => {
     const newObject = await memberElement.getDefaultObject(activeLanguage);
     if (newObject === undefined) return;
+    justClickedAddRef.current = true;
     commit([...cells.map((entry) => entry.value), newObject]);
   };
 
@@ -134,6 +153,7 @@ export default function MemberShapeList({
                   commit(cells.map((c, i) => (i === index ? newValue : c.value)))
                 }
                 onRemove={() => commit(cells.filter((_, i) => i !== index).map((c) => c.value))}
+                autoFocus={index === targetFocusIndex}
               />
             ))}
           </ul>
@@ -141,6 +161,7 @@ export default function MemberShapeList({
       </DndContext>
       <Localized id="member-shape-list-add-item" attrs={{ "aria-label": true }}>
         <button
+          ref={addButtonRef}
           type="button"
           className="st-button st-member-shape-list__add"
           disabled={!canAdd}

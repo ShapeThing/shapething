@@ -49,9 +49,14 @@ function reconcileOrder(
 export default function PropertyUIComponentValues({
   propertyUIElement,
   labelId,
+  autoFocusFirst,
 }: {
   propertyUIElement: PropertyUIElement;
   labelId: string;
+  // True when this property is the first field of a nested form (DetailsEditor) that was itself
+  // just added - see NodeUIElementChildren. A genuinely new nested node has no values of its own
+  // yet, so this lines up with the same "index 0" placeholder as showEmptyWidget below.
+  autoFocusFirst?: boolean;
 }) {
   const { languageMode } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
@@ -82,6 +87,17 @@ export default function PropertyUIComponentValues({
     if (index !== -1) orderRef.current[index] = termKey(newTerm);
   }, []);
   const [showEmptyWidget, setShowEmptyWidget] = useState(languageFilteredObjects.length === 0);
+
+  // Set only by the "+" button's own click (see the wrapped setter passed to
+  // PropertyUIComponentAdd below) - never by the activeLanguage/hadFilteredValues effects below,
+  // which also reopen the empty widget but shouldn't ever focus it (see AutoCompleteEditor's own
+  // near-identical "never on initial mount" reasoning - a screen with several empty properties
+  // must not turn into a focus race). Reset after every render once it's been read into this
+  // render's `objects`, so it can't leak into an unrelated later render of this same component.
+  const justClickedAddRef = useRef(false);
+  useEffect(() => {
+    justClickedAddRef.current = false;
+  });
 
   // Switching the active language can leave this property with no existing value in the newly
   // active language at all - re-show the empty widget in that case, same as removing the last
@@ -143,6 +159,15 @@ export default function PropertyUIComponentValues({
       ).length === 0,
     );
 
+  // Which rendered index (if any) should receive focus this render - the newly-appended
+  // placeholder from an actual "+" click takes priority over autoFocusFirst, though in practice
+  // the two never fire on the same render (see the autoFocusFirst prop doc above).
+  const targetFocusIndex = justClickedAddRef.current
+    ? objects.length - 1
+    : autoFocusFirst
+      ? 0
+      : -1;
+
   return (
     <>
       <div className="st-property-items">
@@ -159,6 +184,7 @@ export default function PropertyUIComponentValues({
               // its "-" no longer hidden either) with none left and no other way back to an
               // editable widget - re-show the empty one whenever that happens, for any field.
               onRemove={syncShowEmptyWidget}
+              autoFocus={index === targetFocusIndex}
             />
           </Suspense>
         ))}
@@ -166,7 +192,12 @@ export default function PropertyUIComponentValues({
       {!isSingleUnifiedWidget && (
         <PropertyUIComponentAdd
           showEmptyWidget={showEmptyWidget}
-          setShowEmptyWidget={setShowEmptyWidget}
+          setShowEmptyWidget={(show) => {
+            // Only this call site (the actual "+" click) may request focus - see justClickedAddRef
+            // above.
+            justClickedAddRef.current = show;
+            setShowEmptyWidget(show);
+          }}
           propertyUIElement={propertyUIElement}
         />
       )}

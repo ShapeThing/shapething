@@ -32,11 +32,13 @@ export default function WidgetSlot({
   object,
   labelledBy,
   setTerm,
+  autoFocus,
 }: {
   propertyUIElement: PropertyUIElement;
   object: Term;
   labelledBy: string;
   setTerm: (newTerm: Term) => void;
+  autoFocus?: boolean;
 }) {
   // A property constrained by sh:or/sh:xone has no top-level sh:datatype/sh:class of its own -
   // widget scoring needs the currently active branch's constraints merged in too, or it stays
@@ -167,6 +169,7 @@ export default function WidgetSlot({
             term={object}
             setTerm={isReadOnly ? noop : setTerm}
             labelledBy={labelledBy}
+            autoFocus={autoFocus}
           />
           {flyOut}
         </div>

@@ -16,6 +16,8 @@ type SelectListboxProps<T extends string> = {
   onDeleteKey?: (value: T) => void;
   /** BEM block prefix for generated class names. Defaults to "st-listbox". */
   classPrefix?: string;
+  /** Focuses the trigger once, on mount - see WidgetProps.autoFocus/useAutoFocusRef. */
+  autoFocus?: boolean;
 };
 
 export default function SelectListbox<T extends string>({
@@ -30,6 +32,7 @@ export default function SelectListbox<T extends string>({
   extraRow,
   onDeleteKey,
   classPrefix = "st-listbox",
+  autoFocus,
 }: SelectListboxProps<T>) {
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -45,6 +48,10 @@ export default function SelectListbox<T extends string>({
     if (open && activeIndex >= 0)
       optionRefs.current[activeIndex]?.scrollIntoView({ block: "nearest" });
   }, [open, activeIndex]);
+
+  useEffect(() => {
+    if (autoFocus) triggerRef.current?.focus();
+  }, [autoFocus]);
 
   const close = () => setOpen(false);
 

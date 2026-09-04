@@ -4,6 +4,7 @@ import type { NamedNode } from "@rdfjs/types";
 import { Loading } from "@/helpers/icons.tsx";
 import { sh } from "@/helpers/namespaces.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
+import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import { useSelectOptions, type ResolvedOption } from "@/outputs/render/hooks/useSelectOptions.tsx";
@@ -12,7 +13,13 @@ import { selectQueryFor } from "@/structure/selectQuery.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
-export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
+export default function EnumSelectEditor({
+  shape,
+  term,
+  setTerm,
+  labelledBy,
+  autoFocus,
+}: WidgetProps) {
   const { enableEditInPlace } = useEnvironment();
   const options = useMemo(() => shape.get(sh("in")), [shape]);
   const selectQuery = useMemo(() => selectQueryFor(shape), [shape]);
@@ -85,6 +92,7 @@ export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: W
   const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const triggerRef = useAutoFocusRef<HTMLButtonElement>(autoFocus);
   const listboxId = useId();
 
   useEffect(() => {
@@ -128,6 +136,7 @@ export default function EnumSelectEditor({ shape, term, setTerm, labelledBy }: W
       }}
     >
       <button
+        ref={triggerRef}
         type="button"
         className="st-enum-select__trigger"
         aria-haspopup="listbox"

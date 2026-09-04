@@ -50,7 +50,6 @@
 }
 
 .st-autocomplete-option__depiction-spacer {
-  padding-inline-start: var(--size-2);
   height: 2rem;
 }
 

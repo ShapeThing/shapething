@@ -2,6 +2,7 @@ import type { Quad_Subject } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
 import { sh } from "@/helpers/namespaces.ts";
+import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 import { Code, Swap } from "@/helpers/icons.tsx";
@@ -33,7 +34,13 @@ function retarget(dataGraph: RdfStore, from: Quad_Subject, to: Quad_Subject): vo
   }
 }
 
-export default function BlankNodeEditor({ shape, term, setTerm, labelledBy }: WidgetProps) {
+export default function BlankNodeEditor({
+  shape,
+  term,
+  setTerm,
+  labelledBy,
+  autoFocus,
+}: WidgetProps) {
   // Every identity change - the initial "assign an identifier" click as well as any later edit of
   // that identifier's IRI - has to carry the node's own fields along with it, so this always goes
   // through retarget() rather than a plain setTerm().
@@ -50,6 +57,7 @@ export default function BlankNodeEditor({ shape, term, setTerm, labelledBy }: Wi
   const nodeKinds = shape.get(sh("nodeKind"));
   const canAssignIdentifier =
     nodeKinds.length === 0 || nodeKinds.some((kind) => kind.equals(sh("IRI")));
+  const assignRef = useAutoFocusRef<HTMLButtonElement>(autoFocus && canAssignIdentifier);
 
   return (
     <div className="st-blank-node-editor">
@@ -60,6 +68,7 @@ export default function BlankNodeEditor({ shape, term, setTerm, labelledBy }: Wi
 
       {canAssignIdentifier ? (
         <button
+          ref={assignRef}
           type="button"
           className="st-button st-blank-node-editor__assign"
           onClick={() => changeIdentity(factory.namedNode(generateIdentifier()))}

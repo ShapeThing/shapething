@@ -10,7 +10,7 @@ import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChil
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
-export default function DetailsEditor({ shape, term }: WidgetProps) {
+export default function DetailsEditor({ shape, term, autoFocus }: WidgetProps) {
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const nodeShapes = useMemo(() => shape.get(sh("node")) as Quad_Subject[], [shape]);
@@ -50,7 +50,7 @@ export default function DetailsEditor({ shape, term }: WidgetProps) {
         {label}
       </button>
       <div className="st-details-editor__body">
-        <NodeUIElementChildren nodeUiElement={nodeUiElement} />
+        <NodeUIElementChildren nodeUiElement={nodeUiElement} autoFocusFirst={autoFocus} />
       </div>
     </div>
   );
