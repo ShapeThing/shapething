@@ -29,6 +29,15 @@ test("defaultTermFromShape returns a BlankNode when sh:nodeKind is unambiguously
   expect(defaultTermFromShape(shape).termType).toEqual("BlankNode");
 });
 
+test("defaultTermFromShape prefers a NamedNode when sh:nodeKind is sh:BlankNodeOrIRI", async () => {
+  const shape = await createElement(
+    `ex:property1 a sh:PropertyShape ; sh:nodeKind sh:BlankNodeOrIRI .`,
+  );
+  const term = defaultTermFromShape(shape);
+  expect(term.termType).toEqual("NamedNode");
+  expect(term.value).toEqual("");
+});
+
 test("defaultTermFromShape treats sh:class as a resource reference when nodeKind is absent", async () => {
   const shape = await createElement(`ex:property1 a sh:PropertyShape ; sh:class ex:Animal .`);
   expect(defaultTermFromShape(shape).termType).toEqual("NamedNode");

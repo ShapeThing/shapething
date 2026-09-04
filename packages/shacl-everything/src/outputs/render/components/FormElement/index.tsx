@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import Tooltip, { type Placement } from "@/outputs/render/components/Tooltip/index.tsx";
 import { Help } from "@/helpers/icons.tsx";
 import { Localized } from "@fluent/react";
+import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import "./style.css";
 
 type Props = {
@@ -43,6 +44,8 @@ export default function FormElement({
   showColon = false,
   labelLayout = "block",
 }: Props) {
+  const { activeInterfaceLanguage } = useInterfaceLanguage();
+
   return (
     <div
       className={clsx("st-form-element", className)}
@@ -56,6 +59,7 @@ export default function FormElement({
             id={labelId}
             htmlFor={htmlFor}
             title={labelTitle}
+            lang={activeInterfaceLanguage}
           >
             {label}
           </label>

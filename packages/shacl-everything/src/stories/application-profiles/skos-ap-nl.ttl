@@ -34,11 +34,11 @@ skosapnl:
 
 skosapnl:Concept
   a sh:NodeShape ;
-  rdfs:comment 
-    "Een abstract idee of notie."@nl, 
+  rdfs:comment
+    "Een abstract idee of notie."@nl,
     "An idea or notion; a unit of thought."@en ;
   rdfs:label "Begrip"@nl, "Concept"@en ;
-  sh:property    
+  sh:property
     skosapnl:Concept-example ,
     skosapnl:Concept-comment ,
     skosapnl:Concept-source ,
@@ -68,7 +68,7 @@ skosapnl:Concept
     skosapnl:Concept-broaderInstantial ,
     skosapnl:Concept-narrowerGeneric ,
     skosapnl:Concept-broadMatch ;
-  sh:sparql 
+  sh:sparql
     skosapnl:TopConceptHavingBroader ,
     skosapnl:UnambiguousNotations ;
     sh:severity sh:Violation;
@@ -272,7 +272,7 @@ skosapnl:Concept-broader
   sh:disjoint skos:related ;
   sh:severity sh:Warning ;
   sh:path skos:broader .
-  
+
 skosapnl:Concept-narrower
   a sh:PropertyShape ;
   rdfs:label "heeft onderliggend begrip"@nl ;
@@ -419,10 +419,10 @@ skosapnl:Concept-topConceptOf
 skosapnl:Concept-altLabel
   a sh:PropertyShape ;
   rdfs:label "alternatieve term"@nl ;
-  sh:description 
-    "An alternative lexical label for a resource."@en, 
+  sh:description
+    "An alternative lexical label for a resource."@en,
     "Een alternatieve term voor een begrip is een term die gebruikt kan worden als alternatief voor de voorkeursterm van dit begrip, maar niet de voorkeur heeft."@nl ;
-  sh:disjoint 
+  sh:disjoint
     skos:hiddenLabel ,
     skos:prefLabel ;
   sh:group skosapnl:LabelsAndDescriptionPropertyGroup ;
@@ -459,11 +459,11 @@ skosapnl:Concept-narrowerGeneric
 
 skosapnl:Concept-historyNote
   a sh:PropertyShape ;
-  sh:description 
+  sh:description
     "A note about the past state/use/meaning of a concept."@en ,
     "Notitie over de voormalige status/gebruik/betekenis van het begrip"@nl ;
   sh:group skosapnl:NotesPropertyGroup ;
-  sh:name 
+  sh:name
     "history note"@en ,
     "historie notitie"@nl ;
   rdfs:label "historie notitie"@nl;
@@ -489,7 +489,7 @@ skosapnl:Concept-comment
   a sh:PropertyShape ;
   sh:description "A description of the subject resource in simple language, at language level B1, which can be understood without further context."@en , "Een beschrijving van iets in eenvoudige taal, op taalniveau B1, die zonder verdere context begrepen kan worden."@nl ;
   sh:group skosapnl:LabelsAndDescriptionPropertyGroup ;
-  sh:name 
+  sh:name
     "comment"@en ,
     "uitleg"@nl ;
   rdfs:label "comment"@nl ;
@@ -503,15 +503,15 @@ skosapnl:Concept-editorialNote
   a sh:PropertyShape ;
   sh:description "A note for an editor, translator or maintainer of the vocabulary."@en, "Een notitie voor de redacteur, vertaler of beheerder van het begrippenkader."@nl ;
   sh:group skosapnl:NotesPropertyGroup ;
-  sh:name 
+  sh:name
     "editorial note"@en ,
     "redactionele notitie"@nl ;
   rdfs:label "redactionele notitie"@nl ;
   sh:datatype rdf:langString ;
   sh:order 32 ;
   sh:nodeKind sh:Literal ;
-  sh:severity sh:Warning ;
-  sh:path skos:editorialNote .
+  sh:path skos:editorialNote ;
+  sh:severity sh:Warning .
 
 skosapnl:Concept-broaderInstantial
   a sh:PropertyShape ;
@@ -762,7 +762,7 @@ skosapnl:MappingRelationsMisuse
       $this skos:broadMatch | skos:closeMatch | skos:exactMatch | skos:narrowMatch | skos:relatedMatch ?concept ;
         skos:inScheme ?cs .
       ?concept skos:inScheme ?cs .
-      
+
     }""" ;
   ] .
 

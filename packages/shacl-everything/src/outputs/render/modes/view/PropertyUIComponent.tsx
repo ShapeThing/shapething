@@ -37,7 +37,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
 
   const labelId = useId();
   const label = propertyUIElement.label([activeInterfaceLanguage]);
-  const description = propertyUIElement.get(sh("description"), [activeInterfaceLanguage])?.value;
+  const description = propertyUIElement.description([activeInterfaceLanguage]);
 
   const existingObjects = useDataGraphObjects(propertyUIElement);
   const languageFilteredObjects =

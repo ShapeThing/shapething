@@ -32,21 +32,26 @@ const LABEL_PREDICATES = new Set([sh("name").value, sh("description").value]);
 // Runs after resolveRdfSources, so dataGraph is always a resolved RdfStore here even though
 // RawEnvironment's type still allows an unresolved RdfSource.
 //
+// A caller-supplied contentLanguages is authoritative: it overrules whatever is actually present
+// in dataGraph, rather than merely seeding the list. This lets an embedder pin a form to e.g. just
+// "nl-NL" even though the data graph also carries "en" literals - those simply stay hidden/unedited
+// rather than leaking a second language into the switcher. Only when nothing is configured do we
+// fall back to discovering languages from dataGraph.
+//
 // Only dataGraph is scanned - shapesGraph holds shape metadata (sh:name/sh:description chrome
 // labels, sh:message, etc.), not content, so any language tag found there belongs to
 // interfaceLanguages (see distillInterfaceLanguages below), never here. Scanning it here too would
 // mix the two: a shape whose sh:name happens to be authored in French would offer French as a
 // content language even though no French data exists.
-//
-// Deduped by primary subtag, same as distillInterfaceLanguages below - a configured "en-GB"
-// already covers a bare "en" literal found in the data (filterByContentLanguage matches content
-// by primary subtag too), so listing both would just give the switcher two indistinguishable
-// "English" entries. The configured/earlier-found tag wins and the later bare one is dropped.
 export const distillLanguages = ((environment) => {
   const configured = environment.contentLanguages ?? [];
-  const seen = new Set(configured.map((language) => primarySubtag(language)));
 
-  const contentLanguages = [...configured];
+  if (configured.length > 0) {
+    return { ...environment, contentLanguages: configured };
+  }
+
+  const seen = new Set<string>();
+  const contentLanguages: BCP47[] = [];
   for (const language of usedLanguages(environment.dataGraph as RdfStore)) {
     const key = primarySubtag(language);
     if (!seen.has(key)) {
@@ -62,7 +67,7 @@ export const distillLanguages = ((environment) => {
     contentLanguages.push(environment.contentLanguage);
   }
 
-  return { ...environment, contentLanguages: contentLanguages };
+  return { ...environment, contentLanguages };
 }) satisfies Preprocessor;
 
 // Every language available for the interface (chrome) to switch to: the shipped/overridden

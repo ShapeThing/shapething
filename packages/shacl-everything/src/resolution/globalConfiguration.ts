@@ -41,3 +41,19 @@ export function getLabelPreference(shapesGraph: RdfStore): PropertyPath[] {
     ? expandListOrTerm(head, shapesGraph).map((term) => parsePathNode(term, shapesGraph))
     : [];
 }
+
+/**
+ * shui:descriptionPreference: not part of the spec (there is no spec clause for property
+ * descriptions the way 8.2.2 covers labels) - a project extension mirroring shui:labelPreference's
+ * shape/mechanism exactly, for propertyDescription() (resolution/label.ts) to use the same
+ * configured-predicate-list-with-ontology-fallback approach for descriptions as labels already get.
+ * Returns [] when unconfigured - callers apply their own context-specific default (sh:description /
+ * rdfs:comment - see resolution/label.ts's effectiveDescriptionPredicates).
+ */
+export function getDescriptionPreference(shapesGraph: RdfStore): PropertyPath[] {
+  const subject = configurationSubject(shapesGraph);
+  const head = subject && shapesGraph.getQuads(subject, shui("descriptionPreference"))[0]?.object;
+  return head
+    ? expandListOrTerm(head, shapesGraph).map((term) => parsePathNode(term, shapesGraph))
+    : [];
+}

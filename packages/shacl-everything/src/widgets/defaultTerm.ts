@@ -8,19 +8,26 @@ import type { CreateTermContext } from "@/widgets/types.ts";
 /**
  * The empty term a property's value should start as, for widgets whose meta.ts declares no
  * createTerm - derived from what the property shape already states: sh:datatype for literals,
- * sh:nodeKind for an unambiguous IRI/blank node, sh:class as a last-resort signal that the
- * value is a resource reference. Falls back to a plain xsd:string literal when the shape says
- * nothing at all.
+ * sh:nodeKind for an IRI/blank node, sh:class as a last-resort signal that the value is a
+ * resource reference. Falls back to a plain xsd:string literal when the shape says nothing at
+ * all - never a resource-typed literal (e.g. plain string) for a shape whose sh:nodeKind
+ * excludes literals entirely, since that would already be an invalid starting value.
+ *
+ * shape.get(sh("nodeKind")) (nodeKindIntersection, see constraintResolutions.ts) already expands
+ * a compound value like sh:BlankNodeOrIRI into its member kinds (sh:BlankNode, sh:IRI), so a
+ * choice between IRI and blank node is common here, not just the single-kind case - IRI is
+ * preferred whenever it's one of the allowed kinds, blank node only when IRI isn't allowed at
+ * all.
  */
 export function defaultTermFromShape(shape: PropertyUIElement): Term {
   const datatype = shape.get(sh("datatype"));
   if (datatype) return factory.literal("", datatype as NamedNode);
 
   const nodeKinds = shape.get(sh("nodeKind"));
-  if (nodeKinds.length === 1 && nodeKinds[0].equals(sh("IRI"))) {
+  if (nodeKinds.some((kind) => kind.equals(sh("IRI")))) {
     return factory.namedNode("");
   }
-  if (nodeKinds.length === 1 && nodeKinds[0].equals(sh("BlankNode"))) {
+  if (nodeKinds.some((kind) => kind.equals(sh("BlankNode")))) {
     return factory.blankNode();
   }
 

@@ -4,6 +4,7 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
 import { filterConformingResults } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/validateSearchResults.ts";
+import { useEnvironment } from "./useEnvironment.tsx";
 import { useInterfaceLanguage } from "./useInterfaceLanguage.tsx";
 import {
   runFederatedQuery,
@@ -30,11 +31,12 @@ async function runSearchQuery(
   query: string,
   search: string,
   uiLanguage: string,
+  corsProxyUrl: string | undefined,
 ): Promise<SearchResult[]> {
   const substituted = substituteSearchParameters(query, search, uiLanguage);
   const results = await filterConformingResults(
     shape,
-    await runFederatedQuery(substituted, shape, uiLanguage),
+    await runFederatedQuery(substituted, shape, uiLanguage, corsProxyUrl),
   );
 
   return results.flatMap((result): SearchResult[] =>
@@ -69,6 +71,7 @@ export function useInstanceSearch(shape: PropertyUIElement): {
   reset: () => void;
 } {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
+  const { corsProxyUrl } = useEnvironment();
   const searchQuery = useMemo(() => searchQueryFor(shape), [shape]);
   const [search, setSearch] = useState<string>();
   const [debounced, setDebounced] = useState<string>();
@@ -89,8 +92,8 @@ export function useInstanceSearch(shape: PropertyUIElement): {
     ],
     queryFn: () =>
       (searchQuery
-        ? runSearchQuery(shape, searchQuery, debounced ?? "", activeInterfaceLanguage)
-        : searchInstances(shape, debounced ?? "")
+        ? runSearchQuery(shape, searchQuery, debounced ?? "", activeInterfaceLanguage, corsProxyUrl)
+        : searchInstances(shape, debounced ?? "", corsProxyUrl)
       ).catch((cause) => {
         console.error("[shacl-everything] instance search failed", cause);
         throw cause;

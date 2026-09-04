@@ -32,17 +32,20 @@ test("distillLanguages - ignores language tags found in the shapes graph (those 
   expect(result.contentLanguages).toEqual(["en-GB"]);
 });
 
-test("distillLanguages - keeps caller-provided languages first, in order, and appends anything extra found in the data", () => {
+test("distillLanguages - a caller-provided list is authoritative and ignores anything found in the data, in order given", () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Cat", "en")));
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Kat", "nl")));
 
   const result = distillLanguages(rawEnvironment({ dataGraph, contentLanguages: ["en", "fr"] }));
 
-  expect(result.contentLanguages).toEqual(["en", "fr", "nl"]);
+  // Not ["en", "fr", "nl"] - "nl" is present in the data but wasn't configured, so it's excluded
+  // entirely rather than merged in. A caller-supplied contentLanguages pins the form to exactly
+  // those languages.
+  expect(result.contentLanguages).toEqual(["en", "fr"]);
 });
 
-test("distillLanguages - dedupes case-insensitively without dropping the caller's original casing", () => {
+test("distillLanguages - a caller-provided list is returned verbatim, casing untouched", () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Cat", "en")));
 
@@ -51,7 +54,7 @@ test("distillLanguages - dedupes case-insensitively without dropping the caller'
   expect(result.contentLanguages).toEqual(["EN"]);
 });
 
-test("distillLanguages - merges a bare tag found in the data into a configured tag sharing the same primary subtag, instead of listing both", () => {
+test("distillLanguages - a caller-provided list overrules a same-primary-subtag bare tag found in the data", () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Hendrik", "en")));
 
@@ -59,9 +62,8 @@ test("distillLanguages - merges a bare tag found in the data into a configured t
     rawEnvironment({ dataGraph, contentLanguages: ["en-GB", "nl-NL"] }),
   );
 
-  // Not ["en-GB", "nl-NL", "en"] - "en"/"en-GB" would be indistinguishable entries in the content
-  // language switcher (filterByContentLanguage already matches across them by primary subtag), so
-  // the configured regioned tag wins and the bare one found in the data is dropped.
+  // Not ["en-GB", "nl-NL", "en"] - the data graph isn't scanned at all once contentLanguages is
+  // configured, so the bare "en" found there never enters the list.
   expect(result.contentLanguages).toEqual(["en-GB", "nl-NL"]);
 });
 

@@ -16,7 +16,7 @@ import type { Widgets } from "@/widgets/types.ts";
 import { toSparql } from "@/structure/paths/toSparql.ts";
 import { resolutions } from "@/structure/constraintResolutions.ts";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
-import { propertyLabel } from "@/resolution/label.ts";
+import { propertyDescription, propertyLabel } from "@/resolution/label.ts";
 
 export type PropertyUIElementOptions = {
   shapesGraph: RdfStore;
@@ -188,21 +188,34 @@ export class PropertyUIElement {
   }
 
   /**
-   * The best available display label, per 8.2.2 Property Labels: the property shape's own
-   * configured label value (sh:name by default) if declared, otherwise the ontology property the
-   * path targets (rdfs:label by default). propertyLabel() always resolves to *something* (falling
-   * back to the term's own local name), so this never returns undefined - for a path with no single
-   * terminal predicate (e.g. sh:alternativePath), the property shape node itself stands in as the
-   * term to fall back from. `isPropertyPath: true` opts into propertyLabel()'s step 1 (the property
-   * shape's own value) - only valid here, where `term` genuinely is this element's own sh:path
-   * target; propertyLabel()'s other callers label unrelated terms (a widget IRI, a class node) using
-   * this element purely as graph/language context, and must not have this element's own sh:name leak
-   * into that.
+   * The best available display label, per 8.2.2 Property Labels (with one deliberate divergence -
+   * see propertyLabel()'s own step 1 comment): the property shape's own configured label value
+   * (sh:name by default) if it has a value in the interface language being rendered, otherwise the
+   * ontology property the path targets (rdfs:label by default), otherwise sh:name again in whatever
+   * language it does have, and only then the term's own local name - so this never returns undefined.
+   * For a path with no single terminal predicate (e.g. sh:alternativePath), the property shape node
+   * itself stands in as the term to fall back from. `isPropertyPath: true` opts into propertyLabel()'s
+   * step 1 (the property shape's own value) - only valid here, where `term` genuinely is this
+   * element's own sh:path target; propertyLabel()'s other callers label unrelated terms (a widget
+   * IRI, a class node) using this element purely as graph/language context, and must not have this
+   * element's own sh:name leak into that.
    */
   label(languages?: BCP47[]): string {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     const predicate = (path && terminalPredicate(path)) ?? this.propertyShapes[0];
     return propertyLabel({ term: predicate, propertyShape: this, languages, isPropertyPath: true });
+  }
+
+  /**
+   * The property's description/help text - see propertyDescription() (resolution/label.ts) for the
+   * resolution order (not a spec clause; mirrors label()'s own mechanism). Unlike label(), this can
+   * return undefined - a property simply has no description when nothing matches, and every caller
+   * already only renders it when truthy.
+   */
+  description(languages?: BCP47[]): string | undefined {
+    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    const predicate = (path && terminalPredicate(path)) ?? this.propertyShapes[0];
+    return propertyDescription({ term: predicate, propertyShape: this, languages });
   }
 
   /**
@@ -324,7 +337,9 @@ function terminalPredicate(path: PropertyPath): NamedNode | undefined {
 
 // Raw values for `predicate` across every grouped shape, in ascending sh:order - the ordering
 // both a keepFirst-style resolution and language selection rely on to break ties consistently.
-function orderedValues(element: PropertyUIElement, predicate: NamedNode): Term[] {
+// Exported for propertyLabel (resolution/label.ts), which needs the raw, un-language-resolved list
+// itself (to try a strict language match first, falling back to the ontology before a looser one).
+export function orderedValues(element: PropertyUIElement, predicate: NamedNode): Term[] {
   const orderedShapes = [...element.propertyShapes].sort(
     (a, b) => shapeOrder(a, element.shapesGraph) - shapeOrder(b, element.shapesGraph),
   );

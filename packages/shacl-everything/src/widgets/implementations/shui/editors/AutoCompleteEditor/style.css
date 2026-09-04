@@ -85,6 +85,7 @@
   min-height: 2rem;
   color: var(--st-color-text-muted);
   font-size: var(--st-font-size-small);
+  cursor: pointer;
 
   svg {
     width: 1.2em;

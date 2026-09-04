@@ -1,5 +1,5 @@
 import { useId } from "react";
-import type { NamedNode } from "@rdfjs/types";
+import type { NamedNode, Term } from "@rdfjs/types";
 import { shui } from "@/helpers/namespaces.ts";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
@@ -15,16 +15,24 @@ export default function WidgetSwitcher({
   activeWidgetIri,
   setActiveWidget,
   shape,
+  valueNode,
 }: {
   activeWidgetIri: NamedNode | undefined;
   setActiveWidget: (iri: NamedNode, widget: () => WidgetComponent | undefined) => void;
   shape: PropertyUIElement;
+  // The property's actual current value - threaded through to useWidgets so a widget only
+  // reachable via a value-only shui:WidgetScore rule (shui:dataGraphShape with no
+  // shui:shapesGraphShape - see score.ts's match()) still appears as a candidate here, matching
+  // how WidgetSlot itself resolves the active widget (useWidget(..., object)). Without this, such
+  // a widget can become active but never show up in this list, and the trigger/option falls back
+  // to rendering the raw widget IRI instead of its label (see renderTriggerContent/renderOption).
+  valueNode?: Term;
 }) {
   const { enableWidgetSwitching } = useEnvironment();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const selectId = useId();
 
-  const widgets = useWidgets(shui("editor"), shape);
+  const widgets = useWidgets(shui("editor"), shape, valueNode);
 
   return enableWidgetSwitching ? (
     <FormElement

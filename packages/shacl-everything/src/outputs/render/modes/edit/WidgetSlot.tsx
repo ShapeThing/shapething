@@ -130,6 +130,7 @@ export default function WidgetSlot({
               setActiveWidgetIri(iri);
             }}
             shape={effectiveProperty}
+            valueNode={object}
           />
         )}
       </div>
