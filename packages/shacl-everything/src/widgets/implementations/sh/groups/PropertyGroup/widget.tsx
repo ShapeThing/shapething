@@ -19,9 +19,10 @@ export default function PropertyGroup({ group }: GroupWidgetProps) {
     <fieldset className="st-property-group">
       <legend className="st-property-group__legend">
         <span className="st-property-group__title">{label}</span>
-        {description && <p className="st-property-group__description">{description}</p>}
       </legend>
       <div className="st-property-group__body">
+        {description && <p className="st-property-group__description">{description}</p>}
+
         <UIElementChildren elements={group.children} />
       </div>
     </fieldset>

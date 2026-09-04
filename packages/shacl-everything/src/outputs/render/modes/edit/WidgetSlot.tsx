@@ -93,21 +93,38 @@ export default function WidgetSlot({
   const currentlyFocused = useFocusWithin(ref);
   const nearestFocused = useFocusWithinNearest(ref, ".st-property-object__widget");
 
-  // Re-sync ActiveWidget when the sh:or/sh:xone branch changes underneath it - not just on first
-  // resolve - otherwise switching branches (e.g. boolean -> string) leaves the old branch's widget
-  // mounted. Gated on !isPlaceholderData so this waits for the *new* branch's own widget query to
-  // resolve, rather than committing the still-stale (keepPreviousData) Widget from the old branch.
+  // Re-sync ActiveWidget whenever the naturally-resolved widget changes underneath it - not just
+  // on first resolve - otherwise the old widget stays mounted after whatever caused the rescore:
+  // an sh:or/sh:xone branch switch (e.g. boolean -> string), or a value's own term type changing
+  // in a way that reroutes it to a different widget (e.g. BlankNodeEditor assigning an identifier,
+  // which turns its term into a NamedNode and should hand off to IRIEditor). Tracked as the last
+  // *naturally* resolved (branch, widget) pair rather than compared against activeWidgetIri, since
+  // WidgetSwitcher can pin activeWidgetIri to a manual override that legitimately differs from the
+  // natural resolution - that override must survive until the natural resolution itself changes
+  // again, not get silently reverted the next time this effect runs. Gated on !isPlaceholderData
+  // so this waits for the *new* query to resolve, rather than committing the still-stale
+  // (keepPreviousData) Widget from before.
   const activeBranchKey = activeBranch?.shape.value;
-  const syncedBranchKeyRef = useRef(activeBranchKey);
+  const resolvedWidgetKey = resolvedWidgetIri?.value;
+  const syncedResolutionRef = useRef({ branch: activeBranchKey, widget: resolvedWidgetKey });
   useEffect(() => {
     if (!Widget || isPlaceholderData) return;
-    const branchChanged = syncedBranchKeyRef.current !== activeBranchKey;
-    if (!ActiveWidget || branchChanged) {
+    const resolutionChanged =
+      syncedResolutionRef.current.branch !== activeBranchKey ||
+      syncedResolutionRef.current.widget !== resolvedWidgetKey;
+    if (!ActiveWidget || resolutionChanged) {
       setActiveWidget(() => Widget);
       setActiveWidgetIri(resolvedWidgetIri as NamedNode);
-      syncedBranchKeyRef.current = activeBranchKey;
+      syncedResolutionRef.current = { branch: activeBranchKey, widget: resolvedWidgetKey };
     }
-  }, [Widget, ActiveWidget, activeBranchKey, isPlaceholderData, resolvedWidgetIri]);
+  }, [
+    Widget,
+    ActiveWidget,
+    activeBranchKey,
+    resolvedWidgetKey,
+    isPlaceholderData,
+    resolvedWidgetIri,
+  ]);
 
   const unit = propertyUIElement.get(sh("unit"))[0]?.value;
 

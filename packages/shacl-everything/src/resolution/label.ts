@@ -398,8 +398,8 @@ export function valueNodeLabel(
   }
 
   // 5. If V is an IRI, use local-name resolution of V.
-  // 6. If V is a blank node, use an implementation-specific placeholder (empty string).
-  if (term.termType === "BlankNode") return factory.literal("");
+  // 6. If V is a blank node, use an implementation-specific placeholder.
+  if (term.termType === "BlankNode") return factory.literal(term.value);
   return factory.literal(localName(term) ?? term.value);
 }
 

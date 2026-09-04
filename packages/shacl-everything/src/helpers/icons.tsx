@@ -15,6 +15,8 @@ import ViolationIcon from "~icons/ic/round-error";
 import WarningIcon from "~icons/ic/round-warning";
 import InfoIcon from "~icons/ic/round-info";
 import GlobeIcon from "~icons/ic/round-public";
+import CodeIcon from "~icons/ic/round-code";
+import SwapIcon from "~icons/ic/round-swap-horiz";
 
 export const Loading = LoadingTwotoneLoopIcon;
 export const EditNested = EditTwotoneLoopIcon;
@@ -33,3 +35,5 @@ export const Violation = ViolationIcon;
 export const Warning = WarningIcon;
 export const Info = InfoIcon;
 export const Globe = GlobeIcon;
+export const Code = CodeIcon;
+export const Swap = SwapIcon;

@@ -15,7 +15,7 @@
   padding: var(--size-2);
   padding-inline-end: calc(var(--size-7) + var(--size-1));
   border-radius: var(--radius-2);
-  border: 1px solid var(--gray-5);
+  border: 1px solid var(--st-color-border);
   width: 100%;
   position: relative;
   z-index: var(--st-z-raised);

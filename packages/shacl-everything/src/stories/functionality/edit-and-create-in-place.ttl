@@ -1,0 +1,56 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix ex: <http://example.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Publisher"@en ;
+        sh:path ex:publisher ;
+        sh:class ex:Organization ;
+        sh:nodeKind sh:IRI ;
+        # sh:node is what lets AutoCompleteEditor's "Create new…" row open a real field-editing
+        # modal (see valueNodeShapes) instead of minting a bare, unlabelled subject.
+        sh:node <#organizationShape> ;
+        shui:editor shui:AutoCompleteEditor ;
+    ] ;
+
+    sh:property [
+        sh:name "Employer"@en ;
+        sh:path ex:employer ;
+        sh:in ( ex:Acme ) ;
+        sh:nodeKind sh:IRI ;
+        # Same organizationShape, this time only used to offer editing the already-selected value
+        # in place (see AutoCompleteOption's resourceEditor prop) - EnumSelectEditor's own options
+        # come from sh:in above, not from this shape.
+        sh:node <#organizationShape> ;
+        shui:editor shui:EnumSelectEditor ;
+    ] ;
+    .
+
+<#organizationShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Organization ;
+    sh:property [
+        sh:name "Name"@en ;
+        sh:path rdfs:label ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:employer ex:Acme ;
+    .
+
+ex:Acme a ex:Organization ;
+    rdfs:label "Acme Corp" .
