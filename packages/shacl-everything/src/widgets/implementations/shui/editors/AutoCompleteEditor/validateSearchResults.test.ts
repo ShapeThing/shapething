@@ -3,7 +3,7 @@ import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { ResolvedTerm } from "@/outputs/render/hooks/query.ts";
-import { filterConformingResults, insertValuesClause } from "./validateSearchResults.ts";
+import { filterConformingResults } from "./validateSearchResults.ts";
 
 const createShape = async (shapesTurtle: string, dataTurtle: string) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${shapesTurtle}`, "text/turtle");
@@ -67,26 +67,4 @@ test("filterConformingResults() filters against a local (no SERVICE) sh:in [ sh:
   const kept = await filterConformingResults(shape, asResults(ex("Netherlands"), ex("Atlantis")));
 
   expect(kept.map((result) => result.term.value)).toEqual([ex("Netherlands").value]);
-});
-
-test("insertValuesClause() binds every candidate in one VALUES clause, inside the SERVICE block when there is one", () => {
-  const federated = insertValuesClause(
-    `PREFIX ex: <http://example.org/>
-     SELECT DISTINCT ?value1 WHERE {
-       SERVICE <https://example.com/sparql> {
-         ?value1 a ex:Person .
-       }
-     }`,
-    "value1",
-    [ex("a"), ex("b")],
-  );
-  const serviceBody = federated.slice(federated.indexOf("SERVICE"));
-  expect(serviceBody).toContain(`VALUES ?value1 { <${ex("a").value}> <${ex("b").value}> }`);
-
-  const local = insertValuesClause(
-    `PREFIX ex: <http://example.org/> SELECT ?value WHERE { ?value a ex:Person }`,
-    "value",
-    [ex("a"), ex("b")],
-  );
-  expect(local).toContain(`VALUES ?value { <${ex("a").value}> <${ex("b").value}> }`);
 });

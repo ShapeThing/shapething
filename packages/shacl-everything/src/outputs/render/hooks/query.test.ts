@@ -2,7 +2,12 @@ import { expect, test } from "vite-plus/test";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { fetchOptions, searchInstances, substituteSearchParameters } from "./query.ts";
+import {
+  fetchOptions,
+  insertValuesClause,
+  searchInstances,
+  substituteSearchParameters,
+} from "./query.ts";
 
 const createShape = async (shapesTurtle: string, dataTurtle: string) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${shapesTurtle}`, "text/turtle");
@@ -106,4 +111,26 @@ test("substituteSearchParameters() replaces both $-prefixed and ?-prefixed forms
   );
   expect(mixedForm).toContain('"hello"');
   expect(mixedForm).toContain('"en-GB"');
+});
+
+test("insertValuesClause() binds every candidate in one VALUES clause, inside the SERVICE block when there is one", () => {
+  const federated = insertValuesClause(
+    `PREFIX ex: <http://example.org/>
+     SELECT DISTINCT ?value1 WHERE {
+       SERVICE <https://example.com/sparql> {
+         ?value1 a ex:Person .
+       }
+     }`,
+    "value1",
+    [ex("a"), ex("b")],
+  );
+  const serviceBody = federated.slice(federated.indexOf("SERVICE"));
+  expect(serviceBody).toContain(`VALUES ?value1 { <${ex("a").value}> <${ex("b").value}> }`);
+
+  const local = insertValuesClause(
+    `PREFIX ex: <http://example.org/> SELECT ?value WHERE { ?value a ex:Person }`,
+    "value",
+    [ex("a"), ex("b")],
+  );
+  expect(local).toContain(`VALUES ?value { <${ex("a").value}> <${ex("b").value}> }`);
 });
