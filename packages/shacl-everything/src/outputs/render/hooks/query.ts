@@ -160,7 +160,7 @@ function toResolvedTerms(bindings: Bindings[]): ResolvedTerm[] {
                   ? classificationLabelTerm.value
                   : classificationTerm.termType === "Literal"
                     ? classificationTerm.value
-                    : localName(classificationTerm) ?? classificationTerm.value,
+                    : (localName(classificationTerm) ?? classificationTerm.value),
             }
           : undefined,
         depiction: depictionTerm?.termType === "NamedNode" ? depictionTerm : undefined,
@@ -381,7 +381,14 @@ async function resolveRoles(
     return values.map((term) => ({ term }));
   }
 
-  return runRoleLookupQuery(values, propertyShape, labelPaths, classificationPaths, depictionPaths, options);
+  return runRoleLookupQuery(
+    values,
+    propertyShape,
+    labelPaths,
+    classificationPaths,
+    depictionPaths,
+    options,
+  );
 }
 
 /**
