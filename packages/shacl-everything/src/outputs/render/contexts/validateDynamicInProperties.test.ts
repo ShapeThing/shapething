@@ -96,7 +96,10 @@ test("validateDynamicInProperties() respects an explicit sh:severity", async () 
 });
 
 test("validateDynamicInProperties() reports nothing for an unset property", async () => {
-  const { shapesGraph, dataGraph } = await createGraphs(DYNAMIC_IN_SHAPE, `ex:Subject a ex:Person .`);
+  const { shapesGraph, dataGraph } = await createGraphs(
+    DYNAMIC_IN_SHAPE,
+    `ex:Subject a ex:Person .`,
+  );
 
   const results = await validateDynamicInProperties(
     shapesGraph,
