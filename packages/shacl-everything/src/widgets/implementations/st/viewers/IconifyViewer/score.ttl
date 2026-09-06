@@ -1,0 +1,40 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+st:IconifyViewer rdfs:label "Icon"@en, "Icoon"@nl .
+
+st:iconifyViewerScore40
+    a shui:WidgetScore ;
+    shui:widget st:IconifyViewer ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:prefersIconifyViewer ;
+.
+
+# A property shape declaring sh:datatype <https://iconify.design> (see namespaces.ts's
+# iconifyDatatype) always means "this value is an Iconify icon name" - beats LiteralViewer's own
+# generic isLiteral rule (score.ttl of that widget), which otherwise ties at 1 for any literal this
+# codebase has no dedicated viewer for.
+st:iconifyViewerScoreDatatype
+    a shui:WidgetScore ;
+    shui:widget st:IconifyViewer ;
+    shui:score 30 ;
+    shui:shapesGraphShape st:hasIconifyDatatypeConstraint ;
+.
+
+st:prefersIconifyViewer
+    a sh:NodeShape ;
+    sh:property [
+        sh:path shui:viewer ;
+        sh:hasValue st:IconifyViewer ;
+    ] ;
+.
+
+st:hasIconifyDatatypeConstraint
+    a sh:NodeShape ;
+    sh:property [
+        sh:path sh:datatype ;
+        sh:hasValue <https://iconify.design> ;
+    ] ;
+.

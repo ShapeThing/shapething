@@ -1,0 +1,44 @@
+.st-address-editor {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  display: flex;
+
+  .st-edit-button {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+  }
+}
+
+.st-address-editor__label {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  padding-inline: var(--size-2);
+  border-inline-end: none;
+
+  /* Overrides st-combo-surface's own (equal-specificity) border-radius so this always wins
+     regardless of stylesheet order - the edit button attaches flush on this side. */
+  &.st-combo-surface {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+}
+
+.st-address-editor__lines {
+  display: flex;
+  flex-direction: column;
+}
+
+.st-address-editor__empty {
+  cursor: pointer;
+}
+
+.st-address-editor__result {
+  display: flex;
+  flex-direction: column;
+  padding-block: var(--size-1);
+  padding-inline: var(--size-2);
+}

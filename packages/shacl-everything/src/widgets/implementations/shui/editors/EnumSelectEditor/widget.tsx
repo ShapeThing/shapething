@@ -11,6 +11,7 @@ import { useSelectOptions, type ResolvedOption } from "@/outputs/render/hooks/us
 import { valueNodeShapes } from "@/resolution/label.ts";
 import { selectQueryFor } from "@/structure/selectQuery.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
+import "@/theme/comboBox.css";
 import "./style.css";
 
 export default function EnumSelectEditor({
@@ -138,7 +139,7 @@ export default function EnumSelectEditor({
       <button
         ref={triggerRef}
         type="button"
-        className="st-enum-select__trigger"
+        className="st-enum-select__trigger st-combo-surface"
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
@@ -196,13 +197,13 @@ export default function EnumSelectEditor({
       </button>
 
       {open && (
-        <div id={listboxId} className="st-enum-select__results" role="listbox">
+        <div id={listboxId} className="st-enum-select__results st-combo-results" role="listbox">
           {selectError ? (
-            <div className="st-enum-select__empty" role="alert">
+            <div className="st-enum-select__empty st-combo-empty" role="alert">
               <Localized id="autocomplete-search-error">Search failed</Localized>
             </div>
           ) : selectLoading ? (
-            <div className="st-enum-select__empty">
+            <div className="st-enum-select__empty st-combo-empty">
               <Loading />
               <Localized id="loading">Loading</Localized>
             </div>
@@ -214,7 +215,7 @@ export default function EnumSelectEditor({
               ref={(el) => {
                 optionRefs.current[index] = el;
               }}
-              className={`st-enum-select__result ${index === activeIndex ? "st-enum-select__result--active" : ""}`}
+              className={`st-enum-select__result st-combo-result ${index === activeIndex ? "st-enum-select__result--active st-combo-result--active" : ""}`}
               role="option"
               aria-selected={option.term.value === term.value}
               // Keeps focus on the trigger during the click so onBlur above never fires for it -

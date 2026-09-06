@@ -18,6 +18,7 @@ import { valueNodeShapes } from "@/resolution/label.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 import type { WidgetProps } from "@/widgets/types.ts";
+import "@/theme/comboBox.css";
 import "./style.css";
 
 // Mirrors AutoCompleteOption's own edit-in-place staging (see InstancesSelectEditor, whose
@@ -203,7 +204,7 @@ export default function AutoCompleteEditor({
   if (mode === "view") {
     return (
       <div className="st-autocomplete">
-        <span tabIndex={0} className="st-autocomplete__label">
+        <span tabIndex={0} className="st-autocomplete__label st-combo-surface">
           {term.value ? (
             <AutoCompleteOption
               term={term}
@@ -280,13 +281,13 @@ export default function AutoCompleteEditor({
       </Localized>
 
       {dropdownOpen && (
-        <div id={listboxId} className="st-autocomplete__results" role="listbox">
+        <div id={listboxId} className="st-autocomplete__results st-combo-results" role="listbox">
           {error ? (
-            <div className="st-autocomplete__empty" role="alert">
+            <div className="st-autocomplete__empty st-combo-empty" role="alert">
               <Localized id="autocomplete-search-error">Search failed</Localized>
             </div>
           ) : isLoading ? (
-            <div className="st-autocomplete__empty">
+            <div className="st-autocomplete__empty st-combo-empty">
               <Loading />
               <Localized id="loading">Loading</Localized>
             </div>
@@ -298,7 +299,7 @@ export default function AutoCompleteEditor({
                 ref={(el) => {
                   optionRefs.current[index] = el;
                 }}
-                className={`st-autocomplete__result ${index === activeIndex ? "st-autocomplete__result--active" : ""}`}
+                className={`st-autocomplete__result st-combo-result ${index === activeIndex ? "st-autocomplete__result--active st-combo-result--active" : ""}`}
                 role="option"
                 aria-selected={result.iri.value === term.value}
                 // Keeps focus on the input during the click so onBlur above never fires for it -
@@ -317,7 +318,7 @@ export default function AutoCompleteEditor({
               </div>
             ))
           ) : results !== undefined ? (
-            <div className="st-autocomplete__empty">
+            <div className="st-autocomplete__empty st-combo-empty">
               <Localized id="autocomplete-no-results">No results found</Localized>
             </div>
           ) : null}
@@ -327,7 +328,7 @@ export default function AutoCompleteEditor({
               ref={(el) => {
                 optionRefs.current[options.length] = el;
               }}
-              className={`st-autocomplete__result st-autocomplete__result--create ${options.length === activeIndex ? "st-autocomplete__result--active" : ""}`}
+              className={`st-autocomplete__result st-autocomplete__result--create st-combo-result ${options.length === activeIndex ? "st-autocomplete__result--active st-combo-result--active" : ""}`}
               role="option"
               aria-selected={false}
               // Keeps focus on the input during the click, same as every result row above - onClick

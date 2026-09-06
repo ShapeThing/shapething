@@ -124,7 +124,7 @@ test("st:facet hard-wires a specific facet widget, same as shui:editor/shui:view
           @prefix sh: <http://www.w3.org/ns/shacl#> .
           @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
           @prefix ex: <http://example.org/> .
-          @prefix st: <http://shapething/> .
+          @prefix st: <http://shapething.com/> .
           ex:ageShape a sh:PropertyShape ;
               sh:path ex:age ;
               sh:datatype xsd:integer ;
@@ -145,7 +145,7 @@ test("st:facet hard-wires a specific facet widget, same as shui:editor/shui:view
             @prefix sh: <http://www.w3.org/ns/shacl#> .
             @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
             @prefix ex: <http://example.org/> .
-            @prefix st: <http://shapething/> .
+            @prefix st: <http://shapething.com/> .
             ex:ageShape a sh:PropertyShape ;
                 sh:path ex:age ;
                 sh:datatype xsd:integer ;
@@ -210,7 +210,7 @@ test("getGroupWidget prefers a more specific registered type (st:CollapsibleProp
   const shapesGraph = await parseRdf(
     `
         @prefix sh: <http://www.w3.org/ns/shacl#> .
-        @prefix st: <http://shapething/> .
+        @prefix st: <http://shapething.com/> .
         @prefix ex: <http://example.org/> .
         ex:nameGroup a sh:PropertyGroup, st:CollapsiblePropertyGroup .
     `,

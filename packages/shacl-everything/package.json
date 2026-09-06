@@ -44,6 +44,7 @@
     "@faker-js/faker": "^10.5.0",
     "@fluent/bundle": "^0.19.1",
     "@fluent/react": "^0.15.2",
+    "@iconify/react": "^6.0.2",
     "@rdfjs/environment": "^1.0.0",
     "@rdfjs/namespace": "^2.0.1",
     "@rdfjs/types": "^2.0.1",
@@ -53,6 +54,7 @@
     "@tiptap/starter-kit": "^3.30.2",
     "buffer": "^6.0.3",
     "clsx": "^2.1.1",
+    "maplibre-gl": "^5.24.0",
     "open-props": "^1.7.23",
     "rdf-data-factory": "^2.0.2",
     "rdf-parse": "^5.0.0",
@@ -62,7 +64,8 @@
     "react-error-boundary": "^6.1.2",
     "shacl-engine": "github:rdf-ext/shacl-engine#1d111fc772a71ec2118eed2974709c2b04f47510",
     "string-to-color-gradient": "^1.0.13",
-    "string-to-stream": "^3.0.1"
+    "string-to-stream": "^3.0.1",
+    "wkt": "^0.1.1"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.2.1",
@@ -75,6 +78,7 @@
     "@storybook/react-vite": "^10.5.4",
     "@svgr/core": "^8.1.0",
     "@svgr/plugin-jsx": "^8.1.0",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^25.9.5",
     "@types/rdfjs__namespace": "^2.0.10",
     "@types/react": "^19.2.17",

@@ -1,0 +1,25 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+st:AddressEditor rdfs:label "Address"@en, "Adres"@nl .
+
+# Ported from shacl-renderer's own AddressEditor: opt-in only, via an explicit shui:editor
+# declaration - unlike most editors here, it never auto-scores against sh:class/sh:node, since a
+# schema:PostalAddress-shaped blank node has no signal distinguishing it from any other nested
+# object a shape might declare (DetailsEditor already owns that generic case).
+st:addressEditorScore40
+    a shui:WidgetScore ;
+    shui:widget st:AddressEditor ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:prefersAddressEditor ;
+.
+
+st:prefersAddressEditor
+    a sh:NodeShape ;
+    sh:property [
+        sh:path shui:editor ;
+        sh:hasValue st:AddressEditor ;
+    ] ;
+.
