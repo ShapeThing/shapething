@@ -1,0 +1,76 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX geosparql: <http://www.opengis.net/ont/geosparql#>
+
+st:MapViewer rdfs:label "Map"@en, "Kaart"@nl .
+
+st:mapViewerScore40
+    a shui:WidgetScore ;
+    shui:widget st:MapViewer ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:prefersMapViewer ;
+.
+
+# sh:datatype geosparql:wktLiteral is an unambiguous signal (unlike e.g. AddressEditor/
+# AddressViewer's schema:PostalAddress-shaped blank node, which has nothing distinguishing it from
+# any other nested object a shape might declare) - so, like IconifyEditor/IconifyViewer's own
+# sh:datatype <https://iconify.design> rule, this auto-scores even without an explicit st:MapViewer
+# declaration.
+st:mapViewerScore20
+    a shui:WidgetScore ;
+    shui:widget st:MapViewer ;
+    shui:score 20 ;
+    shui:dataGraphShape st:isWktLiteral ;
+.
+
+st:mapViewerScore10
+    a shui:WidgetScore ;
+    shui:widget st:MapViewer ;
+    shui:score 10 ;
+    shui:shapesGraphShape st:hasWktDatatypeConstraint ;
+.
+
+st:prefersMapViewer
+    a sh:NodeShape ;
+    sh:property [
+        sh:path shui:viewer ;
+        sh:hasValue st:MapViewer ;
+    ] ;
+.
+
+# A value literal typed as a GeoSPARQL WKT literal - the one direct representation this viewer can
+# recognize without walking into sub-properties (see geometry.ts's valueToFeature). A plain GeoJSON
+# string (no distinguishing datatype) and the st:GeoRole-nested case (see geometry.ts's
+# geoRoleGeometry) have no reliable shapes-graph signal to score on generically, so those are only
+# ever picked up via an explicit shui:viewer declaration (see prefersMapViewer above).
+st:isWktLiteral
+    a sh:NodeShape ;
+    sh:datatype geosparql:wktLiteral ;
+.
+
+# Same signal read off the property shape's own sh:datatype instead of an actual value, so a
+# not-yet-valued property still prefers MapViewer (e.g. WidgetSwitcher listing options). sh:datatype
+# can, per SHACL 1.2, hold a SHACL list of datatypes instead of one IRI (spec issue #1179) - see
+# widget-scoring.ttl's own comment on hasCustomDatatype for why this needs both branches below.
+st:hasWktDatatypeConstraint
+    a sh:NodeShape ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:hasValue geosparql:wktLiteral ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue geosparql:wktLiteral ;
+            ] ;
+        ]
+    ) ;
+.

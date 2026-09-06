@@ -1,0 +1,24 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Icon"@en, "Icoon"@nl ;
+        sh:description "Search is restricted to the mdi icon set"@en ;
+        sh:path ex:icon ;
+        sh:datatype <https://iconify.design> ;
+        st:iconifyCollections "mdi" ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:icon "mdi:home"^^<https://iconify.design> ;
+    .

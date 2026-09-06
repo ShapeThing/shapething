@@ -1,0 +1,24 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+st:AddressViewer rdfs:label "Address"@en, "Adres"@nl .
+
+# Ported from shacl-renderer's own AddressViewer: opt-in only, via an explicit shui:viewer
+# declaration - see AddressEditor/score.ttl for why this never auto-scores against sh:class/
+# sh:node.
+st:addressViewerScore40
+    a shui:WidgetScore ;
+    shui:widget st:AddressViewer ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:prefersAddressViewer ;
+.
+
+st:prefersAddressViewer
+    a sh:NodeShape ;
+    sh:property [
+        sh:path shui:viewer ;
+        sh:hasValue st:AddressViewer ;
+    ] ;
+.

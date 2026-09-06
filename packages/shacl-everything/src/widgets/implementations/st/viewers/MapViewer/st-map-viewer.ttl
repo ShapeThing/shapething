@@ -1,0 +1,68 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix schema: <https://schema.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix geosparql: <http://www.opengis.net/ont/geosparql#>.
+@prefix ex: <http://example.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Place ;
+    sh:closed true ;
+    sh:ignoredProperties (rdf:type) ;
+    sh:property [
+        sh:path schema:name ;
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property ex:Place-location ;
+    .
+
+# No sh:datatype/sh:nodeKind constraint on purpose - this property's values deliberately mix
+# representations (a direct GeoSPARQL WKT literal, a plain GeoJSON string, and a landmark IRI whose
+# geometry/title/classification are only reachable one hop away) to demonstrate MapViewer reading
+# more than one geo format off the same property (see its own geometry.ts).
+ex:Place-location
+    a sh:PropertyShape ;
+    sh:path ex:location ;
+    sh:name "Locations"@en, "Locaties"@nl ;
+    shui:viewer st:MapViewer ;
+    sh:node ex:LandmarkShape ;
+    .
+
+# Declares which of a landmark's own properties is its geometry (st:GeoRole - a ShapeThing
+# extension to the spec's Property Roles), its tooltip title (shui:LabelRole) and its tooltip
+# classification (shui:ClassificationRole). Only exercised by ex:landmark below - the two literal
+# values on ex:Place-location have no node of their own to walk these roles from.
+ex:LandmarkShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path geosparql:asWKT ;
+        shui:propertyRole st:GeoRole ;
+    ] ;
+    sh:property [
+        sh:path schema:name ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:additionalType ;
+        shui:propertyRole shui:ClassificationRole ;
+    ] ;
+    .
+
+<#data>
+    a schema:Place ;
+    schema:name "Amsterdam landmarks"@en, "Amsterdamse bezienswaardigheden"@nl ;
+    ex:location
+        "POINT (4.9041 52.3676)"^^geosparql:wktLiteral,
+        "{\"type\": \"Point\", \"coordinates\": [4.8952, 52.3702]}"^^xsd:string,
+        ex:landmark ;
+    .
+
+ex:landmark
+    schema:name "Rijksmuseum"@en, "Rijksmuseum"@nl ;
+    schema:additionalType "Museum"@en, "Museum"@nl ;
+    geosparql:asWKT "POINT (4.8852 52.3600)"^^geosparql:wktLiteral ;
+    .

@@ -24,9 +24,9 @@ function columnOrder(columnShape: Term, shapesGraph: RdfStore): number {
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 
-function columnsForNodeShape(nodeShape: Term, shapesGraph: RdfStore): Column[] {
-  return shapesGraph
-    .getQuads(nodeShape, sh("property"))
+function columnsForNodeShapes(nodeShapes: Term[], shapesGraph: RdfStore): Column[] {
+  return nodeShapes
+    .flatMap((nodeShape) => shapesGraph.getQuads(nodeShape, sh("property")))
     .map((quad) => quad.object as NamedNode)
     .sort((a, b) => columnOrder(a, shapesGraph) - columnOrder(b, shapesGraph))
     .map((propertyShape) => ({
@@ -37,9 +37,10 @@ function columnsForNodeShape(nodeShape: Term, shapesGraph: RdfStore): Column[] {
 
 /**
  * A property-wide viewer (see meta.ts's singleUnifiedWidget) rendering every value of the outer
- * property as one table: rows are the property's own values, columns come from its sh:node's own
- * sh:property list (ordered by sh:order), each built into a one-shape PropertyUIElement per row so
- * its sh:path can be walked from that row's value rather than the outer property's focus node.
+ * property as one table: rows are the property's own values, columns come from all of its sh:node
+ * shapes' own sh:property lists combined (ordered by sh:order), each built into a one-shape
+ * PropertyUIElement per row so its sh:path can be walked from that row's value rather than the
+ * outer property's focus node.
  * Cell values are shown as resolved labels, not through a further nested widget - a table cell has
  * no room for one.
  */
@@ -47,11 +48,11 @@ export default function ValueTableViewer({ shape }: WidgetProps) {
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const rows = useDataGraphObjects(shape);
-  const nodeShape = shape.get(sh("node"))[0];
+  const nodeShapes = useMemo(() => shape.get(sh("node")) as Term[], [shape]);
 
   const columns = useMemo(
-    () => (nodeShape ? columnsForNodeShape(nodeShape, shape.shapesGraph) : []),
-    [nodeShape, shape.shapesGraph],
+    () => columnsForNodeShapes(nodeShapes, shape.shapesGraph),
+    [nodeShapes, shape.shapesGraph],
   );
 
   if (columns.length === 0) return null;

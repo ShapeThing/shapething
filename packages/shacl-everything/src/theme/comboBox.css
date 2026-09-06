@@ -1,0 +1,69 @@
+/* Shared "combobox" look for EnumSelectEditor's closed trigger and AutoCompleteEditor's view-mode
+   label, plus the results-dropdown panel/rows/empty-state both open - each widget composes these
+   classes alongside its own, so the two stay visually identical except for their genuinely
+   different bits (the value dropdown's arrow reserve space, the attached search/edit button). */
+.st-combo-surface {
+  background-color: white;
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+
+  @layer components {
+    &:hover,
+    &:focus {
+      z-index: var(--st-z-raised);
+      outline: 2px solid var(--st-primary-color);
+      box-shadow: none;
+    }
+  }
+
+  .st-autocomplete-option__depiction {
+    border-radius: var(--radius-2) 0 0 var(--radius-2);
+  }
+}
+
+@layer overlay {
+  .st-combo-results {
+    position: absolute;
+    top: calc(100% + var(--size-2));
+    left: 0;
+    z-index: var(--st-z-overlay);
+    width: 100%;
+    max-height: 16rem;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid var(--st-color-border);
+    border-radius: var(--radius-2);
+    box-shadow: var(--shadow-3);
+
+    &:empty {
+      display: none;
+    }
+  }
+}
+
+.st-combo-result {
+  cursor: pointer;
+  padding-inline-end: var(--size-2);
+  min-height: 2rem;
+
+  &:hover,
+  &[aria-selected="true"],
+  &.st-combo-result--active {
+    background-color: var(--st-primary-color-lighter);
+  }
+}
+
+.st-combo-empty {
+  display: flex;
+  align-items: center;
+  padding-inline: var(--size-2);
+  gap: var(--size-1);
+  min-height: 2rem;
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+
+  svg {
+    width: 1.2em;
+    height: 1.2em;
+  }
+}

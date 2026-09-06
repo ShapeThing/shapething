@@ -9,24 +9,8 @@
   padding-inline-end: calc(var(--size-7) + var(--size-1));
   padding-inline-start: 0;
   padding-block: 0;
-  background-color: white;
-  border: 1px solid var(--gray-3);
-  border-radius: var(--radius-2);
   cursor: pointer;
   position: relative;
-
-  @layer components {
-    &:hover,
-    &:focus {
-      z-index: var(--st-z-raised);
-      outline: 2px solid var(--st-primary-color);
-      box-shadow: none;
-    }
-  }
-
-  .st-autocomplete-option__depiction {
-    border-radius: var(--radius-2) 0 0 var(--radius-2);
-  }
 }
 
 .st-enum-select__arrow {
@@ -47,46 +31,4 @@
 .st-enum-select__trigger:hover .st-enum-select__arrow,
 .st-enum-select__trigger:focus .st-enum-select__arrow {
   background-color: var(--st-primary-color);
-}
-
-@layer overlay {
-  .st-enum-select__results {
-    position: absolute;
-    top: calc(100% + var(--size-2));
-    left: 0;
-    z-index: var(--st-z-overlay);
-    width: 100%;
-    max-height: 16rem;
-    overflow-y: auto;
-    background-color: white;
-    border: 1px solid var(--st-color-border);
-    border-radius: var(--radius-2);
-    box-shadow: var(--shadow-3);
-  }
-}
-
-.st-enum-select__result {
-  cursor: pointer;
-  padding-inline-end: var(--size-2);
-
-  &:hover,
-  &[aria-selected="true"],
-  &.st-enum-select__result--active {
-    background-color: var(--st-primary-color-lighter);
-  }
-}
-
-.st-enum-select__empty {
-  display: flex;
-  align-items: center;
-  padding-inline: var(--size-2);
-  gap: var(--size-1);
-  min-height: 2rem;
-  color: var(--st-color-text-muted);
-  font-size: var(--st-font-size-small);
-
-  svg {
-    width: 1.2em;
-    height: 1.2em;
-  }
 }

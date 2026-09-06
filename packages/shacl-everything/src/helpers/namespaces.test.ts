@@ -27,7 +27,7 @@ test("namespaces - build IRIs by appending the local name to the base IRI", () =
   expect(faker("name").value).toEqual("https://fakerjs.dev/name");
   expect(skos("Concept").value).toEqual("http://www.w3.org/2004/02/skos/core#Concept");
   expect(st("CollapsiblePropertyGroup").value).toEqual(
-    "http://shapething/CollapsiblePropertyGroup",
+    "http://shapething.com/CollapsiblePropertyGroup",
   );
 });
 
@@ -47,7 +47,7 @@ test("prefixes - maps every namespace alias to its base IRI", () => {
     faker: "https://fakerjs.dev/",
     skos: "http://www.w3.org/2004/02/skos/core#",
     shui: "http://www.w3.org/ns/shacl-ui/",
-    st: "http://shapething/",
+    st: "http://shapething.com/",
     foaf: "http://xmlns.com/foaf/0.1/",
     dc: "http://purl.org/dc/elements/1.1/",
     dcterms: "http://purl.org/dc/terms/",
@@ -59,6 +59,7 @@ test("prefixes - maps every namespace alias to its base IRI", () => {
     qb: "http://purl.org/linked-data/cube#",
     time: "http://www.w3.org/2006/time#",
     geo: "http://www.w3.org/2003/01/geo/wgs84_pos#",
+    geosparql: "http://www.opengis.net/ont/geosparql#",
     as: "https://www.w3.org/ns/activitystreams#",
     vs: "http://www.w3.org/2003/06/sw-vocab-status/ns#",
     dbo: "http://dbpedia.org/ontology/",

@@ -1,0 +1,83 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix schema: <https://schema.org/>.
+@prefix geosparql: <http://www.opengis.net/ont/geosparql#>.
+@prefix ex: <http://example.org/>.
+
+# Unlike st-map-viewer.ttl (one resource, several geo-representations on one property), this
+# fixture demonstrates the other common shape: several separate resources - conference sessions -
+# each with its own single-valued location property, gathered onto one map via the outer
+# schema:subEvent property. Every session's own geometry/title/classification is only reachable one
+# hop away, via st:GeoRole/shui:LabelRole/shui:ClassificationRole on ex:SessionShape.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:EventSeries ;
+    sh:closed true ;
+    sh:ignoredProperties (rdf:type) ;
+    sh:property [
+        sh:path schema:name ;
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property ex:EventSeries-sessions ;
+    .
+
+ex:EventSeries-sessions
+    a sh:PropertyShape ;
+    sh:path schema:subEvent ;
+    sh:name "Sessions"@en, "Sessies"@nl ;
+    shui:viewer st:MapViewer ;
+    sh:node ex:SessionShape ;
+    .
+
+ex:SessionShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path geosparql:asWKT ;
+        shui:propertyRole st:GeoRole ;
+    ] ;
+    sh:property [
+        sh:path schema:name ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:additionalType ;
+        shui:propertyRole shui:ClassificationRole ;
+    ] ;
+    .
+
+<#data>
+    a schema:EventSeries ;
+    schema:name "DevConf 2026"@en, "DevConf 2026"@nl ;
+    schema:subEvent ex:openingKeynote, ex:shaclWorkshop, ex:rdfWorkshop, ex:closingPanel ;
+    .
+
+ex:openingKeynote
+    a schema:Event ;
+    schema:name "Opening Keynote"@en, "Openingslezing"@nl ;
+    schema:additionalType "Keynote"@en, "Hoofdlezing"@nl ;
+    geosparql:asWKT "POINT (13.3777 52.5163)"^^geosparql:wktLiteral ;
+    .
+
+ex:shaclWorkshop
+    a schema:Event ;
+    schema:name "Workshop: SHACL in Practice"@en, "Workshop: SHACL in de praktijk"@nl ;
+    schema:additionalType "Workshop"@en, "Workshop"@nl ;
+    geosparql:asWKT "POINT (13.4050 52.5200)"^^geosparql:wktLiteral ;
+    .
+
+ex:rdfWorkshop
+    a schema:Event ;
+    schema:name "Workshop: RDF Modelling"@en, "Workshop: RDF-modellering"@nl ;
+    schema:additionalType "Workshop"@en, "Workshop"@nl ;
+    geosparql:asWKT "POINT (13.3888 52.5170)"^^geosparql:wktLiteral ;
+    .
+
+ex:closingPanel
+    a schema:Event ;
+    schema:name "Closing Panel"@en, "Slotpaneel"@nl ;
+    schema:additionalType "Panel"@en, "Panel"@nl ;
+    geosparql:asWKT "POINT (13.4100 52.5230)"^^geosparql:wktLiteral ;
+    .

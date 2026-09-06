@@ -1,6 +1,6 @@
 PREFIX sh: <http://www.w3.org/ns/shacl#>
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
-PREFIX st: <http://shapething/>
+PREFIX st: <http://shapething.com/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 st:CategoryFacet rdfs:label "Category"@en, "Categorie"@nl .

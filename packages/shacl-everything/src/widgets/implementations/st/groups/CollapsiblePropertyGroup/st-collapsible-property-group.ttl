@@ -1,7 +1,7 @@
 @prefix ex: <http://example.org/>.
 @prefix schema: <http://schema.org/>.
 @prefix sh: <http://www.w3.org/ns/shacl#>.
-@prefix st: <http://shapething/>.
+@prefix st: <http://shapething.com/>.
 
 <#shape>
     a sh:NodeShape ;

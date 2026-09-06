@@ -15,29 +15,19 @@
   flex: 1;
   min-width: 0;
   padding-inline-end: var(--size-2);
-  border: 1px solid var(--st-color-border);
-  border-radius: var(--radius-2);
-  border-top-right-radius: 0;
-  border-bottom-right-radius: 0;
   max-width: 100%;
   border-inline-end: none;
   position: relative;
 
-  @layer components {
-    &:hover,
-    &:focus {
-      z-index: var(--st-z-raised);
-      outline: 2px solid var(--st-primary-color);
-      box-shadow: none;
-    }
+  /* Overrides st-combo-surface's own (equal-specificity) border-radius so this always wins
+     regardless of stylesheet order - the search/edit button attaches flush on this side. */
+  &.st-combo-surface {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
   }
 }
 
 .st-autocomplete__label {
-  .st-autocomplete-option__depiction {
-    border-radius: var(--radius-2) 0 0 var(--radius-2);
-  }
-
   /* Unlike a dropdown result row, the currently selected value has the whole field to itself, so a
      long one wraps onto multiple lines here instead of ellipsis-truncating to one. */
   .st-autocomplete-option,
@@ -47,38 +37,6 @@
     white-space: normal;
     overflow-wrap: break-word;
     word-break: break-word;
-  }
-}
-
-@layer overlay {
-  .st-autocomplete__results {
-    position: absolute;
-    top: calc(100% + var(--size-2));
-    left: 0;
-    z-index: var(--st-z-overlay);
-    width: 100%;
-    max-height: 16rem;
-    overflow-y: auto;
-    background-color: white;
-    border: 1px solid var(--st-color-border);
-    border-radius: var(--radius-2);
-    box-shadow: var(--shadow-3);
-
-    &:empty {
-      display: none;
-    }
-  }
-}
-
-.st-autocomplete__result {
-  padding-inline-end: var(--size-2);
-  min-height: 2rem;
-  cursor: pointer;
-
-  &:hover,
-  &[aria-selected="true"],
-  &.st-autocomplete__result--active {
-    background-color: var(--st-primary-color-lighter);
   }
 }
 
@@ -95,22 +53,6 @@
   display: flex;
   justify-content: flex-end;
   margin-top: var(--size-3);
-}
-
-.st-autocomplete__empty {
-  display: flex;
-  align-items: center;
-  padding-inline: var(--size-2);
-  gap: var(--size-1);
-  min-height: 2rem;
-  color: var(--st-color-text-muted);
-  font-size: var(--st-font-size-small);
-  cursor: pointer;
-
-  svg {
-    width: 1.2em;
-    height: 1.2em;
-  }
 }
 
 .st-autocomplete-option__content {

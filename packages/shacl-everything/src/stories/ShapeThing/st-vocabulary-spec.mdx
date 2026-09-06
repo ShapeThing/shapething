@@ -1,0 +1,305 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="ShapeThing/st: Vocabulary Spec" />
+
+# The ShapeThing Vocabulary (`st:`) — Draft Specification
+
+**Status:** Draft / living document. This describes the `st:` namespace as currently implemented
+by `@shapething/shacl-everything`. It is not a published, versioned specification - it exists so
+the extensions this package makes on top of standard SHACL and the [SHACL-UI](https://www.w3.org/ns/shacl-ui/)
+(`shui:`) proposal are written down in one place, the way `shui:`'s own clauses are documented (and
+tested) under "SHACL 1.2 UI" in this Storybook's own sidebar.
+
+**Namespace:** `http://shapething.com/`, conventionally bound to the prefix `st:`.
+
+## 1. Relationship to SHACL 1.2 Core and `shui:`
+
+This package implements the [SHACL 1.2 Core](https://www.w3.org/TR/shacl12-core/) specification
+and the proposed SHACL-UI (`shui:` = `http://www.w3.org/ns/shacl-ui/`) extension end-to-end (widget
+selection, value-node labeling, language resolution, federated search, Property Roles, etc). Those
+two vocabularies are the standards layer.
+
+`st:` sits on top as a third, ShapeThing-original layer, for things neither spec covers:
+
+- a widget-selection predicate for **facet mode** (`st:facet`), which has no `shui:` equivalent
+  since faceted search isn't part of the SHACL-UI proposal at all;
+- additional **Property Roles** (§4 below) the spec's own §11 doesn't define;
+- a set of built-in **widgets** (editors, viewers, facets, a property group) that are useful in
+  practice but aren't proposed as part of `shui:` itself - either because they're ShapeThing
+  product decisions (`st:CollapsiblePropertyGroup`), or because they depend on a specific external
+  service (`st:AddressEditor`'s OpenStreetMap lookup) that doesn't belong in a vocabulary-neutral
+  spec.
+
+Nothing in this document redefines or overrides `shui:` semantics - `st:` widgets are selected,
+scored, and resolved by exactly the same mechanisms (`shui:WidgetScore`, `shui:editor`/
+`shui:viewer`, `shui:propertyRole`) as `shui:`-namespaced ones. Only the widget/role _IRIs_
+themselves, and the one new `st:facet` predicate, are ShapeThing-specific.
+
+## 2. The widget-selection predicate `st:facet`
+
+Mirrors `shui:editor` (edit mode) and `shui:viewer` (view mode), but for **facet mode** - the
+third `Environment.mode`, used for faceted search/filtering UIs (see `structure/facetValues.ts`,
+`structure/filterShape.ts`). A property shape declares it explicitly the same way it would declare
+`shui:editor`/`shui:viewer`:
+
+```turtle
+ex:PriceShape
+    a sh:PropertyShape ;
+    sh:path ex:price ;
+    sh:datatype xsd:decimal ;
+    st:facet st:NumberRangeFacet ;
+    .
+```
+
+Resolution is identical to `shui:editor`/`shui:viewer` in every other respect: an explicit
+`st:facet` declaration always wins outright; otherwise every registered facet widget's own
+`shui:WidgetScore` rules are evaluated and the highest-scoring one is picked (see §5.3 for each
+built-in facet's own rules). `widgetModeForPredicate` (`widgets/registry.ts`) is the one place that
+maps this predicate to `WidgetMode: "facet"`, the same way it maps `shui:editor`/`shui:viewer` to
+`"edit"`/`"view"`.
+
+## 3. Built-in datatype sentinel: `<https://iconify.design>`
+
+Not itself an `st:`-namespaced IRI (kept as its own bespoke, non-dereferenceable IRI rather than
+`st:iconify` - see `helpers/namespaces.ts`'s `iconifyDatatype`), but a ShapeThing convention closely
+tied to the `st:` widgets in §5.1/§5.2 below, so it's documented here rather than left implicit.
+
+A property shape declaring `sh:datatype <https://iconify.design>` marks its value as a plain string
+literal naming an [Iconify](https://iconify.design/) icon in `"<collection>:<icon>"` form (e.g.
+`"mdi:home"`) - the same identifier `@iconify/react`'s own `<Icon>` component resolves live against
+Iconify's icon data. This datatype is a sentinel only: it is never dereferenced, and no data value
+is actually of this "type" in any RDF sense - it exists purely so `st:IconifyEditor`/
+`st:IconifyViewer`'s own `shui:WidgetScore` rules (§5.1, §5.2) can recognize the value unambiguously.
+
+## 4. Property Roles extension: `st:GeoRole`
+
+The SHACL-UI proposal's §11 "Property Roles" defines a small, fixed set of `shui:propertyRole`
+values - `shui:LabelRole`, `shui:ClassificationRole`, `shui:DepictionRole` - each naming which
+`sh:property` entry on a value node's own shape holds its display label, secondary/disambiguating
+classification, or representative image respectively (see `resolution/label.ts`'s
+`valueNodeLabel`/`valueNodeClassification`/`valueNodeDepiction`).
+
+`st:GeoRole` is a ShapeThing-original addition to that same, otherwise-unchanged mechanism: it
+marks which `sh:property` entry on a value node's shape holds **that value's geometry**, consumed
+by `st:MapViewer` (§5.2.3). It is used exactly like the three spec roles - as the object of the
+_existing_ `shui:propertyRole` predicate (there is no separate `st:propertyRole` predicate; the
+role vocabulary is extended, the mechanism is not):
+
+```turtle
+ex:LandmarkShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path geo:asWKT ;
+        shui:propertyRole st:GeoRole ;
+    ] ;
+    sh:property [
+        sh:path schema:name ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:additionalType ;
+        shui:propertyRole shui:ClassificationRole ;
+    ] ;
+    .
+```
+
+Given a property whose value is (or targets, via `sh:class`) a node conforming to `ex:LandmarkShape`
+above, `st:MapViewer` walks the `st:GeoRole`-annotated path to find the value's geometry (a
+GeoSPARQL WKT or GeoJSON literal), and separately resolves `shui:LabelRole`/`shui:ClassificationRole`
+(exactly as any other viewer would) to build that marker's hover tooltip. All three roles are
+independent and optional: a value can declare `st:GeoRole` alone (a geometry with no tooltip), or
+combine it with either or both of the label/classification roles.
+
+Implementation note: `resolution/label.ts` exports `propertyPathsByRole(propertyShape, role)` as
+the shared, role-agnostic lookup underneath `labelRolePropertyPaths`/`classificationRolePropertyPaths`/
+`depictionRolePropertyPaths` - `st:MapViewer`'s `geometry.ts` calls it directly with `st:GeoRole`
+rather than duplicating the `sh:node`/`sh:class` value-node-shape resolution logic.
+
+## 5. Built-in widgets
+
+Every widget below is registered under the `st:` namespace (its folder lives under
+`src/widgets/implementations/st/<category>/<Name>/`, which is what makes its IRI `st:<Name>` - see
+`widgets/registry.ts`'s `widgetIri`), rather than `shui:`, precisely because none of them are part
+of the `shui:` proposal itself - they are ShapeThing product decisions or ports of
+`@shapething/shacl-renderer`'s own widgets. Each is still selected/scored the standard way (§1):
+an explicit `shui:editor`/`shui:viewer`/`st:facet` declaration always wins; otherwise the widget's
+own `shui:WidgetScore` rules (in its `score.ttl`) are evaluated and the highest-scoring match is
+used.
+
+### 5.1 Editors (`shui:editor`, edit mode)
+
+#### `st:AddressEditor`
+
+_Label: "Address" / "Adres"_
+
+Structured postal-address entry - `schema:streetAddress`, `schema:addressLocality`,
+`schema:addressRegion`, `schema:postalCode`, `schema:addressCountry` on the value's own blank/named
+node - backed by a live address search against OpenStreetMap's Nominatim API
+(`nominatim.openstreetmap.org`). Ported from `@shapething/shacl-renderer`'s own `AddressEditor`.
+
+**Scoring:** opt-in only - a `schema:PostalAddress`-shaped blank node has no signal distinguishing
+it from any other nested object a shape might declare (`st:DetailsEditor`-equivalent territory), so
+this only ever wins via an explicit `shui:editor st:AddressEditor` declaration (score 40). It never
+auto-scores against `sh:class`/`sh:node` alone.
+
+#### `st:IconifyEditor`
+
+_Label: "Icon Picker" / "Icoonkiezer"_
+
+A searchable icon picker (via `@iconify/react`) for a property whose value is an icon name (§3).
+
+**Scoring:** score 40 via explicit `shui:editor st:IconifyEditor` declaration; score 30 whenever the
+property shape declares `sh:datatype <https://iconify.design>` (an unambiguous signal, so this
+auto-scores even without the explicit declaration - beating `TextFieldEditor`'s own generic
+`hasCustomDatatype`/fallback rules, which otherwise tie at 0/1 for any datatype this codebase has
+no dedicated widget for).
+
+### 5.2 Viewers (`shui:viewer`, view mode)
+
+#### `st:AddressViewer`
+
+_Label: "Address" / "Adres"_
+
+Read-only rendering counterpart to `st:AddressEditor` - same `schema:*` address fields, formatted
+for display rather than editing.
+
+**Scoring:** opt-in only, same reasoning as `st:AddressEditor` - score 40 via explicit
+`shui:viewer st:AddressViewer` declaration, no auto-scoring.
+
+#### `st:IconifyViewer`
+
+_Label: "Icon" / "Icoon"_
+
+Renders the icon named by an `<https://iconify.design>`-datatyped value (§3) via `@iconify/react`'s
+`<Icon>` component.
+
+**Scoring:** score 40 via explicit declaration; score 30 on the `<https://iconify.design>`
+datatype signal (same reasoning as `st:IconifyEditor`) - beats `LiteralViewer`'s own generic
+`isLiteral` rule, which otherwise ties at 1 for any literal this codebase has no dedicated viewer
+for.
+
+#### `st:MapViewer`
+
+_Label: "Map" / "Kaart"_
+
+A **multi-viewer** (see `meta.ts`'s `singleUnifiedWidget`) - it renders once for the whole
+property, plotting _every_ value on one interactive map (via [MapLibre GL JS](https://maplibre.org/)),
+rather than once per value. Ported from `@shapething/shacl-renderer`'s own `GeoViewer`, generalized
+to multiple values and multiple geo representations at once (`geometry.ts`):
+
+1. A value literal directly typed `geo:wktLiteral` (GeoSPARQL Well-Known Text), parsed via the
+   `wkt` package.
+2. Failing that, a value literal (any datatype, including a plain `xsd:string`) whose lexical form
+   parses as GeoJSON text (sniffed structurally, not by datatype) - a `Point`/`LineString`/
+   `Polygon`/`MultiPoint`/`MultiLineString`/`MultiPolygon`/`GeometryCollection`/`Feature` object.
+3. Failing that (the value is an IRI or blank node rather than a literal), one hop into that
+   value's own properties via the `st:GeoRole` Property Role (§4) - e.g. a `geo:asWKT` literal on a
+   separate geometry/Feature node, or on a related resource entirely (see the "multiple resources,
+   one shared location predicate" story - several event resources, each with its own venue).
+
+Every plotted marker's hover tooltip is built from the same value's `shui:LabelRole` (title) and
+`shui:ClassificationRole` (subtitle) - resolved exactly as any other viewer resolves them (see §4),
+via `resolution/label.ts`'s `valueNodeLabel`/`valueNodeClassification`. A value that is a bare geo
+literal (representation 1 or 2 above) has no separate node to hang those roles off of, so it plots
+with no tooltip; only a `st:GeoRole`-resolved value (representation 3) can have one.
+
+**Scoring:**
+
+| Score | Rule                          | Basis                                                                                                 |
+| ----: | ----------------------------- | ----------------------------------------------------------------------------------------------------- |
+|    40 | `st:prefersMapViewer`         | explicit `shui:viewer st:MapViewer` declaration                                                       |
+|    20 | `st:isWktLiteral`             | the _value_ is `geo:wktLiteral`-datatyped (dataGraphShape)                                            |
+|    10 | `st:hasWktDatatypeConstraint` | the _property shape_ declares `sh:datatype geo:wktLiteral` (list-datatype-aware, no value needed yet) |
+
+A plain GeoJSON string (no distinguishing datatype) and the `st:GeoRole`-nested case have no
+reliable shapes-graph signal to auto-score on generically, so those two are only ever picked up via
+the explicit `shui:viewer st:MapViewer` declaration.
+
+### 5.3 Facets (`st:facet`, facet mode)
+
+Unlike editors/viewers, a facet's `st:facet` declaration/scoring is the _only_ selection mechanism
+(there is no equivalent of `shui:editor`/`shui:viewer` in a third namespace) - see §2.
+
+#### `st:CategoryFacet`
+
+_Label: "Category" / "Categorie"_
+
+An option-list facet (with optional live per-option counts, see `Environment.enableFacetOptionCounts`)
+for a property whose values are drawn from a fixed/enumerable set.
+
+**Scoring:** 40 (explicit `st:facet st:CategoryFacet`), 20 (`sh:in`), 15 (path is exactly
+`skos:inScheme`), 10 (`sh:class`).
+
+#### `st:TextSearchFacet`
+
+_Label: "Text Search" / "Tekst zoeken"_
+
+A free-text search facet, matching instances whose value contains the entered text.
+
+**Scoring:** 40 (explicit), 30 (`shui:searchQuery` already declared for edit-mode autocomplete -
+"already meant to be searched"), 10 (`xsd:string`/`rdf:langString` datatype), 10 (the property's
+own path is an `sh:alternativePath` across several other properties - "many text properties, one
+text search facet").
+
+#### `st:NumberRangeFacet`
+
+_Label: "Number Range" / "Getalbereik"_
+
+A min/max numeric range facet.
+
+**Scoring:** 40 (explicit), 10 (`xsd:decimal`/`xsd:integer`/`xsd:double`/`xsd:float` datatype).
+
+#### `st:DateRangeFacet`
+
+_Label: "Date Range" / "Datumbereik"_
+
+A min/max `xsd:date` range facet.
+
+**Scoring:** 40 (explicit), 10 (`xsd:date` datatype).
+
+#### `st:DateTimeRangeFacet`
+
+_Label: "Date & Time Range" / "Datum- en tijdbereik"_
+
+A min/max `xsd:dateTime` range facet.
+
+**Scoring:** 40 (explicit), 10 (`xsd:dateTime` datatype).
+
+### 5.4 Groups
+
+Unlike editors/viewers/facets, a group widget is **not** scored at all - it's selected by direct
+`rdf:type` match against the `sh:PropertyGroup` node itself (`widgets/registry.ts`'s
+`getGroupWidget`), the same way a group's own base type (`sh:PropertyGroup`) is mandatory and never
+itself a deliberate widget choice.
+
+#### `st:CollapsiblePropertyGroup`
+
+A `sh:PropertyGroup` additionally typed `st:CollapsiblePropertyGroup`:
+
+```turtle
+ex:PersonalDetails
+    a sh:PropertyGroup, st:CollapsiblePropertyGroup ;
+    sh:name "Personal details"@en ;
+    .
+```
+
+renders its member properties inside a collapsible `<details>` section (open by default) instead
+of the library's default groupless/flat rendering.
+
+## 6. Summary: every `st:` IRI
+
+| IRI                           | Kind                                     | §   |
+| ----------------------------- | ---------------------------------------- | --- |
+| `st:facet`                    | predicate (widget-selection, facet mode) | 2   |
+| `st:GeoRole`                  | `shui:propertyRole` value                | 4   |
+| `st:AddressEditor`            | editor                                   | 5.1 |
+| `st:IconifyEditor`            | editor                                   | 5.1 |
+| `st:AddressViewer`            | viewer                                   | 5.2 |
+| `st:IconifyViewer`            | viewer                                   | 5.2 |
+| `st:MapViewer`                | viewer (multi-viewer)                    | 5.2 |
+| `st:CategoryFacet`            | facet                                    | 5.3 |
+| `st:TextSearchFacet`          | facet                                    | 5.3 |
+| `st:NumberRangeFacet`         | facet                                    | 5.3 |
+| `st:DateRangeFacet`           | facet                                    | 5.3 |
+| `st:DateTimeRangeFacet`       | facet                                    | 5.3 |
+| `st:CollapsiblePropertyGroup` | property group type                      | 5.4 |

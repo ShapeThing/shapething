@@ -1,0 +1,29 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Address"@en, "Adres"@nl ;
+        sh:path schema:address ;
+        shui:editor st:AddressEditor ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    schema:address [
+        a schema:PostalAddress ;
+        schema:streetAddress "Breestraat 1" ;
+        schema:addressLocality "Amersfoort" ;
+        schema:addressRegion "Utrecht" ;
+        schema:postalCode "3811 BH" ;
+        schema:addressCountry "Netherlands" ;
+    ] ;
+    .

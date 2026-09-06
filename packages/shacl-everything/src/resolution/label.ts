@@ -2,20 +2,11 @@ import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
 import { localName } from "@/helpers/localName.ts";
 import { rdfs, sh, shui } from "@/helpers/namespaces.ts";
-import language, {
-  configuredLanguages,
-  effectiveLanguages,
-} from "@/resolution/language.ts";
+import language, { configuredLanguages, effectiveLanguages } from "@/resolution/language.ts";
 import { getLabelPreference } from "@/resolution/globalConfiguration.ts";
-import {
-  parsePropertyPath,
-  type PropertyPath,
-} from "@/structure/paths/parsePropertyPath.ts";
+import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
-import {
-  orderedValues,
-  type PropertyUIElement,
-} from "@/structure/PropertyUIElement.ts";
+import { orderedValues, type PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 import { shapesTargetingClass } from "@/resolution/targets.ts";
 import type { Literal, NamedNode, Quad_Subject, Term } from "@rdfjs/types";
@@ -75,9 +66,7 @@ type GroupLabelOptions = {
  * steps 1/4/5. A group is shape metadata only, not an ontology property/value-node with data-graph
  * labels of its own, so there's no data-graph step to run here.
  */
-export function groupLabel(
-  { node, shapesGraph, languages }: GroupLabelOptions,
-): string {
+export function groupLabel({ node, shapesGraph, languages }: GroupLabelOptions): string {
   const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
 
   for (const path of effectiveLabelPredicates(shapesGraph, "group")) {
@@ -102,9 +91,11 @@ export function groupLabel(
  * steps 1/4/5. A group is shape metadata only, not an ontology property/value-node with data-graph
  * labels of its own, so there's no data-graph step to run here.
  */
-export function groupDescription(
-  { node, shapesGraph, languages }: GroupLabelOptions,
-): string | undefined {
+export function groupDescription({
+  node,
+  shapesGraph,
+  languages,
+}: GroupLabelOptions): string | undefined {
   const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
 
   for (const path of effectiveDescriptionPredicates()) {
@@ -151,8 +142,7 @@ export function propertyLabel({
       const values = orderedValues(propertyShape, path.predicate);
       const value = bestByLanguage(values, effLanguages, { strict: true });
       if (value) return value.value;
-      fallbackPropertyShapeValue ??= bestByLanguage(values, effLanguages)
-        ?.value;
+      fallbackPropertyShapeValue ??= bestByLanguage(values, effLanguages)?.value;
     }
   }
 
@@ -166,9 +156,7 @@ export function propertyLabel({
   // that happens to have a better-matching language.
   for (const path of termLabelPaths) {
     const literal = language(
-      walkPropertyPath(path, term, dataGraph).filter((v): v is Literal =>
-        v.termType === "Literal"
-      ),
+      walkPropertyPath(path, term, dataGraph).filter((v): v is Literal => v.termType === "Literal"),
       effLanguages,
     );
     if (literal) return literal.value;
@@ -188,9 +176,7 @@ export function propertyLabel({
   // Non-spec extension: scoresGraph (e.g. a widget registry entry's own rdfs:label) - tried after
   // the spec's own data/shapes-graph steps, before falling back to the local name.
   const scoresLabel = language(
-    scoresGraph.getQuads(term, rdfs("label")).map(({ object }) =>
-      object as Literal
-    ),
+    scoresGraph.getQuads(term, rdfs("label")).map(({ object }) => object as Literal),
     effLanguages,
   );
   if (scoresLabel) return scoresLabel.value;
@@ -234,9 +220,7 @@ export function propertyDescription({
   const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
 
   let fallbackPropertyShapeValue: string | undefined;
-  for (
-    const path of effectiveDescriptionPredicates()
-  ) {
+  for (const path of effectiveDescriptionPredicates()) {
     if (path.type !== "predicate") continue;
     const values = orderedValues(propertyShape, path.predicate);
     const value = bestByLanguage(values, effLanguages, { strict: true });
@@ -248,9 +232,7 @@ export function propertyDescription({
 
   for (const path of termDescriptionPaths) {
     const literal = language(
-      walkPropertyPath(path, term, dataGraph).filter((v): v is Literal =>
-        v.termType === "Literal"
-      ),
+      walkPropertyPath(path, term, dataGraph).filter((v): v is Literal => v.termType === "Literal"),
       effLanguages,
     );
     if (literal) return literal.value;
@@ -283,9 +265,7 @@ type ValueNodeLabelOptions = {
  * Shared by propertyPathsByRole below and anything else that needs to know which shape governs a
  * referenced resource's own fields (e.g. editInPlace/createInPlace).
  */
-export function valueNodeShapes(
-  propertyShape: PropertyUIElement,
-): Quad_Subject[] {
+export function valueNodeShapes(propertyShape: PropertyUIElement): Quad_Subject[] {
   const { shapesGraph } = propertyShape;
   const explicitNodes = propertyShape.get(sh("node")) as Quad_Subject[];
   const classNodes = propertyShape
@@ -294,9 +274,14 @@ export function valueNodeShapes(
   return [...explicitNodes, ...classNodes];
 }
 
-// The property paths (sh:path) of every property shape on one of propertyShape's valueNodeShapes
-// that's annotated shui:propertyRole `role`.
-function propertyPathsByRole(
+/**
+ * The property paths (sh:path) of every property shape on one of propertyShape's valueNodeShapes
+ * that's annotated shui:propertyRole `role`. Exported (not just used internally by the three spec
+ * roles below) since it's also the mechanism a non-spec, ShapeThing-original role reuses - e.g.
+ * st:MapViewer's st:GeoRole (see its own geometry.ts), marking which property holds a value's
+ * geometry the same way shui:LabelRole marks which one holds its label.
+ */
+export function propertyPathsByRole(
   propertyShape: PropertyUIElement,
   role: NamedNode,
 ): PropertyPath[] {
@@ -310,7 +295,7 @@ function propertyPathsByRole(
           shapesGraph.getQuads(property, shui("propertyRole"), role).length > 0,
       )
       .map(({ object: property }) => parsePropertyPath(property, shapesGraph))
-      .filter((path): path is PropertyPath => path !== null)
+      .filter((path): path is PropertyPath => path !== null),
   );
 }
 
@@ -321,9 +306,7 @@ function propertyPathsByRole(
  * valueNodeLabel (walks the path per value) and anything that instead needs the path itself, e.g.
  * to build a SPARQL query (see structure/paths/toSparql.ts).
  */
-export function labelRolePropertyPaths(
-  propertyShape: PropertyUIElement,
-): PropertyPath[] {
+export function labelRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
   return propertyPathsByRole(propertyShape, shui("LabelRole"));
 }
 
@@ -333,9 +316,7 @@ export function labelRolePropertyPaths(
  * shui:DepictionRole - i.e. what to walk from a value node to find an image representing it.
  * Mirrors labelRolePropertyPaths.
  */
-export function depictionRolePropertyPaths(
-  propertyShape: PropertyUIElement,
-): PropertyPath[] {
+export function depictionRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
   return propertyPathsByRole(propertyShape, shui("DepictionRole"));
 }
 
@@ -347,16 +328,12 @@ export function depictionRolePropertyPaths(
  * a literal directly or on a resource - see valueNodeClassification for how the latter then gets
  * its own label resolved. Mirrors labelRolePropertyPaths.
  */
-export function classificationRolePropertyPaths(
-  propertyShape: PropertyUIElement,
-): PropertyPath[] {
+export function classificationRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
   return propertyPathsByRole(propertyShape, shui("ClassificationRole"));
 }
 
 // 8.2.3 Value Node Labels
-export function valueNodeLabel(
-  { term, propertyShape, languages }: ValueNodeLabelOptions,
-): Literal {
+export function valueNodeLabel({ term, propertyShape, languages }: ValueNodeLabelOptions): Literal {
   const { shapesGraph, dataGraph } = propertyShape;
 
   // 1. If V is a literal, use its lexical form as the label.
@@ -378,9 +355,7 @@ export function valueNodeLabel(
   // 3. DATA graph, subject V, configured label path(s) (default rdfs:label).
   for (const path of labelPaths) {
     const literal = language(
-      walkPropertyPath(path, term, dataGraph).filter((v): v is Literal =>
-        v.termType === "Literal"
-      ),
+      walkPropertyPath(path, term, dataGraph).filter((v): v is Literal => v.termType === "Literal"),
       effLanguages,
     );
     if (literal) return literal;
@@ -429,12 +404,12 @@ export function valueNodeClassification({
 
   const { dataGraph } = propertyShape;
   const effLanguages = effectiveLanguages(propertyShape, languages ?? []);
-  const classifications = classificationRolePropertyPaths(propertyShape)
-    .flatMap((path) => walkPropertyPath(path, term, dataGraph));
+  const classifications = classificationRolePropertyPaths(propertyShape).flatMap((path) =>
+    walkPropertyPath(path, term, dataGraph),
+  );
 
-  const classification = classifications.length > 0
-    ? language(classifications, effLanguages)
-    : undefined;
+  const classification =
+    classifications.length > 0 ? language(classifications, effLanguages) : undefined;
   if (!classification) return undefined;
   if (classification.termType === "Literal") {
     return { term: classification, label: classification.value };
@@ -442,8 +417,7 @@ export function valueNodeClassification({
 
   return {
     term: classification,
-    label:
-      valueNodeLabel({ term: classification, propertyShape, languages }).value,
+    label: valueNodeLabel({ term: classification, propertyShape, languages }).value,
   };
 }
 
