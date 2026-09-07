@@ -25,6 +25,6 @@ export const stAddressEditor: Story = {
 };
 
 export const stAddressEditorWithCountries: Story = {
-  name: "st:osmCountries restricts search to one country",
+  name: "st:isoCountryCodes restricts search to one country",
   args: argsByTestFile("st-address-editor-with-countries.ttl", import.meta.url),
 };

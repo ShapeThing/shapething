@@ -8,7 +8,7 @@
 }
 
 .st-property-group + .st-property-group {
-  margin-top: var(--size-8);
+  margin-top: var(--size-5);
 }
 
 .st-property-group__body {
@@ -22,8 +22,9 @@
     position: sticky;
     top: 0;
     padding-top: var(--size-3);
+    cursor: pointer;
     padding-bottom: var(--size-3);
-    margin-bottom: var(--size-7);
+    margin-bottom: var(--size-5);
     background-color: white;
     z-index: var(--st-z-actions);
     width: 100%;
@@ -36,10 +37,27 @@
   font-size: var(--st-font-size-big);
   font-weight: 600;
   color: var(--st-primary-color);
+  font-family: var(--st-font-family);
+  display: flex;
+  align-items: center;
+  margin-bottom: var(--size-1);
+  gap: 8px;
+
+  svg {
+    transition: transform 0.3s ease;
+  }
+
+  &::marker {
+    content: "";
+  }
+}
+
+[open] .st-property-group__title svg {
+  transform: rotate(90deg);
 }
 
 .st-property-group__description {
-  margin-bottom: var(--size-8);
+  margin-bottom: var(--size-7);
   margin-top: 0;
   color: var(--st-primary-color);
   font-family: var(--st-font-family);

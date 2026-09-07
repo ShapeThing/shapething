@@ -19,10 +19,10 @@
 
 /* The truncation - and the ::first-letter rule below - live on this inner span rather than
    .st-form-element__label itself: first-letter can't target a flex container, only a block
-   container/list-item/table-cell, and the label above has to stay display:flex. As the label's
-   sole flex item this span gets CSS-blockified into a block box, which first-letter can target;
-   min-width:0 overrides the flex item's content-based minimum so it can actually shrink to
-   trigger the ellipsis. */
+   container/list-item/table-cell, and the label above has to stay display:flex. As one of the
+   label's flex items this span gets CSS-blockified into a block box, which first-letter can
+   target; min-width:0 overrides the flex item's content-based minimum so it can actually shrink
+   to trigger the ellipsis. */
 .st-form-element__label-text {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -32,6 +32,17 @@
 /* Correct casing can not be achieved in the browser without JS */
 .st-form-element__label-text::first-letter {
   text-transform: uppercase;
+}
+
+/* When labelTitle is set, the label text above is wrapped in a Tooltip whose own bare wrapper
+   div becomes the label's actual flex item instead of .st-form-element__label-text itself -
+   without shrinking it too, that wrapper (a flex item with the default content-based minimum)
+   would refuse to shrink below the label text's full width, defeating the ellipsis truncation
+   on the span it wraps. */
+.st-form-element__label > .tooltip-wrapper--bare {
+  min-width: 0;
+  overflow: hidden;
+  justify-content: flex-start;
 }
 
 .st-form-element[data-size="small"] .st-form-element__label {
@@ -106,4 +117,9 @@
 
 .st-form-element__label-colon {
   font-weight: bold;
+}
+
+.st-form-element__required {
+  color: var(--st-severity-error);
+  margin-inline-start: var(--size-1);
 }

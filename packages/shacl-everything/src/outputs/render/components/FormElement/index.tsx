@@ -9,6 +9,11 @@ import "./style.css";
 type Props = {
   label?: ReactNode;
   labelTitle?: string;
+  // Rendered right after the label text, inside the same <label> - but, unlike `label` itself,
+  // never wrapped by labelTitle's own Tooltip. Use this for a caller that composes its own
+  // hover-triggered element (e.g. an icon with its own Tooltip) into the label: nesting it inside
+  // labelTitle's Tooltip wrapper would show both tooltips at once when hovering that element.
+  labelSuffix?: ReactNode;
   htmlFor?: string;
   // Id put on the <label> element itself, for a caller whose label describes more than one
   // rendered control (e.g. a multi-valued property's one label above several widget instances) -
@@ -22,6 +27,8 @@ type Props = {
   // Preferred side for the tooltip - see Tooltip's own `placement` prop.
   tooltipPlacement?: Placement;
   showColon?: boolean;
+  // Shows a "required" marker next to the label (e.g. for sh:minCount >= 1).
+  required?: boolean;
   size?: "small" | "medium";
   // "block" (default) stacks the label above children, same as always. "inline" instead places
   // the label beside children on one line - view mode only, driven by
@@ -32,6 +39,7 @@ type Props = {
 export default function FormElement({
   label,
   labelTitle,
+  labelSuffix,
   htmlFor,
   labelId,
   description,
@@ -42,6 +50,7 @@ export default function FormElement({
   tooltipPlacement,
   size = "medium",
   showColon = false,
+  required = false,
   labelLayout = "block",
 }: Props) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
@@ -58,10 +67,23 @@ export default function FormElement({
             className="st-form-element__label"
             id={labelId}
             htmlFor={htmlFor}
-            title={labelTitle}
             lang={activeInterfaceLanguage}
           >
-            <span className="st-form-element__label-text">{label}</span>
+            {labelTitle ? (
+              <Tooltip bare enabled tip={labelTitle} placement={tooltipPlacement}>
+                <span className="st-form-element__label-text">{label}</span>
+              </Tooltip>
+            ) : (
+              <span className="st-form-element__label-text">{label}</span>
+            )}
+            {labelSuffix}
+            {required && (
+              <Localized id="form-element-required" attrs={{ "aria-label": true }}>
+                <span className="st-form-element__required" aria-label="Required">
+                  *
+                </span>
+              </Localized>
+            )}
           </label>
         )}
         {showColon && label && (

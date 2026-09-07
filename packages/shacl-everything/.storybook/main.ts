@@ -1,6 +1,7 @@
 import type { StorybookConfig } from "@storybook/react-vite";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import remarkGfm from "remark-gfm";
 import { checkBannedContent } from "./checkBannedContent.ts";
 import { copyStoryFixtures } from "./copyStoryFixtures.ts";
 
@@ -14,7 +15,18 @@ const config: StorybookConfig = {
     getAbsolutePath("@chromatic-com/storybook"),
     getAbsolutePath("@storybook/addon-vitest"),
     getAbsolutePath("@storybook/addon-a11y"),
-    getAbsolutePath("@storybook/addon-docs"),
+    {
+      name: getAbsolutePath("@storybook/addon-docs"),
+      // GFM (tables, strikethrough, task lists, ...) isn't enabled by MDX3 out of the box -
+      // without this, a Markdown pipe-table in a .mdx doc renders as a plain paragraph.
+      options: {
+        mdxPluginOptions: {
+          mdxCompileOptions: {
+            remarkPlugins: [remarkGfm],
+          },
+        },
+      },
+    },
   ],
   framework: getAbsolutePath("@storybook/react-vite"),
   async viteFinal(config) {
