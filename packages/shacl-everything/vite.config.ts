@@ -41,6 +41,13 @@ export default defineConfig({
       "@": path.join(dirname, "src"),
     },
   },
+  // maplibre-gl loads its own worker via `new Worker(new URL(...))` on its own module graph -
+  // Vite's esbuild-based dep pre-bundler doesn't follow that nested worker reference and warns
+  // ("might be incompatible with the dep optimizer"), so it's excluded from pre-bundling
+  // entirely rather than pre-bundled incorrectly (see MapViewer/GeoEditor's own widget.tsx).
+  optimizeDeps: {
+    exclude: ["maplibre-gl"],
+  },
   pack: {
     dts: {
       tsgo: true,

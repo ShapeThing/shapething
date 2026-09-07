@@ -1,0 +1,69 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX geosparql: <http://www.opengis.net/ont/geosparql#>
+
+st:GeoEditor rdfs:label "Geometry editor"@en, "Geometrie-editor"@nl .
+
+st:geoEditorScore40
+    a shui:WidgetScore ;
+    shui:widget st:GeoEditor ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:prefersGeoEditor ;
+.
+
+# Same signal MapViewer/score.ttl auto-scores a viewer on: a value literal typed as a GeoSPARQL
+# WKT literal, the one representation this editor itself ever writes (see geometry.ts).
+st:geoEditorScore20
+    a shui:WidgetScore ;
+    shui:widget st:GeoEditor ;
+    shui:score 20 ;
+    shui:dataGraphShape st:isGeoEditorWktLiteral ;
+.
+
+# Same signal read off the property shape's own sh:datatype instead of an actual value, so a
+# not-yet-valued property still prefers GeoEditor (e.g. WidgetSwitcher listing options, or the
+# very first "+ Add item" click on an empty property). See MapViewer/score.ttl's own
+# hasWktDatatypeConstraint for why this needs both sh:or branches (SHACL 1.2 lets sh:datatype hold
+# a list of datatypes instead of one IRI, spec issue #1179).
+st:geoEditorScore10
+    a shui:WidgetScore ;
+    shui:widget st:GeoEditor ;
+    shui:score 10 ;
+    shui:shapesGraphShape st:hasGeoEditorWktDatatypeConstraint ;
+.
+
+st:prefersGeoEditor
+    a sh:NodeShape ;
+    sh:property [
+        sh:path shui:editor ;
+        sh:hasValue st:GeoEditor ;
+    ] ;
+.
+
+st:isGeoEditorWktLiteral
+    a sh:NodeShape ;
+    sh:datatype geosparql:wktLiteral ;
+.
+
+st:hasGeoEditorWktDatatypeConstraint
+    a sh:NodeShape ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:hasValue geosparql:wktLiteral ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue geosparql:wktLiteral ;
+            ] ;
+        ]
+    ) ;
+.

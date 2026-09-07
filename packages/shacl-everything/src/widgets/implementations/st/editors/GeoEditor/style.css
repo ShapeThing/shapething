@@ -1,0 +1,7 @@
+.st-geo-editor {
+  width: 100%;
+  height: 450px;
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+}

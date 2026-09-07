@@ -122,4 +122,5 @@
 .st-form-element__required {
   color: var(--st-severity-error);
   margin-inline-start: var(--size-1);
+  font-size: 1.7rem;
 }

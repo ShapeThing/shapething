@@ -51,6 +51,7 @@ export default function PropertyUIComponent({
   const labelId = useId();
   const label = propertyUIElement.label([activeInterfaceLanguage]);
   const description = propertyUIElement.description([activeInterfaceLanguage]);
+  const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
   const showLanguageTag = Boolean(activeLanguage) && isRdfLangString && languageMode === "switcher";
   const showSearchIcon = Boolean(searchQueryFor(propertyUIElement));
 
@@ -104,6 +105,7 @@ export default function PropertyUIComponent({
       labelTitle={propertyUIElement.pathAsSparql()}
       labelId={labelId}
       description={description}
+      required={minCount > 0}
     >
       <ValidationMessages
         className="st-validation-messages--property"
