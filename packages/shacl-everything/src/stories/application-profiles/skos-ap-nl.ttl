@@ -127,36 +127,54 @@ skosapnl:LabelsAndDescriptionPropertyGroup a sh:PropertyGroup ;
   rdfs:label
     "Labels and Description"@en,
     "Termen en beschrijvingen"@nl ;
+  sh:description
+    "De voorkeursterm, synoniemen en verborgen termen waarmee dit begrip wordt aangeduid, samen met algemene beschrijvende notities en notatie."@nl,
+    "The preferred, alternative and hidden terms used to identify this concept, along with general descriptive notes and notation."@en ;
   sh:order 0 .
 
 skosapnl:DefinitionPropertyGroup a sh:PropertyGroup ;
   rdfs:label
     "Definition"@en,
     "Definitie"@nl ;
+  sh:description
+    "De formele definitie van dit begrip en het brondocument waaraan deze is ontleend."@nl,
+    "The formal definition of this concept and the source document it was derived from."@en ;
   sh:order 1 .
 
 skosapnl:SemanticRelationPropertyGroup a sh:PropertyGroup ;
   rdfs:label
     "Semantic Relationships"@en ,
     "Semantische relaties"@nl ;
+  sh:description
+    "Hiërarchische en associatieve relaties tussen dit begrip en andere begrippen."@nl,
+    "Hierarchical and associative relationships between this concept and other concepts."@en ;
   sh:order 2 .
 
 skosapnl:NotesPropertyGroup a sh:PropertyGroup ;
   rdfs:label
     "Notes"@en,
     "Notities"@nl ;
+  sh:description
+    "Aanvullende notities die het gebruik en de geschiedenis van dit begrip toelichten, illustreren of documenteren."@nl,
+    "Supplementary notes that explain, illustrate or document the usage and history of this concept."@en ;
   sh:order 3 .
 
 skosapnl:MatchingRelationshipsPropertyGroup a sh:PropertyGroup ;
   rdfs:label
     "Matching Relationships"@en,
     "Harmonisatierelaties"@nl ;
+  sh:description
+    "Harmonisatierelaties die dit begrip verbinden met gelijkwaardige of verwante begrippen in andere begrippenkaders."@nl,
+    "Mapping relationships that link this concept to equivalent or related concepts in other concept schemes."@en ;
   sh:order 4 .
 
 skosapnl:Iso-thesRelationships a sh:PropertyGroup ;
   rdfs:label
     "Iso-thes Relationships"@en,
     "Iso-thes relaties"@nl ;
+  sh:description
+    "De verfijnde relatietypen en wijzigingsgeschiedenis zoals gedefinieerd door de ISO 25964-thesaurusstandaard."@nl,
+    "The refined relationship types and change history defined by the ISO 25964 thesaurus standard."@en ;
   sh:order 5 .
 
 skosapnl:Concept-related
@@ -901,7 +919,7 @@ skosapnl:OrphanConcept
   <http://purl.org/iso25964/skos-thes#broaderGeneric> <https://identifier.overheid.nl/tooi/def/thes/kern/c_dd451365> ;
   <http://purl.org/iso25964/skos-thes#broaderInstantial> <https://identifier.overheid.nl/tooi/def/thes/kern/c_3f0370ae> ;
   <http://purl.org/iso25964/skos-thes#broaderPartitive> <https://identifier.overheid.nl/tooi/def/thes/kern/c_82c523bf> ;
-  <http://purl.org/iso25964/skos-thes#narrowerGeneric> <https://identifier.overheid.nl/tooi/def/thes/kern/c_82c523bf> ;
+  <http://purl.org/iso25964/skos-thes#narrowerGeneric> <https://identifier.overheid.nl/tooi/def/thes/kern/c_82c523bf>, <https://identifier.overheid.nl/tooi/def/thes/upl/c_jqumq3rb> ;
   <http://purl.org/iso25964/skos-thes#narrowerInstantial> <https://identifier.overheid.nl/tooi/def/thes/kern/c_7ab92a02> ;
   <http://purl.org/iso25964/skos-thes#narrowerPartitive> <https://identifier.overheid.nl/tooi/def/thes/kern/c_8ec8e5e7> ;
   skos:broadMatch <https://identifier.overheid.nl/tooi/def/thes/upl/c_jyrci82q> ;

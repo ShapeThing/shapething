@@ -12,7 +12,7 @@
         sh:description "Search is restricted to Dutch addresses"@en ;
         sh:path schema:address ;
         shui:editor st:AddressEditor ;
-        st:osmCountries "nl" ;
+        st:isoCountryCodes "nl" ;
     ] ;
     .
 

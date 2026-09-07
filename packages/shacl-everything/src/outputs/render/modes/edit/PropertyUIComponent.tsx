@@ -67,10 +67,10 @@ export default function PropertyUIComponent({
 
   return (
     <FormElement
-      label={
+      label={label}
+      labelSuffix={
         label ? (
           <>
-            {label}
             {showSearchIcon && (
               <Tooltip
                 bare
@@ -99,9 +99,7 @@ export default function PropertyUIComponent({
               </span>
             )}
           </>
-        ) : (
-          label
-        )
+        ) : undefined
       }
       labelTitle={propertyUIElement.pathAsSparql()}
       labelId={labelId}

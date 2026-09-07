@@ -3,6 +3,7 @@
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
 @prefix skosapnl: <http://nlbegrip.nl/def/skosapnl#> .
+@prefix st: <http://shapething.com/>.
 
 # dcat-ap-nl-LBL.ttl carries this profile's own rdfs:label translations (including Dutch) on each
 # property shape - these should win over dcat-ap-nl-SHACL.ttl's built-in sh:name (English only),
@@ -11,3 +12,9 @@
 # fallback steps). sh:name stays second in case a property shape has no rdfs:label of its own.
 skosapnl:configuration a shui:Configuration ;
     shui:labelPreference ( rdfs:label sh:name dct:title ) .
+
+skosapnl:DefinitionPropertyGroup a st:CollapsiblePropertyGroup .
+skosapnl:SemanticRelationPropertyGroup a st:CollapsiblePropertyGroup .
+skosapnl:NotesPropertyGroup a st:CollapsiblePropertyGroup .
+skosapnl:MatchingRelationshipsPropertyGroup a st:CollapsiblePropertyGroup .
+skosapnl:Iso-thesRelationships a st:CollapsiblePropertyGroup .

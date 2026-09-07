@@ -46,9 +46,10 @@ async function searchAddresses(query: string, countries: string[]): Promise<OsmS
 /**
  * Search-as-you-type against the public, unauthenticated Nominatim (OpenStreetMap) API - the same
  * one shacl-renderer's own AddressEditor called directly - narrowed down to `shape`'s own
- * st:osmCountries (a property-shape-declared allowlist of ISO 3166-1 alpha-2 country codes, e.g.
- * "nl") when any are configured. Mirrors useIconifySearch's own undefined-until-debounced/reset
- * shape.
+ * st:isoCountryCodes (a property-shape-declared allowlist of ISO 3166-1 alpha-2 country codes,
+ * e.g. "nl") when any are configured. The property is geocoder-agnostic - it's just an ISO
+ * allowlist - even though this widget's own search implementation happens to be Nominatim-backed.
+ * Mirrors useIconifySearch's own undefined-until-debounced/reset shape.
  */
 export function useAddressSearch(shape: PropertyUIElement): {
   search: string;
@@ -58,7 +59,10 @@ export function useAddressSearch(shape: PropertyUIElement): {
   error: unknown;
   reset: () => void;
 } {
-  const countries = useMemo(() => shape.get(st("osmCountries")).map((term) => term.value), [shape]);
+  const countries = useMemo(
+    () => shape.get(st("isoCountryCodes")).map((term) => term.value),
+    [shape],
+  );
   const [search, setSearch] = useState<string>();
   const [debounced, setDebounced] = useState<string>();
 

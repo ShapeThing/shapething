@@ -17,6 +17,8 @@
   padding-inline-end: var(--size-2);
   max-width: 100%;
   border-inline-end: none;
+  display: flex;
+  align-items: center;
   position: relative;
 
   /* Overrides st-combo-surface's own (equal-specificity) border-radius so this always wins
@@ -24,6 +26,14 @@
   &.st-combo-surface {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
+  }
+
+  .st-autocomplete__empty {
+    padding-left: var(--size-2);
+    color: var(--gray-6);
+    display: flex;
+    flex: 1;
+    cursor: pointer;
   }
 }
 

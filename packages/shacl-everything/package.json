@@ -92,6 +92,7 @@
     "playwright": "^1.61.1",
     "prettier": "^3.9.4",
     "react-syntax-highlighter": "^16.1.1",
+    "remark-gfm": "^4.0.1",
     "storybook": "^10.5.4",
     "typescript": "^6.0.3",
     "unplugin-icons": "^23.0.1",
