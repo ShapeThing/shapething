@@ -8,6 +8,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { GeoEditor as GeometryEditorControl } from "maplibre-gl-geo-editor";
 import "maplibre-gl-geo-editor/style.css";
 import { useEffect, useRef } from "react";
+import "@/helpers/configureMaplibreWorker.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
