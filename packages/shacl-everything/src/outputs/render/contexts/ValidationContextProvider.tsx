@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Engine as ShaclEngine, type ValidateResult } from "shacl-engine";
 import {
   constraints as sparqlConstraints,
@@ -26,6 +26,16 @@ function flattenResults(results: ValidateResult[]): ValidationResult[] {
   }));
 }
 
+type Props = {
+  children: ReactNode;
+  // Written on every revalidation, alongside (not instead of) the `results` state below - lets
+  // EditModeWrapper read the current results at submit time to decide whether to block submission,
+  // without subscribing to them as state itself: EditModeWrapper renders this provider as its own
+  // child, so re-rendering *it* on every validation pass would remount every widget mid-edit (see
+  // EditModeWrapper's own comment on why hasAttemptedSubmit is kept out of validationContext).
+  latestResultsRef?: RefObject<ValidationResult[]>;
+};
+
 /**
  * Revalidates `dataGraph` against `shapesGraph` (scoped to `focusNode`/`nodeShapes`, the entity
  * this edit session actually renders - see NodeUIComponent) once on mount, then again on every
@@ -34,7 +44,7 @@ function flattenResults(results: ValidateResult[]): ValidationResult[] {
  * property. shacl-engine validates nested sh:property/sh:node shapes as part of validating their
  * parent node shape, so scoping to just `nodeShapes` here still covers the whole edited subtree.
  */
-export default function ValidationContextProvider({ children }: { children: ReactNode }) {
+export default function ValidationContextProvider({ children, latestResultsRef }: Props) {
   const { shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl } = useEnvironment();
   const [results, setResults] = useState<ValidationResult[]>([]);
   const [isValidating, setIsValidating] = useState(true);
@@ -71,7 +81,11 @@ export default function ValidationContextProvider({ children }: { children: Reac
           focusNode,
           corsProxyUrl,
         );
-        if (!cancelled) setResults([...flattenResults(report.results), ...dynamicInResults]);
+        if (!cancelled) {
+          const combined = [...flattenResults(report.results), ...dynamicInResults];
+          setResults(combined);
+          if (latestResultsRef) latestResultsRef.current = combined;
+        }
       } catch (error) {
         // The engine is constructed with shacl-engine/sparql.js's functions/constraints (see the
         // shacl-engine patch swapping its Comunica dependency for real SERVICE support), so e.g. a

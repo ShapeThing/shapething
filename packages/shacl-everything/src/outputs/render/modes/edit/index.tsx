@@ -9,7 +9,9 @@ import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import ContentLanguageSwitcher from "@/outputs/render/components/ContentLanguageSwitcher/index.tsx";
 import InterfaceLanguageSwitcher from "@/outputs/render/components/InterfaceLanguageSwitcher/index.tsx";
 import ValidationContextProvider from "@/outputs/render/contexts/ValidationContextProvider.tsx";
+import type { ValidationResult } from "@/outputs/render/contexts/validationContext.tsx";
 import { submitAttemptContext } from "@/outputs/render/contexts/submitAttemptContext.tsx";
+import { worstSeverity } from "@/helpers/worstSeverity.ts";
 
 type Props = {
   children?: React.ReactNode;
@@ -41,12 +43,21 @@ export default function EditModeWrapper({ children }: Props) {
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
   const markSubmitAttempted = useCallback(() => setHasAttemptedSubmit(true), []);
 
+  // Latest live-validation results (see ValidationContextProvider), written on every revalidation
+  // without ever causing *this* component to re-render - handleSubmit reads it imperatively at
+  // submit time instead, same reasoning as hasAttemptedSubmit living in its own context: this
+  // component sits above NodeUIComponent, and re-rendering from up here on every keystroke would
+  // remount widgets mid-edit (see submitAttemptContext's own comment).
+  const latestValidationResultsRef = useRef<ValidationResult[]>([]);
+
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     // Unlocks display of validation results already computed by ValidationContextProvider's live
-    // validation - this doesn't block submission on invalid data, matching existing behavior below
-    // (onSubmit still fires regardless of validity).
+    // validation, so an sh:minCount-violating field now shows its error.
     markSubmitAttempted();
+    // sh:Warning/sh:Info don't affect SHACL conformance - only an sh:Violation blocks submission,
+    // same rule shacl-engine itself uses for report.conforms.
+    if (worstSeverity(latestValidationResultsRef.current) === "Violation") return;
     const originalQuads = originalQuadsRef.current!;
     const finalQuads = dataGraph.getQuads();
     const { additions, deletions } = diffQuads(originalQuads, finalQuads);
@@ -59,7 +70,7 @@ export default function EditModeWrapper({ children }: Props) {
 
   return (
     <submitAttemptContext.Provider value={{ hasAttemptedSubmit, markSubmitAttempted }}>
-      <ValidationContextProvider>
+      <ValidationContextProvider latestResultsRef={latestValidationResultsRef}>
         <form onSubmit={handleSubmit} className="st-edit-mode">
           <header className="st-header">
             <InterfaceLanguageSwitcher />

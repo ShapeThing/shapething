@@ -1,5 +1,8 @@
 import type { FeatureCollection } from "geojson";
-import maplibregl, { type GeoJSONSource, type MapGeoJSONFeature } from "maplibre-gl";
+// MapLibre 6 ships no default export (see maplibre-gl-geo-editor's own README, which GeoEditor's
+// widget.tsx depends on) - a namespace import both constructs values (maplibregl.Map, .Popup,
+// .NavigationControl below) and resolves types (maplibregl.MapGeoJSONFeature/.GeoJSONSource).
+import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef } from "react";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
@@ -14,7 +17,7 @@ const LAYER_IDS = ["st-map-viewer-polygons", "st-map-viewer-lines", "st-map-view
 
 // Built via textContent, never innerHTML/setHTML - title/classification come from RDF literal
 // values (see geometry.ts's tooltipProperties), which this widget has no business treating as HTML.
-function popupContent(feature: MapGeoJSONFeature): HTMLElement | null {
+function popupContent(feature: maplibregl.MapGeoJSONFeature): HTMLElement | null {
   const title = feature.properties.title;
   if (typeof title !== "string") return null;
 
@@ -83,7 +86,7 @@ export default function MapViewer({ shape }: WidgetProps) {
     if (!map) return;
 
     const applyData = () => {
-      const source = map.getSource<GeoJSONSource>(SOURCE_ID);
+      const source = map.getSource<maplibregl.GeoJSONSource>(SOURCE_ID);
       if (source) {
         source.setData(collection);
       } else {

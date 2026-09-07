@@ -41,6 +41,7 @@ form-element-help =
     .aria-label = Help
 form-element-required =
     .aria-label = Required
+form-element-required-tooltip = This field is required
 autocomplete-search-placeholder =
     .placeholder = Search…
 autocomplete-no-results = No results found

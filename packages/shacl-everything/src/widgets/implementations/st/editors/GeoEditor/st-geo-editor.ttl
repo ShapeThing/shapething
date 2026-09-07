@@ -1,0 +1,40 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix schema: <https://schema.org/>.
+@prefix geosparql: <http://www.opengis.net/ont/geosparql#>.
+@prefix ex: <http://example.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Place ;
+    sh:closed true ;
+    sh:ignoredProperties (rdf:type) ;
+    sh:property [
+        sh:path schema:name ;
+        sh:name "Name"@en, "Naam"@nl ;
+    ] ;
+    sh:property ex:Place-location ;
+    .
+
+# sh:datatype geosparql:wktLiteral alone would already auto-score st:GeoEditor highest among the
+# built-in editors (see score.ttl) - the explicit shui:editor declaration here is only to make that
+# choice obvious to a reader of this fixture, mirroring st-map-viewer.ttl's own explicit
+# shui:viewer st:MapViewer. Any number of values is allowed (no sh:maxCount) - each becomes its own
+# drawn feature on the one shared map (see widget.tsx's singleUnifiedWidget).
+ex:Place-location
+    a sh:PropertyShape ;
+    sh:path ex:location ;
+    sh:name "Locations"@en, "Locaties"@nl ;
+    sh:datatype geosparql:wktLiteral ;
+    shui:editor st:GeoEditor ;
+    .
+
+<#data>
+    a schema:Place ;
+    schema:name "Amsterdam landmarks"@en, "Amsterdamse bezienswaardigheden"@nl ;
+    ex:location
+        "POINT (4.8852 52.3600)"^^geosparql:wktLiteral,
+        "POINT (4.9041 52.3676)"^^geosparql:wktLiteral ;
+    .

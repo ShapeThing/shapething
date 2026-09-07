@@ -56,3 +56,29 @@ export const submittingHandsBackTheDataGraphAsANewStore: Story = {
     expect(result.deletions).toEqual([]);
   },
 };
+
+const invalidArgs = argsByTestFile("submit-invalid.ttl", import.meta.url);
+
+export const submittingInvalidDataIsBlocked: Story = {
+  name: "Submitting with an unfilled required field does not call onSubmit",
+  args: { ...invalidArgs, onSubmit },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    submittedResult = undefined;
+
+    // ex:data has no schema:givenName at all - sh:minCount 1 is violated from the very first
+    // render, before the user has touched anything (the "create a new, still-empty node" case the
+    // bug report described), so the button reads "Create" (see EditModeWrapper's hasTriples check).
+    const submitButton = await canvas.findByRole("button", { name: "Create" }, { timeout: 5000 });
+    await userEvent.click(submitButton);
+
+    // The sh:minCount violation now shows (submit attempts unlock validation display - see
+    // usePropertyValidationResults), and onSubmit must never have fired for it.
+    await waitFor(() => {
+      expect(
+        canvasElement.querySelector('.st-validation-message[data-severity="Violation"]'),
+      ).toBeTruthy();
+    });
+    expect(submittedResult).toBeUndefined();
+  },
+};

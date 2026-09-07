@@ -78,11 +78,18 @@ export default function FormElement({
             )}
             {labelSuffix}
             {required && (
-              <Localized id="form-element-required" attrs={{ "aria-label": true }}>
-                <span className="st-form-element__required" aria-label="Required">
-                  *
-                </span>
-              </Localized>
+              <Tooltip
+                bare
+                enabled
+                tip={<Localized id="form-element-required-tooltip" />}
+                placement={tooltipPlacement}
+              >
+                <Localized id="form-element-required" attrs={{ "aria-label": true }}>
+                  <span className="st-form-element__required" aria-label="Required">
+                    *
+                  </span>
+                </Localized>
+              </Tooltip>
             )}
           </label>
         )}

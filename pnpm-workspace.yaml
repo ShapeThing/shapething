@@ -7,6 +7,8 @@ allowBuilds:
   esbuild: true
   msgpackr-extract: true
   sharp: true
+minimumReleaseAgeExclude:
+  - maplibre-gl-geo-editor@0.11.0
 packageExtensions:
   shacl-engine@1.0.2:
     dependencies:
