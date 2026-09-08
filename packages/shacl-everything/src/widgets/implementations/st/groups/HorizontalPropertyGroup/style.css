@@ -1,7 +1,3 @@
-.st-property-group--horizontal {
-  position: relative;
-}
-
 /* Layers on top of PropertyGroup's own .st-property-group/__body rules (that widget's style.css
    is always loaded alongside this one - see registry.ts, both widgets live under the same
    groups/ category and are bundled together) - only the row-layout override lives here. */
@@ -27,17 +23,27 @@
   margin-block-start: 0;
 }
 
-/* .st-member-shape-list__items
-  .st-member-shape-list__item:not(:first-child)
-  .st-property-group--horizontal
-  .st-form-element__header {
-  display: none;
+/* MemberShapeListHeader's stand-ins for the drag handle/gear/remove button (see its own doc
+   comment): same classes as the real controls, so they reserve exactly the same width/gap, but
+   inert and invisible rather than interactive - the point is column alignment, not a second set
+   of disabled buttons. */
+.st-member-shape-list__header-spacer {
+  visibility: hidden;
+  pointer-events: none;
+  width: var(--size-3);
 }
 
-.st-member-shape-list__items .st-member-shape-list__item:first-child {
-  .st-button,
-  .st-member-shape-list__handle,
-  .st-details-editor__options {
-    margin-top: var(--size-6);
-  }
-} */
+/* A single-instance use of this group (e.g. DetailsEditor-wrapped schema:prepTime, sh:maxCount 1
+   - not a repeating MemberShapeList row, whose own rows never carry a label at all) still shows
+   its "Amount"/"Unit" labels once, above the inputs, same as any FormElement. That label row is
+   inside PropertyUIComponentObject's own .st-property-object, which top-aligns its remove button
+   (a direct child) and DetailsEditor's gear icon (align-self: flex-start) against the tallest
+   sibling - landing them level with the labels instead of the inputs below. Push both down by
+   the label row's own height (.st-form-element__label's height, FormElement/style.css) so they
+   sit level with the inputs instead. */
+.st-property-object:has(.st-property-group--horizontal) > .st-button {
+  margin-top: var(--size-6);
+}
+.st-property-object:has(.st-property-group--horizontal) .st-details-editor__options {
+  margin-top: calc(var(--size-6) + var(--size-1));
+}

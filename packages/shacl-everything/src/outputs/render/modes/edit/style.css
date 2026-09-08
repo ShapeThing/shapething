@@ -186,7 +186,7 @@
 .st-member-shape-list {
   display: flex;
   flex-direction: column;
-  gap: var(--size-3);
+  gap: var(--size-2);
   width: 100%;
 }
 

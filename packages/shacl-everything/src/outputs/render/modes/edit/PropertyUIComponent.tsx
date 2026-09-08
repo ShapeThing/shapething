@@ -26,11 +26,22 @@ type PropertyUIComponentProps = {
   // (DetailsEditor), forwarded on into whichever of MemberShapeList/PropertyUIComponentValues
   // actually renders this property's values.
   autoFocusFirst?: boolean;
+  // Suppresses this property's own FormElement label/description (visually and from the DOM),
+  // for a caller that already renders this column's label once elsewhere - a MemberShapeList
+  // table-mode header, via HorizontalPropertyGroup (see memberShapeTableContext). Real required-
+  // field validation is unaffected either way; it's driven by shacl-engine, not this UI marker.
+  hideLabel?: boolean;
+  // Overrides the aria-labelledby id this property's widget(s) point at - used together with
+  // hideLabel, so the widget still resolves an accessible name from the header's own label
+  // instead of this (now unrendered) instance's own.
+  labelledBy?: string;
 };
 
 export default function PropertyUIComponent({
   propertyUIElement,
   autoFocusFirst,
+  hideLabel = false,
+  labelledBy: labelledByOverride,
 }: PropertyUIComponentProps) {
   const { languageMode } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
@@ -49,8 +60,11 @@ export default function PropertyUIComponent({
   const memberShapeNodes = propertyUIElement.get(sh("memberShape"));
 
   const labelId = useId();
-  const label = propertyUIElement.label([activeInterfaceLanguage]);
-  const description = propertyUIElement.description([activeInterfaceLanguage]);
+  const effectiveLabelledBy = labelledByOverride ?? labelId;
+  const label = hideLabel ? undefined : propertyUIElement.label([activeInterfaceLanguage]);
+  const description = hideLabel
+    ? undefined
+    : propertyUIElement.description([activeInterfaceLanguage]);
   const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
   const showLanguageTag = Boolean(activeLanguage) && isRdfLangString && languageMode === "switcher";
   const showSearchIcon = Boolean(searchQueryFor(propertyUIElement));
@@ -118,13 +132,13 @@ export default function PropertyUIComponent({
         <MemberShapeList
           propertyUIElement={propertyUIElement}
           memberShapeNodes={memberShapeNodes}
-          labelledBy={labelId}
+          labelledBy={effectiveLabelledBy}
           autoFocusFirst={autoFocusFirst}
         />
       ) : (
         <PropertyUIComponentValues
           propertyUIElement={propertyUIElement}
-          labelId={labelId}
+          labelId={effectiveLabelledBy}
           autoFocusFirst={autoFocusFirst}
         />
       )}

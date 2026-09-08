@@ -18,3 +18,7 @@
   gap: var(--size-3);
   flex: 1;
 }
+
+.st-details-editor__options {
+  margin-top: var(--size-1);
+}

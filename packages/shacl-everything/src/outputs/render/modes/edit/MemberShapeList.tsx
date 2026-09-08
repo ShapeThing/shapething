@@ -1,5 +1,5 @@
-import type { NamedNode, Term } from "@rdfjs/types";
-import { useEffect, useMemo, useRef } from "react";
+import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
+import { useEffect, useId, useMemo, useRef } from "react";
 import {
   closestCenter,
   DndContext,
@@ -14,14 +14,18 @@ import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-ki
 import { Localized } from "@fluent/react";
 import { getRdfListCells, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { Plus } from "@/helpers/icons.tsx";
-import { rdf, sh, shui } from "@/helpers/namespaces.ts";
+import { rdf, sh, shui, st } from "@/helpers/namespaces.ts";
 import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { useRegisterContentLanguageSwitcherWidget } from "@/outputs/render/hooks/useRegisterContentLanguageSwitcherWidget.tsx";
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
+import { memberShapeTableContext } from "@/outputs/render/contexts/memberShapeTableContext.tsx";
+import MemberShapeListHeader from "@/outputs/render/modes/edit/MemberShapeListHeader.tsx";
 import MemberShapeListItem from "@/outputs/render/modes/edit/MemberShapeListItem.tsx";
+import { groupChildren } from "@/structure/groupChildren.ts";
+import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import "./style.css";
 
@@ -84,6 +88,45 @@ export default function MemberShapeList({
   const memberWidget = useWidget(shui("editor"), memberElement);
   useRegisterContentLanguageSwitcherWidget(Boolean(memberWidget?.meta?.needsLanguageSwitcher));
 
+  // When every item's own shape collapses into exactly one st:HorizontalPropertyGroup, this list
+  // renders as a compact table instead: one header row (see MemberShapeListHeader) with these
+  // columns' labels, and every item below it label-less (see the memberShapeTableContext.Provider
+  // below). Computed purely from shape structure via an inert placeholder NodeUIElement/
+  // groupChildren pass - the same technique ValueTableViewer already uses for its own headers -
+  // never from any item's actual data, so this only needs recomputing when the shape itself does.
+  // Anything else (no sh:node, more than one top-level child, a non-horizontal or nested group, a
+  // mix of grouped/ungrouped children) falls back to today's per-item rendering unchanged.
+  const tableColumns = useMemo<PropertyUIElement[] | undefined>(() => {
+    const nodeShapes = memberElement.get(sh("node")) as Quad_Subject[];
+    if (nodeShapes.length === 0) return undefined;
+
+    const placeholder = new NodeUIElement({
+      shapesGraph: memberElement.shapesGraph,
+      dataGraph: memberElement.dataGraph,
+      scoresGraph: memberElement.scoresGraph,
+      widgetRegistry: memberElement.widgetRegistry,
+      focusNode: memberElement.focusNode,
+      nodeShapes,
+    });
+    const grouped = groupChildren(
+      placeholder.children(),
+      placeholder.shapesGraph,
+      placeholder.dataGraph,
+      placeholder.focusNode,
+      placeholder.widgetRegistry,
+    );
+    if (grouped.length !== 1 || grouped[0].kind !== "group") return undefined;
+
+    const [group] = grouped;
+    if (!group.widget()?.widget.equals(st("HorizontalPropertyGroup"))) return undefined;
+    if (group.children.some((child) => child.kind !== "property")) return undefined;
+
+    return group.children as PropertyUIElement[];
+  }, [memberElement]);
+
+  const tableIdBase = useId();
+  const columnLabelId = (index: number) => `${tableIdBase}-col-${index}`;
+
   const minListLength = propertyUIElement.get(sh("minListLength")) ?? 0;
   const maxListLength = propertyUIElement.get(sh("maxListLength")) ?? Infinity;
   const canRemove = cells.length > minListLength;
@@ -133,29 +176,38 @@ export default function MemberShapeList({
     commit([...cells.map((entry) => entry.value), newObject]);
   };
 
+  const items = cells.map((entry, index) => (
+    <MemberShapeListItem
+      key={entry.cell.value}
+      id={entry.cell.value}
+      memberElement={memberElement}
+      value={entry.value}
+      labelledBy={labelledBy}
+      canRemove={canRemove}
+      onChange={(newValue) => commit(cells.map((c, i) => (i === index ? newValue : c.value)))}
+      onRemove={() => commit(cells.filter((_, i) => i !== index).map((c) => c.value))}
+      autoFocus={index === targetFocusIndex}
+    />
+  ));
+
   return (
     <div className="st-member-shape-list">
+      {tableColumns && <MemberShapeListHeader columns={tableColumns} columnLabelId={columnLabelId} />}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext
           items={cells.map((entry) => entry.cell.value)}
           strategy={verticalListSortingStrategy}
         >
           <ul className="st-member-shape-list__items">
-            {cells.map((entry, index) => (
-              <MemberShapeListItem
-                key={entry.cell.value}
-                id={entry.cell.value}
-                memberElement={memberElement}
-                value={entry.value}
-                labelledBy={labelledBy}
-                canRemove={canRemove}
-                onChange={(newValue) =>
-                  commit(cells.map((c, i) => (i === index ? newValue : c.value)))
-                }
-                onRemove={() => commit(cells.filter((_, i) => i !== index).map((c) => c.value))}
-                autoFocus={index === targetFocusIndex}
-              />
-            ))}
+            {tableColumns ? (
+              <memberShapeTableContext.Provider
+                value={{ hideLabels: true, labelledByForColumn: columnLabelId }}
+              >
+                {items}
+              </memberShapeTableContext.Provider>
+            ) : (
+              items
+            )}
           </ul>
         </SortableContext>
       </DndContext>
