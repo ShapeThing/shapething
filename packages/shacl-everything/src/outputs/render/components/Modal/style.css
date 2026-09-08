@@ -2,7 +2,7 @@
   border: none;
   border-radius: var(--radius-2);
   padding: 0;
-  max-width: min(90vw, var(--size-15));
+  max-width: min(90vw, calc(var(--size-15) + var(--size-12)));
   width: 100%;
   color: var(--gray-8);
   font-family: var(--st-font-family);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Localized } from "@fluent/react";
 import type { Quad } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
@@ -12,6 +12,10 @@ import InterfaceLanguageSwitcher from "@/outputs/render/components/InterfaceLang
 import ValidationContextProvider from "@/outputs/render/contexts/ValidationContextProvider.tsx";
 import type { ValidationResult } from "@/outputs/render/contexts/validationContext.tsx";
 import { submitAttemptContext } from "@/outputs/render/contexts/submitAttemptContext.tsx";
+import {
+  undoRedoScopeContext,
+  type UndoRedoScope,
+} from "@/outputs/render/contexts/undoRedoScopeContext.tsx";
 import { worstSeverity } from "@/helpers/worstSeverity.ts";
 
 type Props = {
@@ -79,13 +83,37 @@ export default function EditModeWrapper({ children }: Props) {
     onSubmit?.({ dataGraph: store, additions, deletions });
   };
 
-  useEffect(() => {
-    if (!enableUndoRedo) return;
-    const history = getHistory(dataGraph);
-    if (!history) return;
+  // A Modal editing its own staging graph (see Modal's `dataGraph` prop) pushes its scope here
+  // while open, so Ctrl+Z/Ctrl+Y below acts on the innermost open one instead of always on this
+  // form's own live dataGraph - see undoRedoScopeContext's own doc comment for why this needs to
+  // be an explicit stack rather than relying on DOM/React event bubbling (a widget swap can move
+  // focus outside this <form> entirely, e.g. to <body>, where a bubble-based handler scoped to the
+  // form would never see the keypress at all).
+  const undoRedoStackRef = useRef<UndoRedoScope[]>([]);
+  const undoRedoScope = useMemo(
+    () => ({
+      push: (scope: UndoRedoScope) => {
+        undoRedoStackRef.current.push(scope);
+        return () => {
+          const index = undoRedoStackRef.current.indexOf(scope);
+          if (index !== -1) undoRedoStackRef.current.splice(index, 1);
+        };
+      },
+    }),
+    [],
+  );
 
+  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      const scope = undoRedoStackRef.current.at(-1) ?? {
+        dataGraph,
+        enabled: enableUndoRedo ?? true,
+      };
+      if (!scope.enabled) return;
+      const history = getHistory(scope.dataGraph);
+      if (!history) return;
       if (!(event.ctrlKey || event.metaKey) || isEditableTarget(event.target)) return;
+
       const key = event.key.toLowerCase();
       if (key === "z" && !event.shiftKey) {
         event.preventDefault();
@@ -101,27 +129,29 @@ export default function EditModeWrapper({ children }: Props) {
   }, [dataGraph, enableUndoRedo]);
 
   return (
-    <submitAttemptContext.Provider value={{ hasAttemptedSubmit, markSubmitAttempted }}>
-      <ValidationContextProvider latestResultsRef={latestValidationResultsRef}>
-        <form onSubmit={handleSubmit} className="st-edit-mode">
-          <header className="st-header">
-            <InterfaceLanguageSwitcher />
-            <ContentLanguageSwitcher />
-          </header>
+    <undoRedoScopeContext.Provider value={undoRedoScope}>
+      <submitAttemptContext.Provider value={{ hasAttemptedSubmit, markSubmitAttempted }}>
+        <ValidationContextProvider latestResultsRef={latestValidationResultsRef}>
+          <form onSubmit={handleSubmit} className="st-edit-mode">
+            <header className="st-header">
+              <InterfaceLanguageSwitcher />
+              <ContentLanguageSwitcher />
+            </header>
 
-          <NodeUIComponent />
-          {children}
-          <div className="st-edit-mode--actions">
-            <button className="st-button st-button--primary" type="submit">
-              {hasTriples ? (
-                <Localized id="node-ui-submit-update">Update</Localized>
-              ) : (
-                <Localized id="node-ui-submit-create">Create</Localized>
-              )}
-            </button>
-          </div>
-        </form>
-      </ValidationContextProvider>
-    </submitAttemptContext.Provider>
+            <NodeUIComponent />
+            {children}
+            <div className="st-edit-mode--actions">
+              <button className="st-button st-button--primary" type="submit">
+                {hasTriples ? (
+                  <Localized id="node-ui-submit-update">Update</Localized>
+                ) : (
+                  <Localized id="node-ui-submit-create">Create</Localized>
+                )}
+              </button>
+            </div>
+          </form>
+        </ValidationContextProvider>
+      </submitAttemptContext.Provider>
+    </undoRedoScopeContext.Provider>
   );
 }

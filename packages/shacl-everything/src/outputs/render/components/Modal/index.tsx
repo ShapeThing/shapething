@@ -1,6 +1,9 @@
-import { useEffect, useId, useRef, type ReactNode } from "react";
+import { useContext, useEffect, useId, useRef, type ReactNode } from "react";
+import type { RdfStore } from "rdf-stores";
 import { Close } from "@/helpers/icons.tsx";
 import { Localized } from "@fluent/react";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { undoRedoScopeContext } from "@/outputs/render/contexts/undoRedoScopeContext.tsx";
 import "./style.css";
 
 type Props = {
@@ -8,13 +11,23 @@ type Props = {
   onClose: () => void;
   title: ReactNode;
   children: ReactNode;
+  // The reactive store this modal's own content edits, if it's a staging graph separate from the
+  // outer form's (see AutoCompleteEditor/InstancesSelectEditor's create-new flow,
+  // AutoCompleteOption's edit-in-place flow) - wires Ctrl+Z/Ctrl+Y to that graph's own undo/redo
+  // history (see helpers/reactiveRdfStore.ts) scoped to this dialog, so it doesn't leak out to (or
+  // get shadowed by) the outer form's own Ctrl+Z handling for the live dataGraph. Omit when this
+  // modal's content doesn't edit a graph of its own (e.g. a plain confirmation, or a read-only
+  // view-in-place).
+  dataGraph?: RdfStore;
 };
 
 // A generic modal dialog built on the native <dialog> element - showModal()/close() bring focus
 // trapping, Escape-to-close and a ::backdrop for free, so there's no need to hand-roll those.
-export default function Modal({ open, onClose, title, children }: Props) {
+export default function Modal({ open, onClose, title, children, dataGraph }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
+  const { enableUndoRedo } = useEnvironment();
+  const undoRedoScope = useContext(undoRedoScopeContext);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -22,6 +35,14 @@ export default function Modal({ open, onClose, title, children }: Props) {
     if (open && !dialog.open) dialog.showModal();
     if (!open && dialog.open) dialog.close();
   }, [open]);
+
+  // Pushed for as long as this modal is actually open and editing a graph of its own - popped on
+  // close/unmount, so EditModeWrapper's single Ctrl+Z/Ctrl+Y listener (see undoRedoScopeContext)
+  // falls back to the outer form's own dataGraph again once nothing here needs the override.
+  useEffect(() => {
+    if (!undoRedoScope || !dataGraph || !open) return;
+    return undoRedoScope.push({ dataGraph, enabled: enableUndoRedo ?? true });
+  }, [undoRedoScope, dataGraph, open, enableUndoRedo]);
 
   return (
     <dialog
