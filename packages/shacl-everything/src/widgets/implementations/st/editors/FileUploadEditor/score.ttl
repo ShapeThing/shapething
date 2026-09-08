@@ -1,0 +1,24 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+st:FileUploadEditor rdfs:label "File upload"@en, "Bestand uploaden"@nl .
+
+# Explicit-declare only, same as shacl-renderer's own FileUploadEditor (no scoring `meta.score()`
+# there either) - uploading needs a shape-author-provided st:uploadUrl endpoint, so this widget
+# can never be the right auto-detected default for an arbitrary property.
+st:fileUploadEditorScore40
+    a shui:WidgetScore ;
+    shui:widget st:FileUploadEditor ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:prefersFileUploadEditor ;
+.
+
+st:prefersFileUploadEditor
+    a sh:NodeShape ;
+    sh:property [
+        sh:path shui:editor ;
+        sh:hasValue st:FileUploadEditor ;
+    ] ;
+.

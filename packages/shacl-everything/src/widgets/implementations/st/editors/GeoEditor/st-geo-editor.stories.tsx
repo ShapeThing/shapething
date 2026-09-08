@@ -14,7 +14,7 @@ type Story = StoryObj<ShaclRendererProps>;
 // toolbar draws onto a WebGL canvas, which isn't something a scripted click sequence can drive
 // meaningfully - see geometry.test.ts for the read/write conversion logic this widget relies on.
 export default {
-  title: "ShapeThing/Editors/st:GeoEditor",
+  title: "Specifications/ShapeThing (living document)/Editors/st:GeoEditor",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };

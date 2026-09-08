@@ -10,7 +10,7 @@ import type { SubmitResult } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "ShapeThing/Facets/st:CategoryFacet",
+  title: "Specifications/ShapeThing (living document)/Facets/st:CategoryFacet",
   component: ShaclRenderer,
   args: { ...minimalEnvironment, mode: "facet" },
 };

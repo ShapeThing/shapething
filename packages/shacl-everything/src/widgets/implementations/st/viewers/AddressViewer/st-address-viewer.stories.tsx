@@ -9,7 +9,7 @@ type Story = StoryObj<ShaclRendererProps>;
 // AddressViewer), not part of the SHACL 1.2 Core spec or the shui: extension proposal - it lives
 // in its own stories folder rather than alongside the spec-conformance suite.
 export default {
-  title: "ShapeThing/Viewers/st:AddressViewer",
+  title: "Specifications/ShapeThing (living document)/Viewers/st:AddressViewer",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };

@@ -11,7 +11,7 @@ type Story = StoryObj<ShaclRendererProps>;
 // live via @iconify/react's own <Icon/>, so this story depends on a live network call to
 // api.iconify.design for the icon's SVG data.
 export default {
-  title: "ShapeThing/Viewers/st:IconifyViewer",
+  title: "Specifications/ShapeThing (living document)/Viewers/st:IconifyViewer",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };

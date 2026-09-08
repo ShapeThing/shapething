@@ -13,7 +13,7 @@ type Story = StoryObj<ShaclRendererProps>;
 // shui:LabelRole/ClassificationRole (see st-map-viewer.ttl's ex:LandmarkShape); the two literal
 // values have no separate node to hang a title/classification off of.
 export default {
-  title: "ShapeThing/Viewers/st:MapViewer",
+  title: "Specifications/ShapeThing (living document)/Viewers/st:MapViewer",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };

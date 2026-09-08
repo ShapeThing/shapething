@@ -1,0 +1,24 @@
+/* Layers on top of PropertyGroup's own .st-property-group/__body rules (that widget's style.css
+   is always loaded alongside this one - see registry.ts, both widgets live under the same
+   groups/ category and are bundled together) - only the row-layout override lives here. */
+.st-property-group--horizontal > .st-property-group__body {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--size-2);
+  border-left: 0;
+  padding-left: 0;
+}
+
+/* Each grouped child (typically a .st-form-element) shares the row evenly instead of sizing to
+   its own content, and drops the block-layout bottom padding a stacked property relies on for
+   vertical spacing (see FormElement's style.css) - a row uses `gap` for that instead. */
+.st-property-group--horizontal > .st-property-group__body > * {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-block-end: 0;
+}
+
+.st-property-group--horizontal > .st-property-group__body > .st-form-element + .st-form-element {
+  margin-block-start: 0;
+}

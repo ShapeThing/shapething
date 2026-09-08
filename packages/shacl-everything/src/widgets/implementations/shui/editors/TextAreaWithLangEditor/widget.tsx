@@ -1,6 +1,7 @@
 import { factory } from "@/helpers/factory.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
+import { useAutoGrowTextarea } from "@/outputs/render/hooks/useAutoGrowTextarea.ts";
 import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import type { WidgetProps } from "@/widgets/types.ts";
@@ -34,12 +35,14 @@ export default function TextAreaWithLangEditor({
     setTerm(factory.literal(value, language)),
   );
   const ref = useAutoFocusRef<HTMLTextAreaElement>(autoFocus);
+  useAutoGrowTextarea(ref, localValue);
 
   return (
     <>
       <textarea
         ref={ref}
         className="st-input"
+        style={{ resize: "none", overflow: "hidden" }}
         value={localValue}
         onChange={onChange}
         onBlur={onBlur}

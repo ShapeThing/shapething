@@ -1,0 +1,487 @@
+@prefix ex: <http://example.org/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+### QUDT (Quantities, Units, Dimensions and Types) unit vocabulary - a real, dereferenceable
+### ontology (https://qudt.org/), reused here instead of ad hoc unit strings so schema:unitCode
+### values are grounded in something other than this fixture's own vocabulary. rdfs:label is
+### asserted locally (in this graph) rather than fetched from qudt.org - an ordinary Linked Data
+### pattern for labeling a shared external resource for one's own UI.
+@prefix unit: <http://qudt.org/vocab/unit/>.
+
+### Chef Shape
+ex:ChefShape a sh:NodeShape ;
+    sh:targetClass ex:Chef ;
+    sh:property [
+        sh:path schema:name ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 0 ;
+        sh:name "Name"@en, "Naam"@nl ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:image ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:order 1 ;
+        sh:name "Photo"@en, "Foto"@nl ;
+        shui:viewer shui:ImageViewer ;
+        shui:propertyRole shui:DepictionRole ;
+    ] ;
+    sh:property [
+        sh:path schema:nationality ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 2 ;
+        sh:name "Nationality"@en, "Nationaliteit"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:cuisine ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 3 ;
+        sh:name "Signature cuisine"@en, "Signatuurkeuken"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:michelinStars ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 3 ;
+        sh:maxCount 1 ;
+        sh:order 4 ;
+        sh:name "Michelin stars"@en, "Michelinsterren"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:worksFor ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 5 ;
+        sh:name "Restaurant"@en, "Restaurant"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:description ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:singleLine false ;
+        sh:order 6 ;
+        sh:name "Biography"@en, "Biografie"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:sameAs ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:order 7 ;
+        sh:name "Wikipedia"@en, "Wikipedia"@nl ;
+    ] ;
+    .
+
+### Recipe categories and units of measurement are both closed sets of referenceable resources
+### (not free-text strings) - ex:RecipeCategoryShape/ex:UnitShape below give each a proper node
+### shape with an rdfs:label LabelRole, the same pattern used for the Chef reference (sh:class,
+### resolved via valueNodeShapes) so EnumSelectEditor's options - and any viewer/chip that shows
+### one - display a translated label instead of a raw enum string or IRI.
+ex:RecipeCategoryShape a sh:NodeShape ;
+    sh:targetClass ex:RecipeCategory ;
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    .
+
+ex:Starter a ex:RecipeCategory ; rdfs:label "Starter"@en, "Voorgerecht"@nl .
+ex:MainCourse a ex:RecipeCategory ; rdfs:label "Main course"@en, "Hoofdgerecht"@nl .
+ex:Dessert a ex:RecipeCategory ; rdfs:label "Dessert"@en, "Dessert"@nl .
+ex:SideDish a ex:RecipeCategory ; rdfs:label "Side dish"@en, "Bijgerecht"@nl .
+
+ex:UnitShape a sh:NodeShape ;
+    sh:targetClass ex:Unit ;
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    .
+
+unit:KiloGM a ex:Unit ; rdfs:label "Kilogram"@en, "Kilogram"@nl .
+unit:GM a ex:Unit ; rdfs:label "Gram"@en, "Gram"@nl .
+unit:MilliL a ex:Unit ; rdfs:label "Milliliter"@en, "Milliliter"@nl .
+unit:TBSP a ex:Unit ; rdfs:label "Tablespoon"@en, "Eetlepel"@nl .
+unit:TSP a ex:Unit ; rdfs:label "Teaspoon"@en, "Theelepel"@nl .
+unit:MIN a ex:Unit ; rdfs:label "Minutes"@en, "Minuten"@nl .
+unit:COUNT a ex:Unit ; rdfs:label "Count"@en, "Aantal"@nl .
+
+### A reusable schema:QuantitativeValue-shaped pair (schema:value + schema:unitCode) for any single
+### measured quantity that isn't itself a value with a name of its own - prep/cook time (unitCode
+### unit:MIN) and servings (unitCode unit:COUNT). Ingredients need a third field (their own name),
+### so they get their own IngredientShape below instead of reusing this one.
+ex:QuantityShape a sh:NodeShape ;
+    sh:property [
+        sh:path schema:value ;
+        sh:datatype xsd:integer ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 0 ;
+        sh:name "Amount"@en, "Aantal"@nl ;
+        shui:propertyRole shui:LabelRole ;
+        sh:group ex:quantityFieldsGroup ;
+    ] ;
+    sh:property [
+        sh:path schema:unitCode ;
+        sh:class ex:Unit ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        shui:editor shui:EnumSelectEditor ;
+        sh:minCount 1 ;
+        sh:order 1 ;
+        sh:name "Unit"@en, "Eenheid"@nl ;
+        sh:group ex:quantityFieldsGroup ;
+    ] ;
+    .
+
+ex:quantityFieldsGroup a sh:PropertyGroup, st:HorizontalPropertyGroup ;
+    .
+
+### One recipeIngredient value: a name plus an optional quantity (schema:value/schema:unitCode) -
+### some ingredients (a pinch of this, a component already reduced to a name) genuinely have no
+### clean amount, hence sh:minCount 0 on both.
+ex:IngredientShape a sh:NodeShape ;
+    sh:property [
+        sh:path schema:name ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 0 ;
+        sh:name "Ingredient"@en, "Ingrediënt"@nl ;
+        shui:propertyRole shui:LabelRole ;
+        sh:group ex:ingredientFieldsGroup ;
+    ] ;
+    sh:property [
+        sh:path schema:value ;
+        sh:datatype xsd:decimal ;
+        sh:maxCount 1 ;
+        sh:minCount 1 ;
+        sh:order 1 ;
+        sh:name "Amount"@en, "Hoeveelheid"@nl ;
+        sh:group ex:ingredientFieldsGroup ;
+    ] ;
+    sh:property [
+        sh:path schema:unitCode ;
+        sh:class ex:Unit ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:minCount 1 ;
+        shui:editor shui:EnumSelectEditor ;
+        sh:order 2 ;
+        sh:name "Unit"@en, "Eenheid"@nl ;
+        sh:group ex:ingredientFieldsGroup ;
+    ] ;
+    .
+
+ex:ingredientFieldsGroup a sh:PropertyGroup, st:HorizontalPropertyGroup ;
+    .
+
+### Recipe Shape
+ex:RecipeShape a sh:NodeShape ;
+    sh:targetClass schema:Recipe ;
+    sh:property [
+        sh:path schema:name ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:minCount 1 ;
+        sh:order 0 ;
+        sh:name "Recipe name"@en, "Naam van het recept"@nl ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:image ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:order 1 ;
+        sh:name "Photo"@en, "Foto"@nl ;
+        shui:viewer shui:ImageViewer ;
+    ] ;
+    sh:property [
+        sh:path schema:author ;
+        sh:class ex:Chef ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 2 ;
+        sh:name "Chef"@en, "Chef-kok"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeCuisine ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 3 ;
+        sh:name "Cuisine"@en, "Keuken"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeCategory ;
+        sh:class ex:RecipeCategory ;
+        sh:nodeKind sh:IRI ;
+        sh:in ( ex:Starter ex:MainCourse ex:Dessert ex:SideDish ) ;
+        sh:maxCount 1 ;
+        sh:order 4 ;
+        sh:name "Category"@en, "Categorie"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:prepTime ;
+        sh:nodeKind sh:BlankNode ;
+        sh:node ex:QuantityShape ;
+        shui:editor shui:DetailsEditor ;
+        sh:maxCount 1 ;
+        sh:order 5 ;
+        sh:name "Prep time"@en, "Bereidingstijd"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:cookTime ;
+        sh:nodeKind sh:BlankNode ;
+        sh:node ex:QuantityShape ;
+        shui:editor shui:DetailsEditor ;
+        sh:maxCount 1 ;
+        sh:order 6 ;
+        sh:name "Cook time"@en, "Kooktijd"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeYield ;
+        sh:nodeKind sh:BlankNode ;
+        sh:node ex:QuantityShape ;
+        shui:editor shui:DetailsEditor ;
+        sh:maxCount 1 ;
+        sh:order 7 ;
+        sh:name "Servings"@en, "Porties"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeIngredient ;
+        sh:memberShape [
+            sh:node ex:IngredientShape ;
+            shui:editor shui:DetailsEditor ;
+        ] ;
+        sh:minListLength 1 ;
+        sh:order 8 ;
+        sh:name "Ingredients"@en, "Ingrediënten"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeInstructions ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:singleLine false ;
+        sh:minCount 1 ;
+        sh:order 9 ;
+        sh:name "Instructions"@en, "Bereidingswijze"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:description ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:singleLine false ;
+        sh:order 10 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+    ] ;
+    .
+
+### Chefs
+### Photo credits: Wikimedia Commons, via each chef's English Wikipedia article.
+ex:gordonRamsay a ex:Chef ;
+    schema:name "Gordon Ramsay" ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/9/96/Gordon_Ramsay_%28cropped%29.jpg> ;
+    schema:nationality "British" ;
+    ex:cuisine "Modern European" ;
+    ex:michelinStars 3 ;
+    schema:worksFor "Restaurant Gordon Ramsay, London" ;
+    schema:description "Scottish-born chef and restaurateur known for his Michelin-starred restaurants and television programmes such as Hell's Kitchen and MasterChef."@en,
+        "Schotse chef-kok en restaurateur, bekend van zijn Michelinsterrenrestaurants en tv-programma's als Hell's Kitchen en MasterChef."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Gordon_Ramsay> ;
+    .
+
+ex:juliaChild a ex:Chef ;
+    schema:name "Julia Child" ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/3/3a/Julia_Child_portrait_by_%C2%A9Lynn_Gilbert%2C_1978.jpg> ;
+    schema:nationality "American" ;
+    ex:cuisine "French" ;
+    schema:description "American chef, author and television personality who introduced French cuisine to American home cooks through Mastering the Art of French Cooking and her show The French Chef."@en,
+        "Amerikaanse chef-kok, auteur en tv-persoonlijkheid die de Franse keuken introduceerde bij Amerikaanse thuiskoks via Mastering the Art of French Cooking en haar programma The French Chef."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Julia_Child> ;
+    .
+
+ex:massimoBottura a ex:Chef ;
+    schema:name "Massimo Bottura" ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Massimo_Bottura_Rimini.jpg/960px-Massimo_Bottura_Rimini.jpg> ;
+    schema:nationality "Italian" ;
+    ex:cuisine "Modern Italian" ;
+    ex:michelinStars 3 ;
+    schema:worksFor "Osteria Francescana, Modena" ;
+    schema:description "Italian chef and owner of Osteria Francescana in Modena, celebrated for reinterpreting traditional Italian dishes with a contemporary, artistic approach."@en,
+        "Italiaanse chef-kok en eigenaar van Osteria Francescana in Modena, geroemd om zijn eigentijdse, artistieke herinterpretatie van traditionele Italiaanse gerechten."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Massimo_Bottura> ;
+    .
+
+ex:yotamOttolenghi a ex:Chef ;
+    schema:name "Yotam Ottolenghi" ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Yotam_Ottolenghi.jpg/960px-Yotam_Ottolenghi.jpg> ;
+    schema:nationality "Israeli-British" ;
+    ex:cuisine "Middle Eastern & Mediterranean" ;
+    schema:worksFor "Ottolenghi & NOPI, London" ;
+    schema:description "Israeli-British chef, restaurateur and food writer known for his vegetable-forward Mediterranean and Middle Eastern cooking."@en,
+        "Israëlisch-Britse chef-kok, restaurateur en foodschrijver, bekend om zijn groentegerichte mediterrane en Midden-Oosterse keuken."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Yotam_Ottolenghi> ;
+    .
+
+ex:aliceWaters a ex:Chef ;
+    schema:name "Alice Waters" ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Alice_Waters_2014_%28cropped%29.jpg/960px-Alice_Waters_2014_%28cropped%29.jpg> ;
+    schema:nationality "American" ;
+    ex:cuisine "Californian / Farm-to-table" ;
+    schema:worksFor "Chez Panisse, Berkeley" ;
+    schema:description "American chef and founder of Chez Panisse in Berkeley, California, credited with pioneering the farm-to-table movement."@en,
+        "Amerikaanse chef-kok en oprichter van Chez Panisse in Berkeley, Californië, geldt als pionier van de farm-to-table-beweging."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Alice_Waters> ;
+    .
+
+### Recipes
+<#data> a schema:Recipe ;
+    schema:name "Beef Wellington"@en, "Beef Wellington"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Beef_Wellington_2019.jpg/960px-Beef_Wellington_2019.jpg> ;
+    schema:author ex:gordonRamsay ;
+    schema:recipeCuisine "British" ;
+    schema:recipeCategory ex:MainCourse ;
+    schema:prepTime [ schema:value 45 ; schema:unitCode unit:MIN ] ;
+    schema:cookTime [ schema:value 40 ; schema:unitCode unit:MIN ] ;
+    schema:recipeYield [ schema:value 4 ; schema:unitCode unit:COUNT ] ;
+    schema:recipeIngredient (
+        [ schema:name "Beef fillet" ; schema:value 1.0 ; schema:unitCode unit:KiloGM ]
+        [ schema:name "English mustard" ; schema:value 2.0 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Mushrooms, finely chopped" ; schema:value 500.0 ; schema:unitCode unit:GM ]
+        [ schema:name "Parma ham" ; schema:value 8.0 ; schema:unitCode unit:COUNT ]
+        [ schema:name "Puff pastry" ; schema:value 500.0 ; schema:unitCode unit:GM ]
+        [ schema:name "Egg yolks, beaten" ; schema:value 2.0 ; schema:unitCode unit:COUNT ]
+    ) ;
+    schema:recipeInstructions "Sear the beef fillet until browned on all sides, then brush with English mustard and leave to cool. Cook the chopped mushrooms in a dry pan until all the moisture has evaporated to make a duxelles. Lay out the Parma ham, spread the duxelles over it, and wrap it tightly around the beef. Chill, then wrap the whole thing in puff pastry, brush with egg yolk, and bake until the pastry is golden and the beef reaches the desired doneness."@en,
+        "Schroei de runderhaas rondom bruin dicht, bestrijk hem daarna met Engelse mosterd en laat afkoelen. Bak de fijngehakte paddenstoelen in een droge pan tot al het vocht is verdampt, zodat een duxelles ontstaat. Leg de Parmaham neer, verdeel de duxelles erover en wikkel het geheel strak om het vlees. Laat afkoelen, wikkel het daarna in bladerdeeg, bestrijk met eidooier en bak tot het deeg goudbruin is en het vlees de gewenste gaarheid heeft."@nl ;
+    schema:description "Gordon Ramsay's take on the classic fillet of beef wrapped in mushroom duxelles, Parma ham and puff pastry."@en,
+        "Gordon Ramsays versie van het klassieke stuk rundvlees, gewikkeld in een duxelles van paddenstoelen, Parmaham en bladerdeeg."@nl ;
+    .
+
+ex:stickyToffeePudding a schema:Recipe ;
+    schema:name "Sticky Toffee Pudding"@en, "Sticky Toffee Pudding"@nl ;
+    schema:author ex:gordonRamsay ;
+    schema:recipeCuisine "British" ;
+    schema:recipeCategory ex:Dessert ;
+    schema:prepTime [ schema:value 20 ; schema:unitCode unit:MIN ] ;
+    schema:cookTime [ schema:value 30 ; schema:unitCode unit:MIN ] ;
+    schema:recipeYield [ schema:value 6 ; schema:unitCode unit:COUNT ] ;
+    schema:recipeIngredient (
+        [ schema:name "Pitted dates, chopped" ; schema:value 200.0 ; schema:unitCode unit:GM ]
+        [ schema:name "Bicarbonate of soda" ; schema:value 1.0 ; schema:unitCode unit:TSP ]
+        [ schema:name "Butter" ; schema:value 50.0 ; schema:unitCode unit:GM ]
+        [ schema:name "Soft brown sugar" ; schema:value 150.0 ; schema:unitCode unit:GM ]
+        [ schema:name "Eggs" ; schema:value 2.0 ]
+        [ schema:name "Self-raising flour" ; schema:value 175.0 ; schema:unitCode unit:GM ]
+        [ schema:name "Double cream, for the toffee sauce" ; schema:value 300.0 ; schema:unitCode unit:MilliL ]
+    ) ;
+    schema:recipeInstructions "Soak the chopped dates in boiling water with the bicarbonate of soda for 10 minutes, then blend to a puree. Cream the butter and sugar, beat in the eggs, then fold in the flour and the date puree. Bake in individual moulds until risen and springy. Serve warm, soaked in a butterscotch sauce made from cream and brown sugar."@en,
+        "Week de gehakte dadels met de baking soda 10 minuten in kokend water en pureer ze. Klop de boter en suiker romig, klop de eieren erdoor en spatel er de bloem en het datelmengsel doorheen. Bak in kleine vormpjes tot ze gerezen en veerkrachtig zijn. Serveer warm, overgoten met een botersaus van room en bruine suiker."@nl ;
+    schema:description "A warm, date-based sponge pudding served drenched in butterscotch sauce."@en,
+        "Een warme cake op basis van dadels, overgoten met een romige toffeesaus."@nl ;
+    .
+
+ex:boeufBourguignon a schema:Recipe ;
+    schema:name "Boeuf Bourguignon"@en, "Boeuf Bourguignon"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Beef_bourguignon_NYT.jpg/960px-Beef_bourguignon_NYT.jpg> ;
+    schema:author ex:juliaChild ;
+    schema:recipeCuisine "French" ;
+    schema:recipeCategory ex:MainCourse ;
+    schema:prepTime [ schema:value 30 ; schema:unitCode unit:MIN ] ;
+    schema:cookTime [ schema:value 180 ; schema:unitCode unit:MIN ] ;
+    schema:recipeYield [ schema:value 6 ; schema:unitCode unit:COUNT ] ;
+    schema:recipeIngredient (
+        [ schema:name "Beef chuck, cubed" ; schema:value 1.5 ; schema:unitCode unit:KiloGM ]
+        [ schema:name "Bacon lardons" ; schema:value 200.0 ; schema:unitCode unit:GM ]
+        [ schema:name "Red Burgundy wine" ; schema:value 1.0 ; schema:unitCode unit:COUNT ]
+        [ schema:name "Beef stock" ; schema:value 500.0 ; schema:unitCode unit:MilliL ]
+        [ schema:name "Pearl onions" ; schema:value 12.0 ]
+        [ schema:name "Button mushrooms" ; schema:value 250.0 ; schema:unitCode unit:GM ]
+        [ schema:name "Carrots, sliced" ; schema:value 3.0 ]
+        [ schema:name "Bouquet garni" ; schema:value 1.0 ]
+    ) ;
+    schema:recipeInstructions "Brown the bacon lardons, then sear the beef cubes in the rendered fat until deeply coloured. Add the carrots and onion, then the wine and enough stock to cover, along with the bouquet garni. Cover and braise slowly until the beef is fork-tender. In a separate pan, glaze the pearl onions and sauté the mushrooms, then fold both into the stew just before serving."@en,
+        "Bak de spekblokjes uit en schroei daarna het rundvlees rondom bruin in het vrijgekomen vet. Voeg de wortel en ui toe, gevolgd door de wijn en genoeg bouillon om het vlees te bedekken, samen met het bouquet garni. Laat afgedekt langzaam sudderen tot het vlees mals is. Karameliseer in een aparte pan de zilveruitjes en bak de paddenstoelen, en schep beide er vlak voor het serveren doorheen."@nl ;
+    schema:description "Julia Child's version of the Burgundian classic: beef slowly braised in red wine with bacon, mushrooms and pearl onions."@en,
+        "Julia Childs versie van de Bourgondische klassieker: rundvlees langzaam gestoofd in rode wijn met spek, paddenstoelen en zilveruitjes."@nl ;
+    .
+
+ex:lemonTart a schema:Recipe ;
+    schema:name "Oops! I Dropped the Lemon Tart"@en, "Oeps! De Citroentaart Is Gevallen"@nl ;
+    schema:author ex:massimoBottura ;
+    schema:recipeCuisine "Modern Italian" ;
+    schema:recipeCategory ex:Dessert ;
+    schema:prepTime [ schema:value 60 ; schema:unitCode unit:MIN ] ;
+    schema:cookTime [ schema:value 20 ; schema:unitCode unit:MIN ] ;
+    schema:recipeYield [ schema:value 4 ; schema:unitCode unit:COUNT ] ;
+    schema:recipeIngredient (
+        [ schema:name "Sablé pastry crumbs" ]
+        [ schema:name "Lemon cream (lemon juice, sugar, eggs, butter)" ]
+        [ schema:name "Meringue shards" ]
+        [ schema:name "Lime zest" ]
+        [ schema:name "Basil-infused olive oil, to drizzle" ]
+    ) ;
+    schema:recipeInstructions "Bake a sablé pastry disc and shatter it. Prepare a smooth lemon cream and pipe it in irregular smears across the plate as though the tart had been dropped. Scatter the shattered pastry, meringue shards and lime zest over and around the cream, finishing with a drizzle of basil-infused olive oil."@en,
+        "Bak een schijf zanddeeg en verbrijzel deze. Maak een gladde citroencrème en spuit deze in onregelmatige vegen over het bord, alsof de taart is gevallen. Verdeel de verbrijzelde taartbodem, schilfers meringue en limoenrasp erover en eromheen, en werk af met een scheutje basilicumolie."@nl ;
+    schema:description "Massimo Bottura's signature deconstructed dessert at Osteria Francescana, born from a real kitchen accident and rebuilt as a deliberately \"broken\" plate."@en,
+        "Massimo Bottura's iconische gedeconstrueerde dessert van Osteria Francescana, ontstaan uit een echt ongelukje in de keuken en herbouwd tot een bewust 'gebroken' bord."@nl ;
+    .
+
+ex:roastedCauliflower a schema:Recipe ;
+    schema:name "Roasted Cauliflower with Tahini and Pomegranate"@en, "Geroosterde bloemkool met tahin en granaatappel"@nl ;
+    schema:author ex:yotamOttolenghi ;
+    schema:recipeCuisine "Middle Eastern & Mediterranean" ;
+    schema:recipeCategory ex:SideDish ;
+    schema:prepTime [ schema:value 15 ; schema:unitCode unit:MIN ] ;
+    schema:cookTime [ schema:value 35 ; schema:unitCode unit:MIN ] ;
+    schema:recipeYield [ schema:value 4 ; schema:unitCode unit:COUNT ] ;
+    schema:recipeIngredient (
+        [ schema:name "Large cauliflower, cut into florets" ; schema:value 1.0 ]
+        [ schema:name "Olive oil" ; schema:value 3.0 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Tahini" ; schema:value 3.0 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Lemon juice" ; schema:value 1.0 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Garlic, crushed" ; schema:value 1.0 ; schema:unitCode unit:COUNT ]
+        [ schema:name "Pomegranate seeds, to garnish" ]
+        [ schema:name "Chopped parsley, to garnish" ]
+    ) ;
+    schema:recipeInstructions "Toss the cauliflower florets in olive oil and roast at high heat until golden and tender. Whisk the tahini with lemon juice, garlic and a little water into a smooth, pourable sauce. Arrange the roasted cauliflower on a platter, drizzle generously with the tahini sauce, and scatter over pomegranate seeds and parsley."@en,
+        "Meng de bloemkoolroosjes met olijfolie en rooster ze op hoog vuur tot ze goudbruin en gaar zijn. Klop de tahin met citroensap, knoflook en een beetje water tot een gladde, gietbare saus. Schik de geroosterde bloemkool op een schaal, besprenkel rijkelijk met de tahinsaus en bestrooi met granaatappelpitjes en peterselie."@nl ;
+    schema:description "Whole roasted cauliflower florets with a lemony tahini sauce, pomegranate seeds and parsley."@en,
+        "Hele geroosterde bloemkoolroosjes met een citroenachtige tahinsaus, granaatappelpitjes en peterselie."@nl ;
+    .
+
+ex:gardenSalad a schema:Recipe ;
+    schema:name "Chez Panisse Garden Salad"@en, "Chez Panisse tuinsalade"@nl ;
+    schema:author ex:aliceWaters ;
+    schema:recipeCuisine "Californian / Farm-to-table" ;
+    schema:recipeCategory ex:Starter ;
+    schema:prepTime [ schema:value 15 ; schema:unitCode unit:MIN ] ;
+    schema:cookTime [ schema:value 0 ; schema:unitCode unit:MIN ] ;
+    schema:recipeYield [ schema:value 4 ; schema:unitCode unit:COUNT ] ;
+    schema:recipeIngredient (
+        [ schema:name "Mixed young lettuces" ]
+        [ schema:name "Edible flowers" ]
+        [ schema:name "Shallot, finely minced" ; schema:value 1.0 ]
+        [ schema:name "Red wine vinegar" ; schema:value 1.0 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Extra virgin olive oil" ; schema:value 3.0 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Salt and pepper, to taste" ]
+    ) ;
+    schema:recipeInstructions "Wash and dry the lettuces gently, keeping the leaves whole. Whisk the minced shallot with red wine vinegar, then slowly whisk in the olive oil to make a simple vinaigrette. Season the leaves lightly with salt, dress them just before serving, and scatter with edible flowers."@en,
+        "Was en droog de slasoorten voorzichtig en houd de blaadjes heel. Klop de fijngesneden sjalot met de rodewijnazijn en klop er geleidelijk de olijfolie doorheen tot een eenvoudige vinaigrette. Breng de blaadjes licht op smaak met zout, dresseer ze vlak voor het serveren en bestrooi met eetbare bloemen."@nl ;
+    schema:description "Alice Waters' simple, seasonal salad of just-picked young lettuces dressed with a light shallot vinaigrette."@en,
+        "Alice Waters' eenvoudige, seizoensgebonden salade van vers geplukte jonge slasoorten met een lichte sjalotvinaigrette."@nl ;
+    .

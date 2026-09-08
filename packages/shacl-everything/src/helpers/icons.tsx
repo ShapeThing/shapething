@@ -1,5 +1,5 @@
 import LoadingTwotoneLoopIcon from "~icons/line-md/loading-twotone-loop";
-import EditTwotoneLoopIcon from "~icons/ic/round-zoom-in";
+import EditNoteIcon from "~icons/ic/round-note-alt";
 import PlusIcon from "~icons/ic/round-add";
 import MinusIcon from "~icons/ic/round-remove";
 import ArrowDropDown from "~icons/ic/round-arrow-drop-down";
@@ -18,9 +18,11 @@ import GlobeIcon from "~icons/ic/round-public";
 import CodeIcon from "~icons/ic/round-code";
 import SwapIcon from "~icons/ic/round-swap-horiz";
 import ChevronRight from "~icons/ic/round-chevron-right";
+import CloudUploadIcon from "~icons/ic/round-cloud-upload";
+import SettingsIcon from "~icons/ic/round-settings";
 
 export const Loading = LoadingTwotoneLoopIcon;
-export const EditNested = EditTwotoneLoopIcon;
+export const EditNested = EditNoteIcon;
 export const Plus = PlusIcon;
 export const Minus = MinusIcon;
 export const SelectArrow = ArrowDropDown;
@@ -39,3 +41,5 @@ export const Globe = GlobeIcon;
 export const Code = CodeIcon;
 export const Swap = SwapIcon;
 export const Chevron = ChevronRight;
+export const Upload = CloudUploadIcon;
+export const Settings = SettingsIcon;

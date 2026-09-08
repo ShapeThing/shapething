@@ -41,7 +41,7 @@ export class GroupUIElement {
    * only, so there are no data-graph label steps to run here (see resolution/label.ts's
    * groupLabel).
    */
-  label(languages?: BCP47[]): string {
+  label(languages?: BCP47[]): string | undefined {
     return groupLabel({
       node: this.node,
       shapesGraph: this.shapesGraph,

@@ -5,6 +5,7 @@ import { withCorsProxy } from "@/helpers/corsProxy.ts";
 import {
   classificationRolePropertyPaths,
   depictionRolePropertyPaths,
+  effectiveLabelPredicates,
   labelRolePropertyPaths,
 } from "@/resolution/label.ts";
 import { toSparql } from "@/structure/paths/toSparql.ts";
@@ -198,8 +199,10 @@ export async function runQuery(
  * always outranks any partial/substring match. Results are ordered by descending score, so
  * callers can rely on array order rather than re-sorting client-side. `labelPaths` are SPARQL
  * property path expressions (see toSparql.ts) from a candidate instance to its label literal(s) -
- * left out of the scoring entirely when there are none, so a class with no shui:LabelRole still
- * searches by IRI alone. `classificationPaths` and `depictionPaths` are walked the same way to bind
+ * searchInstances always supplies at least a plain rdfs:label fallback here (see labelPathsFor),
+ * but an empty array is still handled (label scoring simply drops out, leaving IRI-only matching)
+ * since this function is a plain SPARQL-builder, not itself aware of that fallback.
+ * `classificationPaths` and `depictionPaths` are walked the same way to bind
  * `?classification`/`?depiction` alongside each result. Unlike sh:in's role resolution (see
  * buildRoleLookupQuery), these roles can't be split into a separate lookup afterwards - the label
  * match has to happen inside the ranking query itself, since it's what's being ranked on. When
@@ -323,11 +326,23 @@ function buildRoleLookupQuery(
 
 type RoleLookupOptions = { uiLanguage?: string; endpoint?: string; corsProxyUrl?: string };
 
+// A value's LabelRole path(s), falling back to plain rdfs:label (or a configured
+// shui:labelPreference) when its node shape has no explicit shui:LabelRole annotation - mirrors
+// resolution/label.ts's valueNodeLabel() steps 3/4 spec fallback, so a class whose instances only
+// carry an ordinary rdfs:label (no shui:LabelRole property shape) still resolves a label here
+// instead of silently falling back to the raw IRI. Shared by rolePathsFor and searchInstances.
+function labelPathsFor(propertyShape: PropertyUIElement) {
+  const roles = labelRolePropertyPaths(propertyShape);
+  return roles.length > 0
+    ? roles
+    : effectiveLabelPredicates(propertyShape.shapesGraph, "term");
+}
+
 // Shared by resolveRoles and fetchOptions/batchRoleLookup so both compute the exact same set of
 // SPARQL path expressions for a given shape.
 function rolePathsFor(propertyShape: PropertyUIElement) {
   return {
-    labelPaths: labelRolePropertyPaths(propertyShape).map(toSparql),
+    labelPaths: labelPathsFor(propertyShape).map(toSparql),
     classificationPaths: classificationRolePropertyPaths(propertyShape).map(toSparql),
     depictionPaths: depictionRolePropertyPaths(propertyShape).map(toSparql),
   };
@@ -365,8 +380,7 @@ async function runRoleLookupQuery(
  * unbatched across calls - unlike fetchOptions/batchRoleLookup below, there's no cross-property
  * mounting burst to coalesce here: this only ever runs after useInstanceSearch's own client-side
  * debounce, on an interactive per-keystroke path where responsiveness matters more than round-trip
- * count. Returns `values` unchanged (as bare terms) without ever building or running a query when
- * `propertyShape` declares none of those roles, since the result would be identical either way.
+ * count.
  */
 async function resolveRoles(
   values: Term[],
@@ -376,10 +390,6 @@ async function resolveRoles(
   if (values.length === 0) return [];
 
   const { labelPaths, classificationPaths, depictionPaths } = rolePathsFor(propertyShape);
-
-  if (labelPaths.length + classificationPaths.length + depictionPaths.length === 0) {
-    return values.map((term) => ({ term }));
-  }
 
   return runRoleLookupQuery(
     values,
@@ -405,7 +415,7 @@ export async function searchInstances(
   const classIri = shape.get(sh("class"))[0] as NamedNode | undefined;
   if (!classIri) return [];
 
-  const labelPaths = labelRolePropertyPaths(shape).map(toSparql);
+  const labelPaths = labelPathsFor(shape).map(toSparql);
   const classificationPaths = classificationRolePropertyPaths(shape).map(toSparql);
   const depictionPaths = depictionRolePropertyPaths(shape).map(toSparql);
   const query = buildSearchQuery(classIri, labelPaths, classificationPaths, depictionPaths, search);
@@ -545,10 +555,6 @@ export async function fetchOptions(
 
   const { labelPaths, classificationPaths, depictionPaths } = rolePathsFor(shape);
 
-  if (labelPaths.length + classificationPaths.length + depictionPaths.length === 0) {
-    return toSearchResults(iris.map((term) => ({ term })));
-  }
-
   return toSearchResults(
     await batchRoleLookup(iris, shape, labelPaths, classificationPaths, depictionPaths, options),
   );
@@ -560,8 +566,10 @@ export async function fetchOptions(
  * result's LabelRole/ClassificationRole/DepictionRole via `propertyShape`'s sh:node in a second request.
  * The first projected variable is used as the value IRI - it need not be named `?value`.
  *
- * Labels always come from propertyRoles (resolveRoles), never from the query itself. When no roles
- * are declared, results are returned without labels - the raw IRIs.
+ * Labels always come from propertyRoles (resolveRoles), never from the query itself - and always
+ * include at least a plain rdfs:label attempt (see labelPathsFor) even when no shui:LabelRole is
+ * declared, mirroring resolution/label.ts's valueNodeLabel() fallback. Results only come back
+ * without a label when the remote value has neither an explicit role nor an rdfs:label of its own.
  *
  * Role resolution is a *second*, separate request that batches every value via a single `VALUES`
  * clause. That matters because Comunica's join planner evaluates a join between a small bindings

@@ -182,7 +182,7 @@ test("getWidgetMeta returns a meta with no createTerm for widgets whose value sh
   expect(getWidgetMeta(shui("TextFieldEditor"))?.createTerm).toBeUndefined();
 });
 
-test("defaultWidgets.groups contains the bundled sh:PropertyGroup and st:CollapsiblePropertyGroup entries", () => {
+test("defaultWidgets.groups contains the bundled sh:PropertyGroup, st:CollapsiblePropertyGroup and st:HorizontalPropertyGroup entries", () => {
   expect(
     Object.values(defaultWidgets.groups).some((entry) => entry.widget.equals(sh("PropertyGroup"))),
   ).toBe(true);
@@ -191,6 +191,27 @@ test("defaultWidgets.groups contains the bundled sh:PropertyGroup and st:Collaps
       entry.widget.equals(st("CollapsiblePropertyGroup")),
     ),
   ).toBe(true);
+  expect(
+    Object.values(defaultWidgets.groups).some((entry) =>
+      entry.widget.equals(st("HorizontalPropertyGroup")),
+    ),
+  ).toBe(true);
+});
+
+test("getGroupWidget prefers a more specific registered type (st:HorizontalPropertyGroup) over the sh:PropertyGroup default", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix st: <http://shapething.com/> .
+        @prefix ex: <http://example.org/> .
+        ex:nameGroup a sh:PropertyGroup, st:HorizontalPropertyGroup .
+    `,
+    "text/turtle",
+  );
+
+  expect(getGroupWidget(ex("nameGroup"), shapesGraph)?.widget).toEqual(
+    st("HorizontalPropertyGroup"),
+  );
 });
 
 test("getGroupWidget matches sh:PropertyGroup alone", async () => {

@@ -19,6 +19,26 @@ shui:enumSelectEditorScore30
     shui:shapesGraphShape shui:hasInConstraint ;
 .
 
+# sh:class without sh:in (e.g. a small controlled vocabulary enumerated by rdf:type rather than
+# spelled out via sh:in) - see widget.tsx's classOptions fallback. Scored the same tier as
+# AutoCompleteEditor/InstancesSelectEditor's own hasClassConstraint rules: explicit shui:editor
+# declaration wins outright (40), otherwise this stays a 0-score fallback so those two - better
+# suited to a class with many/unbounded instances - are preferred by default.
+shui:enumSelectEditorScore40Class
+    a shui:WidgetScore ;
+    shui:widget shui:EnumSelectEditor ;
+    shui:score 40 ;
+    shui:dataGraphShape shui:isIRI ;
+    shui:shapesGraphShape shui:prefersEnumSelectEditor, shui:hasClassConstraint ;
+.
+
+shui:enumSelectEditorScore0Class
+    a shui:WidgetScore ;
+    shui:widget shui:EnumSelectEditor ;
+    shui:score 0 ;
+    shui:shapesGraphShape shui:hasClassConstraint ;
+.
+
 shui:prefersEnumSelectEditor
     a sh:NodeShape ;
     sh:property [

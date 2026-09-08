@@ -1,19 +1,17 @@
 import { useMemo } from "react";
 import type { Quad_Subject } from "@rdfjs/types";
+import { Localized } from "@fluent/react";
 import { sh } from "@/helpers/namespaces.ts";
-import { valueNodeLabel } from "@/resolution/label.ts";
+import { Settings } from "@/helpers/icons.tsx";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
-import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
-import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
-import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 
 export default function DetailsEditor({ shape, term, autoFocus }: WidgetProps) {
-  const { activeLanguage } = useContentLanguage();
-  const { activeInterfaceLanguage } = useInterfaceLanguage();
   const nodeShapes = useMemo(() => shape.get(sh("node")) as Quad_Subject[], [shape]);
+  const { enableLogicalBranchSwitching, enableWidgetSwitching } = useEnvironment();
 
   const nodeUiElement = useMemo(
     () =>
@@ -28,30 +26,27 @@ export default function DetailsEditor({ shape, term, autoFocus }: WidgetProps) {
     [shape, term, nodeShapes],
   );
 
-  // A fresh BlankNode has no data to derive a label from yet - valueNodeLabel() falls back to the
-  // blank node's own (meaningless-to-show) identifier in that case, so this widget prefers the
-  // outer property's own name (e.g. "Address") until there's real data. That fallback is detected
-  // by rawLabel.value coming back identical to the blank node's own id, since no real label data
-  // could coincidentally match the store's internal identifier.
-  const label = useReactiveRead(
-    shape.dataGraph,
-    `details-editor-label@${term.value}@${activeLanguage}@${activeInterfaceLanguage}`,
-    () => {
-      const rawLabel = valueNodeLabel({ term, propertyShape: shape, languages: [activeLanguage] });
-      return term.termType === "BlankNode" && rawLabel.value === term.value
-        ? shape.label([activeInterfaceLanguage])
-        : rawLabel.value;
-    },
-  );
-
   return (
     <div className="st-details-editor">
-      <button type="button" className="st-details-editor__label">
-        {label}
-      </button>
+      {/* FormElement already renders this property's own sh:name above - no need to repeat a
+          label here. This button stays purely as a focusable anchor that isn't inside a nested
+          property's own .st-property-object__widget wrapper, so WidgetSlot's nearestFocused check
+          can still find *this* widget's wrapper and keep the widget-switcher/branch-switcher
+          fly-out reachable once the nested form below has its own focusable children. */}
       <div className="st-details-editor__body">
         <NodeUIElementChildren nodeUiElement={nodeUiElement} autoFocusFirst={autoFocus} />
       </div>
+      {(enableLogicalBranchSwitching || enableWidgetSwitching) && (
+        <Localized id="details-editor-options" attrs={{ "aria-label": true }}>
+          <button
+            type="button"
+            className="st-icon-button st-details-editor__options"
+            aria-label="Field options"
+          >
+            <Settings />
+          </button>
+        </Localized>
+      )}
     </div>
   );
 }

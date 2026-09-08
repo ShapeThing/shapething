@@ -119,6 +119,11 @@ export type Environment = {
   // creating rather than editing a referenced resource. When false, only existing instances can be
   // picked, same as before this option existed.
   enableCreateInPlace?: boolean;
+  // Shows a link icon next to a NamedNode value in AutoCompleteOption (used by
+  // shui:AutoCompleteEditor/InstancesSelectEditor's dropdown and selected-value display), linking
+  // out to the term's own IRI in a new tab. When false, the icon is omitted and the value is
+  // otherwise not directly navigable to from there.
+  enableLinksToResources?: boolean;
   // Called when the edit mode form is submitted - or, in facet mode, with the generated filter
   // shape (see structure/filterShape.ts and facetChangeMode below). Both hand back the same
   // SubmitResult shape (a fresh, non-reactive RdfStore plus its additions/deletions since the
@@ -166,15 +171,17 @@ export type Environment = {
 // still be an unparsed/undereferenced RdfSource rather than a ready RdfStore. RdfStore is itself
 // a valid RdfSource, so a fully-resolved Environment already satisfies this type - preprocessors
 // don't need a different type per stage of the chain.
-export type RawEnvironment = Omit<
-  Environment,
-  "shapesGraph" | "dataGraph" | "scoresGraph" | "readOnlyGraph"
-> & {
-  shapesGraph: RdfSource;
-  dataGraph: RdfSource;
-  scoresGraph: RdfSource;
-  readOnlyGraph?: RdfSource;
-};
+export type RawEnvironment =
+  & Omit<
+    Environment,
+    "shapesGraph" | "dataGraph" | "scoresGraph" | "readOnlyGraph"
+  >
+  & {
+    shapesGraph: RdfSource;
+    dataGraph: RdfSource;
+    scoresGraph: RdfSource;
+    readOnlyGraph?: RdfSource;
+  };
 
 export const defaultEnvironment: Environment = {
   shapesGraph: RdfStore.createDefault(),
@@ -199,12 +206,16 @@ export const defaultEnvironment: Environment = {
   enableEditInPlace: true,
   enableViewInPlace: true,
   enableCreateInPlace: true,
+  enableLinksToResources: true,
   facetChangeMode: "live",
   enableFacetTypeUnion: false,
   enableFacetOptionCounts: false,
 };
 
-export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph" | "dataGraph"> = {
+export const minimalEnvironment: Omit<
+  Environment,
+  "scoresGraph" | "shapesGraph" | "dataGraph"
+> = {
   focusNode: ex("focusNode"),
   nodeShapes: [],
   mode: "edit",
@@ -226,6 +237,7 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableEditInPlace: false,
   enableViewInPlace: false,
   enableCreateInPlace: false,
+  enableLinksToResources: false,
   facetChangeMode: "live",
   enableFacetTypeUnion: false,
   enableFacetOptionCounts: false,
@@ -238,4 +250,35 @@ export const minimalEnvironmentWithContentLanguages: Omit<
   ...minimalEnvironment,
   enableContentLanguageCreation: true,
   contentLanguages: ["en-GB", "nl-NL", "fr-FR"],
+};
+
+export const testingEnvironment: Omit<
+  Environment,
+  "scoresGraph" | "shapesGraph" | "dataGraph"
+> = {
+  focusNode: ex("focusNode"),
+  nodeShapes: [],
+  mode: "edit",
+  interfaceLanguage: "en-GB",
+  interfaceLocales: {
+    "nl-NL": null, // remove Dutch from the shipped set, so only en-GB is available
+  },
+  interfaceLanguages: [],
+  contentLanguage: "en-GB",
+  contentLanguages: [],
+  languageMode: "switcher",
+  viewModeLabelLayout: "block",
+  enableWidgetSwitching: true,
+  enableLogicalBranchSwitching: true,
+  enableContentLanguageCreation: true,
+  enableShPathInLabelTitle: true,
+  enableFullLanguageRemoval: true,
+  enableInterfaceLanguageWithShapesLabelsOnly: true,
+  enableEditInPlace: true,
+  enableViewInPlace: true,
+  enableCreateInPlace: true,
+  enableLinksToResources: true,
+  facetChangeMode: "live",
+  enableFacetTypeUnion: true,
+  enableFacetOptionCounts: true,
 };

@@ -14,7 +14,7 @@ type Story = StoryObj<ShaclRendererProps>;
 // network call to nominatim.openstreetmap.org. Unlike most editors here, st:AddressEditor is
 // opt-in only (see score.ttl) - a shape must declare `shui:editor st:AddressEditor` explicitly.
 export default {
-  title: "ShapeThing/Editors/st:AddressEditor",
+  title: "Specifications/ShapeThing (living document)/Editors/st:AddressEditor",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };
