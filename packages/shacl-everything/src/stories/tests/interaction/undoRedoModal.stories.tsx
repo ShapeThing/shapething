@@ -64,9 +64,12 @@ export const modalUndoOnlyAffectsItsOwnStagingGraph: Story = {
     );
     await userEvent.click(editButton);
 
+    // AutoCompleteOption's own edit-in-place modal portals straight to <body> (see its own
+    // comment: a <dialog> can't validly nest inside the "closed" trigger's own clickable surface),
+    // so it renders outside canvasElement's subtree entirely - look it up from `document`.
     const dialog = await waitFor(
       () => {
-        const element = canvasElement.querySelector<HTMLDialogElement>("dialog.st-modal[open]");
+        const element = document.querySelector<HTMLDialogElement>("dialog.st-modal[open]");
         if (!element) throw new Error("The Chef edit-in-place modal did not open");
         return element;
       },
@@ -106,7 +109,7 @@ export const modalUndoOnlyAffectsItsOwnStagingGraph: Story = {
     // value) and confirm the outer form's own undo still works normally afterwards.
     const closeButton = dialog.querySelector<HTMLButtonElement>('button[aria-label="Close"]')!;
     await userEvent.click(closeButton);
-    await waitFor(() => expect(canvasElement.querySelector("dialog.st-modal[open]")).toBeNull());
+    await waitFor(() => expect(document.querySelector("dialog.st-modal[open]")).toBeNull());
 
     const submitButton = canvasElement.querySelector('button[type="submit"]')!;
     (submitButton as HTMLButtonElement).focus();

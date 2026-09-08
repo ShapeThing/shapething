@@ -79,11 +79,15 @@ export default function InstancesSelectEditor({
       return;
     }
     const originalQuads = shape.dataGraph.getQuads();
-    const stagingDataGraph = makeReactive(RdfStore.createDefault());
-    for (const quad of originalQuads) stagingDataGraph.addQuad(quad);
+    // Populated *before* wrapping in makeReactive() - see AutoCompleteOption.openEditor()'s own
+    // comment: none of this modal's own starting state (the copied graph, the new subject's
+    // initial rdf:type) should be undo-able, only whatever the user actually edits inside it.
+    const plainStore = RdfStore.createDefault();
+    for (const quad of originalQuads) plainStore.addQuad(quad);
     for (const shClass of shClasses) {
-      stagingDataGraph.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
+      plainStore.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
     }
+    const stagingDataGraph = makeReactive(plainStore);
     setStaging({ dataGraph: stagingDataGraph, originalQuads });
     setCreating(subject);
   };

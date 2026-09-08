@@ -99,8 +99,12 @@ export default function AutoCompleteOption({
   const openEditor = () => {
     if (!resourceEditor) return;
     const originalQuads = resourceEditor.dataGraph.getQuads();
-    const stagingDataGraph = makeReactive(RdfStore.createDefault());
-    for (const quad of originalQuads) stagingDataGraph.addQuad(quad);
+    // Populated *before* wrapping in makeReactive(), so copying the whole outer graph into the
+    // staging store isn't itself recorded as undo-able history - undo/redo inside this modal
+    // should only ever see the user's own edits, not the initial snapshot they started from.
+    const plainStore = RdfStore.createDefault();
+    for (const quad of originalQuads) plainStore.addQuad(quad);
+    const stagingDataGraph = makeReactive(plainStore);
     setStaging({ dataGraph: stagingDataGraph, originalQuads });
     setConfirmDiscard(false);
   };
