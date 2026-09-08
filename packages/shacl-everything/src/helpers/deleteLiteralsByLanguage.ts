@@ -1,5 +1,6 @@
 import type { RdfStore } from "rdf-stores";
 import type { BCP47 } from "@/types/BCP47.ts";
+import { transact } from "@/helpers/reactiveRdfStore.ts";
 
 /**
  * Removes every quad in `dataGraph` whose object is a Literal tagged with exactly `language`
@@ -16,5 +17,7 @@ export function deleteLiteralsByLanguage(dataGraph: RdfStore, language: BCP47): 
     return object.termType === "Literal" && object.language.toLowerCase() === target;
   });
 
-  for (const quad of matches) dataGraph.removeQuad(quad);
+  transact(dataGraph, () => {
+    for (const quad of matches) dataGraph.removeQuad(quad);
+  });
 }

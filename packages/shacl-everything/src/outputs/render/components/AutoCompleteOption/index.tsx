@@ -9,7 +9,7 @@ import { Edit, Link } from "@/helpers/icons.tsx";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
 import { localName } from "@/helpers/localName.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
-import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
+import { makeReactive, transact } from "@/helpers/reactiveRdfStore.ts";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
@@ -110,8 +110,10 @@ export default function AutoCompleteOption({
   const commitEditor = () => {
     if (!staging || !resourceEditor) return;
     const { additions, deletions } = diffQuads(staging.originalQuads, staging.dataGraph.getQuads());
-    for (const quad of deletions) resourceEditor.dataGraph.removeQuad(quad);
-    for (const quad of additions) resourceEditor.dataGraph.addQuad(quad);
+    transact(resourceEditor.dataGraph, () => {
+      for (const quad of deletions) resourceEditor.dataGraph.removeQuad(quad);
+      for (const quad of additions) resourceEditor.dataGraph.addQuad(quad);
+    });
     setStaging(undefined);
     setConfirmDiscard(false);
     // The edited resource's own label/classification/depiction (shown on the closed trigger and in the

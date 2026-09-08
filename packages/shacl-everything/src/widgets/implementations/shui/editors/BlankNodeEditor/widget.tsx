@@ -2,6 +2,7 @@ import type { Quad_Subject } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
 import { sh } from "@/helpers/namespaces.ts";
+import { transact } from "@/helpers/reactiveRdfStore.ts";
 import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
@@ -45,8 +46,10 @@ export default function BlankNodeEditor({
   // that identifier's IRI - has to carry the node's own fields along with it, so this always goes
   // through retarget() rather than a plain setTerm().
   const changeIdentity = (next: Quad_Subject) => {
-    retarget(shape.dataGraph, term as Quad_Subject, next);
-    setTerm(next);
+    transact(shape.dataGraph, () => {
+      retarget(shape.dataGraph, term as Quad_Subject, next);
+      setTerm(next);
+    });
   };
 
   // No sh:nodeKind at all leaves every kind open; an explicit one has already been merged down to

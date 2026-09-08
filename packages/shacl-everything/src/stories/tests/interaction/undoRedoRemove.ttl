@@ -1,0 +1,20 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Photo"@en ;
+        sh:path schema:image ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        shui:editor shui:IRIEditor ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:image <https://example.com/existing.jpg> ;
+    .

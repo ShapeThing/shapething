@@ -1,0 +1,26 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Address"@en ;
+        sh:path schema:address ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+
+        sh:property [
+            sh:path schema:postalCode ;
+            sh:name "Postal Code"@en ;
+         ] ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    schema:address [
+        schema:postalCode "1012 AB" ;
+    ] ;
+    .

@@ -2,6 +2,7 @@ import type { Quad_Object, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
 import { rdf } from "@/helpers/namespaces.ts";
+import { transact } from "@/helpers/reactiveRdfStore.ts";
 
 export type RdfListCell = { cell: Term; value: Term };
 
@@ -47,17 +48,24 @@ export function getRdfList(listNode: Term, store: RdfStore): Term[] {
  * values themselves (including any subgraph hanging off an object-shaped one) are never written
  * or removed, only which cell points to which value and in what order. Returns the new head -
  * rdf:nil when `values` is empty.
+ *
+ * Every cell gets deleted and recreated even for a single-item add/remove/reorder, so this can be
+ * many individual addQuad/removeQuad calls for one logical edit - wrapped in transact() so undo/
+ * redo treats the whole rebuild as one step, not dozens (a single Ctrl+Z landing mid-rebuild would
+ * otherwise leave the list skeleton in a half-old-half-new, broken state).
  */
 export function rebuildRdfList(oldHead: Term, values: Term[], store: RdfStore): Term {
-  for (const { cell } of getRdfListCells(oldHead, store)) {
-    for (const quad of store.getQuads(cell, rdf("first"))) store.removeQuad(quad);
-    for (const quad of store.getQuads(cell, rdf("rest"))) store.removeQuad(quad);
-  }
+  return transact(store, () => {
+    for (const { cell } of getRdfListCells(oldHead, store)) {
+      for (const quad of store.getQuads(cell, rdf("first"))) store.removeQuad(quad);
+      for (const quad of store.getQuads(cell, rdf("rest"))) store.removeQuad(quad);
+    }
 
-  return values.reduceRight<Quad_Object>((rest, value) => {
-    const cell = factory.blankNode();
-    store.addQuad(factory.quad(cell, rdf("first"), value as Quad_Object));
-    store.addQuad(factory.quad(cell, rdf("rest"), rest));
-    return cell;
-  }, rdf("nil"));
+    return values.reduceRight<Quad_Object>((rest, value) => {
+      const cell = factory.blankNode();
+      store.addQuad(factory.quad(cell, rdf("first"), value as Quad_Object));
+      store.addQuad(factory.quad(cell, rdf("rest"), rest));
+      return cell;
+    }, rdf("nil"));
+  });
 }

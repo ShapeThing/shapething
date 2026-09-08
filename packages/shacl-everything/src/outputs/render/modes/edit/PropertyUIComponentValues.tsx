@@ -108,17 +108,22 @@ export default function PropertyUIComponentValues({
     setShowEmptyWidget(languageFilteredObjects.length === 0);
   }, [activeLanguage]);
 
-  // Values in the active language can also disappear without the active language changing at all
-  // and without going through this property's own widget - e.g. ContentLanguageSwitcher bulk-
-  // deleting every literal in a language elsewhere in the data graph. That path has no onRemove
-  // callback to call syncShowEmptyWidget through, so catch the same "went from having a value to
-  // having none" transition here instead. Only ever flips this to true, never false, so it can't
-  // fight the "0 -> 1" transition while typing into the empty widget commits a first value (see
-  // the activeLanguage effect above for why that direction has to stay untouched).
+  // The existing value count can also change without going through this property's own widget
+  // callbacks at all - e.g. ContentLanguageSwitcher bulk-deleting every literal in a language
+  // elsewhere in the data graph, or an undo()/redo() (see helpers/reactiveRdfStore.ts's History)
+  // replaying a write directly against dataGraph. Those paths have no onRemove/onTermSet callback
+  // to call syncShowEmptyWidget through, so catch the same transition here instead, in both
+  // directions: values dropping to zero re-shows the empty widget (same as removing the last value
+  // does), and values reappearing (e.g. redoing a removal, or undoing one) hides it again - a
+  // restored real value shouldn't leave a stray empty placeholder sitting next to it. This can
+  // never fight typing into an already-open empty widget: that widget's own local text
+  // (useDeferredInput) never touches dataGraph until blur, so languageFilteredObjects - and this
+  // transition - only changes once the field's own onTermSet has already set showEmptyWidget
+  // itself, making any change this effect makes here redundant rather than conflicting.
   const hasFilteredValues = languageFilteredObjects.length > 0;
   const hadFilteredValues = useRef(hasFilteredValues);
   useEffect(() => {
-    if (hadFilteredValues.current && !hasFilteredValues) setShowEmptyWidget(true);
+    if (hadFilteredValues.current !== hasFilteredValues) setShowEmptyWidget(!hasFilteredValues);
     hadFilteredValues.current = hasFilteredValues;
   }, [hasFilteredValues]);
 

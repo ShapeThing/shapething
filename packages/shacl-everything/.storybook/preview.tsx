@@ -18,7 +18,7 @@ const withArgsKeyRemount: Decorator = (Story, context) => (
 );
 
 const withMaxWidth: Decorator = (Story) => (
-  <div style={{ maxWidth: 600, marginInline: "auto" }}>{Story()}</div>
+  <div style={{ maxWidth: 700, marginInline: "auto" }}>{Story()}</div>
 );
 
 type RdfTerm = { termType: string; value: string };

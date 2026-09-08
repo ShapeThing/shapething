@@ -1,8 +1,9 @@
-import { useCallback, useRef, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { Localized } from "@fluent/react";
 import type { Quad } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { diffQuads } from "@/helpers/diffQuads.ts";
+import { getHistory } from "@/helpers/reactiveRdfStore.ts";
 import NodeUIComponent from "@/outputs/render/modes/edit/NodeUIComponent.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
@@ -17,8 +18,18 @@ type Props = {
   children?: React.ReactNode;
 };
 
+// True for an element the browser already gives its own text-undo (a text input/textarea, or a
+// contentEditable like RichTextEditor) - Ctrl+Z/Ctrl+Y there is left alone (see the keydown
+// listener below) rather than fighting that native undo for an in-progress, not-yet-committed edit.
+function isEditableTarget(target: EventTarget | null): boolean {
+  return (
+    target instanceof HTMLElement &&
+    (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+  );
+}
+
 export default function EditModeWrapper({ children }: Props) {
-  const { focusNode, dataGraph, onSubmit } = useEnvironment();
+  const { focusNode, dataGraph, onSubmit, enableUndoRedo } = useEnvironment();
   const hasTriples = useReactiveRead(
     dataGraph,
     focusNode.value,
@@ -67,6 +78,27 @@ export default function EditModeWrapper({ children }: Props) {
 
     onSubmit?.({ dataGraph: store, additions, deletions });
   };
+
+  useEffect(() => {
+    if (!enableUndoRedo) return;
+    const history = getHistory(dataGraph);
+    if (!history) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (!(event.ctrlKey || event.metaKey) || isEditableTarget(event.target)) return;
+      const key = event.key.toLowerCase();
+      if (key === "z" && !event.shiftKey) {
+        event.preventDefault();
+        history.undo();
+      } else if (key === "y" || (key === "z" && event.shiftKey)) {
+        event.preventDefault();
+        history.redo();
+      }
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [dataGraph, enableUndoRedo]);
 
   return (
     <submitAttemptContext.Provider value={{ hasAttemptedSubmit, markSubmitAttempted }}>

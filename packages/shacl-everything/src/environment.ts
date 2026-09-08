@@ -124,6 +124,12 @@ export type Environment = {
   // out to the term's own IRI in a new tab. When false, the icon is omitted and the value is
   // otherwise not directly navigable to from there.
   enableLinksToResources?: boolean;
+  // Edit mode only. Enables Ctrl+Z/Ctrl+Y (and Ctrl+Shift+Z as a redo alias) to undo/redo edits to
+  // dataGraph for the current session (see helpers/reactiveRdfStore.ts's History, and
+  // EditModeWrapper). Ignored while focus is inside a text input/textarea/contentEditable element,
+  // so the browser's own native text-undo still works for an in-progress, not-yet-committed edit.
+  // Set to false when an embedder's host page already binds these keys to something else.
+  enableUndoRedo?: boolean;
   // Called when the edit mode form is submitted - or, in facet mode, with the generated filter
   // shape (see structure/filterShape.ts and facetChangeMode below). Both hand back the same
   // SubmitResult shape (a fresh, non-reactive RdfStore plus its additions/deletions since the
@@ -207,6 +213,7 @@ export const defaultEnvironment: Environment = {
   enableViewInPlace: true,
   enableCreateInPlace: true,
   enableLinksToResources: true,
+  enableUndoRedo: true,
   facetChangeMode: "live",
   enableFacetTypeUnion: false,
   enableFacetOptionCounts: false,
@@ -238,6 +245,7 @@ export const minimalEnvironment: Omit<
   enableViewInPlace: false,
   enableCreateInPlace: false,
   enableLinksToResources: false,
+  enableUndoRedo: false,
   facetChangeMode: "live",
   enableFacetTypeUnion: false,
   enableFacetOptionCounts: false,
@@ -278,6 +286,7 @@ export const testingEnvironment: Omit<
   enableViewInPlace: true,
   enableCreateInPlace: true,
   enableLinksToResources: true,
+  enableUndoRedo: true,
   facetChangeMode: "live",
   enableFacetTypeUnion: true,
   enableFacetOptionCounts: true,

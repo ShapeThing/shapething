@@ -1,0 +1,36 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#itemShape>
+    a sh:NodeShape ;
+    sh:property [
+        sh:path schema:name ;
+        sh:datatype xsd:string ;
+        sh:name "Name"@en ;
+    ] ;
+    .
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:ItemList ;
+    sh:property [
+        sh:path schema:itemListElement ;
+        sh:memberShape [
+            sh:node <#itemShape> ;
+            shui:editor shui:DetailsEditor ;
+        ] ;
+        sh:name "Items"@en ;
+    ] ;
+    .
+
+<#data>
+    a schema:ItemList ;
+    schema:itemListElement (
+        [ schema:name "First" ]
+        [ schema:name "Second" ]
+        [ schema:name "Third" ]
+    ) ;
+    .
