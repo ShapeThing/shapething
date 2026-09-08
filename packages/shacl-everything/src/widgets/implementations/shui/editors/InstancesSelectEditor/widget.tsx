@@ -162,6 +162,7 @@ export default function InstancesSelectEditor({
           open
           onClose={cancelCreate}
           title={<Localized id="create-new-reference-title">New item</Localized>}
+          dataGraph={staging.dataGraph}
         >
           <NodeUIElementChildren
             nodeUiElement={

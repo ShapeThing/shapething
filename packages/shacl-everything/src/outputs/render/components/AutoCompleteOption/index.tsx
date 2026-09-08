@@ -237,7 +237,12 @@ export default function AutoCompleteOption({
               onMouseDown={(event) => event.stopPropagation()}
               onClick={(event) => event.stopPropagation()}
             >
-              <Modal open={true} onClose={requestCloseEditor} title={displayLabel}>
+              <Modal
+                open={true}
+                onClose={requestCloseEditor}
+                title={displayLabel}
+                dataGraph={staging.dataGraph}
+              >
                 {/* A real <form>, not a plain div: unlike Modal's other consumers, this one is
                   portaled to <body>, so it's never actually nested inside the page's own edit
                   <form> - only wherever it renders in the React tree, which doesn't apply here. */}
