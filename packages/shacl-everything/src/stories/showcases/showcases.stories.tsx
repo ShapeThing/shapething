@@ -42,6 +42,7 @@ export const recipesAndChefs: Story = {
   args: {
     ...argsByTestFile("recipes-and-chefs.ttl", import.meta.url),
     nodeShapes: [ex("RecipeShape")],
+    enableLinksToResources: false,
   },
 };
 
