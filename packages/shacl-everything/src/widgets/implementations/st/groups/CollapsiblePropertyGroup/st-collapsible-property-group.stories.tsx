@@ -6,12 +6,12 @@ import { minimalEnvironment } from "@/environment.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
-// st:CollapsiblePropertyGroup is a ShapeThing-original group widget, not part of the SHACL 1.2
-// Core spec or the shui: extension proposal (unlike sh:PropertyGroup itself, see "SHACL 1.2 UI"'s
+// st:CollapsiblePropertyGroup is a ShapeThing-original group widget, not part of the SHACL core
+// 1.2 spec or the shui: extension proposal (unlike sh:PropertyGroup itself, see "SHACL UI 1.2"'s
 // 10.3.1 story) - it lives in its own stories folder rather than alongside the spec-conformance
 // suite.
 export default {
-  title: "ShapeThing/Groups/st:CollapsiblePropertyGroup",
+  title: "Specifications/ShapeThing (living document)/Groups/st:CollapsiblePropertyGroup",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };

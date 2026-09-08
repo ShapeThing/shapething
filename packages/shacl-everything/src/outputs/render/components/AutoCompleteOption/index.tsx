@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Localized } from "@fluent/react";
 import { RdfStore } from "rdf-stores";
-import { EditNested, Link } from "@/helpers/icons.tsx";
+import { Edit, Link } from "@/helpers/icons.tsx";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
 import { localName } from "@/helpers/localName.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
@@ -63,7 +63,7 @@ export default function AutoCompleteOption({
   const [hasError, setHasError] = useState<boolean | undefined>(undefined);
   const [staging, setStaging] = useState<Staging | undefined>(undefined);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
-  const { enableEditInPlace } = useEnvironment();
+  const { enableEditInPlace, enableLinksToResources } = useEnvironment();
   const queryClient = useQueryClient();
   const displayLabel = label ?? localName(term) ?? term.value;
   const isDirectRenderable =
@@ -207,11 +207,11 @@ export default function AutoCompleteOption({
                     openEditor();
                   }}
                 >
-                  <EditNested />
+                  <Edit />
                 </span>
               </Localized>
             )}
-            {term.termType === "NamedNode" && (
+            {term.termType === "NamedNode" && enableLinksToResources && (
               <a
                 className="st-autocomplete-option__iri"
                 href={term.value}

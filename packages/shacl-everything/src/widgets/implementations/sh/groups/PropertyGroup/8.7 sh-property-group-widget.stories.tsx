@@ -7,7 +7,7 @@ import { minimalEnvironment } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "SHACL 1.2 Core/8. Non-Validating Shape Characteristics/8.7 sh:group",
+  title: "Specifications/SHACL core 1.2/8. Non-Validating Shape Characteristics/8.7 sh:group",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };

@@ -11,7 +11,7 @@ type Story = StoryObj<ShaclRendererProps>;
 // Delegates to DateRangeFacet's own widget.tsx (type="datetime-local"), the same way
 // shui:DateTimePickerEditor delegates to a sibling TextFieldEditor - see the widget's own comment.
 export default {
-  title: "ShapeThing/Facets/st:DateTimeRangeFacet",
+  title: "Specifications/ShapeThing (living document)/Facets/st:DateTimeRangeFacet",
   component: ShaclRenderer,
   args: { ...minimalEnvironment, mode: "facet" },
 };

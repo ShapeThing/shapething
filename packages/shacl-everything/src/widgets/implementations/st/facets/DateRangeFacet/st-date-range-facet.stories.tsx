@@ -9,7 +9,7 @@ import type { SubmitResult } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "ShapeThing/Facets/st:DateRangeFacet",
+  title: "Specifications/ShapeThing (living document)/Facets/st:DateRangeFacet",
   component: ShaclRenderer,
   args: { ...minimalEnvironment, mode: "facet" },
 };

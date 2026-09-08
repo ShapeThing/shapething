@@ -1,15 +1,15 @@
 import type { StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
-import { ex, sh } from "@/helpers/namespaces.ts";
-import type { SubmitResult } from "@/environment.ts";
+import { ex } from "@/helpers/namespaces.ts";
+import { testingEnvironment } from "@/environment.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
   title: "Showcases",
   component: ShaclRenderer,
+  args: testingEnvironment,
 };
 
 export const academic: Story = {
@@ -37,13 +37,38 @@ export const academicView: Story = {
   },
 };
 
-// Facet mode calls the very same onSubmit callback edit mode uses (see modes/facet/index.tsx) -
-// every story already gets a turtle preview of it for free in Storybook's "Submit" panel (see
-// .storybook/withSubmitPreview.tsx). "live" mode (the default) fires a fresh snapshot on every
-// debounced change.
-let productCatalogSubmitResult: SubmitResult | undefined;
-const onSubmit = (result: SubmitResult) => {
-  productCatalogSubmitResult = result;
+export const recipesAndChefs: Story = {
+  name: "Recipes & Chefs (edit)",
+  args: {
+    ...argsByTestFile("recipes-and-chefs.ttl", import.meta.url),
+    nodeShapes: [ex("RecipeShape")],
+  },
+};
+
+export const recipesAndChefsView: Story = {
+  name: "Recipes & Chefs (view)",
+  args: {
+    ...argsByTestFile("recipes-and-chefs.ttl", import.meta.url),
+    nodeShapes: [ex("RecipeShape")],
+    mode: "view",
+    viewModeLabelLayout: "inline",
+  },
+};
+
+// The Recipe's "Chef" property only declares sh:class ex:Chef, not sh:node - valueNodeShapes()
+// (resolution/label.ts) still resolves it to ChefShape by matching sh:targetClass, so the chef
+// picked in recipesAndChefsView above renders with both a name (shui:LabelRole on schema:name) and
+// a photo (shui:DepictionRole on schema:image) rather than a bare IRI. This story renders a chef's
+// own full profile directly, to show ChefShape isn't just a label/depiction source for Recipe.
+export const chefProfile: Story = {
+  name: "Chef profile (view)",
+  args: {
+    ...argsByTestFile("recipes-and-chefs.ttl", import.meta.url),
+    nodeShapes: [ex("ChefShape")],
+    focusNode: ex("massimoBottura"),
+    mode: "view",
+    viewModeLabelLayout: "inline",
+  },
 };
 
 // The one requirement the whole facets plan was built around: a shapes graph with no facet-
@@ -63,59 +88,5 @@ export const productCatalogFacets: Story = {
     // auto-discover both rather than filtering everything out looking for a nonexistent "#shape".
     nodeShapes: [],
     mode: "facet",
-    onSubmit,
-  },
-  play: async ({ canvasElement }) => {
-    productCatalogSubmitResult = undefined;
-    const canvas = within(canvasElement);
-
-    // The type selector shows up because two root shapes were discovered; Product is picked first
-    // (stable order), so its four facets render below.
-    const productRadio = (await canvas.findByRole("radio", {
-      name: "Product",
-    })) as HTMLInputElement;
-    await canvas.findByRole("radio", { name: "Person" });
-    const search = await canvas.findByRole("searchbox");
-    await canvas.findByLabelText("Electronics");
-    const [minPrice] = await canvas.findAllByRole("spinbutton");
-
-    await userEvent.type(search, "widget");
-    await userEvent.type(minPrice, "15");
-
-    await waitFor(() => {
-      if (!productCatalogSubmitResult) throw new Error("onSubmit has not fired yet");
-      expect(
-        productCatalogSubmitResult.dataGraph
-          .getQuads(null, sh("pattern"))
-          .map((quad) => quad.object.value),
-      ).toEqual(["widget"]);
-      expect(
-        productCatalogSubmitResult.dataGraph
-          .getQuads(null, sh("minInclusive"))
-          .map((quad) => quad.object.value),
-      ).toEqual(["15"]);
-    });
-
-    // Switching the type selector to Person swaps the rendered facets entirely, and also
-    // constrains the generated shape's own rdf:type facet accordingly. The radio's own DOM
-    // `checked` state must flip too, not just the underlying generated shape (a controlled radio
-    // not kept live off the externally-mutated filterShape store would otherwise look unclickable).
-    const personRadio = canvas.getByRole("radio", { name: "Person" }) as HTMLInputElement;
-    await userEvent.click(personRadio);
-    await waitFor(() => expect(personRadio.checked).toBe(true));
-    expect(productRadio.checked).toBe(false);
-    const givenName = (await canvas.findByLabelText("Given name")) as HTMLInputElement;
-
-    // Both "Search" (Product) and "Given name" (Person) resolve to the same TextSearchFacet
-    // widget, which buffers what's typed as its own local component state rather than deriving it
-    // from the filter shape's store - an index-keyed remount would let React reuse that same
-    // widget instance (and its stale "widget" text) across the type switch, even though it's now a
-    // completely different property. See NodeUIComponent's own key comment for the fix.
-    expect(givenName.value).toBe("");
-
-    await waitFor(() => {
-      const listHead = productCatalogSubmitResult!.dataGraph.getQuads(null, sh("in"))[0]?.object;
-      if (!listHead) throw new Error("the type selector's sh:in has not been written yet");
-    });
   },
 };

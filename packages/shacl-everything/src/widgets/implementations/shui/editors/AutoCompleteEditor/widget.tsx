@@ -34,7 +34,7 @@ export default function AutoCompleteEditor({
   autoFocus,
 }: WidgetProps) {
   const existingObjects = useDataGraphObjects(shape);
-  const { enableCreateInPlace } = useEnvironment();
+  const { enableCreateInPlace, enableEditInPlace } = useEnvironment();
   const shClasses = useMemo(() => shape.get(sh("class")), [shape]);
   // Whether the "Create new…" row (rendered as the last item of the results dropdown, see below)
   // is offered at all.
@@ -211,6 +211,17 @@ export default function AutoCompleteEditor({
               label={current?.label}
               classification={current?.classification}
               depiction={current?.depiction}
+              resourceEditor={
+                enableEditInPlace
+                  ? {
+                      shapesGraph: shape.shapesGraph,
+                      dataGraph: shape.dataGraph,
+                      scoresGraph: shape.scoresGraph,
+                      widgetRegistry: shape.widgetRegistry,
+                      nodeShapes,
+                    }
+                  : undefined
+              }
             />
           ) : (
             <span className="st-autocomplete__empty" onClick={() => setMode("edit")}>

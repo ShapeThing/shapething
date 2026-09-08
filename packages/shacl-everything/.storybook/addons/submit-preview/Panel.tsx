@@ -1,7 +1,7 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
-import { useChannel, useStorybookState } from "storybook/manager-api";
-import { SUBMIT_PREVIEW_EVENT } from "./constants.ts";
+import { useArgs, useChannel, useStorybookState } from "storybook/manager-api";
+import { SUBMIT_PREVIEW_EVENT, SUBMIT_PREVIEW_PANEL_ID } from "./constants.ts";
 import type { SubmitPreviewPayload } from "./constants.ts";
 import { TurtleCode } from "../graph-inspector/TurtleCode.tsx";
 import { splitPrefixes, parsePrefixMap } from "../graph-inspector/splitPrefixes.ts";
@@ -12,6 +12,7 @@ type Props = {
 
 export const SubmitPreviewPanel = ({ active }: Props) => {
   const { storyId } = useStorybookState();
+  const [currentArgs] = useArgs();
   const [payloadsByStory, setPayloadsByStory] = useState<Record<string, SubmitPreviewPayload>>({});
   // Only meaningful once a payload with resourceOnly text exists, but kept independent of that so
   // flipping stories doesn't silently reset the reviewer's chosen mode.
@@ -23,7 +24,24 @@ export const SubmitPreviewPanel = ({ active }: Props) => {
     },
   });
 
-  if (!active) return null;
+  // Environment.mode (see environment.ts) is "edit" | "view" | "facet" - view mode has no form to
+  // submit, so there's nothing this panel can ever show there. The Tools/* stories (generate.ts,
+  // rdf-to-js.ts, js-to-rdf.ts, shacl-to-type.ts under src/outputs/) don't render ShaclRenderer at
+  // all and so have no `mode` arg - undefined falls through to shown, same as edit/facet.
+  const mode = (currentArgs as { mode?: unknown } | undefined)?.mode;
+  const showsForCurrentMode = mode !== "view";
+
+  // Storybook's addon-panel API only supports hiding a panel's *tab* via a story's static
+  // `parameters` (its `disabled` callback never sees args) - there's no supported hook for "hide
+  // based on a live arg value" like `mode`. StatelessTab (storybook/dist/manager/runtime.js) renders
+  // each tab with its DOM `id` set to the panel's own registered id, so this reaches for that exact
+  // id rather than a fragile selector, and only ever touches our own tab.
+  useEffect(() => {
+    const tab = document.getElementById(SUBMIT_PREVIEW_PANEL_ID);
+    if (tab) tab.hidden = !showsForCurrentMode;
+  }, [showsForCurrentMode]);
+
+  if (!active || !showsForCurrentMode) return null;
 
   const payload = payloadsByStory[storyId];
   const hasResourceOnly = payload?.resourceOnly !== undefined;

@@ -14,7 +14,7 @@ type Story = StoryObj<ShaclRendererProps>;
 // data - both stories below render an already-selected icon rather than driving the search
 // dropdown itself, since that would depend on a live network call to api.iconify.design.
 export default {
-  title: "ShapeThing/Editors/st:IconifyEditor",
+  title: "Specifications/ShapeThing (living document)/Editors/st:IconifyEditor",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };

@@ -9,10 +9,10 @@ import type { SubmitResult } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 // st:NumberRangeFacet is a ShapeThing-original facet widget - facets have no SHACL-UI spec clause
-// yet (unlike the shui: editors/viewers under "SHACL 1.2 UI"), so this lives in its own stories
-// bucket, same precedent as st:CollapsiblePropertyGroup (see "ShapeThing/Groups").
+// yet (unlike the shui: editors/viewers under "SHACL UI 1.2"), so this lives in its own stories
+// bucket, same precedent as st:CollapsiblePropertyGroup (see "Specifications/ShapeThing (living document)/Groups").
 export default {
-  title: "ShapeThing/Facets/st:NumberRangeFacet",
+  title: "Specifications/ShapeThing (living document)/Facets/st:NumberRangeFacet",
   component: ShaclRenderer,
   args: { ...minimalEnvironment, mode: "facet" },
 };

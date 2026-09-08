@@ -6,7 +6,7 @@ import { minimalEnvironment } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "SHACL 1.2 UI/10. Built-in Widgets/10.2 Viewers/10.2.1 shui:BlankNodeViewer",
+  title: "Specifications/SHACL UI 1.2/10. Built-in Widgets/10.2 Viewers/10.2.1 shui:BlankNodeViewer",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };

@@ -119,10 +119,14 @@ ex:ResearcherShape a sh:NodeShape ;
         sh:name "Job Title"@en, "Functietitel"@nl ;
     ] ;
     sh:property [
-        sh:path ( schema:affiliation [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
-        sh:class schema:Organization ;
+        sh:path schema:affiliation ;
+        sh:memberShape [
+            sh:class schema:Organization ;
+            sh:nodeKind sh:IRI ;
+        ] ;
         sh:group <#academic> ;
         sh:minCount 1 ;
+        sh:minListLength 1 ;
         sh:order 5;
         sh:name "Affiliated Organization"@en, "Aangesloten organisatie"@nl ;
         sh:description "Choose the institution where the researcher works."@en, "Kies de instelling waar de onderzoeker werkt."@nl ;

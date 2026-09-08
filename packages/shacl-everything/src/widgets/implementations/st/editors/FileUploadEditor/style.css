@@ -1,0 +1,61 @@
+.st-file-upload-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+  width: 100%;
+}
+
+.st-file-upload-editor__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.st-file-upload-editor__item {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  padding: var(--size-1) var(--size-2);
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+}
+
+.st-file-upload-editor__thumbnail {
+  width: 2rem;
+  height: 2rem;
+  object-fit: cover;
+  border-radius: var(--radius-1);
+  flex: none;
+}
+
+.st-file-upload-editor__name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-file-upload-editor__remove {
+  flex: none;
+}
+
+.st-file-upload-editor__dropzone {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--size-2);
+  padding: var(--size-6) var(--size-4);
+  border: 2px dashed var(--st-color-border);
+  border-radius: var(--radius-2);
+  cursor: pointer;
+  text-align: center;
+}
+
+.st-file-upload-editor__error {
+  margin: 0;
+  color: var(--st-severity-error);
+}

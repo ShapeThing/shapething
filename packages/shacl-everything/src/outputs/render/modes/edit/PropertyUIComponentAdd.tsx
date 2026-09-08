@@ -38,7 +38,17 @@ export default function PropertyUIComponentAdd({
   const disabled = showEmptyWidget;
 
   const { meta } = useWidget(shui("editor"), propertyUIElement) ?? {};
-  const { enableCreateInPlace } = useEnvironment();
+  const { enableCreateInPlace, languageMode } = useEnvironment();
+
+  // In "switcher" mode, PropertyUIComponentValues only ever shows the value(s) matching the
+  // single active content language, and a fresh value from this button is seeded with that same
+  // activeLanguage (see useDefaultObject) - so for a sh:uniqueLang property, "+" could only ever
+  // produce a second same-language value, an immediate violation. The way to add another
+  // translation is to switch the active content language instead, not this button. "individual"
+  // mode is unaffected: every value renders side by side there with its own language picker
+  // (ValueLanguageSelect), so "+" can still add a value in a not-yet-used language.
+  const uniqueLangBlocksAdd =
+    propertyUIElement.get(sh("uniqueLang")) === true && languageMode === "switcher";
 
   // A widget's own "no more values possible" signal (e.g. InstancesSelectEditor once every
   // instance is already in use) is a hard, structural block like sh:maxCount above, not a
@@ -53,7 +63,8 @@ export default function PropertyUIComponentAdd({
   return (
     !fieldIsSingleValued &&
     !hardBlockedByMaxCount &&
-    !noOptionsAvailable && (
+    !noOptionsAvailable &&
+    !uniqueLangBlocksAdd && (
       <Localized id="property-add-value" attrs={{ "aria-label": true }}>
         <button
           disabled={disabled}

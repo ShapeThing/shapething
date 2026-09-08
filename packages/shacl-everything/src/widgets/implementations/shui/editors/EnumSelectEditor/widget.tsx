@@ -8,7 +8,9 @@ import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import { useSelectOptions, type ResolvedOption } from "@/outputs/render/hooks/useSelectOptions.tsx";
+import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { valueNodeShapes } from "@/resolution/label.ts";
+import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import { selectQueryFor } from "@/structure/selectQuery.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "@/theme/comboBox.css";
@@ -22,8 +24,25 @@ export default function EnumSelectEditor({
   autoFocus,
 }: WidgetProps) {
   const { enableEditInPlace } = useEnvironment();
-  const options = useMemo(() => shape.get(sh("in")), [shape]);
+  const inOptions = useMemo(() => shape.get(sh("in")), [shape]);
   const selectQuery = useMemo(() => selectQueryFor(shape), [shape]);
+  const shClasses = useMemo(() => shape.get(sh("class")), [shape]);
+  // No sh:in (or sh:select-driven one) to enumerate, but a sh:class - fall back to every existing
+  // local instance of that class. This is the closed/already-known-set case (e.g. a small
+  // controlled vocabulary like a unit-of-measure list) that doesn't need AutoCompleteEditor's
+  // federated search or InstancesSelectEditor's create-new affordance.
+  const classOptions = useMemo(
+    () =>
+      inOptions.length > 0 || selectQuery
+        ? []
+        : dedupeTerms(
+            shClasses.flatMap((shClass) =>
+              shaclInstancesOfClass(shClass, shape.dataGraph, shape.shapesGraph),
+            ),
+          ),
+    [inOptions, selectQuery, shClasses, shape],
+  );
+  const options = inOptions.length > 0 ? inOptions : classOptions;
   // The shape describing the currently selected value (its own sh:node, or - failing that - any
   // node shape targeting its sh:class via sh:targetClass, see valueNodeShapes) - when present (and
   // enableEditInPlace hasn't turned the feature off), the value can be opened and edited in place

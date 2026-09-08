@@ -2,9 +2,11 @@
   padding: var(--size-2);
   border-radius: var(--radius-2);
   border: 1px solid var(--gray-5);
-  flex: 1;
+  flex: 1 1 auto;
   position: relative;
   z-index: var(--st-z-raised);
+  max-width: 100%;
+  box-sizing: border-box;
   appearance: none;
   resize: vertical;
   font-family: var(--st-font-family);
