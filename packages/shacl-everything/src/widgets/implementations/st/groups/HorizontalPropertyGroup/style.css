@@ -1,3 +1,7 @@
+.st-property-group--horizontal {
+  position: relative;
+}
+
 /* Layers on top of PropertyGroup's own .st-property-group/__body rules (that widget's style.css
    is always loaded alongside this one - see registry.ts, both widgets live under the same
    groups/ category and are bundled together) - only the row-layout override lives here. */
@@ -22,3 +26,18 @@
 .st-property-group--horizontal > .st-property-group__body > .st-form-element + .st-form-element {
   margin-block-start: 0;
 }
+
+/* .st-member-shape-list__items
+  .st-member-shape-list__item:not(:first-child)
+  .st-property-group--horizontal
+  .st-form-element__header {
+  display: none;
+}
+
+.st-member-shape-list__items .st-member-shape-list__item:first-child {
+  .st-button,
+  .st-member-shape-list__handle,
+  .st-details-editor__options {
+    margin-top: var(--size-6);
+  }
+} */

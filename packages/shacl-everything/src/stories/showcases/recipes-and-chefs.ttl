@@ -82,43 +82,21 @@ ex:ChefShape a sh:NodeShape ;
     ] ;
     .
 
-### Recipe categories and units of measurement are both closed sets of referenceable resources
-### (not free-text strings) - ex:RecipeCategoryShape/ex:UnitShape below give each a proper node
-### shape with an rdfs:label LabelRole, the same pattern used for the Chef reference (sh:class,
-### resolved via valueNodeShapes) so EnumSelectEditor's options - and any viewer/chip that shows
-### one - display a translated label instead of a raw enum string or IRI.
-ex:RecipeCategoryShape a sh:NodeShape ;
-    sh:targetClass ex:RecipeCategory ;
-    sh:property [
-        sh:path rdfs:label ;
-        shui:propertyRole shui:LabelRole ;
-    ] ;
-    .
-
 ex:Starter a ex:RecipeCategory ; rdfs:label "Starter"@en, "Voorgerecht"@nl .
 ex:MainCourse a ex:RecipeCategory ; rdfs:label "Main course"@en, "Hoofdgerecht"@nl .
 ex:Dessert a ex:RecipeCategory ; rdfs:label "Dessert"@en, "Dessert"@nl .
 ex:SideDish a ex:RecipeCategory ; rdfs:label "Side dish"@en, "Bijgerecht"@nl .
-
-ex:UnitShape a sh:NodeShape ;
-    sh:targetClass ex:Unit ;
-    sh:property [
-        sh:path rdfs:label ;
-        shui:propertyRole shui:LabelRole ;
-    ] ;
-    .
 
 unit:KiloGM a ex:Unit ; rdfs:label "Kilogram"@en, "Kilogram"@nl .
 unit:GM a ex:Unit ; rdfs:label "Gram"@en, "Gram"@nl .
 unit:MilliL a ex:Unit ; rdfs:label "Milliliter"@en, "Milliliter"@nl .
 unit:TBSP a ex:Unit ; rdfs:label "Tablespoon"@en, "Eetlepel"@nl .
 unit:TSP a ex:Unit ; rdfs:label "Teaspoon"@en, "Theelepel"@nl .
-unit:MIN a ex:Unit ; rdfs:label "Minutes"@en, "Minuten"@nl .
 unit:COUNT a ex:Unit ; rdfs:label "Count"@en, "Aantal"@nl .
 
 ### A reusable schema:QuantitativeValue-shaped pair (schema:value + schema:unitCode) for any single
 ### measured quantity that isn't itself a value with a name of its own - prep/cook time (unitCode
-### unit:MIN) and servings (unitCode unit:COUNT). Ingredients need a third field (their own name),
+### ex:minute) and servings (unitCode unit:COUNT). Ingredients need a third field (their own name),
 ### so they get their own IngredientShape below instead of reusing this one.
 ex:QuantityShape a sh:NodeShape ;
     sh:property [
@@ -133,7 +111,9 @@ ex:QuantityShape a sh:NodeShape ;
     ] ;
     sh:property [
         sh:path schema:unitCode ;
-        sh:class ex:Unit ;
+        sh:in (
+            ex:minute ex:hour
+        ) ;
         sh:nodeKind sh:IRI ;
         sh:maxCount 1 ;
         shui:editor shui:EnumSelectEditor ;
@@ -143,6 +123,12 @@ ex:QuantityShape a sh:NodeShape ;
         sh:group ex:quantityFieldsGroup ;
     ] ;
     .
+
+ex:minute 
+    rdfs:label "Minute"@en, "Minuten"@nl .
+
+ex:hour
+    rdfs:label "Hour"@en, "Uur"@nl .
 
 ex:quantityFieldsGroup a sh:PropertyGroup, st:HorizontalPropertyGroup ;
     .
@@ -252,9 +238,7 @@ ex:RecipeShape a sh:NodeShape ;
     ] ;
     sh:property [
         sh:path schema:recipeYield ;
-        sh:nodeKind sh:BlankNode ;
-        sh:node ex:QuantityShape ;
-        shui:editor shui:DetailsEditor ;
+        sh:datatype xsd:integer ;
         sh:maxCount 1 ;
         sh:order 7 ;
         sh:name "Servings"@en, "Porties"@nl ;
@@ -267,7 +251,7 @@ ex:RecipeShape a sh:NodeShape ;
         ] ;
         sh:minListLength 1 ;
         sh:order 8 ;
-        sh:name "Ingredients"@en, "Ingrediënten"@nl ;
+        sh:name "" ;
     ] ;
     sh:property [
         sh:path schema:recipeInstructions ;
@@ -355,9 +339,9 @@ ex:aliceWaters a ex:Chef ;
     schema:author ex:gordonRamsay ;
     schema:recipeCuisine "British" ;
     schema:recipeCategory ex:MainCourse ;
-    schema:prepTime [ schema:value 45 ; schema:unitCode unit:MIN ] ;
-    schema:cookTime [ schema:value 40 ; schema:unitCode unit:MIN ] ;
-    schema:recipeYield [ schema:value 4 ; schema:unitCode unit:COUNT ] ;
+    schema:prepTime [ schema:value 45 ; schema:unitCode ex:minute ] ;
+    schema:cookTime [ schema:value 40 ; schema:unitCode ex:minute ] ;
+    schema:recipeYield 4 ;
     schema:recipeIngredient (
         [ schema:name "Beef fillet" ; schema:value 1.0 ; schema:unitCode unit:KiloGM ]
         [ schema:name "English mustard" ; schema:value 2.0 ; schema:unitCode unit:TBSP ]
@@ -377,9 +361,9 @@ ex:stickyToffeePudding a schema:Recipe ;
     schema:author ex:gordonRamsay ;
     schema:recipeCuisine "British" ;
     schema:recipeCategory ex:Dessert ;
-    schema:prepTime [ schema:value 20 ; schema:unitCode unit:MIN ] ;
-    schema:cookTime [ schema:value 30 ; schema:unitCode unit:MIN ] ;
-    schema:recipeYield [ schema:value 6 ; schema:unitCode unit:COUNT ] ;
+    schema:prepTime [ schema:value 20 ; schema:unitCode ex:minute ] ;
+    schema:cookTime [ schema:value 30 ; schema:unitCode ex:minute ] ;
+    schema:recipeYield 6 ;
     schema:recipeIngredient (
         [ schema:name "Pitted dates, chopped" ; schema:value 200.0 ; schema:unitCode unit:GM ]
         [ schema:name "Bicarbonate of soda" ; schema:value 1.0 ; schema:unitCode unit:TSP ]
@@ -401,9 +385,9 @@ ex:boeufBourguignon a schema:Recipe ;
     schema:author ex:juliaChild ;
     schema:recipeCuisine "French" ;
     schema:recipeCategory ex:MainCourse ;
-    schema:prepTime [ schema:value 30 ; schema:unitCode unit:MIN ] ;
-    schema:cookTime [ schema:value 180 ; schema:unitCode unit:MIN ] ;
-    schema:recipeYield [ schema:value 6 ; schema:unitCode unit:COUNT ] ;
+    schema:prepTime [ schema:value 30 ; schema:unitCode ex:minute ] ;
+    schema:cookTime [ schema:value 180 ; schema:unitCode ex:minute ] ;
+    schema:recipeYield 6 ;
     schema:recipeIngredient (
         [ schema:name "Beef chuck, cubed" ; schema:value 1.5 ; schema:unitCode unit:KiloGM ]
         [ schema:name "Bacon lardons" ; schema:value 200.0 ; schema:unitCode unit:GM ]
@@ -425,9 +409,9 @@ ex:lemonTart a schema:Recipe ;
     schema:author ex:massimoBottura ;
     schema:recipeCuisine "Modern Italian" ;
     schema:recipeCategory ex:Dessert ;
-    schema:prepTime [ schema:value 60 ; schema:unitCode unit:MIN ] ;
-    schema:cookTime [ schema:value 20 ; schema:unitCode unit:MIN ] ;
-    schema:recipeYield [ schema:value 4 ; schema:unitCode unit:COUNT ] ;
+    schema:prepTime [ schema:value 60 ; schema:unitCode ex:minute ] ;
+    schema:cookTime [ schema:value 20 ; schema:unitCode ex:minute ] ;
+    schema:recipeYield 4 ;
     schema:recipeIngredient (
         [ schema:name "Sablé pastry crumbs" ]
         [ schema:name "Lemon cream (lemon juice, sugar, eggs, butter)" ]
@@ -446,9 +430,9 @@ ex:roastedCauliflower a schema:Recipe ;
     schema:author ex:yotamOttolenghi ;
     schema:recipeCuisine "Middle Eastern & Mediterranean" ;
     schema:recipeCategory ex:SideDish ;
-    schema:prepTime [ schema:value 15 ; schema:unitCode unit:MIN ] ;
-    schema:cookTime [ schema:value 35 ; schema:unitCode unit:MIN ] ;
-    schema:recipeYield [ schema:value 4 ; schema:unitCode unit:COUNT ] ;
+    schema:prepTime [ schema:value 15 ; schema:unitCode ex:minute ] ;
+    schema:cookTime [ schema:value 35 ; schema:unitCode ex:minute ] ;
+    schema:recipeYield 4 ;
     schema:recipeIngredient (
         [ schema:name "Large cauliflower, cut into florets" ; schema:value 1.0 ]
         [ schema:name "Olive oil" ; schema:value 3.0 ; schema:unitCode unit:TBSP ]
@@ -469,9 +453,9 @@ ex:gardenSalad a schema:Recipe ;
     schema:author ex:aliceWaters ;
     schema:recipeCuisine "Californian / Farm-to-table" ;
     schema:recipeCategory ex:Starter ;
-    schema:prepTime [ schema:value 15 ; schema:unitCode unit:MIN ] ;
-    schema:cookTime [ schema:value 0 ; schema:unitCode unit:MIN ] ;
-    schema:recipeYield [ schema:value 4 ; schema:unitCode unit:COUNT ] ;
+    schema:prepTime [ schema:value 15 ; schema:unitCode ex:minute ] ;
+    schema:cookTime [ schema:value 0 ; schema:unitCode ex:minute ] ;
+    schema:recipeYield 4 ;
     schema:recipeIngredient (
         [ schema:name "Mixed young lettuces" ]
         [ schema:name "Edible flowers" ]
