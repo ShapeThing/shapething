@@ -8,6 +8,7 @@ import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.ts
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { languageLabels } from "@/helpers/languageLabels.ts";
 import { deleteLiteralsByLanguage } from "@/helpers/deleteLiteralsByLanguage.ts";
+import { recordEffect, transact } from "@/helpers/reactiveRdfStore.ts";
 import { Delete } from "@/helpers/icons.tsx";
 import type { BCP47 } from "@/types/BCP47.ts";
 import { Localized } from "@fluent/react";
@@ -132,8 +133,17 @@ export default function ContentLanguageSwitcher() {
         onCancel={() => setLanguageToDelete(undefined)}
         onConfirm={() => {
           if (languageToDelete) {
-            deleteLiteralsByLanguage(dataGraph, languageToDelete);
-            removeLanguage(languageToDelete);
+            transact(dataGraph, () => {
+              deleteLiteralsByLanguage(dataGraph, languageToDelete);
+              removeLanguage(languageToDelete);
+              // removeLanguage() is local React state, not a dataGraph write - undo/redo would
+              // otherwise restore the deleted literals without ever bringing the language itself
+              // back into the switcher's own list, leaving them unreachable again.
+              recordEffect(dataGraph, {
+                undo: () => addLanguage(languageToDelete),
+                redo: () => removeLanguage(languageToDelete),
+              });
+            });
           }
           setLanguageToDelete(undefined);
         }}

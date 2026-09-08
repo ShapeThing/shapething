@@ -1,5 +1,5 @@
 import type { StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 
@@ -127,5 +127,47 @@ export const deletingALanguageWipesItFromEveryProperty: Story = {
     // ever needed again.
     await openContentLanguageMenu(canvasElement);
     expect(contentLanguageOptionLabels(canvasElement)).toEqual(["English", "Add language…"]);
+  },
+};
+
+export const undoingADeletionRestoresBothTheValuesAndTheLanguage: Story = {
+  name: "Ctrl+Z after deleting a language restores its values and brings it back to the switcher",
+  args,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByDisplayValue("Redhead", {}, { timeout: 5000 });
+
+    await clickDeleteLanguage(canvasElement, "nl");
+    const confirmButton = findDeleteConfirmModal(canvasElement).querySelector<HTMLButtonElement>(
+      "button.st-button--danger",
+    )!;
+    await userEvent.click(confirmButton);
+    expect(canvasElement.querySelector("dialog.st-modal[open]")).toBeNull();
+
+    // removeLanguage() is local React state (ContentLanguageProvider), not a dataGraph write - a
+    // History effect (see ContentLanguageSwitcher) has to bring it back explicitly, or undo would
+    // restore the Dutch literals into a graph the switcher no longer offers a way to see them in.
+    const submitButton = canvasElement.querySelector('button[type="submit"]')!;
+    (submitButton as HTMLButtonElement).focus();
+    await userEvent.keyboard("{Control>}z{/Control}");
+
+    await openContentLanguageMenu(canvasElement);
+    await waitFor(() =>
+      expect(contentLanguageOptionLabels(canvasElement)).toEqual([
+        "English",
+        "Dutch",
+        "Add language…",
+      ]),
+    );
+    await userEvent.click(findContentLanguageTrigger(canvasElement)); // close the menu again
+
+    await pickContentLanguage(canvasElement, "nl");
+    await waitFor(() =>
+      expect(
+        findFieldInputs(canvasElement)
+          .map((input) => input.value)
+          .sort(),
+      ).toEqual(["Een persoon met rood haar", "Roodharige"].sort()),
+    );
   },
 };

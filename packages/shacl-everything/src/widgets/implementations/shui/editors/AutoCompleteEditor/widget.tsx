@@ -6,7 +6,7 @@ import { factory } from "@/helpers/factory.ts";
 import { Loading, Plus, Search } from "@/helpers/icons.tsx";
 import { rdf, sh } from "@/helpers/namespaces.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
-import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
+import { makeReactive, transact } from "@/helpers/reactiveRdfStore.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
@@ -118,10 +118,12 @@ export default function AutoCompleteEditor({
     const subject = factory.namedNode(`urn:uuid:${crypto.randomUUID()}`);
     // No field-editing modal to stage against - nothing to defer, so create and select it directly.
     if (nodeShapes.length === 0) {
-      for (const shClass of shClasses) {
-        shape.dataGraph.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
-      }
-      setTerm(subject);
+      transact(shape.dataGraph, () => {
+        for (const shClass of shClasses) {
+          shape.dataGraph.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
+        }
+        setTerm(subject);
+      });
       reset();
       setMode("view");
       return;
@@ -144,9 +146,11 @@ export default function AutoCompleteEditor({
         staging.originalQuads,
         staging.dataGraph.getQuads(),
       );
-      for (const quad of deletions) shape.dataGraph.removeQuad(quad);
-      for (const quad of additions) shape.dataGraph.addQuad(quad);
-      setTerm(creating);
+      transact(shape.dataGraph, () => {
+        for (const quad of deletions) shape.dataGraph.removeQuad(quad);
+        for (const quad of additions) shape.dataGraph.addQuad(quad);
+        setTerm(creating);
+      });
       reset();
       setMode("view");
     }

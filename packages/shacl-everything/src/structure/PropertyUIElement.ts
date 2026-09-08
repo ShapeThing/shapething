@@ -9,6 +9,7 @@ import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import { insertPropertyPath } from "@/structure/paths/insertPropertyPath.ts";
 import { replacePropertyPath } from "@/structure/paths/replacePropertyPath.ts";
 import { removePropertyPath } from "@/structure/paths/removePropertyPath.ts";
+import { transact } from "@/helpers/reactiveRdfStore.ts";
 import { score, select, type WidgetScoreResult } from "@/scoring/score.ts";
 import { createDefaultTerm } from "@/widgets/defaultTerm.ts";
 import { defaultWidgets } from "@/widgets/registry.ts";
@@ -133,7 +134,9 @@ export class PropertyUIElement {
   addObject(value: Term): void {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return;
-    insertPropertyPath(path, this.focusNode, this.dataGraph, value);
+    transact(this.dataGraph, () =>
+      insertPropertyPath(path, this.focusNode, this.dataGraph, value),
+    );
   }
 
   /**
@@ -144,15 +147,17 @@ export class PropertyUIElement {
   replaceObject(oldValue: Term, newValue: Term): void {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return;
-    const existing = walkPropertyPath(path, this.focusNode, this.dataGraph).some((term) =>
-      term.equals(oldValue),
-    );
+    transact(this.dataGraph, () => {
+      const existing = walkPropertyPath(path, this.focusNode, this.dataGraph).some((term) =>
+        term.equals(oldValue),
+      );
 
-    if (!existing) {
-      insertPropertyPath(path, this.focusNode, this.dataGraph, newValue);
-    } else {
-      replacePropertyPath(path, this.focusNode, this.dataGraph, oldValue, newValue);
-    }
+      if (!existing) {
+        insertPropertyPath(path, this.focusNode, this.dataGraph, newValue);
+      } else {
+        replacePropertyPath(path, this.focusNode, this.dataGraph, oldValue, newValue);
+      }
+    });
   }
 
   /**
@@ -163,7 +168,9 @@ export class PropertyUIElement {
   removeObject(value: Term): void {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return;
-    removePropertyPath(path, this.focusNode, this.dataGraph, value);
+    transact(this.dataGraph, () =>
+      removePropertyPath(path, this.focusNode, this.dataGraph, value),
+    );
   }
 
   /**

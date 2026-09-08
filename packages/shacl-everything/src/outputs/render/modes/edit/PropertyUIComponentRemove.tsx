@@ -1,6 +1,7 @@
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { Minus } from "@/helpers/icons.tsx";
 import { sh } from "@/helpers/namespaces.ts";
+import { transact } from "@/helpers/reactiveRdfStore.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
 import { Localized } from "@fluent/react";
@@ -48,13 +49,15 @@ export default function PropertyUIComponentRemove({
   const hardBlockedByMinCount = minCountReached && (severity === undefined || severity === "error");
 
   const removeValue = () => {
-    if (clearAll) {
-      for (const existing of [...propertyUIElement.getObjects()]) {
-        propertyUIElement.removeObject(existing);
+    transact(propertyUIElement.dataGraph, () => {
+      if (clearAll) {
+        for (const existing of [...propertyUIElement.getObjects()]) {
+          propertyUIElement.removeObject(existing);
+        }
+      } else {
+        propertyUIElement.removeObject(object);
       }
-    } else {
-      propertyUIElement.removeObject(object);
-    }
+    });
     onRemove();
   };
 

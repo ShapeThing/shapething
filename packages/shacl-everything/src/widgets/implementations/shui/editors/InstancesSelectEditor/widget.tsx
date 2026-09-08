@@ -5,7 +5,7 @@ import { factory } from "@/helpers/factory.ts";
 import { Plus } from "@/helpers/icons.tsx";
 import { rdf, sh } from "@/helpers/namespaces.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
-import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
+import { makeReactive, transact } from "@/helpers/reactiveRdfStore.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import { valueNodeLabel, valueNodeShapes } from "@/resolution/label.ts";
 import { shaclInstancesOfClass } from "@/resolution/targets.ts";
@@ -70,10 +70,12 @@ export default function InstancesSelectEditor({
     const subject = factory.namedNode(`urn:uuid:${crypto.randomUUID()}`);
     // No field-editing modal to stage against - nothing to defer, so create and select it directly.
     if (nodeShapes.length === 0) {
-      for (const shClass of shClasses) {
-        shape.dataGraph.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
-      }
-      setTerm(subject);
+      transact(shape.dataGraph, () => {
+        for (const shClass of shClasses) {
+          shape.dataGraph.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
+        }
+        setTerm(subject);
+      });
       return;
     }
     const originalQuads = shape.dataGraph.getQuads();
@@ -94,9 +96,11 @@ export default function InstancesSelectEditor({
         staging.originalQuads,
         staging.dataGraph.getQuads(),
       );
-      for (const quad of deletions) shape.dataGraph.removeQuad(quad);
-      for (const quad of additions) shape.dataGraph.addQuad(quad);
-      setTerm(creating);
+      transact(shape.dataGraph, () => {
+        for (const quad of deletions) shape.dataGraph.removeQuad(quad);
+        for (const quad of additions) shape.dataGraph.addQuad(quad);
+        setTerm(creating);
+      });
     }
     setCreating(undefined);
     setStaging(undefined);

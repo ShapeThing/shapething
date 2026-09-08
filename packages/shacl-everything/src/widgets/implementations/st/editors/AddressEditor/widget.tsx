@@ -6,6 +6,7 @@ import { factory } from "@/helpers/factory.ts";
 import { Loading, Search } from "@/helpers/icons.tsx";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { schema } from "@/helpers/namespaces.ts";
+import { transact } from "@/helpers/reactiveRdfStore.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import type { BCP47 } from "@/types/BCP47.ts";
@@ -133,11 +134,13 @@ export default function AddressEditor({
   };
 
   const apply = (result: OsmSearchResult) => {
-    applySearchResult(shape.dataGraph, node, result.address);
-    // A blank node's own identity never changes when its sub-fields are (re)written - this just
-    // re-affirms `term` as this property's value, which is what actually links a freshly-created
-    // (not yet reachable) node in for the first time (see PropertyUIElement.replaceObject).
-    setTerm(term);
+    transact(shape.dataGraph, () => {
+      applySearchResult(shape.dataGraph, node, result.address);
+      // A blank node's own identity never changes when its sub-fields are (re)written - this just
+      // re-affirms `term` as this property's value, which is what actually links a freshly-created
+      // (not yet reachable) node in for the first time (see PropertyUIElement.replaceObject).
+      setTerm(term);
+    });
     reset();
     setMode("view");
   };

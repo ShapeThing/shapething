@@ -15,6 +15,7 @@ import { Localized } from "@fluent/react";
 import { getRdfListCells, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { Plus } from "@/helpers/icons.tsx";
 import { rdf, sh, shui, st } from "@/helpers/namespaces.ts";
+import { transact } from "@/helpers/reactiveRdfStore.ts";
 import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
@@ -149,9 +150,11 @@ export default function MemberShapeList({
   // property's own tracked read (focusNode -> path -> head) changes on every commit, so
   // useDataGraphObjects above re-renders this component with the new `head` on its own.
   const commit = (values: Term[]) => {
-    const newHead = rebuildRdfList(currentHead, values, propertyUIElement.dataGraph);
-    if (head === undefined) propertyUIElement.addObject(newHead);
-    else propertyUIElement.replaceObject(head, newHead);
+    transact(propertyUIElement.dataGraph, () => {
+      const newHead = rebuildRdfList(currentHead, values, propertyUIElement.dataGraph);
+      if (head === undefined) propertyUIElement.addObject(newHead);
+      else propertyUIElement.replaceObject(head, newHead);
+    });
   };
 
   const sensors = useSensors(
