@@ -2,11 +2,15 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { Localized } from "@fluent/react";
 import type { Quad } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
+import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
-import { getHistory } from "@/helpers/reactiveRdfStore.ts";
+import { rebuildRdfList } from "@/helpers/rdfList.ts";
+import { getHistory, transact } from "@/helpers/reactiveRdfStore.ts";
 import NodeUIComponent from "@/outputs/render/modes/edit/NodeUIComponent.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
+import { orphanedTargetWhereObjects, shapesWhereTargetingFocusNode } from "@/resolution/targets.ts";
+import { removePropertyPath } from "@/structure/paths/removePropertyPath.ts";
 import ContentLanguageSwitcher from "@/outputs/render/components/ContentLanguageSwitcher/index.tsx";
 import InterfaceLanguageSwitcher from "@/outputs/render/components/InterfaceLanguageSwitcher/index.tsx";
 import ValidationContextProvider from "@/outputs/render/contexts/ValidationContextProvider.tsx";
@@ -33,7 +37,8 @@ function isEditableTarget(target: EventTarget | null): boolean {
 }
 
 export default function EditModeWrapper({ children }: Props) {
-  const { focusNode, dataGraph, onSubmit, enableUndoRedo } = useEnvironment();
+  const { focusNode, shapesGraph, dataGraph, nodeShapes, readOnlyGraph, onSubmit, enableUndoRedo } =
+    useEnvironment();
   const hasTriples = useReactiveRead(
     dataGraph,
     focusNode.value,
@@ -65,7 +70,7 @@ export default function EditModeWrapper({ children }: Props) {
   // remount widgets mid-edit (see submitAttemptContext's own comment).
   const latestValidationResultsRef = useRef<ValidationResult[]>([]);
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     // Unlocks display of validation results already computed by ValidationContextProvider's live
     // validation, so an sh:minCount-violating field now shows its error.
@@ -73,6 +78,34 @@ export default function EditModeWrapper({ children }: Props) {
     // sh:Warning/sh:Info don't affect SHACL conformance - only an sh:Violation blocks submission,
     // same rule shacl-engine itself uses for report.conforms.
     if (worstSeverity(latestValidationResultsRef.current) === "Violation") return;
+
+    // A sh:targetWhere fragment (see NodeUIComponent's own effectiveNodeShapes) that no longer
+    // matches has already stopped rendering its fields - but nothing else prunes the triples those
+    // fields used to hold, so they'd otherwise resubmit unchanged. Delete them now, for real,
+    // before taking the diff snapshot below, so diffQuads picks the deletion up for free.
+    const activeFragments = await shapesWhereTargetingFocusNode(focusNode, shapesGraph, dataGraph);
+    const effectiveNodeShapes = dedupeTerms([...nodeShapes, ...activeFragments]);
+    const orphaned = await orphanedTargetWhereObjects(
+      focusNode,
+      shapesGraph,
+      dataGraph,
+      effectiveNodeShapes,
+      readOnlyGraph,
+    );
+    transact(dataGraph, () => {
+      for (const entry of orphaned) {
+        if (entry.kind === "memberShapeList") {
+          // Retires the whole rdf:first/rdf:rest cell chain, not just the link to its head - see
+          // orphanedTargetWhereObjects's own doc comment for why a memberShape property needs this
+          // instead of a plain removePropertyPath.
+          rebuildRdfList(entry.head, [], dataGraph);
+          removePropertyPath(entry.path, focusNode, dataGraph, entry.head);
+        } else {
+          removePropertyPath(entry.path, focusNode, dataGraph, entry.value);
+        }
+      }
+    });
+
     const originalQuads = originalQuadsRef.current!;
     const finalQuads = dataGraph.getQuads();
     const { additions, deletions } = diffQuads(originalQuads, finalQuads);

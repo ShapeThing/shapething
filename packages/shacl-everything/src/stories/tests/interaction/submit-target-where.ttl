@@ -1,0 +1,58 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+### Minimal sh:targetWhere (3.1.3.6) fixture for the submit-time pruning test: <#shape> is the base
+### shape, always present; ex:FragmentAShape/FragmentBShape each attach only while ex:kind holds
+### their own value (see insurance-claims.ttl for the fuller showcase this mirrors). The data opens
+### on "A", with ex:extraA and the ex:extraListA rdf:List already filled in - switching "Kind" to
+### "B" detaches FragmentAShape (its fields disappear) without anything on FragmentBShape's own
+### path, so both become orphaned: still in dataGraph, but reachable from nothing currently
+### rendered. ex:extraListA (sh:memberShape) exercises the "whole list skeleton, not just its head
+### link" case - see orphanedTargetWhereObjects's own doc comment.
+<#shape> a sh:NodeShape ;
+    sh:targetClass ex:Thing ;
+    sh:property [
+        sh:path ex:kind ;
+        sh:in ("A" "B") ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:name "Kind" ;
+    ] .
+
+ex:FragmentAShape a sh:NodeShape ;
+    sh:targetWhere [
+        sh:property [ sh:path ex:kind ; sh:hasValue "A" ] ;
+    ] ;
+    sh:property [
+        sh:path ex:extraA ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name "Extra A" ;
+    ] ;
+    sh:property [
+        sh:path ex:extraListA ;
+        sh:memberShape [ sh:datatype xsd:string ] ;
+        sh:name "Extra List A" ;
+    ] .
+
+ex:FragmentBShape a sh:NodeShape ;
+    sh:targetWhere [
+        sh:property [ sh:path ex:kind ; sh:hasValue "B" ] ;
+    ] ;
+    sh:property [
+        sh:path ex:extraB ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:name "Extra B" ;
+    ] .
+
+<#data> a ex:Thing ;
+    ex:kind "A" ;
+    ex:extraA "hello" ;
+    ex:extraListA <#extraListCell1> .
+
+<#extraListCell1> rdf:first "one" ; rdf:rest <#extraListCell2> .
+<#extraListCell2> rdf:first "two" ; rdf:rest rdf:nil .

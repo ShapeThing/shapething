@@ -5,6 +5,8 @@ import { rdf, rdfs, sh } from "@/helpers/namespaces.ts";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { validate } from "@/scoring/score.ts";
+import { childrenForShape } from "@/structure/childrenForShape.ts";
+import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 
 /**
  * Every class reachable from `classIri` by walking rdfs:subClassOf downward (i.e. every subclass,
@@ -226,6 +228,96 @@ export function predicatesReferencedByTargetWhereShapes(shapesGraph: RdfStore): 
   for (const quad of declarations) walk(quad.object);
 
   return dedupeTerms(predicates) as NamedNode[];
+}
+
+// The path types removePropertyPath actually supports detaching a value through - see its own
+// thrown-error boundary for alternative/zeroOrMore/oneOrMore/zeroOrOne (none of those have a
+// single, well-defined place to remove a value from).
+function isRemovablePath(
+  path: PropertyPath,
+): path is Extract<PropertyPath, { type: "predicate" | "sequence" | "inverse" }> {
+  return path.type === "predicate" || path.type === "sequence" || path.type === "inverse";
+}
+
+/**
+ * One entry per `focusNode`'s currently-held value that belongs *only* to a `sh:targetWhere`
+ * fragment shape (3.1.3.6) that no longer conforms - i.e. data left behind by a fragment that used
+ * to attach (see useTargetWhereFragments.tsx) but has since stopped matching, and whose property is
+ * no longer reachable through any other currently-effective shape either. Meant to be called right
+ * before submit (see modes/edit/index.tsx's handleSubmit) so this stale data actually gets deleted
+ * rather than silently resubmitted unchanged - nothing today prunes it (a fragment losing its match
+ * just stops rendering those fields; the underlying triples are untouched).
+ *
+ * A `sh:memberShape` property's own `getObjects()` returns only its rdf:List's head (see
+ * MemberShapeList.tsx's own doc comment) - unlinking just that one quad would leave the whole
+ * rdf:first/rdf:rest cell chain behind, dangling and unreachable, so such a value is reported as its
+ * own `"memberShapeList"` kind instead of a plain `"value"`, letting the caller retire the list's
+ * entire skeleton (the same delete-and-rebuild-to-empty helpers/rdfList.ts's rebuildRdfList already
+ * uses for every ordinary add/remove/reorder) rather than just unlinking its head.
+ *
+ * `effectiveNodeShapes` is the caller's current `nodeShapes ∪ shapesWhereTargetingFocusNode(...)` -
+ * i.e. exactly what's actually rendering right now - so a path is only ever reported here when
+ * nothing currently effective still declares it (including a *different* sh:targetWhere fragment
+ * that's still matching, or the real base shape itself).
+ *
+ * Conservative by design, same as predicatesReferencedByTargetWhereShapes: a value also reachable
+ * via `readOnlyGraph` (an embedder-marked non-editable/inferred triple) is never included, a path
+ * type removePropertyPath itself can't detach through (sh:alternativePath and friends) is skipped,
+ * and a property nested inside a fragment's own sh:or/sh:xone ChoiceElement is left alone entirely -
+ * not a full dependency solver, just the direct sh:property (and sh:and/sh:node-composed) case. A
+ * memberShape list's own members (if object-shaped, via sh:node) keep the same limitation as any
+ * other blank-node value elsewhere in the app: only the list skeleton is retired, never a member's
+ * own subgraph.
+ */
+export type OrphanedTargetWhereEntry =
+  | { kind: "value"; path: PropertyPath; value: Term }
+  | { kind: "memberShapeList"; path: PropertyPath; head: Term };
+
+export async function orphanedTargetWhereObjects(
+  focusNode: Quad_Subject,
+  shapesGraph: RdfStore,
+  dataGraph: RdfStore,
+  effectiveNodeShapes: Term[],
+  readOnlyGraph?: RdfStore,
+): Promise<OrphanedTargetWhereEntry[]> {
+  const declarations = shapesGraph.getQuads(null, sh("targetWhere"));
+  if (declarations.length === 0) return [];
+
+  const allFragmentShapes = dedupeTerms(declarations.map((quad) => quad.subject));
+  const effectiveKeys = new Set(effectiveNodeShapes.map(termKey));
+  const inactiveFragmentShapes = allFragmentShapes.filter(
+    (shape) => !effectiveKeys.has(termKey(shape)),
+  );
+  if (inactiveFragmentShapes.length === 0) return [];
+
+  const activePaths = new Set(
+    childrenForShape(shapesGraph, dataGraph, effectiveNodeShapes, focusNode)
+      .filter((element) => element.kind === "property")
+      .map((element) => element.pathAsSparql())
+      .filter((path) => path !== undefined),
+  );
+
+  const orphaned: OrphanedTargetWhereEntry[] = [];
+  for (const fragmentShape of inactiveFragmentShapes) {
+    const elements = childrenForShape(shapesGraph, dataGraph, fragmentShape, focusNode);
+    for (const element of elements) {
+      if (element.kind !== "property") continue;
+      const sparqlPath = element.pathAsSparql();
+      if (sparqlPath === undefined || activePaths.has(sparqlPath)) continue;
+
+      const path = parsePropertyPath(element.propertyShapes[0], shapesGraph);
+      if (!path || !isRemovablePath(path)) continue;
+
+      const isMemberShapeList = element.get(sh("memberShape")).length > 0;
+      for (const value of element.getObjects()) {
+        if (readOnlyGraph && element.isReadOnly(value, readOnlyGraph)) continue;
+        orphaned.push(
+          isMemberShapeList ? { kind: "memberShapeList", path, head: value } : { kind: "value", path, value },
+        );
+      }
+    }
+  }
+  return orphaned;
 }
 
 /**
