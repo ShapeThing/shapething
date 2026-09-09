@@ -31,6 +31,7 @@
     "lint": "vp lint --react-plugin --jsx-a11y-plugin",
     "test": "vp test",
     "check": "vp check",
+    "analyze": "vite-bundle-visualizer -i src/index.ts -o stats.html",
     "prepublishOnly": "vp run build",
     "storybook": "pnpm --filter @shapething/resource-fetcher build && storybook dev -p 6006",
     "build-storybook": "pnpm --filter @shapething/resource-fetcher build && storybook build"
@@ -42,9 +43,9 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@effect/experimental": "^0.60.0",
     "@faker-js/faker": "^10.5.0",
-    "@geoman-io/maplibre-geoman-free": "^0.9.1",
     "@fluent/bundle": "^0.19.1",
     "@fluent/react": "^0.15.2",
+    "@geoman-io/maplibre-geoman-free": "^0.9.1",
     "@iconify/react": "^6.0.2",
     "@rdfjs/environment": "^1.0.0",
     "@rdfjs/namespace": "^2.0.1",
@@ -98,6 +99,7 @@
     "storybook": "^10.5.4",
     "typescript": "^6.0.3",
     "unplugin-icons": "^23.0.1",
+    "vite-bundle-visualizer": "^1.2.1",
     "vite-plus": "^0.2.8",
     "vitest": "^4.1.10"
   }

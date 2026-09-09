@@ -1,4 +1,5 @@
 import type { NamedNode, Term } from "@rdfjs/types";
+import { lazy } from "react";
 import { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
@@ -24,10 +25,33 @@ import widgetScoringTtl from "@/scoring/widget-scoring.ttl?raw";
 // without touching this file. The namespace folder name must be a prefix registered in
 // helpers/namespaces.ts's `prefixes` (its own alias, e.g. "sh"/"shui"/"st") - that's the single
 // source of truth for which IRI a namespace folder resolves to.
-const components = import.meta.glob("/src/widgets/implementations/*/*/*/widget.tsx", {
-  eager: true,
-  import: "default",
-}) as Record<string, WidgetComponent | GroupWidgetComponent | FacetWidgetComponent>;
+//
+// A handful of editors/viewers pull in dependencies heavy enough (MapViewer/GeoEditor's
+// maplibre-gl+geoman+maplibre-gl-geo-editor, RichTextEditor/HTMLViewer's tiptap+prosemirror) that
+// bundling every widget eagerly forced every consumer to pay for all of them regardless of which
+// widgets their shapes actually use - these four are loaded lazily instead (one dynamic import
+// per widget, wrapped in React.lazy below). Every other editor/viewer is small enough that a
+// dynamic-import round trip would only add latency (see WidgetSlot's Suspense boundary) for no
+// real size win, so they - and groups/facets, which have no heavy outliers of their own - stay
+// eager, same as before. If a future widget turns out to pull in something similarly heavy, add
+// its path to both lists below.
+const lazyComponentLoaders = import.meta.glob([
+  "/src/widgets/implementations/st/viewers/MapViewer/widget.tsx",
+  "/src/widgets/implementations/st/editors/GeoEditor/widget.tsx",
+  "/src/widgets/implementations/shui/editors/RichTextEditor/widget.tsx",
+  "/src/widgets/implementations/shui/viewers/HTMLViewer/widget.tsx",
+]) as Record<string, () => Promise<{ default: WidgetComponent }>>;
+
+const eagerComponents = import.meta.glob(
+  [
+    "/src/widgets/implementations/*/*/*/widget.tsx",
+    "!/src/widgets/implementations/st/viewers/MapViewer/widget.tsx",
+    "!/src/widgets/implementations/st/editors/GeoEditor/widget.tsx",
+    "!/src/widgets/implementations/shui/editors/RichTextEditor/widget.tsx",
+    "!/src/widgets/implementations/shui/viewers/HTMLViewer/widget.tsx",
+  ],
+  { eager: true, import: "default" },
+) as Record<string, WidgetComponent | GroupWidgetComponent | FacetWidgetComponent>;
 
 const scoringGraphs = import.meta.glob("/src/widgets/implementations/*/*/*/score.ttl", {
   eager: true,
@@ -71,11 +95,20 @@ function widgetIri(path: string): NamedNode {
 
 function buildEntries(category: "editors" | "viewers"): Record<string, WidgetRegistryEntry> {
   const entries: Record<string, WidgetRegistryEntry> = {};
-  for (const [path, Component] of Object.entries(components)) {
+  for (const [path, Component] of Object.entries(eagerComponents)) {
     if (categorySegment(path) !== category) continue;
     entries[folderName(path)] = {
       widget: widgetIri(path),
       Component: Component as WidgetComponent,
+      meta: meta[path.replace(/widget\.tsx$/, "meta.ts")],
+      scoringGraph: scoringGraphs[path.replace(/widget\.tsx$/, "score.ttl")],
+    };
+  }
+  for (const [path, load] of Object.entries(lazyComponentLoaders)) {
+    if (categorySegment(path) !== category) continue;
+    entries[folderName(path)] = {
+      widget: widgetIri(path),
+      Component: lazy(load),
       meta: meta[path.replace(/widget\.tsx$/, "meta.ts")],
       scoringGraph: scoringGraphs[path.replace(/widget\.tsx$/, "score.ttl")],
     };
@@ -87,7 +120,7 @@ function buildEntries(category: "editors" | "viewers"): Record<string, WidgetReg
 // are all editor/viewer-only) - just widget + scoringGraph, same as buildEntries above minus meta.
 function buildFacetEntries(): Record<string, FacetWidgetRegistryEntry> {
   const entries: Record<string, FacetWidgetRegistryEntry> = {};
-  for (const [path, Component] of Object.entries(components)) {
+  for (const [path, Component] of Object.entries(eagerComponents)) {
     if (categorySegment(path) !== "facets") continue;
     entries[folderName(path)] = {
       widget: widgetIri(path),
@@ -100,7 +133,7 @@ function buildFacetEntries(): Record<string, FacetWidgetRegistryEntry> {
 
 function buildGroupEntries(): Record<string, GroupWidgetRegistryEntry> {
   const entries: Record<string, GroupWidgetRegistryEntry> = {};
-  for (const [path, Component] of Object.entries(components)) {
+  for (const [path, Component] of Object.entries(eagerComponents)) {
     if (categorySegment(path) !== "groups") continue;
     entries[folderName(path)] = {
       widget: widgetIri(path),

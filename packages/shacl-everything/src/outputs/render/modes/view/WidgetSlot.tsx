@@ -1,6 +1,8 @@
 import type { Term } from "@rdfjs/types";
-import { useMemo } from "react";
+import { Suspense, useMemo } from "react";
 import { sh, shui } from "@/helpers/namespaces.ts";
+import { Loading } from "@/helpers/icons.tsx";
+import { localName } from "@/helpers/localName.ts";
 import { useActiveBranch } from "@/outputs/render/hooks/useActiveBranch.tsx";
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import { logicalBranches, withBranch } from "@/structure/logicalBranches.ts";
@@ -34,15 +36,17 @@ export default function WidgetSlot({
     ? withBranch(propertyUIElement, detectedBranch.shape)
     : propertyUIElement;
 
-  const { Widget } = useWidget(shui("viewer"), effectiveProperty, object) ?? {};
+  const { Widget, iri } = useWidget(shui("viewer"), effectiveProperty, object) ?? {};
   const unit = propertyUIElement.get(sh("unit"))[0]?.value;
 
   if (!Widget) return null;
 
   return (
     <>
-      <div className="st-property-object__widget" data-widget={Widget.name}>
-        <Widget shape={effectiveProperty} term={object} setTerm={noop} labelledBy={labelledBy} />
+      <div className="st-property-object__widget" data-widget={localName(iri)}>
+        <Suspense fallback={<Loading />}>
+          <Widget shape={effectiveProperty} term={object} setTerm={noop} labelledBy={labelledBy} />
+        </Suspense>
       </div>
       {unit && <span className="st-property-object__unit">{unit}</span>}
     </>
