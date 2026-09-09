@@ -18,6 +18,7 @@ export default {
     interfaceLanguage: "nl-NL",
     contentLanguage: "nl-NL",
     contentLanguages: ["nl-NL"],
+    enableLinksToResources: true,
   },
 };
 
