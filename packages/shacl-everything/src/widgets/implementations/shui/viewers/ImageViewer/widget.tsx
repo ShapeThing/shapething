@@ -7,5 +7,5 @@ export default function ImageViewer({ shape, term }: WidgetProps) {
   const { activeLanguage } = useContentLanguage();
   const alt = valueNodeLabel({ term, propertyShape: shape, languages: [activeLanguage] }).value;
 
-  return <img className="st-image-viewer" src={term.value} alt={alt} />;
+  return <img className="image-viewer" src={term.value} alt={alt} />;
 }

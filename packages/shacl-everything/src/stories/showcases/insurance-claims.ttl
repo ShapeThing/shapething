@@ -10,21 +10,22 @@
 ### referenced from here at all - no sh:and/sh:node/sh:or/sh:xone links them to
 ### ex:InsuranceClaimShape. Instead each one declares its own sh:targetWhere (3.1.3.6): a shape
 ### describing the condition under which it applies (here, ex:claimType having that fragment's own
-### value). preprocess/targetWhereFragments.ts is what makes this conditional attachment actually
-### happen - once per environment, it checks every sh:targetWhere shape in shapesGraph against the
-### resolved focusNode (via the same shacl-engine-backed validate() structure/choiceBranches.ts uses
-### for sh:or/sh:xone branch detection) and folds whichever ones conform into nodeShapes, so
-### structure/childrenForShape.ts renders a matching fragment's sh:property list exactly like any
-### other explicitly-passed shape.
+### value). outputs/render/hooks/useTargetWhereFragments.tsx is what makes this conditional
+### attachment actually happen - reactively, on every render where a write changes the answer, it
+### checks every sh:targetWhere shape in shapesGraph against the focusNode (via the same
+### shacl-engine-backed validate() structure/choiceBranches.ts uses for sh:or/sh:xone branch
+### detection) and folds whichever ones conform into nodeShapes, so structure/childrenForShape.ts
+### renders a matching fragment's sh:property list exactly like any other explicitly-passed shape.
 ###
-### This resolution happens once, at mount - unlike sh:or/sh:xone's ChoiceElement (which re-detects
-### the active branch on every dataGraph write), changing ex:claimType in an already-open form
-### won't swap the fragment live. That fits how a claim naturally works: its kind is settled before
-### or as it's filed, not toggled back and forth in the same sitting - see
-### "specifications/SHACL core 1.2/7.7.3.f sh-or.ttl" instead for a fixture demonstrating the live-
-### switching case.
+### Unlike sh:or/sh:xone's ChoiceElement, there's no single list of mutually-exclusive branches to
+### switch between - any number of sh:targetWhere fragments can conform at once (or none), each
+### independently. Here they happen to be mutually exclusive by construction (each keys off the
+### same ex:claimType value), so changing "Claim type" in the open form swaps exactly one
+### fragment's fields for another, live.
 ex:InsuranceClaimShape a sh:NodeShape ;
     sh:targetClass ex:InsuranceClaim ;
+    sh:description "Change \"Claim type\" below to see the extra fields specific to that kind of claim appear automatically."@en,
+        "Wijzig \"Soort claim\" hieronder om de extra velden voor dat type claim automatisch te zien verschijnen."@nl ;
 
     sh:property [
         sh:path schema:name ;

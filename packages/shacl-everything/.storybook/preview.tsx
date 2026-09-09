@@ -69,6 +69,7 @@ const ENUM_ARG_OPTIONS: Record<string, readonly string[]> = {
   mode: ["edit", "view", "facet"],
   languageMode: ["switcher", "individual"],
   viewModeLabelLayout: ["block", "inline"],
+  facetChangeMode: ["live", "submit"],
 };
 
 const selectControlsForEnumArgs: ArgTypesEnhancer = (context) => {

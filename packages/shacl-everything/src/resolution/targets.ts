@@ -187,6 +187,48 @@ export async function shapesWhereTargetingFocusNode(
 }
 
 /**
+ * Every predicate a sh:targetWhere value shape directly inspects via sh:property/sh:path (walking
+ * sh:and/sh:node the same way structure/childrenForShape.ts does, so a value shape built out of
+ * other composed shapes is covered too). Lets a caller re-run shapesWhereTargetingFocusNode only
+ * when a write could plausibly change its answer, instead of on every write touching the focus
+ * node at all - see outputs/render/hooks/useTargetWhereFragments.tsx, the one caller.
+ *
+ * Deliberately conservative, not a full dependency solver: a sh:targetWhere value using a
+ * construct with no sh:path at all (e.g. a bare sh:class check, or a SPARQL-based constraint) is
+ * invisible to this walk and contributes no predicates for it. Callers must treat an empty result
+ * as "couldn't narrow it down", not "this shape never changes", and fall back to broad tracking.
+ */
+export function predicatesReferencedByTargetWhereShapes(shapesGraph: RdfStore): NamedNode[] {
+  const declarations = shapesGraph.getQuads(null, sh("targetWhere"));
+  if (declarations.length === 0) return [];
+
+  const visited = new Set<string>();
+  const predicates: NamedNode[] = [];
+
+  function walk(shapeNode: Term): void {
+    const key = termKey(shapeNode);
+    if (visited.has(key)) return;
+    visited.add(key);
+
+    for (const quad of shapesGraph.getQuads(shapeNode, sh("property"))) {
+      for (const pathQuad of shapesGraph.getQuads(quad.object, sh("path"))) {
+        if (pathQuad.object.termType === "NamedNode") predicates.push(pathQuad.object);
+      }
+    }
+
+    for (const listQuad of shapesGraph.getQuads(shapeNode, sh("and"))) {
+      for (const branchShape of getRdfList(listQuad.object, shapesGraph)) walk(branchShape);
+    }
+
+    for (const nodeQuad of shapesGraph.getQuads(shapeNode, sh("node"))) walk(nodeQuad.object);
+  }
+
+  for (const quad of declarations) walk(quad.object);
+
+  return dedupeTerms(predicates) as NamedNode[];
+}
+
+/**
  * Every "root" shape in `shapesGraph` - every shape declaring an explicit target (3.1.3.1/.2/.4/.5)
  * plus every implicit class-shape (3.1.3.3: a node that's both a shape and a class, or typed
  * sh:ShapeClass) - regardless of whether any actual data conforms to it yet. Facet mode's entry

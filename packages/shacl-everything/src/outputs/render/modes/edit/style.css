@@ -221,6 +221,13 @@
   margin-inline-start: auto;
 }
 
+.st-node-ui-component__description {
+  margin-block: var(--size-4);
+  font-size: var(--st-font-size);
+  color: var(--st-primary-color);
+  font-family: var(--st-font-family);
+}
+
 @layer actions {
   .st-edit-mode--actions {
     position: sticky;

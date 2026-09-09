@@ -3,8 +3,10 @@ import { RdfStore } from "rdf-stores";
 import { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { groupDescription } from "@/resolution/label.ts";
 import { defaultWidgets } from "@/widgets/registry.ts";
 import type { Widgets } from "@/widgets/types.ts";
+import type { BCP47 } from "@/types/BCP47.ts";
 
 export type NodeUIElementOptions = {
   shapesGraph: RdfStore;
@@ -44,5 +46,22 @@ export class NodeUIElement {
       this.scoresGraph,
       this.widgetRegistry,
     );
+  }
+
+  /**
+   * This node's own sh:description (or rdfs:comment, see resolution/label.ts's
+   * effectiveDescriptionPredicates), shown once above its rendered fields - the node-shape
+   * equivalent of GroupUIElement.description()/PropertyUIElement.description(). When more than one
+   * node shape applies to this focus node (sh:and, several sh:targetClass matches, a conforming
+   * sh:targetWhere fragment, etc.) the first one - in nodeShapes' own order - that has a
+   * description in the active language wins, rather than concatenating every applicable shape's
+   * text together.
+   */
+  description(languages?: BCP47[]): string | undefined {
+    for (const node of this.nodeShapes) {
+      const description = groupDescription({ node, shapesGraph: this.shapesGraph, languages });
+      if (description) return description;
+    }
+    return undefined;
   }
 }
