@@ -2,7 +2,8 @@ import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import type { Term } from "@rdfjs/types";
 import { Localized } from "@fluent/react";
-import { DragHandle, Minus } from "@/helpers/icons.tsx";
+import { Suspense } from "react";
+import { DragHandle, Loading, Minus } from "@/helpers/icons.tsx";
 import WidgetSlot from "@/outputs/render/modes/edit/WidgetSlot.tsx";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 
@@ -48,13 +49,15 @@ export default function MemberShapeListItem({
         </button>
       </Localized>
       <div className="st-member-shape-list__item-widget">
-        <WidgetSlot
-          propertyUIElement={memberElement}
-          object={value}
-          labelledBy={labelledBy}
-          setTerm={onChange}
-          autoFocus={autoFocus}
-        />
+        <Suspense fallback={<Loading />}>
+          <WidgetSlot
+            propertyUIElement={memberElement}
+            object={value}
+            labelledBy={labelledBy}
+            setTerm={onChange}
+            autoFocus={autoFocus}
+          />
+        </Suspense>
       </div>
       <Localized id="member-shape-list-remove-item" attrs={{ "aria-label": true }}>
         <button

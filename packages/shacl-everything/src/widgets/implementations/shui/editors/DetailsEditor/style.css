@@ -6,6 +6,7 @@
 
 .st-details-editor__options {
   align-self: flex-start;
+  order: 1;
   height: 1.5rem;
   font-size: 0.9rem;
   border: none;

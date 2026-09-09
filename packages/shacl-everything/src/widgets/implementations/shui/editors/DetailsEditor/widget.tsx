@@ -32,10 +32,10 @@ export default function DetailsEditor({ shape, term, autoFocus }: WidgetProps) {
           label here. This button stays purely as a focusable anchor that isn't inside a nested
           property's own .st-property-object__widget wrapper, so WidgetSlot's nearestFocused check
           can still find *this* widget's wrapper and keep the widget-switcher/branch-switcher
-          fly-out reachable once the nested form below has its own focusable children. */}
-      <div className="st-details-editor__body">
-        <NodeUIElementChildren nodeUiElement={nodeUiElement} autoFocusFirst={autoFocus} />
-      </div>
+          fly-out reachable once the nested form below has its own focusable children. Placed
+          before the nested body in DOM order (and visually restored to the trailing side via
+          CSS `order`) so tabbing from it lands in the sub-form's own first field, rather than
+          skipping past it straight to this property's own outer fly-out. */}
       {(enableLogicalBranchSwitching || enableWidgetSwitching) && (
         <Localized id="details-editor-options" attrs={{ "aria-label": true }}>
           <button
@@ -47,6 +47,9 @@ export default function DetailsEditor({ shape, term, autoFocus }: WidgetProps) {
           </button>
         </Localized>
       )}
+      <div className="st-details-editor__body">
+        <NodeUIElementChildren nodeUiElement={nodeUiElement} autoFocusFirst={autoFocus} />
+      </div>
     </div>
   );
 }

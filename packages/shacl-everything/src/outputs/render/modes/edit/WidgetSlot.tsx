@@ -3,6 +3,7 @@ import { useActiveBranch } from "@/outputs/render/hooks/useActiveBranch.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useFocusWithin } from "@/outputs/render/hooks/useFocusWithin.tsx";
 import { useFocusWithinNearest } from "@/outputs/render/hooks/useFocusWithinNearest.tsx";
+import { localName } from "@/helpers/localName.ts";
 import { logicalBranches, withBranch, type LogicalBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { NamedNode, Term } from "@rdfjs/types";
@@ -161,7 +162,7 @@ export default function WidgetSlot({
         <div
           className="st-property-object__widget"
           ref={ref}
-          data-widget={ActiveWidget?.name}
+          data-widget={localName(activeWidgetIri)}
           data-read-only={isReadOnly || undefined}
         >
           <ActiveWidget
