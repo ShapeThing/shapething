@@ -74,17 +74,33 @@ export const chefProfile: Story = {
 
 // Depending on the sort of claim, extra fields from separate shapes attach to the one main shape -
 // ex:AutoClaimShape/HomeClaimShape/HealthClaimShape each declare only a sh:targetWhere (3.1.3.6),
-// no sh:and/sh:node/sh:or link to ex:InsuranceClaimShape at all. preprocess/targetWhereFragments.ts
-// checks the resolved focusNode against every sh:targetWhere shape in the shapesGraph and folds
-// whichever ones conform into nodeShapes, so the matching fragment's fields render right alongside
-// the main shape's own - here that's ex:AutoClaimShape, since the fixture's ex:claimType is "Auto".
-// See insurance-claims.ttl's own top comment for why this is a mount-time resolution, not a live
-// switch the way sh:or/sh:xone's ChoiceElement is (compare "7.7.3.f sh-or.ttl").
+// no sh:and/sh:node/sh:or link to ex:InsuranceClaimShape at all. useTargetWhereFragments (see
+// outputs/render/hooks/) checks the focusNode against every sh:targetWhere shape in the
+// shapesGraph and folds whichever ones conform into nodeShapes, live - changing "Claim type" in
+// the open form swaps the extra fields immediately, the same as sh:or/sh:xone's ChoiceElement
+// does for a branch switch (compare "7.7.3.f sh-or.ttl"). The fixture opens on an Auto claim, so
+// ex:AutoClaimShape is what's attached at first - try changing Claim type to see another attach.
 export const insuranceClaim: Story = {
   name: "Insurance claim (targetWhere fragments)",
   args: {
     ...argsByTestFile("insurance-claims.ttl", import.meta.url),
     nodeShapes: [ex("InsuranceClaimShape")],
+  },
+};
+
+// sh:targetWhere can react to anything a SHACL shape can express - not just an equality check on
+// a dedicated "kind" field like the insurance claim above. ex:UpcomingAppointmentShape/
+// PastAppointmentShape react to a plain sh:minExclusive/sh:maxInclusive range on ex:scheduledDate,
+// against a fixed reference date standing in for "today" (see appointments.ttl's own comment for
+// why that date is spelled out in sh:description rather than anywhere else). The fixture's
+// appointment is scheduled after that date, so ex:UpcomingAppointmentShape attaches - edit
+// "Scheduled date" to 2026-09-09 or earlier to watch it swap for ex:PastAppointmentShape's field,
+// live, the same way changing "Claim type" does above.
+export const appointmentDateTrigger: Story = {
+  name: "Appointment (targetWhere reacting to a date)",
+  args: {
+    ...argsByTestFile("appointments.ttl", import.meta.url),
+    nodeShapes: [ex("AppointmentShape")],
   },
 };
 

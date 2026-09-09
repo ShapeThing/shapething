@@ -11,7 +11,14 @@
 .st-view-mode .st-node-ui-component {
   display: flex;
   flex-direction: column;
-  gap: var(--size-5);
+}
+
+.st-view-mode {
+  .st-form-element:has([data-widget="ImageViewer"]) {
+    .st-form-element__header {
+      align-self: start;
+    }
+  }
 }
 
 /* View mode never passes FormElement its `actions` prop - only ever `tooltip` (see

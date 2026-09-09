@@ -1,0 +1,85 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+### Main shape: every appointment has a subject and a scheduled date. Nothing here says anything
+### about "upcoming" or "past" - that split is entirely driven by ex:UpcomingAppointmentShape/
+### PastAppointmentShape below, purely via sh:targetWhere (3.1.3.6), reacting to ex:scheduledDate.
+ex:AppointmentShape a sh:NodeShape ;
+    sh:targetClass ex:Appointment ;
+
+    sh:property [
+        sh:path ex:subject ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 1 ;
+        sh:name "Subject"@en, "Onderwerp"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:scheduledDate ;
+        sh:datatype xsd:date ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 2 ;
+        sh:name "Scheduled date"@en, "Geplande datum"@nl ;
+    ] ;
+    .
+
+### sh:targetWhere's value can be any SHACL shape - it doesn't need a dedicated "kind" field like
+### insurance-claims.ttl's ex:claimType at all. Here it's a plain sh:minExclusive/sh:maxInclusive
+### range check on ex:scheduledDate, comparing it to a fixed reference date. SHACL Core has no
+### "today" - a range constraint's value has to be a literal, not a live clock - so 2026-09-09 is
+### hardcoded below and spelled out in each shape's own sh:description instead, standing in for
+### "today" in this fixture.
+
+### Only attaches when ex:scheduledDate is after 2026-09-09.
+ex:UpcomingAppointmentShape a sh:NodeShape ;
+    sh:targetWhere [
+        sh:class ex:Appointment ;
+        sh:property [
+            sh:path ex:scheduledDate ;
+            sh:minExclusive "2026-09-09"^^xsd:date ;
+        ] ;
+    ] ;
+
+    sh:property [
+        sh:path ex:reminderMinutesBefore ;
+        sh:datatype xsd:integer ;
+        sh:maxCount 1 ;
+        sh:order 3 ;
+        sh:name "Remind me before"@en, "Herinner me van tevoren"@nl ;
+        sh:description "Minutes before the scheduled date to send a reminder - only relevant while the appointment is still ahead of 2026-09-09."@en,
+            "Minuten vóór de geplande datum om een herinnering te sturen - alleen relevant zolang de afspraak nog vóór 2026-09-09 ligt."@nl ;
+    ] ;
+    .
+
+### Only attaches when ex:scheduledDate is on or before 2026-09-09.
+ex:PastAppointmentShape a sh:NodeShape ;
+    sh:targetWhere [
+        sh:class ex:Appointment ;
+        sh:property [
+            sh:path ex:scheduledDate ;
+            sh:maxInclusive "2026-09-09"^^xsd:date ;
+        ] ;
+    ] ;
+
+    sh:property [
+        sh:path ex:outcomeNotes ;
+        sh:datatype xsd:string ;
+        sh:singleLine false ;
+        sh:maxCount 1 ;
+        sh:order 3 ;
+        sh:name "Outcome notes"@en, "Notities over de uitkomst"@nl ;
+        sh:description "What happened at the appointment - only relevant once its date is 2026-09-09 or earlier."@en,
+            "Wat er tijdens de afspraak is gebeurd - alleen relevant zodra de datum 2026-09-09 of eerder is."@nl ;
+    ] ;
+    .
+
+
+### Data: scheduled after the reference date, so ex:UpcomingAppointmentShape attaches - edit
+### "Scheduled date" to 2026-09-09 or earlier to watch it swap for ex:PastAppointmentShape's field.
+<#data> a ex:Appointment ;
+    ex:subject "Dentist check-up" ;
+    ex:scheduledDate "2026-09-20"^^xsd:date ;
+    .

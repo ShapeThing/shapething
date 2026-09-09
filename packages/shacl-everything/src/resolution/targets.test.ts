@@ -3,8 +3,10 @@ import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import {
   facetableRootShapes,
+  predicatesReferencedByTargetWhereShapes,
   shaclInstancesOfClass,
   shapesTargetingClass,
+  shapesWhereTargetingFocusNode,
   targetsOfShape,
 } from "@/resolution/targets.ts";
 
@@ -167,4 +169,78 @@ test("facetableRootShapes: no targets declared at all yields an empty list", asy
   });
 
   expect(facetableRootShapes(shapesGraph)).toEqual([]);
+});
+
+test("shapesWhereTargetingFocusNode 3.1.3.6: a shape whose sh:targetWhere value the focus node conforms to", async () => {
+  const { shapesGraph, dataGraph } = await graphs({
+    shapes: `
+      ex:AutoClaimShape a sh:NodeShape ;
+        sh:targetWhere [ sh:property [ sh:path ex:claimType ; sh:hasValue "Auto" ] ] .
+      ex:HomeClaimShape a sh:NodeShape ;
+        sh:targetWhere [ sh:property [ sh:path ex:claimType ; sh:hasValue "Home" ] ] .
+    `,
+    data: `ex:claim1 a ex:InsuranceClaim ; ex:claimType "Auto" .`,
+  });
+
+  const shapes = await shapesWhereTargetingFocusNode(ex("claim1"), shapesGraph, dataGraph);
+  expect(shapes.map((t) => t.value)).toEqual([ex("AutoClaimShape").value]);
+});
+
+test("shapesWhereTargetingFocusNode 3.1.3.6: no sh:targetWhere shape conforms yields an empty list", async () => {
+  const { shapesGraph, dataGraph } = await graphs({
+    shapes: `
+      ex:AutoClaimShape a sh:NodeShape ;
+        sh:targetWhere [ sh:property [ sh:path ex:claimType ; sh:hasValue "Auto" ] ] .
+    `,
+    data: `ex:claim1 a ex:InsuranceClaim .`,
+  });
+
+  const shapes = await shapesWhereTargetingFocusNode(ex("claim1"), shapesGraph, dataGraph);
+  expect(shapes).toEqual([]);
+});
+
+test("predicatesReferencedByTargetWhereShapes: collects sh:path from every sh:targetWhere value, across shapes", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `
+      ex:AutoClaimShape a sh:NodeShape ;
+        sh:targetWhere [ sh:property [ sh:path ex:claimType ; sh:hasValue "Auto" ] ] .
+      ex:HomeClaimShape a sh:NodeShape ;
+        sh:targetWhere [ sh:property [ sh:path ex:kind ; sh:hasValue "Home" ] ] .
+    `,
+  });
+
+  const predicates = predicatesReferencedByTargetWhereShapes(shapesGraph);
+  expect(new Set(predicates.map((t) => t.value))).toEqual(
+    new Set([ex("claimType").value, ex("kind").value]),
+  );
+});
+
+test("predicatesReferencedByTargetWhereShapes: walks sh:and/sh:node inside the targetWhere value", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `
+      ex:AutoClaimShape a sh:NodeShape ;
+        sh:targetWhere [
+          sh:node [ sh:property [ sh:path ex:claimType ; sh:hasValue "Auto" ] ] ;
+        ] .
+    `,
+  });
+
+  const predicates = predicatesReferencedByTargetWhereShapes(shapesGraph);
+  expect(predicates.map((t) => t.value)).toEqual([ex("claimType").value]);
+});
+
+test("predicatesReferencedByTargetWhereShapes: a targetWhere value with no sh:path yields an empty list", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `ex:AdultShape a sh:NodeShape ; sh:targetWhere [ sh:class ex:Person ] .`,
+  });
+
+  expect(predicatesReferencedByTargetWhereShapes(shapesGraph)).toEqual([]);
+});
+
+test("predicatesReferencedByTargetWhereShapes: no sh:targetWhere declared at all yields an empty list", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `ex:PlainShape a sh:NodeShape ; sh:targetClass ex:Person .`,
+  });
+
+  expect(predicatesReferencedByTargetWhereShapes(shapesGraph)).toEqual([]);
 });
