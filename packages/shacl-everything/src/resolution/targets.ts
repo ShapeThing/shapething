@@ -1,7 +1,10 @@
-import type { Quad_Subject, Term } from "@rdfjs/types";
+import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { rdf, rdfs, sh } from "@/helpers/namespaces.ts";
+import { getRdfList } from "@/helpers/rdfList.ts";
+import { termKey } from "@/helpers/termKey.ts";
+import { validate } from "@/scoring/score.ts";
 
 /**
  * Every class reachable from `classIri` by walking rdfs:subClassOf downward (i.e. every subclass,
@@ -69,13 +72,13 @@ export function shapesTargetingClass(classIri: Term, shapesGraph: RdfStore): Qua
  * widget's "which existing nodes could I offer") should still prefer shaclInstancesOfClass/
  * shapesTargetingClass above directly rather than re-deriving their own graph-pattern queries.
  *
- * 3.1.3.6 (sh:targetWhere) is deliberately not covered here: it requires evaluating full SHACL
- * shape conformance against every dataGraph candidate (the spec's own performance note
- * acknowledges this is the expensive case), which means reusing a real shacl-engine Engine rather
- * than a plain graph-pattern lookup like the other five kinds - and every current caller of this
- * function already has an explicit focus node in hand instead of needing one discovered, so
- * there's no real consumer for it yet. Add an async, Engine-aware sibling (see
- * ValidationContextProvider for how an Engine is normally constructed/scoped) if/when one exists.
+ * 3.1.3.6 (sh:targetWhere) is deliberately not covered here: unlike the other five kinds, a where
+ * target's value is itself a shape (spec: "the set of nodes in a data graph DG that conform to w"),
+ * so establishing whether one candidate conforms means real SHACL shape validation via a
+ * shacl-engine Engine, not a plain graph-pattern lookup - and discovering the *whole* target set
+ * would mean checking every dataGraph candidate against it (the spec's own performance note flags
+ * this as the expensive case). See shapesWhereTargetingFocusNode below for the one-known-candidate
+ * case every current caller actually needs instead.
  */
 export function targetsOfShape(
   shapeNode: Quad_Subject,
@@ -150,6 +153,37 @@ export function shapesTargetingNode(
   return candidateShapes.filter((shapeNode) =>
     targetsOfShape(shapeNode, shapesGraph, dataGraph).some((target) => target.equals(node)),
   );
+}
+
+/**
+ * 3.1.3.6 Where Targets (sh:targetWhere), for one already-known candidate node - the sibling
+ * shapesTargetingNode above deliberately excludes: every shape `s` in `shapesGraph` that declares
+ * `sh:targetWhere w` where `focusNode` conforms to `w` (the where-target's value is itself a
+ * shape - spec: "the set of nodes ... that conform to w" - not a SPARQL pattern despite the
+ * predicate's name). Conformance is checked via validate() (scoring/score.ts), the same
+ * shacl-engine-backed helper structure/choiceBranches.ts's detectActiveChoiceBranch uses to test a
+ * focus node against a candidate branch shape - this is that same one-node check, just against
+ * every sh:targetWhere value in the shapes graph instead of one sh:or/sh:xone's branch list.
+ */
+export async function shapesWhereTargetingFocusNode(
+  focusNode: Term,
+  shapesGraph: RdfStore,
+  dataGraph: RdfStore,
+): Promise<Quad_Subject[]> {
+  const declarations = shapesGraph.getQuads(null, sh("targetWhere"));
+  if (declarations.length === 0) return [];
+
+  const matches: Quad_Subject[] = [];
+  for (const quad of declarations) {
+    const conforms = await validate({
+      focusNode,
+      targetGraph: dataGraph,
+      shapeNode: quad.object,
+      shapesGraph,
+    });
+    if (conforms) matches.push(quad.subject as Quad_Subject);
+  }
+  return dedupeTerms(matches) as Quad_Subject[];
 }
 
 /**

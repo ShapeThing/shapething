@@ -86,6 +86,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   padding-block: 0.4rem;
+
+  /* The classification chip renders as part of the label's own inline content (not a separate
+     flex/block sibling), so it flows with the text and wraps onto the next line with it wherever
+     white-space is switched to normal (e.g. AutoCompleteEditor's selected-value trigger). */
+  .st-value-chip {
+    vertical-align: middle;
+    margin-inline-start: var(--size-2);
+    margin-block: var(--size-1);
+  }
 }
 
 .st-autocomplete-option__content {

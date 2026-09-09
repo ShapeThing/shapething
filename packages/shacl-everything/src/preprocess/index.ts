@@ -4,6 +4,7 @@ import { distillLanguages, distillInterfaceLanguages } from "@/preprocess/langua
 import { resolveScoresGraph } from "@/preprocess/scoresGraph.ts";
 import { resolveWidgets } from "@/preprocess/widgets.ts";
 import { addMissingShapes } from "@/preprocess/shapes.ts";
+import { resolveTargetWhereFragments } from "@/preprocess/targetWhereFragments.ts";
 import { prepareEnvironmentScoringGraph } from "@/preprocess/scoringGraphPreparation.ts";
 import { assertValidEnvironment } from "@/preprocess/configuration.ts";
 import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
@@ -14,6 +15,7 @@ export type Preprocessor = (
 
 export const defaultPreprocessors: readonly Preprocessor[] = [
   resolveRdfSources,
+  resolveTargetWhereFragments,
   distillLanguages,
   distillInterfaceLanguages,
   resolveWidgets,

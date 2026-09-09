@@ -62,16 +62,21 @@
   }
 }
 
-.st-value-chip--small .st-value-chip__label {
+/* font-size lives on the chip itself, not just __label - the iri/remove icons are sized in `em`
+   (1em square), so they only shrink/grow in proportion with the text, and stay vertically
+   centered on it, if they inherit the same font-size rather than the page's ambient default. */
+.st-value-chip--small {
   font-size: calc(var(--size-3) * 0.7);
+}
+.st-value-chip--small .st-value-chip__label {
   text-transform: lowercase;
   letter-spacing: 0.05em;
   font-style: italic;
   color: var(--gray-8);
 }
-.st-value-chip--medium .st-value-chip__label {
+.st-value-chip--medium {
   font-size: var(--size-3);
 }
-.st-value-chip--large .st-value-chip__label {
+.st-value-chip--large {
   font-size: calc(var(--size-3) * 1.3);
 }
