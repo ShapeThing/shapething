@@ -1,0 +1,249 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix ex: <http://example.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+### Main shape: claimant + generic claim fields every claim has, regardless of kind, plus the
+### ex:claimType picker that decides which kind this is.
+###
+### The kind-specific fields below (ex:AutoClaimShape/HomeClaimShape/HealthClaimShape) are NOT
+### referenced from here at all - no sh:and/sh:node/sh:or/sh:xone links them to
+### ex:InsuranceClaimShape. Instead each one declares its own sh:targetWhere (3.1.3.6): a shape
+### describing the condition under which it applies (here, ex:claimType having that fragment's own
+### value). preprocess/targetWhereFragments.ts is what makes this conditional attachment actually
+### happen - once per environment, it checks every sh:targetWhere shape in shapesGraph against the
+### resolved focusNode (via the same shacl-engine-backed validate() structure/choiceBranches.ts uses
+### for sh:or/sh:xone branch detection) and folds whichever ones conform into nodeShapes, so
+### structure/childrenForShape.ts renders a matching fragment's sh:property list exactly like any
+### other explicitly-passed shape.
+###
+### This resolution happens once, at mount - unlike sh:or/sh:xone's ChoiceElement (which re-detects
+### the active branch on every dataGraph write), changing ex:claimType in an already-open form
+### won't swap the fragment live. That fits how a claim naturally works: its kind is settled before
+### or as it's filed, not toggled back and forth in the same sitting - see
+### "specifications/SHACL core 1.2/7.7.3.f sh-or.ttl" instead for a fixture demonstrating the live-
+### switching case.
+ex:InsuranceClaimShape a sh:NodeShape ;
+    sh:targetClass ex:InsuranceClaim ;
+
+    sh:property [
+        sh:path schema:name ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 1 ;
+        sh:group <#claimant> ;
+        sh:name "Claimant name"@en, "Naam van de indiener"@nl ;
+        sh:description "The person filing the claim."@en, "De persoon die de claim indient."@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:email ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 2 ;
+        sh:group <#claimant> ;
+        sh:name "Email"@en, "E-mailadres"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:telephone ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 3 ;
+        sh:group <#claimant> ;
+        sh:name "Phone"@en, "Telefoon"@nl ;
+    ] ;
+
+    sh:property [
+        sh:path ex:policyNumber ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 4 ;
+        sh:group <#claim> ;
+        sh:name "Policy number"@en, "Polisnummer"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:dateFiled ;
+        sh:datatype xsd:date ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 5 ;
+        sh:group <#claim> ;
+        sh:name "Date filed"@en, "Datum van indiening"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:claimType ;
+        sh:in ("Auto" "Home" "Health") ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 6 ;
+        sh:group <#claim> ;
+        sh:name "Claim type"@en, "Soort claim"@nl ;
+        sh:description "What kind of claim is this - decides which extra fields below apply."@en,
+            "Wat voor soort claim dit is - bepaalt welke extra velden hieronder van toepassing zijn."@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:claimDescription ;
+        sh:datatype xsd:string ;
+        sh:singleLine false ;
+        sh:maxCount 1 ;
+        sh:order 7 ;
+        sh:group <#claim> ;
+        sh:name "Description"@en, "Omschrijving"@nl ;
+        sh:description "What happened, in your own words."@en, "Wat is er gebeurd, in je eigen woorden."@nl ;
+    ] ;
+    .
+
+<#claimant>
+    a sh:PropertyGroup ;
+    sh:order 1 ;
+    sh:name "Claimant"@en, "Indiener"@nl ;
+    sh:description "Who is filing this claim."@en, "Wie deze claim indient."@nl .
+
+<#claim>
+    a sh:PropertyGroup ;
+    sh:order 2 ;
+    sh:name "Claim"@en, "Claim"@nl ;
+    sh:description "The basics every claim needs, whatever kind it is."@en, "De basis die elke claim nodig heeft, ongeacht het soort."@nl .
+
+
+### Auto claim fragment - only attaches when ex:claimType is "Auto".
+ex:AutoClaimShape a sh:NodeShape ;
+    sh:targetWhere [
+        sh:class ex:InsuranceClaim ;
+        sh:property [
+            sh:path ex:claimType ;
+            sh:hasValue "Auto" ;
+        ] ;
+    ] ;
+
+    sh:property [
+        sh:path ex:vehiclePlate ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 8 ;
+        sh:group <#claim> ;
+        sh:name "License plate"@en, "Kenteken"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:vehicleMakeModel ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 9 ;
+        sh:group <#claim> ;
+        sh:name "Make & model"@en, "Merk & model"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:incidentLocation ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 10 ;
+        sh:group <#claim> ;
+        sh:name "Incident location"@en, "Locatie van het incident"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:otherPartyInvolved ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+        sh:order 11 ;
+        sh:group <#claim> ;
+        sh:name "Other party involved"@en, "Andere partij betrokken"@nl ;
+    ] ;
+    .
+
+### Home claim fragment - only attaches when ex:claimType is "Home".
+ex:HomeClaimShape a sh:NodeShape ;
+    sh:targetWhere [
+        sh:class ex:InsuranceClaim ;
+        sh:property [
+            sh:path ex:claimType ;
+            sh:hasValue "Home" ;
+        ] ;
+    ] ;
+
+    sh:property [
+        sh:path ex:propertyAddress ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 8 ;
+        sh:group <#claim> ;
+        sh:name "Property address"@en, "Adres van de woning"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:damageType ;
+        sh:in ("Fire" "Water" "Storm" "Theft" "Other") ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 9 ;
+        sh:group <#claim> ;
+        sh:name "Damage type"@en, "Type schade"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:estimatedRepairCost ;
+        sh:datatype xsd:decimal ;
+        sh:maxCount 1 ;
+        sh:order 10 ;
+        sh:group <#claim> ;
+        sh:name "Estimated repair cost"@en, "Geschatte reparatiekosten"@nl ;
+    ] ;
+    .
+
+### Health claim fragment - only attaches when ex:claimType is "Health".
+ex:HealthClaimShape a sh:NodeShape ;
+    sh:targetWhere [
+        sh:class ex:InsuranceClaim ;
+        sh:property [
+            sh:path ex:claimType ;
+            sh:hasValue "Health" ;
+        ] ;
+    ] ;
+
+    sh:property [
+        sh:path ex:patientRelationship ;
+        sh:in ("Self" "Spouse" "Child" "Other") ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 8 ;
+        sh:group <#claim> ;
+        sh:name "Patient's relationship to policyholder"@en, "Relatie van de patiënt tot de polishouder"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:treatmentDescription ;
+        sh:datatype xsd:string ;
+        sh:singleLine false ;
+        sh:maxCount 1 ;
+        sh:order 9 ;
+        sh:group <#claim> ;
+        sh:name "Treatment description"@en, "Omschrijving behandeling"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:providerName ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 10 ;
+        sh:group <#claim> ;
+        sh:name "Healthcare provider"@en, "Zorgverlener"@nl ;
+    ] ;
+    .
+
+
+### Data: one Auto claim - ex:claimType "Auto" makes ex:AutoClaimShape (and only that fragment)
+### conform to sh:targetWhere, so its fields (license plate, make & model, ...) attach here while
+### ex:HomeClaimShape/HealthClaimShape's fields stay unattached.
+<#data> a ex:InsuranceClaim ;
+    schema:name "Priya Sharma" ;
+    schema:email "priya.sharma@example.org" ;
+    schema:telephone "+31 6 1234 5678" ;
+    ex:policyNumber "POL-88213" ;
+    ex:dateFiled "2026-08-14"^^xsd:date ;
+    ex:claimType "Auto" ;
+    ex:claimDescription "Rear-ended at a red light on the A10; bumper and taillight damaged." ;
+    ex:vehiclePlate "AB-123-C" ;
+    ex:vehicleMakeModel "Volkswagen Golf, 2021" ;
+    ex:incidentLocation "A10 ring road, near the Coentunnel" ;
+    ex:otherPartyInvolved true ;
+    .

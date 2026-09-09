@@ -172,8 +172,6 @@ export default function AutoCompleteOption({
       )}
       <span className="st-autocomplete-option__label">
         {highlightMatches(displayLabel, highlight, "st-autocomplete-option__match")}
-      </span>
-      <span className="st-autocomplete-option__content">
         {classification && (
           <ValueChip
             colors={classificationGradient}
@@ -182,6 +180,8 @@ export default function AutoCompleteOption({
             term={classification.term}
           />
         )}
+      </span>
+      <span className="st-autocomplete-option__content">
         {term.termType === "NamedNode" && (
           <span className="st-autocomplete-option__actions">
             {canEditResource && enableEditInPlace && (

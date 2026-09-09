@@ -72,6 +72,22 @@ export const chefProfile: Story = {
   },
 };
 
+// Depending on the sort of claim, extra fields from separate shapes attach to the one main shape -
+// ex:AutoClaimShape/HomeClaimShape/HealthClaimShape each declare only a sh:targetWhere (3.1.3.6),
+// no sh:and/sh:node/sh:or link to ex:InsuranceClaimShape at all. preprocess/targetWhereFragments.ts
+// checks the resolved focusNode against every sh:targetWhere shape in the shapesGraph and folds
+// whichever ones conform into nodeShapes, so the matching fragment's fields render right alongside
+// the main shape's own - here that's ex:AutoClaimShape, since the fixture's ex:claimType is "Auto".
+// See insurance-claims.ttl's own top comment for why this is a mount-time resolution, not a live
+// switch the way sh:or/sh:xone's ChoiceElement is (compare "7.7.3.f sh-or.ttl").
+export const insuranceClaim: Story = {
+  name: "Insurance claim (targetWhere fragments)",
+  args: {
+    ...argsByTestFile("insurance-claims.ttl", import.meta.url),
+    nodeShapes: [ex("InsuranceClaimShape")],
+  },
+};
+
 // The one requirement the whole facets plan was built around: a shapes graph with no facet-
 // specific annotations at all (no st:facet declarations anywhere in this fixture) still renders a
 // full, working facet sidebar - text search (sh:alternativePath), category (sh:class, options
