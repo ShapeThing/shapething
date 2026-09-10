@@ -16,7 +16,7 @@ test("renders nothing when the group has no resolved widget", async () => {
     "text/turtle",
   );
 
-  const widgetRegistry: Widgets = { editors: {}, viewers: {}, groups: {} };
+  const widgetRegistry: Widgets = { editors: {}, viewers: {}, groups: {}, facets: {} };
   const group = new GroupUIElement({
     shapesGraph,
     dataGraph: RdfStore.createDefault(),
@@ -45,6 +45,7 @@ test("renders the resolved group widget's Component, passing the group through",
   const widgetRegistry: Widgets = {
     editors: {},
     viewers: {},
+    facets: {},
     groups: { TestGroup: { widget: ex("TestGroup"), Component: StubGroupWidget } },
   };
   const group = new GroupUIElement({
