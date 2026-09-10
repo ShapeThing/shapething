@@ -1,8 +1,9 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import type { Quad_Subject } from "@rdfjs/types";
 import { useQuery } from "@tanstack/react-query";
 import type { RdfStore } from "rdf-stores";
 import { noRefetch } from "@/helpers/noRefetch.ts";
+import { termKey } from "@/helpers/termKey.ts";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import {
   predicatesReferencedByTargetWhereShapes,
@@ -57,6 +58,29 @@ export function useTargetWhereFragments(
     queryFn: () => shapesWhereTargetingFocusNode(focusNode, shapesGraph, dataGraph),
     ...noRefetch,
   });
+
+  // Logs whenever a sh:targetWhere fragment starts or stops matching focusNode, so a form change
+  // driven purely by data no longer conforming to a where-target (rather than an explicit widget
+  // interaction) is still visible - the previous set is only compared once `data` has resolved at
+  // least once, so the initial attachment on mount is silent.
+  const previousFragmentsRef = useRef<Quad_Subject[] | undefined>(undefined);
+  useEffect(() => {
+    if (data === undefined) return;
+    const previous = previousFragmentsRef.current;
+    if (previous !== undefined) {
+      const previousKeys = new Set(previous.map(termKey));
+      const currentKeys = new Set(data.map(termKey));
+      const attached = data.filter((shape) => !previousKeys.has(termKey(shape)));
+      const detached = previous.filter((shape) => !currentKeys.has(termKey(shape)));
+      if (attached.length > 0 || detached.length > 0) {
+        console.log(
+          `[shacl-everything] sh:targetWhere fragments changed for focus node <${focusNode.value}>`,
+          { attached: attached.map((shape) => shape.value), detached: detached.map((shape) => shape.value) },
+        );
+      }
+    }
+    previousFragmentsRef.current = data;
+  }, [data, focusNode]);
 
   return data ?? [];
 }
