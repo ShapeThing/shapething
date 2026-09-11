@@ -1,10 +1,11 @@
 .st-input {
-  padding: var(--size-2);
+  padding: calc(var(--size-2) - 1px);
   border-radius: var(--radius-2);
   border: 1px solid var(--gray-5);
   flex: 1 1 auto;
   position: relative;
   z-index: var(--st-z-raised);
+  font-size: var(--st-font-size-small);
   max-width: 100%;
   box-sizing: border-box;
   appearance: none;

@@ -9,6 +9,7 @@ import GroupUIElementComponent from "@/outputs/render/modes/edit/GroupUIElementC
 import TabbedPropertyGroupFamily from "@/outputs/render/modes/edit/TabbedPropertyGroupFamily.tsx";
 import PropertyUIElementComponent from "@/outputs/render/modes/view/PropertyUIComponent.tsx";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
+import { elementKey } from "@/structure/elementKey.ts";
 import type { GroupUIElement } from "@/structure/GroupUIElement.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 
@@ -19,8 +20,8 @@ export default function UIElementChildren({
 }) {
   return (
     <TabbedPropertyGroupFamily elements={elements}>
-      {elements.map((element, index) => (
-        <Fragment key={index}>
+      {elements.map((element) => (
+        <Fragment key={elementKey(element)}>
           {element.kind === "property" ? (
             <PropertyUIElementComponent propertyUIElement={element} />
           ) : element.kind === "choice" ? (

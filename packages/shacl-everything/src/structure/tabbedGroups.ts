@@ -14,10 +14,11 @@ export function isTabbedPropertyGroup(node: Term, shapesGraph: RdfStore): boolea
   return shapesGraph.getQuads(node, rdf("type"), st("TabbedPropertyGroup")).length > 0;
 }
 
-// Stable DOM ids shared between TabbedPropertyGroupFamily's own <button role="tab"> (aria-controls)
-// and the TabbedPropertyGroup widget's own <div role="tabpanel"> (id, aria-labelledby) - the two
-// are separate React components with no ref to one another, so the id must be derivable from the
-// group node alone on both sides rather than generated once via useId().
+// Stable DOM ids for the tab button (rendered per entry in `tabs`, see the TabbedPropertyGroup
+// widget) and each own instance's <div role="tabpanel"> (id, aria-labelledby). Even though one
+// widget instance now renders the whole nav, it only has the *other* tabs' plain GroupUIElement
+// data (via context), not their own rendered React output, so an id must stay derivable from a
+// group node alone rather than generated once via useId().
 function sanitizeForId(value: string): string {
   return value.replace(/[^a-zA-Z0-9_-]/g, "_");
 }

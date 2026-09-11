@@ -1,25 +1,26 @@
 import { useState, type ReactNode } from "react";
 import type { Term } from "@rdfjs/types";
-import clsx from "clsx";
 import { tabbedPropertyGroupContext } from "@/outputs/render/contexts/tabbedPropertyGroupContext.tsx";
-import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
-import {
-  isTabbedPropertyGroup,
-  tabbedGroupPanelId,
-  tabbedGroupTabId,
-} from "@/structure/tabbedGroups.ts";
+import { isTabbedPropertyGroup } from "@/structure/tabbedGroups.ts";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import type { GroupUIElement } from "@/structure/GroupUIElement.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import "./style.css";
 
 /**
  * Wraps one UIElementChildren list (one sibling level - the top of a node, or inside a plain group
  * like st:CollapsiblePropertyGroup) so every st:TabbedPropertyGroup sibling found in it shares one
- * "which tab is active" state and one <button role="tab"> nav, rendered once above the list -
- * exactly one sh:PropertyGroup subtype's DOM ever shows at a time, the rest render nothing (see the
- * widget itself). A list with no tabbed siblings renders `children` completely unchanged, which
- * covers every other list in the codebase, so this must stay a no-op then.
+ * "which tab is active" state and one shared `tabs` list, provided via context - it renders no nav
+ * markup of its own. The first tab (lowest sh:order) always renders the shared <button role="tab">
+ * nav (over every tab in `tabs`, not just itself), regardless of whether it's the active one, so the
+ * nav's DOM stays mounted continuously across tab switches rather than unmounting/remounting from a
+ * different widget instance on every click (see the TabbedPropertyGroup widget for why that matters
+ * - it would otherwise drop focus off the very button just clicked). The active tab's own panel is
+ * rendered separately by whichever widget instance is currently active. Either way this still lands
+ * at that group's own place in the sh:order-sorted sibling sequence - instead of the nav being
+ * hoisted above the whole list regardless of where the tab groups themselves sort. Every sibling
+ * that is neither the first tab nor the active one still renders nothing. A list with no tabbed
+ * siblings renders `children` completely unchanged, which covers every other list in the codebase,
+ * so this must stay a no-op then.
  *
  * Shared, mode-agnostic like GroupUIElementComponent (see UIElementChildren's own doc comment) -
  * kept under modes/edit/ and imported directly by modes/view/UIElementChildren.tsx rather than
@@ -33,7 +34,6 @@ export default function TabbedPropertyGroupFamily({
   elements: (PropertyUIElement | ChoiceElement | GroupUIElement)[];
   children: ReactNode;
 }) {
-  const { activeInterfaceLanguage } = useInterfaceLanguage();
   const tabs = elements.filter(
     (element): element is GroupUIElement =>
       element.kind === "group" && isTabbedPropertyGroup(element.node, element.shapesGraph),
@@ -52,26 +52,9 @@ export default function TabbedPropertyGroupFamily({
     : tabs[0].node;
 
   return (
-    <tabbedPropertyGroupContext.Provider value={{ activeTabIri, setActiveTabIri: setPinnedTabIri }}>
-      <div className="st-tabbed-group-nav" role="tablist">
-        {tabs.map((tab) => {
-          const active = tab.node.equals(activeTabIri);
-          return (
-            <button
-              key={tab.node.value}
-              type="button"
-              role="tab"
-              id={tabbedGroupTabId(tab.node)}
-              aria-selected={active}
-              aria-controls={tabbedGroupPanelId(tab.node)}
-              className={clsx("st-button", active && "st-button--primary")}
-              onClick={() => setPinnedTabIri(tab.node)}
-            >
-              {tab.label([activeInterfaceLanguage]) ?? tab.node.value}
-            </button>
-          );
-        })}
-      </div>
+    <tabbedPropertyGroupContext.Provider
+      value={{ tabs, activeTabIri, setActiveTabIri: setPinnedTabIri }}
+    >
       {children}
     </tabbedPropertyGroupContext.Provider>
   );

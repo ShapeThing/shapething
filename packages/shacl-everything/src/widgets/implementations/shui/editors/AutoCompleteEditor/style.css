@@ -33,8 +33,13 @@
     color: var(--gray-6);
     display: flex;
     flex: 1;
+    font-size: var(--st-font-size-small);
     cursor: pointer;
   }
+}
+
+.st-autocomplete--empty .st-combo-surface {
+  cursor: pointer;
 }
 
 .st-autocomplete__label {

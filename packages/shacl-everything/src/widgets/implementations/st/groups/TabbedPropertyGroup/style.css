@@ -1,0 +1,9 @@
+/* One row of .st-button per sibling st:TabbedPropertyGroup, rendered by whichever tab's own widget
+   instance is currently active (see widget.tsx) - the active tab reuses .st-button--primary,
+   exactly like any other primary action, so no bespoke color scheme is needed just for tabs. */
+.st-tabbed-group-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2);
+  margin-bottom: var(--size-5);
+}
