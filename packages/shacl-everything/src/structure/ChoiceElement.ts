@@ -21,6 +21,7 @@ export class ChoiceElement {
   public shape: Term;
   public connective: ChoiceConnective;
   public list: Term;
+  public ancestorPath: string[];
 
   constructor(
     shapesGraph: RdfStore,
@@ -31,6 +32,7 @@ export class ChoiceElement {
     list: Term,
     scoresGraph?: RdfStore,
     widgetRegistry?: Widgets,
+    ancestorPath?: string[],
   ) {
     this.shapesGraph = shapesGraph;
     this.dataGraph = dataGraph;
@@ -40,6 +42,7 @@ export class ChoiceElement {
     this.shape = shape;
     this.connective = connective;
     this.list = list;
+    this.ancestorPath = ancestorPath ?? [];
   }
 
   children(): (PropertyUIElement | ChoiceElement)[][] {
@@ -51,6 +54,7 @@ export class ChoiceElement {
         this.focusNode,
         this.scoresGraph,
         this.widgetRegistry,
+        this.ancestorPath,
       ),
     );
   }

@@ -9,7 +9,6 @@ import { usePropertyValidationResults } from "@/outputs/render/hooks/useProperty
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import MemberShapeList from "@/outputs/render/modes/edit/MemberShapeList.tsx";
 import PropertyUIComponentValues from "@/outputs/render/modes/edit/PropertyUIComponentValues.tsx";
-import { hashString } from "@/helpers/hashString.ts";
 import { localName } from "@/helpers/localName.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
 import { Globe } from "@/helpers/icons.tsx";
@@ -85,13 +84,7 @@ export default function PropertyUIComponent({
   return (
     <FormElement
       label={label}
-      dataId={
-        sparqlPath
-          ? hashString(
-              propertyUIElement.propertyShapes.map((ps) => ps.value).join(",") + sparqlPath,
-            )
-          : undefined
-      }
+      dataId={propertyUIElement.dataId()}
       labelSuffix={
         label ? (
           <>

@@ -814,3 +814,80 @@ test("removeObject() does nothing when the property shape has no sh:path", async
   element.removeObject(factory.literal("hello"));
   expect(element.getObjects()).toEqual([]);
 });
+
+test("dataId() is undefined when the property has no sh:path", async () => {
+  const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
+  expect(element.dataId()).toBeUndefined();
+});
+
+test("dataId() stays identical across two separate parses of the same blank-node property shape", async () => {
+  // sh:property [ ... ] (a blank node, not a named shape) is the overwhelmingly common way to
+  // author a property - a parser assigns each blank node its own internal label (b0, n3-2, ...)
+  // arbitrarily, and nothing guarantees the same label comes out of a second parse of identical
+  // Turtle. dataId() must not depend on that label at all, or an embedder's CSS hook would break
+  // across reloads for the common case rather than the rare named-shape one.
+  const turtle = `
+    ex:Person a sh:NodeShape ;
+        sh:property [ sh:path ex:name ] .
+  `;
+
+  const dataGraph = await parseRdf("", "text/turtle");
+
+  const firstShapesGraph = await parseRdf(`${queryPrefixes}\n\n${turtle}`, "text/turtle");
+  const firstPropertyShape = firstShapesGraph.getQuads(ex("Person"), sh("property"))[0]
+    .object as NamedNode;
+  const first = new PropertyUIElement({
+    shapesGraph: firstShapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [firstPropertyShape],
+  });
+
+  const secondShapesGraph = await parseRdf(`${queryPrefixes}\n\n${turtle}`, "text/turtle");
+  const secondPropertyShape = secondShapesGraph.getQuads(ex("Person"), sh("property"))[0]
+    .object as NamedNode;
+  const second = new PropertyUIElement({
+    shapesGraph: secondShapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [secondPropertyShape],
+  });
+
+  expect(first.dataId()).toBeDefined();
+  expect(first.dataId()).toEqual(second.dataId());
+});
+
+test("dataId() differs for the same path at different ancestorPath depths, but stays stable for equal ones", async () => {
+  const element = await createElement(`ex:nameShape a sh:PropertyShape ; sh:path ex:name .`, [
+    ex("nameShape"),
+  ]);
+
+  const root = element.dataId();
+
+  const nestedViaAuthor = new PropertyUIElement({
+    shapesGraph: element.shapesGraph,
+    dataGraph: element.dataGraph,
+    focusNode: element.focusNode,
+    propertyShapes: element.propertyShapes,
+    ancestorPath: ["ex:hasAuthor"],
+  }).dataId();
+
+  const nestedViaPublisher = new PropertyUIElement({
+    shapesGraph: element.shapesGraph,
+    dataGraph: element.dataGraph,
+    focusNode: element.focusNode,
+    propertyShapes: element.propertyShapes,
+    ancestorPath: ["ex:hasPublisher"],
+  }).dataId();
+
+  const nestedViaAuthorAgain = new PropertyUIElement({
+    shapesGraph: element.shapesGraph,
+    dataGraph: element.dataGraph,
+    focusNode: element.focusNode,
+    propertyShapes: element.propertyShapes,
+    ancestorPath: ["ex:hasAuthor"],
+  }).dataId();
+
+  expect(new Set([root, nestedViaAuthor, nestedViaPublisher]).size).toBe(3);
+  expect(nestedViaAuthor).toEqual(nestedViaAuthorAgain);
+});

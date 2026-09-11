@@ -12,7 +12,7 @@ export default function LangStringViewer({ term }: WidgetProps) {
   return (
     <span className="st-lang-string-viewer">
       {term.value}
-      {label && <span className="st-lang-string-viewer__lang">{label}</span>}
+      {label && <span className="st-lang-string-viewer__lang">&nbsp;{label}</span>}
     </span>
   );
 }

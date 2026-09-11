@@ -29,12 +29,10 @@
 .st-view-mode .st-form-element__header {
   width: auto;
   justify-content: flex-start;
-}
 
-.st-property-language-tag {
-  font-weight: normal;
-  font-size: var(--st-font-size-small);
-  color: var(--st-color-text-muted);
+  &:empty {
+    display: none;
+  }
 }
 
 .st-property-items {

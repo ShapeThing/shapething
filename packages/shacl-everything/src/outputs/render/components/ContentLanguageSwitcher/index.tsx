@@ -15,7 +15,7 @@ import { Localized } from "@fluent/react";
 import "./style.css";
 
 export default function ContentLanguageSwitcher() {
-  const { languageMode, enableContentLanguageCreation, enableFullLanguageRemoval, dataGraph } =
+  const { mode, languageMode, enableContentLanguageCreation, enableFullLanguageRemoval, dataGraph } =
     useEnvironment();
   const {
     languages,
@@ -44,6 +44,10 @@ export default function ContentLanguageSwitcher() {
   // shown either, so the whole thing (switcher and creation) stays hidden.
   const enabled = languageMode !== "individual";
   const showCreateOption = enabled && Boolean(enableContentLanguageCreation);
+  // Removing a language deletes data (deleteLiteralsByLanguage) - view mode is read-only, so the
+  // delete affordance (row button and Delete-key shortcut) must not appear there even if the
+  // embedder enabled it for edit mode.
+  const canRemoveLanguages = enableFullLanguageRemoval && mode === "edit";
   // The dropdown is worth showing even with only one language, as long as it can grow via the
   // "add language" row below - otherwise there'd be nowhere to trigger creation from at all.
   // Also worthless if nothing currently rendered would actually respond to it (e.g. a form with
@@ -75,7 +79,7 @@ export default function ContentLanguageSwitcher() {
           renderOption={(language, close) => (
             <>
               <span className="st-content-language-switcher__option-label">{labels[language]}</span>
-              {enableFullLanguageRemoval && (
+              {canRemoveLanguages && (
                 <Localized
                   id="content-language-delete-option"
                   vars={{ language: labels[language] ?? language }}
@@ -114,7 +118,7 @@ export default function ContentLanguageSwitcher() {
               : undefined
           }
           onDeleteKey={(language) => {
-            if (languages.length <= 1) return;
+            if (!canRemoveLanguages || languages.length <= 1) return;
             setLanguageToDelete(language);
           }}
         />

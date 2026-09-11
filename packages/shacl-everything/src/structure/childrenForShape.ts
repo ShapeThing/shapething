@@ -36,6 +36,10 @@ export function childrenForShape(
   focusNode: Quad_Subject,
   scoresGraph?: RdfStore,
   widgets?: Widgets,
+  // See NodeUIElementOptions.ancestorPath / PropertyUIElement.dataId() - forwarded unchanged into
+  // every PropertyUIElement/ChoiceElement produced here, since expanding `shape` itself (sh:and/
+  // sh:node/sh:or/sh:xone) stays at the same focusNode and so isn't its own hop.
+  ancestorPath?: string[],
 ): (PropertyUIElement | ChoiceElement)[] {
   const visited = new Set<string>();
   const propertyShapes: NamedNode[] = [];
@@ -72,6 +76,7 @@ export function childrenForShape(
             listQuad.object,
             scoresGraph,
             widgets,
+            ancestorPath,
           ),
         );
       }
@@ -90,6 +95,7 @@ export function childrenForShape(
       focusNode,
       scoresGraph,
       widgets,
+      ancestorPath,
     ),
     ...choiceElements,
   ];

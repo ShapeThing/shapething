@@ -22,6 +22,7 @@ export function groupPropertyShapesByPath(
   focusNode: Quad_Subject,
   scoresGraph?: RdfStore,
   widgets?: Widgets,
+  ancestorPath?: string[],
 ): PropertyUIElement[] {
   const groupedPropertyShapes = new Map<string, NamedNode[]>();
 
@@ -44,6 +45,7 @@ export function groupPropertyShapesByPath(
         widgetRegistry: widgets,
         focusNode,
         propertyShapes: shapes,
+        ancestorPath,
       }),
   );
 }

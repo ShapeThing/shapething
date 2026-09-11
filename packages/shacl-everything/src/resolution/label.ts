@@ -16,7 +16,7 @@ import {
   orderedValues,
   type PropertyUIElement,
 } from "@/structure/PropertyUIElement.ts";
-import type { BCP47 } from "@/types/BCP47.ts";
+import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
 import { shapesTargetingClass } from "@/resolution/targets.ts";
 import type { Literal, NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
@@ -371,12 +371,20 @@ export function valueNodeLabel(
 
   const effLanguages = effectiveLanguages(propertyShape, languages ?? []);
 
-  // 2. shui:LabelRole-annotated path(s) from V, walked in the data graph.
-  const labelsViaPropertyRoles = labelRolePropertyPaths(propertyShape)
-    .flatMap((path) => walkPropertyPath(path, term, dataGraph))
-    .filter((value): value is Literal => value.termType === "Literal");
-  const viaRoles = language(labelsViaPropertyRoles, effLanguages);
-  if (viaRoles) return viaRoles;
+  // 2. shui:LabelRole-annotated path(s) from V, walked in the data graph - an sh:alternativePath's
+  // branches (e.g. a quantity/unit/name triple describing one ingredient) each resolve their own
+  // best-language text independently and are combined into one composed label ("1.0 Kilogram Beef
+  // fillet"), rather than pooling every branch's raw values together and picking a single overall
+  // winner by language - a language-less quantity should contribute alongside a name, not compete
+  // with it for the same slot (and lose to it whenever no configured language matches at all). A
+  // branch that resolves to a resource rather than a literal (e.g. schema:unitCode, an IRI) recurses
+  // through this same function - e.g. resolving to the unit's own rdfs:label - instead of being
+  // silently dropped by a literal-only filter.
+  const roleLabelParts = labelRolePropertyPaths(propertyShape)
+    .flatMap((path) => resolveLabelRolePathParts(path, term, propertyShape, effLanguages, languages));
+  if (roleLabelParts.length > 0) {
+    return factory.literal(roleLabelParts.join(" "));
+  }
 
   const labelPaths = effectiveLabelPredicates(shapesGraph, "term");
 
@@ -406,6 +414,39 @@ export function valueNodeLabel(
   // 6. If V is a blank node, use an implementation-specific placeholder.
   if (term.termType === "BlankNode") return factory.literal(term.value);
   return factory.literal(localName(term) ?? term.value);
+}
+
+/**
+ * One shui:LabelRole path's own contribution to valueNodeLabel's combined text - an
+ * sh:alternativePath decomposes into its branches (each resolved independently, all of them
+ * combined), any other path type walks straight to its value(s): a literal picks the best-language
+ * match among them, a resource recurses through valueNodeLabel itself (e.g. schema:unitCode's own
+ * rdfs:label) rather than being dropped. Returns nothing for a branch with no match at all - the
+ * empty branches this filters out are what let e.g. an ingredient with no schema:unitCode still
+ * combine cleanly into "1.0 Beef fillet" instead of leaving a stray gap.
+ */
+function resolveLabelRolePathParts(
+  path: PropertyPath,
+  term: Term,
+  propertyShape: PropertyUIElement,
+  effLanguages: LanguageRange[],
+  languages: BCP47[] | undefined,
+): string[] {
+  if (path.type === "alternative") {
+    return path.items.flatMap((item) =>
+      resolveLabelRolePathParts(item, term, propertyShape, effLanguages, languages)
+    );
+  }
+
+  const values = walkPropertyPath(path, term, propertyShape.dataGraph);
+  const literal = language(
+    values.filter((v): v is Literal => v.termType === "Literal"),
+    effLanguages,
+  );
+  if (literal) return [literal.value];
+
+  const resource = values.find((v) => v.termType !== "Literal");
+  return resource ? [valueNodeLabel({ term: resource, propertyShape, languages }).value] : [];
 }
 
 type ValueNodeClassificationOptions = {

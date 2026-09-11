@@ -5,10 +5,10 @@ import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguag
 import { useTargetWhereFragments } from "@/outputs/render/hooks/useTargetWhereFragments.tsx";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 
-export default function NodeUIComponent() {
+export default function NodeUIComponent({ noWrapper }: { noWrapper?: boolean }) {
   const { focusNode, shapesGraph, dataGraph, scoresGraph, widgets, nodeShapes } = useEnvironment();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   // nodeShapes stays static for the Environment's lifetime (see EnvironmentContextProvider's own
@@ -35,10 +35,12 @@ export default function NodeUIComponent() {
   const cssImports = useMemo(() => nodeUiElement.cssImports(), [nodeUiElement]);
   useCssImports(cssImports);
 
+  const WrapperElement = noWrapper ? Fragment : "div";
+
   return (
-    <div className="st-node-ui-component">
+    <WrapperElement className="st-node-ui-component">
       {description && <p className="st-node-ui-component__description">{description}</p>}
       <NodeUIElementChildren nodeUiElement={nodeUiElement} />
-    </div>
+    </WrapperElement>
   );
 }

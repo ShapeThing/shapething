@@ -52,10 +52,10 @@
 
 .st-form-element[data-label-layout="inline"] {
   flex-direction: row;
-  gap: var(--size-2);
+  gap: 0 var(--size-2);
   flex-wrap: wrap;
   padding-block-end: 0;
-  align-items: baseline;
+  align-items: center;
 }
 
 .st-form-element[data-label-layout="inline"] .st-form-element__header {

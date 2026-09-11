@@ -22,6 +22,7 @@ export default function DetailsEditor({ shape, term, autoFocus }: WidgetProps) {
         widgetRegistry: shape.widgetRegistry,
         focusNode: term as Quad_Subject,
         nodeShapes,
+        ancestorPath: shape.nestedAncestorPath(),
       }),
     [shape, term, nodeShapes],
   );

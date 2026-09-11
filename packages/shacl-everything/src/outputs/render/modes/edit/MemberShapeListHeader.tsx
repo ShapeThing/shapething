@@ -23,7 +23,8 @@ export default function MemberShapeListHeader({
   columns: PropertyUIElement[];
   columnLabelId: (index: number) => string;
 }) {
-  const { enableLogicalBranchSwitching, enableWidgetSwitching } = useEnvironment();
+  const { enableLogicalBranchSwitching, enableWidgetSwitching, enableShPathInLabelTitle } =
+    useEnvironment();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   // A data row's own gear icon (see DetailsEditor) only renders under this same condition - the
   // header's spacer has to match exactly, or its presence/absence would shift every column after
@@ -45,6 +46,7 @@ export default function MemberShapeListHeader({
                   <FormElement
                     key={index}
                     label={column.label([activeInterfaceLanguage])}
+                    labelTitle={enableShPathInLabelTitle ? column.pathAsSparql() : undefined}
                     required={(column.get(sh("minCount")) ?? 0) > 0}
                     labelId={columnLabelId(index)}
                   />

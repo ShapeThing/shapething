@@ -5,6 +5,10 @@
   margin: 0;
   padding: 0;
   border: none;
+  /* fieldset's UA default is min-width: min-content; Firefox (unlike Chromium)
+     still enforces that as a flex/grid item, so it refuses to shrink below its
+     widest child and blows out past a fixed grid track. */
+  min-width: 0;
 }
 
 .st-property-group + .st-property-group {

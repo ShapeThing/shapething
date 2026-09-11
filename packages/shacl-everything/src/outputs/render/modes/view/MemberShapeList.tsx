@@ -39,6 +39,11 @@ export default function MemberShapeList({
         widgetRegistry: propertyUIElement.widgetRegistry,
         focusNode: propertyUIElement.focusNode,
         propertyShapes: memberShapeNodes as NamedNode[],
+        // The list itself is a hop (see PropertyUIElement.dataId()/.nestedAncestorPath()) - an
+        // item's own nested form (DetailsViewer, when an item is object-shaped) must count the
+        // list's own path as an ancestor, or e.g. two lists' items that each have their own
+        // "name" property would collide on the exact same dataId.
+        ancestorPath: propertyUIElement.nestedAncestorPath(),
       }),
     [propertyUIElement, memberShapeNodes],
   );
