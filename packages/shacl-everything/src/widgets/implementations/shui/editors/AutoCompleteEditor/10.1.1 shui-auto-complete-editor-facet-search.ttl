@@ -47,6 +47,7 @@ ex:Asia a ex:Continent ; rdfs:label "Asia"@en .
     a sh:NodeShape ;
     sh:targetClass ex:Country ;
     sh:property [
+        sh:name "Search"@en ;
         sh:path rdfs:label ;
         sh:datatype xsd:string ;
         shui:propertyRole shui:LabelRole ;

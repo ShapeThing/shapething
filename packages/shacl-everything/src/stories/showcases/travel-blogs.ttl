@@ -1,0 +1,116 @@
+@prefix ex: <http://example.org/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix geosparql: <http://www.opengis.net/ont/geosparql#>.
+
+### Travel Blog Post
+### A deliberately tiny "microformat": a title (rdfs:label), rich-text content (schema:articleBody,
+### rdf:HTML), zero or more photos (schema:image) and zero or more geo locations (ex:location,
+### GeoSPARQL WKT literals - one property covers both points and polygons, since WKT already
+### distinguishes the two on its own). ex:location doubles as the showcase for st:MapFacet (see
+### widgets/implementations/st/facets/MapFacet) - see the "Travel Blogs (facets)" story, which plots
+### every post's own location on one map and lets you draw a rectangle/polygon to narrow the list
+### down to whichever posts fall inside it.
+ex:TravelBlogPostShape a sh:NodeShape ;
+    sh:targetClass ex:TravelBlogPost ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:minCount 2 ;
+        sh:order 0 ;
+        sh:name "Title"@en, "Titel"@nl ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:datePublished ;
+        sh:datatype xsd:date ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 1 ;
+        sh:name "Published"@en, "Gepubliceerd"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:location ;
+        sh:datatype geosparql:wktLiteral ;
+        sh:order 2 ;
+        sh:name "Location"@en, "Locatie"@nl ;
+        shui:editor st:GeoEditor ;
+        shui:viewer st:MapViewer ;
+        st:facet st:MapFacet ;
+    ] ;
+    sh:property [
+        sh:path schema:image ;
+        sh:nodeKind sh:IRI ;
+        sh:order 3 ;
+        sh:name "Photos"@en, "Foto's"@nl ;
+        shui:viewer shui:ImageViewer ;
+    ] ;
+    sh:property [
+        sh:path schema:articleBody ;
+        sh:datatype rdf:HTML ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 4 ;
+        sh:name "Story"@en, "Verhaal"@nl ;
+    ] ;
+    .
+
+### Posts - three in Europe (Lisbon, Tuscany, Iceland) and three elsewhere (Kyoto, Cape Town,
+### Patagonia), so drawing a rectangle over Europe in the facets story visibly narrows six posts
+### down to three. Iceland is the one polygon (a rough stretch of its south coast); every other post
+### is a single point. Photos are illustrative placeholders (picsum.photos), not real location
+### photography - Iceland has none, to show schema:image is genuinely optional.
+
+<#data> a ex:TravelBlogPost ;
+    rdfs:label "Three Days in Lisbon"@en, "Drie Dagen in Lissabon"@nl ;
+    schema:datePublished "2025-03-14"^^xsd:date ;
+    ex:location "POINT (-9.1393 38.7223)"^^geosparql:wktLiteral ;
+    schema:image <https://picsum.photos/seed/lisbon-alfama/900/560> ;
+    schema:articleBody "<p>Lisbon rewards a wandering pace: the <strong>Alfama</strong>'s tiled facades spill downhill toward the Tejo, tram 28 rattles past miradouros full of espresso and fado, and every dead-end alley turns out to have a view.</p><p>Best eaten with a <em>pastel de nata</em> still warm from the oven.</p>"^^rdf:HTML ;
+    .
+
+ex:kyotoAutumn a ex:TravelBlogPost ;
+    rdfs:label "Autumn Colours in Kyoto"@en, "Herfstkleuren in Kyoto"@nl ;
+    schema:datePublished "2024-11-02"^^xsd:date ;
+    ex:location "POINT (135.7681 35.0116)"^^geosparql:wktLiteral ;
+    schema:image <https://picsum.photos/seed/kyoto-momiji/900/560> ;
+    schema:articleBody "<p>The maples along the <strong>Philosopher's Path</strong> turn a deep red just as the crowds thin out for the season. Early mornings at Tofuku-ji are worth the alarm clock - the temple's valley of momiji is at its best before the tour buses arrive.</p>"^^rdf:HTML ;
+    .
+
+ex:icelandRingRoad a ex:TravelBlogPost ;
+    rdfs:label "Circling Iceland's South Coast"@en, "Langs de Zuidkust van IJsland"@nl ;
+    schema:datePublished "2025-07-20"^^xsd:date ;
+    ex:location "POLYGON ((-19.5 63.4, -16.0 63.4, -16.0 64.3, -19.5 64.3, -19.5 63.4))"^^geosparql:wktLiteral ;
+    schema:articleBody "<p>Black sand beaches, glacier lagoons and waterfalls close enough to soak you - the stretch between <strong>Vík</strong> and <strong>Jökulsárlón</strong> packs in more scenery per kilometre than anywhere else on the ring road.</p>"^^rdf:HTML ;
+    .
+
+ex:capeTownHike a ex:TravelBlogPost ;
+    rdfs:label "Table Mountain at Sunrise"@en, "Tafelberg bij Zonsopgang"@nl ;
+    schema:datePublished "2026-01-10"^^xsd:date ;
+    ex:location "POINT (18.4241 -33.9249)"^^geosparql:wktLiteral ;
+    schema:image <https://picsum.photos/seed/capetown-tablemountain/900/560> ;
+    schema:articleBody "<p>Platteklip Gorge is the most direct route up - steep, relentless stairs of stone, but the first light over the city bowl from the top makes every step worth it.</p>"^^rdf:HTML ;
+    .
+
+ex:tuscanyVineyards a ex:TravelBlogPost ;
+    rdfs:label "A Week Among Tuscany's Vineyards"@en, "Een Week Tussen de Wijngaarden van Toscane"@nl ;
+    schema:datePublished "2025-09-05"^^xsd:date ;
+    ex:location "POINT (11.3306 43.3188)"^^geosparql:wktLiteral ;
+    schema:image <https://picsum.photos/seed/tuscany-vineyard/900/560> ;
+    schema:articleBody "<p>Renting a bike in <strong>Siena</strong> and following the gravel roads south through Chianti turns out to be the slowest, best way to see the region - cypress-lined driveways, roadside wine tastings, and not another tourist in sight.</p>"^^rdf:HTML ;
+    .
+
+ex:patagoniaTrek a ex:TravelBlogPost ;
+    rdfs:label "Trekking Torres del Paine"@en, "Trekken door Torres del Paine"@nl ;
+    schema:datePublished "2024-12-18"^^xsd:date ;
+    ex:location "POINT (-73.0392 -50.9423)"^^geosparql:wktLiteral ;
+    schema:image <https://picsum.photos/seed/patagonia-torres/900/560> ;
+    schema:articleBody "<p>The <strong>W trek</strong> earns its name from the map, and its reputation from the wind - but the payoff at the base of the towers, granite spires lit orange at dawn, is exactly as good as every photo promises.</p>"^^rdf:HTML ;
+    .

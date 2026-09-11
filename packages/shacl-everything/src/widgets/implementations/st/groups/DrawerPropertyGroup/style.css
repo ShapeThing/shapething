@@ -1,0 +1,19 @@
+/* Layers on top of PropertyGroup's own .st-property-group/__body rules (that widget's style.css
+   is always loaded alongside this one - see registry.ts, both widgets live under the same
+   groups/ category and are bundled together) - only the "add a property" row lives here. */
+.st-drawer-property-group__add {
+  margin-top: var(--size-3);
+  padding-top: var(--size-3);
+  border-top: 1px dashed var(--st-primary-color-lighter);
+}
+
+/* .st-select's shared rule sets cursor: pointer for its usual <button> trigger - this one is a
+   type-to-filter text <input> instead (see AddPropertySelect), so typing is the point. */
+.st-drawer-property-group__search input.st-select {
+  cursor: text;
+}
+
+.st-property-group--drawer .st-property-group__body {
+  padding-left: 0;
+  border-left: none;
+}

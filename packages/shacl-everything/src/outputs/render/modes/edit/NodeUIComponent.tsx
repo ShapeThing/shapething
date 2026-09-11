@@ -36,9 +36,10 @@ export default function NodeUIComponent({ noWrapper }: { noWrapper?: boolean }) 
   useCssImports(cssImports);
 
   const WrapperElement = noWrapper ? Fragment : "div";
+  const attributes = noWrapper ? {} : { className: "st-node-ui-component" };
 
   return (
-    <WrapperElement className="st-node-ui-component">
+    <WrapperElement {...attributes}>
       {description && <p className="st-node-ui-component__description">{description}</p>}
       <NodeUIElementChildren nodeUiElement={nodeUiElement} />
     </WrapperElement>

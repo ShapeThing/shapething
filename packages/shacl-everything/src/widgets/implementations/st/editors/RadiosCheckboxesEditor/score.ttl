@@ -1,0 +1,26 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+st:RadiosCheckboxesEditor rdfs:label "Radios/Checkboxes"@en, "Keuzerondjes/-vakjes"@nl .
+
+# Opt-in only: unlike EnumSelectEditor/InstancesSelectEditor, a plain sh:class constraint alone
+# never scores this widget - a shape author picks it explicitly for a small, already-known set of
+# instances that should render as a flat list of radios/checkboxes (optionally swapped for
+# clickable images - see widget.tsx's hasDepictionRole) rather than a dropdown/typeahead.
+st:radiosCheckboxesEditorScore40
+    a shui:WidgetScore ;
+    shui:widget st:RadiosCheckboxesEditor ;
+    shui:score 40 ;
+    shui:dataGraphShape shui:isIRI ;
+    shui:shapesGraphShape st:prefersRadiosCheckboxesEditor, shui:hasClassConstraint ;
+.
+
+st:prefersRadiosCheckboxesEditor
+    a sh:NodeShape ;
+    sh:property [
+        sh:path shui:editor ;
+        sh:hasValue st:RadiosCheckboxesEditor ;
+    ] ;
+.

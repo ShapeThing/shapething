@@ -42,15 +42,17 @@ export const modalUndoOnlyAffectsItsOwnStagingGraph: Story = {
   play: async ({ canvasElement }) => {
     submittedResult = undefined;
 
-    // Edit the outer Recipe's own Cuisine field first, so the outer form's undo stack has
-    // something real on it to protect.
-    const cuisineInput = await waitFor(() => findFieldInput(canvasElement, "Cuisine"), {
+    // Edit the outer Recipe's own name field first, so the outer form's undo stack has
+    // something real on it to protect. (Cuisine won't do for this any more - it's now an
+    // IRI-valued SubClassEditor pick, not a free-text field: its own input is just a transient
+    // search box that clears on blur, see that widget's own onBlur handler.)
+    const recipeNameInput = await waitFor(() => findFieldInput(canvasElement, "Recipe name"), {
       timeout: 5000,
     });
-    await userEvent.clear(cuisineInput);
-    await userEvent.type(cuisineInput, "Test cuisine");
+    await userEvent.clear(recipeNameInput);
+    await userEvent.type(recipeNameInput, "Test recipe name");
     await userEvent.tab();
-    await waitFor(() => expect(cuisineInput).toHaveValue("Test cuisine"));
+    await waitFor(() => expect(recipeNameInput).toHaveValue("Test recipe name"));
 
     // Open the Chef field's edit-in-place modal (AutoCompleteOption's own resourceEditor,
     // staged against a separate makeReactive() store - see AutoCompleteOption/index.tsx).
@@ -93,17 +95,17 @@ export const modalUndoOnlyAffectsItsOwnStagingGraph: Story = {
     modalSubmitButton.focus();
 
     // One Ctrl+Z, still focused inside the modal, must undo the modal's own edit - not fall
-    // through to (or otherwise disturb) the outer Cuisine edit sitting underneath it.
+    // through to (or otherwise disturb) the outer Recipe name edit sitting underneath it.
     await userEvent.keyboard("{Control>}z{/Control}");
     await waitFor(() => expect(nationalityInput).toHaveValue("British"));
-    expect(cuisineInput).toHaveValue("Test cuisine");
+    expect(recipeNameInput).toHaveValue("Test recipe name");
 
     // A second Ctrl+Z, with the modal's own stack now empty, must be a no-op here too - not leak
-    // through to the outer form's stack and undo the Cuisine edit out from under the still-open
-    // modal.
+    // through to the outer form's stack and undo the Recipe name edit out from under the
+    // still-open modal.
     await userEvent.keyboard("{Control>}z{/Control}");
     expect(nationalityInput).toHaveValue("British");
-    expect(cuisineInput).toHaveValue("Test cuisine");
+    expect(recipeNameInput).toHaveValue("Test recipe name");
 
     // Close the modal (nothing left staged to confirm discarding, since it's back to the original
     // value) and confirm the outer form's own undo still works normally afterwards.
@@ -114,7 +116,7 @@ export const modalUndoOnlyAffectsItsOwnStagingGraph: Story = {
     const submitButton = canvasElement.querySelector('button[type="submit"]')!;
     (submitButton as HTMLButtonElement).focus();
     await userEvent.keyboard("{Control>}z{/Control}");
-    await waitFor(() => expect(cuisineInput).toHaveValue("British"));
+    await waitFor(() => expect(recipeNameInput).toHaveValue("Beef Wellington"));
 
     await userEvent.click(submitButton);
     const result = await waitFor(() => {

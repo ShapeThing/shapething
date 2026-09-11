@@ -1,3 +1,6 @@
+import type { DetectedPattern } from "../../../src/analysis/patterns.ts";
+import type { SpecUsage } from "../../../src/analysis/specUsage.ts";
+
 export const GRAPH_INSPECTOR_ADDON_ID = "graph-inspector";
 export const GRAPH_INSPECTOR_PANEL_ID = `${GRAPH_INSPECTOR_ADDON_ID}/panel`;
 export const GRAPH_INSPECTOR_EVENT = `${GRAPH_INSPECTOR_ADDON_ID}/update`;
@@ -20,4 +23,9 @@ export type GraphInspectorPayload = {
   storyId: string;
   shapesGraph?: GraphText;
   dataGraph?: GraphText;
+  // Computed by the library (src/analysis/) from the resolved shapesGraph, over in the preview
+  // decorator (withGraphInspector.tsx) - already-serializable results, not a live RdfStore, since
+  // this crosses the manager/preview channel boundary.
+  specUsage?: SpecUsage[];
+  patterns?: DetectedPattern[];
 };

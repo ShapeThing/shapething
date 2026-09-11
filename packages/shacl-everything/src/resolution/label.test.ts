@@ -184,13 +184,38 @@ test("valueNodeLabel step 2: a single shui:LabelRole path", async () => {
   ).toBe("Beef fillet");
 });
 
-test("valueNodeLabel step 2: an sh:alternativePath's branches combine into one label instead of pooling into a single pick", async () => {
+test("valueNodeLabel step 2: a plain sh:alternativePath follows real SHACL semantics - the first branch with a value wins", async () => {
   const shape = await createShape({
     shapes: `
       ex:property1 a sh:PropertyShape ; sh:node [
         sh:property [
           sh:path [ sh:alternativePath ( ex:value ex:unitCode ex:name ) ] ;
           shui:propertyRole shui:LabelRole ;
+        ] ;
+      ] .
+      ex:KiloGM rdfs:label "Kilogram"@en, "Kilogram"@nl .
+    `,
+    data: `
+      ex:ingredient1 ex:name "Beef fillet"@en, "Runderhaas"@nl ; ex:value 1.0 ; ex:unitCode ex:KiloGM .
+    `,
+    propertyShapes: [ex("property1")],
+  });
+
+  // No st:mergeAlternatives - only the first branch with a value (ex:value) contributes, matching
+  // sh:alternativePath's real "OR" meaning rather than combining every branch.
+  expect(
+    valueNodeLabel({ term: ex("ingredient1"), propertyShape: shape, languages: ["en"] }).value,
+  ).toBe("1.0");
+});
+
+test("valueNodeLabel step 2: st:mergeAlternatives combines an sh:alternativePath's branches into one label instead of picking the first", async () => {
+  const shape = await createShape({
+    shapes: `
+      ex:property1 a sh:PropertyShape ; sh:node [
+        sh:property [
+          sh:path [ sh:alternativePath ( ex:value ex:unitCode ex:name ) ] ;
+          shui:propertyRole shui:LabelRole ;
+          st:mergeAlternatives true ;
         ] ;
       ] .
       ex:KiloGM rdfs:label "Kilogram"@en, "Kilogram"@nl .
@@ -213,13 +238,14 @@ test("valueNodeLabel step 2: an sh:alternativePath's branches combine into one l
   ).toBe("1.0 Kilogram Runderhaas");
 });
 
-test("valueNodeLabel step 2: an sh:alternativePath branch with no match is skipped, not left as a gap", async () => {
+test("valueNodeLabel step 2: st:mergeAlternatives skips a branch with no match, not left as a gap", async () => {
   const shape = await createShape({
     shapes: `
       ex:property1 a sh:PropertyShape ; sh:node [
         sh:property [
           sh:path [ sh:alternativePath ( ex:value ex:unitCode ex:name ) ] ;
           shui:propertyRole shui:LabelRole ;
+          st:mergeAlternatives true ;
         ] ;
       ] .
     `,

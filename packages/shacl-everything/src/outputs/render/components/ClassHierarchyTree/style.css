@@ -25,7 +25,7 @@
 /* The vertical trunk running past every node at this depth - offset by the checkbox's own center
    (padding + half its width), so it lines up under the parent's checkbox rather than its edge. */
 .st-class-tree__children {
-  padding-inline-start: var(--size-6);
+  padding-inline-start: var(--size-3);
   margin-inline-start: calc(var(--size-1) + var(--size-2));
   border-inline-start: 1px solid var(--gray-4);
 }
@@ -38,8 +38,8 @@
     content: "";
     position: absolute;
     top: 50%;
-    left: calc(-1 * var(--size-6));
-    width: var(--size-6);
+    left: calc(-1 * var(--size-3));
+    width: var(--size-3);
     height: 1px;
     background-color: var(--gray-4);
   }

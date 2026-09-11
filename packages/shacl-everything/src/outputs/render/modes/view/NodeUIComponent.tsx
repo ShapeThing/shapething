@@ -35,9 +35,10 @@ export default function NodeUIComponent({ noWrapper }: { noWrapper?: boolean }) 
   const cssImports = useMemo(() => nodeUiElement.cssImports(), [nodeUiElement]);
   useCssImports(cssImports);
   const WrapperElement = noWrapper ? Fragment : "section";
+  const attributes = noWrapper ? {} : { className: "st-node-ui-component" };
 
   return (
-    <WrapperElement className="st-node-ui-component">
+    <WrapperElement {...attributes}>
       {description && <p className="st-node-ui-component__description">{description}</p>}
       <NodeUIElementChildren nodeUiElement={nodeUiElement} />
     </WrapperElement>

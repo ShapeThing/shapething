@@ -31,7 +31,9 @@ export const shuiIRIEditorImagePreview: Story = {
     expect(input).toBeVisible();
 
     const preview = await waitFor(() => {
-      const element = canvasElement.querySelector<HTMLImageElement>(".st-iri-editor__preview");
+      const element = canvasElement.querySelector<HTMLImageElement>(
+        ".st-iri-editor__preview-image",
+      );
       if (!element) throw new Error("Could not find the image preview");
       return element;
     });

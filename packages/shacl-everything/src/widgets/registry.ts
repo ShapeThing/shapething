@@ -32,15 +32,23 @@ import widgetScoringTtl from "@/scoring/widget-scoring.ttl?raw";
 // widgets their shapes actually use - these four are loaded lazily instead (one dynamic import
 // per widget, wrapped in React.lazy below). Every other editor/viewer is small enough that a
 // dynamic-import round trip would only add latency (see WidgetSlot's Suspense boundary) for no
-// real size win, so they - and groups/facets, which have no heavy outliers of their own - stay
-// eager, same as before. If a future widget turns out to pull in something similarly heavy, add
-// its path to both lists below.
+// real size win, so they - and groups, which have no heavy outliers of their own - stay eager,
+// same as before. If a future widget turns out to pull in something similarly heavy, add its path
+// to both lists below.
 const lazyComponentLoaders = import.meta.glob([
   "/src/widgets/implementations/st/viewers/MapViewer/widget.tsx",
   "/src/widgets/implementations/st/editors/GeoEditor/widget.tsx",
   "/src/widgets/implementations/shui/editors/RichTextEditor/widget.tsx",
   "/src/widgets/implementations/shui/viewers/HTMLViewer/widget.tsx",
 ]) as Record<string, () => Promise<{ default: WidgetComponent }>>;
+
+// MapFacet shares MapViewer/GeoEditor's own maplibre-gl+geoman+maplibre-gl-geo-editor footprint -
+// same "don't force it on every consumer" reasoning as the editors/viewers above, kept as its own
+// typed glob (rather than folded into lazyComponentLoaders) since a facet's Component is a
+// FacetWidgetComponent, not a WidgetComponent - see buildFacetEntries below.
+const lazyFacetComponentLoaders = import.meta.glob([
+  "/src/widgets/implementations/st/facets/MapFacet/widget.tsx",
+]) as Record<string, () => Promise<{ default: FacetWidgetComponent }>>;
 
 const eagerComponents = import.meta.glob(
   [
@@ -49,6 +57,7 @@ const eagerComponents = import.meta.glob(
     "!/src/widgets/implementations/st/editors/GeoEditor/widget.tsx",
     "!/src/widgets/implementations/shui/editors/RichTextEditor/widget.tsx",
     "!/src/widgets/implementations/shui/viewers/HTMLViewer/widget.tsx",
+    "!/src/widgets/implementations/st/facets/MapFacet/widget.tsx",
   ],
   { eager: true, import: "default" },
 ) as Record<string, WidgetComponent | GroupWidgetComponent | FacetWidgetComponent>;
@@ -125,6 +134,13 @@ function buildFacetEntries(): Record<string, FacetWidgetRegistryEntry> {
     entries[folderName(path)] = {
       widget: widgetIri(path),
       Component: Component as FacetWidgetComponent,
+      scoringGraph: scoringGraphs[path.replace(/widget\.tsx$/, "score.ttl")],
+    };
+  }
+  for (const [path, load] of Object.entries(lazyFacetComponentLoaders)) {
+    entries[folderName(path)] = {
+      widget: widgetIri(path),
+      Component: lazy(load),
       scoringGraph: scoringGraphs[path.replace(/widget\.tsx$/, "score.ttl")],
     };
   }
