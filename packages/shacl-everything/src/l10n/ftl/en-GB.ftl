@@ -90,3 +90,4 @@ duration-viewer-hours = Hours
 duration-viewer-minutes = Minutes
 duration-viewer-seconds = Seconds
 duration-viewer-milliseconds = Milliseconds
+blank-node-editor-switch-to-iri = Switch to IRI

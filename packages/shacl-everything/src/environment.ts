@@ -329,5 +329,5 @@ export const testingEnvironment: Omit<
   enableFacetOptionCounts: true,
   enableMissingShapesGeneration: false,
   enableFacetTextSearchMerging: false,
-  enableFacetSearchForAutocomplete: true,
+  enableFacetSearchForAutocomplete: false,
 };
