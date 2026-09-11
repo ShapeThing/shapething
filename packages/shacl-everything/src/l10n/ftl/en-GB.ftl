@@ -18,6 +18,7 @@ widget-switcher-label = Pick a widget
 widget-switcher-tooltip = Choose which editor is used for this field. Different widgets can offer different ways to enter the same value.
 logical-constraint-switcher-label = Pick an alternative
 logical-constraint-switcher-tooltip = This field accepts several kinds of values. Pick which one you want to enter, then fill in the fields that appear below.
+drawer-property-group-add-label = Add a property
 content-language-switcher-label = Content language
 content-language-switcher-tooltip = Content language controls which translation of a value (for example a name or description) is shown and edited. It doesn't change the labels and buttons around it.
 interface-language-switcher-label = Interface language

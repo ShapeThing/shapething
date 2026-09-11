@@ -1,11 +1,12 @@
 import { expect, test } from "vite-plus/test";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
-import { ex, queryPrefixes, xsd } from "@/helpers/namespaces.ts";
+import { ex, geosparql, queryPrefixes, xsd } from "@/helpers/namespaces.ts";
 import {
   aggregateFacetValues,
   countFacetInstancesInRange,
   countFacetInstancesMatchingPattern,
+  countFacetInstancesWithinArea,
 } from "@/structure/facetValues.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 
@@ -137,4 +138,28 @@ test("countFacetInstancesMatchingPattern: returns 0 when no pattern is given yet
   expect(countFacetInstancesMatchingPattern(property, [ex("Widget")], undefined, undefined)).toBe(
     0,
   );
+});
+
+test("countFacetInstancesWithinArea: counts instances with at least one location inside the drawn area", async () => {
+  const property = await propertyFor(
+    `ex:property1 sh:path ex:location .`,
+    `ex:paris ex:location "POINT (2.35 48.85)"^^geosparql:wktLiteral .
+     ex:tokyo ex:location "POINT (139.69 35.68)"^^geosparql:wktLiteral .`,
+  );
+  const instances = [ex("paris"), ex("tokyo")];
+  const area = factory.literal(
+    "POLYGON ((-10 35, 20 35, 20 60, -10 60, -10 35))",
+    geosparql("wktLiteral"),
+  );
+
+  expect(countFacetInstancesWithinArea(property, instances, area)).toBe(1); // Paris only
+});
+
+test("countFacetInstancesWithinArea: returns 0 when no area has been drawn yet", async () => {
+  const property = await propertyFor(
+    `ex:property1 sh:path ex:location .`,
+    `ex:paris ex:location "POINT (2.35 48.85)"^^geosparql:wktLiteral .`,
+  );
+
+  expect(countFacetInstancesWithinArea(property, [ex("paris")], undefined)).toBe(0);
 });

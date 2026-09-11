@@ -31,11 +31,6 @@
   aspect-ratio: 1 / 1;
 }
 
-.st-teaser__depiction-spacer {
-  flex-shrink: 0;
-  width: var(--size-10);
-}
-
 .st-teaser__body {
   display: flex;
   flex-direction: column;

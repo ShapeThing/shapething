@@ -1,0 +1,44 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Given name"@en ;
+        sh:path schema:givenName ;
+        sh:order 0 ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:group <#contact> ;
+    ] ;
+    sh:property [
+        sh:name "Email"@en ;
+        sh:path schema:email ;
+        sh:order 1 ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:group <#contact> ;
+    ] ;
+    sh:property [
+        sh:name "Phone number"@en ;
+        sh:path schema:telephone ;
+        sh:order 2 ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:group <#contact> ;
+    ] ;
+    .
+
+<#contact>
+    a sh:PropertyGroup, st:DrawerPropertyGroup ;
+    sh:name "Contact details"@en ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" .

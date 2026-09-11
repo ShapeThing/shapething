@@ -332,6 +332,39 @@ export function labelRolePropertyPaths(
   return propertyPathsByRole(propertyShape, shui("LabelRole"));
 }
 
+type LabelRolePath = { path: PropertyPath; mergeAlternatives: boolean };
+
+/**
+ * Same match as labelRolePropertyPaths, but paired with each property shape's own
+ * st:mergeAlternatives flag - a ShapeThing-original, non-spec escape hatch that opts one
+ * sh:alternativePath-typed LabelRole path into "combine every branch" behavior (see
+ * resolveLabelRolePathParts) instead of sh:alternativePath's real SHACL meaning (the first branch
+ * with a value wins). Kept as a plain sibling triple on the property shape rather than folded into
+ * the sh:path expression itself (e.g. a hypothetical st:mergedPaths path type replacing
+ * sh:alternativePath), so sh:path stays a spec-legal path expression shacl-engine can still
+ * validate the property against.
+ */
+function labelRolePathEntries(propertyShape: PropertyUIElement): LabelRolePath[] {
+  const { shapesGraph } = propertyShape;
+
+  return valueNodeShapes(propertyShape).flatMap((node) =>
+    shapesGraph
+      .getQuads(node, sh("property"))
+      .filter(
+        ({ object: property }) =>
+          shapesGraph.getQuads(property, shui("propertyRole"), shui("LabelRole")).length > 0,
+      )
+      .flatMap(({ object: property }) => {
+        const path = parsePropertyPath(property, shapesGraph);
+        if (!path) return [];
+        const mergeAlternatives = shapesGraph
+          .getQuads(property, st("mergeAlternatives"))
+          .some((quad) => quad.object.value === "true");
+        return [{ path, mergeAlternatives }];
+      })
+  );
+}
+
 /**
  * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
  * node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole
@@ -386,17 +419,18 @@ export function valueNodeLabel(
 
   const effLanguages = effectiveLanguages(propertyShape, languages ?? []);
 
-  // 2. shui:LabelRole-annotated path(s) from V, walked in the data graph - an sh:alternativePath's
-  // branches (e.g. a quantity/unit/name triple describing one ingredient) each resolve their own
-  // best-language text independently and are combined into one composed label ("1.0 Kilogram Beef
-  // fillet"), rather than pooling every branch's raw values together and picking a single overall
-  // winner by language - a language-less quantity should contribute alongside a name, not compete
-  // with it for the same slot (and lose to it whenever no configured language matches at all). A
-  // branch that resolves to a resource rather than a literal (e.g. schema:unitCode, an IRI) recurses
-  // through this same function - e.g. resolving to the unit's own rdfs:label - instead of being
-  // silently dropped by a literal-only filter.
-  const roleLabelParts = labelRolePropertyPaths(propertyShape)
-    .flatMap((path) => resolveLabelRolePathParts(path, term, propertyShape, effLanguages, languages));
+  // 2. shui:LabelRole-annotated path(s) from V, walked in the data graph. An sh:alternativePath's
+  // branches normally follow real SHACL "OR" semantics: the first branch with a value wins. A
+  // property shape opted into st:mergeAlternatives instead resolves every branch independently and
+  // combines them into one composed label (e.g. a quantity/unit/name triple describing one
+  // ingredient becomes "1.0 Kilogram Beef fillet") - see resolveLabelRolePathParts. A branch that
+  // resolves to a resource rather than a literal (e.g. schema:unitCode, an IRI) recurses through
+  // this same function - e.g. resolving to the unit's own rdfs:label - instead of being silently
+  // dropped by a literal-only filter.
+  const roleLabelParts = labelRolePathEntries(propertyShape)
+    .flatMap(({ path, mergeAlternatives }) =>
+      resolveLabelRolePathParts(path, term, propertyShape, effLanguages, languages, mergeAlternatives)
+    );
   if (roleLabelParts.length > 0) {
     return factory.literal(roleLabelParts.join(" "));
   }
@@ -432,13 +466,16 @@ export function valueNodeLabel(
 }
 
 /**
- * One shui:LabelRole path's own contribution to valueNodeLabel's combined text - an
- * sh:alternativePath decomposes into its branches (each resolved independently, all of them
- * combined), any other path type walks straight to its value(s): a literal picks the best-language
- * match among them, a resource recurses through valueNodeLabel itself (e.g. schema:unitCode's own
- * rdfs:label) rather than being dropped. Returns nothing for a branch with no match at all - the
- * empty branches this filters out are what let e.g. an ingredient with no schema:unitCode still
- * combine cleanly into "1.0 Beef fillet" instead of leaving a stray gap.
+ * One shui:LabelRole path's own contribution to valueNodeLabel's combined text. An
+ * sh:alternativePath decomposes into its branches: with `mergeAlternatives` (st:mergeAlternatives),
+ * every branch is resolved independently and all of them combine - the empty branches this filters
+ * out are what let e.g. an ingredient with no schema:unitCode still combine cleanly into "1.0 Beef
+ * fillet" instead of leaving a stray gap. Without it, branches follow real SHACL alternation: the
+ * first one with a value wins (early exit), matching the federated SPARQL role lookup's own
+ * sample()-based pick-one behavior (see outputs/render/hooks/query.ts's buildRoleLookupQuery). Any
+ * other path type walks straight to its value(s): a literal picks the best-language match among
+ * them, a resource recurses through valueNodeLabel itself (e.g. schema:unitCode's own rdfs:label)
+ * rather than being dropped.
  */
 function resolveLabelRolePathParts(
   path: PropertyPath,
@@ -446,11 +483,27 @@ function resolveLabelRolePathParts(
   propertyShape: PropertyUIElement,
   effLanguages: LanguageRange[],
   languages: BCP47[] | undefined,
+  mergeAlternatives: boolean,
 ): string[] {
   if (path.type === "alternative") {
-    return path.items.flatMap((item) =>
-      resolveLabelRolePathParts(item, term, propertyShape, effLanguages, languages)
-    );
+    if (mergeAlternatives) {
+      return path.items.flatMap((item) =>
+        resolveLabelRolePathParts(item, term, propertyShape, effLanguages, languages, mergeAlternatives)
+      );
+    }
+
+    for (const item of path.items) {
+      const parts = resolveLabelRolePathParts(
+        item,
+        term,
+        propertyShape,
+        effLanguages,
+        languages,
+        mergeAlternatives,
+      );
+      if (parts.length > 0) return parts;
+    }
+    return [];
   }
 
   const values = walkPropertyPath(path, term, propertyShape.dataGraph);

@@ -14,6 +14,7 @@ const FIXTURE_CONTENT_TYPES: Record<string, string> = {
   ".gif": "image/gif",
   ".webp": "image/webp",
   ".css": "text/css; charset=utf-8",
+  ".ftl": "text/plain; charset=utf-8",
 };
 
 // argsByTestFile.ts resolves fixtures with `new URL(filename, import.meta.url)`. Under

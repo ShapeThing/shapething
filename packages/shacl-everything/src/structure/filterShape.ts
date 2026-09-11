@@ -2,7 +2,8 @@ import type { NamedNode, Quad_Object, Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 import { factory } from "@/helpers/factory.ts";
-import { rdf, sh } from "@/helpers/namespaces.ts";
+import { geometryIntersectsArea, literalToGeometry } from "@/helpers/geometryLiteral.ts";
+import { rdf, sh, st } from "@/helpers/namespaces.ts";
 import { rebuildRdfList } from "@/helpers/rdfList.ts";
 import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
 import { collectClassAndSubClasses } from "@/structure/classHierarchy.ts";
@@ -271,11 +272,12 @@ export function removeFilterConstraintsForPaths(
 }
 
 // Whether `instance`'s own values for `constraintNode`'s path satisfy every constraint predicate
-// currently written on it (sh:in, sh:pattern+sh:flags, sh:minInclusive/sh:maxInclusive - the only
-// predicates any facet widget ever writes via setConstraint) - true if the node declares none of
-// them (a bare sh:property/sh:path skeleton, which auto-vivify never actually leaves lying around,
-// but this stays permissive rather than assuming). A predicate this doesn't recognize is silently
-// ignored rather than excluding every instance - only facet-writable predicates are meaningful here.
+// currently written on it (sh:in, sh:pattern+sh:flags, sh:minInclusive/sh:maxInclusive,
+// st:withinArea - the only predicates any facet widget ever writes via setConstraint) - true if the
+// node declares none of them (a bare sh:property/sh:path skeleton, which auto-vivify never actually
+// leaves lying around, but this stays permissive rather than assuming). A predicate this doesn't
+// recognize is silently ignored rather than excluding every instance - only facet-writable
+// predicates are meaningful here.
 function instanceSatisfiesConstraintNode(
   constraintNode: Quad_Subject,
   instance: Quad_Subject,
@@ -325,6 +327,24 @@ function instanceSatisfiesConstraintNode(
       return aboveMin && belowMax;
     });
     if (!inRange) return false;
+  }
+
+  // st:withinArea - MapFacet's own constraint predicate (see widgets/implementations/st/facets/
+  // MapFacet), holding a GeoSPARQL WKT literal for the Polygon/MultiPolygon area the user drew on
+  // the map. Neither SHACL nor SHACL-UI has a spatial-containment constraint of its own, so this is
+  // a ShapeThing-original addition, the geo analogue of sh:minInclusive/sh:maxInclusive above. An
+  // instance matches if *any* of its own values for this path falls inside the drawn area - see
+  // helpers/geometryLiteral.ts's geometryIntersectsArea for what "inside" means here.
+  const withinAreaQuad = store.getQuads(constraintNode, st("withinArea"))[0];
+  if (withinAreaQuad) {
+    const area = literalToGeometry(withinAreaQuad.object as Term);
+    if (area) {
+      const withinArea = values.some((value) => {
+        const geometry = literalToGeometry(value);
+        return geometry !== undefined && geometryIntersectsArea(geometry, area);
+      });
+      if (!withinArea) return false;
+    }
   }
 
   return true;

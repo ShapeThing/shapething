@@ -6,6 +6,8 @@ import type { GraphFileText, GraphInspectorPayload, GraphText } from "./constant
 import { TurtleCode } from "./TurtleCode.tsx";
 import { splitPrefixes, parsePrefixMap, formatPrefixDeclarations } from "./splitPrefixes.ts";
 import { prefixes as wellKnownPrefixes } from "../../../src/helpers/namespaces.ts";
+import type { SpecId, SpecUsage } from "../../../src/analysis/specUsage.ts";
+import type { DetectedPattern } from "../../../src/analysis/patterns.ts";
 
 type Props = {
   active: boolean;
@@ -35,8 +37,7 @@ export const GraphInspectorPanel = ({ active }: Props) => {
     <div
       style={{
         display: "flex",
-        flexDirection,
-        gap: 20,
+        flexDirection: "column",
         padding: 12,
         background: "#fff",
         color: "#1a1a1a",
@@ -44,17 +45,114 @@ export const GraphInspectorPanel = ({ active }: Props) => {
         boxSizing: "border-box",
       }}
     >
-      {!payload ? (
-        <p style={{ opacity: 0.6, fontSize: 13 }}>No shapes or data graph on this story.</p>
-      ) : sameSource ? (
-        <GraphSection title="Shapes & data graph" graph={payload.shapesGraph} />
-      ) : (
-        <>
-          <GraphSection title="Shapes graph" graph={payload.shapesGraph} />
-          <GraphSection title="Data graph" graph={payload.dataGraph} />
-        </>
-      )}
+      <SpecAnalysisSummary specUsage={payload?.specUsage} patterns={payload?.patterns} />
+      <div style={{ display: "flex", flexDirection, gap: 20, flex: 1, minHeight: 0 }}>
+        {!payload ? (
+          <p style={{ opacity: 0.6, fontSize: 13 }}>No shapes or data graph on this story.</p>
+        ) : sameSource ? (
+          <GraphSection title="Shapes & data graph" graph={payload.shapesGraph} />
+        ) : (
+          <>
+            <GraphSection title="Shapes graph" graph={payload.shapesGraph} />
+            <GraphSection title="Data graph" graph={payload.dataGraph} />
+          </>
+        )}
+      </div>
     </div>
+  );
+};
+
+// A distinguishable, light-background-readable color per SpecId - purely a display concern of
+// this addon, not the library (which has no notion of "color", only spec/count/percentage data).
+const SPEC_COLORS: Record<SpecId, string> = {
+  "shacl-core-1": "#6366f1",
+  "shacl-core-1-2": "#22c55e",
+  "shacl-ui-1-2": "#f59e0b",
+  dash: "#ec4899",
+  shapething: "#0ea5e9",
+};
+
+const SpecAnalysisSummary = ({
+  specUsage,
+  patterns,
+}: {
+  specUsage?: SpecUsage[];
+  patterns?: DetectedPattern[];
+}) => {
+  const hasSpecUsage = !!specUsage?.length;
+  const hasPatterns = !!patterns?.length;
+  if (!hasSpecUsage && !hasPatterns) return null;
+
+  return (
+    <section style={{ flexShrink: 0, marginBottom: 16 }}>
+      {hasSpecUsage && (
+        <div style={{ marginBottom: hasPatterns ? 12 : 0 }}>
+          <h3 style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 600 }}>
+            Spec usage <span style={{ fontWeight: 400, opacity: 0.6 }}>— shapes graph</span>
+          </h3>
+          <div
+            style={{
+              display: "flex",
+              height: 10,
+              borderRadius: 4,
+              overflow: "hidden",
+              border: "1px solid rgba(128, 128, 128, 0.3)",
+            }}
+          >
+            {specUsage.map((usage) => (
+              <div
+                key={usage.spec}
+                title={`${usage.label}: ${usage.percentage.toFixed(1)}% (${usage.count} terms)`}
+                style={{
+                  width: `${usage.percentage}%`,
+                  background: SPEC_COLORS[usage.spec] ?? "#999",
+                }}
+              />
+            ))}
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              columnGap: 14,
+              rowGap: 4,
+              marginTop: 6,
+              fontSize: 11,
+              opacity: 0.85,
+            }}
+          >
+            {specUsage.map((usage) => (
+              <span key={usage.spec} style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                <span
+                  style={{
+                    display: "inline-block",
+                    width: 8,
+                    height: 8,
+                    borderRadius: 2,
+                    background: SPEC_COLORS[usage.spec] ?? "#999",
+                    flexShrink: 0,
+                  }}
+                />
+                {usage.label} — {usage.percentage.toFixed(1)}%
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {hasPatterns && (
+        <div>
+          <h3 style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 600 }}>Detected patterns</h3>
+          <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12 }}>
+            {patterns.map((pattern) => (
+              <li key={pattern.pattern} title={pattern.description}>
+                {pattern.label} <span style={{ opacity: 0.6 }}>({pattern.count})</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </section>
   );
 };
 

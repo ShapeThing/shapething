@@ -1,7 +1,7 @@
 import type { Literal, Term } from "@rdfjs/types";
 import type { Feature, FeatureCollection, GeoJsonProperties, Geometry } from "geojson";
-import { parse as parseWkt } from "wkt";
-import { geosparql, st } from "@/helpers/namespaces.ts";
+import { literalToGeometry } from "@/helpers/geometryLiteral.ts";
+import { st } from "@/helpers/namespaces.ts";
 import {
   propertyPathsByRole,
   valueNodeClassification,
@@ -10,46 +10,6 @@ import {
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
-
-// "FeatureCollection" deliberately excluded - a single RDF value maps to a single feature in this
-// widget's model, and a FeatureCollection has no single Geometry to hang onto a Feature anyway.
-const GEOJSON_TYPES = new Set([
-  "Point",
-  "MultiPoint",
-  "LineString",
-  "MultiLineString",
-  "Polygon",
-  "MultiPolygon",
-  "GeometryCollection",
-  "Feature",
-]);
-
-function parseJsonGeometry(value: string): Feature | Geometry | undefined {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(value);
-  } catch {
-    return undefined;
-  }
-  const type = (parsed as { type?: unknown } | null)?.type;
-  return typeof type === "string" && GEOJSON_TYPES.has(type)
-    ? (parsed as Feature | Geometry)
-    : undefined;
-}
-
-// A value literal directly typed as a GeoSPARQL WKT literal, or - falling back for a plain string/
-// custom datatype - one whose lexical value happens to parse as GeoJSON text.
-function literalToGeometry(term: Term): Feature | Geometry | undefined {
-  if (term.termType !== "Literal") return undefined;
-  if (term.datatype.equals(geosparql("wktLiteral"))) {
-    try {
-      return parseWkt(term.value) ?? undefined;
-    } catch {
-      return undefined;
-    }
-  }
-  return parseJsonGeometry(term.value);
-}
 
 // One hop into `row`'s own properties, for the common case where a property's value is a Feature/
 // geometry IRI or blank node rather than the geo literal itself. Which property that is gets

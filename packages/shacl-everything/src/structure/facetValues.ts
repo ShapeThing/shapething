@@ -1,5 +1,6 @@
 import type { Quad_Subject, Term } from "@rdfjs/types";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
+import { geometryIntersectsArea, literalToGeometry } from "@/helpers/geometryLiteral.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { literalOrder } from "@/structure/constraintResolutions.ts";
 import { parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
@@ -124,5 +125,36 @@ export function countFacetInstancesMatchingPattern(
   const regex = new RegExp(pattern, flags);
   return instances.filter((instance) =>
     walkPropertyPath(path, instance, property.dataGraph).some((value) => regex.test(value.value)),
+  ).length;
+}
+
+/**
+ * How many of `instances` have at least one value for `property`'s path falling inside `area` (a
+ * GeoSPARQL WKT Polygon/MultiPolygon literal, MapFacet's own st:withinArea constraint value - see
+ * structure/filterShape.ts) - the spatial analogue of countFacetInstancesInRange, backing
+ * Environment.enableFacetOptionCounts for MapFacet. Counts *instances*, not values, the same way the
+ * other count functions do. `area` undefined means nothing has been drawn yet - returns 0, the same
+ * "nothing entered" sentinel the other count functions use.
+ *
+ * Like the other count functions, this is a plain static tally over whatever `instances` it's given
+ * - the live, re-narrowing behavior comes from the caller passing in an already-narrowed instance
+ * list (structure/filterShape.ts's instancesMatchingOtherConstraints).
+ */
+export function countFacetInstancesWithinArea(
+  property: PropertyUIElement,
+  instances: Quad_Subject[],
+  area: Term | undefined,
+): number {
+  if (area === undefined) return 0;
+  const areaGeometry = literalToGeometry(area);
+  if (!areaGeometry) return 0;
+  const path = parsePropertyPath(property.propertyShapes[0], property.shapesGraph);
+  if (!path) return 0;
+
+  return instances.filter((instance) =>
+    walkPropertyPath(path, instance, property.dataGraph).some((value) => {
+      const geometry = literalToGeometry(value);
+      return geometry !== undefined && geometryIntersectsArea(geometry, areaGeometry);
+    }),
   ).length;
 }

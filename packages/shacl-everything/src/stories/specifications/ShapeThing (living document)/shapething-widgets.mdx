@@ -6,14 +6,14 @@ import { Meta } from "@storybook/addon-docs/blocks";
 
 Widgets provided by ShapeThing. We think these are complementary to SHACL UI.
 
-## 1. Editors (`shui:editor`)
+## Editors (`shui:editor`)
 
 | Widget             | Use case                                                                      |
 | ------------------ | ----------------------------------------------------------------------------- |
 | `st:AddressEditor` | Structured `schema.org` postal-address entry, backed by live geocoder search. |
 | `st:IconifyEditor` | Searchable icon picker for [iconify icons](https://iconify.design/).          |
 
-## 2. Viewers (`shui:viewer`)
+## Viewers (`shui:viewer`)
 
 | Widget             | Use case                                                              |
 | ------------------ | --------------------------------------------------------------------- |
@@ -21,7 +21,7 @@ Widgets provided by ShapeThing. We think these are complementary to SHACL UI.
 | `st:IconifyViewer` | Renders the icon named by an iconify-datatyped value.                 |
 | `st:MapViewer`     | Plotting every value of a geo-valued property on one interactive map. |
 
-## 3. Facets (`st:facet`)
+## Facets (`st:facet`)
 
 Similar to `shui:editor`/`shui:viewer` but then for the facet mode.
 
@@ -34,7 +34,7 @@ Similar to `shui:editor`/`shui:viewer` but then for the facet mode.
 | `st:DateRangeFacet`     | Filtering an `xsd:date` property by min/max range.                                                                                                        |
 | `st:DateTimeRangeFacet` | Filtering an `xsd:dateTime` property by min/max range.                                                                                                    |
 
-## 4. Groups (use these IRIs instead of sh:PropertyGroup)
+## Groups (use these IRIs instead of sh:PropertyGroup)
 
 Not scored — selected by direct `rdf:type` match against the `sh:PropertyGroup` node itself
 (`widgets/registry.ts`'s `getGroupWidget`).

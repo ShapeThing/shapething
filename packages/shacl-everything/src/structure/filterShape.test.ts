@@ -3,7 +3,7 @@ import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
 import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
 import { getRdfList } from "@/helpers/rdfList.ts";
-import { ex, queryPrefixes, rdf, sh, xsd } from "@/helpers/namespaces.ts";
+import { ex, geosparql, queryPrefixes, rdf, sh, st, xsd } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import {
   createFilterShape,
@@ -333,6 +333,88 @@ test("instancesMatchingOtherConstraints: without sh:rootClass, sh:in still requi
   );
 
   expect(matching.map((instance) => instance.value)).toEqual([ex("widget").value]);
+});
+
+test("instancesMatchingOtherConstraints: st:withinArea (MapFacet) matches an instance whose value falls inside the drawn polygon", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:property1 sh:path ex:location .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}
+
+     ex:paris ex:location "POINT (2.35 48.85)"^^geosparql:wktLiteral .
+     ex:tokyo ex:location "POINT (139.69 35.68)"^^geosparql:wktLiteral .`,
+    "text/turtle",
+  );
+  const property = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("unused"),
+    propertyShapes: [ex("property1")],
+  });
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(
+    filterShape,
+    property,
+    st("withinArea"),
+    factory.literal("POLYGON ((-10 35, 20 35, 20 60, -10 60, -10 35))", geosparql("wktLiteral")),
+  );
+
+  const matching = instancesMatchingOtherConstraints(
+    filterShape,
+    dataGraph,
+    shapesGraph,
+    [ex("paris"), ex("tokyo")],
+    undefined,
+  );
+
+  expect(matching.map((instance) => instance.value)).toEqual([ex("paris").value]);
+});
+
+test("instancesMatchingOtherConstraints: st:withinArea matches any instance value against any drawn polygon (a MultiPolygon selection is an OR)", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:property1 sh:path ex:location .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}
+
+     ex:paris ex:location "POINT (2.35 48.85)"^^geosparql:wktLiteral .
+     ex:tokyo ex:location "POINT (139.69 35.68)"^^geosparql:wktLiteral .
+     ex:capeTown ex:location "POINT (18.42 -33.92)"^^geosparql:wktLiteral .`,
+    "text/turtle",
+  );
+  const property = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("unused"),
+    propertyShapes: [ex("property1")],
+  });
+  const filterShape = createFilterShape();
+  // Two separate drawn rectangles - one over Europe, one over Japan - combined into a single
+  // MultiPolygon selection literal, the same way MapFacet's own drawnFeaturesToAreaLiteral does.
+  setFilterConstraintForProperty(
+    filterShape,
+    property,
+    st("withinArea"),
+    factory.literal(
+      "MULTIPOLYGON (((-10 35, 20 35, 20 60, -10 60, -10 35)), ((120 20, 150 20, 150 45, 120 45, 120 20)))",
+      geosparql("wktLiteral"),
+    ),
+  );
+
+  const matching = instancesMatchingOtherConstraints(
+    filterShape,
+    dataGraph,
+    shapesGraph,
+    [ex("paris"), ex("tokyo"), ex("capeTown")],
+    undefined,
+  );
+
+  expect(matching.map((instance) => instance.value).sort()).toEqual(
+    [ex("paris").value, ex("tokyo").value].sort(),
+  );
 });
 
 test("removeFilterConstraintsForPaths: an empty path set is a no-op", async () => {

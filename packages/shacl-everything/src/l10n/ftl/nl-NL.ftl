@@ -18,6 +18,7 @@ widget-switcher-label = Selecteer een widget
 widget-switcher-tooltip = Kies welke editor voor dit veld wordt gebruikt. Verschillende widgets kunnen andere manieren bieden om dezelfde waarde in te voeren.
 logical-constraint-switcher-label = Selecteer een alternatief
 logical-constraint-switcher-tooltip = Dit veld accepteert meerdere soorten waarden. Kies welke je wilt invoeren en vul daarna de velden in die hieronder verschijnen.
+drawer-property-group-add-label = Eigenschap toevoegen
 content-language-switcher-label = Inhoudstaal
 content-language-switcher-tooltip = Inhoudstaal bepaalt welke vertaling van een waarde (bijvoorbeeld een naam of omschrijving) wordt getoond en bewerkt. De labels en knoppen eromheen veranderen hierdoor niet.
 interface-language-switcher-label = Interfacetaal

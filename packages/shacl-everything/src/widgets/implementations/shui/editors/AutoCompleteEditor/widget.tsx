@@ -19,6 +19,7 @@ import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 import FacetSearchModal from "@/widgets/implementations/shui/editors/AutoCompleteEditor/FacetSearchModal.tsx";
+import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "@/theme/comboBox.css";
 import "./style.css";
@@ -51,8 +52,12 @@ export default function AutoCompleteEditor({
 
   // Whether the search icon opens the facet-search modal instead of the ordinary inline typeahead
   // (see openSearch below) - gated the same way canCreate/canEditResource are, on there being a
-  // known shape to actually render something against.
-  const canFacetSearch = Boolean(enableFacetSearchForAutocomplete) && nodeShapes.length > 0;
+  // known shape to actually render something against. Facet search only ever narrows local
+  // dataGraph instances (see FacetSearchModal/instancesMatchingOtherConstraints), so a property
+  // that instead declares shui:searchQuery - a shape author's explicit federated/remote search -
+  // must keep using the ordinary typeahead (see useInstanceSearch), not this local-only modal.
+  const canFacetSearch =
+    Boolean(enableFacetSearchForAutocomplete) && nodeShapes.length > 0 && !searchQueryFor(shape);
   const [facetSearching, setFacetSearching] = useState(false);
   // Every existing sh:class instance the facet-search modal's own facets narrow down - mirrors
   // InstancesSelectEditor's own equivalent "subjects" computation. Only worth computing at all when

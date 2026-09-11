@@ -15,6 +15,7 @@
 
 ### Chef Shape
 ex:ChefShape a sh:NodeShape ;
+    st:cssImport <./recipes-and-chefs.css> ;
     sh:targetClass ex:Chef ;
     sh:property [
         sh:path schema:name ;
@@ -130,7 +131,7 @@ unit:GM a ex:Unit ; rdfs:label "Gram"@en, "Gram"@nl .
 unit:MilliL a ex:Unit ; rdfs:label "Milliliter"@en, "Milliliter"@nl .
 unit:TBSP a ex:Unit ; rdfs:label "Tablespoon"@en, "Eetlepel"@nl .
 unit:TSP a ex:Unit ; rdfs:label "Teaspoon"@en, "Theelepel"@nl .
-unit:COUNT a ex:Unit ; rdfs:label "Count"@en, "Aantal"@nl .
+unit:COUNT a ex:Unit ; rdfs:label "Count"@en, "Stuks"@nl .
 
 ### One recipeIngredient value: a name plus an optional quantity (schema:value/schema:unitCode) -
 ### some ingredients (a pinch of this, a component already reduced to a name) genuinely have no
@@ -936,9 +937,9 @@ ex:RecipeViewShape a sh:NodeShape ;
             shui:viewer shui:LabelViewer ;
             sh:node [
                 sh:property [
-                    sh:name "1" ;
                     sh:path [ sh:alternativePath ( schema:value schema:unitCode schema:name  ) ] ;
                     shui:propertyRole shui:LabelRole ;
+                    st:mergeAlternatives true ;
                 ] ;
             ] ;
         ] ;

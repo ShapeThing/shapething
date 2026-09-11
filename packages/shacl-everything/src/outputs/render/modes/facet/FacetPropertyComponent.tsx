@@ -12,6 +12,7 @@ import {
   aggregateFacetValues,
   countFacetInstancesInRange,
   countFacetInstancesMatchingPattern,
+  countFacetInstancesWithinArea,
 } from "@/structure/facetValues.ts";
 import {
   findFilterConstraintNode,
@@ -133,12 +134,25 @@ export default function FacetPropertyComponent({ property, filterShape, instance
     [enableFacetOptionCounts, property, narrowedInstances, patternBound, flagsBound],
   );
 
-  // A range facet only ever sets sh:minInclusive/sh:maxInclusive, and a search facet only ever
-  // sets sh:pattern - never both on the same property - so at most one of these is ever defined;
-  // whichever it is becomes this property's one overall match count, shown on the FormElement
-  // label rather than inline in the widget itself (valueCounts has no single-value equivalent, so
-  // CategoryFacet/SubClassFacet's per-option counts stay put next to each option).
-  const matchCount = rangeMatchCount ?? searchMatchCount;
+  // Same idea again, for MapFacet's own st:withinArea instead of a numeric/date range or text
+  // pattern - only computed once the user has actually drawn a selection area (an untouched map
+  // facet has no st:withinArea yet).
+  const areaBound = getConstraint(st("withinArea"))[0];
+  const areaMatchCount = useMemo(
+    () =>
+      enableFacetOptionCounts && areaBound !== undefined
+        ? countFacetInstancesWithinArea(property, narrowedInstances, areaBound)
+        : undefined,
+    [enableFacetOptionCounts, property, narrowedInstances, areaBound],
+  );
+
+  // A range facet only ever sets sh:minInclusive/sh:maxInclusive, a search facet only ever sets
+  // sh:pattern, and a map facet only ever sets st:withinArea - never more than one of these on the
+  // same property - so at most one of these is ever defined; whichever it is becomes this
+  // property's one overall match count, shown on the FormElement label rather than inline in the
+  // widget itself (valueCounts has no single-value equivalent, so CategoryFacet/SubClassFacet's
+  // per-option counts stay put next to each option).
+  const matchCount = rangeMatchCount ?? searchMatchCount ?? areaMatchCount;
 
   if (!widget) return null;
   const { Widget } = widget;
@@ -157,7 +171,7 @@ export default function FacetPropertyComponent({ property, filterShape, instance
       label={label}
       actions={
         matchCount !== undefined && (
-          <span className="st-form-element__count-badge">{matchCount}</span>
+          <span className="st-form-element__count-badge">({matchCount})</span>
         )
       }
       showColon

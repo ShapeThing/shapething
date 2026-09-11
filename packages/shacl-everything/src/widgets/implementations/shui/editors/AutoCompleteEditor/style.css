@@ -81,6 +81,10 @@
   align-items: start;
 }
 
+.st-autocomplete__label + .st-edit-button {
+  margin-left: -1px;
+}
+
 .st-autocomplete__facet-search {
   display: flex;
   flex-wrap: wrap;

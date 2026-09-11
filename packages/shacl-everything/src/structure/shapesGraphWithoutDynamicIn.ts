@@ -1,5 +1,6 @@
 import { RdfStore } from "rdf-stores";
 import { sh } from "@/helpers/namespaces.ts";
+import { findDynamicInSubjects } from "@/structure/dynamicIn.ts";
 
 /**
  * A copy of `shapesGraph` with every dynamic `sh:in [ sh:select "..." ]` triple removed, so a
@@ -11,26 +12,15 @@ import { sh } from "@/helpers/namespaces.ts";
  * validateDynamicInProperties.ts) - this function is what keeps shacl-engine from also (wastefully,
  * redundantly) running the unscoped version.
  *
- * Mirrors selectQueryFor's own definition of "dynamic sh:in": a single sh:in value, a BlankNode,
- * carrying its own sh:select literal. Any other sh:in shape - a plain rdf:List, or an unusual
- * multi-value mix - is left completely untouched and still validated by shacl-engine exactly as
- * before; only the shapes selectQueryFor itself would recognize as dynamic are affected, so the
- * two stay in sync about which properties are "ours to check" versus "shacl-engine's to check".
+ * "Dynamic sh:in" itself is defined by findDynamicInSubjects() (shared with selectQueryFor.ts and
+ * analysis/patterns.ts) - a single sh:in value, a BlankNode, carrying its own sh:select literal.
+ * Any other sh:in shape - a plain rdf:List, or an unusual multi-value mix - is left completely
+ * untouched and still validated by shacl-engine exactly as before.
  */
 export function shapesGraphWithoutDynamicIn(shapesGraph: RdfStore): RdfStore {
-  const inCountsBySubject = new Map<string, number>();
-  for (const quad of shapesGraph.getQuads(null, sh("in"))) {
-    inCountsBySubject.set(quad.subject.value, (inCountsBySubject.get(quad.subject.value) ?? 0) + 1);
-  }
-
-  const dynamicInSubjects = new Set<string>();
-  for (const quad of shapesGraph.getQuads(null, sh("in"))) {
-    if (inCountsBySubject.get(quad.subject.value) !== 1) continue;
-    if (quad.object.termType !== "BlankNode") continue;
-
-    const select = shapesGraph.getQuads(quad.object, sh("select"))[0]?.object;
-    if (select?.termType === "Literal") dynamicInSubjects.add(quad.subject.value);
-  }
+  const dynamicInSubjects = new Set(
+    findDynamicInSubjects(shapesGraph).map((subject) => subject.value),
+  );
 
   if (dynamicInSubjects.size === 0) return shapesGraph;
 

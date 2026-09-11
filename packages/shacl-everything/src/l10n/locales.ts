@@ -2,7 +2,10 @@ import type { BCP47 } from "@/types/BCP47.ts";
 
 export const DEFAULT_LOCALE: BCP47 = "en-GB";
 
-const fetchText = async (url: URL): Promise<string> => {
+// Exported so a caller-supplied `interfaceLocales` loader (e.g. a showcase story loading its own
+// translation via `new URL(name, import.meta.url)`) can reuse the same fetch-with-error-checking
+// logic as the built-in loaders below, instead of duplicating it.
+export const fetchText = async (url: URL): Promise<string> => {
   const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`Failed to fetch ${url.href}: ${response.status} ${response.statusText}`);
