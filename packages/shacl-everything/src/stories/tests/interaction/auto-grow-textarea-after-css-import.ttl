@@ -1,0 +1,25 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:group ex:notesGroup ;
+        sh:name "Notes"@en ;
+        sh:path ex:notes ;
+        sh:datatype xsd:string ;
+        sh:singleLine false ;
+    ] ;
+    .
+
+ex:notesGroup a sh:PropertyGroup .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:notes "This sentence needs to wrap across several lines once its container is narrowed down to a fixed width." ;
+    .

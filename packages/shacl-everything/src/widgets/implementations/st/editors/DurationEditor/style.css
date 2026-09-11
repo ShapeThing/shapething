@@ -72,5 +72,5 @@
   display: inline-flex;
   align-items: center;
   white-space: pre;
-  color: var(--st-color-text-muted);
+  color: var(--st-color-text);
 }

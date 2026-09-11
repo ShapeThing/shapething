@@ -2,6 +2,7 @@ import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
+import { hashString } from "@/helpers/hashString.ts";
 import { sh, shui } from "@/helpers/namespaces.ts";
 import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
 import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
@@ -26,6 +27,10 @@ export type PropertyUIElementOptions = {
   widgetRegistry?: Widgets;
   focusNode: Quad_Subject;
   propertyShapes: NamedNode[];
+  // The chain of SPARQL-rendered paths (toSparql) walked from the Environment's own root
+  // focusNode down to this element's own focusNode - see NodeUIElementOptions.ancestorPath and
+  // dataId() below.
+  ancestorPath?: string[];
 };
 
 type ShBase = "http://www.w3.org/ns/shacl#";
@@ -76,6 +81,7 @@ export class PropertyUIElement {
   public widgetRegistry: Widgets;
   public focusNode: Quad_Subject;
   public propertyShapes: NamedNode[];
+  public ancestorPath: string[];
 
   constructor(options: PropertyUIElementOptions) {
     this.shapesGraph = options.shapesGraph;
@@ -84,6 +90,7 @@ export class PropertyUIElement {
     this.widgetRegistry = options.widgetRegistry ?? defaultWidgets;
     this.focusNode = options.focusNode;
     this.propertyShapes = options.propertyShapes;
+    this.ancestorPath = options.ancestorPath ?? [];
   }
 
   /**
@@ -192,6 +199,35 @@ export class PropertyUIElement {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return undefined;
     return toSparql(path);
+  }
+
+  /**
+   * A stable, CSS-safe token identifying this exact property at this exact position in the form -
+   * for an embedder to hook custom styling onto (see FormElement's own `data-id`). Hashes
+   * ancestorPath + this property's own path rather than propertyShapes' own term identity: a
+   * property shape is very often a blank node (the common `sh:property [ ... ]` pattern), whose
+   * internal label is assigned arbitrarily by whichever parse produced it and isn't guaranteed
+   * stable across reloads - the full path-from-root is entirely IRI/path-derived instead, so it
+   * stays stable, and it disambiguates a path reused at different nesting depths (rdfs:label
+   * being the classic case: the same path both at the top level and inside a nested DetailsEditor
+   * form) where sparqlPath alone would collide.
+   */
+  dataId(): string | undefined {
+    const sparqlPath = this.pathAsSparql();
+    if (!sparqlPath) return undefined;
+    return hashString([...this.ancestorPath, sparqlPath].join(">"));
+  }
+
+  /**
+   * `ancestorPath` extended by this property's own path - the value a nested NodeUIElement built
+   * "one hop past" this property (DetailsEditor's sh:node body, or a MemberShapeList item's own
+   * nested form) should be given as its own `ancestorPath`. Falls back to this.ancestorPath
+   * unchanged when this property has no sh:path of its own (a memberShape placeholder, see
+   * MemberShapeList) - there's no segment to add for that hop.
+   */
+  nestedAncestorPath(): string[] {
+    const sparqlPath = this.pathAsSparql();
+    return sparqlPath ? [...this.ancestorPath, sparqlPath] : this.ancestorPath;
   }
 
   /**

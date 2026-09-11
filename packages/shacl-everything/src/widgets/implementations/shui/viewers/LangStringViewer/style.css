@@ -1,10 +1,5 @@
-.st-lang-string-viewer {
-  display: inline-flex;
-  align-items: baseline;
-  gap: var(--size-2);
-}
-
 .st-lang-string-viewer__lang {
   font-size: var(--st-font-size-small);
+  font-style: italic;
   color: var(--st-color-text-muted);
 }

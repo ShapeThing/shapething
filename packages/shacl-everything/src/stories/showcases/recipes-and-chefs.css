@@ -1,44 +1,60 @@
-.st-node-ui-component {
-  display: flex;
-  gap: 2rem;
-  padding: 2rem;
-  max-width: 1200px;
-  margin-inline: auto;
-  flex-wrap: wrap;
+:root {
+  --st-primary-color: var(--green-9);
+  --st-secondary-color: #ebf7ef;
 }
 
-@media (min-width: 800px) {
-  .st-edit-mode--actions {
-    max-width: 1200px;
-    margin-inline: auto;
-    padding-right: calc(300px + 3.6rem);
-    box-sizing: border-box;
-  }
+.st-view-mode,
+.st-edit-mode {
+  display: grid;
+  max-width: 1200px;
+  margin-inline: auto;
+  gap: 0 2rem;
+  grid-template-columns: 1fr 340px;
+  grid-template-rows: auto auto auto;
+  grid-template-areas:
+    "main ui"
+    "main meta"
+    "actions meta";
 }
 
 .st-header {
-  max-width: 1200px;
-  margin-inline: auto;
+  grid-area: ui;
+  margin-top: 3.5rem;
+  flex-direction: column;
+  background-color: var(--st-secondary-color);
+  border-radius: var(--radius-2);
+  padding: 1rem;
+
+  & > * {
+    flex: 0 0 auto !important;
+  }
 }
 
-.st-property-group + .st-property-group {
-  margin-top: 0;
+.st-property-group__legend {
+  display: none;
 }
 
 [data-iri="http://example.org/mainGroup"] {
-  flex: 1 1 auto;
+  grid-area: main;
 }
 
 [data-iri="http://example.org/metaGroup"] {
-  width: 100%;
-  flex: 0 0 auto;
-  background-color: #e6e8ff;
+  margin-bottom: auto;
+  grid-area: meta;
+  background-color: var(--st-secondary-color);
   border-radius: var(--radius-2);
+
+  .react-duration-control-fieldset,
+  .st-button {
+    background-color: white;
+  }
 }
 
-@media (min-width: 800px) {
-  [data-iri="http://example.org/metaGroup"] {
-    width: 300px;
+.st-edit-mode--actions {
+  grid-area: actions;
+
+  .st-button {
+    font-size: 1.2rem;
   }
 }
 
@@ -46,21 +62,19 @@
 [data-iri="http://example.org/metaGroup"] {
   & > .st-property-group__body {
     padding-left: 0;
-    border-left: none;
     padding: 1rem;
+    border-left: none;
   }
 }
 
-.st-node-ui-component .st-button,
-.react-duration-control-fieldset,
-.st-input {
-  background-color: white;
-}
-
-[data-id="hqryb4zxtqw"] {
+[data-id="h28plmfce1tl"] {
   font-size: 1.4rem;
 
   > .st-form-element__header {
     margin-bottom: 1rem;
   }
+}
+
+.st-iri-editor__preview-image {
+  max-height: 200px;
 }

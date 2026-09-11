@@ -1,0 +1,38 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix schema: <http://schema.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:closed true ;
+    sh:property [
+        sh:path schema:name ;
+        sh:name "Name"@en, "Naam"@nl ;
+    ] ;
+    sh:property ex:Product-warranty ;
+    .
+
+# sh:datatype xsd:duration alone would already auto-score st:DurationViewer highest among the
+# built-in viewers (see score.ttl) - the explicit shui:viewer declaration here is only to make that
+# choice obvious to a reader of this fixture, mirroring st-duration-editor.ttl's own explicit
+# shui:editor. Unlike DurationEditor (bound to react-duration-control's day/hour/minute/second/
+# millisecond-only units), this viewer renders the full xsd:duration value as-is - a warranty
+# period's year/month components included.
+ex:Product-warranty
+    a sh:PropertyShape ;
+    sh:path schema:warranty ;
+    sh:name "Warranty"@en, "Garantie"@nl ;
+    sh:datatype xsd:duration ;
+    sh:maxCount 1 ;
+    shui:viewer st:DurationViewer ;
+    .
+
+<#data>
+    a schema:Product ;
+    schema:name "Espresso Machine"@en, "Espressomachine"@nl ;
+    schema:warranty "P2Y6M"^^xsd:duration ;
+    .

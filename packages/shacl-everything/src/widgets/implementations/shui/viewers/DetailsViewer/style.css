@@ -13,3 +13,7 @@
   flex-direction: column;
   margin-top: var(--size-2);
 }
+
+.st-member-shape-list__item > .st-property-object__widget > .st-details-viewer {
+  padding-inline-start: var(--size-4);
+}

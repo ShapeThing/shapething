@@ -10,7 +10,6 @@ import MemberShapeList from "@/outputs/render/modes/view/MemberShapeList.tsx";
 import PropertyUIComponentObject from "@/outputs/render/modes/view/PropertyUIComponentObject.tsx";
 import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
-import { languageLabels } from "@/helpers/languageLabels.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import "./style.css";
 
@@ -66,23 +65,11 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
 
   return (
     <FormElement
-      label={
-        label && activeLanguage && isRdfLangString ? (
-          <>
-            {label}{" "}
-            {languageMode === "switcher" && (
-              <span className="st-property-language-tag">
-                ({Object.values(languageLabels([activeLanguage], activeInterfaceLanguage))})
-              </span>
-            )}
-          </>
-        ) : (
-          `${label}`
-        )
-      }
+      label={label}
       showColon={true}
       labelTitle={propertyUIElement.pathAsSparql()}
       labelId={labelId}
+      dataId={propertyUIElement.dataId()}
       tooltip={description}
       labelLayout={labelLayout}
     >

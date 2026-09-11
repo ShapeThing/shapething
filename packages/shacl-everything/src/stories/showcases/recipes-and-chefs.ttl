@@ -21,7 +21,7 @@ ex:ChefShape a sh:NodeShape ;
         sh:datatype rdf:langString ;
         sh:languageIn ( "en" "nl" ) ;
         sh:uniqueLang true ;
-        sh:minCount 1 ;
+        sh:minCount 2 ;
         sh:order 0 ;
         sh:name "Name"@en, "Naam"@nl ;
         shui:propertyRole shui:LabelRole ;
@@ -40,6 +40,7 @@ ex:ChefShape a sh:NodeShape ;
         sh:datatype rdf:langString ;
         sh:languageIn ( "en" "nl" ) ;
         sh:uniqueLang true ;
+        sh:minCount 2 ;
         sh:order 2 ;
         sh:name "Nationality"@en, "Nationaliteit"@nl ;
     ] ;
@@ -108,7 +109,7 @@ ex:IngredientShape a sh:NodeShape ;
         sh:datatype rdf:langString ;
         sh:languageIn ( "en" "nl" ) ;
         sh:uniqueLang true ;
-        sh:minCount 1 ;
+        sh:minCount 2 ;
         sh:order 0 ;
         sh:name "Ingredient"@en, "Ingrediënt"@nl ;
         shui:propertyRole shui:LabelRole ;
@@ -116,7 +117,7 @@ ex:IngredientShape a sh:NodeShape ;
     ] ;
     sh:property [
         sh:path schema:value ;
-        sh:datatype xsd:decimal ;
+        sh:datatype xsd:integer ;
         sh:maxCount 1 ;
         sh:minCount 1 ;
         sh:order 1 ;
@@ -140,11 +141,13 @@ ex:ingredientFieldsGroup a sh:PropertyGroup, st:HorizontalPropertyGroup ;
     .
 ex:mainGroup 
     a sh:PropertyGroup ;
+    sh:name "Main content"@en, "Hoofdinhoud"@nl ;
     sh:order -99 ;
     .
 
 ex:metaGroup 
     a sh:PropertyGroup ;
+    sh:name "Metadata"@en, "Metadata"@nl ;
     sh:order -98 ;
     .
 
@@ -157,7 +160,7 @@ ex:RecipeShape a sh:NodeShape ;
         sh:datatype rdf:langString ;
         sh:languageIn ( "en" "nl" ) ;
         sh:uniqueLang true ;
-        sh:minCount 1 ;
+        sh:minCount 2 ;
         sh:group ex:mainGroup ;
         sh:order -6 ;
         sh:name "Recipe name"@en, "Naam van het recept"@nl ;
@@ -167,8 +170,8 @@ ex:RecipeShape a sh:NodeShape ;
         sh:path schema:image ;
         sh:nodeKind sh:IRI ;
         sh:maxCount 1 ;
-        sh:group ex:metaGroup ;
-        sh:order 1 ;
+        sh:group ex:mainGroup ;
+        sh:order 10 ;
         sh:name "Photo"@en, "Foto"@nl ;
         shui:viewer shui:ImageViewer ;
     ] ;
@@ -207,6 +210,7 @@ ex:RecipeShape a sh:NodeShape ;
         shui:editor st:DurationEditor ;
         st:durationPattern "{hh}{mm}" ;
         sh:group ex:metaGroup ;
+        sh:minCount 1 ;
         sh:maxCount 1 ;
         sh:order 5 ;
         sh:name "Prep time"@en, "Bereidingstijd"@nl ;
@@ -216,6 +220,7 @@ ex:RecipeShape a sh:NodeShape ;
         sh:datatype xsd:duration ;
         shui:editor st:DurationEditor ;
         st:durationPattern "{hh}{mm}" ;
+        sh:minCount 1 ;
         sh:group ex:metaGroup ;
         sh:maxCount 1 ;
         sh:order 6 ;
@@ -226,15 +231,16 @@ ex:RecipeShape a sh:NodeShape ;
         sh:datatype xsd:integer ;
         sh:group ex:metaGroup ;
         sh:maxCount 1 ;
+        sh:minCount 1 ;
         sh:order 7 ;
         sh:name "Servings"@en, "Porties"@nl ;
     ] ;
     sh:property [
         sh:path schema:recipeIngredient ;
-        sh:name "Ingredients"@en, "Ingrediënten"@nl ;
         sh:memberShape [
             sh:node ex:IngredientShape ;
             shui:editor shui:DetailsEditor ;
+            shui:viewer shui:DetailsViewer ;
         ] ;
         sh:minListLength 1 ;
         sh:group ex:mainGroup ;
@@ -248,7 +254,7 @@ ex:RecipeShape a sh:NodeShape ;
         sh:uniqueLang true ;
         sh:singleLine false ;
         sh:group ex:mainGroup ;
-        sh:minCount 1 ;
+        sh:minCount 2 ;
         sh:order -2 ;
         sh:name "Instructions"@en, "Bereidingswijze"@nl ;
     ] ;
@@ -258,6 +264,7 @@ ex:RecipeShape a sh:NodeShape ;
         sh:languageIn ( "en" "nl" ) ;
         sh:uniqueLang true ;
         sh:singleLine false ;
+        sh:minCount 2 ;
         sh:group ex:mainGroup ;
         sh:order -3 ;
         sh:name "Description"@en, "Beschrijving"@nl ;
@@ -333,12 +340,12 @@ ex:aliceWaters a ex:Chef ;
     schema:cookTime "PT40M"^^xsd:duration ;
     schema:recipeYield 4 ;
     schema:recipeIngredient (
-        [ schema:name "Beef fillet"@en, "Runderhaas"@nl ; schema:value 1.0 ; schema:unitCode unit:KiloGM ]
-        [ schema:name "English mustard"@en, "Engelse mosterd"@nl ; schema:value 2.0 ; schema:unitCode unit:TBSP ]
-        [ schema:name "Mushrooms, finely chopped"@en, "Paddenstoelen, fijngehakt"@nl ; schema:value 500.0 ; schema:unitCode unit:GM ]
-        [ schema:name "Parma ham"@en, "Parmaham"@nl ; schema:value 8.0 ; schema:unitCode unit:COUNT ]
-        [ schema:name "Puff pastry"@en, "Bladerdeeg"@nl ; schema:value 500.0 ; schema:unitCode unit:GM ]
-        [ schema:name "Egg yolks, beaten"@en, "Eidooiers, losgeklopt"@nl ; schema:value 2.0 ; schema:unitCode unit:COUNT ]
+        [ schema:name "Beef fillet"@en, "Runderhaas"@nl ; schema:value 1 ; schema:unitCode unit:KiloGM ]
+        [ schema:name "English mustard"@en, "Engelse mosterd"@nl ; schema:value 2 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Mushrooms, finely chopped"@en, "Paddenstoelen, fijngehakt"@nl ; schema:value 500 ; schema:unitCode unit:GM ]
+        [ schema:name "Parma ham"@en, "Parmaham"@nl ; schema:value 8 ; schema:unitCode unit:COUNT ]
+        [ schema:name "Puff pastry"@en, "Bladerdeeg"@nl ; schema:value 500 ; schema:unitCode unit:GM ]
+        [ schema:name "Egg yolks, beaten"@en, "Eidooiers, losgeklopt"@nl ; schema:value 2 ; schema:unitCode unit:COUNT ]
     ) ;
     schema:recipeInstructions "Sear the beef fillet until browned on all sides, then brush with English mustard and leave to cool. Cook the chopped mushrooms in a dry pan until all the moisture has evaporated to make a duxelles. Lay out the Parma ham, spread the duxelles over it, and wrap it tightly around the beef. Chill, then wrap the whole thing in puff pastry, brush with egg yolk, and bake until the pastry is golden and the beef reaches the desired doneness."@en,
         "Schroei de runderhaas rondom bruin dicht, bestrijk hem daarna met Engelse mosterd en laat afkoelen. Bak de fijngehakte paddenstoelen in een droge pan tot al het vocht is verdampt, zodat een duxelles ontstaat. Leg de Parmaham neer, verdeel de duxelles erover en wikkel het geheel strak om het vlees. Laat afkoelen, wikkel het daarna in bladerdeeg, bestrijk met eidooier en bak tot het deeg goudbruin is en het vlees de gewenste gaarheid heeft."@nl ;
@@ -355,13 +362,13 @@ ex:stickyToffeePudding a schema:Recipe ;
     schema:cookTime "PT30M"^^xsd:duration ;
     schema:recipeYield 6 ;
     schema:recipeIngredient (
-        [ schema:name "Pitted dates, chopped"@en, "Ontpitte dadels, gehakt"@nl ; schema:value 200.0 ; schema:unitCode unit:GM ]
-        [ schema:name "Bicarbonate of soda"@en, "Zuiveringszout"@nl ; schema:value 1.0 ; schema:unitCode unit:TSP ]
-        [ schema:name "Butter"@en, "Boter"@nl ; schema:value 50.0 ; schema:unitCode unit:GM ]
-        [ schema:name "Soft brown sugar"@en, "Bruine basterdsuiker"@nl ; schema:value 150.0 ; schema:unitCode unit:GM ]
-        [ schema:name "Eggs"@en, "Eieren"@nl ; schema:value 2.0 ]
-        [ schema:name "Self-raising flour"@en, "Zelfrijzend bakmeel"@nl ; schema:value 175.0 ; schema:unitCode unit:GM ]
-        [ schema:name "Double cream, for the toffee sauce"@en, "Slagroom, voor de toffeesaus"@nl ; schema:value 300.0 ; schema:unitCode unit:MilliL ]
+        [ schema:name "Pitted dates, chopped"@en, "Ontpitte dadels, gehakt"@nl ; schema:value 200 ; schema:unitCode unit:GM ]
+        [ schema:name "Bicarbonate of soda"@en, "Zuiveringszout"@nl ; schema:value 1 ; schema:unitCode unit:TSP ]
+        [ schema:name "Butter"@en, "Boter"@nl ; schema:value 50 ; schema:unitCode unit:GM ]
+        [ schema:name "Soft brown sugar"@en, "Bruine basterdsuiker"@nl ; schema:value 150 ; schema:unitCode unit:GM ]
+        [ schema:name "Eggs"@en, "Eieren"@nl ; schema:value 2 ]
+        [ schema:name "Self-raising flour"@en, "Zelfrijzend bakmeel"@nl ; schema:value 175 ; schema:unitCode unit:GM ]
+        [ schema:name "Double cream, for the toffee sauce"@en, "Slagroom, voor de toffeesaus"@nl ; schema:value 300 ; schema:unitCode unit:MilliL ]
     ) ;
     schema:recipeInstructions "Soak the chopped dates in boiling water with the bicarbonate of soda for 10 minutes, then blend to a puree. Cream the butter and sugar, beat in the eggs, then fold in the flour and the date puree. Bake in individual moulds until risen and springy. Serve warm, soaked in a butterscotch sauce made from cream and brown sugar."@en,
         "Week de gehakte dadels met de baking soda 10 minuten in kokend water en pureer ze. Klop de boter en suiker romig, klop de eieren erdoor en spatel er de bloem en het datelmengsel doorheen. Bak in kleine vormpjes tot ze gerezen en veerkrachtig zijn. Serveer warm, overgoten met een botersaus van room en bruine suiker."@nl ;
@@ -379,14 +386,14 @@ ex:boeufBourguignon a schema:Recipe ;
     schema:cookTime "PT3H"^^xsd:duration ;
     schema:recipeYield 6 ;
     schema:recipeIngredient (
-        [ schema:name "Beef chuck, cubed"@en, "Runderschouder, in blokjes"@nl ; schema:value 1.5 ; schema:unitCode unit:KiloGM ]
-        [ schema:name "Bacon lardons"@en, "Spekblokjes"@nl ; schema:value 200.0 ; schema:unitCode unit:GM ]
-        [ schema:name "Red Burgundy wine"@en, "Rode bourgognewijn"@nl ; schema:value 1.0 ; schema:unitCode unit:COUNT ]
-        [ schema:name "Beef stock"@en, "Runderbouillon"@nl ; schema:value 500.0 ; schema:unitCode unit:MilliL ]
-        [ schema:name "Pearl onions"@en, "Zilveruitjes"@nl ; schema:value 12.0 ]
-        [ schema:name "Button mushrooms"@en, "Champignons"@nl ; schema:value 250.0 ; schema:unitCode unit:GM ]
-        [ schema:name "Carrots, sliced"@en, "Wortels, in plakjes"@nl ; schema:value 3.0 ]
-        [ schema:name "Bouquet garni"@en, "Bouquet garni"@nl ; schema:value 1.0 ]
+        [ schema:name "Beef chuck, cubed"@en, "Runderschouder, in blokjes"@nl ; schema:value 1500 ; schema:unitCode unit:GM ]
+        [ schema:name "Bacon lardons"@en, "Spekblokjes"@nl ; schema:value 200 ; schema:unitCode unit:GM ]
+        [ schema:name "Red Burgundy wine"@en, "Rode bourgognewijn"@nl ; schema:value 1 ; schema:unitCode unit:COUNT ]
+        [ schema:name "Beef stock"@en, "Runderbouillon"@nl ; schema:value 500 ; schema:unitCode unit:MilliL ]
+        [ schema:name "Pearl onions"@en, "Zilveruitjes"@nl ; schema:value 12 ]
+        [ schema:name "Button mushrooms"@en, "Champignons"@nl ; schema:value 250 ; schema:unitCode unit:GM ]
+        [ schema:name "Carrots, sliced"@en, "Wortels, in plakjes"@nl ; schema:value 3 ]
+        [ schema:name "Bouquet garni"@en, "Bouquet garni"@nl ; schema:value 1 ]
     ) ;
     schema:recipeInstructions "Brown the bacon lardons, then sear the beef cubes in the rendered fat until deeply coloured. Add the carrots and onion, then the wine and enough stock to cover, along with the bouquet garni. Cover and braise slowly until the beef is fork-tender. In a separate pan, glaze the pearl onions and sauté the mushrooms, then fold both into the stew just before serving."@en,
         "Bak de spekblokjes uit en schroei daarna het rundvlees rondom bruin in het vrijgekomen vet. Voeg de wortel en ui toe, gevolgd door de wijn en genoeg bouillon om het vlees te bedekken, samen met het bouquet garni. Laat afgedekt langzaam sudderen tot het vlees mals is. Karameliseer in een aparte pan de zilveruitjes en bak de paddenstoelen, en schep beide er vlak voor het serveren doorheen."@nl ;
@@ -424,11 +431,11 @@ ex:roastedCauliflower a schema:Recipe ;
     schema:cookTime "PT35M"^^xsd:duration ;
     schema:recipeYield 4 ;
     schema:recipeIngredient (
-        [ schema:name "Large cauliflower, cut into florets"@en, "Grote bloemkool, in roosjes verdeeld"@nl ; schema:value 1.0 ]
-        [ schema:name "Olive oil"@en, "Olijfolie"@nl ; schema:value 3.0 ; schema:unitCode unit:TBSP ]
-        [ schema:name "Tahini"@en, "Tahin"@nl ; schema:value 3.0 ; schema:unitCode unit:TBSP ]
-        [ schema:name "Lemon juice"@en, "Citroensap"@nl ; schema:value 1.0 ; schema:unitCode unit:TBSP ]
-        [ schema:name "Garlic, crushed"@en, "Knoflook, geplet"@nl ; schema:value 1.0 ; schema:unitCode unit:COUNT ]
+        [ schema:name "Large cauliflower, cut into florets"@en, "Grote bloemkool, in roosjes verdeeld"@nl ; schema:value 1 ]
+        [ schema:name "Olive oil"@en, "Olijfolie"@nl ; schema:value 3 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Tahini"@en, "Tahin"@nl ; schema:value 3 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Lemon juice"@en, "Citroensap"@nl ; schema:value 1 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Garlic, crushed"@en, "Knoflook, geplet"@nl ; schema:value 1 ; schema:unitCode unit:COUNT ]
         [ schema:name "Pomegranate seeds, to garnish"@en, "Granaatappelpitjes, om te garneren"@nl ]
         [ schema:name "Chopped parsley, to garnish"@en, "Gehakte peterselie, om te garneren"@nl ]
     ) ;
@@ -449,13 +456,134 @@ ex:gardenSalad a schema:Recipe ;
     schema:recipeIngredient (
         [ schema:name "Mixed young lettuces"@en, "Gemengde jonge slasoorten"@nl ]
         [ schema:name "Edible flowers"@en, "Eetbare bloemen"@nl ]
-        [ schema:name "Shallot, finely minced"@en, "Sjalot, fijngesneden"@nl ; schema:value 1.0 ]
-        [ schema:name "Red wine vinegar"@en, "Rodewijnazijn"@nl ; schema:value 1.0 ; schema:unitCode unit:TBSP ]
-        [ schema:name "Extra virgin olive oil"@en, "Extra vergine olijfolie"@nl ; schema:value 3.0 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Shallot, finely minced"@en, "Sjalot, fijngesneden"@nl ; schema:value 1 ]
+        [ schema:name "Red wine vinegar"@en, "Rodewijnazijn"@nl ; schema:value 1 ; schema:unitCode unit:TBSP ]
+        [ schema:name "Extra virgin olive oil"@en, "Extra vergine olijfolie"@nl ; schema:value 3 ; schema:unitCode unit:TBSP ]
         [ schema:name "Salt and pepper, to taste"@en, "Zout en peper, naar smaak"@nl ]
     ) ;
     schema:recipeInstructions "Wash and dry the lettuces gently, keeping the leaves whole. Whisk the minced shallot with red wine vinegar, then slowly whisk in the olive oil to make a simple vinaigrette. Season the leaves lightly with salt, dress them just before serving, and scatter with edible flowers."@en,
         "Was en droog de slasoorten voorzichtig en houd de blaadjes heel. Klop de fijngesneden sjalot met de rodewijnazijn en klop er geleidelijk de olijfolie doorheen tot een eenvoudige vinaigrette. Breng de blaadjes licht op smaak met zout, dresseer ze vlak voor het serveren en bestrooi met eetbare bloemen."@nl ;
     schema:description "Alice Waters' simple, seasonal salad of just-picked young lettuces dressed with a light shallot vinaigrette."@en,
         "Alice Waters' eenvoudige, seizoensgebonden salade van vers geplukte jonge slasoorten met een lichte sjalotvinaigrette."@nl ;
+    .
+
+
+### Recipe Shape
+ex:RecipeViewShape a sh:NodeShape ;
+    st:cssImport <./recipes-and-chefs.css> ;
+    sh:targetClass schema:Recipe ;
+    sh:property [
+        sh:path schema:name ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:minCount 1 ;
+        sh:group ex:mainGroup ;
+        sh:order -6 ;
+        sh:name "" ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:image ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:group ex:mainGroup ;
+        sh:order 10 ;
+        sh:name "Photo"@en, "Foto"@nl ;
+        shui:viewer shui:ImageViewer ;
+    ] ;
+    sh:property [
+        sh:path schema:author ;
+        sh:class ex:Chef ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:group ex:metaGroup ;
+        sh:order 2 ;
+        sh:name "Chef"@en, "Chef-kok"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeCuisine ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:order 3 ;
+        sh:group ex:metaGroup ;
+        sh:name "Cuisine"@en, "Keuken"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeCategory ;
+        sh:class ex:RecipeCategory ;
+        sh:nodeKind sh:IRI ;
+        sh:in ( ex:Starter ex:MainCourse ex:Dessert ex:SideDish ) ;
+        sh:maxCount 1 ;
+        sh:group ex:metaGroup ;
+        sh:order 4 ;
+        sh:name "Category"@en, "Categorie"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:prepTime ;
+        sh:datatype xsd:duration ;
+        shui:editor st:DurationEditor ;
+        st:durationPattern "{hh}{mm}" ;
+        sh:group ex:metaGroup ;
+        sh:maxCount 1 ;
+        sh:order 5 ;
+        sh:name "Prep time"@en, "Bereidingstijd"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:cookTime ;
+        sh:datatype xsd:duration ;
+        shui:editor st:DurationEditor ;
+        st:durationPattern "{hh}{mm}" ;
+        sh:group ex:metaGroup ;
+        sh:maxCount 1 ;
+        sh:order 6 ;
+        sh:name "Cook time"@en, "Kooktijd"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeYield ;
+        sh:datatype xsd:integer ;
+        sh:group ex:metaGroup ;
+        sh:maxCount 1 ;
+        sh:order 7 ;
+        sh:name "Servings"@en, "Porties"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeIngredient ;
+        sh:name "Ingredients"@en, "Ingrediënten"@nl ;
+        sh:memberShape [
+            shui:viewer shui:LabelViewer ;
+            sh:node [
+                sh:property [
+                    sh:name "1" ;
+                    sh:path [ sh:alternativePath ( schema:value schema:unitCode schema:name  ) ] ;
+                    shui:propertyRole shui:LabelRole ;
+                ] ;
+            ] ;
+        ] ;
+        sh:group ex:mainGroup ;
+        sh:order 8 ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeInstructions ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:singleLine false ;
+        sh:group ex:mainGroup ;
+        sh:minCount 1 ;
+        sh:order -2 ;
+        sh:name "Instructions"@en, "Bereidingswijze"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:description ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:singleLine false ;
+        sh:group ex:mainGroup ;
+        sh:order -3 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+    ] ;
     .

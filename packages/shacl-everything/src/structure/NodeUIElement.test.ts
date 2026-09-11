@@ -1,10 +1,10 @@
 import { expect, test } from "vite-plus/test";
-import type { BlankNode } from "@rdfjs/types";
+import type { BlankNode, NamedNode } from "@rdfjs/types";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
-import { ex } from "@/helpers/namespaces.ts";
+import { ex, sh } from "@/helpers/namespaces.ts";
 
 test("NodeUIElement", async () => {
   const shapesGraph = await parseRdf(
@@ -443,4 +443,133 @@ test("root sh:or with a sh:node branch (mirrors 7.7.3.f) resolves real data thro
   const structuredBranch = branches[1] as PropertyUIElement[];
   expect(structuredBranch).toHaveLength(2);
   expect(structuredBranch.map((property) => property.getObjects()[0]?.value)).toEqual(["Dam", "1"]);
+});
+
+test("PropertyUIElement.dataId() disambiguates the same path reused inside a nested object (what DetailsEditor does for sh:node)", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+        ex:Book a sh:NodeShape ;
+            sh:property [ sh:path rdfs:label ] ;
+            sh:property [
+                sh:path ex:hasAuthor ;
+                sh:node ex:Person ;
+            ] .
+
+        ex:Person a sh:NodeShape ;
+            sh:property [ sh:path rdfs:label ] .
+    `,
+    "text/turtle",
+  );
+
+  const dataGraph = await parseRdf(
+    `
+        @prefix ex: <http://example.org/> .
+        @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+        ex:MobyDick rdfs:label "Moby Dick" ; ex:hasAuthor ex:Melville .
+        ex:Melville rdfs:label "Herman Melville" .
+    `,
+    "text/turtle",
+  );
+
+  const root = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("MobyDick"),
+    nodeShapes: [ex("Book")],
+  });
+
+  const [rootLabel, hasAuthor] = root.children() as PropertyUIElement[];
+  expect(rootLabel.pathAsSparql()).toBeDefined();
+  expect(hasAuthor.pathAsSparql()).toBeDefined();
+
+  // Mirrors DetailsEditor's own nesting: extend the ancestorPath by the property that led here,
+  // then build a fresh NodeUIElement for the nested focus node.
+  const nested = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Melville"),
+    nodeShapes: [ex("Person")],
+    ancestorPath: [...hasAuthor.ancestorPath, hasAuthor.pathAsSparql()!],
+  });
+  const [nestedLabel] = nested.children() as PropertyUIElement[];
+  expect(nestedLabel.pathAsSparql()).toBeDefined();
+
+  expect(rootLabel.dataId()).toBeDefined();
+  expect(nestedLabel.dataId()).toBeDefined();
+  expect(nestedLabel.dataId()).not.toEqual(rootLabel.dataId());
+});
+
+test("PropertyUIElement.dataId() disambiguates a memberShape list item's property from the outer node's own (recipe schema:name vs. each ingredient's own schema:name)", async () => {
+  // Mirrors stories/showcases/recipes-and-chefs.ttl: a Recipe has its own schema:name, and each of
+  // its schema:recipeIngredient list items (sh:memberShape) is an Ingredient with its own,
+  // separately-scoped schema:name.
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix schema: <http://schema.org/> .
+
+        ex:RecipeShape a sh:NodeShape ;
+            sh:property [ sh:path schema:name ] ;
+            sh:property [
+                sh:path schema:recipeIngredient ;
+                sh:memberShape [ sh:node ex:IngredientShape ] ;
+            ] .
+
+        ex:IngredientShape a sh:NodeShape ;
+            sh:property [ sh:path schema:name ] .
+    `,
+    "text/turtle",
+  );
+
+  const dataGraph = await parseRdf(
+    `
+        @prefix ex: <http://example.org/> .
+        @prefix schema: <http://schema.org/> .
+
+        ex:Recipe schema:name "Beef Wellington" ;
+            schema:recipeIngredient ( ex:Fillet ex:Mustard ) .
+        ex:Fillet schema:name "Beef fillet" .
+        ex:Mustard schema:name "English mustard" .
+    `,
+    "text/turtle",
+  );
+
+  const recipe = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Recipe"),
+    nodeShapes: [ex("RecipeShape")],
+  });
+
+  const [recipeName, recipeIngredient] = recipe.children() as PropertyUIElement[];
+
+  // Mirrors MemberShapeList's own memberElement construction.
+  const memberShapeNodes = recipeIngredient.get(sh("memberShape")) as NamedNode[];
+  const memberElement = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: recipe.focusNode,
+    propertyShapes: memberShapeNodes,
+    ancestorPath: recipeIngredient.nestedAncestorPath(),
+  });
+
+  // Mirrors DetailsEditor's own nested NodeUIElement construction for one ingredient item.
+  const ingredientNode = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Fillet"),
+    nodeShapes: memberElement.get(sh("node")) as NamedNode[],
+    ancestorPath: memberElement.nestedAncestorPath(),
+  });
+  const [ingredientName] = ingredientNode.children() as PropertyUIElement[];
+
+  expect(recipeName.dataId()).toBeDefined();
+  expect(ingredientName.dataId()).toBeDefined();
+  expect(ingredientName.dataId()).not.toEqual(recipeName.dataId());
 });

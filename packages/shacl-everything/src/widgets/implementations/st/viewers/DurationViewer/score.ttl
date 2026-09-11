@@ -1,0 +1,69 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+st:DurationViewer rdfs:label "Duration"@en, "Tijdsduur"@nl .
+
+st:durationViewerScore40
+    a shui:WidgetScore ;
+    shui:widget st:DurationViewer ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:prefersDurationViewer ;
+.
+
+# Same signal DurationEditor/score.ttl auto-scores its own widget on: a value literal already
+# typed xsd:duration - beats LiteralViewer's generic isLiteral rule (score.ttl of that widget),
+# which otherwise ties at 1 for any literal this codebase has no dedicated viewer for.
+st:durationViewerScore20
+    a shui:WidgetScore ;
+    shui:widget st:DurationViewer ;
+    shui:score 20 ;
+    shui:dataGraphShape st:isDurationViewerDurationLiteral ;
+.
+
+# Same signal read off the property shape's own sh:datatype instead of an actual value, so a
+# not-yet-valued property still prefers DurationViewer. Needs both sh:or branches since SHACL 1.2
+# lets sh:datatype hold a list of datatypes instead of one IRI (spec issue #1179) - see
+# DurationEditor/score.ttl's own hasDurationEditorDatatypeConstraint for the same shape.
+st:durationViewerScore10
+    a shui:WidgetScore ;
+    shui:widget st:DurationViewer ;
+    shui:score 10 ;
+    shui:shapesGraphShape st:hasDurationViewerDatatypeConstraint ;
+.
+
+st:prefersDurationViewer
+    a sh:NodeShape ;
+    sh:property [
+        sh:path shui:viewer ;
+        sh:hasValue st:DurationViewer ;
+    ] ;
+.
+
+st:isDurationViewerDurationLiteral
+    a sh:NodeShape ;
+    sh:datatype xsd:duration ;
+.
+
+st:hasDurationViewerDatatypeConstraint
+    a sh:NodeShape ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:hasValue xsd:duration ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:hasValue xsd:duration ;
+            ] ;
+        ]
+    ) ;
+.

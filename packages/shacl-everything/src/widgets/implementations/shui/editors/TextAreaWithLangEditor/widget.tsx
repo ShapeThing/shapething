@@ -45,6 +45,7 @@ export default function TextAreaWithLangEditor({
         style={{ resize: "none", overflow: "hidden" }}
         value={localValue}
         onChange={onChange}
+        lang={language}
         onBlur={onBlur}
         aria-labelledby={labelledBy}
       >

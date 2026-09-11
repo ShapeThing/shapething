@@ -16,6 +16,13 @@ export type NodeUIElementOptions = {
   widgetRegistry?: Widgets;
   focusNode: Quad_Subject;
   nodeShapes: Quad_Subject[];
+  // The chain of SPARQL-rendered property paths (toSparql) walked from the Environment's own root
+  // focusNode down to *this* node's focusNode - empty at the root, one entry longer each time a
+  // widget (DetailsEditor) descends into a nested object's own NodeUIElement. Forwarded onto every
+  // PropertyUIElement this node produces (see PropertyUIElement.dataId()) purely so a form-styling
+  // consumer can tell apart a path reused at different nesting depths (rdfs:label being the classic
+  // case) - nothing else in this codebase reads it.
+  ancestorPath?: string[];
 };
 
 export class NodeUIElement {
@@ -25,6 +32,7 @@ export class NodeUIElement {
   public widgetRegistry: Widgets;
   public focusNode: Quad_Subject;
   public nodeShapes: Quad_Subject[];
+  public ancestorPath: string[];
 
   constructor(options: NodeUIElementOptions) {
     this.shapesGraph = options.shapesGraph;
@@ -33,6 +41,7 @@ export class NodeUIElement {
     this.widgetRegistry = options.widgetRegistry ?? defaultWidgets;
     this.focusNode = options.focusNode;
     this.nodeShapes = options.nodeShapes;
+    this.ancestorPath = options.ancestorPath ?? [];
   }
 
   children(): (PropertyUIElement | ChoiceElement)[] {
@@ -46,6 +55,7 @@ export class NodeUIElement {
       this.focusNode,
       this.scoresGraph,
       this.widgetRegistry,
+      this.ancestorPath,
     );
   }
 

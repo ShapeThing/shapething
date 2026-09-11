@@ -26,6 +26,7 @@ export default function DetailsViewer({ shape, term }: WidgetProps) {
         widgetRegistry: shape.widgetRegistry,
         focusNode: term as Quad_Subject,
         nodeShapes,
+        ancestorPath: shape.nestedAncestorPath(),
       }),
     [shape, term, nodeShapes],
   );
@@ -45,7 +46,6 @@ export default function DetailsViewer({ shape, term }: WidgetProps) {
 
   return (
     <div className="st-details-viewer">
-      <div className="st-details-viewer__label">{label}</div>
       <div className="st-details-viewer__body">
         <NodeUIElementChildren nodeUiElement={nodeUiElement} />
       </div>

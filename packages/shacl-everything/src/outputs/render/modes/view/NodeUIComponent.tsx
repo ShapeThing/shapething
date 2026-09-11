@@ -1,4 +1,5 @@
 import type { Quad_Subject } from "@rdfjs/types";
+import { Fragment } from "react";
 import { useCssImports } from "@/outputs/render/hooks/useCssImports.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
@@ -8,7 +9,7 @@ import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { useMemo } from "react";
 import NodeUIElementChildren from "@/outputs/render/modes/view/NodeUIElementChildren.tsx";
 
-export default function NodeUIComponent() {
+export default function NodeUIComponent({ noWrapper }: { noWrapper?: boolean }) {
   const { focusNode, shapesGraph, dataGraph, scoresGraph, widgets, nodeShapes } = useEnvironment();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   // See modes/edit/NodeUIComponent.tsx's own comment on why this is folded in here rather than
@@ -33,11 +34,12 @@ export default function NodeUIComponent() {
   const description = nodeUiElement.description([activeInterfaceLanguage]);
   const cssImports = useMemo(() => nodeUiElement.cssImports(), [nodeUiElement]);
   useCssImports(cssImports);
+  const WrapperElement = noWrapper ? Fragment : "section";
 
   return (
-    <div className="st-node-ui-component">
+    <WrapperElement className="st-node-ui-component">
       {description && <p className="st-node-ui-component__description">{description}</p>}
       <NodeUIElementChildren nodeUiElement={nodeUiElement} />
-    </div>
+    </WrapperElement>
   );
 }

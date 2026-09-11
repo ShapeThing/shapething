@@ -50,3 +50,7 @@
 .severity-info {
   --color: var(--st-severity-info);
 }
+
+* {
+  box-sizing: border-box;
+}

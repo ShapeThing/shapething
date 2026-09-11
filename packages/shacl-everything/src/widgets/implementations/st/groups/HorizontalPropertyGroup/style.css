@@ -23,6 +23,10 @@
   margin-block-start: 0;
 }
 
+.st-member-shape-list__header {
+  margin-top: 1rem;
+}
+
 /* MemberShapeListHeader's stand-ins for the drag handle/gear/remove button (see its own doc
    comment): same classes as the real controls, so they reserve exactly the same width/gap, but
    inert and invisible rather than interactive - the point is column alignment, not a second set
@@ -31,6 +35,7 @@
   visibility: hidden;
   pointer-events: none;
   width: var(--size-3);
+  box-sizing: content-box;
 }
 
 /* A single-instance use of this group (e.g. DetailsEditor-wrapped schema:prepTime, sh:maxCount 1

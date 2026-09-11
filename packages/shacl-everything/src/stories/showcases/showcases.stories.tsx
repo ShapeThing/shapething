@@ -44,6 +44,9 @@ export const recipesAndChefs: Story = {
     ...argsByTestFile("recipes-and-chefs.ttl", import.meta.url),
     nodeShapes: [ex("RecipeShape")],
     enableLinksToResources: false,
+    enableWidgetSwitching: false,
+    enableLogicalBranchSwitching: false,
+    enableShPathInLabelTitle: false,
   },
   parameters: {
     maxWidth: false,
@@ -54,9 +57,12 @@ export const recipesAndChefsView: Story = {
   name: "Recipes & Chefs (view)",
   args: {
     ...argsByTestFile("recipes-and-chefs.ttl", import.meta.url),
-    nodeShapes: [ex("RecipeShape")],
+    nodeShapes: [ex("RecipeViewShape")],
     mode: "view",
     viewModeLabelLayout: "inline",
+  },
+  parameters: {
+    maxWidth: false,
   },
 };
 

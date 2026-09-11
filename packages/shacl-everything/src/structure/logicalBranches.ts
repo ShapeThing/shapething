@@ -44,6 +44,7 @@ export function withBranch(element: PropertyUIElement, branch: Term): PropertyUI
     widgetRegistry: element.widgetRegistry,
     focusNode: element.focusNode,
     propertyShapes: [...element.propertyShapes, branch as NamedNode],
+    ancestorPath: element.ancestorPath,
   });
 }
 

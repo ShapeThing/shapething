@@ -168,6 +168,70 @@ test("valueNodeLabel step 1: a literal's own lexical form", async () => {
   expect(valueNodeLabel({ term: literal, propertyShape: shape })).toBe(literal);
 });
 
+test("valueNodeLabel step 2: a single shui:LabelRole path", async () => {
+  const shape = await createShape({
+    shapes: `
+      ex:property1 a sh:PropertyShape ; sh:node [
+        sh:property [ sh:path ex:name ; shui:propertyRole shui:LabelRole ] ;
+      ] .
+    `,
+    data: `ex:ingredient1 ex:name "Beef fillet"@en, "Runderhaas"@nl .`,
+    propertyShapes: [ex("property1")],
+  });
+
+  expect(
+    valueNodeLabel({ term: ex("ingredient1"), propertyShape: shape, languages: ["en"] }).value,
+  ).toBe("Beef fillet");
+});
+
+test("valueNodeLabel step 2: an sh:alternativePath's branches combine into one label instead of pooling into a single pick", async () => {
+  const shape = await createShape({
+    shapes: `
+      ex:property1 a sh:PropertyShape ; sh:node [
+        sh:property [
+          sh:path [ sh:alternativePath ( ex:value ex:unitCode ex:name ) ] ;
+          shui:propertyRole shui:LabelRole ;
+        ] ;
+      ] .
+      ex:KiloGM rdfs:label "Kilogram"@en, "Kilogram"@nl .
+    `,
+    data: `
+      ex:ingredient1 ex:name "Beef fillet"@en, "Runderhaas"@nl ; ex:value 1.0 ; ex:unitCode ex:KiloGM .
+    `,
+    propertyShapes: [ex("property1")],
+  });
+
+  // Each branch resolves independently (the language-less ex:value literal, ex:unitCode recursed
+  // to the unit's own rdfs:label, ex:name's best-language literal) and all three combine - the
+  // language-less quantity no longer wins outright just because "en"/"nl" happen to be unmatched
+  // for the whole pooled candidate set.
+  expect(
+    valueNodeLabel({ term: ex("ingredient1"), propertyShape: shape, languages: ["en"] }).value,
+  ).toBe("1.0 Kilogram Beef fillet");
+  expect(
+    valueNodeLabel({ term: ex("ingredient1"), propertyShape: shape, languages: ["nl"] }).value,
+  ).toBe("1.0 Kilogram Runderhaas");
+});
+
+test("valueNodeLabel step 2: an sh:alternativePath branch with no match is skipped, not left as a gap", async () => {
+  const shape = await createShape({
+    shapes: `
+      ex:property1 a sh:PropertyShape ; sh:node [
+        sh:property [
+          sh:path [ sh:alternativePath ( ex:value ex:unitCode ex:name ) ] ;
+          shui:propertyRole shui:LabelRole ;
+        ] ;
+      ] .
+    `,
+    data: `ex:ingredient1 ex:name "Beef fillet"@en ; ex:value 1.0 .`,
+    propertyShapes: [ex("property1")],
+  });
+
+  expect(
+    valueNodeLabel({ term: ex("ingredient1"), propertyShape: shape, languages: ["en"] }).value,
+  ).toBe("1.0 Beef fillet");
+});
+
 test("valueNodeLabel step 3 (data graph, configured predicate, default rdfs:label)", async () => {
   const shape = await createShape({
     shapes: `ex:property1 a sh:PropertyShape .`,
