@@ -124,3 +124,20 @@
   margin-inline-start: var(--size-1);
   font-size: 1.7rem;
 }
+
+/* A facet's own live match count (see FacetPropertyComponent's actions) - given a solid
+   primary-color fill rather than the muted text color the count used to render in (inline in the
+   widget itself) so it stays clearly visible, pushed to the far end of the header alongside
+   the other actions. */
+.st-form-element__count-badge {
+  display: inline-flex;
+  align-items: center;
+  padding-inline: var(--size-1);
+  height: var(--size-4);
+  border-radius: var(--radius-round);
+  background-color: var(--st-primary-color);
+  color: white;
+  font-size: 0.7rem;
+  font-weight: bold;
+  line-height: 1;
+}

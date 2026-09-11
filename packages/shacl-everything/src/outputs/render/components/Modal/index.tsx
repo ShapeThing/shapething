@@ -7,9 +7,10 @@ import { undoRedoScopeContext } from "@/outputs/render/contexts/undoRedoScopeCon
 import "./style.css";
 
 type Props = {
+  className?: string;
   open: boolean;
   onClose: () => void;
-  title: ReactNode;
+  title?: ReactNode;
   children: ReactNode;
   // The reactive store this modal's own content edits, if it's a staging graph separate from the
   // outer form's (see AutoCompleteEditor/InstancesSelectEditor's create-new flow,
@@ -19,11 +20,24 @@ type Props = {
   // modal's content doesn't edit a graph of its own (e.g. a plain confirmation, or a read-only
   // view-in-place).
   dataGraph?: RdfStore;
+  // "default" sizes the dialog to fit its content, same as before this prop existed. "large" gives
+  // it a fixed, much bigger viewport-relative footprint (see style.css) for content that benefits
+  // from more room to breathe - e.g. AutoCompleteEditor's own facet-search modal, whose two-column
+  // layout otherwise has nothing to flex-grow into.
+  size?: "default" | "large";
 };
 
 // A generic modal dialog built on the native <dialog> element - showModal()/close() bring focus
 // trapping, Escape-to-close and a ::backdrop for free, so there's no need to hand-roll those.
-export default function Modal({ open, onClose, title, children, dataGraph }: Props) {
+export default function Modal({
+  open,
+  onClose,
+  title,
+  children,
+  className,
+  dataGraph,
+  size = "default",
+}: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   const { enableUndoRedo } = useEnvironment();
@@ -47,7 +61,7 @@ export default function Modal({ open, onClose, title, children, dataGraph }: Pro
   return (
     <dialog
       ref={dialogRef}
-      className="st-modal"
+      className={`st-modal${size === "large" ? " st-modal--large" : ""} ${className ?? ""}`}
       aria-labelledby={titleId}
       // "close" and "cancel" don't natively bubble, but React simulates bubbling for them through
       // the *React* tree regardless (not the DOM tree, so portaling this component wouldn't help

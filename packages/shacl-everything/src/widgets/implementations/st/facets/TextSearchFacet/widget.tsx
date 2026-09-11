@@ -11,11 +11,7 @@ function escapeRegExp(value: string): string {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-export default function TextSearchFacet({
-  setConstraint,
-  searchMatchCount,
-  labelledBy,
-}: FacetWidgetProps) {
+export default function TextSearchFacet({ setConstraint, labelledBy }: FacetWidgetProps) {
   const [search, setSearch] = useState("");
 
   return (
@@ -39,9 +35,6 @@ export default function TextSearchFacet({
           setConstraint(sh("flags"), factory.literal("i", xsd("string")));
         }}
       />
-      {searchMatchCount !== undefined && (
-        <span className="st-text-search-facet__count"> ({searchMatchCount})</span>
-      )}
     </div>
   );
 }

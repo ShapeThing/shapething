@@ -9,6 +9,7 @@ import {
   createFilterShape,
   findFilterConstraintNode,
   getFilterConstraintNode,
+  instancesMatchingOtherConstraints,
   pathSparqlFor,
   removeFilterConstraintsForPaths,
   setFilterConstraint,
@@ -259,6 +260,79 @@ test("removeFilterConstraintsForPaths: drops only the constraints whose path is 
     ex("Alice").value,
     ex("Bob").value,
   ]);
+});
+
+test("instancesMatchingOtherConstraints: a class-taxonomy pick (sh:rootClass) also matches an instance tagged with a subclass", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}
+
+     ex:property1 sh:path ex:category ; sh:rootClass ex:Electronics .
+     ex:Computers rdfs:subClassOf ex:Electronics .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}
+
+     ex:widget ex:category ex:Electronics .
+     ex:laptop ex:category ex:Computers .
+     ex:novel ex:category ex:Books .`,
+    "text/turtle",
+  );
+  const property = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("unused"),
+    propertyShapes: [ex("property1")],
+  });
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("Electronics")]);
+
+  const matching = instancesMatchingOtherConstraints(
+    filterShape,
+    dataGraph,
+    shapesGraph,
+    [ex("widget"), ex("laptop"), ex("novel")],
+    undefined,
+  );
+
+  expect(matching.map((instance) => instance.value).sort()).toEqual(
+    [ex("widget").value, ex("laptop").value].sort(),
+  );
+});
+
+test("instancesMatchingOtherConstraints: without sh:rootClass, sh:in still requires an exact match despite a subClassOf relation existing", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}
+
+     ex:property1 sh:path ex:category .
+     ex:Computers rdfs:subClassOf ex:Electronics .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}
+
+     ex:widget ex:category ex:Electronics .
+     ex:laptop ex:category ex:Computers .`,
+    "text/turtle",
+  );
+  const property = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("unused"),
+    propertyShapes: [ex("property1")],
+  });
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("Electronics")]);
+
+  const matching = instancesMatchingOtherConstraints(
+    filterShape,
+    dataGraph,
+    shapesGraph,
+    [ex("widget"), ex("laptop")],
+    undefined,
+  );
+
+  expect(matching.map((instance) => instance.value)).toEqual([ex("widget").value]);
 });
 
 test("removeFilterConstraintsForPaths: an empty path set is a no-op", async () => {

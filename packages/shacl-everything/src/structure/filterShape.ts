@@ -5,6 +5,7 @@ import { factory } from "@/helpers/factory.ts";
 import { rdf, sh } from "@/helpers/namespaces.ts";
 import { rebuildRdfList } from "@/helpers/rdfList.ts";
 import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
+import { collectClassAndSubClasses } from "@/structure/classHierarchy.ts";
 import { literalOrder } from "@/structure/constraintResolutions.ts";
 import { parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { toSparql } from "@/structure/paths/toSparql.ts";
@@ -111,8 +112,29 @@ export function getFilterConstraintNode(
       factory.quad(propertyNode, sh("path"), writePropertyPath(path, store) as Quad_Object),
     );
   }
+  copyRootClass(property, propertyNode, store);
   store.addQuad(factory.quad(rootNode, sh("property"), propertyNode));
   return propertyNode;
+}
+
+/**
+ * Carries `property`'s own sh:rootClass (see shui:SubClassEditor/st:SubClassFacet) over onto the
+ * generated filter constraint node, the same way the path itself is copied - so
+ * instanceSatisfiesConstraintNode below can tell, from the constraint node alone, that this
+ * property's sh:in is a class-taxonomy pick (rollUpClassCounts's own hierarchy - Electronics
+ * should also match Computers, a subclass) rather than an ordinary exact-match option list
+ * (CategoryFacet), and so the shape modes/facet/index.tsx eventually submits stays self-describing
+ * enough for an external consumer to reproduce the same hierarchy-aware matching.
+ */
+function copyRootClass(
+  property: PropertyUIElement,
+  propertyNode: Quad_Subject,
+  store: RdfStore,
+): void {
+  const rootClass = property.get(sh("rootClass"))[0];
+  if (rootClass?.termType === "NamedNode") {
+    store.addQuad(factory.quad(propertyNode, sh("rootClass"), rootClass));
+  }
 }
 
 /**
@@ -162,6 +184,7 @@ export function setFilterConstraintForProperty(
       factory.quad(propertyNode, sh("path"), writePropertyPath(path, store) as Quad_Object),
     );
   }
+  copyRootClass(property, propertyNode, store);
   setFilterConstraint(filterShape, propertyNode, predicate, value);
   store.addQuad(factory.quad(rootNode, sh("property"), propertyNode));
 }
@@ -258,6 +281,7 @@ function instanceSatisfiesConstraintNode(
   instance: Quad_Subject,
   store: RdfStore,
   dataGraph: RdfStore,
+  shapesGraph: RdfStore,
 ): boolean {
   const path = parsePropertyPath(constraintNode, store);
   if (!path) return true;
@@ -266,7 +290,20 @@ function instanceSatisfiesConstraintNode(
   const inQuad = store.getQuads(constraintNode, sh("in"))[0];
   if (inQuad) {
     const allowed = expandListOrTerm(inQuad.object, store);
-    if (!values.some((value) => allowed.some((term) => term.equals(value)))) return false;
+    // A class-taxonomy pick (see copyRootClass above) matches not just the exact class chosen but
+    // anything filed under it too - ex:Electronics also matches a value of ex:Computers, one of
+    // its subclasses - rather than plain sh:in's ordinary exact-term-equality membership test.
+    const isClassHierarchy = store.getQuads(constraintNode, sh("rootClass")).length > 0;
+    const satisfiesIn = (value: Term): boolean =>
+      allowed.some((term) => term.equals(value)) ||
+      (isClassHierarchy &&
+        value.termType === "NamedNode" &&
+        allowed.some(
+          (term) =>
+            term.termType === "NamedNode" &&
+            collectClassAndSubClasses(shapesGraph, term).has(value.value),
+        ));
+    if (!values.some(satisfiesIn)) return false;
   }
 
   const patternQuad = store.getQuads(constraintNode, sh("pattern"))[0];
@@ -310,6 +347,7 @@ function instanceSatisfiesConstraintNode(
 export function instancesMatchingOtherConstraints(
   filterShape: FilterShape,
   dataGraph: RdfStore,
+  shapesGraph: RdfStore,
   instances: Quad_Subject[],
   excludePath: string | undefined,
 ): Quad_Subject[] {
@@ -326,7 +364,7 @@ export function instancesMatchingOtherConstraints(
   if (otherConstraintNodes.length === 0) return instances;
   return instances.filter((instance) =>
     otherConstraintNodes.every((node) =>
-      instanceSatisfiesConstraintNode(node, instance, store, dataGraph),
+      instanceSatisfiesConstraintNode(node, instance, store, dataGraph, shapesGraph),
     ),
   );
 }

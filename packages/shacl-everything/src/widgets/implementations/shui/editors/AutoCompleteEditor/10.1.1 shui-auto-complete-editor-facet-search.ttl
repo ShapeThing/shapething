@@ -1,0 +1,74 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Born in"@en ;
+        sh:path ex:bornIn ;
+        sh:class ex:Country ;
+        sh:nodeKind sh:IRI ;
+        shui:editor shui:AutoCompleteEditor ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:bornIn ex:Netherlands ;
+    .
+
+ex:Netherlands a ex:Country ;
+    rdfs:label "Netherlands"@en ;
+    ex:continent ex:Europe ;
+    ex:blurb "A low-lying country famous for its canals, tulips and windmills."@en .
+
+ex:Germany a ex:Country ;
+    rdfs:label "Germany"@en ;
+    ex:continent ex:Europe ;
+    ex:blurb "A Central European country known for its castles, forests and car industry."@en .
+
+ex:Japan a ex:Country ;
+    rdfs:label "Japan"@en ;
+    ex:continent ex:Asia ;
+    ex:blurb "An island nation blending ancient temples with cutting-edge technology."@en .
+
+ex:Europe a ex:Continent ; rdfs:label "Europe"@en .
+ex:Asia a ex:Continent ; rdfs:label "Asia"@en .
+
+<#countryShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Country ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:datatype xsd:string ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:name "Continent"@en ;
+        sh:path ex:continent ;
+        sh:class ex:Continent ;
+    ] ;
+    sh:property [
+        sh:path ex:blurb ;
+        sh:datatype xsd:string ;
+        shui:propertyRole st:DescriptionRole ;
+    ] ;
+    .
+
+<#continentShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Continent ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:datatype xsd:string ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    .

@@ -48,6 +48,7 @@ autocomplete-search-placeholder =
     .placeholder = Zoeken…
 autocomplete-no-results = Geen resultaten gevonden
 autocomplete-search-error = Zoeken mislukt
+autocomplete-facet-search-title = Selecteer een waarde voor { $label }
 address-search-placeholder =
     .placeholder = Zoek een adres…
 autocomplete-edit-value =

@@ -79,6 +79,7 @@ export default function FacetPropertyComponent({ property, filterShape, instance
         ? instancesMatchingOtherConstraints(
             filterShape,
             property.dataGraph,
+            property.shapesGraph,
             instances,
             pathSparqlFor(property),
           )
@@ -132,6 +133,13 @@ export default function FacetPropertyComponent({ property, filterShape, instance
     [enableFacetOptionCounts, property, narrowedInstances, patternBound, flagsBound],
   );
 
+  // A range facet only ever sets sh:minInclusive/sh:maxInclusive, and a search facet only ever
+  // sets sh:pattern - never both on the same property - so at most one of these is ever defined;
+  // whichever it is becomes this property's one overall match count, shown on the FormElement
+  // label rather than inline in the widget itself (valueCounts has no single-value equivalent, so
+  // CategoryFacet/SubClassFacet's per-option counts stay put next to each option).
+  const matchCount = rangeMatchCount ?? searchMatchCount;
+
   if (!widget) return null;
   const { Widget } = widget;
 
@@ -145,15 +153,23 @@ export default function FacetPropertyComponent({ property, filterShape, instance
     setFilterConstraintForProperty(filterShape, property, predicate, value);
 
   return (
-    <FormElement label={label} showColon labelId={labelId} tooltip={description}>
+    <FormElement
+      label={label}
+      actions={
+        matchCount !== undefined && (
+          <span className="st-form-element__count-badge">{matchCount}</span>
+        )
+      }
+      showColon
+      labelId={labelId}
+      tooltip={description}
+    >
       <Widget
         shape={property}
         values={values}
         getConstraint={getConstraint}
         setConstraint={setConstraint}
         valueCounts={valueCounts}
-        rangeMatchCount={rangeMatchCount}
-        searchMatchCount={searchMatchCount}
         labelledBy={labelId}
       />
     </FormElement>

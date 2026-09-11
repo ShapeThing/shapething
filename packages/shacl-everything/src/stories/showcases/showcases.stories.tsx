@@ -47,6 +47,9 @@ export const recipesAndChefs: Story = {
     enableWidgetSwitching: false,
     enableLogicalBranchSwitching: false,
     enableShPathInLabelTitle: false,
+    enableFacetSearchForAutocomplete: true,
+    enableFacetTextSearchMerging: true,
+    enableFacetOptionCounts: true,
   },
   parameters: {
     maxWidth: false,

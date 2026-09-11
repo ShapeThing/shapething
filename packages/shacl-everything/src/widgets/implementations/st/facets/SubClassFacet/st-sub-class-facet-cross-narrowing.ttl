@@ -1,0 +1,33 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Category"@en ;
+        sh:path schema:category ;
+        sh:rootClass ex:Category ;
+        st:facet st:SubClassFacet ;
+        sh:order 0 ;
+    ] ;
+    sh:property [
+        sh:name "Price"@en ;
+        sh:path schema:price ;
+        sh:datatype xsd:decimal ;
+        sh:order 1 ;
+    ] ;
+    .
+
+ex:Category a rdfs:Class ; rdfs:label "Category"@en .
+ex:Electronics rdfs:subClassOf ex:Category ; rdfs:label "Electronics"@en .
+ex:Computers rdfs:subClassOf ex:Electronics ; rdfs:label "Computers"@en .
+ex:Books rdfs:subClassOf ex:Category ; rdfs:label "Books"@en .
+
+<#widget> a schema:Product ; schema:name "Widget" ; schema:category ex:Electronics ; schema:price 19.99 .
+<#laptop> a schema:Product ; schema:name "Laptop" ; schema:category ex:Computers ; schema:price 42.50 .
+<#novel> a schema:Product ; schema:name "Novel" ; schema:category ex:Books ; schema:price 12.00 .

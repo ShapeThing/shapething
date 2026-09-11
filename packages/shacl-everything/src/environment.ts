@@ -171,6 +171,39 @@ export type Environment = {
   // are the one exception: they stay a static per-type instance count, not narrowed by other active
   // facets. When false (the default), no count is shown at all, same as before this option existed.
   enableFacetOptionCounts?: boolean;
+  // When true, preprocess/shapes.ts's addMissingShapes scans dataGraph for classes (rdf:type
+  // values) that no shape in shapesGraph already targets, and mints a synthetic sh:NodeShape -
+  // sh:targetClass - with a bare sh:property/sh:path for each predicate actually used by that
+  // class's instances, so otherwise-unshaped data still renders as something editable. A class
+  // already covered by some shape is left untouched, even if that shape is missing some properties
+  // its instances carry. Off by default: a shapesGraph is normally authored deliberately, and this
+  // is meant as a fallback for exploring/rendering data that has none, not a silent, ongoing
+  // overlay on top of an intentionally scoped shape.
+  enableMissingShapesGeneration?: boolean;
+  // Facet mode only. When true, preprocess/shapes.ts's mergeFacetTextSearchProperties folds every
+  // sh:property of a facetable root shape (resolution/targets.ts's facetableRootShapes) that
+  // declares sh:datatype xsd:string/rdf:langString and has no st:facet of its own into one combined
+  // property instead - sh:path an sh:alternativePath across all of their predicates, explicitly
+  // tagged st:facet st:TextSearchFacet - so there is one free-text search box covering every such
+  // field at once, rather than a separate search box per plain text property. Facet widgets are
+  // otherwise entirely hardcoded via st:facet, so a property already given one (any widget,
+  // including TextSearchFacet itself) is left exactly as it was, never folded in. Off by default: a
+  // shapesGraph that deliberately gives each string property its own st:facet should stay that way
+  // unless this merge is opted into.
+  enableFacetTextSearchMerging?: boolean;
+  // Enables an alternate search flow on shui:AutoCompleteEditor: clicking its search icon opens a
+  // modal containing a nested ShaclRenderer in facet mode (mode: "facet", see modes/facet/), so the
+  // user can narrow candidates down through facets instead of only free-text search - handy once a
+  // class has enough properties that typing a label isn't the fastest way to find one. Facet mode
+  // has no results list of its own (see FacetModeWrapper's doc comment - it only ever hands the
+  // generated filter shape to onSubmit); AutoCompleteEditor's own modal supplies one by re-running
+  // structure/filterShape.ts's instancesMatchingOtherConstraints against that filter shape itself.
+  // Only takes effect when the property actually has a known value node shape to facet against
+  // (see resolution/label.ts's valueNodeShapes - the same emptiness check enableCreateInPlace/
+  // enableEditInPlace already gate on); when false (the default) or when there's no such shape, the
+  // search icon always just opens the ordinary inline typeahead, same as before this option
+  // existed.
+  enableFacetSearchForAutocomplete?: boolean;
 };
 
 // What flows through the preprocessor chain before it's fully resolved: the graph fields may
@@ -217,6 +250,9 @@ export const defaultEnvironment: Environment = {
   facetChangeMode: "live",
   enableFacetTypeUnion: false,
   enableFacetOptionCounts: false,
+  enableMissingShapesGeneration: false,
+  enableFacetTextSearchMerging: false,
+  enableFacetSearchForAutocomplete: false,
 };
 
 export const minimalEnvironment: Omit<
@@ -249,6 +285,9 @@ export const minimalEnvironment: Omit<
   facetChangeMode: "live",
   enableFacetTypeUnion: false,
   enableFacetOptionCounts: false,
+  enableMissingShapesGeneration: false,
+  enableFacetTextSearchMerging: false,
+  enableFacetSearchForAutocomplete: false,
 };
 
 export const minimalEnvironmentWithContentLanguages: Omit<
@@ -268,9 +307,7 @@ export const testingEnvironment: Omit<
   nodeShapes: [],
   mode: "edit",
   interfaceLanguage: "en-GB",
-  interfaceLocales: {
-    "nl-NL": null, // remove Dutch from the shipped set, so only en-GB is available
-  },
+  interfaceLocales: {},
   interfaceLanguages: [],
   contentLanguage: "en-GB",
   contentLanguages: [],
@@ -290,4 +327,7 @@ export const testingEnvironment: Omit<
   facetChangeMode: "live",
   enableFacetTypeUnion: true,
   enableFacetOptionCounts: true,
+  enableMissingShapesGeneration: false,
+  enableFacetTextSearchMerging: false,
+  enableFacetSearchForAutocomplete: true,
 };

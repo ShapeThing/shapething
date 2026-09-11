@@ -46,9 +46,10 @@ ex:ChefShape a sh:NodeShape ;
     ] ;
     sh:property [
         sh:path ex:cuisine ;
-        sh:datatype rdf:langString ;
-        sh:languageIn ( "en" "nl" ) ;
-        sh:uniqueLang true ;
+        sh:rootClass ex:Cuisine ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        shui:editor shui:SubClassEditor ;
         sh:order 3 ;
         sh:name "Signature cuisine"@en, "Signatuurkeuken"@nl ;
     ] ;
@@ -77,6 +78,7 @@ ex:ChefShape a sh:NodeShape ;
         sh:singleLine false ;
         sh:order 6 ;
         sh:name "Biography"@en, "Biografie"@nl ;
+        shui:propertyRole st:DescriptionRole ;
     ] ;
     sh:property [
         sh:path schema:sameAs ;
@@ -86,6 +88,36 @@ ex:ChefShape a sh:NodeShape ;
         sh:name "Wikipedia"@en, "Wikipedia"@nl ;
     ] ;
     .
+
+### Cuisines
+### A small rdfs:subClassOf hierarchy (root ex:Cuisine), walked by shui:SubClassEditor - see
+### widgets/implementations/shui/editors/SubClassEditor/widget.tsx's buildHierarchy(), which reads
+### this subClassOf structure straight out of shapesGraph rather than from class-membership data.
+ex:Cuisine a rdfs:Class ; rdfs:label "Cuisine"@en, "Keuken"@nl .
+
+ex:European rdfs:subClassOf ex:Cuisine ; rdfs:label "European"@en, "Europees"@nl .
+ex:ModernEuropean rdfs:subClassOf ex:European ; rdfs:label "Modern European"@en, "Modern Europees"@nl .
+ex:British rdfs:subClassOf ex:European ; rdfs:label "British"@en, "Brits"@nl .
+ex:French rdfs:subClassOf ex:European ; rdfs:label "French"@en, "Frans"@nl .
+ex:ModernItalian rdfs:subClassOf ex:European ; rdfs:label "Modern Italian"@en, "Modern Italiaans"@nl .
+
+ex:MiddleEasternMediterranean rdfs:subClassOf ex:Cuisine ; rdfs:label "Middle Eastern & Mediterranean"@en, "Midden-Oosters & mediterraan"@nl .
+
+ex:American rdfs:subClassOf ex:Cuisine ; rdfs:label "American"@en, "Amerikaans"@nl .
+ex:CalifornianFarmToTable rdfs:subClassOf ex:American ; rdfs:label "Californian / Farm-to-table"@en, "Californisch / Farm-to-table"@nl .
+ex:SouthernAmerican rdfs:subClassOf ex:American ; rdfs:label "Southern American"@en, "Zuidelijk Amerikaans"@nl .
+ex:ModernAmerican rdfs:subClassOf ex:American ; rdfs:label "Modern American"@en, "Modern Amerikaans"@nl .
+
+ex:Italian rdfs:subClassOf ex:European ; rdfs:label "Italian"@en, "Italiaans"@nl .
+ex:Spanish rdfs:subClassOf ex:European ; rdfs:label "Spanish"@en, "Spaans"@nl .
+ex:Nordic rdfs:subClassOf ex:European ; rdfs:label "Nordic"@en, "Scandinavisch"@nl .
+
+ex:Asian rdfs:subClassOf ex:Cuisine ; rdfs:label "Asian"@en, "Aziatisch"@nl .
+ex:Japanese rdfs:subClassOf ex:Asian ; rdfs:label "Japanese"@en, "Japans"@nl .
+ex:Indian rdfs:subClassOf ex:Asian ; rdfs:label "Indian"@en, "Indiaas"@nl .
+ex:AsianFusion rdfs:subClassOf ex:Asian ; rdfs:label "Asian fusion"@en, "Aziatische fusion"@nl .
+
+ex:Mexican rdfs:subClassOf ex:Cuisine ; rdfs:label "Mexican"@en, "Mexicaans"@nl .
 
 ex:Starter a ex:RecipeCategory ; rdfs:label "Starter"@en, "Voorgerecht"@nl .
 ex:MainCourse a ex:RecipeCategory ; rdfs:label "Main course"@en, "Hoofdgerecht"@nl .
@@ -186,10 +218,11 @@ ex:RecipeShape a sh:NodeShape ;
         sh:name "Chef"@en, "Chef-kok"@nl ;
     ] ;
     sh:property [
-        sh:path schema:recipeCuisine ;
-        sh:datatype rdf:langString ;
-        sh:languageIn ( "en" "nl" ) ;
-        sh:uniqueLang true ;
+        sh:path ex:cuisine ;
+        sh:rootClass ex:Cuisine ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        shui:editor shui:SubClassEditor ;
         sh:order 3 ;
         sh:group ex:metaGroup ;
         sh:name "Cuisine"@en, "Keuken"@nl ;
@@ -277,7 +310,7 @@ ex:gordonRamsay a ex:Chef ;
     schema:name "Gordon Ramsay"@en, "Gordon Ramsay"@nl ;
     schema:image <https://upload.wikimedia.org/wikipedia/commons/9/96/Gordon_Ramsay_%28cropped%29.jpg> ;
     schema:nationality "British"@en, "Brits"@nl ;
-    ex:cuisine "Modern European"@en, "Modern Europees"@nl ;
+    ex:cuisine ex:ModernEuropean ;
     ex:michelinStars 3 ;
     schema:worksFor "Restaurant Gordon Ramsay, London"@en, "Restaurant Gordon Ramsay, Londen"@nl ;
     schema:description "Scottish-born chef and restaurateur known for his Michelin-starred restaurants and television programmes such as Hell's Kitchen and MasterChef."@en,
@@ -289,7 +322,7 @@ ex:juliaChild a ex:Chef ;
     schema:name "Julia Child"@en, "Julia Child"@nl ;
     schema:image <https://upload.wikimedia.org/wikipedia/commons/3/3a/Julia_Child_portrait_by_%C2%A9Lynn_Gilbert%2C_1978.jpg> ;
     schema:nationality "American"@en, "Amerikaans"@nl ;
-    ex:cuisine "French"@en, "Frans"@nl ;
+    ex:cuisine ex:French ;
     schema:description "American chef, author and television personality who introduced French cuisine to American home cooks through Mastering the Art of French Cooking and her show The French Chef."@en,
         "Amerikaanse chef-kok, auteur en tv-persoonlijkheid die de Franse keuken introduceerde bij Amerikaanse thuiskoks via Mastering the Art of French Cooking en haar programma The French Chef."@nl ;
     schema:sameAs <https://en.wikipedia.org/wiki/Julia_Child> ;
@@ -299,7 +332,7 @@ ex:massimoBottura a ex:Chef ;
     schema:name "Massimo Bottura"@en, "Massimo Bottura"@nl ;
     schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Massimo_Bottura_Rimini.jpg/960px-Massimo_Bottura_Rimini.jpg> ;
     schema:nationality "Italian"@en, "Italiaans"@nl ;
-    ex:cuisine "Modern Italian"@en, "Modern Italiaans"@nl ;
+    ex:cuisine ex:ModernItalian ;
     ex:michelinStars 3 ;
     schema:worksFor "Osteria Francescana, Modena"@en, "Osteria Francescana, Modena"@nl ;
     schema:description "Italian chef and owner of Osteria Francescana in Modena, celebrated for reinterpreting traditional Italian dishes with a contemporary, artistic approach."@en,
@@ -311,7 +344,7 @@ ex:yotamOttolenghi a ex:Chef ;
     schema:name "Yotam Ottolenghi"@en, "Yotam Ottolenghi"@nl ;
     schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Yotam_Ottolenghi.jpg/960px-Yotam_Ottolenghi.jpg> ;
     schema:nationality "Israeli-British"@en, "Israëlisch-Brits"@nl ;
-    ex:cuisine "Middle Eastern & Mediterranean"@en, "Midden-Oosters & mediterraan"@nl ;
+    ex:cuisine ex:MiddleEasternMediterranean ;
     schema:worksFor "Ottolenghi & NOPI, London"@en, "Ottolenghi & NOPI, Londen"@nl ;
     schema:description "Israeli-British chef, restaurateur and food writer known for his vegetable-forward Mediterranean and Middle Eastern cooking."@en,
         "Israëlisch-Britse chef-kok, restaurateur en foodschrijver, bekend om zijn groentegerichte mediterrane en Midden-Oosterse keuken."@nl ;
@@ -322,11 +355,357 @@ ex:aliceWaters a ex:Chef ;
     schema:name "Alice Waters"@en, "Alice Waters"@nl ;
     schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Alice_Waters_2014_%28cropped%29.jpg/960px-Alice_Waters_2014_%28cropped%29.jpg> ;
     schema:nationality "American"@en, "Amerikaans"@nl ;
-    ex:cuisine "Californian / Farm-to-table"@en, "Californisch / Farm-to-table"@nl ;
+    ex:cuisine ex:CalifornianFarmToTable ;
     schema:worksFor "Chez Panisse, Berkeley"@en, "Chez Panisse, Berkeley"@nl ;
     schema:description "American chef and founder of Chez Panisse in Berkeley, California, credited with pioneering the farm-to-table movement."@en,
         "Amerikaanse chef-kok en oprichter van Chez Panisse in Berkeley, Californië, geldt als pionier van de farm-to-table-beweging."@nl ;
     schema:sameAs <https://en.wikipedia.org/wiki/Alice_Waters> ;
+    .
+
+### Additional chefs
+### schema:image/schema:sameAs URLs below were verified live (fetched each chef's actual
+### Wikipedia article and cross-checked the infobox image via the MediaWiki API) rather than
+### guessed - a few chefs (Enrique Olvera, Cristina Bowerman, Gaggan Anand) have no infobox
+### photo on English Wikipedia, so schema:image is omitted for those (it's optional: sh:maxCount
+### 1, no sh:minCount on ChefShape).
+ex:anthonyBourdain a ex:Chef ;
+    schema:name "Anthony Bourdain"@en, "Anthony Bourdain"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/a/a5/Anthony_Bourdain_Peabody_2014b.jpg> ;
+    schema:nationality "American"@en, "Amerikaans"@nl ;
+    ex:cuisine ex:American ;
+    schema:worksFor "Brasserie Les Halles, New York"@en, "Brasserie Les Halles, New York"@nl ;
+    schema:description "American chef, author and television host best known for exploring world cuisines and cultures through travelogue series such as No Reservations and Parts Unknown."@en,
+        "Amerikaanse chef-kok, auteur en tv-presentator, vooral bekend van het verkennen van wereldkeukens en culturen in reisprogramma's als No Reservations en Parts Unknown."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Anthony_Bourdain> ;
+    .
+
+ex:wolfgangPuck a ex:Chef ;
+    schema:name "Wolfgang Puck"@en, "Wolfgang Puck"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/1/16/Wolfgang_Puck_2012.jpg> ;
+    schema:nationality "Austrian-American"@en, "Oostenrijks-Amerikaans"@nl ;
+    ex:cuisine ex:CalifornianFarmToTable ;
+    schema:worksFor "Spago, Beverly Hills"@en, "Spago, Beverly Hills"@nl ;
+    schema:description "Austrian-born American chef and restaurateur who helped define modern California cuisine at Spago, blending French technique with fresh, local ingredients."@en,
+        "In Oostenrijk geboren Amerikaanse chef-kok en restaurateur die met Spago de moderne Californische keuken mede vormgaf, met Franse techniek en verse, lokale ingrediënten."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Wolfgang_Puck> ;
+    .
+
+ex:thomasKeller a ex:Chef ;
+    schema:name "Thomas Keller"@en, "Thomas Keller"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/9/93/Thomas_Keller.jpg> ;
+    schema:nationality "American"@en, "Amerikaans"@nl ;
+    ex:cuisine ex:ModernAmerican ;
+    ex:michelinStars 3 ;
+    schema:worksFor "The French Laundry, Yountville"@en, "The French Laundry, Yountville"@nl ;
+    schema:description "American chef and owner of The French Laundry in Napa Valley, renowned for his exacting technique and refined tasting menus rooted in classic French method."@en,
+        "Amerikaanse chef-kok en eigenaar van The French Laundry in Napa Valley, geroemd om zijn nauwkeurige techniek en verfijnde degustatiemenu's, geworteld in de klassieke Franse keuken."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Thomas_Keller> ;
+    .
+
+ex:reneRedzepi a ex:Chef ;
+    schema:name "René Redzepi"@en, "René Redzepi"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/b/b8/Ren%C3%A9_Redzepi_en_la_cena_de_las_14_estrellas_Michel%C3%ADn_del_restaurante_Zaldiar%C3%A1n.jpg> ;
+    schema:nationality "Danish"@en, "Deens"@nl ;
+    ex:cuisine ex:Nordic ;
+    ex:michelinStars 2 ;
+    schema:worksFor "Noma, Copenhagen"@en, "Noma, Kopenhagen"@nl ;
+    schema:description "Danish chef and co-founder of Noma in Copenhagen, a driving force behind the New Nordic movement's focus on foraging, fermentation and hyper-local ingredients."@en,
+        "Deense chef-kok en medeoprichter van Noma in Kopenhagen, een drijvende kracht achter de New Nordic-beweging met haar focus op wildplukken, fermentatie en hyperlokale ingrediënten."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Ren%C3%A9_Redzepi> ;
+    .
+
+ex:ferranAdria a ex:Chef ;
+    schema:name "Ferran Adrià"@en, "Ferran Adrià"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/3/3b/Ferran_Adri%C3%A0_en_la_presentaci%C3%B3n_de_%27Un_proyecte_per_compartir%27.jpg> ;
+    schema:nationality "Spanish"@en, "Spaans"@nl ;
+    ex:cuisine ex:Spanish ;
+    ex:michelinStars 3 ;
+    schema:worksFor "El Bulli, Roses"@en, "El Bulli, Roses"@nl ;
+    schema:description "Spanish chef who led El Bulli near Roses to worldwide fame, pioneering molecular gastronomy techniques such as foams and spherification."@en,
+        "Spaanse chef-kok die El Bulli bij Roses wereldwijde faam bracht en baanbrekende technieken uit de moleculaire keuken introduceerde, zoals foams en sferificatie."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Ferran_Adri%C3%A0> ;
+    .
+
+ex:joelRobuchon a ex:Chef ;
+    schema:name "Joël Robuchon"@en, "Joël Robuchon"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/3/3a/Jo%C3%ABl_Robuchon.jpg> ;
+    schema:nationality "French"@en, "Frans"@nl ;
+    ex:cuisine ex:French ;
+    ex:michelinStars 3 ;
+    schema:worksFor "L'Atelier de Joël Robuchon, Paris"@en, "L'Atelier de Joël Robuchon, Parijs"@nl ;
+    schema:description "French chef widely regarded as one of the most influential cooks of the twentieth century, famed for his silky mashed potatoes and precise, produce-led classicism."@en,
+        "Franse chef-kok die geldt als een van de invloedrijkste kok van de twintigste eeuw, bekend om zijn zijdezachte aardappelpuree en precieze, ingrediëntgedreven klassieke keuken."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Jo%C3%ABl_Robuchon> ;
+    .
+
+ex:paulBocuse a ex:Chef ;
+    schema:name "Paul Bocuse"@en, "Paul Bocuse"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/f/f1/Paul_Bocuse2.jpg> ;
+    schema:nationality "French"@en, "Frans"@nl ;
+    ex:cuisine ex:French ;
+    ex:michelinStars 3 ;
+    schema:worksFor "Auberge du Pont de Collonges, Lyon"@en, "Auberge du Pont de Collonges, Lyon"@nl ;
+    schema:description "French chef and figurehead of nouvelle cuisine, who ran his eponymous restaurant near Lyon for over five decades and lent his name to the Bocuse d'Or cooking competition."@en,
+        "Franse chef-kok en boegbeeld van de nouvelle cuisine, die zijn gelijknamige restaurant bij Lyon meer dan vijf decennia leidde en zijn naam gaf aan de kookwedstrijd Bocuse d'Or."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Paul_Bocuse> ;
+    .
+
+ex:alainDucasse a ex:Chef ;
+    schema:name "Alain Ducasse"@en, "Alain Ducasse"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/e/e3/Alain_Ducasse.jpg> ;
+    schema:nationality "French"@en, "Frans"@nl ;
+    ex:cuisine ex:French ;
+    ex:michelinStars 3 ;
+    schema:worksFor "Alain Ducasse au Plaza Athénée, Paris"@en, "Alain Ducasse au Plaza Athénée, Parijs"@nl ;
+    schema:description "French chef and restaurateur presiding over a global empire of Michelin-starred restaurants, known for a refined, ingredient-focused style he calls \"naturalité\"."@en,
+        "Franse chef-kok en restaurateur aan het hoofd van een wereldwijd imperium van Michelinsterrenrestaurants, bekend om zijn verfijnde, ingrediëntgerichte stijl die hij 'naturalité' noemt."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Alain_Ducasse> ;
+    .
+
+ex:hestonBlumenthal a ex:Chef ;
+    schema:name "Heston Blumenthal"@en, "Heston Blumenthal"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/9/97/Hestonregentspark.jpg> ;
+    schema:nationality "British"@en, "Brits"@nl ;
+    ex:cuisine ex:ModernEuropean ;
+    ex:michelinStars 3 ;
+    schema:worksFor "The Fat Duck, Bray"@en, "The Fat Duck, Bray"@nl ;
+    schema:description "British chef and owner of The Fat Duck in Bray, celebrated for applying scientific method to cooking and for playful, multi-sensory dishes like snail porridge."@en,
+        "Britse chef-kok en eigenaar van The Fat Duck in Bray, geroemd om zijn wetenschappelijke benadering van koken en om speelse, multisensorische gerechten zoals slakkenpap."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Heston_Blumenthal> ;
+    .
+
+ex:marcoPierreWhite a ex:Chef ;
+    schema:name "Marco Pierre White"@en, "Marco Pierre White"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/0/0d/MarcoPierreWhite.jpg> ;
+    schema:nationality "British"@en, "Brits"@nl ;
+    ex:cuisine ex:British ;
+    schema:worksFor "Mr White's, London"@en, "Mr White's, Londen"@nl ;
+    schema:description "British chef and one of the first celebrity chefs of his generation, known for his fiery kitchen reputation and mentoring a wave of later Michelin-starred cooks."@en,
+        "Britse chef-kok en een van de eerste sterchefs van zijn generatie, bekend om zijn vurige reputatie in de keuken en het begeleiden van een latere generatie Michelinsterrenkoks."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Marco_Pierre_White> ;
+    .
+
+ex:nobuMatsuhisa a ex:Chef ;
+    schema:name "Nobu Matsuhisa"@en, "Nobu Matsuhisa"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/d/dd/Nobu_Matsuhisa_with_sushi.png> ;
+    schema:nationality "Japanese"@en, "Japans"@nl ;
+    ex:cuisine ex:Japanese ;
+    schema:worksFor "Nobu, worldwide"@en, "Nobu, wereldwijd"@nl ;
+    schema:description "Japanese chef and founder of the Nobu restaurant group, known for fusing traditional Japanese technique with Peruvian influences picked up early in his career."@en,
+        "Japanse chef-kok en oprichter van de Nobu-restaurantgroep, bekend om het combineren van traditionele Japanse technieken met Peruaanse invloeden uit het begin van zijn carrière."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Nobu_Matsuhisa> ;
+    .
+
+ex:jiroOno a ex:Chef ;
+    schema:name "Jiro Ono"@en, "Jiro Ono"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/5/54/Jiro_behind_the_counter_%2819137550458%29.jpg> ;
+    schema:nationality "Japanese"@en, "Japans"@nl ;
+    ex:cuisine ex:Japanese ;
+    ex:michelinStars 3 ;
+    schema:worksFor "Sukiyabashi Jiro, Tokyo"@en, "Sukiyabashi Jiro, Tokio"@nl ;
+    schema:description "Japanese sushi chef and owner of the ten-seat Sukiyabashi Jiro in Tokyo, whose lifelong pursuit of perfection was chronicled in the documentary Jiro Dreams of Sushi."@en,
+        "Japanse sushichef en eigenaar van het tien zitplaatsen tellende Sukiyabashi Jiro in Tokio, wiens levenslange streven naar perfectie werd vastgelegd in de documentaire Jiro Dreams of Sushi."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Jiro_Ono_(chef)> ;
+    .
+
+ex:nigellaLawson a ex:Chef ;
+    schema:name "Nigella Lawson"@en, "Nigella Lawson"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/1/1c/Nigella_Lawson_4_in_2020.jpg> ;
+    schema:nationality "British"@en, "Brits"@nl ;
+    ex:cuisine ex:British ;
+    schema:description "British food writer and television cook whose warm, unfussy style and bestselling books helped popularise home cooking for a broad domestic audience."@en,
+        "Britse foodschrijver en tv-kok wier warme, ongecompliceerde stijl en bestsellende boeken het thuiskoken populair maakten bij een breed publiek."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Nigella_Lawson> ;
+    .
+
+ex:jamieOliver a ex:Chef ;
+    schema:name "Jamie Oliver"@en, "Jamie Oliver"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/3/38/Jamie_Oliver_%28cropped%29.jpg> ;
+    schema:nationality "British"@en, "Brits"@nl ;
+    ex:cuisine ex:British ;
+    schema:worksFor "Jamie's Italian"@en, "Jamie's Italian"@nl ;
+    schema:description "British chef, restaurateur and campaigner who rose to fame as The Naked Chef and has since championed school-meal reform and healthier home cooking."@en,
+        "Britse chef-kok, restaurateur en pleitbezorger die beroemd werd als The Naked Chef en zich sindsdien inzet voor betere schoolmaaltijden en gezonder thuiskoken."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Jamie_Oliver> ;
+    .
+
+ex:rickStein a ex:Chef ;
+    schema:name "Rick Stein"@en, "Rick Stein"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/e/e1/Rick_Stein_at_Tastes_of_the_Sea_cooking_demonstration_-_01.jpg> ;
+    schema:nationality "British"@en, "Brits"@nl ;
+    ex:cuisine ex:British ;
+    schema:worksFor "The Seafood Restaurant, Padstow"@en, "The Seafood Restaurant, Padstow"@nl ;
+    schema:description "British chef and restaurateur whose Padstow restaurants and television travelogues have long championed simply prepared, sustainably sourced seafood."@en,
+        "Britse chef-kok en restaurateur wiens restaurants in Padstow en tv-reisprogramma's al jarenlang pleiten voor eenvoudig bereide, duurzaam gevangen zeevis."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Rick_Stein> ;
+    .
+
+ex:davidChang a ex:Chef ;
+    schema:name "David Chang"@en, "David Chang"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/1/10/David_Chang_David_Shankbone_2010_%283x4_cropped%29.jpg> ;
+    schema:nationality "American"@en, "Amerikaans"@nl ;
+    ex:cuisine ex:AsianFusion ;
+    schema:worksFor "Momofuku Noodle Bar, New York"@en, "Momofuku Noodle Bar, New York"@nl ;
+    schema:description "American chef and founder of the Momofuku restaurant group, known for blending Korean flavors with American diner sensibilities, starting with ramen and pork buns."@en,
+        "Amerikaanse chef-kok en oprichter van de Momofuku-restaurantgroep, bekend om het combineren van Koreaanse smaken met Amerikaanse dinergevoeligheden, beginnend met ramen en pork buns."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/David_Chang_(chef)> ;
+    .
+
+ex:royChoi a ex:Chef ;
+    schema:name "Roy Choi"@en, "Roy Choi"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/3/38/Roy_Choi_from_Koji_BBQ_%28cropped%29.jpg> ;
+    schema:nationality "American"@en, "Amerikaans"@nl ;
+    ex:cuisine ex:AsianFusion ;
+    schema:worksFor "Kogi BBQ, Los Angeles"@en, "Kogi BBQ, Los Angeles"@nl ;
+    schema:description "Korean-American chef credited with launching the modern food-truck movement through Kogi BBQ, serving Korean-Mexican fusion tacos across Los Angeles."@en,
+        "Koreaans-Amerikaanse chef-kok die met Kogi BBQ aan de basis stond van de moderne foodtruckbeweging, met Koreaans-Mexicaanse fusietaco's door heel Los Angeles."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Roy_Choi> ;
+    .
+
+ex:ericRipert a ex:Chef ;
+    schema:name "Eric Ripert"@en, "Eric Ripert"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/a/a0/Eric_ripert_5213048.jpg> ;
+    schema:nationality "French-American"@en, "Frans-Amerikaans"@nl ;
+    ex:cuisine ex:French ;
+    ex:michelinStars 3 ;
+    schema:worksFor "Le Bernardin, New York"@en, "Le Bernardin, New York"@nl ;
+    schema:description "French-American chef and co-owner of Le Bernardin in New York, celebrated for his precise, restrained treatment of fish and seafood."@en,
+        "Frans-Amerikaanse chef-kok en medeeigenaar van Le Bernardin in New York, geroemd om zijn precieze, ingetogen bereiding van vis en schaal- en schelpdieren."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Eric_Ripert> ;
+    .
+
+ex:danielBoulud a ex:Chef ;
+    schema:name "Daniel Boulud"@en, "Daniel Boulud"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/d/dc/DanielBoulud.jpg> ;
+    schema:nationality "French-American"@en, "Frans-Amerikaans"@nl ;
+    ex:cuisine ex:French ;
+    ex:michelinStars 2 ;
+    schema:worksFor "Restaurant Daniel, New York"@en, "Restaurant Daniel, New York"@nl ;
+    schema:description "French-American chef and founder of the Daniel Boulud restaurant group, known for elevating classic French technique for a New York audience."@en,
+        "Frans-Amerikaanse chef-kok en oprichter van de Daniel Boulud-restaurantgroep, bekend om het verheffen van de klassieke Franse techniek voor een New Yorks publiek."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Daniel_Boulud> ;
+    .
+
+ex:joseAndres a ex:Chef ;
+    schema:name "José Andrés"@en, "José Andrés"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/b/b4/Jose_Andres_Puerta_2012_Shankbone.JPG> ;
+    schema:nationality "Spanish-American"@en, "Spaans-Amerikaans"@nl ;
+    ex:cuisine ex:Spanish ;
+    schema:worksFor "Jaleo, Washington D.C."@en, "Jaleo, Washington D.C."@nl ;
+    schema:description "Spanish-American chef and founder of Jaleo, credited with popularising Spanish tapas in the United States and widely recognised for his disaster-relief cooking through World Central Kitchen."@en,
+        "Spaans-Amerikaanse chef-kok en oprichter van Jaleo, die de Spaanse tapas populair maakte in de Verenigde Staten en breed erkend wordt voor zijn rampenhulp via World Central Kitchen."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Jos%C3%A9_Andr%C3%A9s> ;
+    .
+
+ex:enriqueOlvera a ex:Chef ;
+    schema:name "Enrique Olvera"@en, "Enrique Olvera"@nl ;
+    schema:nationality "Mexican"@en, "Mexicaans"@nl ;
+    ex:cuisine ex:Mexican ;
+    schema:worksFor "Pujol, Mexico City"@en, "Pujol, Mexico-Stad"@nl ;
+    schema:description "Mexican chef and owner of Pujol in Mexico City, widely credited with elevating Mexican cuisine's international standing through a deeply research-driven, ingredient-led approach."@en,
+        "Mexicaanse chef-kok en eigenaar van Pujol in Mexico-Stad, algemeen erkend voor het internationaal op de kaart zetten van de Mexicaanse keuken via een grondig onderzoekende, ingrediëntgerichte aanpak."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Enrique_Olvera> ;
+    .
+
+ex:carloCracco a ex:Chef ;
+    schema:name "Carlo Cracco"@en, "Carlo Cracco"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/3/33/Carlo_Cracco.JPG> ;
+    schema:nationality "Italian"@en, "Italiaans"@nl ;
+    ex:cuisine ex:ModernItalian ;
+    ex:michelinStars 2 ;
+    schema:worksFor "Ristorante Cracco, Milan"@en, "Ristorante Cracco, Milaan"@nl ;
+    schema:description "Italian chef and television personality known for a rigorous, technique-driven reinterpretation of Italian regional classics at his Milan restaurant."@en,
+        "Italiaanse chef-kok en tv-persoonlijkheid, bekend om zijn rigoureuze, techniekgedreven herinterpretatie van Italiaanse regionale klassiekers in zijn restaurant in Milaan."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Carlo_Cracco> ;
+    .
+
+ex:cristinaBowerman a ex:Chef ;
+    schema:name "Cristina Bowerman"@en, "Cristina Bowerman"@nl ;
+    schema:nationality "Italian"@en, "Italiaans"@nl ;
+    ex:cuisine ex:ModernItalian ;
+    ex:michelinStars 1 ;
+    schema:worksFor "Glass Hostaria, Rome"@en, "Glass Hostaria, Rome"@nl ;
+    schema:description "Italian chef and owner of Glass Hostaria in Rome, known for a creative, internationally inflected take on Italian cooking honed partly during years spent in the United States."@en,
+        "Italiaanse chef-kok en eigenaar van Glass Hostaria in Rome, bekend om haar creatieve, internationaal beïnvloede benadering van de Italiaanse keuken, deels ontwikkeld tijdens jaren in de Verenigde Staten."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Cristina_Bowerman> ;
+    .
+
+ex:dominiqueCrenn a ex:Chef ;
+    schema:name "Dominique Crenn"@en, "Dominique Crenn"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/5/51/Dominique_Crenn_2013.jpg> ;
+    schema:nationality "French-American"@en, "Frans-Amerikaans"@nl ;
+    ex:cuisine ex:ModernAmerican ;
+    ex:michelinStars 3 ;
+    schema:worksFor "Atelier Crenn, San Francisco"@en, "Atelier Crenn, San Francisco"@nl ;
+    schema:description "French-born chef and owner of Atelier Crenn in San Francisco, the first woman in the United States to lead a restaurant to three Michelin stars, known for her poetic, garden-inspired menus."@en,
+        "In Frankrijk geboren chef-kok en eigenaar van Atelier Crenn in San Francisco, de eerste vrouw in de Verenigde Staten die een restaurant naar drie Michelinsterren leidde, bekend om haar poëtische, door de tuin geïnspireerde menu's."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Dominique_Crenn> ;
+    .
+
+ex:grantAchatz a ex:Chef ;
+    schema:name "Grant Achatz"@en, "Grant Achatz"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/5/54/JOH_0416_%286079731832%29.jpg> ;
+    schema:nationality "American"@en, "Amerikaans"@nl ;
+    ex:cuisine ex:ModernAmerican ;
+    ex:michelinStars 3 ;
+    schema:worksFor "Alinea, Chicago"@en, "Alinea, Chicago"@nl ;
+    schema:description "American chef and co-owner of Alinea in Chicago, known for avant-garde, multi-sensory tasting menus that push the boundaries of modernist cuisine."@en,
+        "Amerikaanse chef-kok en medeeigenaar van Alinea in Chicago, bekend om avant-gardistische, multisensorische degustatiemenu's die de grenzen van de modernistische keuken verleggen."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Grant_Achatz> ;
+    .
+
+ex:giadaDeLaurentiis a ex:Chef ;
+    schema:name "Giada De Laurentiis"@en, "Giada De Laurentiis"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/e/e1/Giada_De_Laurentiis_2010.jpg> ;
+    schema:nationality "Italian-American"@en, "Italiaans-Amerikaans"@nl ;
+    ex:cuisine ex:Italian ;
+    schema:worksFor "Giada, Las Vegas"@en, "Giada, Las Vegas"@nl ;
+    schema:description "Italian-American chef and television host known for bringing approachable, family-style Italian cooking into American homes through her cookbooks and shows."@en,
+        "Italiaans-Amerikaanse chef-kok en tv-presentator, bekend om het toegankelijk maken van huiselijke Italiaanse keuken voor Amerikaanse huishoudens via haar kookboeken en programma's."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Giada_De_Laurentiis> ;
+    .
+
+ex:inaGarten a ex:Chef ;
+    schema:name "Ina Garten"@en, "Ina Garten"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/d/d4/MFF24_Ina_Garten_Grabowsky_TTL_3492_%2854135420705%29_%28cropped%29.jpg> ;
+    schema:nationality "American"@en, "Amerikaans"@nl ;
+    ex:cuisine ex:ModernAmerican ;
+    schema:description "American author and television cook known as the Barefoot Contessa, celebrated for effortless entertaining and reliably simple, ingredient-forward recipes."@en,
+        "Amerikaanse auteur en tv-kok, bekend als de Barefoot Contessa, geroemd om moeiteloos gastheerschap en betrouwbaar eenvoudige, ingrediëntgerichte recepten."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Ina_Garten> ;
+    .
+
+ex:emerilLagasse a ex:Chef ;
+    schema:name "Emeril Lagasse"@en, "Emeril Lagasse"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/6/6e/Emeril_Lagasse_book_signing.jpg> ;
+    schema:nationality "American"@en, "Amerikaans"@nl ;
+    ex:cuisine ex:SouthernAmerican ;
+    schema:worksFor "Emeril's, New Orleans"@en, "Emeril's, New Orleans"@nl ;
+    schema:description "American chef and restaurateur who brought Louisiana Creole and Cajun cooking to a national television audience with his catchphrase-driven, high-energy style."@en,
+        "Amerikaanse chef-kok en restaurateur die de Creoolse en Cajun-keuken van Louisiana bij een landelijk tv-publiek bracht met zijn energieke stijl vol kenmerkende uitroepen."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Emeril_Lagasse> ;
+    .
+
+ex:paulaDeen a ex:Chef ;
+    schema:name "Paula Deen"@en, "Paula Deen"@nl ;
+    schema:image <https://upload.wikimedia.org/wikipedia/commons/5/53/Fleet_Week_New_York_City_2009_090521-N-DG679-144_%28cropped%29.jpg> ;
+    schema:nationality "American"@en, "Amerikaans"@nl ;
+    ex:cuisine ex:SouthernAmerican ;
+    schema:worksFor "The Lady & Sons, Savannah"@en, "The Lady & Sons, Savannah"@nl ;
+    schema:description "American chef and television personality known for popularising rich, buttery Southern comfort food from her restaurant in Savannah, Georgia."@en,
+        "Amerikaanse chef-kok en tv-persoonlijkheid, bekend om het populair maken van rijke, boterrijke Zuidelijke comfortfood vanuit haar restaurant in Savannah, Georgia."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Paula_Deen> ;
+    .
+
+ex:gagganAnand a ex:Chef ;
+    schema:name "Gaggan Anand"@en, "Gaggan Anand"@nl ;
+    schema:nationality "Indian"@en, "Indiaas"@nl ;
+    ex:cuisine ex:Indian ;
+    ex:michelinStars 2 ;
+    schema:worksFor "Gaggan, Bangkok"@en, "Gaggan, Bangkok"@nl ;
+    schema:description "Indian chef and owner of Gaggan in Bangkok, known for a playful, boundary-pushing progressive Indian cuisine served as a surprise tasting menu."@en,
+        "Indiase chef-kok en eigenaar van Gaggan in Bangkok, bekend om zijn speelse, grensverleggende progressieve Indiase keuken, geserveerd als verrassingsmenu."@nl ;
+    schema:sameAs <https://en.wikipedia.org/wiki/Gaggan_Anand> ;
     .
 
 ### Recipes
@@ -334,7 +713,7 @@ ex:aliceWaters a ex:Chef ;
     schema:name "Beef Wellington"@en, "Beef Wellington"@nl ;
     schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Beef_Wellington_2019.jpg/960px-Beef_Wellington_2019.jpg> ;
     schema:author ex:gordonRamsay ;
-    schema:recipeCuisine "British"@en, "Brits"@nl ;
+    ex:cuisine ex:British ;
     schema:recipeCategory ex:MainCourse ;
     schema:prepTime "PT45M"^^xsd:duration ;
     schema:cookTime "PT40M"^^xsd:duration ;
@@ -356,7 +735,7 @@ ex:aliceWaters a ex:Chef ;
 ex:stickyToffeePudding a schema:Recipe ;
     schema:name "Sticky Toffee Pudding"@en, "Sticky Toffee Pudding"@nl ;
     schema:author ex:gordonRamsay ;
-    schema:recipeCuisine "British"@en, "Brits"@nl ;
+    ex:cuisine ex:British ;
     schema:recipeCategory ex:Dessert ;
     schema:prepTime "PT20M"^^xsd:duration ;
     schema:cookTime "PT30M"^^xsd:duration ;
@@ -380,7 +759,7 @@ ex:boeufBourguignon a schema:Recipe ;
     schema:name "Boeuf Bourguignon"@en, "Boeuf Bourguignon"@nl ;
     schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Beef_bourguignon_NYT.jpg/960px-Beef_bourguignon_NYT.jpg> ;
     schema:author ex:juliaChild ;
-    schema:recipeCuisine "French"@en, "Frans"@nl ;
+    ex:cuisine ex:French ;
     schema:recipeCategory ex:MainCourse ;
     schema:prepTime "PT30M"^^xsd:duration ;
     schema:cookTime "PT3H"^^xsd:duration ;
@@ -404,7 +783,7 @@ ex:boeufBourguignon a schema:Recipe ;
 ex:lemonTart a schema:Recipe ;
     schema:name "Oops! I Dropped the Lemon Tart"@en, "Oeps! De Citroentaart Is Gevallen"@nl ;
     schema:author ex:massimoBottura ;
-    schema:recipeCuisine "Modern Italian"@en, "Modern Italiaans"@nl ;
+    ex:cuisine ex:ModernItalian ;
     schema:recipeCategory ex:Dessert ;
     schema:prepTime "PT1H"^^xsd:duration ;
     schema:cookTime "PT20M"^^xsd:duration ;
@@ -425,7 +804,7 @@ ex:lemonTart a schema:Recipe ;
 ex:roastedCauliflower a schema:Recipe ;
     schema:name "Roasted Cauliflower with Tahini and Pomegranate"@en, "Geroosterde bloemkool met tahin en granaatappel"@nl ;
     schema:author ex:yotamOttolenghi ;
-    schema:recipeCuisine "Middle Eastern & Mediterranean"@en, "Midden-Oosters & mediterraan"@nl ;
+    ex:cuisine ex:MiddleEasternMediterranean ;
     schema:recipeCategory ex:SideDish ;
     schema:prepTime "PT15M"^^xsd:duration ;
     schema:cookTime "PT35M"^^xsd:duration ;
@@ -448,7 +827,7 @@ ex:roastedCauliflower a schema:Recipe ;
 ex:gardenSalad a schema:Recipe ;
     schema:name "Chez Panisse Garden Salad"@en, "Chez Panisse tuinsalade"@nl ;
     schema:author ex:aliceWaters ;
-    schema:recipeCuisine "Californian / Farm-to-table"@en, "Californisch / Farm-to-table"@nl ;
+    ex:cuisine ex:CalifornianFarmToTable ;
     schema:recipeCategory ex:Starter ;
     schema:prepTime "PT15M"^^xsd:duration ;
     schema:cookTime "PT0M"^^xsd:duration ;
@@ -503,10 +882,11 @@ ex:RecipeViewShape a sh:NodeShape ;
         sh:name "Chef"@en, "Chef-kok"@nl ;
     ] ;
     sh:property [
-        sh:path schema:recipeCuisine ;
-        sh:datatype rdf:langString ;
-        sh:languageIn ( "en" "nl" ) ;
-        sh:uniqueLang true ;
+        sh:path ex:cuisine ;
+        sh:rootClass ex:Cuisine ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        shui:editor shui:SubClassEditor ;
         sh:order 3 ;
         sh:group ex:metaGroup ;
         sh:name "Cuisine"@en, "Keuken"@nl ;
