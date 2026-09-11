@@ -78,7 +78,7 @@ export default function RichTextEditor({ term, setTerm, labelledBy, autoFocus }:
 
   // Push external value changes in without disturbing cursor position.
   useEffect(() => {
-    if (editor && term.value !== lastEmitted.current) {
+    if (editor && !editor.isDestroyed && term.value !== lastEmitted.current) {
       lastEmitted.current = term.value;
       isExternalUpdate.current = true;
       editor.commands.setContent(term.value);

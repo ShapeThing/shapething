@@ -18,7 +18,7 @@ export default function HTMLViewer({ term }: WidgetProps) {
   });
 
   useEffect(() => {
-    if (editor && term.value !== editor.getHTML()) {
+    if (editor && !editor.isDestroyed && term.value !== editor.getHTML()) {
       editor.commands.setContent(term.value);
     }
   }, [editor, term.value]);
