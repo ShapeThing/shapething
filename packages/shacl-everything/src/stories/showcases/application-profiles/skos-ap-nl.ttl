@@ -1,3 +1,4 @@
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
@@ -501,6 +502,7 @@ skosapnl:Concept-source
   sh:nodeKind sh:BlankNodeOrIRI ;
   sh:severity sh:Warning ;
   sh:node skosapnl:SourceDocument ;
+  shui:editor shui:DetailsEditor ;
   sh:path dct:source .
 
 skosapnl:Concept-comment
