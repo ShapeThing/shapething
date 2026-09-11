@@ -32,6 +32,10 @@
   }
 }
 
+.st-autocomplete-option__iri svg {
+  transform: translateY(0.1em);
+}
+
 .st-autocomplete-option__edit {
   cursor: pointer;
 }
@@ -85,7 +89,6 @@
   align-content: center;
   text-overflow: ellipsis;
   white-space: nowrap;
-  padding-block: 0.4rem;
 
   /* The classification chip renders as part of the label's own inline content (not a separate
      flex/block sibling), so it flows with the text and wraps onto the next line with it wherever
@@ -93,7 +96,7 @@
   .st-value-chip {
     vertical-align: middle;
     margin-inline-start: var(--size-2);
-    margin-block: var(--size-1);
+    transform: translateY(-0.125em);
   }
 }
 

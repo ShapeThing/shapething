@@ -43,7 +43,7 @@ export default function PropertyUIComponent({
   hideLabel = false,
   labelledBy: labelledByOverride,
 }: PropertyUIComponentProps) {
-  const { languageMode } = useEnvironment();
+  const { languageMode, enableShPathInLabelTitle } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const isRdfLangString = propertyUIElement.get(sh("datatype"))?.equals(rdf("langString"));
@@ -116,7 +116,7 @@ export default function PropertyUIComponent({
           </>
         ) : undefined
       }
-      labelTitle={propertyUIElement.pathAsSparql()}
+      labelTitle={enableShPathInLabelTitle ? propertyUIElement.pathAsSparql() : undefined}
       labelId={labelId}
       description={description}
       required={minCount > 0}

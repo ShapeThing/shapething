@@ -1,9 +1,15 @@
 import type { Term } from "@rdfjs/types";
 import { createContext, type Dispatch, type SetStateAction } from "react";
+import type { GroupUIElement } from "@/structure/GroupUIElement.ts";
 
 export type TabbedPropertyGroupContextValue = {
   activeTabIri: Term | undefined;
   setActiveTabIri: Dispatch<SetStateAction<Term | undefined>>;
+  // The full sibling tab list, computed once by TabbedPropertyGroupFamily - every family member
+  // needs it now, not just the family wrapper, since whichever tab is active is the one that
+  // renders the shared nav (over every tab, not just itself) immediately before its own panel -
+  // see the TabbedPropertyGroup widget.
+  tabs: readonly GroupUIElement[];
 };
 
 // A concrete default (not undefined/throwing) - same convention as memberShapeTableContext:
@@ -13,4 +19,5 @@ export type TabbedPropertyGroupContextValue = {
 export const tabbedPropertyGroupContext = createContext<TabbedPropertyGroupContextValue>({
   activeTabIri: undefined,
   setActiveTabIri: () => {},
+  tabs: [],
 });

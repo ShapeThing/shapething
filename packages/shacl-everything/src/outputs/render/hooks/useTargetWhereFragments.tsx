@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import type { Quad_Subject } from "@rdfjs/types";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { RdfStore } from "rdf-stores";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import { termKey } from "@/helpers/termKey.ts";
@@ -56,8 +56,33 @@ export function useTargetWhereFragments(
   const { data } = useQuery({
     queryKey: ["target-where-fragments", focusNode.value, revision],
     queryFn: () => shapesWhereTargetingFocusNode(focusNode, shapesGraph, dataGraph),
+    // Every watched write bumps `revision`, which is part of the query key - without this, each
+    // bump starts a brand-new cache entry with `data: undefined` until the next revision's (async)
+    // check resolves, flashing every already-attached fragment's fields away and back on every
+    // qualifying edit. Same fix useWidget.tsx already applies for its own revision-keyed query.
+    placeholderData: keepPreviousData,
     ...noRefetch,
   });
+
+  // Stabilizes the returned array's reference across revisions whose resolved fragment set is
+  // identical (order-independent) to the last one returned - `data` is a freshly built array on
+  // every resolved revision even when nothing actually changed, and callers (NodeUIComponent) feed
+  // it straight into a useMemo dependency array that rebuilds the whole node's element tree on any
+  // reference change. Computed inline during render (not in the effect below, which runs after the
+  // commit that would otherwise already have used a fresh reference) - idempotent for a given
+  // `data`, so safe under StrictMode's double-invocation.
+  const stableFragmentsRef = useRef<{ signature: string; value: Quad_Subject[] }>({
+    signature: "",
+    value: [],
+  });
+  const fragments = useMemo(() => {
+    const resolved = data ?? [];
+    const signature = resolved.map(termKey).sort().join("|");
+    if (signature !== stableFragmentsRef.current.signature) {
+      stableFragmentsRef.current = { signature, value: resolved };
+    }
+    return stableFragmentsRef.current.value;
+  }, [data]);
 
   // Logs whenever a sh:targetWhere fragment starts or stops matching focusNode, so a form change
   // driven purely by data no longer conforming to a where-target (rather than an explicit widget
@@ -69,8 +94,8 @@ export function useTargetWhereFragments(
     const previous = previousFragmentsRef.current;
     if (previous !== undefined) {
       const previousKeys = new Set(previous.map(termKey));
-      const currentKeys = new Set(data.map(termKey));
-      const attached = data.filter((shape) => !previousKeys.has(termKey(shape)));
+      const currentKeys = new Set(fragments.map(termKey));
+      const attached = fragments.filter((shape) => !previousKeys.has(termKey(shape)));
       const detached = previous.filter((shape) => !currentKeys.has(termKey(shape)));
       if (attached.length > 0 || detached.length > 0) {
         console.log(
@@ -79,8 +104,8 @@ export function useTargetWhereFragments(
         );
       }
     }
-    previousFragmentsRef.current = data;
-  }, [data, focusNode]);
+    previousFragmentsRef.current = fragments;
+  }, [data, fragments, focusNode]);
 
-  return data ?? [];
+  return fragments;
 }

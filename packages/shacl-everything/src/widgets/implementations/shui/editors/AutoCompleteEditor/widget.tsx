@@ -212,8 +212,14 @@ export default function AutoCompleteEditor({
 
   if (mode === "view") {
     return (
-      <div className="st-autocomplete">
-        <span tabIndex={0} className="st-autocomplete__label st-combo-surface">
+      <div
+        className={`st-autocomplete ${term.value ? "st-autocomplete--filled" : "st-autocomplete--empty"}`}
+      >
+        <span
+          tabIndex={0}
+          className="st-autocomplete__label st-combo-surface"
+          onClick={() => !term.value && setMode("edit")}
+        >
           {term.value ? (
             <AutoCompleteOption
               term={term}
@@ -233,7 +239,7 @@ export default function AutoCompleteEditor({
               }
             />
           ) : (
-            <span className="st-autocomplete__empty" onClick={() => setMode("edit")}>
+            <span className="st-autocomplete__empty">
               <Localized id="select-an-option">- Select an option -</Localized>
             </span>
           )}

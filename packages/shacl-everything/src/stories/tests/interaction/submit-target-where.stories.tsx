@@ -44,6 +44,16 @@ export const orphanedTargetWhereDataIsDeletedOnSubmit: Story = {
 
     await waitFor(() => expect(canvas.queryByDisplayValue("hello")).toBeNull());
 
+    // "Kind" itself belongs to the always-present base shape, not a fragment - useTargetWhereFragments
+    // recalculating (which detaches FragmentAShape and attaches FragmentBShape around it) must not
+    // remount it. Before elementKey()-based keying, an index-keyed sibling list could tear down and
+    // rebuild everything from the change point onward on any array-length shift; asserting the same
+    // DOM node survives the switch is a regression guard against that class of bug reappearing.
+    const triggerAfterSwitch = canvasElement.querySelector<HTMLButtonElement>(
+      ".st-enum-select__trigger",
+    );
+    expect(triggerAfterSwitch).toBe(trigger);
+
     const submitButton = await canvas.findByRole("button", { name: "Update" }, { timeout: 5000 });
     await userEvent.click(submitButton);
 
