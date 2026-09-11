@@ -171,7 +171,7 @@ export default function EditModeWrapper({ children }: Props) {
               <ContentLanguageSwitcher />
             </header>
 
-            <NodeUIComponent />
+            <NodeUIComponent noWrapper />
             {children}
             <div className="st-edit-mode--actions">
               <button className="st-button st-button--primary" type="submit">
