@@ -40,7 +40,7 @@ export default function TabbedPropertyGroup({ group }: GroupWidgetProps) {
   return (
     <>
       {isFirstTab && (
-        <div className="st-tabbed-group-nav" role="tablist">
+        <div className="st-tabbed-group-nav" role="tablist" data-iri={group.node.value}>
           {tabs.map((tab) => {
             const active = tab.node.equals(activeTabIri);
             return (
@@ -66,6 +66,7 @@ export default function TabbedPropertyGroup({ group }: GroupWidgetProps) {
           role="tabpanel"
           id={tabbedGroupPanelId(group.node)}
           aria-labelledby={tabbedGroupTabId(group.node)}
+          data-iri={group.node.value}
         >
           {description && <p className="st-property-group__description">{description}</p>}
           <div className="st-property-group__body">

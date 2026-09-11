@@ -3,6 +3,7 @@ import { RdfStore } from "rdf-stores";
 import { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { cssImportsForShapes } from "@/resolution/cssImports.ts";
 import { groupDescription } from "@/resolution/label.ts";
 import { defaultWidgets } from "@/widgets/registry.ts";
 import type { Widgets } from "@/widgets/types.ts";
@@ -63,5 +64,10 @@ export class NodeUIElement {
       if (description) return description;
     }
     return undefined;
+  }
+
+  /** See resolution/cssImports.ts's cssImportsForShapes - this node's own st:cssImport URLs. */
+  cssImports(): string[] {
+    return cssImportsForShapes(this.nodeShapes, this.shapesGraph);
   }
 }

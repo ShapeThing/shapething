@@ -13,13 +13,16 @@ import React from "react";
 // since nothing about a Storybook args update naturally remounts the component. Keying the story
 // on its own args forces React to tear down and remount it on every Controls edit instead, which
 // gives the same result as a reload without leaving Storybook.
-const withArgsKeyRemount: Decorator = (Story, context) => (
+export const withArgsKeyRemount: Decorator = (Story, context) => (
   <React.Fragment key={JSON.stringify(context.args)}>{Story()}</React.Fragment>
 );
 
-const withMaxWidth: Decorator = (Story) => (
-  <div style={{ maxWidth: 700, marginInline: "auto" }}>{Story()}</div>
-);
+export const withMaxWidth: Decorator = (Story, context) =>
+  context.parameters.maxWidth === false ? (
+    Story()
+  ) : (
+    <div style={{ maxWidth: 800, marginInline: "auto" }}>{Story()}</div>
+  );
 
 type RdfTerm = { termType: string; value: string };
 

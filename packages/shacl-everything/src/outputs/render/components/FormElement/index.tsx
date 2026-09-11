@@ -23,6 +23,7 @@ type Props = {
   description?: string;
   children?: ReactNode;
   className?: string;
+  dataId?: string | null;
   tooltip?: ReactNode;
   // Preferred side for the tooltip - see Tooltip's own `placement` prop.
   tooltipPlacement?: Placement;
@@ -49,6 +50,7 @@ export default function FormElement({
   tooltip,
   tooltipPlacement,
   size = "medium",
+  dataId,
   showColon = false,
   required = false,
   labelLayout = "block",
@@ -60,6 +62,7 @@ export default function FormElement({
       className={clsx("st-form-element", className)}
       data-size={size}
       data-label-layout={labelLayout}
+      data-id={dataId}
     >
       <header className="st-form-element__header">
         {label && (

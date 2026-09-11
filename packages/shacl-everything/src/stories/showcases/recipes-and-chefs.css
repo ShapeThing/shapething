@@ -1,0 +1,66 @@
+.st-node-ui-component {
+  display: flex;
+  gap: 2rem;
+  padding: 2rem;
+  max-width: 1200px;
+  margin-inline: auto;
+  flex-wrap: wrap;
+}
+
+@media (min-width: 800px) {
+  .st-edit-mode--actions {
+    max-width: 1200px;
+    margin-inline: auto;
+    padding-right: calc(300px + 3.6rem);
+    box-sizing: border-box;
+  }
+}
+
+.st-header {
+  max-width: 1200px;
+  margin-inline: auto;
+}
+
+.st-property-group + .st-property-group {
+  margin-top: 0;
+}
+
+[data-iri="http://example.org/mainGroup"] {
+  flex: 1 1 auto;
+}
+
+[data-iri="http://example.org/metaGroup"] {
+  width: 100%;
+  flex: 0 0 auto;
+  background-color: #e6e8ff;
+  border-radius: var(--radius-2);
+}
+
+@media (min-width: 800px) {
+  [data-iri="http://example.org/metaGroup"] {
+    width: 300px;
+  }
+}
+
+[data-iri="http://example.org/mainGroup"],
+[data-iri="http://example.org/metaGroup"] {
+  & > .st-property-group__body {
+    padding-left: 0;
+    border-left: none;
+    padding: 1rem;
+  }
+}
+
+.st-node-ui-component .st-button,
+.react-duration-control-fieldset,
+.st-input {
+  background-color: white;
+}
+
+[data-id="hqryb4zxtqw"] {
+  font-size: 1.4rem;
+
+  > .st-form-element__header {
+    margin-bottom: 1rem;
+  }
+}

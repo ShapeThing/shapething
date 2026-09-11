@@ -1,4 +1,5 @@
 import type { Quad_Subject } from "@rdfjs/types";
+import { useCssImports } from "@/outputs/render/hooks/useCssImports.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useTargetWhereFragments } from "@/outputs/render/hooks/useTargetWhereFragments.tsx";
@@ -31,6 +32,8 @@ export default function NodeUIComponent() {
     [shapesGraph, dataGraph, scoresGraph, widgets, focusNode, effectiveNodeShapes],
   );
   const description = nodeUiElement.description([activeInterfaceLanguage]);
+  const cssImports = useMemo(() => nodeUiElement.cssImports(), [nodeUiElement]);
+  useCssImports(cssImports);
 
   return (
     <div className="st-node-ui-component">

@@ -1,7 +1,7 @@
 .st-input {
   padding: calc(var(--size-2) - 1px);
   border-radius: var(--radius-2);
-  border: 1px solid var(--gray-5);
+  border: 1px solid var(--st-color-border);
   flex: 1 1 auto;
   position: relative;
   z-index: var(--st-z-raised);
@@ -34,7 +34,7 @@
   align-items: center;
   border-top-left-radius: var(--radius-2);
   border-bottom-left-radius: var(--radius-2);
-  border: 1px solid var(--gray-5);
+  border: 1px solid var(--st-color-border);
   border-right: none;
   position: relative;
   background-color: var(--gray-1);
@@ -53,11 +53,10 @@
   align-items: center;
   border-top-right-radius: var(--radius-2);
   border-bottom-right-radius: var(--radius-2);
-  border: 1px solid var(--gray-5);
+  border: 1px solid var(--st-color-border);
   border-left: none;
   position: relative;
   background-color: var(--gray-1);
-  margin-left: calc(var(--size-2) * -1);
 }
 
 .st-property-object__widget:has(.st-input-suffix) .st-input {

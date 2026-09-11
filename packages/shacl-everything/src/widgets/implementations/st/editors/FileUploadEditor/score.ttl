@@ -5,9 +5,6 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 st:FileUploadEditor rdfs:label "File upload"@en, "Bestand uploaden"@nl .
 
-# Explicit-declare only, same as shacl-renderer's own FileUploadEditor (no scoring `meta.score()`
-# there either) - uploading needs a shape-author-provided st:uploadUrl endpoint, so this widget
-# can never be the right auto-detected default for an arbitrary property.
 st:fileUploadEditorScore40
     a shui:WidgetScore ;
     shui:widget st:FileUploadEditor ;
@@ -15,10 +12,28 @@ st:fileUploadEditorScore40
     shui:shapesGraphShape st:prefersFileUploadEditor ;
 .
 
+# A property shape declaring st:uploadUrl (the multipart-POST endpoint this widget's own
+# widget.tsx reads via shape.get(st("uploadUrl"))) is just as unambiguous a signal as an explicit
+# shui:editor declaration - no other widget could sensibly do anything with that annotation.
+st:fileUploadEditorScoreUploadUrl
+    a shui:WidgetScore ;
+    shui:widget st:FileUploadEditor ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:hasUploadUrlConstraint ;
+.
+
 st:prefersFileUploadEditor
     a sh:NodeShape ;
     sh:property [
         sh:path shui:editor ;
         sh:hasValue st:FileUploadEditor ;
+    ] ;
+.
+
+st:hasUploadUrlConstraint
+    a sh:NodeShape ;
+    sh:property [
+        sh:path st:uploadUrl ;
+        sh:minCount 1 ;
     ] ;
 .

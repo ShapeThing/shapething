@@ -61,13 +61,10 @@
   margin-top: 0;
   color: var(--st-primary-color);
   font-family: var(--st-font-family);
+  font-size: var(--st-font-size);
 }
 
 .st-property-group__body {
   display: flex;
   flex-direction: column;
-}
-
-.st-property-group__description {
-  font-size: var(--st-font-size-small);
 }

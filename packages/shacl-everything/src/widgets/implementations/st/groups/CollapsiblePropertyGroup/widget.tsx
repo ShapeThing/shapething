@@ -16,7 +16,7 @@ export default function CollapsiblePropertyGroup({ group }: GroupWidgetProps) {
   const UIElementChildren = mode === "view" ? ViewUIElementChildren : EditUIElementChildren;
 
   return (
-    <details className="st-property-group" open>
+    <details className="st-property-group" open data-iri={group.node.value}>
       <summary className="st-property-group__title st-property-group__legend">
         <Chevron />
         {label}
