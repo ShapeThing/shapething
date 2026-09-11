@@ -21,12 +21,18 @@ export default {
   },
 };
 
+// dcat-ap-nl-drawer-groups.ttl is a purely additive overlay (see its own header comment) - it adds
+// one st:DrawerPropertyGroup per showcased shape and moves that shape's own optional properties
+// into it, entirely via sh:group triples on dcat-ap-nl-LBL.ttl's existing named property shapes,
+// without editing either generated file in place - same approach as the RDA-FR showcase's own
+// rdafr-shacl-drawer-groups.ttl.
 const files = [
   "dcat-ap-nl-SHACL.ttl",
   "dcat-ap-eu-SHACL.ttl",
   "dcat-ap-nl-LBL.ttl",
   "dcat-ap-nl-configuration.ttl",
   "dcat-ap-nl-description-NL.ttl",
+  "dcat-ap-nl-drawer-groups.ttl",
 ];
 
 export const dataset: Story = {

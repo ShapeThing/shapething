@@ -18,12 +18,13 @@ const baseArgs: ShaclRendererProps = {
   mode: "view",
 };
 
-// Scoped to .st-node-ui-component (the actual property tree) - a bare .st-form-element also
-// matches the header's InterfaceLanguageSwitcher/ContentLanguageSwitcher, which render their own
-// FormElement first in DOM order and always default to "block", regardless of this setting.
+// View mode's NodeUIComponent renders with noWrapper, so there's no .st-node-ui-component element
+// to scope into - instead exclude .st-header, since a bare .st-form-element also matches the
+// header's InterfaceLanguageSwitcher/ContentLanguageSwitcher, which render their own FormElement
+// first in DOM order and always default to "block", regardless of this setting.
 function propertyFormElement(canvasElement: HTMLElement): HTMLElement {
-  const element = canvasElement.querySelector<HTMLElement>(
-    ".st-node-ui-component .st-form-element",
+  const element = [...canvasElement.querySelectorAll<HTMLElement>(".st-form-element")].find(
+    (candidate) => !candidate.closest(".st-header"),
   );
   if (!element) throw new Error("Could not find the property's .st-form-element");
   return element;

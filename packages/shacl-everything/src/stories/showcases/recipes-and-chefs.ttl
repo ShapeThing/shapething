@@ -15,7 +15,6 @@
 
 ### Chef Shape
 ex:ChefShape a sh:NodeShape ;
-    st:cssImport <./recipes-and-chefs.css> ;
     sh:targetClass ex:Chef ;
     sh:property [
         sh:path schema:name ;
