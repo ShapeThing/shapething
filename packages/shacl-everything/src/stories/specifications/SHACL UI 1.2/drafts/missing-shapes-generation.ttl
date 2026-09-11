@@ -1,0 +1,11 @@
+@prefix ex: <http://example.org/>.
+
+# Deliberately declares no shape at all: <#shape> has zero triples describing it as a sh:NodeShape
+# anywhere in this file - the whole point of this fixture is that preprocess/shapes.ts's
+# addMissingShapes is the only thing that ever says anything about it (see the story's
+# enableMissingShapesGeneration:true args). Without that flag, nodeShapes still resolves to a real
+# IRI (<#shape>), it just has no sh:property children to expand.
+<#data>
+    a <#shape> ;
+    ex:name "Tom" ;
+    ex:age "3" .

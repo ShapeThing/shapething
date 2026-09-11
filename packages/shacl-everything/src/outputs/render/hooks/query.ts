@@ -5,6 +5,7 @@ import { withCorsProxy } from "@/helpers/corsProxy.ts";
 import {
   classificationRolePropertyPaths,
   depictionRolePropertyPaths,
+  descriptionRolePropertyPaths,
   effectiveLabelPredicates,
   labelRolePropertyPaths,
 } from "@/resolution/label.ts";
@@ -33,6 +34,7 @@ export type ResolvedTerm = {
   label?: string;
   classification?: { term: Term; label: string };
   depiction?: NamedNode;
+  description?: string;
 };
 
 // The narrower shape callers that only ever deal in IRIs (class-instance search, sh:in option
@@ -42,6 +44,7 @@ export type SearchResult = {
   label?: string;
   classification?: { term: Term; label: string };
   depiction?: NamedNode;
+  description?: string;
 };
 
 // One Comunica engine for every query this module runs, whether it only ever touches the already-
@@ -143,6 +146,7 @@ function toResolvedTerms(bindings: Bindings[]): ResolvedTerm[] {
     const classificationTerm = binding.get("classification");
     const classificationLabelTerm = binding.get("classificationLabel");
     const depictionTerm = binding.get("depiction");
+    const descriptionTerm = binding.get("description");
 
     return [
       {
@@ -165,6 +169,7 @@ function toResolvedTerms(bindings: Bindings[]): ResolvedTerm[] {
             }
           : undefined,
         depiction: depictionTerm?.termType === "NamedNode" ? depictionTerm : undefined,
+        description: descriptionTerm?.termType === "Literal" ? descriptionTerm.value : undefined,
       },
     ];
   });
@@ -216,6 +221,7 @@ export function buildSearchQuery(
   labelPaths: string[],
   classificationPaths: string[],
   depictionPaths: string[],
+  descriptionPaths: string[],
   search: string,
 ): string {
   const needle = escapeSparqlLiteral(search.trim().toLowerCase());
@@ -240,14 +246,19 @@ export function buildSearchQuery(
     depictionPaths.length > 0
       ? `optional { ?value ${depictionPaths.join("|")} ?iriDepiction }`
       : "";
+  const descriptionPattern =
+    descriptionPaths.length > 0
+      ? `optional { ?value ${descriptionPaths.join("|")} ?iriDescription }`
+      : "";
 
   return `
     ${queryPrefixes}
-    select ?value (sample(?iriLabel) as ?label) (sample(?iriClassification) as ?classification) (sample(?iriClassificationLabel) as ?classificationLabel) (sample(?iriDepiction) as ?depiction) (max(?matchScore) as ?score) where {
+    select ?value (sample(?iriLabel) as ?label) (sample(?iriClassification) as ?classification) (sample(?iriClassificationLabel) as ?classificationLabel) (sample(?iriDepiction) as ?depiction) (sample(?iriDescription) as ?description) (max(?matchScore) as ?score) where {
       ?value a <${classIri.value}> .
       ${labelPattern}
       ${classificationPattern}
       ${depictionPattern}
+      ${descriptionPattern}
       bind(${labelScoreExpression} as ?labelScore)
       bind(if(contains(lcase(str(?value)), "${needle}"), ${IRI_MATCH_WEIGHT}, 0) as ?iriScore)
       bind(${exactScoreExpression} as ?exactScore)
@@ -283,6 +294,7 @@ function buildRoleLookupQuery(
   labelPaths: string[],
   classificationPaths: string[],
   depictionPaths: string[],
+  descriptionPaths: string[],
   uiLanguage: string | undefined,
   endpoint: string | undefined,
 ): string {
@@ -306,6 +318,8 @@ function buildRoleLookupQuery(
         )} ?roleClassificationLabel${languageFilter("?roleClassificationLabel")} }
       }`,
     depictionPaths.length > 0 && `optional { ?value ${depictionPaths.join("|")} ?roleDepiction }`,
+    descriptionPaths.length > 0 &&
+      `optional { ?value ${descriptionPaths.join("|")} ?roleDescription${languageFilter("?roleDescription")} }`,
   ]
     .filter((pattern): pattern is string => Boolean(pattern))
     .join("\n");
@@ -317,7 +331,7 @@ function buildRoleLookupQuery(
 
   return `
     ${queryPrefixes}
-    select ?value (sample(?roleLabel) as ?label) (sample(?roleClassification) as ?classification) (sample(?roleClassificationLabel) as ?classificationLabel) (sample(?roleDepiction) as ?depiction) where {
+    select ?value (sample(?roleLabel) as ?label) (sample(?roleClassification) as ?classification) (sample(?roleClassificationLabel) as ?classificationLabel) (sample(?roleDepiction) as ?depiction) (sample(?roleDescription) as ?description) where {
       ${where}
     }
     group by ?value
@@ -345,6 +359,7 @@ function rolePathsFor(propertyShape: PropertyUIElement) {
     labelPaths: labelPathsFor(propertyShape).map(toSparql),
     classificationPaths: classificationRolePropertyPaths(propertyShape).map(toSparql),
     depictionPaths: depictionRolePropertyPaths(propertyShape).map(toSparql),
+    descriptionPaths: descriptionRolePropertyPaths(propertyShape).map(toSparql),
   };
 }
 
@@ -357,6 +372,7 @@ async function runRoleLookupQuery(
   labelPaths: string[],
   classificationPaths: string[],
   depictionPaths: string[],
+  descriptionPaths: string[],
   options: RoleLookupOptions,
 ): Promise<ResolvedTerm[]> {
   const query = buildRoleLookupQuery(
@@ -364,6 +380,7 @@ async function runRoleLookupQuery(
     labelPaths,
     classificationPaths,
     depictionPaths,
+    descriptionPaths,
     options.uiLanguage,
     options.endpoint,
   );
@@ -389,7 +406,8 @@ async function resolveRoles(
 ): Promise<ResolvedTerm[]> {
   if (values.length === 0) return [];
 
-  const { labelPaths, classificationPaths, depictionPaths } = rolePathsFor(propertyShape);
+  const { labelPaths, classificationPaths, depictionPaths, descriptionPaths } =
+    rolePathsFor(propertyShape);
 
   return runRoleLookupQuery(
     values,
@@ -397,6 +415,7 @@ async function resolveRoles(
     labelPaths,
     classificationPaths,
     depictionPaths,
+    descriptionPaths,
     options,
   );
 }
@@ -418,7 +437,15 @@ export async function searchInstances(
   const labelPaths = labelPathsFor(shape).map(toSparql);
   const classificationPaths = classificationRolePropertyPaths(shape).map(toSparql);
   const depictionPaths = depictionRolePropertyPaths(shape).map(toSparql);
-  const query = buildSearchQuery(classIri, labelPaths, classificationPaths, depictionPaths, search);
+  const descriptionPaths = descriptionRolePropertyPaths(shape).map(toSparql);
+  const query = buildSearchQuery(
+    classIri,
+    labelPaths,
+    classificationPaths,
+    depictionPaths,
+    descriptionPaths,
+    search,
+  );
 
   return toSearchResults(await runQuery(query, shape, corsProxyUrl));
 }
@@ -443,12 +470,14 @@ function roleLookupBatchKey(
   labelPaths: string[],
   classificationPaths: string[],
   depictionPaths: string[],
+  descriptionPaths: string[],
   options: RoleLookupOptions,
 ): string {
   return JSON.stringify([
     labelPaths,
     classificationPaths,
     depictionPaths,
+    descriptionPaths,
     options.uiLanguage,
     options.endpoint,
     options.corsProxyUrl,
@@ -464,6 +493,7 @@ async function runRoleLookupBatch(
   labelPaths: string[],
   classificationPaths: string[],
   depictionPaths: string[],
+  descriptionPaths: string[],
   options: RoleLookupOptions,
 ): Promise<void> {
   try {
@@ -473,6 +503,7 @@ async function runRoleLookupBatch(
       labelPaths,
       classificationPaths,
       depictionPaths,
+      descriptionPaths,
       options,
     );
     const resolvedByValue = new Map(resolved.map((result) => [result.term.value, result]));
@@ -499,6 +530,7 @@ function batchRoleLookup(
   labelPaths: string[],
   classificationPaths: string[],
   depictionPaths: string[],
+  descriptionPaths: string[],
   options: RoleLookupOptions,
 ): Promise<ResolvedTerm[]> {
   let batchesForGraph = roleLookupBatches.get(propertyShape.dataGraph);
@@ -507,7 +539,13 @@ function batchRoleLookup(
     roleLookupBatches.set(propertyShape.dataGraph, batchesForGraph);
   }
 
-  const key = roleLookupBatchKey(labelPaths, classificationPaths, depictionPaths, options);
+  const key = roleLookupBatchKey(
+    labelPaths,
+    classificationPaths,
+    depictionPaths,
+    descriptionPaths,
+    options,
+  );
   let entry = batchesForGraph.get(key);
   if (!entry) {
     entry = { values: new Map(), waiters: [] };
@@ -522,6 +560,7 @@ function batchRoleLookup(
         labelPaths,
         classificationPaths,
         depictionPaths,
+        descriptionPaths,
         options,
       );
     }, ROLE_LOOKUP_BATCH_DELAY_MS);
@@ -553,10 +592,18 @@ export async function fetchOptions(
 ): Promise<SearchResult[]> {
   if (iris.length === 0) return [];
 
-  const { labelPaths, classificationPaths, depictionPaths } = rolePathsFor(shape);
+  const { labelPaths, classificationPaths, depictionPaths, descriptionPaths } = rolePathsFor(shape);
 
   return toSearchResults(
-    await batchRoleLookup(iris, shape, labelPaths, classificationPaths, depictionPaths, options),
+    await batchRoleLookup(
+      iris,
+      shape,
+      labelPaths,
+      classificationPaths,
+      depictionPaths,
+      descriptionPaths,
+      options,
+    ),
   );
 }
 

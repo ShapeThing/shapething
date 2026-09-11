@@ -1,5 +1,7 @@
-import { sh } from "@/helpers/namespaces.ts";
+import { languageLabels } from "@/helpers/languageLabels.ts";
+import { rdf, sh } from "@/helpers/namespaces.ts";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
+import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -23,9 +25,14 @@ export default function MemberShapeListHeader({
   columns: PropertyUIElement[];
   columnLabelId: (index: number) => string;
 }) {
-  const { enableLogicalBranchSwitching, enableWidgetSwitching, enableShPathInLabelTitle } =
-    useEnvironment();
+  const {
+    enableLogicalBranchSwitching,
+    enableWidgetSwitching,
+    enableShPathInLabelTitle,
+    languageMode,
+  } = useEnvironment();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
+  const { activeLanguage } = useContentLanguage();
   // A data row's own gear icon (see DetailsEditor) only renders under this same condition - the
   // header's spacer has to match exactly, or its presence/absence would shift every column after
   // it out of alignment with the rows below.
@@ -42,15 +49,27 @@ export default function MemberShapeListHeader({
           <div className="st-details-editor__body">
             <fieldset className="st-property-group st-property-group--horizontal">
               <div className="st-property-group__body">
-                {columns.map((column, index) => (
-                  <FormElement
-                    key={index}
-                    label={column.label([activeInterfaceLanguage])}
-                    labelTitle={enableShPathInLabelTitle ? column.pathAsSparql() : undefined}
-                    required={(column.get(sh("minCount")) ?? 0) > 0}
-                    labelId={columnLabelId(index)}
-                  />
-                ))}
+                {columns.map((column, index) => {
+                  const isRdfLangString = column.get(sh("datatype"))?.equals(rdf("langString"));
+                  const showLanguageTag =
+                    Boolean(activeLanguage) && isRdfLangString && languageMode === "switcher";
+                  return (
+                    <FormElement
+                      key={index}
+                      label={column.label([activeInterfaceLanguage])}
+                      labelSuffix={
+                        showLanguageTag ? (
+                          <span className="st-property-language-tag">
+                            ({Object.values(languageLabels([activeLanguage], activeInterfaceLanguage))})
+                          </span>
+                        ) : undefined
+                      }
+                      labelTitle={enableShPathInLabelTitle ? column.pathAsSparql() : undefined}
+                      required={(column.get(sh("minCount")) ?? 0) > 0}
+                      labelId={columnLabelId(index)}
+                    />
+                  );
+                })}
               </div>
             </fieldset>
           </div>

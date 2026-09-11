@@ -48,6 +48,7 @@ autocomplete-search-placeholder =
     .placeholder = Search…
 autocomplete-no-results = No results found
 autocomplete-search-error = Search failed
+autocomplete-facet-search-title = Select a value for { $label }
 address-search-placeholder =
     .placeholder = Search for an address…
 autocomplete-edit-value =

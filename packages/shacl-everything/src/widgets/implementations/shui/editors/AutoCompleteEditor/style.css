@@ -80,3 +80,48 @@
 .st-edit-button {
   align-items: start;
 }
+
+.st-autocomplete__facet-search {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: var(--size-4);
+  min-width: min(80vw, var(--size-15));
+  min-height: 0;
+
+  /* The nested ShaclRenderer's own facet-mode root (modes/facet/index.tsx's FacetModeWrapper) -
+     the facet-controls column. Sized as a flex item (rather than a fixed width) so it wraps onto
+     its own row above the results, instead of squeezing both columns unreadably thin, once the
+     modal is narrower than both columns' combined basis (e.g. a small viewport). */
+  > .st-autocomplete__facet-search-controls {
+    flex: 0 0 300px;
+  }
+}
+
+.st-autocomplete__facet-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+  flex: 1 1 500px;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  position: relative;
+  max-height: 100%;
+  margin-block: var(--size-3);
+  overflow-y: auto;
+  padding-top: 0;
+  width: auto;
+  top: 0;
+  left: 0;
+}
+
+.st-autocomplete__facet-search-modal {
+  max-width: 900px;
+  min-height: 800px;
+
+  .st-modal__content {
+    padding-bottom: var(--size-8);
+  }
+}

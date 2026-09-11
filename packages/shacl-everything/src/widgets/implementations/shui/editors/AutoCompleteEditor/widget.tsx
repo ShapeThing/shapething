@@ -15,8 +15,10 @@ import { useInstanceSearch } from "@/outputs/render/hooks/useInstanceSearch.tsx"
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import type { SearchResult } from "@/outputs/render/hooks/query.ts";
 import { valueNodeShapes } from "@/resolution/label.ts";
+import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
+import FacetSearchModal from "@/widgets/implementations/shui/editors/AutoCompleteEditor/FacetSearchModal.tsx";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "@/theme/comboBox.css";
 import "./style.css";
@@ -34,16 +36,43 @@ export default function AutoCompleteEditor({
   autoFocus,
 }: WidgetProps) {
   const existingObjects = useDataGraphObjects(shape);
-  const { enableCreateInPlace, enableEditInPlace } = useEnvironment();
+  const { enableCreateInPlace, enableEditInPlace, enableFacetSearchForAutocomplete } =
+    useEnvironment();
   const shClasses = useMemo(() => shape.get(sh("class")), [shape]);
   // Whether the "Create new…" row (rendered as the last item of the results dropdown, see below)
   // is offered at all.
   const canCreate = enableCreateInPlace && shClasses.length > 0;
   // The shape describing a newly created instance's own fields - see InstancesSelectEditor, whose
-  // createNew this mirrors.
+  // createNew this mirrors. Doubles as the facet-search modal's own scope (see below): both need
+  // "the node shape(s) that actually describe this property's values."
   const nodeShapes = useMemo(() => valueNodeShapes(shape), [shape]);
   const [creating, setCreating] = useState<NamedNode | undefined>(undefined);
   const [staging, setStaging] = useState<Staging | undefined>(undefined);
+
+  // Whether the search icon opens the facet-search modal instead of the ordinary inline typeahead
+  // (see openSearch below) - gated the same way canCreate/canEditResource are, on there being a
+  // known shape to actually render something against.
+  const canFacetSearch = Boolean(enableFacetSearchForAutocomplete) && nodeShapes.length > 0;
+  const [facetSearching, setFacetSearching] = useState(false);
+  // Every existing sh:class instance the facet-search modal's own facets narrow down - mirrors
+  // InstancesSelectEditor's own equivalent "subjects" computation. Only worth computing at all when
+  // the modal can actually be opened.
+  const facetSearchCandidates = useMemo(() => {
+    if (!canFacetSearch) return [];
+    const seen = new Set<string>();
+    const result: NamedNode[] = [];
+    for (const shClass of shClasses) {
+      for (const instance of shaclInstancesOfClass(shClass, shape.dataGraph, shape.shapesGraph)) {
+        if (instance.termType !== "NamedNode" || seen.has(instance.value)) continue;
+        seen.add(instance.value);
+        result.push(instance);
+      }
+    }
+    return result.filter(
+      (instance) =>
+        !existingObjects.some((obj) => obj.value === instance.value && obj.value !== term.value),
+    );
+  }, [canFacetSearch, shClasses, shape, existingObjects, term]);
 
   // Normally always starts as "view" regardless of whether `term` already has a value, so a
   // screen with several empty properties of this widget type doesn't turn into a race over which
@@ -108,6 +137,17 @@ export default function AutoCompleteEditor({
     // the value display is always correct here regardless of what `term` currently reads.
     reset();
     setMode("view");
+  };
+
+  // What the search icon (and the empty-value label, see the view-mode render below) actually
+  // does: opens the facet-search modal when it's available, otherwise falls back to the ordinary
+  // inline typeahead, same as before that modal existed.
+  const openSearch = () => {
+    if (canFacetSearch) {
+      setFacetSearching(true);
+      return;
+    }
+    setMode("edit");
   };
 
   // Mints a fresh, randomly-identified instance of this property's sh:class(es) - mirrors
@@ -218,7 +258,7 @@ export default function AutoCompleteEditor({
         <span
           tabIndex={0}
           className="st-autocomplete__label st-combo-surface"
-          onClick={() => !term.value && setMode("edit")}
+          onClick={() => !term.value && openSearch()}
         >
           {term.value ? (
             <AutoCompleteOption
@@ -249,12 +289,24 @@ export default function AutoCompleteEditor({
             type="button"
             className="st-button st-edit-button"
             aria-label="Edit"
-            onClick={() => setMode("edit")}
+            onClick={openSearch}
           >
             <Search />
           </button>
         </Localized>
         {createModal}
+        {facetSearching && (
+          <FacetSearchModal
+            onClose={() => setFacetSearching(false)}
+            shape={shape}
+            nodeShapes={nodeShapes}
+            candidateInstances={facetSearchCandidates}
+            onSelect={(result) => {
+              apply(result);
+              setFacetSearching(false);
+            }}
+          />
+        )}
       </div>
     );
   }

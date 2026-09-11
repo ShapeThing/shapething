@@ -1,16 +1,21 @@
-.st-subclass {
+.st-subclass-facet {
   position: relative;
   flex: 1;
   width: 100%;
   display: flex;
   background-color: white;
   flex-direction: column;
+
+  .st-option {
+    white-space: nowrap;
+  }
 }
 
 /* Looks like a single .st-input (same border/radius) but wraps its own chips plus the bare search
    input - the focus ring lives here (:focus-within) rather than on the input itself, since the
-   input has no border of its own once it's sharing this box with the pills. */
-.st-subclass__chips {
+   input has no border of its own once it's sharing this box with the pills. Same shape as
+   shui:SubClassEditor's own .st-subclass__chips. */
+.st-subclass-facet__chips {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -30,7 +35,7 @@
 
 /* Shares the row with whatever chips already exist - never shrinks to nothing when they wrap,
    and grows to fill the rest of the row when there's only one or none. */
-.st-subclass__input {
+.st-subclass-facet__input {
   flex: 1 1 auto;
   min-width: 6rem;
   border: none;
@@ -39,24 +44,21 @@
   padding: var(--size-1) 0;
 }
 
-/* Floats over whatever comes after this field in the form instead of pushing it down, same as
-   .st-autocomplete__results / .st-enum-select__results. */
+/* Floats over whatever comes after this field instead of pushing it down, same as
+   shui:SubClassEditor's own .st-subclass__panel / .st-autocomplete__results. */
 @layer overlay {
-  .st-subclass__panel {
+  .st-subclass-facet__panel {
     position: absolute;
     top: calc(100% + var(--size-2));
     left: 0;
     z-index: var(--st-z-overlay);
-    width: 100%;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
     gap: var(--size-2);
-    padding: var(--size-2);
     background-color: white;
     border: 1px solid var(--st-color-border);
     border-radius: var(--radius-2);
     box-shadow: var(--shadow-3);
   }
 }
-

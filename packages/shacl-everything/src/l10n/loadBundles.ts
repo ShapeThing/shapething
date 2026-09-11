@@ -1,6 +1,7 @@
 import { FluentBundle, FluentResource } from "@fluent/bundle";
 import type { BCP47 } from "@/types/BCP47.ts";
 import {
+  builtInLocaleLoaders,
   DEFAULT_LOCALE,
   mergeLocaleLoaders,
   resolveLocale,
@@ -37,7 +38,21 @@ export const loadBundles = async (
 ): Promise<FluentBundle[]> => {
   const loaders = mergeLocaleLoaders(customLocales);
   const fallback = DEFAULT_LOCALE in loaders ? DEFAULT_LOCALE : Object.keys(loaders)[0]!;
-  const resolved = resolveLocale(interfaceLanguage, loaders);
+
+  // A locale explicitly removed via `interfaceLocales` (e.g. `{ "nl-NL": null }`) is ordinarily
+  // just gone - but Environment.enableInterfaceLanguageWithShapesLabelsOnly can still resurrect it
+  // into interfaceLanguages (see preprocess/languages.ts) purely because the shapes graph itself
+  // carries sh:name/sh:description labels in it. When that happens, the library's own built-in
+  // translation for it - if it ships one - is still the right thing to load, rather than silently
+  // leaving every FTL-driven string in the fallback language while shape-derived labels follow the
+  // resurrected one.
+  let resolved = resolveLocale(interfaceLanguage, loaders);
+  let effectiveLoaders = loaders;
+  if (!resolved) {
+    resolved = resolveLocale(interfaceLanguage, builtInLocaleLoaders);
+    if (resolved) effectiveLoaders = { ...loaders, [resolved]: builtInLocaleLoaders[resolved] };
+  }
+
   const locales = resolved && resolved !== fallback ? [resolved, fallback] : [fallback];
-  return Promise.all(locales.map((locale) => getBundle(locale, loaders[locale]!)));
+  return Promise.all(locales.map((locale) => getBundle(locale, effectiveLoaders[locale]!)));
 };

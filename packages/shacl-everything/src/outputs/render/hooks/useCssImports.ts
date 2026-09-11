@@ -10,7 +10,6 @@ import { acquireStylesheet } from "@/helpers/stylesheetRegistry.ts";
  */
 export function useCssImports(hrefs: readonly string[]): void {
   useEffect(() => {
-    console.log(hrefs);
     const releases = hrefs.map((href) => acquireStylesheet(href));
     return () => {
       for (const release of releases) release();

@@ -1,7 +1,7 @@
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
 import { localName } from "@/helpers/localName.ts";
-import { rdfs, sh, shui } from "@/helpers/namespaces.ts";
+import { rdfs, sh, shui, st } from "@/helpers/namespaces.ts";
 import language, {
   configuredLanguages,
   effectiveLanguages,
@@ -358,6 +358,21 @@ export function classificationRolePropertyPaths(
   return propertyPathsByRole(propertyShape, shui("ClassificationRole"));
 }
 
+/**
+ * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
+ * node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole
+ * st:DescriptionRole - a longer, free-text summary of a value (e.g. a chef's own biography), as
+ * opposed to LabelRole's short display name. Not part of the shui: spec - a ShapeThing-original
+ * role, the same kind of extension st:GeoRole is (see st:MapViewer's geometry.ts): declared via
+ * the very same generic `shui:propertyRole` predicate, just with an `st:` role value instead of a
+ * `shui:` one. Mirrors labelRolePropertyPaths/depictionRolePropertyPaths.
+ */
+export function descriptionRolePropertyPaths(
+  propertyShape: PropertyUIElement,
+): PropertyPath[] {
+  return propertyPathsByRole(propertyShape, st("DescriptionRole"));
+}
+
 // 8.2.3 Value Node Labels
 export function valueNodeLabel(
   { term, propertyShape, languages }: ValueNodeLabelOptions,
@@ -514,4 +529,36 @@ export function valueNodeDepiction({
   return depictionRolePropertyPaths(propertyShape)
     .flatMap((path) => walkPropertyPath(path, term, dataGraph))
     .find((value): value is NamedNode => value.termType === "NamedNode");
+}
+
+type ValueNodeDescriptionOptions = {
+  term: Term;
+  propertyShape: PropertyUIElement;
+  languages?: BCP47[];
+};
+
+/**
+ * A longer, free-text summary of V (e.g. a chef's own biography): the best-language match from a
+ * st:DescriptionRole-annotated path from V in the data graph. Undefined when V is a literal
+ * (nothing to walk from) or no such value exists - mirrors valueNodeDepiction, but resolving to a
+ * language-selected string rather than an image IRI, the same way propertyDescription resolves a
+ * property's own help text.
+ */
+export function valueNodeDescription({
+  term,
+  propertyShape,
+  languages,
+}: ValueNodeDescriptionOptions): string | undefined {
+  if (term.termType === "Literal") return undefined;
+
+  const { dataGraph } = propertyShape;
+  const effLanguages = effectiveLanguages(propertyShape, languages ?? []);
+
+  const values = descriptionRolePropertyPaths(propertyShape).flatMap((path) =>
+    walkPropertyPath(path, term, dataGraph),
+  );
+  return language(
+    values.filter((v): v is Literal => v.termType === "Literal"),
+    effLanguages,
+  )?.value;
 }

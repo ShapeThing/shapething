@@ -1,0 +1,28 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+st:SubClassFacet rdfs:label "Class Picker"@en, "Klassekiezer"@nl .
+
+st:subClassFacetScore40
+    a shui:WidgetScore ;
+    shui:widget st:SubClassFacet ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:prefersSubClassFacet ;
+.
+
+st:subClassFacetScoreRootClass
+    a shui:WidgetScore ;
+    shui:widget st:SubClassFacet ;
+    shui:score 20 ;
+    shui:shapesGraphShape shui:hasRootClassConstraint ;
+.
+
+st:prefersSubClassFacet
+    a sh:NodeShape ;
+    sh:property [
+        sh:path st:facet ;
+        sh:hasValue st:SubClassFacet ;
+    ] ;
+.

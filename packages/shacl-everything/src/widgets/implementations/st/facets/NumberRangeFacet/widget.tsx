@@ -11,7 +11,6 @@ export default function NumberRangeFacet({
   shape,
   values,
   setConstraint,
-  rangeMatchCount,
   labelledBy,
 }: FacetWidgetProps) {
   const datatype = (shape.get(sh("datatype")) ?? xsd("decimal")) as NamedNode;
@@ -94,9 +93,6 @@ export default function NumberRangeFacet({
           setConstraint(sh("maxInclusive"), factory.literal(clamped, datatype));
         }}
       />
-      {rangeMatchCount !== undefined && (
-        <span className="st-number-range-facet__count"> ({rangeMatchCount})</span>
-      )}
     </div>
   );
 }
