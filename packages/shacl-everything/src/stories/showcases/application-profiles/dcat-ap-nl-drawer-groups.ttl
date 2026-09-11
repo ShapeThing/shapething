@@ -1,0 +1,155 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix st: <http://shapething.com/> .
+@prefix dcatapnl-sh: <http://modellen.geostandaarden.nl/dcat-ap-nl/id/shape/> .
+@prefix dcatshow: <https://shapething.com/showcases/dcat-ap-nl#> .
+
+# Overlay for the DCAT AP NL showcase (Showcases/Application profiles/DCAT AP NL), same approach as
+# the RDA-FR showcase's own rdafr-shacl-drawer-groups.ttl: adds one st:DrawerPropertyGroup per
+# showcased shape and moves that shape's own optional (no sh:minCount >= 1, as declared across
+# dcat-ap-nl-SHACL.ttl's constraint-only property shapes for the same sh:path) properties into it -
+# via sh:group triples on dcat-ap-nl-LBL.ttl's existing named property shapes, without editing either
+# generated file in place. Required properties are left out of the group and stay directly visible.
+# Loaded alongside the other profile files via argsByTestFile's multi-file merge in dcat.stories.tsx.
+
+# Dataset: 6 required (accessRights, contactPoint, creator, identifier, publisher, theme), 32 optional
+dcatshow:DatasetShapeDrawer a sh:PropertyGroup, st:DrawerPropertyGroup ;
+    sh:order 1000 ;
+    sh:name "Overige eigenschappen"@nl .
+
+dcatapnl-sh:DatasetShape_description sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_title sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_distribution sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_spatial sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_keyword sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_temporal sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_applicableLegislation sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_conformsTo sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_accrualPeriodicity sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_hasVersion sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_inSeries sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_isReferencedBy sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_landingPage sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_language sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_modified sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_other_identifier sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_provenance sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_qualifiedAttribution sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_qualifiedRelation sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_relation sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_issued sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_sample sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_source sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_status sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_spatialResolutionInMeters sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_temporalResolution sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_type sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_version sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_versionNotes sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_wasGeneratedBy sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_hvdCategory sh:group dcatshow:DatasetShapeDrawer .
+dcatapnl-sh:DatasetShape_documentation sh:group dcatshow:DatasetShapeDrawer .
+
+# Distribution: 1 required (license), 23 optional
+dcatshow:DistributionShapeDrawer a sh:PropertyGroup, st:DrawerPropertyGroup ;
+    sh:order 1000 ;
+    sh:name "Overige eigenschappen"@nl .
+
+dcatapnl-sh:DistributionShape_accessURL sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_availability sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_description sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_format sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_accessService sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_applicableLegislation sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_byteSize sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_checksum sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_compressionFormat sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_documentation sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_modified sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_packagingFormat sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_issued sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_rights sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_spatialResolutionInMeters sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_status sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_temporalResolution sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_title sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_downloadURL sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_hasPolicy sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_language sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_conformsTo sh:group dcatshow:DistributionShapeDrawer .
+dcatapnl-sh:DistributionShape_mediaType sh:group dcatshow:DistributionShapeDrawer .
+
+# DataService: 8 required (accessRights, contactPoint, description, endpointDescription, identifier,
+# license, publisher, theme), 15 optional
+dcatshow:DataServiceShapeDrawer a sh:PropertyGroup, st:DrawerPropertyGroup ;
+    sh:order 1000 ;
+    sh:name "Overige eigenschappen"@nl .
+
+dcatapnl-sh:dcatDataService_endpointURL sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:dcatDataService_title sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:dcatDataService_conformsTo sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:dcatDataService_keyword sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:dcatDataService_servesDataset sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:dcatDataService_applicableLegislation sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:dcatDataService_format sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:dcatDataService_landingPage sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:DataServiceShape_documentation sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:DataServiceShape_hvdCategory sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:DataServiceShape_language sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:DataServiceShape_modified sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:DataServiceShape_otherIdentifier sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:DataServiceShape_creator sh:group dcatshow:DataServiceShapeDrawer .
+dcatapnl-sh:DataServiceShape_rights sh:group dcatshow:DataServiceShapeDrawer .
+
+# Catalog: 2 required (contactPoint, dataset), 18 optional
+dcatshow:CatalogShapeDrawer a sh:PropertyGroup, st:DrawerPropertyGroup ;
+    sh:order 1000 ;
+    sh:name "Overige eigenschappen"@nl .
+
+dcatapnl-sh:dcatCatalog_description sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_publisher sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_title sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_spatial sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_homepage sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_language sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_license sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_modified sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_issued sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_service sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_themeTaxonomy sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_applicableLegislation sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_catalog sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_creator sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_hasPart sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_record sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_rights sh:group dcatshow:CatalogShapeDrawer .
+dcatapnl-sh:dcatCatalog_temporal sh:group dcatshow:CatalogShapeDrawer .
+
+# DatasetSeries: 0 required, 10 optional
+dcatshow:DatasetSeriesShapeDrawer a sh:PropertyGroup, st:DrawerPropertyGroup ;
+    sh:order 1000 ;
+    sh:name "Overige eigenschappen"@nl .
+
+dcatapnl-sh:DatasetShapeSeries_description sh:group dcatshow:DatasetSeriesShapeDrawer .
+dcatapnl-sh:DatasetShapeSeries_title sh:group dcatshow:DatasetSeriesShapeDrawer .
+dcatapnl-sh:DatasetShapeSeries_contactPoint sh:group dcatshow:DatasetSeriesShapeDrawer .
+dcatapnl-sh:DatasetShapeSeries_spatial sh:group dcatshow:DatasetSeriesShapeDrawer .
+dcatapnl-sh:DatasetShapeSeries_publisher sh:group dcatshow:DatasetSeriesShapeDrawer .
+dcatapnl-sh:DatasetShapeSeries_applicableLegislation sh:group dcatshow:DatasetSeriesShapeDrawer .
+dcatapnl-sh:DatasetShapeSeries_accrualPeriodicity sh:group dcatshow:DatasetSeriesShapeDrawer .
+dcatapnl-sh:DatasetShapeSeries_modified sh:group dcatshow:DatasetSeriesShapeDrawer .
+dcatapnl-sh:DatasetShapeSeries_issued sh:group dcatshow:DatasetSeriesShapeDrawer .
+dcatapnl-sh:DatasetShapeSeries_temporal sh:group dcatshow:DatasetSeriesShapeDrawer .
+
+# CatalogRecord: 1 required (language), 8 optional
+dcatshow:CatalogRecordShapeDrawer a sh:PropertyGroup, st:DrawerPropertyGroup ;
+    sh:order 1000 ;
+    sh:name "Overige eigenschappen"@nl .
+
+dcatapnl-sh:dcatCatalogRecord_applicationprofile sh:group dcatshow:CatalogRecordShapeDrawer .
+dcatapnl-sh:dcatCatalogRecord_modified sh:group dcatshow:CatalogRecordShapeDrawer .
+dcatapnl-sh:dcatCatalogRecord_primaryTopic sh:group dcatshow:CatalogRecordShapeDrawer .
+dcatapnl-sh:dcatCatalogRecord_changetype sh:group dcatshow:CatalogRecordShapeDrawer .
+dcatapnl-sh:dcatCatalogRecord_issued sh:group dcatshow:CatalogRecordShapeDrawer .
+dcatapnl-sh:dcatCatalogRecord_description sh:group dcatshow:CatalogRecordShapeDrawer .
+dcatapnl-sh:dcatCatalogRecord_source sh:group dcatshow:CatalogRecordShapeDrawer .
+dcatapnl-sh:dcatCatalogRecord_title sh:group dcatshow:CatalogRecordShapeDrawer .

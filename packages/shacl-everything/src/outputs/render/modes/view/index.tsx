@@ -14,7 +14,7 @@ export default function ViewModeWrapper({ children }: Props) {
         <InterfaceLanguageSwitcher />
         <ContentLanguageSwitcher />
       </header>
-      <NodeUIComponent />
+      <NodeUIComponent noWrapper />
       {children}
     </div>
   );
