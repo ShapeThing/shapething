@@ -340,6 +340,31 @@ test("propertyUiElements exposes sh:xone as a ChoiceElement", async () => {
   expect(choiceElement.connective).toBe("xone");
 });
 
+test("cssImports() returns this node's applicable shapes' own st:cssImport URLs", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix st: <http://shapething.com/> .
+
+        ex:Recipe a sh:NodeShape ;
+            st:cssImport <http://example.org/recipe.css> .
+    `,
+    "text/turtle",
+  );
+
+  const dataGraph = await parseRdf("", "text/turtle");
+
+  const node = new NodeUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("ChickenSoup"),
+    nodeShapes: [ex("Recipe")],
+  });
+
+  expect(node.cssImports()).toEqual(["http://example.org/recipe.css"]);
+});
+
 test("focusNode may be a BlankNode, as when walking a nested sh:node value (e.g. DetailsEditor)", async () => {
   const shapesGraph = await parseRdf(
     `

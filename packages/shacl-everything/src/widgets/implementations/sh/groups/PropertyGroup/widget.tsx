@@ -16,7 +16,7 @@ export default function PropertyGroup({ group }: GroupWidgetProps) {
   const UIElementChildren = mode === "view" ? ViewUIElementChildren : EditUIElementChildren;
 
   return (
-    <fieldset className="st-property-group">
+    <fieldset className="st-property-group" data-iri={group.node.value}>
       {label && (
         <legend className="st-property-group__legend">
           <span className="st-property-group__title">{label}</span>

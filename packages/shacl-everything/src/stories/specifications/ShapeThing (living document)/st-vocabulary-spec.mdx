@@ -41,12 +41,37 @@ no tooltip) or combine it with either/both label roles. `resolution/label.ts`'s
 `propertyPathsByRole(propertyShape, role)` is the shared, role-agnostic lookup underneath all four
 roles.
 
-## 5. Summary: every `st:` IRI
+## 6. Node-level stylesheet import: `st:cssImport`
+
+A `sh:NodeShape` can declare one or more `st:cssImport <URL>` triples to load extra, shape-authored
+CSS whenever a focus node conforming to that shape is rendered (edit, view, or facet mode) - a
+presentational escape hatch for styling that's specific to one shape (e.g. targeting one of its own
+`sh:PropertyGroup`s by the `data-iri` every built-in group widget already renders) and doesn't
+belong in this package's bundled theme:
+
+```turtle
+ex:ChefShape
+    a sh:NodeShape ;
+    st:cssImport <./chef-shape.css> ;
+    sh:targetClass ex:Chef ;
+    .
+```
+
+A relative URL resolves against the shapes graph document's own URL, the same as any other
+relative IRI in Turtle. Each distinct URL is loaded as a single `<link rel="stylesheet">`,
+shared and refcounted across every node currently rendering a shape that names it (see
+`helpers/stylesheetRegistry.ts`) and removed again once no rendered node still needs it. When more
+than one applicable shape (`sh:and`, several matching `sh:targetClass`es, an active facet root
+shape, etc.) declares `st:cssImport`, every distinct URL loads, in that `nodeShapes` order - a
+later shape's stylesheet cascades after an earlier one's. See `resolution/cssImports.ts`.
+
+## 7. Summary: every `st:` IRI
 
 | IRI                                                                                                           | Kind                      | Where                                                          |
-| ------------------------------------------------------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------- |
+| --------------------------------------------------------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------- |
 | `st:facet`                                                                                                    | predicate                 | §2                                                             |
 | `st:GeoRole`                                                                                                  | `shui:propertyRole` value | §4                                                             |
+| `st:cssImport`                                                                                                | predicate                 | §6                                                             |
 | `st:AddressEditor`, `st:IconifyEditor`                                                                        | editors                   | [Widgets](?path=/docs/shapething-st-built-in-widgets--docs) §1 |
 | `st:AddressViewer`, `st:IconifyViewer`, `st:MapViewer`                                                        | viewers                   | [Widgets](?path=/docs/shapething-st-built-in-widgets--docs) §2 |
 | `st:CategoryFacet`, `st:TextSearchFacet`, `st:NumberRangeFacet`, `st:DateRangeFacet`, `st:DateTimeRangeFacet` | facets                    | [Widgets](?path=/docs/shapething-st-built-in-widgets--docs) §3 |

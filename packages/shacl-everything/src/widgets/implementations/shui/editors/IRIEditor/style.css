@@ -1,3 +1,34 @@
+[data-widget="IRIEditor"] .st-input-suffix.has-value svg {
+  color: var(--st-primary-color);
+}
+
 [data-widget="IRIEditor"] .st-input-suffix svg {
   color: var(--gray-6);
+}
+
+.st-iri-editor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+  width: 100%;
+}
+
+.st-iri-editor__row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.st-iri-editor__preview {
+  width: auto;
+  height: auto;
+  border-radius: var(--radius-2);
+}
+
+.st-iri-editor__preview-image {
+  max-width: 100%;
+  width: auto;
+  height: auto;
+  max-height: 300px;
+  border-radius: var(--radius-2);
 }

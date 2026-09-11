@@ -11,13 +11,23 @@ import type { Plugin } from "vite";
 //
 // Fixtures aren't confined to src/stories/ - widget-specific ones are colocated with their
 // widget (src/widgets/implementations/.../<Name>/), alongside that widget's own score.ttl. A
-// fixture is a .ttl (or media asset a fixture references, e.g. ImageViewer's own hendrik.svg)
-// that sits next to a *.stories.tsx AND isn't literally named score.ttl - score.ttl is a reserved
-// widget-scoring filename (registry.ts glob-imports it directly via `?raw`, already inlined into
-// the JS bundle) that happens to share a directory with the moved story but was never meant to be
-// served as a standalone asset; every widget has one, so including it would collide on the same
-// flattened `assets/score.ttl` output name.
-const FIXTURE_EXTENSIONS = new Set([".ttl", ".svg", ".jpg", ".jpeg", ".png", ".gif", ".webp"]);
+// fixture is a .ttl (or a media/stylesheet asset a fixture references, e.g. ImageViewer's own
+// hendrik.svg or a showcase's st:cssImport target) that sits next to a *.stories.tsx AND isn't
+// literally named score.ttl - score.ttl is a reserved widget-scoring filename (registry.ts
+// glob-imports it directly via `?raw`, already inlined into the JS bundle) that happens to share
+// a directory with the moved story but was never meant to be served as a standalone asset; every
+// widget has one, so including it would collide on the same flattened `assets/score.ttl` output
+// name.
+const FIXTURE_EXTENSIONS = new Set([
+  ".ttl",
+  ".svg",
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".webp",
+  ".css",
+]);
 
 export function copyStoryFixtures(srcDir: string): Plugin {
   return {

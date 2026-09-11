@@ -171,14 +171,19 @@ export default function AutoCompleteOption({
         <span className="st-autocomplete-option__depiction-spacer"></span>
       )}
       <span className="st-autocomplete-option__label">
-        {highlightMatches(displayLabel, highlight, "st-autocomplete-option__match")}
+        <span className="st-autocomplete-option__label--inner">
+          {highlightMatches(displayLabel, highlight, "st-autocomplete-option__match")}
+          &nbsp;&nbsp;
+        </span>
         {classification && (
-          <ValueChip
-            colors={classificationGradient}
-            label={classification.label}
-            size="small"
-            term={classification.term}
-          />
+          <>
+            <ValueChip
+              colors={classificationGradient}
+              label={classification.label}
+              size="small"
+              term={classification.term}
+            />
+          </>
         )}
       </span>
       <span className="st-autocomplete-option__content">

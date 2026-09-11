@@ -1,0 +1,41 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix schema: <http://schema.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Recipe ;
+    sh:closed true ;
+    sh:ignoredProperties (rdf:type) ;
+    sh:property [
+        sh:path schema:name ;
+        sh:name "Name"@en, "Naam"@nl ;
+    ] ;
+    sh:property ex:Recipe-cookTime ;
+    .
+
+# sh:datatype xsd:duration alone would already auto-score st:DurationEditor highest among the
+# built-in editors (see score.ttl) - the explicit shui:editor declaration here is only to make that
+# choice obvious to a reader of this fixture, mirroring st-geo-editor.ttl's own explicit
+# shui:editor st:GeoEditor. st:durationPattern restricts the control to hours+minutes, since a
+# cook time has no practical use for day/second/millisecond precision - omit it to fall back to
+# the widget's own default of every unit ({dd}{hh}{mm}{ss}{fff}).
+ex:Recipe-cookTime
+    a sh:PropertyShape ;
+    sh:path schema:cookTime ;
+    sh:name "Cook time"@en, "Kooktijd"@nl ;
+    sh:datatype xsd:duration ;
+    sh:maxCount 1 ;
+    shui:editor st:DurationEditor ;
+    st:durationPattern "{hh}{mm}" ;
+    .
+
+<#data>
+    a schema:Recipe ;
+    schema:name "Pancakes"@en, "Pannenkoeken"@nl ;
+    schema:cookTime "PT15M"^^xsd:duration ;
+    .

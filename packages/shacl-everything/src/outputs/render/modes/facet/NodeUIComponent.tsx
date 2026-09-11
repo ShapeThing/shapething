@@ -5,6 +5,7 @@ import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { factory } from "@/helpers/factory.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
+import { cssImportsForShapes } from "@/resolution/cssImports.ts";
 import { facetableRootShapes, targetsOfShape } from "@/resolution/targets.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
 import {
@@ -13,6 +14,7 @@ import {
   type FilterShape,
 } from "@/structure/filterShape.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { useCssImports } from "@/outputs/render/hooks/useCssImports.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import FacetPropertyComponent from "@/outputs/render/modes/facet/FacetPropertyComponent.tsx";
 import TypeSelector from "@/outputs/render/modes/facet/TypeSelector.tsx";
@@ -73,6 +75,12 @@ export default function NodeUIComponent({ filterShape }: { filterShape: FilterSh
     () => (enableFacetTypeUnion ? rootShapes : activeRootShape ? [activeRootShape] : []),
     [enableFacetTypeUnion, rootShapes, activeRootShape],
   );
+
+  const cssImports = useMemo(
+    () => cssImportsForShapes(activeShapes, shapesGraph),
+    [activeShapes, shapesGraph],
+  );
+  useCssImports(cssImports);
 
   const placeholderFocusNode = useMemo(() => factory.blankNode(), []);
 

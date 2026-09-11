@@ -25,7 +25,10 @@ export default function HorizontalPropertyGroup({ group }: GroupWidgetProps) {
   const UIElementChildren = mode === "view" ? ViewUIElementChildren : EditUIElementChildren;
 
   return (
-    <fieldset className="st-property-group st-property-group--horizontal">
+    <fieldset
+      className="st-property-group st-property-group--horizontal"
+      data-iri={group.node.value}
+    >
       {label && !hideLabels && (
         <legend className="st-property-group__legend">
           <span className="st-property-group__title">{label}</span>

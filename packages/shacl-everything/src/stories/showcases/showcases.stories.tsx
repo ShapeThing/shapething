@@ -1,4 +1,5 @@
 import type { StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import { ex } from "@/helpers/namespaces.ts";
@@ -44,6 +45,9 @@ export const recipesAndChefs: Story = {
     nodeShapes: [ex("RecipeShape")],
     enableLinksToResources: false,
   },
+  parameters: {
+    maxWidth: false,
+  },
 };
 
 export const recipesAndChefsView: Story = {
@@ -69,6 +73,16 @@ export const chefProfile: Story = {
     focusNode: ex("massimoBottura"),
     mode: "view",
     viewModeLabelLayout: "inline",
+  },
+  // ex:ChefShape declares st:cssImport <./recipes-and-chefs.css> (see resolution/cssImports.ts) -
+  // confirms the actual <link> lands in document.head, not just that cssImportsForShapes()
+  // resolves the URL correctly.
+  play: async ({ canvasElement }) => {
+    await within(canvasElement).findByText("Massimo Bottura");
+    const link = document.head.querySelector(
+      'link[rel="stylesheet"][href$="recipes-and-chefs.css"]',
+    );
+    expect(link).not.toBeNull();
   },
 };
 

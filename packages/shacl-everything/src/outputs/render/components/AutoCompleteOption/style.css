@@ -95,11 +95,15 @@
      white-space is switched to normal (e.g. AutoCompleteEditor's selected-value trigger). */
   .st-value-chip {
     vertical-align: middle;
-    margin-inline-start: var(--size-2);
-    transform: translateY(-0.125em);
+    margin-block: 0.5rem;
   }
 }
 
 .st-autocomplete-option__content {
   padding-block: 0.4rem;
+}
+
+.st-autocomplete-option__label--inner {
+  display: inline-block;
+  margin-block: 0.26rem;
 }
