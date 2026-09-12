@@ -15,25 +15,25 @@ const rawEnvironment = (overrides: Partial<RawEnvironment>): RawEnvironment => (
   ...overrides,
 });
 
-test("addMissingShapes - does nothing unless enableMissingShapesGeneration is on", () => {
+test("addMissingShapes - does nothing unless enableMissingShapesGeneration is on", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
 
   const shapesGraph = RdfStore.createDefault();
-  const result = addMissingShapes(rawEnvironment({ dataGraph, shapesGraph }));
+  const result = await addMissingShapes(rawEnvironment({ dataGraph, shapesGraph }));
 
   expect(result.shapesGraph).toBe(shapesGraph);
   expect((result.shapesGraph as RdfStore).getQuads()).toHaveLength(0);
 });
 
-test("addMissingShapes - mints an implicit class-shape (the class IRI itself) and a property shape per predicate for a wholly unshaped class", () => {
+test("addMissingShapes - mints an implicit class-shape (the class IRI itself) and a property shape per predicate for a wholly unshaped class", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
   dataGraph.addQuad(factory.quad(ex("a"), ex("age"), factory.literal("3")));
 
-  const result = addMissingShapes(
+  const result = await addMissingShapes(
     rawEnvironment({ dataGraph, enableMissingShapesGeneration: true }),
   );
   const shapesGraph = result.shapesGraph as RdfStore;
@@ -52,11 +52,11 @@ test("addMissingShapes - mints an implicit class-shape (the class IRI itself) an
   expect(new Set(paths)).toEqual(new Set([ex("name").value, ex("age").value]));
 });
 
-test("addMissingShapes - never generates a property shape for rdf:type itself", () => {
+test("addMissingShapes - never generates a property shape for rdf:type itself", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
 
-  const result = addMissingShapes(
+  const result = await addMissingShapes(
     rawEnvironment({ dataGraph, enableMissingShapesGeneration: true }),
   );
   const shapesGraph = result.shapesGraph as RdfStore;
@@ -66,7 +66,7 @@ test("addMissingShapes - never generates a property shape for rdf:type itself", 
   expect(shapesGraph.getQuads(ex("Cat"), rdf("type"), sh("NodeShape"))).toHaveLength(0);
 });
 
-test("addMissingShapes - leaves a class alone when it already has an explicit sh:targetClass shape, even if that shape is missing properties", () => {
+test("addMissingShapes - leaves a class alone when it already has an explicit sh:targetClass shape, even if that shape is missing properties", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
@@ -75,7 +75,7 @@ test("addMissingShapes - leaves a class alone when it already has an explicit sh
   shapesGraph.addQuad(factory.quad(ex("CatShape"), rdf("type"), sh("NodeShape")));
   shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("targetClass"), ex("Cat")));
 
-  const result = addMissingShapes(
+  const result = await addMissingShapes(
     rawEnvironment({ dataGraph, shapesGraph, enableMissingShapesGeneration: true }),
   );
   const resultShapesGraph = result.shapesGraph as RdfStore;
@@ -87,7 +87,7 @@ test("addMissingShapes - leaves a class alone when it already has an explicit sh
   expect(resultShapesGraph.getQuads(ex("Cat"), rdf("type"), sh("NodeShape"))).toHaveLength(0);
 });
 
-test("addMissingShapes - leaves a class alone when it's covered by an implicit class-shape (sh:NodeShape + rdfs:Class)", () => {
+test("addMissingShapes - leaves a class alone when it's covered by an implicit class-shape (sh:NodeShape + rdfs:Class)", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
@@ -96,7 +96,7 @@ test("addMissingShapes - leaves a class alone when it's covered by an implicit c
   shapesGraph.addQuad(factory.quad(ex("Cat"), rdf("type"), sh("NodeShape")));
   shapesGraph.addQuad(factory.quad(ex("Cat"), rdf("type"), rdfs("Class")));
 
-  const result = addMissingShapes(
+  const result = await addMissingShapes(
     rawEnvironment({ dataGraph, shapesGraph, enableMissingShapesGeneration: true }),
   );
   const resultShapesGraph = result.shapesGraph as RdfStore;
@@ -105,7 +105,7 @@ test("addMissingShapes - leaves a class alone when it's covered by an implicit c
   expect(resultShapesGraph.getQuads(ex("Cat"), sh("property"))).toHaveLength(0);
 });
 
-test("addMissingShapes - covers a second, unshaped class found in the same data graph while leaving the shaped one untouched", () => {
+test("addMissingShapes - covers a second, unshaped class found in the same data graph while leaving the shaped one untouched", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
@@ -116,7 +116,7 @@ test("addMissingShapes - covers a second, unshaped class found in the same data 
   shapesGraph.addQuad(factory.quad(ex("CatShape"), rdf("type"), sh("NodeShape")));
   shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("targetClass"), ex("Cat")));
 
-  const result = addMissingShapes(
+  const result = await addMissingShapes(
     rawEnvironment({ dataGraph, shapesGraph, enableMissingShapesGeneration: true }),
   );
   const resultShapesGraph = result.shapesGraph as RdfStore;
@@ -145,7 +145,7 @@ test("addMissingShapes - does not mutate the caller-supplied shapesGraph in plac
 const facetEnvironment = (overrides: Partial<RawEnvironment>): RawEnvironment =>
   rawEnvironment({ mode: "facet", enableFacetTextSearchMerging: true, ...overrides });
 
-test("mergeFacetTextSearchProperties - does nothing unless mode is facet and enableFacetTextSearchMerging is on", () => {
+test("mergeFacetTextSearchProperties - does nothing unless mode is facet and enableFacetTextSearchMerging is on", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
@@ -154,12 +154,12 @@ test("mergeFacetTextSearchProperties - does nothing unless mode is facet and ena
   shapesGraph.addQuad(factory.quad(ex("Cat"), rdf("type"), sh("NodeShape")));
   shapesGraph.addQuad(factory.quad(ex("Cat"), rdf("type"), rdfs("Class")));
 
-  const notFacetMode = mergeFacetTextSearchProperties(
+  const notFacetMode = await mergeFacetTextSearchProperties(
     rawEnvironment({ dataGraph, shapesGraph, mode: "edit", enableFacetTextSearchMerging: true }),
   );
   expect((notFacetMode.shapesGraph as RdfStore).getQuads(ex("Cat"), sh("property"))).toHaveLength(0);
 
-  const flagOff = mergeFacetTextSearchProperties(facetEnvironment({ dataGraph, shapesGraph, enableFacetTextSearchMerging: false }));
+  const flagOff = await mergeFacetTextSearchProperties(facetEnvironment({ dataGraph, shapesGraph, enableFacetTextSearchMerging: false }));
   expect((flagOff.shapesGraph as RdfStore).getQuads(ex("Cat"), sh("property"))).toHaveLength(0);
 });
 
@@ -178,7 +178,7 @@ function addTextProperty(
   return propertyNode;
 }
 
-test("mergeFacetTextSearchProperties - merges every sh:datatype xsd:string/rdf:langString property with no st:facet of its own into one sh:alternativePath text search property", () => {
+test("mergeFacetTextSearchProperties - merges every sh:datatype xsd:string/rdf:langString property with no st:facet of its own into one sh:alternativePath text search property", async () => {
   const shapesGraph = RdfStore.createDefault();
   shapesGraph.addQuad(factory.quad(ex("Cat"), rdf("type"), sh("NodeShape")));
   shapesGraph.addQuad(factory.quad(ex("Cat"), rdf("type"), rdfs("Class")));
@@ -190,7 +190,7 @@ test("mergeFacetTextSearchProperties - merges every sh:datatype xsd:string/rdf:l
   shapesGraph.addQuad(factory.quad(ageProperty, sh("datatype"), xsd("integer")));
   shapesGraph.addQuad(factory.quad(ex("Cat"), sh("property"), ageProperty));
 
-  const result = mergeFacetTextSearchProperties(facetEnvironment({ shapesGraph }));
+  const result = await mergeFacetTextSearchProperties(facetEnvironment({ shapesGraph }));
   const resultShapesGraph = result.shapesGraph as RdfStore;
 
   const properties = resultShapesGraph.getQuads(ex("Cat"), sh("property")).map((quad) => quad.object);
@@ -214,7 +214,7 @@ test("mergeFacetTextSearchProperties - merges every sh:datatype xsd:string/rdf:l
   expect(new Set(mergedPredicates)).toEqual(new Set([ex("name").value, ex("bio").value]));
 });
 
-test("mergeFacetTextSearchProperties - leaves a property alone (never folds it in) once it already has its own st:facet, even when it's xsd:string", () => {
+test("mergeFacetTextSearchProperties - leaves a property alone (never folds it in) once it already has its own st:facet, even when it's xsd:string", async () => {
   const shapesGraph = RdfStore.createDefault();
   shapesGraph.addQuad(factory.quad(ex("Cat"), rdf("type"), sh("NodeShape")));
   shapesGraph.addQuad(factory.quad(ex("Cat"), rdf("type"), rdfs("Class")));
@@ -224,7 +224,7 @@ test("mergeFacetTextSearchProperties - leaves a property alone (never folds it i
 
   addTextProperty(shapesGraph, ex("Cat"), ex("name"), xsd("string"));
 
-  const result = mergeFacetTextSearchProperties(facetEnvironment({ shapesGraph }));
+  const result = await mergeFacetTextSearchProperties(facetEnvironment({ shapesGraph }));
   const resultShapesGraph = result.shapesGraph as RdfStore;
 
   const properties = resultShapesGraph.getQuads(ex("Cat"), sh("property")).map((quad) => quad.object);
@@ -235,7 +235,7 @@ test("mergeFacetTextSearchProperties - leaves a property alone (never folds it i
   expect(resultShapesGraph.getQuads(colorProperty, st("facet"), st("CategoryFacet"))).toHaveLength(1);
 });
 
-test("mergeFacetTextSearchProperties - does nothing when every property already has its own st:facet", () => {
+test("mergeFacetTextSearchProperties - does nothing when every property already has its own st:facet", async () => {
   const shapesGraph = RdfStore.createDefault();
   shapesGraph.addQuad(factory.quad(ex("Cat"), rdf("type"), sh("NodeShape")));
   shapesGraph.addQuad(factory.quad(ex("Cat"), rdf("type"), rdfs("Class")));
@@ -243,7 +243,7 @@ test("mergeFacetTextSearchProperties - does nothing when every property already 
   const colorProperty = addTextProperty(shapesGraph, ex("Cat"), ex("color"), xsd("string"));
   shapesGraph.addQuad(factory.quad(colorProperty, st("facet"), st("TextSearchFacet")));
 
-  const result = mergeFacetTextSearchProperties(facetEnvironment({ shapesGraph }));
+  const result = await mergeFacetTextSearchProperties(facetEnvironment({ shapesGraph }));
   const resultShapesGraph = result.shapesGraph as RdfStore;
 
   expect(resultShapesGraph.getQuads(ex("Cat"), sh("property"))).toHaveLength(1);

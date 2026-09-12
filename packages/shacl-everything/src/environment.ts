@@ -204,6 +204,11 @@ export type Environment = {
   // search icon always just opens the ordinary inline typeahead, same as before this option
   // existed.
   enableFacetSearchForAutocomplete?: boolean;
+  // MapLibre GL style URL used by every map-based st: widget (GeoEditor, MapViewer, MapFacet) -
+  // a single shared setting rather than a per-widget one, since they're always meant to look the
+  // same within one embedder. Defaults to a public OpenFreeMap style; override to point at a
+  // self-hosted or branded style instead.
+  mapStyleUrl?: string;
 };
 
 // What flows through the preprocessor chain before it's fully resolved: the graph fields may
@@ -253,6 +258,7 @@ export const defaultEnvironment: Environment = {
   enableMissingShapesGeneration: false,
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
+  mapStyleUrl: "https://tiles.openfreemap.org/styles/bright",
 };
 
 export const minimalEnvironment: Omit<
@@ -288,6 +294,7 @@ export const minimalEnvironment: Omit<
   enableMissingShapesGeneration: false,
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
+  mapStyleUrl: "https://tiles.openfreemap.org/styles/bright",
 };
 
 export const minimalEnvironmentWithContentLanguages: Omit<

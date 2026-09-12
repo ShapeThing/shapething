@@ -5,14 +5,15 @@ import type { FeatureCollection } from "geojson";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useEffect, useMemo, useRef } from "react";
+import { defaultEnvironment } from "@/environment.ts";
 import "@/helpers/configureMaplibreWorker.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import type { WidgetProps } from "@/widgets/types.ts";
 import { featureCollectionBounds, valueToFeature } from "./geometry.ts";
 import "./style.css";
 
-const STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
 const SOURCE_ID = "st-map-viewer-data";
 const LAYER_IDS = ["st-map-viewer-polygons", "st-map-viewer-lines", "st-map-viewer-points"];
 
@@ -54,6 +55,7 @@ export default function MapViewer({ shape }: WidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const { activeLanguage } = useContentLanguage();
+  const { mapStyleUrl } = useEnvironment();
   const rows = useDataGraphObjects(shape);
 
   const collection = useMemo<FeatureCollection>(() => {
@@ -71,7 +73,7 @@ export default function MapViewer({ shape }: WidgetProps) {
     if (!containerRef.current) return;
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: STYLE_URL,
+      style: mapStyleUrl ?? defaultEnvironment.mapStyleUrl!,
       maxZoom: 18,
     });
     map.addControl(new maplibregl.NavigationControl());

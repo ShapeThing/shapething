@@ -9,12 +9,25 @@
   max-width: 1200px;
   margin-inline: auto;
   gap: 0 2rem;
-  grid-template-columns: 1fr 340px;
-  grid-template-rows: auto auto auto;
+  grid-template-columns: 1fr;
+  grid-template-rows: auto auto auto auto;
   grid-template-areas:
-    "main ui"
-    "main meta"
-    "actions meta";
+    "ui"
+    "main"
+    "meta"
+    "actions";
+}
+
+@media (min-width: 1000px) {
+  .st-view-mode,
+  .st-edit-mode {
+    grid-template-columns: 1fr 340px;
+    grid-template-rows: auto auto auto;
+    grid-template-areas:
+      "main ui"
+      "main meta"
+      "actions meta";
+  }
 }
 
 .st-header {

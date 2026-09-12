@@ -74,7 +74,7 @@ export default function CategoryFacet({
       role={singleSelect ? "radiogroup" : "group"}
       aria-labelledby={labelledBy}
     >
-      {selectQuery && federatedError && (
+      {selectQuery && Boolean(federatedError) && (
         <div className="st-category-facet__empty" role="alert">
           <Localized id="autocomplete-search-error">Search failed</Localized>
         </div>

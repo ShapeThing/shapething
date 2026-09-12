@@ -6,8 +6,10 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { GeoEditor as GeometryEditorControl } from "maplibre-gl-geo-editor";
 import "maplibre-gl-geo-editor/style.css";
 import { useEffect, useMemo, useRef } from "react";
+import { defaultEnvironment } from "@/environment.ts";
 import "@/helpers/configureMaplibreWorker.ts";
 import { st } from "@/helpers/namespaces.ts";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { featureCollectionBounds } from "@/widgets/implementations/st/viewers/MapViewer/geometry.ts";
 import type { FacetWidgetProps } from "@/widgets/types.ts";
 import {
@@ -17,7 +19,6 @@ import {
 } from "./geometry.ts";
 import "./style.css";
 
-const STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
 const SOURCE_ID = "st-map-facet-values";
 const POLL_INTERVAL_MS = 400;
 
@@ -38,6 +39,7 @@ const POLL_INTERVAL_MS = 400;
 export default function MapFacet({ values, getConstraint, setConstraint, labelledBy }: FacetWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const { mapStyleUrl } = useEnvironment();
 
   const collection = useMemo(() => valuesToFeatureCollection(values), [values]);
 
@@ -56,7 +58,7 @@ export default function MapFacet({ values, getConstraint, setConstraint, labelle
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: STYLE_URL,
+      style: mapStyleUrl ?? defaultEnvironment.mapStyleUrl!,
       maxZoom: 18,
     });
     map.addControl(new maplibregl.NavigationControl());
