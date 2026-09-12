@@ -19,7 +19,7 @@ test("resolveWidgets fills in defaultWidgets when the caller supplies none", () 
 });
 
 test("resolveWidgets leaves a caller-supplied widgets object untouched, even a partial replacement", () => {
-  const customWidgets: Widgets = { editors: {}, viewers: {}, groups: {} };
+  const customWidgets: Widgets = { editors: {}, viewers: {}, groups: {}, facets: {} };
   const result = resolveWidgets(rawEnvironment({ widgets: customWidgets }));
   expect(result.widgets).toBe(customWidgets);
 });

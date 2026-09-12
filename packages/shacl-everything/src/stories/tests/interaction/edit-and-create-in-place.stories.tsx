@@ -104,8 +104,6 @@ export const editingTheSelectedAutoCompleteReferenceInPlace: Story = {
   name: "Editing the selected reference in place (shui:AutoCompleteEditor)",
   args,
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
     // Sponsor already holds ex:Acme (see the fixture) - AutoCompleteEditor's own "view" mode
     // renders it through AutoCompleteOption just like EnumSelectEditor's closed trigger does, and
     // should offer the same edit-in-place icon.

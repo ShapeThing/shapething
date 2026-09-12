@@ -248,7 +248,12 @@ export function getWidgetComponent(
   widget: NamedNode,
   widgets: Widgets = defaultWidgets,
 ): WidgetComponent | FacetWidgetComponent | undefined {
-  return findWidget(categoryFor(mode, widgets), widget)?.Component;
+  // categoryFor's return type is a plain union across editors/viewers/facets - the caller-supplied
+  // `mode` is what actually picks the right category (and, with it, the right Component shape) at
+  // runtime, same "narrow past the union yourself" story as this function's own return type (see
+  // its doc comment above).
+  return findWidget(categoryFor(mode, widgets) as Record<string, WidgetRegistryEntry>, widget)
+    ?.Component;
 }
 
 /**

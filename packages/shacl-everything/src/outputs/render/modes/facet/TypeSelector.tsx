@@ -75,7 +75,7 @@ export default function TypeSelector({
       scoresGraph,
       widgetRegistry: widgets,
       focusNode: placeholderFocusNode,
-      propertyShapes: [shapeNode as NamedNode],
+      propertyShapes: [shapeNode as unknown as NamedNode],
     });
   }, [rootShapes, classFor, dataGraph, scoresGraph, widgets, placeholderFocusNode]);
 

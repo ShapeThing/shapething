@@ -1,6 +1,7 @@
 declare module "wkt" {
-  import type { Geometry } from "geojson";
+  import type { Feature, Geometry } from "geojson";
 
   export function parse(wkt: string): Geometry | null;
-  export function stringify(geometry: Geometry): string;
+  // Accepts a Feature too - stringify() unwraps `.geometry` itself when given one.
+  export function stringify(geometry: Feature | Geometry): string;
 }

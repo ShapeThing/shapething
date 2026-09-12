@@ -2,12 +2,13 @@ import { expect, test } from "vite-plus/test";
 import { matchesProperty } from "@/outputs/render/hooks/usePropertyValidationResults.tsx";
 import type { ValidationResult } from "@/outputs/render/contexts/validationContext.tsx";
 import { ex, sh } from "@/helpers/namespaces.ts";
+import { factory } from "@/helpers/factory.ts";
 
 const baseResult: ValidationResult = {
   focusNode: ex("Alice"),
   sourceShape: ex("property1"),
   severity: sh("Violation"),
-  message: ["too few values"],
+  message: [factory.literal("too few values")],
 };
 
 const property = {

@@ -53,7 +53,9 @@ export function useWidgets(
       // is the first one since score() already yields in descending-score order.
       .filter(({ widget }) => (seen.has(widget.value) ? false : (seen.add(widget.value), true)))
       .map(({ widget, score }) => ({
-        Widget: getWidgetComponent(mode, widget as NamedNode, property.widgetRegistry)!,
+        // mode is never "facet" here (see the early return above) - registry.ts's own doc comment
+        // on getWidgetComponent says this union is the caller's to narrow, same as useWidget's `as T`.
+        Widget: getWidgetComponent(mode, widget as NamedNode, property.widgetRegistry)! as WidgetComponent,
         meta: getWidgetMeta(widget as NamedNode, property.widgetRegistry),
         iri: widget,
         score,

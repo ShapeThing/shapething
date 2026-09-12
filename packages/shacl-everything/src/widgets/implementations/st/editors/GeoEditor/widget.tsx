@@ -8,14 +8,14 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { GeoEditor as GeometryEditorControl } from "maplibre-gl-geo-editor";
 import "maplibre-gl-geo-editor/style.css";
 import { useEffect, useRef } from "react";
+import { defaultEnvironment } from "@/environment.ts";
 import "@/helpers/configureMaplibreWorker.ts";
 import { termKey } from "@/helpers/termKey.ts";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import { canonicalWktValue, geometryToLiteral, termToFeature } from "./geometry.ts";
 import "./style.css";
-
-const STYLE_URL = "https://tiles.openfreemap.org/styles/bright";
 
 type FeatureSource = { getAllFeatureCollection(): FeatureCollection };
 
@@ -41,13 +41,14 @@ const POLL_INTERVAL_MS = 400;
 
 export default function GeoEditor({ shape }: WidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const { mapStyleUrl } = useEnvironment();
 
   useEffect(() => {
     if (!containerRef.current) return;
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: STYLE_URL,
+      style: mapStyleUrl ?? defaultEnvironment.mapStyleUrl!,
       maxZoom: 18,
     });
     map.addControl(new maplibregl.NavigationControl(), "top-right");
