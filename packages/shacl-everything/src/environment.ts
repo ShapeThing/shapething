@@ -180,6 +180,15 @@ export type Environment = {
   // is meant as a fallback for exploring/rendering data that has none, not a silent, ongoing
   // overlay on top of an intentionally scoped shape.
   enableMissingShapesGeneration?: boolean;
+  // When true, preprocess/ontologyLabels.ts's dereferenceMissingPropertyNames scans shapesGraph for
+  // property shapes (sh:path) whose path is a plain predicate IRI and that have no sh:name (or
+  // whatever shui:labelPreference configures instead) in any language, dereferences that predicate's
+  // own IRI over HTTP, and merges whichever rdfs:label triples it finds there (describing the
+  // predicate itself) into shapesGraph - so propertyLabel() (resolution/label.ts) still has
+  // something better than the raw local name to fall back to. A predicate that fails to dereference
+  // is skipped, not thrown. Off by default: this fires one HTTP request per otherwise-unnamed
+  // property, which isn't free and depends on the ontology's own IRI actually being dereferenceable.
+  enableMissingPropertyNameDereferencing?: boolean;
   // Facet mode only. When true, preprocess/shapes.ts's mergeFacetTextSearchProperties folds every
   // sh:property of a facetable root shape (resolution/targets.ts's facetableRootShapes) that
   // declares sh:datatype xsd:string/rdf:langString and has no st:facet of its own into one combined
@@ -256,6 +265,7 @@ export const defaultEnvironment: Environment = {
   enableFacetTypeUnion: false,
   enableFacetOptionCounts: false,
   enableMissingShapesGeneration: false,
+  enableMissingPropertyNameDereferencing: false,
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
   mapStyleUrl: "https://tiles.openfreemap.org/styles/bright",
@@ -292,6 +302,7 @@ export const minimalEnvironment: Omit<
   enableFacetTypeUnion: false,
   enableFacetOptionCounts: false,
   enableMissingShapesGeneration: false,
+  enableMissingPropertyNameDereferencing: false,
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
   mapStyleUrl: "https://tiles.openfreemap.org/styles/bright",
@@ -335,6 +346,7 @@ export const testingEnvironment: Omit<
   enableFacetTypeUnion: true,
   enableFacetOptionCounts: true,
   enableMissingShapesGeneration: false,
+  enableMissingPropertyNameDereferencing: false,
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
 };

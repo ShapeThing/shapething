@@ -10,6 +10,7 @@ import {
   addMissingShapes,
   mergeFacetTextSearchProperties,
 } from "@/preprocess/shapes.ts";
+import { dereferenceMissingPropertyNames } from "@/preprocess/ontologyLabels.ts";
 import { assertValidEnvironment } from "@/preprocess/configuration.ts";
 import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
 
@@ -24,6 +25,7 @@ export const defaultPreprocessors: readonly Preprocessor[] = [
   resolveWidgets,
   resolveScoresGraph,
   addMissingShapes,
+  dereferenceMissingPropertyNames,
   mergeFacetTextSearchProperties,
 ];
 

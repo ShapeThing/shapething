@@ -5,13 +5,6 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 st:IconifyEditor rdfs:label "Icon Picker"@en, "Icoonkiezer"@nl .
 
-st:iconifyEditorScore40
-    a shui:WidgetScore ;
-    shui:editor st:IconifyEditor ;
-    shui:score 40 ;
-    shui:shapesGraphShape st:prefersIconifyEditor ;
-.
-
 # A property shape declaring sh:datatype <https://iconify.design> (see namespaces.ts's
 # iconifyDatatype) always means "this value is an Iconify icon name" - beats TextFieldEditor's own
 # generic hasCustomDatatype/fallback rules (score.ttl of that widget), which otherwise tie at 0/1
@@ -21,14 +14,6 @@ st:iconifyEditorScoreDatatype
     shui:editor st:IconifyEditor ;
     shui:score 30 ;
     shui:shapesGraphShape st:hasIconifyDatatypeConstraint ;
-.
-
-st:prefersIconifyEditor
-    a sh:NodeShape ;
-    sh:property [
-        sh:path shui:editor ;
-        sh:hasValue st:IconifyEditor ;
-    ] ;
 .
 
 st:hasIconifyDatatypeConstraint

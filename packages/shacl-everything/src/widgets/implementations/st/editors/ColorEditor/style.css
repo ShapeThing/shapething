@@ -1,0 +1,38 @@
+.st-color-editor {
+  display: flex;
+  align-items: stretch;
+  gap: var(--size-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.st-color-editor__swatch {
+  flex: none;
+  width: 2.5rem;
+  padding: 2px;
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+  background: none;
+  cursor: pointer;
+
+  &::-webkit-color-swatch-wrapper {
+    padding: 0;
+  }
+
+  &::-webkit-color-swatch {
+    border: none;
+    border-radius: calc(var(--radius-2) - 2px);
+  }
+
+  &::-moz-color-swatch {
+    border: none;
+    border-radius: calc(var(--radius-2) - 2px);
+  }
+}
+
+.st-color-editor__hex {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--font-mono);
+  text-transform: lowercase;
+}

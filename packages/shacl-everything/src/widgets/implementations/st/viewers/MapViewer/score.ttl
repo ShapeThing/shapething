@@ -7,13 +7,6 @@ PREFIX geosparql: <http://www.opengis.net/ont/geosparql#>
 
 st:MapViewer rdfs:label "Map"@en, "Kaart"@nl .
 
-st:mapViewerScore40
-    a shui:WidgetScore ;
-    shui:viewer st:MapViewer ;
-    shui:score 40 ;
-    shui:shapesGraphShape st:prefersMapViewer ;
-.
-
 # sh:datatype geosparql:wktLiteral is an unambiguous signal (unlike e.g. AddressEditor/
 # AddressViewer's schema:PostalAddress-shaped blank node, which has nothing distinguishing it from
 # any other nested object a shape might declare) - so, like IconifyEditor/IconifyViewer's own
@@ -33,19 +26,11 @@ st:mapViewerScore10
     shui:shapesGraphShape st:hasWktDatatypeConstraint ;
 .
 
-st:prefersMapViewer
-    a sh:NodeShape ;
-    sh:property [
-        sh:path shui:viewer ;
-        sh:hasValue st:MapViewer ;
-    ] ;
-.
-
 # A value literal typed as a GeoSPARQL WKT literal - the one direct representation this viewer can
 # recognize without walking into sub-properties (see geometry.ts's valueToFeature). A plain GeoJSON
 # string (no distinguishing datatype) and the st:GeoRole-nested case (see geometry.ts's
 # geoRoleGeometry) have no reliable shapes-graph signal to score on generically, so those are only
-# ever picked up via an explicit shui:viewer declaration (see prefersMapViewer above).
+# ever picked up via an explicit shui:viewer declaration.
 st:isWktLiteral
     a sh:NodeShape ;
     sh:datatype geosparql:wktLiteral ;
