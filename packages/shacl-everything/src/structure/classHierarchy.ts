@@ -67,7 +67,7 @@ export function filterClassTree(node: ClassNode, query: string): ClassNode | und
  * through the rdfs:subClassOf tree, so a class's displayed count includes everything filed under
  * it too: ex:Electronics's count becomes its own direct matches plus ex:Computers's (and so on,
  * recursively), the same way picking a broad category in a real taxonomy facet implies everything
- * more specific under it. Without this, a non-leaf node would show "(0)" whenever nothing is
+ * more specific under it. Without this, a non-leaf node would show "0" whenever nothing is
  * tagged with that exact class directly - which reads as "nothing here" rather than what it
  * actually means, "nothing filed at this exact level, only in the levels below".
  */

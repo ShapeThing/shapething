@@ -171,7 +171,7 @@ export default function FacetPropertyComponent({ property, filterShape, instance
       label={label}
       actions={
         matchCount !== undefined && (
-          <span className="st-form-element__count-badge">({matchCount})</span>
+          <span className="st-form-element__count-badge">{matchCount}</span>
         )
       }
       showColon

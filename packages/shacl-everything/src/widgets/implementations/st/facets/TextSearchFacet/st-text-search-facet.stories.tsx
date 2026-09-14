@@ -44,7 +44,7 @@ export const stTextSearchFacet: Story = {
 };
 
 // Environment.enableFacetOptionCounts extends to TextSearchFacet too: once something is typed, a
-// "(n)" count shows how many target instances currently match. "widget" matches only Widget (its
+// count shows how many target instances currently match. "widget" matches only Widget (its
 // own name); "gadget" matches only Gadget (both its name and description contain it, but that
 // still counts as one matching instance, not two).
 export const stTextSearchFacetMatchCount: Story = {
@@ -57,13 +57,13 @@ export const stTextSearchFacetMatchCount: Story = {
     const canvas = within(canvasElement);
     const search = await canvas.findByRole("searchbox");
 
-    expect(canvas.queryByText(/^\(\d+\)$/)).toBeNull();
+    expect(canvas.queryByText(/^\d+$/)).toBeNull();
 
     await userEvent.type(search, "widget");
-    await canvas.findByText("(1)");
+    await canvas.findByText("1");
 
     await userEvent.clear(search);
     await userEvent.type(search, "gadget");
-    await canvas.findByText("(1)");
+    await canvas.findByText("1");
   },
 };

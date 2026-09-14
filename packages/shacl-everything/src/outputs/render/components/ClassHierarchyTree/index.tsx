@@ -69,7 +69,7 @@ function ClassHierarchyTreeNode({
           the array produces instead of just once between the checkbox and the label. */}
           <span>{highlightMatches(node.label, query, "st-class-tree__match")}</span>
           {valueCounts && (
-            <span className="st-class-tree__count"> ({valueCounts.get(termKey(node.term)) ?? 0})</span>
+            <span className="st-class-tree__count"> {valueCounts.get(termKey(node.term)) ?? 0}</span>
           )}
         </label>
       )}

@@ -30,8 +30,8 @@ import "./style.css";
  * `sh:maxCount 1` renders as single-select (used by TypeSelector's own synthetic root-shape
  * picker) - every other cardinality renders multi-select checkboxes, since picking more than one
  * category value is an ordinary OR-filter (sh:in already means "any of these"). `valueCounts`,
- * only given when Environment.enableFacetOptionCounts is on, shows a "(n)" count after each
- * option's label.
+ * only given when Environment.enableFacetOptionCounts is on, shows a count after each option's
+ * label.
  */
 export default function CategoryFacet({
   shape,
@@ -113,7 +113,7 @@ export default function CategoryFacet({
             {valueCounts && (
               <span className="st-category-facet__count">
                 {" "}
-                ({valueCounts.get(termKey(option)) ?? 0})
+                {valueCounts.get(termKey(option)) ?? 0}
               </span>
             )}
           </label>

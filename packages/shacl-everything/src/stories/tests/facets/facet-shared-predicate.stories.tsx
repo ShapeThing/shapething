@@ -61,22 +61,22 @@ export const sharedPathMergesIntoOneFacetAcrossTypes: Story = {
 
     // Genre's own counts, before any filter is active: 4 Science Fiction (2 books + 2 movies),
     // 2 Romance (1 book + 1 movie) - one shared category facet aggregating both types' instances.
-    await canvas.findByLabelText("Science Fiction (4)");
-    await canvas.findByLabelText("Romance (2)");
+    await canvas.findByLabelText("Science Fiction 4");
+    await canvas.findByLabelText("Romance 2");
 
     await userEvent.type(name, "Dune");
 
     // The shared Name facet's own live match count: exactly one book (Dune) and one movie (Dune)
     // match, both counted through this single facet. Scoped to the Name facet's own container -
-    // Genre's "Science Fiction" count also happens to read "(2)" once narrowed below.
-    await within(nameContainer).findByText("(2)");
+    // Genre's "Science Fiction" count also happens to read "2" once narrowed below.
+    await within(nameContainer).findByText("2");
 
     // Narrowed by the active Name search, Genre's counts update too: both "Dune" instances are
     // Science Fiction, so that count drops from 4 to 2 and Romance drops to 0 - the same live,
     // cross-facet narrowing (see facet-option-counts.stories.tsx), now proven to also aggregate
     // correctly across two different rdf:types through a shared property.
-    await canvas.findByLabelText("Science Fiction (2)");
-    await canvas.findByLabelText("Romance (0)");
+    await canvas.findByLabelText("Science Fiction 2");
+    await canvas.findByLabelText("Romance 0");
 
     await waitFor(() => {
       if (!submitResult) throw new Error("onSubmit has not fired yet");

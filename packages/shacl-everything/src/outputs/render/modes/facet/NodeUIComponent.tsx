@@ -136,7 +136,7 @@ export default function NodeUIComponent({ filterShape }: { filterShape: FilterSh
     [activeShapes, shapesGraph, dataGraph],
   );
 
-  // TypeSelector's own "(n)" counts (Environment.enableFacetOptionCounts) - each root shape's own
+  // TypeSelector's own counts (Environment.enableFacetOptionCounts) - each root shape's own
   // target-instance count, keyed by termKey(classFor(rootShape)) the same way CategoryFacet keys
   // its own valueCounts, since a root shape's "value" in that radio/checkbox group is its class.
   const rootShapeCounts = useMemo(() => {
