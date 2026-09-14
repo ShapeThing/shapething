@@ -549,12 +549,12 @@ test("widget() returns the highest-scoring widget for the property shape alone",
             sh:property [ sh:path sh:datatype ; sh:hasValue xsd:boolean ] .
 
         ex:booleanWidgetScore a shui:WidgetScore ;
-            shui:widget ex:BooleanWidget ;
+            shui:editor ex:BooleanWidget ;
             shui:score 20 ;
             shui:shapesGraphShape ex:hasBooleanDatatype .
 
         ex:textWidgetScore a shui:WidgetScore ;
-            shui:widget ex:TextWidget ;
+            shui:editor ex:TextWidget ;
             shui:score 5 .
     `,
     "text/turtle",
@@ -596,7 +596,7 @@ test("widget() also scores the given value against shui:dataGraphShape", async (
         ex:isBoolean a sh:NodeShape ; sh:datatype xsd:boolean .
 
         ex:booleanWidgetScore a shui:WidgetScore ;
-            shui:widget ex:BooleanWidget ;
+            shui:editor ex:BooleanWidget ;
             shui:score 20 ;
             shui:dataGraphShape ex:isBoolean .
     `,
@@ -649,7 +649,7 @@ test("widget() merges grouped property shapes, so a widget hint on either shape 
             sh:property [ sh:path shui:editor ; sh:hasValue ex:CustomWidget ] .
 
         ex:customWidgetScore a shui:WidgetScore ;
-            shui:widget ex:CustomWidget ;
+            shui:editor ex:CustomWidget ;
             shui:score 40 ;
             shui:shapesGraphShape ex:prefersCustomWidget .
     `,

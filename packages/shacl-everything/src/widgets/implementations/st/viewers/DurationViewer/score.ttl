@@ -9,7 +9,7 @@ st:DurationViewer rdfs:label "Duration"@en, "Tijdsduur"@nl .
 
 st:durationViewerScore40
     a shui:WidgetScore ;
-    shui:widget st:DurationViewer ;
+    shui:viewer st:DurationViewer ;
     shui:score 40 ;
     shui:shapesGraphShape st:prefersDurationViewer ;
 .
@@ -19,7 +19,7 @@ st:durationViewerScore40
 # which otherwise ties at 1 for any literal this codebase has no dedicated viewer for.
 st:durationViewerScore20
     a shui:WidgetScore ;
-    shui:widget st:DurationViewer ;
+    shui:viewer st:DurationViewer ;
     shui:score 20 ;
     shui:dataGraphShape st:isDurationViewerDurationLiteral ;
 .
@@ -30,7 +30,7 @@ st:durationViewerScore20
 # DurationEditor/score.ttl's own hasDurationEditorDatatypeConstraint for the same shape.
 st:durationViewerScore10
     a shui:WidgetScore ;
-    shui:widget st:DurationViewer ;
+    shui:viewer st:DurationViewer ;
     shui:score 10 ;
     shui:shapesGraphShape st:hasDurationViewerDatatypeConstraint ;
 .

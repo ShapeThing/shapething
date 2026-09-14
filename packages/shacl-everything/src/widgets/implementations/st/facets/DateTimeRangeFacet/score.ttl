@@ -7,14 +7,14 @@ st:DateTimeRangeFacet rdfs:label "Date & Time Range"@en, "Datum- en tijdbereik"@
 
 st:dateTimeRangeFacetScore40
     a shui:WidgetScore ;
-    shui:widget st:DateTimeRangeFacet ;
+    st:facet st:DateTimeRangeFacet ;
     shui:score 40 ;
     shui:shapesGraphShape st:prefersDateTimeRangeFacet ;
 .
 
 st:dateTimeRangeFacetScore10
     a shui:WidgetScore ;
-    shui:widget st:DateTimeRangeFacet ;
+    st:facet st:DateTimeRangeFacet ;
     shui:score 10 ;
     shui:shapesGraphShape shui:hasDatatypeDateTimeConstraint ;
 .

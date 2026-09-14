@@ -9,7 +9,7 @@ st:DurationEditor rdfs:label "Duration"@en, "Tijdsduur"@nl .
 
 st:durationEditorScore40
     a shui:WidgetScore ;
-    shui:widget st:DurationEditor ;
+    shui:editor st:DurationEditor ;
     shui:score 40 ;
     shui:shapesGraphShape st:prefersDurationEditor ;
 .
@@ -18,7 +18,7 @@ st:durationEditorScore40
 # the datatype this editor itself ever writes (see duration.ts's termFromMilliseconds).
 st:durationEditorScore20
     a shui:WidgetScore ;
-    shui:widget st:DurationEditor ;
+    shui:editor st:DurationEditor ;
     shui:score 20 ;
     shui:dataGraphShape st:isDurationEditorDurationLiteral ;
 .
@@ -30,7 +30,7 @@ st:durationEditorScore20
 # widget-scoring.ttl's own hasDatatypeDateConstraint for the same shape.
 st:durationEditorScore10
     a shui:WidgetScore ;
-    shui:widget st:DurationEditor ;
+    shui:editor st:DurationEditor ;
     shui:score 10 ;
     shui:shapesGraphShape st:hasDurationEditorDatatypeConstraint ;
 .

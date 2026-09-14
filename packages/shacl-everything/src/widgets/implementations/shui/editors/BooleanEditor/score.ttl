@@ -1,36 +1,19 @@
-PREFIX sh: <http://www.w3.org/ns/shacl#>
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 shui:BooleanEditor rdfs:label "Checkbox"@en, "Aankruisvakje"@nl .
 
-shui:booleanEditorScore40
-    a shui:WidgetScore ;
-    shui:widget shui:BooleanEditor ;
-    shui:score 40 ;
-    shui:dataGraphShape shui:isBoolean ;
-    shui:shapesGraphShape shui:prefersBooleanEditor ;
-.
-
 shui:booleanEditorScore20
     a shui:WidgetScore ;
-    shui:widget shui:BooleanEditor ;
+    shui:editor shui:BooleanEditor ;
     shui:score 20 ;
     shui:dataGraphShape shui:isBoolean ;
 .
 
 shui:booleanEditorScore10
     a shui:WidgetScore ;
-    shui:widget shui:BooleanEditor ;
+    shui:editor shui:BooleanEditor ;
     shui:score 10 ;
     shui:shapesGraphShape shui:hasDatatypeBooleanConstraint ;
-.
-
-shui:prefersBooleanEditor
-    a sh:NodeShape ;
-    sh:property [
-        sh:path shui:editor ;
-        sh:hasValue shui:BooleanEditor ;
-    ] ;
 .

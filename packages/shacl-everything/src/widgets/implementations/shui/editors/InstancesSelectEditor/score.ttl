@@ -1,4 +1,3 @@
-PREFIX sh: <http://www.w3.org/ns/shacl#>
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
@@ -6,23 +5,15 @@ shui:InstancesSelectEditor rdfs:label "Instance Picker"@en, "Instantiekiezer"@nl
 
 shui:instancesSelectEditorScore40
     a shui:WidgetScore ;
-    shui:widget shui:InstancesSelectEditor ;
+    shui:editor shui:InstancesSelectEditor ;
     shui:score 40 ;
     shui:dataGraphShape shui:isIRI ;
-    shui:shapesGraphShape shui:prefersInstancesSelectEditor, shui:hasClassConstraint ;
+    shui:shapesGraphShape shui:hasClassConstraint ;
 .
 
 shui:instancesSelectEditorScore0
     a shui:WidgetScore ;
-    shui:widget shui:InstancesSelectEditor ;
+    shui:editor shui:InstancesSelectEditor ;
     shui:score 0 ;
     shui:shapesGraphShape shui:hasClassConstraint ;
-.
-
-shui:prefersInstancesSelectEditor
-    a sh:NodeShape ;
-    sh:property [
-        sh:path shui:editor ;
-        sh:hasValue shui:InstancesSelectEditor ;
-    ] ;
 .

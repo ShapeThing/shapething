@@ -9,7 +9,7 @@ st:GeoEditor rdfs:label "Geometry editor"@en, "Geometrie-editor"@nl .
 
 st:geoEditorScore40
     a shui:WidgetScore ;
-    shui:widget st:GeoEditor ;
+    shui:editor st:GeoEditor ;
     shui:score 40 ;
     shui:shapesGraphShape st:prefersGeoEditor ;
 .
@@ -18,7 +18,7 @@ st:geoEditorScore40
 # WKT literal, the one representation this editor itself ever writes (see geometry.ts).
 st:geoEditorScore20
     a shui:WidgetScore ;
-    shui:widget st:GeoEditor ;
+    shui:editor st:GeoEditor ;
     shui:score 20 ;
     shui:dataGraphShape st:isGeoEditorWktLiteral ;
 .
@@ -30,7 +30,7 @@ st:geoEditorScore20
 # a list of datatypes instead of one IRI, spec issue #1179).
 st:geoEditorScore10
     a shui:WidgetScore ;
-    shui:widget st:GeoEditor ;
+    shui:editor st:GeoEditor ;
     shui:score 10 ;
     shui:shapesGraphShape st:hasGeoEditorWktDatatypeConstraint ;
 .

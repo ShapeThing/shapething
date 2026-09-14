@@ -1,23 +1,21 @@
-PREFIX sh: <http://www.w3.org/ns/shacl#>
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-shui:AutoCompleteEditor 
+shui:AutoCompleteEditor
     a shui:Widget ;
     rdfs:label "Autocomplete"@en, "Automatisch aanvullen"@nl .
 
 shui:autoCompleteEditorScore40
     a shui:WidgetScore ;
-    shui:widget shui:AutoCompleteEditor ;
+    shui:editor shui:AutoCompleteEditor ;
     shui:score 40 ;
     shui:dataGraphShape shui:isIRI ;
-    shui:shapesGraphShape shui:prefersAutoCompleteEditor, shui:hasClassConstraint ;
+    shui:shapesGraphShape shui:hasClassConstraint ;
 .
 
 shui:autoCompleteEditorScore10
     a shui:WidgetScore ;
-    shui:widget shui:AutoCompleteEditor ;
+    shui:editor shui:AutoCompleteEditor ;
     shui:score 10 ;
     shui:shapesGraphShape shui:hasNodeKindIRIConstraint, shui:hasClassConstraint ;
 .
@@ -26,16 +24,14 @@ shui:autoCompleteEditorScore10
 # without an explicit shui:editor statement - scored the same as an explicit declaration.
 shui:autoCompleteEditorScoreSearchQuery
     a shui:WidgetScore ;
-    shui:widget shui:AutoCompleteEditor ;
+    shui:editor shui:AutoCompleteEditor ;
     shui:score 40 ;
     shui:dataGraphShape shui:isIRI ;
     shui:shapesGraphShape shui:hasSearchQueryConstraint ;
 .
 
-shui:prefersAutoCompleteEditor
-    a sh:NodeShape ;
-    sh:property [
-        sh:path shui:editor ;
-        sh:hasValue shui:AutoCompleteEditor ;
-    ] ;
-.
+shui:AutoCompleteEditorAcceptMatcher
+    a shui:WidgetAcceptMatcher ;
+    shui:dataGraphShape shui:isIRI ;
+    shui:shapesGraphShape shui:hasNodeKindIRIConstraint ;
+    shui:editor shui:AutoCompleteEditor .

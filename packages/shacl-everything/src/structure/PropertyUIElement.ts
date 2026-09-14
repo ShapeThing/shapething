@@ -5,7 +5,10 @@ import { factory } from "@/helpers/factory.ts";
 import { hashString } from "@/helpers/hashString.ts";
 import { sh, shui } from "@/helpers/namespaces.ts";
 import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
-import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import {
+  parsePropertyPath,
+  type PropertyPath,
+} from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import { insertPropertyPath } from "@/structure/paths/insertPropertyPath.ts";
 import { replacePropertyPath } from "@/structure/paths/replacePropertyPath.ts";
@@ -52,21 +55,28 @@ type NumberPredicates = ShIri<
   | "maxInclusive"
 >;
 type BooleanPredicates = ShIri<
-  "closed" | "singleLine" | "uniqueLang" | "uniqueMembers" | "reificationRequired"
+  | "closed"
+  | "singleLine"
+  | "uniqueLang"
+  | "uniqueMembers"
+  | "reificationRequired"
 >;
 type SingleTermPredicates = ShIri<
-  "name" | "codeIdentifier" | "group" | "severity" | "equals" | "hasValue" | "datatype"
+  | "name"
+  | "codeIdentifier"
+  | "group"
+  | "severity"
+  | "equals"
+  | "hasValue"
+  | "datatype"
 >;
 
 export type PredicateReturn<Iri extends string> = Iri extends NumberPredicates
   ? number | undefined
-  : Iri extends BooleanPredicates
-    ? boolean | undefined
-    : Iri extends ShIri<"pattern">
-      ? RegExp | undefined
-      : Iri extends SingleTermPredicates
-        ? Term | undefined
-        : Term[];
+  : Iri extends BooleanPredicates ? boolean | undefined
+  : Iri extends ShIri<"pattern"> ? RegExp | undefined
+  : Iri extends SingleTermPredicates ? Term | undefined
+  : Term[];
 
 export class PropertyUIElement {
   // A tag, not just a class to `instanceof`-check against: Vite HMR can reload this module (or one
@@ -111,7 +121,10 @@ export class PropertyUIElement {
    * declared value by sh:order.
    */
   get<Iri extends string>(predicate: NamedNode<Iri>): PredicateReturn<Iri>;
-  get(predicate: NamedNode, languages: LanguageRange[] | undefined): Term | undefined;
+  get(
+    predicate: NamedNode,
+    languages: LanguageRange[] | undefined,
+  ): Term | undefined;
   get(predicate: NamedNode, languages?: LanguageRange[]): unknown {
     const values = orderedValues(this, predicate);
     if (languages !== undefined) {
@@ -141,8 +154,9 @@ export class PropertyUIElement {
   addObject(value: Term): void {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return;
-    transact(this.dataGraph, () =>
-      insertPropertyPath(path, this.focusNode, this.dataGraph, value),
+    transact(
+      this.dataGraph,
+      () => insertPropertyPath(path, this.focusNode, this.dataGraph, value),
     );
   }
 
@@ -155,14 +169,19 @@ export class PropertyUIElement {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return;
     transact(this.dataGraph, () => {
-      const existing = walkPropertyPath(path, this.focusNode, this.dataGraph).some((term) =>
-        term.equals(oldValue),
-      );
+      const existing = walkPropertyPath(path, this.focusNode, this.dataGraph)
+        .some((term) => term.equals(oldValue));
 
       if (!existing) {
         insertPropertyPath(path, this.focusNode, this.dataGraph, newValue);
       } else {
-        replacePropertyPath(path, this.focusNode, this.dataGraph, oldValue, newValue);
+        replacePropertyPath(
+          path,
+          this.focusNode,
+          this.dataGraph,
+          oldValue,
+          newValue,
+        );
       }
     });
   }
@@ -175,8 +194,9 @@ export class PropertyUIElement {
   removeObject(value: Term): void {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return;
-    transact(this.dataGraph, () =>
-      removePropertyPath(path, this.focusNode, this.dataGraph, value),
+    transact(
+      this.dataGraph,
+      () => removePropertyPath(path, this.focusNode, this.dataGraph, value),
     );
   }
 
@@ -192,7 +212,9 @@ export class PropertyUIElement {
   isReadOnly(value: Term, readOnlyGraph: RdfStore): boolean {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return false;
-    return walkPropertyPath(path, this.focusNode, readOnlyGraph).some((term) => term.equals(value));
+    return walkPropertyPath(path, this.focusNode, readOnlyGraph).some((term) =>
+      term.equals(value)
+    );
   }
 
   pathAsSparql(): string | undefined {
@@ -245,8 +267,14 @@ export class PropertyUIElement {
    */
   label(languages?: BCP47[]): string {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
-    const predicate = (path && terminalPredicate(path)) ?? this.propertyShapes[0];
-    return propertyLabel({ term: predicate, propertyShape: this, languages, isPropertyPath: true });
+    const predicate = (path && terminalPredicate(path)) ??
+      this.propertyShapes[0];
+    return propertyLabel({
+      term: predicate,
+      propertyShape: this,
+      languages,
+      isPropertyPath: true,
+    });
   }
 
   /**
@@ -257,8 +285,13 @@ export class PropertyUIElement {
    */
   description(languages?: BCP47[]): string | undefined {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
-    const predicate = (path && terminalPredicate(path)) ?? this.propertyShapes[0];
-    return propertyDescription({ term: predicate, propertyShape: this, languages });
+    const predicate = (path && terminalPredicate(path)) ??
+      this.propertyShapes[0];
+    return propertyDescription({
+      term: predicate,
+      propertyShape: this,
+      languages,
+    });
   }
 
   /**
@@ -275,18 +308,14 @@ export class PropertyUIElement {
     valueNode?: Term;
   }): Promise<Term | undefined> {
     const { shapeNode, shapesGraph } = widgetShapeSource(this);
-    const [widget] = await Array.fromAsync(
-      select({
-        best: true,
-        focusNode: valueNode,
-        dataGraph: this.dataGraph,
-        shapeNode,
-        shapesGraph,
-        scoringGraph: this.scoresGraph,
-        widgetPredicate,
-        widgets: this.widgetRegistry,
-      }),
-    );
+    const widget = select({
+      focusNode: valueNode,
+      dataGraph: this.dataGraph,
+      shapeNode,
+      shapesGraph,
+      scoringGraph: this.scoresGraph,
+      widgetPredicate,
+    });
 
     return widget;
   }
@@ -299,17 +328,15 @@ export class PropertyUIElement {
     valueNode?: Term;
   }): Promise<WidgetScoreResult[]> {
     const { shapeNode, shapesGraph } = widgetShapeSource(this);
-    return Array.fromAsync(
-      score({
-        focusNode: valueNode,
-        dataGraph: this.dataGraph,
-        shapeNode,
-        shapesGraph,
-        scoringGraph: this.scoresGraph,
-        widgetPredicate,
-        widgets: this.widgetRegistry,
-      }),
-    );
+    return score({
+      focusNode: valueNode,
+      dataGraph: this.dataGraph,
+      shapeNode,
+      shapesGraph,
+      scoringGraph: this.scoresGraph,
+      widgetPredicate,
+      widgets: this.widgetRegistry,
+    });
   }
 
   /**
@@ -331,7 +358,9 @@ export class PropertyUIElement {
 // shui:editor, ...) - so a grouped element backed by more than one property shape needs those
 // triples merged onto one synthetic node first, for the same reason get() merges their values:
 // SHACL treats repeated constraints conjunctively whether declared on one shape or several.
-function widgetShapeSource(element: PropertyUIElement): { shapeNode: Term; shapesGraph: RdfStore } {
+function widgetShapeSource(
+  element: PropertyUIElement,
+): { shapeNode: Term; shapesGraph: RdfStore } {
   if (element.propertyShapes.length === 1) {
     return {
       shapeNode: element.propertyShapes[0],
@@ -382,11 +411,15 @@ function terminalPredicate(path: PropertyPath): NamedNode | undefined {
 // both a keepFirst-style resolution and language selection rely on to break ties consistently.
 // Exported for propertyLabel (resolution/label.ts), which needs the raw, un-language-resolved list
 // itself (to try a strict language match first, falling back to the ontology before a looser one).
-export function orderedValues(element: PropertyUIElement, predicate: NamedNode): Term[] {
+export function orderedValues(
+  element: PropertyUIElement,
+  predicate: NamedNode,
+): Term[] {
   const orderedShapes = [...element.propertyShapes].sort(
-    (a, b) => shapeOrder(a, element.shapesGraph) - shapeOrder(b, element.shapesGraph),
+    (a, b) =>
+      shapeOrder(a, element.shapesGraph) - shapeOrder(b, element.shapesGraph),
   );
   return orderedShapes.flatMap((shape) =>
-    element.shapesGraph.getQuads(shape, predicate).map((quad) => quad.object),
+    element.shapesGraph.getQuads(shape, predicate).map((quad) => quad.object)
   );
 }

@@ -60,13 +60,19 @@ const eagerComponents = import.meta.glob(
     "!/src/widgets/implementations/st/facets/MapFacet/widget.tsx",
   ],
   { eager: true, import: "default" },
-) as Record<string, WidgetComponent | GroupWidgetComponent | FacetWidgetComponent>;
+) as Record<
+  string,
+  WidgetComponent | GroupWidgetComponent | FacetWidgetComponent
+>;
 
-const scoringGraphs = import.meta.glob("/src/widgets/implementations/*/*/*/score.ttl", {
-  eager: true,
-  query: "?raw",
-  import: "default",
-}) as Record<string, string>;
+const scoringGraphs = import.meta.glob(
+  "/src/widgets/implementations/*/*/*/score.ttl",
+  {
+    eager: true,
+    query: "?raw",
+    import: "default",
+  },
+) as Record<string, string>;
 
 // Only editors ever produce a fresh/empty term for a property, so meta.ts (and createTerm) is an
 // editor-only concept in practice - viewers/groups have nothing to create - but is discovered the
@@ -102,7 +108,9 @@ function widgetIri(path: string): NamedNode {
   return factory.namedNode(`${prefix}${folderName(path)}`);
 }
 
-function buildEntries(category: "editors" | "viewers"): Record<string, WidgetRegistryEntry> {
+function buildEntries(
+  category: "editors" | "viewers",
+): Record<string, WidgetRegistryEntry> {
   const entries: Record<string, WidgetRegistryEntry> = {};
   for (const [path, Component] of Object.entries(eagerComponents)) {
     if (categorySegment(path) !== category) continue;
@@ -178,7 +186,8 @@ export type WidgetMode = "edit" | "view" | "facet";
 export function categoryFor(mode: WidgetMode, widgets: Widgets) {
   if (mode === "edit") return widgets.editors;
   if (mode === "view") return widgets.viewers;
-  return widgets.facets;
+  if (mode === "facet") return widgets.facets;
+  throw new Error(`Unknown widget mode: ${mode}`);
 }
 
 // The inverse of categoryFor: which WidgetMode's pool a given shui:editor/shui:viewer/st:facet
@@ -187,7 +196,9 @@ export function categoryFor(mode: WidgetMode, widgets: Widgets) {
 // instead of trusting the ambient Environment.mode - the two usually coincide (edit mode always
 // scores shui:editor, view always shui:viewer), but edit mode's read-only rendering deliberately
 // resolves a shui:viewer widget while Environment.mode stays "edit", so they can't be conflated.
-export function widgetModeForPredicate(widgetPredicate: Term): WidgetMode | undefined {
+export function widgetModeForPredicate(
+  widgetPredicate: Term,
+): WidgetMode | undefined {
   if (widgetPredicate.equals(shui("editor"))) return "edit";
   if (widgetPredicate.equals(shui("viewer"))) return "view";
   if (widgetPredicate.equals(st("facet"))) return "facet";
@@ -201,7 +212,10 @@ export function widgetModeForPredicate(widgetPredicate: Term): WidgetMode | unde
 // `defaultWidgets` is a stable module singleton so the common case caches exactly as before: a
 // caller-supplied `widgets` object should likewise be constructed once and reused, not rebuilt on
 // every render, or it never benefits from this cache.
-const scoringGraphCache = new WeakMap<Widgets, Map<WidgetMode, Promise<RdfStore>>>();
+const scoringGraphCache = new WeakMap<
+  Widgets,
+  Map<WidgetMode, Promise<RdfStore>>
+>();
 
 /**
  * Combines the shared widget-scoring.ttl shape definitions with every editor's/viewer's/facet's
@@ -212,7 +226,8 @@ export function getScoringGraph(
   mode: WidgetMode,
   widgets: Widgets = defaultWidgets,
 ): Promise<RdfStore> {
-  const modeCache = scoringGraphCache.get(widgets) ?? new Map<WidgetMode, Promise<RdfStore>>();
+  const modeCache = scoringGraphCache.get(widgets) ??
+    new Map<WidgetMode, Promise<RdfStore>>();
   scoringGraphCache.set(widgets, modeCache);
 
   const cached = modeCache.get(mode);
@@ -237,9 +252,10 @@ function findWidget<T extends { widget: NamedNode }>(
 }
 
 /**
- * Resolves a shui:widget/st:widget IRI (as picked by PropertyUIElement.widget()) to the React
- * component implementing it, matched against the active `widgets`' own editors/viewers/facets
- * entries (by `mode`) by IRI equality (not by folder path - `widgets` need not be the bundled
+ * Resolves a widget's own type IRI (e.g. shui:TextFieldEditor or st:CategoryFacet, as picked by
+ * PropertyUIElement.widget()) to the React component implementing it, matched against the active
+ * `widgets`' own editors/viewers/facets entries (by `mode`) by IRI equality (not by folder path -
+ * `widgets` need not be the bundled
  * `defaultWidgets` at all). The return type follows `mode`: callers that know their mode statically
  * (e.g. useWidget's own generic parameter) can narrow past the union themselves.
  */
@@ -252,7 +268,10 @@ export function getWidgetComponent(
   // `mode` is what actually picks the right category (and, with it, the right Component shape) at
   // runtime, same "narrow past the union yourself" story as this function's own return type (see
   // its doc comment above).
-  return findWidget(categoryFor(mode, widgets) as Record<string, WidgetRegistryEntry>, widget)
+  return findWidget(
+    categoryFor(mode, widgets) as Record<string, WidgetRegistryEntry>,
+    widget,
+  )
     ?.Component;
 }
 
@@ -268,7 +287,8 @@ export function getWidgetMeta(
   widget: NamedNode,
   widgets: Widgets = defaultWidgets,
 ): WidgetMeta | undefined {
-  return findWidget(widgets.editors, widget)?.meta ?? findWidget(widgets.viewers, widget)?.meta;
+  return findWidget(widgets.editors, widget)?.meta ??
+    findWidget(widgets.viewers, widget)?.meta;
 }
 
 /**
@@ -283,9 +303,12 @@ export function getGroupWidget(
   shapesGraph: RdfStore,
   widgets: Widgets = defaultWidgets,
 ): GroupWidgetRegistryEntry | undefined {
-  const types = shapesGraph.getQuads(node, rdf("type")).map((quad) => quad.object);
-  const matches = Object.values(widgets.groups).filter((entry) =>
-    types.some((type) => type.equals(entry.widget)),
+  const types = shapesGraph.getQuads(node, rdf("type")).map((quad) =>
+    quad.object
   );
-  return matches.find((entry) => !entry.widget.equals(sh("PropertyGroup"))) ?? matches[0];
+  const matches = Object.values(widgets.groups).filter((entry) =>
+    types.some((type) => type.equals(entry.widget))
+  );
+  return matches.find((entry) => !entry.widget.equals(sh("PropertyGroup"))) ??
+    matches[0];
 }

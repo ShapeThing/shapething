@@ -9,7 +9,7 @@ st:MapViewer rdfs:label "Map"@en, "Kaart"@nl .
 
 st:mapViewerScore40
     a shui:WidgetScore ;
-    shui:widget st:MapViewer ;
+    shui:viewer st:MapViewer ;
     shui:score 40 ;
     shui:shapesGraphShape st:prefersMapViewer ;
 .
@@ -21,14 +21,14 @@ st:mapViewerScore40
 # declaration.
 st:mapViewerScore20
     a shui:WidgetScore ;
-    shui:widget st:MapViewer ;
+    shui:viewer st:MapViewer ;
     shui:score 20 ;
     shui:dataGraphShape st:isWktLiteral ;
 .
 
 st:mapViewerScore10
     a shui:WidgetScore ;
-    shui:widget st:MapViewer ;
+    shui:viewer st:MapViewer ;
     shui:score 10 ;
     shui:shapesGraphShape st:hasWktDatatypeConstraint ;
 .

@@ -96,6 +96,42 @@ test("detectActiveBranch picks the branch a literal's datatype already conforms 
   expect(detectedForLangString?.shape.equals(langStringBranch.shape)).toBe(true);
 });
 
+test("detectActiveBranch picks the branch matching an IRI value's own nodeKind, even when it's absent from dataGraph", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+
+        ex:Person a sh:NodeShape ;
+            sh:property ex:refShape .
+
+        ex:refShape a sh:PropertyShape ;
+            sh:path ex:ref ;
+            sh:or (
+                [ sh:name "As IRI"@en ; sh:nodeKind sh:IRI ]
+                [ sh:name "As blank node"@en ; sh:nodeKind sh:BlankNode ]
+            ) .
+    `,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf("", "text/turtle");
+
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Hendrik"),
+    propertyShapes: [ex("refShape")],
+  });
+
+  const branches = logicalBranches(element);
+  const [iriBranch] = branches;
+
+  // Never written into dataGraph - e.g. widgets/defaultTerm.ts's defaultTermFromShape() placeholder.
+  const uncommittedIRI = factory.namedNode("");
+  const detected = await detectActiveBranch(element, uncommittedIRI, branches);
+  expect(detected?.shape.equals(iriBranch.shape)).toBe(true);
+});
+
 test("detectActiveBranch returns undefined when no branch conforms", async () => {
   const shapesGraph = await contactShapesGraph();
   const dataGraph = await parseRdf("", "text/turtle");
