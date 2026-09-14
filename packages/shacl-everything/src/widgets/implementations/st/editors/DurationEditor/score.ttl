@@ -7,13 +7,6 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 st:DurationEditor rdfs:label "Duration"@en, "Tijdsduur"@nl .
 
-st:durationEditorScore40
-    a shui:WidgetScore ;
-    shui:editor st:DurationEditor ;
-    shui:score 40 ;
-    shui:shapesGraphShape st:prefersDurationEditor ;
-.
-
 # Same signal MapViewer/GeoEditor auto-score their own widget on: a value literal already typed as
 # the datatype this editor itself ever writes (see duration.ts's termFromMilliseconds).
 st:durationEditorScore20
@@ -33,14 +26,6 @@ st:durationEditorScore10
     shui:editor st:DurationEditor ;
     shui:score 10 ;
     shui:shapesGraphShape st:hasDurationEditorDatatypeConstraint ;
-.
-
-st:prefersDurationEditor
-    a sh:NodeShape ;
-    sh:property [
-        sh:path shui:editor ;
-        sh:hasValue st:DurationEditor ;
-    ] ;
 .
 
 st:isDurationEditorDurationLiteral

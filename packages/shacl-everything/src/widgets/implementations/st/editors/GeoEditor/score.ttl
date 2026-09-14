@@ -7,13 +7,6 @@ PREFIX geosparql: <http://www.opengis.net/ont/geosparql#>
 
 st:GeoEditor rdfs:label "Geometry editor"@en, "Geometrie-editor"@nl .
 
-st:geoEditorScore40
-    a shui:WidgetScore ;
-    shui:editor st:GeoEditor ;
-    shui:score 40 ;
-    shui:shapesGraphShape st:prefersGeoEditor ;
-.
-
 # Same signal MapViewer/score.ttl auto-scores a viewer on: a value literal typed as a GeoSPARQL
 # WKT literal, the one representation this editor itself ever writes (see geometry.ts).
 st:geoEditorScore20
@@ -33,14 +26,6 @@ st:geoEditorScore10
     shui:editor st:GeoEditor ;
     shui:score 10 ;
     shui:shapesGraphShape st:hasGeoEditorWktDatatypeConstraint ;
-.
-
-st:prefersGeoEditor
-    a sh:NodeShape ;
-    sh:property [
-        sh:path shui:editor ;
-        sh:hasValue st:GeoEditor ;
-    ] ;
 .
 
 st:isGeoEditorWktLiteral

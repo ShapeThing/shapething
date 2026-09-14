@@ -3,51 +3,50 @@ PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX st: <http://shapething.com/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-st:DurationViewer rdfs:label "Duration"@en, "Tijdsduur"@nl .
+st:ColorEditor rdfs:label "Color Picker"@en, "Kleurkiezer"@nl .
 
-# Same signal DurationEditor/score.ttl auto-scores its own widget on: a value literal already
-# typed xsd:duration - beats LiteralViewer's generic isLiteral rule (score.ttl of that widget),
-# which otherwise ties at 1 for any literal this codebase has no dedicated viewer for.
-st:durationViewerScore20
+# Same signal IconifyEditor/GeoEditor auto-score their own widget on: a value literal already typed
+# as the datatype this editor itself ever writes (see widget.tsx).
+st:colorEditorScore20
     a shui:WidgetScore ;
-    shui:viewer st:DurationViewer ;
+    shui:editor st:ColorEditor ;
     shui:score 20 ;
-    shui:dataGraphShape st:isDurationViewerDurationLiteral ;
+    shui:dataGraphShape st:isColorEditorColorLiteral ;
 .
 
 # Same signal read off the property shape's own sh:datatype instead of an actual value, so a
-# not-yet-valued property still prefers DurationViewer. Needs both sh:or branches since SHACL 1.2
+# not-yet-valued property still prefers ColorEditor (e.g. WidgetSwitcher listing options, or the
+# very first "+ Add item" click on an empty property). Needs both sh:or branches since SHACL 1.2
 # lets sh:datatype hold a list of datatypes instead of one IRI (spec issue #1179) - see
 # DurationEditor/score.ttl's own hasDurationEditorDatatypeConstraint for the same shape.
-st:durationViewerScore10
+st:colorEditorScore10
     a shui:WidgetScore ;
-    shui:viewer st:DurationViewer ;
+    shui:editor st:ColorEditor ;
     shui:score 10 ;
-    shui:shapesGraphShape st:hasDurationViewerDatatypeConstraint ;
+    shui:shapesGraphShape st:hasColorEditorDatatypeConstraint ;
 .
 
-st:isDurationViewerDurationLiteral
+st:isColorEditorColorLiteral
     a sh:NodeShape ;
-    sh:datatype xsd:duration ;
+    sh:datatype <https://www.w3.org/TR/css-color-4/> ;
 .
 
-st:hasDurationViewerDatatypeConstraint
+st:hasColorEditorDatatypeConstraint
     a sh:NodeShape ;
     sh:or (
         [
             sh:property [
                 sh:path sh:datatype ;
                 sh:minCount 1 ;
-                sh:hasValue xsd:duration ;
+                sh:hasValue <https://www.w3.org/TR/css-color-4/> ;
             ] ;
         ]
         [
             sh:property [
                 sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
                 sh:minCount 1 ;
-                sh:hasValue xsd:duration ;
+                sh:hasValue <https://www.w3.org/TR/css-color-4/> ;
             ] ;
         ]
     ) ;

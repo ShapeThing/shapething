@@ -1,0 +1,21 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Favorite color"@en, "Lievelingskleur"@nl ;
+        sh:path ex:favoriteColor ;
+        sh:datatype <https://www.w3.org/TR/css-color-4/> ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:favoriteColor "#3b82f6"^^<https://www.w3.org/TR/css-color-4/> ;
+    .

@@ -5,13 +5,6 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 st:IconifyViewer rdfs:label "Icon"@en, "Icoon"@nl .
 
-st:iconifyViewerScore40
-    a shui:WidgetScore ;
-    shui:viewer st:IconifyViewer ;
-    shui:score 40 ;
-    shui:shapesGraphShape st:prefersIconifyViewer ;
-.
-
 # A property shape declaring sh:datatype <https://iconify.design> (see namespaces.ts's
 # iconifyDatatype) always means "this value is an Iconify icon name" - beats LiteralViewer's own
 # generic isLiteral rule (score.ttl of that widget), which otherwise ties at 1 for any literal this
@@ -21,14 +14,6 @@ st:iconifyViewerScoreDatatype
     shui:viewer st:IconifyViewer ;
     shui:score 30 ;
     shui:shapesGraphShape st:hasIconifyDatatypeConstraint ;
-.
-
-st:prefersIconifyViewer
-    a sh:NodeShape ;
-    sh:property [
-        sh:path shui:viewer ;
-        sh:hasValue st:IconifyViewer ;
-    ] ;
 .
 
 st:hasIconifyDatatypeConstraint

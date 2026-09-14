@@ -1,0 +1,15 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Organization ;
+    sh:property [
+        sh:path <enable-missing-property-name-dereferencing.term.ttl> ;
+        sh:datatype xsd:string ;
+    ] .
+
+<#data>
+    a schema:Organization ;
+    <enable-missing-property-name-dereferencing.term.ttl> "Acme" .

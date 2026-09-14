@@ -7,13 +7,6 @@ PREFIX geosparql: <http://www.opengis.net/ont/geosparql#>
 
 st:MapFacet rdfs:label "Map"@en, "Kaart"@nl .
 
-st:mapFacetScore40
-    a shui:WidgetScore ;
-    st:facet st:MapFacet ;
-    shui:score 40 ;
-    shui:shapesGraphShape st:prefersMapFacet ;
-.
-
 # Mirrors viewers/MapViewer/score.ttl's own geosparql:wktLiteral auto-scoring rules - kept as a
 # separate, facet-mode-scoped copy rather than a cross-category reference: getScoringGraph
 # (widgets/registry.ts) only ever concatenates one category's own score.ttls per mode, so facet mode
@@ -30,14 +23,6 @@ st:mapFacetScore10
     st:facet st:MapFacet ;
     shui:score 10 ;
     shui:shapesGraphShape st:mapFacetHasWktDatatypeConstraint ;
-.
-
-st:prefersMapFacet
-    a sh:NodeShape ;
-    sh:property [
-        sh:path st:facet ;
-        sh:hasValue st:MapFacet ;
-    ] ;
 .
 
 # A value literal typed as a GeoSPARQL WKT literal - the one direct representation this facet can

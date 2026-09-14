@@ -88,6 +88,26 @@ const selectControlsForEnumArgs: ArgTypesEnhancer = (context) => {
   return { ...context.argTypes, ...enhanced };
 };
 
+// Ported from packages/shacl-renderer's own .storybook/preview.ts: st:FileUploadEditor's demo
+// fixture (st-file-upload-editor.ttl) points st:uploadUrl at "/storage-service-worker", which
+// public/sw.js (vendored from shacl-renderer, using localforage/IndexedDB) intercepts to fake a
+// real upload backend - without registering it, dragging a file onto the dropzone in a live
+// Storybook session would 404 instead of actually uploading.
+const registerServiceWorker = async () => {
+  // Skip under the Vitest browser (this project's "storybook" test project) integration, which
+  // runs on this fixed port - see shacl-renderer's identical check for the same reason.
+  if (location.port === "63315") return;
+  if (!("serviceWorker" in navigator)) return;
+
+  try {
+    await navigator.serviceWorker.register("./sw.js", { scope: "/" });
+  } catch (error) {
+    console.error(`Service worker registration failed with ${error}`);
+  }
+};
+
+void registerServiceWorker();
+
 const preview: Preview = {
   decorators: [withArgsKeyRemount, withGraphInspector, withSubmitPreview, withMaxWidth],
   argTypesEnhancers: [friendlyArgDisplay, selectControlsForEnumArgs],

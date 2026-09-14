@@ -5,13 +5,6 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 st:TextSearchFacet rdfs:label "Text Search"@en, "Tekst zoeken"@nl .
 
-st:textSearchFacetScore40
-    a shui:WidgetScore ;
-    st:facet st:TextSearchFacet ;
-    shui:score 40 ;
-    shui:shapesGraphShape st:prefersTextSearchFacet ;
-.
-
 # shui:searchQuery is a strong "this property is meant to be searched" signal even though it's
 # edit mode's own federated-autocomplete predicate (see AutoCompleteEditor) - a facet author who
 # already declared it for editing gets a matching text-search facet for free, no extra annotation.
@@ -46,14 +39,6 @@ st:textSearchFacetScoreAlternativePath
     st:facet st:TextSearchFacet ;
     shui:score 10 ;
     shui:shapesGraphShape st:hasAlternativePathConstraint ;
-.
-
-st:prefersTextSearchFacet
-    a sh:NodeShape ;
-    sh:property [
-        sh:path st:facet ;
-        sh:hasValue st:TextSearchFacet ;
-    ] ;
 .
 
 st:hasAlternativePathConstraint
