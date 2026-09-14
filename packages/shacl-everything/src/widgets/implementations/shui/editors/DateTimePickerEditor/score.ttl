@@ -1,36 +1,18 @@
-PREFIX sh: <http://www.w3.org/ns/shacl#>
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 shui:DateTimePickerEditor rdfs:label "Date & Time Picker"@en, "Datum- en tijdkiezer"@nl .
 
-shui:dateTimePickerEditorScore40
-    a shui:WidgetScore ;
-    shui:widget shui:DateTimePickerEditor ;
-    shui:score 40 ;
-    shui:dataGraphShape shui:isDateTime ;
-    shui:shapesGraphShape shui:prefersDateTimePickerEditor ;
-.
-
 shui:dateTimePickerEditorScore20
     a shui:WidgetScore ;
-    shui:widget shui:DateTimePickerEditor ;
+    shui:editor shui:DateTimePickerEditor ;
     shui:score 20 ;
     shui:dataGraphShape shui:isDateTime ;
 .
 
 shui:dateTimePickerEditorScore10
     a shui:WidgetScore ;
-    shui:widget shui:DateTimePickerEditor ;
+    shui:editor shui:DateTimePickerEditor ;
     shui:score 10 ;
     shui:shapesGraphShape shui:hasDatatypeDateTimeConstraint ;
-.
-
-shui:prefersDateTimePickerEditor
-    a sh:NodeShape ;
-    sh:property [
-        sh:path shui:editor ;
-        sh:hasValue shui:DateTimePickerEditor ;
-    ] ;
 .

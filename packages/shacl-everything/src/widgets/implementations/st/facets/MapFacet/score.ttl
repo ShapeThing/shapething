@@ -9,7 +9,7 @@ st:MapFacet rdfs:label "Map"@en, "Kaart"@nl .
 
 st:mapFacetScore40
     a shui:WidgetScore ;
-    shui:widget st:MapFacet ;
+    st:facet st:MapFacet ;
     shui:score 40 ;
     shui:shapesGraphShape st:prefersMapFacet ;
 .
@@ -20,14 +20,14 @@ st:mapFacetScore40
 # never sees viewers' scoring rules (and vice versa).
 st:mapFacetScore20
     a shui:WidgetScore ;
-    shui:widget st:MapFacet ;
+    st:facet st:MapFacet ;
     shui:score 20 ;
     shui:dataGraphShape st:mapFacetIsWktLiteral ;
 .
 
 st:mapFacetScore10
     a shui:WidgetScore ;
-    shui:widget st:MapFacet ;
+    st:facet st:MapFacet ;
     shui:score 10 ;
     shui:shapesGraphShape st:mapFacetHasWktDatatypeConstraint ;
 .

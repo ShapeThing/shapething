@@ -7,7 +7,7 @@ import {
   getWidgetMeta,
 } from "@/widgets/registry.ts";
 import { ex, rdf, sh, shui, st } from "@/helpers/namespaces.ts";
-import { prepareScoringGraph, score, select } from "@/scoring/score.ts";
+import { score, select } from "@/scoring/score.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
 
@@ -18,23 +18,23 @@ test("getScoringGraph combines the shared widget-scoring.ttl shapes with every e
   expect(scoringGraph.getQuads(shui("isBoolean"), rdf("type"), sh("NodeShape"))).toHaveLength(1);
 
   // A WidgetScore that only exists for the BooleanEditor.
-  expect(scoringGraph.getQuads(null, shui("widget"), shui("BooleanEditor")).length).toBeGreaterThan(
+  expect(scoringGraph.getQuads(null, shui("editor"), shui("BooleanEditor")).length).toBeGreaterThan(
     0,
   );
 
   // Viewer-only widgets should not be present in the editor graph.
-  expect(scoringGraph.getQuads(null, shui("widget"), shui("LiteralViewer"))).toHaveLength(0);
+  expect(scoringGraph.getQuads(null, shui("viewer"), shui("LiteralViewer"))).toHaveLength(0);
 });
 
 test("getScoringGraph combines the shared widget-scoring.ttl shapes with every viewer score.ttl", async () => {
   const scoringGraph = await getScoringGraph("view");
 
-  expect(scoringGraph.getQuads(null, shui("widget"), shui("LiteralViewer")).length).toBeGreaterThan(
+  expect(scoringGraph.getQuads(null, shui("viewer"), shui("LiteralViewer")).length).toBeGreaterThan(
     0,
   );
 
   // Editor-only widgets should not be present in the viewer graph.
-  expect(scoringGraph.getQuads(null, shui("widget"), shui("BooleanEditor"))).toHaveLength(0);
+  expect(scoringGraph.getQuads(null, shui("editor"), shui("BooleanEditor"))).toHaveLength(0);
 });
 
 test("getScoringGraph + score picks the BooleanEditor for a plain boolean property, using the real widget scoring rules", async () => {
@@ -64,16 +64,14 @@ test("getScoringGraph + score picks the BooleanEditor for a plain boolean proper
     factory.namedNode("http://example.org/isActive"),
   );
 
-  const best = await Array.fromAsync(
-    score({
-      focusNode: isActiveQuad.object,
-      dataGraph,
-      shapeNode: factory.namedNode("http://example.org/isActiveShape"),
-      shapesGraph,
-      scoringGraph,
-      widgetPredicate: shui("editor"),
-    }),
-  );
+  const best = await score({
+    focusNode: isActiveQuad.object,
+    dataGraph,
+    shapeNode: factory.namedNode("http://example.org/isActiveShape"),
+    shapesGraph,
+    scoringGraph,
+    widgetPredicate: shui("editor"),
+  });
 
   expect(best[0]?.widget).toEqual(shui("BooleanEditor"));
 });
@@ -81,12 +79,12 @@ test("getScoringGraph + score picks the BooleanEditor for a plain boolean proper
 test("getScoringGraph combines the shared widget-scoring.ttl shapes with every facet score.ttl", async () => {
   const scoringGraph = await getScoringGraph("facet");
 
-  expect(
-    scoringGraph.getQuads(null, shui("widget"), st("NumberRangeFacet")).length,
-  ).toBeGreaterThan(0);
+  expect(scoringGraph.getQuads(null, st("facet"), st("NumberRangeFacet")).length).toBeGreaterThan(
+    0,
+  );
 
   // Editor/viewer-only widgets should not be present in the facet graph.
-  expect(scoringGraph.getQuads(null, shui("widget"), shui("BooleanEditor"))).toHaveLength(0);
+  expect(scoringGraph.getQuads(null, shui("editor"), shui("BooleanEditor"))).toHaveLength(0);
 });
 
 test("facet scoring picks st:NumberRangeFacet for a plain numeric property, using the real widget scoring rules", async () => {
@@ -104,44 +102,25 @@ test("facet scoring picks st:NumberRangeFacet for a plain numeric property, usin
     "text/turtle",
   );
 
-  const best = await Array.fromAsync(
-    score({
-      dataGraph: await parseRdf("", "text/turtle"),
-      shapeNode: ex("ageShape"),
-      shapesGraph,
-      scoringGraph,
-      widgetPredicate: st("facet"),
-    }),
-  );
+  const best = await score({
+    dataGraph: await parseRdf("", "text/turtle"),
+    shapeNode: ex("ageShape"),
+    shapesGraph,
+    scoringGraph,
+    widgetPredicate: st("facet"),
+  });
 
   expect(best[0]?.widget).toEqual(st("NumberRangeFacet"));
 });
 
 test("st:facet hard-wires a specific facet widget, same as shui:editor/shui:viewer do for edit/view", async () => {
-  const scoringGraph = prepareScoringGraph({
+  const scoringGraph = await getScoringGraph("facet");
+
+  const widget = await select({
+    dataGraph: await parseRdf("", "text/turtle"),
+    shapeNode: ex("ageShape"),
     shapesGraph: await parseRdf(
       `
-          @prefix sh: <http://www.w3.org/ns/shacl#> .
-          @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-          @prefix ex: <http://example.org/> .
-          @prefix st: <http://shapething.com/> .
-          ex:ageShape a sh:PropertyShape ;
-              sh:path ex:age ;
-              sh:datatype xsd:integer ;
-              st:facet st:CategoryFacet .
-      `,
-      "text/turtle",
-    ),
-    scoringGraph: await getScoringGraph("facet"),
-  });
-
-  const [widget] = await Array.fromAsync(
-    select({
-      best: true,
-      dataGraph: await parseRdf("", "text/turtle"),
-      shapeNode: ex("ageShape"),
-      shapesGraph: await parseRdf(
-        `
             @prefix sh: <http://www.w3.org/ns/shacl#> .
             @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
             @prefix ex: <http://example.org/> .
@@ -151,12 +130,11 @@ test("st:facet hard-wires a specific facet widget, same as shui:editor/shui:view
                 sh:datatype xsd:integer ;
                 st:facet st:CategoryFacet .
         `,
-        "text/turtle",
-      ),
-      scoringGraph,
-      widgetPredicate: st("facet"),
-    }),
-  );
+      "text/turtle",
+    ),
+    scoringGraph,
+    widgetPredicate: st("facet"),
+  });
 
   // Would otherwise score as st:NumberRangeFacet (see the test above) - the explicit declaration
   // wins outright, without even needing st:CategoryFacet's own score.ttl rules to match.

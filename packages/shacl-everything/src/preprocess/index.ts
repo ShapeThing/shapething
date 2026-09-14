@@ -6,8 +6,10 @@ import {
 } from "@/preprocess/languages.ts";
 import { resolveScoresGraph } from "@/preprocess/scoresGraph.ts";
 import { resolveWidgets } from "@/preprocess/widgets.ts";
-import { addMissingShapes, mergeFacetTextSearchProperties } from "@/preprocess/shapes.ts";
-import { prepareEnvironmentScoringGraph } from "@/preprocess/scoringGraphPreparation.ts";
+import {
+  addMissingShapes,
+  mergeFacetTextSearchProperties,
+} from "@/preprocess/shapes.ts";
 import { assertValidEnvironment } from "@/preprocess/configuration.ts";
 import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
 
@@ -23,7 +25,6 @@ export const defaultPreprocessors: readonly Preprocessor[] = [
   resolveScoresGraph,
   addMissingShapes,
   mergeFacetTextSearchProperties,
-  prepareEnvironmentScoringGraph,
 ];
 
 export const runPreprocessors = async (

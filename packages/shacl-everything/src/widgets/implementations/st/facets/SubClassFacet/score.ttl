@@ -7,14 +7,14 @@ st:SubClassFacet rdfs:label "Class Picker"@en, "Klassekiezer"@nl .
 
 st:subClassFacetScore40
     a shui:WidgetScore ;
-    shui:widget st:SubClassFacet ;
+    st:facet st:SubClassFacet ;
     shui:score 40 ;
     shui:shapesGraphShape st:prefersSubClassFacet ;
 .
 
 st:subClassFacetScoreRootClass
     a shui:WidgetScore ;
-    shui:widget st:SubClassFacet ;
+    st:facet st:SubClassFacet ;
     shui:score 20 ;
     shui:shapesGraphShape shui:hasRootClassConstraint ;
 .

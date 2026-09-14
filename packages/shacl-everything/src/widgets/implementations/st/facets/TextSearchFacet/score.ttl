@@ -7,7 +7,7 @@ st:TextSearchFacet rdfs:label "Text Search"@en, "Tekst zoeken"@nl .
 
 st:textSearchFacetScore40
     a shui:WidgetScore ;
-    shui:widget st:TextSearchFacet ;
+    st:facet st:TextSearchFacet ;
     shui:score 40 ;
     shui:shapesGraphShape st:prefersTextSearchFacet ;
 .
@@ -17,21 +17,21 @@ st:textSearchFacetScore40
 # already declared it for editing gets a matching text-search facet for free, no extra annotation.
 st:textSearchFacetScore30
     a shui:WidgetScore ;
-    shui:widget st:TextSearchFacet ;
+    st:facet st:TextSearchFacet ;
     shui:score 30 ;
     shui:shapesGraphShape shui:hasSearchQueryConstraint ;
 .
 
 st:textSearchFacetScoreString
     a shui:WidgetScore ;
-    shui:widget st:TextSearchFacet ;
+    st:facet st:TextSearchFacet ;
     shui:score 10 ;
     shui:shapesGraphShape shui:hasDatatypeStringConstraint ;
 .
 
 st:textSearchFacetScoreLangString
     a shui:WidgetScore ;
-    shui:widget st:TextSearchFacet ;
+    st:facet st:TextSearchFacet ;
     shui:score 10 ;
     shui:shapesGraphShape shui:hasDatatypeLangStringConstraint ;
 .
@@ -43,7 +43,7 @@ st:textSearchFacetScoreLangString
 # branches are).
 st:textSearchFacetScoreAlternativePath
     a shui:WidgetScore ;
-    shui:widget st:TextSearchFacet ;
+    st:facet st:TextSearchFacet ;
     shui:score 10 ;
     shui:shapesGraphShape st:hasAlternativePathConstraint ;
 .

@@ -7,7 +7,7 @@ st:IconifyEditor rdfs:label "Icon Picker"@en, "Icoonkiezer"@nl .
 
 st:iconifyEditorScore40
     a shui:WidgetScore ;
-    shui:widget st:IconifyEditor ;
+    shui:editor st:IconifyEditor ;
     shui:score 40 ;
     shui:shapesGraphShape st:prefersIconifyEditor ;
 .
@@ -18,7 +18,7 @@ st:iconifyEditorScore40
 # for any datatype this codebase has no dedicated widget for.
 st:iconifyEditorScoreDatatype
     a shui:WidgetScore ;
-    shui:widget st:IconifyEditor ;
+    shui:editor st:IconifyEditor ;
     shui:score 30 ;
     shui:shapesGraphShape st:hasIconifyDatatypeConstraint ;
 .

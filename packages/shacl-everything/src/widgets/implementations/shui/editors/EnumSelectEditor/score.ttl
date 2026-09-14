@@ -1,48 +1,30 @@
-PREFIX sh: <http://www.w3.org/ns/shacl#>
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 shui:EnumSelectEditor rdfs:label "Dropdown"@en, "Keuzelijst"@nl .
 
-shui:enumSelectEditorScore40
-    a shui:WidgetScore ;
-    shui:widget shui:EnumSelectEditor ;
-    shui:score 40 ;
-    shui:shapesGraphShape shui:prefersEnumSelectEditor, shui:hasInConstraint ;
-.
-
 shui:enumSelectEditorScore30
     a shui:WidgetScore ;
-    shui:widget shui:EnumSelectEditor ;
+    shui:editor shui:EnumSelectEditor ;
     shui:score 30 ;
     shui:shapesGraphShape shui:hasInConstraint ;
 .
 
 # sh:class without sh:in (e.g. a small controlled vocabulary enumerated by rdf:type rather than
-# spelled out via sh:in) - see widget.tsx's classOptions fallback. Scored the same tier as
-# AutoCompleteEditor/InstancesSelectEditor's own hasClassConstraint rules: explicit shui:editor
-# declaration wins outright (40), otherwise this stays a 0-score fallback so those two - better
-# suited to a class with many/unbounded instances - are preferred by default.
+# spelled out via sh:in) - see widget.tsx's classOptions fallback. Scored the same tier (40) as
+# AutoCompleteEditor/InstancesSelectEditor's own hasClassConstraint rules, so all three tie for a
+# bare sh:class constraint.
 shui:enumSelectEditorScore40Class
     a shui:WidgetScore ;
-    shui:widget shui:EnumSelectEditor ;
+    shui:editor shui:EnumSelectEditor ;
     shui:score 40 ;
     shui:dataGraphShape shui:isIRI ;
-    shui:shapesGraphShape shui:prefersEnumSelectEditor, shui:hasClassConstraint ;
+    shui:shapesGraphShape shui:hasClassConstraint ;
 .
 
 shui:enumSelectEditorScore0Class
     a shui:WidgetScore ;
-    shui:widget shui:EnumSelectEditor ;
+    shui:editor shui:EnumSelectEditor ;
     shui:score 0 ;
     shui:shapesGraphShape shui:hasClassConstraint ;
-.
-
-shui:prefersEnumSelectEditor
-    a sh:NodeShape ;
-    sh:property [
-        sh:path shui:editor ;
-        sh:hasValue shui:EnumSelectEditor ;
-    ] ;
 .

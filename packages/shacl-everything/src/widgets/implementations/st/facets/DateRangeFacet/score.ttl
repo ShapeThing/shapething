@@ -7,14 +7,14 @@ st:DateRangeFacet rdfs:label "Date Range"@en, "Datumbereik"@nl .
 
 st:dateRangeFacetScore40
     a shui:WidgetScore ;
-    shui:widget st:DateRangeFacet ;
+    st:facet st:DateRangeFacet ;
     shui:score 40 ;
     shui:shapesGraphShape st:prefersDateRangeFacet ;
 .
 
 st:dateRangeFacetScore10
     a shui:WidgetScore ;
-    shui:widget st:DateRangeFacet ;
+    st:facet st:DateRangeFacet ;
     shui:score 10 ;
     shui:shapesGraphShape shui:hasDatatypeDateConstraint ;
 .
