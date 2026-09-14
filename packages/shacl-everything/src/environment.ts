@@ -158,7 +158,7 @@ export type Environment = {
   enableFacetTypeUnion?: boolean;
   // Facet mode only. When true, an ordinary facet (CategoryFacet's options, a range facet's
   // min/max once at least one bound is filled in, or TextSearchFacet once something is typed)
-  // shows a "(n)" count - how many target instances currently qualify (see
+  // shows a count - how many target instances currently qualify (see
   // structure/facetValues.ts's aggregateFacetValueCounts/countFacetInstancesInRange/
   // countFacetInstancesMatchingPattern). This is a *live, re-narrowing* count: it excludes instances that
   // fail any *other* currently-active facet constraint (see structure/filterShape.ts's

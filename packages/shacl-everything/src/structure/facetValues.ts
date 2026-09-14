@@ -29,7 +29,7 @@ export function aggregateFacetValues(
 
 /**
  * How many of `instances` have each distinct value for `property`'s path, keyed by termKey - the
- * "(n)" count Environment.enableFacetOptionCounts shows next to a facet option (CategoryFacet).
+ * count Environment.enableFacetOptionCounts shows next to a facet option (CategoryFacet).
  * Counts *instances*, not raw triples: an instance whose path happens to yield the same value more
  * than once (e.g. through a compound path with more than one matching branch) still only
  * contributes 1 to that value's count, matching "n things have this value" rather than "n triples

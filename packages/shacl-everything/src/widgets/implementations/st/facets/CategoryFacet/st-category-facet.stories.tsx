@@ -97,12 +97,12 @@ export const stCategoryFacetFederated: Story = {
     // Options and labels come from the sh:select query's own results (LabelRole-resolved via
     // <#categoryShape>'s sh:node) - not shape.get(sh("in")) (which only ever resolves a plain
     // rdf:List) and not the data-derived `values` fallback.
-    await canvas.findByLabelText("Electronics (2)");
-    await canvas.findByLabelText("Books (1)");
+    await canvas.findByLabelText("Electronics 2");
+    await canvas.findByLabelText("Books 1");
     // Toys has no matching local product - still offered (the federated query enumerates every
     // ex:Category regardless of local usage), with a genuine zero count rather than being
     // silently dropped: valueCounts is still computed locally, keyed by termKey, so a federated
     // option with nothing in the local data simply falls back to CategoryFacet's own `?? 0`.
-    await canvas.findByLabelText("Toys (0)");
+    await canvas.findByLabelText("Toys 0");
   },
 };

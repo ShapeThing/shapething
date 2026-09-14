@@ -39,7 +39,7 @@ export type WidgetComponent = ComponentType<WidgetProps>;
  * instances have this value, given every other currently-active facet constraint" (a live,
  * re-narrowing count - see structure/filterShape.ts's instancesMatchingOtherConstraints, which
  * FacetPropertyComponent applies before counting). Option-based widgets (CategoryFacet) use it to
- * show a "(n)" count next to each option; a widget with no notion of discrete options
+ * show a count next to each option; a widget with no notion of discrete options
  * (TextSearchFacet, the range facets) simply ignores it.
  *
  * A range/search widget (NumberRangeFacet/DateRangeFacet/DateTimeRangeFacet/TextSearchFacet) has

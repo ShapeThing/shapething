@@ -102,8 +102,8 @@ export const stSubClassFacet: Story = {
 // Environment.enableFacetOptionCounts extends to SubClassFacet's own taxonomy tree, rolled up
 // through rdfs:subClassOf (structure/classHierarchy.ts's rollUpClassCounts): Widget is tagged
 // Electronics directly and Laptop is tagged Computers (a child of Electronics), so Electronics'
-// own count includes Laptop's too - "(2)", not just its own direct match "(1)" - and the untagged
-// root Category shows the full "(3)".
+// own count includes Laptop's too - "2", not just its own direct match "1" - and the untagged
+// root Category shows the full "3".
 export const stSubClassFacetShowsRolledUpCounts: Story = {
   name: "shows a rolled-up count per node, including every descendant",
   args: {
@@ -115,10 +115,10 @@ export const stSubClassFacetShowsRolledUpCounts: Story = {
     const searchInput = await canvas.findByPlaceholderText("Search…");
     await userEvent.click(searchInput);
 
-    await canvas.findByLabelText("Category (3)");
-    await canvas.findByLabelText("Electronics (2)");
-    await canvas.findByLabelText("Computers (1)");
-    await canvas.findByLabelText("Books (1)");
+    await canvas.findByLabelText("Category 3");
+    await canvas.findByLabelText("Electronics 2");
+    await canvas.findByLabelText("Computers 1");
+    await canvas.findByLabelText("Books 1");
   },
 };
 
@@ -143,18 +143,18 @@ export const stSubClassFacetNarrowsSiblingFacetsByHierarchy: Story = {
 
     // Price >= 0: all three products qualify before any category is picked.
     await userEvent.type(minPrice, "0");
-    await within(priceContainer).findByText("(3)");
+    await within(priceContainer).findByText("3");
 
     const searchInput = await canvas.findByPlaceholderText("Search…");
     await userEvent.click(searchInput);
-    // Own count label includes SubClassFacet's own rolled-up "(2)" (Widget direct + Laptop via
+    // Own count label includes SubClassFacet's own rolled-up "2" (Widget direct + Laptop via
     // ex:Computers), same as stSubClassFacetShowsRolledUpCounts above.
-    const electronics = (await canvas.findByLabelText("Electronics (2)")) as HTMLInputElement;
+    const electronics = (await canvas.findByLabelText("Electronics 2")) as HTMLInputElement;
     await userEvent.click(electronics);
 
     // Widget (ex:Electronics) and Laptop (ex:Computers, a subclass) both still qualify - Novel
     // (ex:Books, an unrelated branch of the taxonomy) is excluded.
-    await within(priceContainer).findByText("(2)");
+    await within(priceContainer).findByText("2");
   },
 };
 
