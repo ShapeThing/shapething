@@ -59,18 +59,30 @@ export function aggregateFacetValueCounts(
   return counts;
 }
 
+// The four independent, conjunctively-combined bounds a range-style facet constraint node can
+// carry - mirrors the four range predicates constraintResolutions.ts's own `resolutions` map
+// already recognizes at the shape-authoring level (sh:minInclusive/sh:maxInclusive/
+// sh:minExclusive/sh:maxExclusive), so the facet-filter layer doesn't hardcode only the inclusive
+// half of that set. An omitted bound imposes no constraint on that side.
+export type RangeBounds = {
+  minInclusive?: Term;
+  maxInclusive?: Term;
+  minExclusive?: Term;
+  maxExclusive?: Term;
+};
+
 /**
- * How many of `instances` have at least one value for `property`'s path that falls within
- * [min, max] (each bound inclusive; an omitted bound imposes no constraint on that side) - the
- * range-facet analogue of aggregateFacetValueCounts's per-option counts, backing
- * Environment.enableFacetOptionCounts for NumberRangeFacet/DateRangeFacet/DateTimeRangeFacet.
- * Counts *instances*, not values (the same per-instance fidelity aggregateFacetValueCounts needs,
- * for the same reason aggregateFacetValues's cross-instance dedupe is unsuitable here) - an
- * instance with more than one qualifying value still only counts once, via `.some()`. Ordering
- * uses constraintResolutions.ts's own literalOrder, the same numeric-vs-date-aware comparison
- * sh:minInclusive/sh:maxInclusive's own conjunctive resolution already relies on, reused here
- * rather than reimplemented. Returns 0 when both bounds are undefined - callers gate on that
- * themselves to distinguish "no filter entered yet" from "filter matches nothing".
+ * How many of `instances` have at least one value for `property`'s path that satisfies every
+ * bound in `bounds` - the range-facet analogue of aggregateFacetValueCounts's per-option counts,
+ * backing Environment.enableFacetOptionCounts for NumberRangeFacet/DateRangeFacet/
+ * DateTimeRangeFacet/ColorFacet. Counts *instances*, not values (the same per-instance fidelity
+ * aggregateFacetValueCounts needs, for the same reason aggregateFacetValues's cross-instance
+ * dedupe is unsuitable here) - an instance with more than one qualifying value still only counts
+ * once, via `.some()`. Ordering uses constraintResolutions.ts's own literalOrder, the same
+ * numeric-vs-date-vs-color-aware comparison the facet constraint's own conjunctive resolution
+ * already relies on, reused here rather than reimplemented. Returns 0 when every bound is
+ * undefined - callers gate on that themselves to distinguish "no filter entered yet" from "filter
+ * matches nothing".
  *
  * Like aggregateFacetValueCounts, this is a plain static tally over whatever `instances` it's
  * given - the live, re-narrowing behavior comes from the caller passing in an already-narrowed
@@ -80,21 +92,34 @@ export function aggregateFacetValueCounts(
 export function countFacetInstancesInRange(
   property: PropertyUIElement,
   instances: Quad_Subject[],
-  min: Term | undefined,
-  max: Term | undefined,
+  bounds: RangeBounds,
 ): number {
-  if (min === undefined && max === undefined) return 0;
+  const { minInclusive, maxInclusive, minExclusive, maxExclusive } = bounds;
+  if (
+    minInclusive === undefined &&
+    maxInclusive === undefined &&
+    minExclusive === undefined &&
+    maxExclusive === undefined
+  ) {
+    return 0;
+  }
   const path = parsePropertyPath(property.propertyShapes[0], property.shapesGraph);
   if (!path) return 0;
 
-  const minOrder = min !== undefined ? literalOrder(min) : undefined;
-  const maxOrder = max !== undefined ? literalOrder(max) : undefined;
+  const minInclusiveOrder = minInclusive !== undefined ? literalOrder(minInclusive) : undefined;
+  const maxInclusiveOrder = maxInclusive !== undefined ? literalOrder(maxInclusive) : undefined;
+  const minExclusiveOrder = minExclusive !== undefined ? literalOrder(minExclusive) : undefined;
+  const maxExclusiveOrder = maxExclusive !== undefined ? literalOrder(maxExclusive) : undefined;
 
   return instances.filter((instance) =>
     walkPropertyPath(path, instance, property.dataGraph).some((value) => {
       const order = literalOrder(value);
-      const aboveMin = minOrder === undefined || order >= minOrder;
-      const belowMax = maxOrder === undefined || order <= maxOrder;
+      const aboveMin =
+        (minInclusiveOrder === undefined || order >= minInclusiveOrder) &&
+        (minExclusiveOrder === undefined || order > minExclusiveOrder);
+      const belowMax =
+        (maxInclusiveOrder === undefined || order <= maxInclusiveOrder) &&
+        (maxExclusiveOrder === undefined || order < maxExclusiveOrder);
       return aboveMin && belowMax;
     }),
   ).length;

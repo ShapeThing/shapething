@@ -4,7 +4,7 @@ import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { propertyLabel, valueNodeLabel } from "@/resolution/label.ts";
+import { propertyLabel, valueNodeColor, valueNodeLabel } from "@/resolution/label.ts";
 
 const createShape = async ({
   shapes,
@@ -298,4 +298,63 @@ test("valueNodeLabel falls back to the blank node's own identifier when there is
   const blankNode = factory.blankNode();
 
   expect(valueNodeLabel({ term: blankNode, propertyShape: shape }).value).toBe(blankNode.value);
+});
+
+test("valueNodeColor resolves a swatch color declared via st:ColorRole on a shape targeting the term's own rdf:type", async () => {
+  const shape = await createShape({
+    shapes: `
+      ex:property1 a sh:PropertyShape ; sh:path ex:favouriteColor .
+      ex:SchemeShape a sh:NodeShape ; sh:targetClass ex:Scheme ;
+        sh:property [ sh:path ex:swatch ; shui:propertyRole st:ColorRole ] .
+    `,
+    data: `ex:someScheme a ex:Scheme ; ex:swatch "#3b82f6" .`,
+    propertyShapes: [ex("property1")],
+  });
+
+  expect(valueNodeColor({ term: ex("someScheme"), propertyShape: shape })).toBe("#3b82f6");
+});
+
+test("valueNodeColor is resolved off the value's own class, not propertyShape's sh:class/sh:node", async () => {
+  const shape = await createShape({
+    shapes: `
+      ex:property1 a sh:PropertyShape ; sh:path ex:favouriteConcept ; sh:class ex:Concept ;
+        sh:node ex:ConceptShape .
+      ex:ConceptShape sh:property [ sh:path ex:swatch ; shui:propertyRole st:ColorRole ] .
+      ex:SchemeShape a sh:NodeShape ; sh:targetClass ex:Scheme ;
+        sh:property [ sh:path ex:themeColor ; shui:propertyRole st:ColorRole ] .
+    `,
+    data: `
+      ex:someConcept a ex:Concept ; ex:inScheme ex:someScheme .
+      ex:someScheme a ex:Scheme ; ex:themeColor "#f59e0b" .
+    `,
+    propertyShapes: [ex("property1")],
+  });
+
+  // ex:someScheme has no ex:swatch of its own (that's ex:ConceptShape's path, which doesn't apply
+  // to it) - only ex:SchemeShape's own ex:themeColor, found via its own rdf:type ex:Scheme.
+  expect(valueNodeColor({ term: ex("someScheme"), propertyShape: shape })).toBe("#f59e0b");
+});
+
+test("valueNodeColor returns undefined for a literal (no rdf:type of its own to resolve a shape from)", async () => {
+  const shape = await createShape({
+    shapes: `ex:property1 a sh:PropertyShape ; sh:path ex:favouriteColor .`,
+    propertyShapes: [ex("property1")],
+  });
+
+  expect(
+    valueNodeColor({ term: factory.literal("Manufacturing"), propertyShape: shape }),
+  ).toBeUndefined();
+});
+
+test("valueNodeColor returns undefined when the term's own class declares no st:ColorRole", async () => {
+  const shape = await createShape({
+    shapes: `
+      ex:property1 a sh:PropertyShape ; sh:path ex:favouriteColor .
+      ex:SchemeShape a sh:NodeShape ; sh:targetClass ex:Scheme .
+    `,
+    data: `ex:someScheme a ex:Scheme .`,
+    propertyShapes: [ex("property1")],
+  });
+
+  expect(valueNodeColor({ term: ex("someScheme"), propertyShape: shape })).toBeUndefined();
 });

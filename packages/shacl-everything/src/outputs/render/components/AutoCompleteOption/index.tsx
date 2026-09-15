@@ -43,7 +43,7 @@ type Staging = { dataGraph: RdfStore; originalQuads: Quad[] };
 type Props = {
   term: Term;
   label?: string;
-  classification?: { term: Term; label: string };
+  classification?: { term: Term; label: string; color?: string };
   depiction?: NamedNode;
   highlight?: string;
   // Only passed for the currently selected value (never for a row in a dropdown list) - see
@@ -148,9 +148,12 @@ export default function AutoCompleteOption({
     setConfirmDiscard(false);
   };
 
-  const classificationGradient = stringToGradient(classification?.label ?? "", {
-    brightness: "light",
-  });
+  // st:ColorRole (resolved via classification.color, see resolution/label.ts's valueNodeColor)
+  // wins when the classification's own class declares one - the hash-derived gradient is only a
+  // fallback for the (far more common) case where no such role is declared.
+  const classificationColors = classification?.color
+    ? [classification.color]
+    : stringToGradient(classification?.label ?? "", { brightness: "light" });
 
   return (
     <span className="st-autocomplete-option">
@@ -178,7 +181,7 @@ export default function AutoCompleteOption({
         {classification && (
           <>
             <ValueChip
-              colors={classificationGradient}
+              colors={classificationColors}
               label={classification.label}
               size="small"
               term={classification.term}

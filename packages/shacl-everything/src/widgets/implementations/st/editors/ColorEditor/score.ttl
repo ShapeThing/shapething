@@ -1,53 +1,9 @@
-PREFIX sh: <http://www.w3.org/ns/shacl#>
-PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX st: <http://shapething.com/>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
+# Opt-in only, via an explicit shui:editor declaration - see AddressEditor/score.ttl for why an
+# editor of a compound blank node (here: st:hue/st:saturation/st:lightness, see widget.tsx) never
+# auto-scores against sh:node - there's no reliable signal distinguishing it from any other nested
+# object a shape might declare. No WidgetScore rule at all, therefore - select()'s own explicit-
+# shui:editor fast path is what makes it selectable.
 st:ColorEditor rdfs:label "Color Picker"@en, "Kleurkiezer"@nl .
-
-# Same signal IconifyEditor/GeoEditor auto-score their own widget on: a value literal already typed
-# as the datatype this editor itself ever writes (see widget.tsx).
-st:colorEditorScore20
-    a shui:WidgetScore ;
-    shui:editor st:ColorEditor ;
-    shui:score 20 ;
-    shui:dataGraphShape st:isColorEditorColorLiteral ;
-.
-
-# Same signal read off the property shape's own sh:datatype instead of an actual value, so a
-# not-yet-valued property still prefers ColorEditor (e.g. WidgetSwitcher listing options, or the
-# very first "+ Add item" click on an empty property). Needs both sh:or branches since SHACL 1.2
-# lets sh:datatype hold a list of datatypes instead of one IRI (spec issue #1179) - see
-# DurationEditor/score.ttl's own hasDurationEditorDatatypeConstraint for the same shape.
-st:colorEditorScore10
-    a shui:WidgetScore ;
-    shui:editor st:ColorEditor ;
-    shui:score 10 ;
-    shui:shapesGraphShape st:hasColorEditorDatatypeConstraint ;
-.
-
-st:isColorEditorColorLiteral
-    a sh:NodeShape ;
-    sh:datatype <https://www.w3.org/TR/css-color-4/> ;
-.
-
-st:hasColorEditorDatatypeConstraint
-    a sh:NodeShape ;
-    sh:or (
-        [
-            sh:property [
-                sh:path sh:datatype ;
-                sh:minCount 1 ;
-                sh:hasValue <https://www.w3.org/TR/css-color-4/> ;
-            ] ;
-        ]
-        [
-            sh:property [
-                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
-                sh:minCount 1 ;
-                sh:hasValue <https://www.w3.org/TR/css-color-4/> ;
-            ] ;
-        ]
-    ) ;
-.

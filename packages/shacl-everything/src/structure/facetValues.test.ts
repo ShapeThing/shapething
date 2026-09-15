@@ -56,21 +56,50 @@ test("countFacetInstancesInRange: counts instances whose numeric value falls wit
   const instances = [ex("Widget"), ex("Gadget"), ex("Novel")];
 
   expect(
-    countFacetInstancesInRange(
-      property,
-      instances,
-      factory.literal("15", xsd("decimal")),
-      undefined,
-    ),
+    countFacetInstancesInRange(property, instances, {
+      minInclusive: factory.literal("15", xsd("decimal")),
+    }),
   ).toBe(2); // Widget, Gadget
   expect(
-    countFacetInstancesInRange(
-      property,
-      instances,
-      factory.literal("15", xsd("decimal")),
-      factory.literal("20", xsd("decimal")),
-    ),
+    countFacetInstancesInRange(property, instances, {
+      minInclusive: factory.literal("15", xsd("decimal")),
+      maxInclusive: factory.literal("20", xsd("decimal")),
+    }),
   ).toBe(1); // Widget only
+});
+
+test("countFacetInstancesInRange: sh:minExclusive/sh:maxExclusive exclude their own boundary value", async () => {
+  const property = await propertyFor(
+    `ex:property1 sh:path ex:price .`,
+    `ex:Widget ex:price 15 . ex:Gadget ex:price 20 . ex:Novel ex:price 25 .`,
+  );
+  const instances = [ex("Widget"), ex("Gadget"), ex("Novel")];
+
+  // minInclusive 15 includes the Widget at exactly 15; minExclusive 15 excludes it.
+  expect(
+    countFacetInstancesInRange(property, instances, {
+      minInclusive: factory.literal("15", xsd("decimal")),
+    }),
+  ).toBe(3);
+  expect(
+    countFacetInstancesInRange(property, instances, {
+      minExclusive: factory.literal("15", xsd("decimal")),
+    }),
+  ).toBe(2); // Gadget, Novel
+
+  // maxInclusive 20 includes the Gadget at exactly 20; maxExclusive 20 excludes it.
+  expect(
+    countFacetInstancesInRange(property, instances, {
+      minExclusive: factory.literal("15", xsd("decimal")),
+      maxInclusive: factory.literal("20", xsd("decimal")),
+    }),
+  ).toBe(1); // Gadget only
+  expect(
+    countFacetInstancesInRange(property, instances, {
+      minExclusive: factory.literal("15", xsd("decimal")),
+      maxExclusive: factory.literal("20", xsd("decimal")),
+    }),
+  ).toBe(0);
 });
 
 test("countFacetInstancesInRange: compares xsd:date values chronologically, not lexically", async () => {
@@ -83,30 +112,25 @@ test("countFacetInstancesInRange: compares xsd:date values chronologically, not 
   const instances = [ex("Widget"), ex("Gadget"), ex("Novel")];
 
   expect(
-    countFacetInstancesInRange(
-      property,
-      instances,
-      factory.literal("2024-01-01", xsd("date")),
-      undefined,
-    ),
+    countFacetInstancesInRange(property, instances, {
+      minInclusive: factory.literal("2024-01-01", xsd("date")),
+    }),
   ).toBe(2); // Widget, Gadget
   expect(
-    countFacetInstancesInRange(
-      property,
-      instances,
-      factory.literal("2024-01-01", xsd("date")),
-      factory.literal("2024-12-31", xsd("date")),
-    ),
+    countFacetInstancesInRange(property, instances, {
+      minInclusive: factory.literal("2024-01-01", xsd("date")),
+      maxInclusive: factory.literal("2024-12-31", xsd("date")),
+    }),
   ).toBe(1); // Widget only
 });
 
-test("countFacetInstancesInRange: returns 0 when neither bound is given - callers gate on this to distinguish 'nothing entered yet' from 'the range matches nothing'", async () => {
+test("countFacetInstancesInRange: returns 0 when no bound is given - callers gate on this to distinguish 'nothing entered yet' from 'the range matches nothing'", async () => {
   const property = await propertyFor(
     `ex:property1 sh:path ex:price .`,
     `ex:Widget ex:price 19.99 .`,
   );
 
-  expect(countFacetInstancesInRange(property, [ex("Widget")], undefined, undefined)).toBe(0);
+  expect(countFacetInstancesInRange(property, [ex("Widget")], {})).toBe(0);
 });
 
 test("countFacetInstancesMatchingPattern: counts instances with at least one matching value, case-insensitively via flags", async () => {

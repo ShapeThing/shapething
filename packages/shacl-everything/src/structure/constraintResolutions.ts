@@ -14,7 +14,10 @@ export type ResolutionFunction<T> = (
 ) => T;
 
 // xsd:date/dateTime-family literals sort by calendar time; everything else sorts numerically,
-// which covers every datatype sh:minExclusive/minInclusive/maxExclusive/maxInclusive apply to.
+// which covers every remaining datatype sh:minExclusive/minInclusive/maxExclusive/maxInclusive
+// apply to (e.g. NumberRangeFacet/DateRangeFacet's own plain xsd:decimal/xsd:date bounds).
+// st:ColorFacet does not use this at all - it writes a plain st:colorBucket value (see
+// structure/filterShape.ts's instanceSatisfiesConstraintNode), not a range.
 const DATE_DATATYPES = new Set(
   [
     xsd("date"),
@@ -28,7 +31,7 @@ const DATE_DATATYPES = new Set(
 
 // Exported for structure/facetValues.ts's countFacetInstancesInRange, which needs the same
 // numeric-vs-date-aware comparison to check whether a raw value falls within a facet's currently
-// entered min/max, rather than reimplementing it.
+// entered bounds, rather than reimplementing it.
 export function literalOrder(term: Term): number {
   const datatype = (term as Literal).datatype?.value;
   return datatype && DATE_DATATYPES.has(datatype)

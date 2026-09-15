@@ -55,6 +55,27 @@ export const shuiAutoCompleteEditorFederatedSearch: Story = {
   },
 };
 
+// st:ColorRole (see resolution/label.ts's valueNodeColor): a ClassificationRole value's chip
+// (here, the "Transport" skos:ConceptScheme) is colored via a swatch property declared on a shape
+// targeting *its own* rdf:type - resolved independently of the property's own sh:class/sh:node.
+export const shuiAutoCompleteEditorColorRole: Story = {
+  name: "Classification chip colored via st:ColorRole (resolved off its own class)",
+  args: argsByTestFile("10.1.1 shui-auto-complete-editor-color-role.ttl", import.meta.url),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(canvas.findByText("Transport")).resolves.toBeVisible();
+    const chip = await waitFor(() => {
+      const element = canvasElement.querySelector<HTMLElement>(".st-value-chip");
+      if (!element) throw new Error("Could not find the classification chip");
+      return element;
+    });
+
+    expect(chip.className).toContain("st-value-chip--colored--1");
+    expect(chip.style.getPropertyValue("--color-0")).toBe("#22c55e");
+  },
+};
+
 export const shuiAutoCompleteEditorInvalidSearchResults: Story = {
   name: "Search results outside sh:in are filtered out (spec §10.2)",
   args: argsByTestFile(

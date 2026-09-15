@@ -1,0 +1,36 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Category"@en ;
+        sh:path schema:category ;
+        sh:class ex:Category ;
+    ] ;
+    .
+
+# st:ColorRole is resolved off each option's own rdf:type (ex:Category) - the same mechanism
+# AutoCompleteOption's ClassificationRole chip uses, here applied to the option value itself.
+<#categoryShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Category ;
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path ex:swatch ;
+        shui:propertyRole st:ColorRole ;
+    ] .
+
+ex:Electronics a ex:Category ; rdfs:label "Electronics"@en ; ex:swatch "#3b82f6" .
+ex:Books a ex:Category ; rdfs:label "Books"@en ; ex:swatch "#f59e0b" .
+
+<#data> a schema:Product ; schema:name "Widget" ; schema:category ex:Electronics .
+<#product2> a schema:Product ; schema:name "Novel" ; schema:category ex:Books .

@@ -112,6 +112,17 @@ const preview: Preview = {
   decorators: [withArgsKeyRemount, withGraphInspector, withSubmitPreview, withMaxWidth],
   argTypesEnhancers: [friendlyArgDisplay, selectControlsForEnumArgs],
   parameters: {
+    // Without this, the sidebar falls back to sorting by file-discovery/import order, which
+    // isn't stable across runs (glob traversal order can shift as files are added/renamed) -
+    // that's what caused chapters to reshuffle. "alphabetical" also numeric-sorts each title
+    // segment (10.1.2 before 10.1.10), which plain string sort would get wrong.
+    options: {
+      storySort: {
+        method: "alphabetical",
+        order: ["Showcases", "Specifications", "Tools", "Tests", "Environment", "Experiments"],
+      },
+    },
+
     controls: {
       matchers: {
         color: /(background|color)$/i,

@@ -33,8 +33,12 @@ const POLL_INTERVAL_MS = 400;
  * Unlike GeoEditor, the drawn shape(s) here are never a data value themselves: they're combined
  * into a single MultiPolygon st:withinArea literal on the generated filter shape (see
  * structure/filterShape.ts's instanceSatisfiesConstraintNode) - the facet-mode analogue of
- * NumberRangeFacet's sh:minInclusive/sh:maxInclusive. st:withinArea is a ShapeThing-original
- * constraint predicate, since neither SHACL nor SHACL-UI has a notion of spatial containment.
+ * NumberRangeFacet's sh:minInclusive/sh:maxInclusive, and this renderer's own fast synchronous read
+ * of the selection. setFilterConstraint also derives a real, standards-conformant SHACL
+ * SPARQL-based Constraint (sh:sparql [ a sh:SPARQLConstraint ; sh:select "..." ], built on the
+ * geof:sfWithin GeoSPARQL extension function - see structure/filterShape.ts's
+ * syncWithinAreaSparqlConstraint) from that same literal, so an external consumer of the submitted
+ * filter shape can enforce the identical spatial rule without any ShapeThing-specific vocabulary.
  */
 export default function MapFacet({ values, getConstraint, setConstraint, labelledBy }: FacetWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);

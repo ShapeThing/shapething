@@ -127,6 +127,65 @@ test("a dead owl:imports URL is skipped instead of failing the whole resolve", a
   warnSpy.mockRestore();
 });
 
+test("sh:shape on the data graph dereferences and bootstraps an empty shapes graph", async () => {
+  fixtures["http://example.org/data.ttl"] = `
+    @prefix sh: <http://www.w3.org/ns/shacl#> .
+    @prefix ex: <http://example.org/> .
+    ex:alice a ex:Person ; sh:shape <http://example.org/PersonShape.ttl> .
+  `;
+  fixtures["http://example.org/PersonShape.ttl"] = `
+    @prefix sh: <http://www.w3.org/ns/shacl#> .
+    <http://example.org/PersonShape.ttl> a sh:NodeShape .
+  `;
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({ dataGraph: new URL("http://example.org/data.ttl") }),
+  );
+
+  expect(
+    environment.shapesGraph.getQuads(ex("PersonShape.ttl"), null, null).length,
+  ).toBeGreaterThan(0);
+});
+
+test("sh:shape dereferencing is skipped when a shapes graph was already supplied", async () => {
+  fixtures["http://example.org/data.ttl"] = `
+    @prefix sh: <http://www.w3.org/ns/shacl#> .
+    @prefix ex: <http://example.org/> .
+    ex:alice a ex:Person ; sh:shape <http://example.org/PersonShape.ttl> .
+  `;
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({
+      shapesGraph: `@prefix ex: <http://example.org/> . ex:SomeShape a <http://www.w3.org/ns/shacl#NodeShape> .`,
+      dataGraph: new URL("http://example.org/data.ttl"),
+    }),
+  );
+
+  expect(environment.shapesGraph.size).toBe(1);
+  expect(fetchCalls).not.toContain("http://example.org/PersonShape.ttl");
+});
+
+test("a dead sh:shape URL is skipped instead of failing the whole resolve", async () => {
+  fixtures["http://example.org/data.ttl"] = `
+    @prefix sh: <http://www.w3.org/ns/shacl#> .
+    @prefix ex: <http://example.org/> .
+    ex:alice a ex:Person ; sh:shape <http://example.org/dead.ttl> .
+  `;
+  // "http://example.org/dead.ttl" is deliberately absent from fixtures, so the stubbed fetch
+  // above throws for it on every attempt (including retries) - simulating a permanently dead URL.
+
+  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({ dataGraph: new URL("http://example.org/data.ttl") }),
+  );
+
+  expect(environment.shapesGraph.size).toBe(0);
+  expect(warnSpy).toHaveBeenCalled();
+
+  warnSpy.mockRestore();
+});
+
 test("an array of sources is merged into a single graph", async () => {
   fixtures["http://example.org/a.ttl"] = `
     @prefix ex: <http://example.org/> .

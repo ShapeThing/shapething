@@ -60,6 +60,7 @@ test("prefixes - maps every namespace alias to its base IRI", () => {
     time: "http://www.w3.org/2006/time#",
     geo: "http://www.w3.org/2003/01/geo/wgs84_pos#",
     geosparql: "http://www.opengis.net/ont/geosparql#",
+    geof: "http://www.opengis.net/def/function/geosparql/",
     as: "https://www.w3.org/ns/activitystreams#",
     vs: "http://www.w3.org/2003/06/sw-vocab-status/ns#",
     dbo: "http://dbpedia.org/ontology/",

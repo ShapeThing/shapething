@@ -1,0 +1,27 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix st: <http://shapething.com/>.
+
+# st:ColorFacet is opt-in (see its own score.ttl) - the same schema:color property st:ColorEditor/
+# st:ColorViewer would use, just with an explicit st:facet declaration alongside them.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Color"@en, "Kleur"@nl ;
+        sh:path schema:color ;
+        st:facet st:ColorFacet ;
+    ] ;
+    .
+
+<#product1> a schema:Product ; schema:name "Fire truck" ;
+    schema:color [ st:hue "0"^^xsd:decimal ; st:saturation "100"^^xsd:decimal ; st:lightness "50"^^xsd:decimal ] .
+<#product2> a schema:Product ; schema:name "Stop sign" ;
+    schema:color [ st:hue "3"^^xsd:decimal ; st:saturation "100"^^xsd:decimal ; st:lightness "47"^^xsd:decimal ] .
+<#product3> a schema:Product ; schema:name "Clear sky" ;
+    schema:color [ st:hue "240"^^xsd:decimal ; st:saturation "100"^^xsd:decimal ; st:lightness "50"^^xsd:decimal ] .
+<#product4> a schema:Product ; schema:name "Fresh grass" ;
+    schema:color [ st:hue "120"^^xsd:decimal ; st:saturation "100"^^xsd:decimal ; st:lightness "50"^^xsd:decimal ] .
+<#product5> a schema:Product ; schema:name "Concrete" ;
+    schema:color [ st:hue "0"^^xsd:decimal ; st:saturation "0"^^xsd:decimal ; st:lightness "50"^^xsd:decimal ] .

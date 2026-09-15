@@ -1,0 +1,317 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Search"@en ;
+        sh:path [ sh:alternativePath ( schema:name schema:description ) ] ;
+        sh:order 0 ;
+    ] ;
+    sh:property [
+        sh:name "Category"@en ;
+        sh:path schema:category ;
+        sh:class ex:Category ;
+        sh:order 1 ;
+    ] ;
+    # st:ColorFacet is opt-in (see its own score.ttl) - the same schema:color property <#viewShape>
+    # below uses for st:ColorViewer, just with an explicit st:facet declaration alongside it.
+    sh:property [
+        sh:name "Color"@en ;
+        sh:path schema:color ;
+        st:facet st:ColorFacet ;
+        sh:order 2 ;
+    ] ;
+    sh:property [
+        sh:name "Price"@en ;
+        sh:path schema:price ;
+        sh:datatype xsd:decimal ;
+        sh:order 3 ;
+    ] ;
+    .
+
+# Same target/fields as <#shape>, minus its facet-only "Search" alternativePath property (a plain
+# Name/Description pair instead) - used to render one matching product as a clean result card
+# (see webshop.stories.tsx), the same "separate view shape" convention recipes-and-chefs.ttl's own
+# ex:RecipeViewShape uses.
+<#viewShape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Name"@en ;
+        sh:path schema:name ;
+        sh:order 0 ;
+    ] ;
+    sh:property [
+        sh:name "Description"@en ;
+        sh:path schema:description ;
+        sh:order 1 ;
+    ] ;
+    sh:property [
+        sh:name "Category"@en ;
+        sh:path schema:category ;
+        sh:class ex:Category ;
+        sh:order 2 ;
+    ] ;
+    # st:ColorViewer is shui:viewer-only, opt-in (see its own score.ttl) - schema:color's value is
+    # a blank node carrying st:hue/st:saturation/st:lightness (genuine CSS HSL notation), not a hex
+    # literal - see st:ColorEditor/widget.tsx's own doc comment.
+    sh:property [
+        sh:name "Color"@en ;
+        sh:path schema:color ;
+        shui:viewer st:ColorViewer ;
+        sh:order 3 ;
+    ] ;
+    sh:property [
+        sh:name "Price"@en ;
+        sh:path schema:price ;
+        sh:datatype xsd:decimal ;
+        sh:order 4 ;
+    ] ;
+    .
+
+ex:TShirts a ex:Category ; rdfs:label "T-Shirts"@en .
+ex:Jackets a ex:Category ; rdfs:label "Jackets"@en .
+ex:Jeans a ex:Category ; rdfs:label "Jeans"@en .
+ex:Sneakers a ex:Category ; rdfs:label "Sneakers"@en .
+ex:Sweaters a ex:Category ; rdfs:label "Sweaters"@en .
+ex:Accessories a ex:Category ; rdfs:label "Accessories"@en .
+ex:Dresses a ex:Category ; rdfs:label "Dresses"@en .
+
+<#data>
+    a schema:Product ;
+    schema:name "Classic Cotton Tee - Red" ;
+    schema:description "Soft everyday cotton t-shirt, regular fit" ;
+    schema:category ex:TShirts ;
+    schema:color [ st:hue "0"^^xsd:decimal ; st:saturation "72.22222222222223"^^xsd:decimal ; st:lightness "50.588235294117645"^^xsd:decimal ] ;
+    schema:price 19.99 .
+
+<#product2>
+    a schema:Product ;
+    schema:name "Classic Cotton Tee - White" ;
+    schema:description "Soft everyday cotton t-shirt, regular fit" ;
+    schema:category ex:TShirts ;
+    schema:color [ st:hue "210.00000000000023"^^xsd:decimal ; st:saturation "40.00000000000017"^^xsd:decimal ; st:lightness "98.03921568627452"^^xsd:decimal ] ;
+    schema:price 19.99 .
+
+<#product3>
+    a schema:Product ;
+    schema:name "Denim Jacket" ;
+    schema:description "Sturdy denim jacket with a button front" ;
+    schema:category ex:Jackets ;
+    schema:color [ st:hue "221.21212121212122"^^xsd:decimal ; st:saturation "83.19327731092436"^^xsd:decimal ; st:lightness "53.333333333333336"^^xsd:decimal ] ;
+    schema:price 89.00 .
+
+<#product4>
+    a schema:Product ;
+    schema:name "Bomber Jacket" ;
+    schema:description "Lightweight bomber jacket for city commutes" ;
+    schema:category ex:Jackets ;
+    schema:color [ st:hue "0"^^xsd:decimal ; st:saturation "0"^^xsd:decimal ; st:lightness "3.9215686274509802"^^xsd:decimal ] ;
+    schema:price 120.00 .
+
+<#product5>
+    a schema:Product ;
+    schema:name "Slim Fit Jeans - Blue" ;
+    schema:description "Slim fit jeans in stretch denim" ;
+    schema:category ex:Jeans ;
+    schema:color [ st:hue "225.93103448275863"^^xsd:decimal ; st:saturation "70.73170731707317"^^xsd:decimal ; st:lightness "40.19607843137255"^^xsd:decimal ] ;
+    schema:price 59.95 .
+
+<#product6>
+    a schema:Product ;
+    schema:name "Straight Jeans - Black" ;
+    schema:description "Straight leg jeans in black denim" ;
+    schema:category ex:Jeans ;
+    schema:color [ st:hue "0"^^xsd:decimal ; st:saturation "0"^^xsd:decimal ; st:lightness "3.9215686274509802"^^xsd:decimal ] ;
+    schema:price 64.95 .
+
+<#product7>
+    a schema:Product ;
+    schema:name "Running Sneakers" ;
+    schema:description "Lightweight running sneakers with a mesh upper" ;
+    schema:category ex:Sneakers ;
+    schema:color [ st:hue "210.00000000000023"^^xsd:decimal ; st:saturation "40.00000000000017"^^xsd:decimal ; st:lightness "98.03921568627452"^^xsd:decimal ] ;
+    schema:price 79.00 .
+
+<#product8>
+    a schema:Product ;
+    schema:name "Canvas Sneakers" ;
+    schema:description "Classic canvas low-top sneakers" ;
+    schema:category ex:Sneakers ;
+    schema:color [ st:hue "0"^^xsd:decimal ; st:saturation "72.22222222222223"^^xsd:decimal ; st:lightness "50.588235294117645"^^xsd:decimal ] ;
+    schema:price 45.00 .
+
+<#product9>
+    a schema:Product ;
+    schema:name "Fleece Hoodie" ;
+    schema:description "Cozy fleece hoodie for cool evenings" ;
+    schema:category ex:Sweaters ;
+    schema:color [ st:hue "220"^^xsd:decimal ; st:saturation "8.936170212765955"^^xsd:decimal ; st:lightness "46.07843137254902"^^xsd:decimal ] ;
+    schema:price 54.00 .
+
+<#product10>
+    a schema:Product ;
+    schema:name "Graphic Tee - Orange" ;
+    schema:description "Bold graphic print tee in soft jersey cotton" ;
+    schema:category ex:TShirts ;
+    schema:color [ st:hue "25"^^xsd:decimal ; st:saturation "74.99999999999999"^^xsd:decimal ; st:lightness "47.05882352941176"^^xsd:decimal ] ;
+    schema:price 24.99 .
+
+<#product11>
+    a schema:Product ;
+    schema:name "Linen Shirt - Yellow" ;
+    schema:description "Breathable linen short-sleeve shirt" ;
+    schema:category ex:TShirts ;
+    schema:color [ st:hue "60"^^xsd:decimal ; st:saturation "100"^^xsd:decimal ; st:lightness "50"^^xsd:decimal ] ;
+    schema:price 34.99 .
+
+<#product12>
+    a schema:Product ;
+    schema:name "Polo Shirt - Green" ;
+    schema:description "Classic pique polo shirt" ;
+    schema:category ex:TShirts ;
+    schema:color [ st:hue "120"^^xsd:decimal ; st:saturation "60.69364161849712"^^xsd:decimal ; st:lightness "33.921568627450974"^^xsd:decimal ] ;
+    schema:price 29.99 .
+
+<#product13>
+    a schema:Product ;
+    schema:name "Puffer Jacket - Cyan" ;
+    schema:description "Insulated puffer jacket for cold weather" ;
+    schema:category ex:Jackets ;
+    schema:color [ st:hue "174"^^xsd:decimal ; st:saturation "72.07207207207207"^^xsd:decimal ; st:lightness "56.470588235294116"^^xsd:decimal ] ;
+    schema:price 145.00 .
+
+<#product14>
+    a schema:Product ;
+    schema:name "Rain Jacket - Yellow" ;
+    schema:description "Waterproof rain jacket with hood" ;
+    schema:category ex:Jackets ;
+    schema:color [ st:hue "60"^^xsd:decimal ; st:saturation "100"^^xsd:decimal ; st:lightness "50"^^xsd:decimal ] ;
+    schema:price 99.00 .
+
+<#product15>
+    a schema:Product ;
+    schema:name "Blazer - Purple" ;
+    schema:description "Tailored blazer for smart-casual looks" ;
+    schema:category ex:Jackets ;
+    schema:color [ st:hue "274.875"^^xsd:decimal ; st:saturation "86.02150537634408"^^xsd:decimal ; st:lightness "36.47058823529412"^^xsd:decimal ] ;
+    schema:price 160.00 .
+
+<#product16>
+    a schema:Product ;
+    schema:name "Wide Leg Jeans - Gray" ;
+    schema:description "Relaxed wide leg jeans in gray wash denim" ;
+    schema:category ex:Jeans ;
+    schema:color [ st:hue "220"^^xsd:decimal ; st:saturation "8.936170212765955"^^xsd:decimal ; st:lightness "46.07843137254902"^^xsd:decimal ] ;
+    schema:price 69.95 .
+
+<#product17>
+    a schema:Product ;
+    schema:name "Skinny Jeans - Black" ;
+    schema:description "Skinny fit jeans in classic black denim" ;
+    schema:category ex:Jeans ;
+    schema:color [ st:hue "0"^^xsd:decimal ; st:saturation "0"^^xsd:decimal ; st:lightness "3.9215686274509802"^^xsd:decimal ] ;
+    schema:price 54.95 .
+
+<#product18>
+    a schema:Product ;
+    schema:name "Cropped Jeans - White" ;
+    schema:description "Cropped straight jeans in white denim" ;
+    schema:category ex:Jeans ;
+    schema:color [ st:hue "210.00000000000023"^^xsd:decimal ; st:saturation "40.00000000000017"^^xsd:decimal ; st:lightness "98.03921568627452"^^xsd:decimal ] ;
+    schema:price 62.95 .
+
+<#product19>
+    a schema:Product ;
+    schema:name "High-Top Sneakers - Purple" ;
+    schema:description "High-top sneakers with cushioned sole" ;
+    schema:category ex:Sneakers ;
+    schema:color [ st:hue "274.875"^^xsd:decimal ; st:saturation "86.02150537634408"^^xsd:decimal ; st:lightness "36.47058823529412"^^xsd:decimal ] ;
+    schema:price 89.00 .
+
+<#product20>
+    a schema:Product ;
+    schema:name "Slip-On Sneakers - Pink" ;
+    schema:description "Comfortable slip-on sneakers for everyday wear" ;
+    schema:category ex:Sneakers ;
+    schema:color [ st:hue "330"^^xsd:decimal ; st:saturation "100"^^xsd:decimal ; st:lightness "70.58823529411764"^^xsd:decimal ] ;
+    schema:price 55.00 .
+
+<#product21>
+    a schema:Product ;
+    schema:name "Trail Sneakers - Green" ;
+    schema:description "Rugged trail sneakers with a grippy sole" ;
+    schema:category ex:Sneakers ;
+    schema:color [ st:hue "120"^^xsd:decimal ; st:saturation "60.69364161849712"^^xsd:decimal ; st:lightness "33.921568627450974"^^xsd:decimal ] ;
+    schema:price 95.00 .
+
+<#product22>
+    a schema:Product ;
+    schema:name "Cable Knit Sweater - White" ;
+    schema:description "Chunky cable knit sweater" ;
+    schema:category ex:Sweaters ;
+    schema:color [ st:hue "210.00000000000023"^^xsd:decimal ; st:saturation "40.00000000000017"^^xsd:decimal ; st:lightness "98.03921568627452"^^xsd:decimal ] ;
+    schema:price 74.00 .
+
+<#product23>
+    a schema:Product ;
+    schema:name "Crewneck Sweater - Blue" ;
+    schema:description "Soft crewneck sweater in a cotton blend" ;
+    schema:category ex:Sweaters ;
+    schema:color [ st:hue "217.2192513368984"^^xsd:decimal ; st:saturation "91.21951219512198"^^xsd:decimal ; st:lightness "59.80392156862745"^^xsd:decimal ] ;
+    schema:price 59.00 .
+
+<#product24>
+    a schema:Product ;
+    schema:name "Turtleneck Sweater - Black" ;
+    schema:description "Fitted turtleneck sweater" ;
+    schema:category ex:Sweaters ;
+    schema:color [ st:hue "0"^^xsd:decimal ; st:saturation "0"^^xsd:decimal ; st:lightness "3.9215686274509802"^^xsd:decimal ] ;
+    schema:price 64.00 .
+
+<#product25>
+    a schema:Product ;
+    schema:name "Leather Belt - Black" ;
+    schema:description "Genuine leather belt with a metal buckle" ;
+    schema:category ex:Accessories ;
+    schema:color [ st:hue "0"^^xsd:decimal ; st:saturation "0"^^xsd:decimal ; st:lightness "3.9215686274509802"^^xsd:decimal ] ;
+    schema:price 34.00 .
+
+<#product26>
+    a schema:Product ;
+    schema:name "Wool Scarf - Red" ;
+    schema:description "Soft wool scarf for winter" ;
+    schema:category ex:Accessories ;
+    schema:color [ st:hue "0"^^xsd:decimal ; st:saturation "72.22222222222223"^^xsd:decimal ; st:lightness "50.588235294117645"^^xsd:decimal ] ;
+    schema:price 29.00 .
+
+<#product27>
+    a schema:Product ;
+    schema:name "Beanie Hat - Gray" ;
+    schema:description "Ribbed knit beanie hat" ;
+    schema:category ex:Accessories ;
+    schema:color [ st:hue "220"^^xsd:decimal ; st:saturation "8.936170212765955"^^xsd:decimal ; st:lightness "46.07843137254902"^^xsd:decimal ] ;
+    schema:price 19.00 .
+
+<#product28>
+    a schema:Product ;
+    schema:name "Summer Dress - Pink" ;
+    schema:description "Flowy summer dress in lightweight fabric" ;
+    schema:category ex:Dresses ;
+    schema:color [ st:hue "330"^^xsd:decimal ; st:saturation "100"^^xsd:decimal ; st:lightness "70.58823529411764"^^xsd:decimal ] ;
+    schema:price 79.00 .
+
+<#product29>
+    a schema:Product ;
+    schema:name "Wrap Dress - Red" ;
+    schema:description "Elegant wrap dress for evening wear" ;
+    schema:category ex:Dresses ;
+    schema:color [ st:hue "0"^^xsd:decimal ; st:saturation "72.22222222222223"^^xsd:decimal ; st:lightness "50.588235294117645"^^xsd:decimal ] ;
+    schema:price 89.00 .

@@ -1,0 +1,8 @@
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Opt-in only, via an explicit shui:viewer declaration - see ColorEditor/score.ttl (and
+# AddressEditor/score.ttl, the same idiom this is ported from) for why a viewer of a compound blank
+# node never auto-scores against sh:node. No WidgetScore rule at all, therefore - select()'s own
+# explicit-shui:viewer fast path is what makes it selectable.
+st:ColorViewer rdfs:label "Color"@en, "Kleur"@nl .

@@ -141,6 +141,57 @@ const resolveOwlImports = async (
   await resolveOwlImports(store, quadCache, visitedImports, corsProxyUrl);
 };
 
+// Bootstraps shapesGraph from the DATA graph's own sh:shape declarations (3.1.3.7 Explicit shape
+// targets, see resolution/targets.ts) when the caller supplied no shapes graph at all. This lets a
+// standalone resource - fetched with nothing but its data - name where its own shape lives (`<node>
+// sh:shape <shapeIri>`) instead of requiring the embedder to already know and pass it in. Every
+// distinct sh:shape object IRI is dereferenced the same way an owl:imports target is (same
+// quadCache, so a shape also reachable via an actual owl:imports isn't fetched twice), merged into
+// a fresh store, and resolveOwlImports is run on that afterwards so an owl:imports the fetched shape
+// document itself declares is still picked up.
+//
+// Only fires when shapesGraph.size === 0: a shapesGraph the caller did supply - even a small,
+// deliberately partial one - is left exactly as given, since sh:shape is meant to bootstrap the "no
+// shapes at all" case, not overlay onto an intentionally scoped one. Returns a brand new RdfStore
+// rather than mutating the given (empty) one in place: unlike a URL-sourced store, an
+// already-materialized RdfStore passed in as `raw.shapesGraph` is returned as the very same instance
+// by resolveRdfSource, and it's frequently a caller-held constant (e.g. defaultEnvironment's own
+// module-level RdfStore.createDefault()) reused - unmutated - across many independent
+// resolveRdfSources() calls; mutating it here would leak dereferenced shapes from one call's data
+// graph into every other call that also defaults shapesGraph.
+const dereferenceShapeTargets = async (
+  dataGraph: RdfStore,
+  quadCache: Map<string, Promise<Quad[]>>,
+  corsProxyUrl: string | undefined,
+): Promise<RdfStore | undefined> => {
+  const shapeIris = new Set<string>();
+  for (const quad of dataGraph.getQuads(null, sh("shape"))) {
+    if (quad.object.termType === "NamedNode") shapeIris.add(quad.object.value);
+  }
+  if (!shapeIris.size) return undefined;
+
+  const hrefs = [...shapeIris];
+  const dereferenced = await Promise.allSettled(
+    hrefs.map((href) => dereferenceUrl(new URL(href), quadCache, corsProxyUrl)),
+  );
+
+  const merged = RdfStore.createDefault();
+  for (const [index, result] of dereferenced.entries()) {
+    if (result.status === "rejected") {
+      console.warn(
+        `[shacl-everything] Failed to dereference sh:shape <${hrefs[index]}>:`,
+        result.reason,
+      );
+      continue;
+    }
+    for (const quad of result.value.getQuads()) merged.addQuad(quad);
+  }
+  if (merged.size === 0) return undefined;
+
+  await resolveOwlImports(merged, quadCache, new Set<string>(), corsProxyUrl);
+  return merged;
+};
+
 // A literal Quad[] and a list of RdfSources to merge are both plain arrays, so they're
 // disambiguated by shape: an empty array is treated as (empty) quads, and a non-empty one is
 // treated as quads only if its first element actually looks like a Quad.
@@ -189,7 +240,7 @@ const resolveRdfSource = async (
 export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environment> => {
   const quadCache = new Map<string, Promise<Quad[]>>();
   const { corsProxyUrl } = raw;
-  const [shapesGraph, dataGraph, scoresGraph, readOnlyGraph] = await Promise.all([
+  const [resolvedShapesGraph, dataGraph, scoresGraph, readOnlyGraph] = await Promise.all([
     resolveRdfSource(raw.shapesGraph, quadCache, corsProxyUrl),
     resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl),
     resolveRdfSource(raw.scoresGraph, quadCache, corsProxyUrl),
@@ -197,6 +248,11 @@ export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environmen
       ? resolveRdfSource(raw.readOnlyGraph, quadCache, corsProxyUrl)
       : undefined,
   ]);
+
+  const shapesGraph =
+    resolvedShapesGraph.size === 0
+      ? ((await dereferenceShapeTargets(dataGraph, quadCache, corsProxyUrl)) ?? resolvedShapesGraph)
+      : resolvedShapesGraph;
 
   let nodeShapes: Quad_Subject[] = [];
   if (!raw.nodeShapes?.length) {

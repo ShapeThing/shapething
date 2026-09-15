@@ -5,6 +5,7 @@ import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import {
   fetchOptions,
   insertValuesClause,
+  runQuery,
   searchInstances,
   substituteSearchParameters,
 } from "./query.ts";
@@ -56,6 +57,47 @@ test("searchInstances() falls back to IRI-only matching when there is no LabelRo
   const results = await searchInstances(shape, "ali");
 
   expect(results.map((result) => result.iri.value)).toEqual([ex("ali-street-42").value]);
+});
+
+test("searchInstances() resolves a ClassificationRole value's own st:ColorRole, off the classification's own rdf:type rather than propertyShape's", async () => {
+  const shape = await createShape(
+    `
+      ex:property1 a sh:PropertyShape ; sh:class ex:Concept ; sh:node ex:ConceptShape .
+      ex:ConceptShape sh:property ex:nameProperty, ex:schemeProperty .
+      ex:nameProperty sh:path ex:name ; shui:propertyRole shui:LabelRole .
+      ex:schemeProperty sh:path ex:inScheme ; shui:propertyRole shui:ClassificationRole .
+      ex:SchemeShape a sh:NodeShape ; sh:targetClass ex:Scheme ;
+        sh:property [ sh:path ex:swatch ; shui:propertyRole st:ColorRole ] .
+    `,
+    `
+      ex:p1 a ex:Concept ; ex:name "Bicycle" ; ex:inScheme ex:transport .
+      ex:transport a ex:Scheme ; ex:swatch "#22c55e" .
+    `,
+  );
+
+  const results = await searchInstances(shape, "bicycle");
+
+  expect(results[0]?.classification?.term.value).toBe(ex("transport").value);
+  expect(results[0]?.classification?.color).toBe("#22c55e");
+});
+
+test("searchInstances() leaves classification.color undefined when the classification's own class declares no st:ColorRole", async () => {
+  const shape = await createShape(
+    `
+      ex:property1 a sh:PropertyShape ; sh:class ex:Concept ; sh:node ex:ConceptShape .
+      ex:ConceptShape sh:property ex:schemeProperty .
+      ex:schemeProperty sh:path ex:inScheme ; shui:propertyRole shui:ClassificationRole .
+    `,
+    `
+      ex:p1 a ex:Concept ; ex:inScheme ex:transport .
+      ex:transport a ex:Scheme .
+    `,
+  );
+
+  const results = await searchInstances(shape, "p1");
+
+  expect(results[0]?.classification?.term.value).toBe(ex("transport").value);
+  expect(results[0]?.classification?.color).toBeUndefined();
 });
 
 test("fetchOptions() resolves every requested iri's label in a single batched query", async () => {
@@ -114,6 +156,27 @@ test("fetchOptions() keeps concurrent calls on the same shape scoped to their ow
   expect(first.map((result) => result.label)).toEqual(["Ali", "Bob"]);
   expect(second.map((result) => result.iri.value)).toEqual([ex("p3").value, ex("p4").value]);
   expect(second.map((result) => result.label)).toEqual(["Carol", "Dee"]);
+});
+
+test("runQuery() can FILTER on a geof: GeoSPARQL relation function, proving the extension function is actually wired into the Comunica engine (not just unit-tested in isolation)", async () => {
+  const shape = await createShape(
+    `ex:property1 a sh:PropertyShape ; sh:class ex:City .`,
+    `
+      ex:paris a ex:City ; ex:location "POINT (2.35 48.85)"^^geosparql:wktLiteral .
+      ex:tokyo a ex:City ; ex:location "POINT (139.69 35.68)"^^geosparql:wktLiteral .
+    `,
+  );
+
+  const results = await runQuery(
+    `${queryPrefixes}
+     select ?value where {
+       ?value a ex:City ; ex:location ?location .
+       filter(geof:sfWithin(?location, "POLYGON ((-10 35, 20 35, 20 60, -10 60, -10 35))"^^geosparql:wktLiteral))
+     }`,
+    shape,
+  );
+
+  expect(results.map((result) => result.term.value)).toEqual([ex("paris").value]);
 });
 
 test("substituteSearchParameters() replaces both $-prefixed and ?-prefixed forms of the same query", () => {

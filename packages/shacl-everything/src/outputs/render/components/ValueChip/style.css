@@ -45,6 +45,7 @@
   }
 }
 
+.st-value-chip--colored--1,
 .st-value-chip--colored--2 {
   position: relative;
   z-index: 0;
@@ -58,8 +59,15 @@
     z-index: -1;
     inset: 0;
     opacity: 0.3;
-    background: linear-gradient(10deg, var(--color-0), var(--color-1));
   }
+}
+
+.st-value-chip--colored--1::after {
+  background: var(--color-0);
+}
+
+.st-value-chip--colored--2::after {
+  background: linear-gradient(10deg, var(--color-0), var(--color-1));
 }
 
 /* font-size lives on the chip itself, not just __label - the iri/remove icons are sized in `em`

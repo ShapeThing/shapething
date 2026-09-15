@@ -7,7 +7,7 @@ import { sh } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useSelectOptions } from "@/outputs/render/hooks/useSelectOptions.tsx";
-import { valueNodeLabel } from "@/resolution/label.ts";
+import { valueNodeColor, valueNodeLabel } from "@/resolution/label.ts";
 import { selectQueryFor } from "@/structure/selectQuery.ts";
 import type { FacetWidgetProps } from "@/widgets/types.ts";
 import "./style.css";
@@ -32,6 +32,12 @@ import "./style.css";
  * category value is an ordinary OR-filter (sh:in already means "any of these"). `valueCounts`,
  * only given when Environment.enableFacetOptionCounts is on, shows a count after each option's
  * label.
+ *
+ * Each option also shows a swatch when st:ColorRole is resolved off the option's own rdf:type (see
+ * resolution/label.ts's valueNodeColor) - the same role/mechanism AutoCompleteOption's
+ * ClassificationRole chip uses, just applied to the option value itself rather than a nested
+ * classification. A federated option resolves to no swatch (its type triples live only on the
+ * remote endpoint, never the local dataGraph), same as any other unset role.
  */
 export default function CategoryFacet({
   shape,
@@ -99,6 +105,12 @@ export default function CategoryFacet({
               propertyShape: shape,
               languages: [activeLanguage],
             }).value;
+        // st:ColorRole, resolved off the option's own rdf:type (see resolution/label.ts's
+        // valueNodeColor) - same mechanism as AutoCompleteOption's classification chip, just
+        // applied to the option itself rather than a nested classification value. A federated
+        // option's own type triples were never materialized into the local dataGraph, so this
+        // simply resolves to undefined for those, same as an unset role.
+        const color = valueNodeColor({ term: option, propertyShape: shape });
         const checked = selectedKeys.has(termKey(option));
 
         return (
@@ -109,6 +121,13 @@ export default function CategoryFacet({
               checked={checked}
               onChange={(event) => toggle(option, event.target.checked)}
             />
+            {color && (
+              <span
+                className="st-category-facet__swatch"
+                style={{ backgroundColor: color }}
+                aria-hidden="true"
+              />
+            )}
             {label}
             {valueCounts && (
               <span className="st-category-facet__count">

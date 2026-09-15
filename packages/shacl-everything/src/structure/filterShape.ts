@@ -1,9 +1,10 @@
 import type { NamedNode, Quad_Object, Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
+import { bucketForHsl, sparqlFilterForBucket, type ColorBucket } from "@/helpers/colorBuckets.ts";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 import { factory } from "@/helpers/factory.ts";
 import { geometryIntersectsArea, literalToGeometry } from "@/helpers/geometryLiteral.ts";
-import { rdf, sh, st } from "@/helpers/namespaces.ts";
+import { queryPrefixes, rdf, sh, st } from "@/helpers/namespaces.ts";
 import { rebuildRdfList } from "@/helpers/rdfList.ts";
 import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
 import { collectClassAndSubClasses } from "@/structure/classHierarchy.ts";
@@ -139,42 +140,49 @@ function copyRootClass(
 }
 
 /**
- * The combined find-or-create-and-write every facet widget's own setConstraint should call,
+ * The combined find-or-create-and-write every facet widget's own setConstraint(s) should call,
  * instead of calling getFilterConstraintNode then setFilterConstraint as two separate steps.
  *
  * The difference matters under React: filterShape.store is reactive (helpers/reactiveRdfStore.ts),
- * and a facet's own live read is a useSyncExternalStore subscription (useReactiveRead), which
- * forces an *immediate, synchronous* re-render the instant a write matches its tracked pattern -
- * before the calling code gets to run any further statements. Every sibling facet watches the same
- * wildcard rootNode/sh:property pattern (to notice a completely new constraint appearing anywhere),
- * so if getFilterConstraintNode's create branch linked a brand-new, still-empty node into rootNode
- * *before* setFilterConstraint got a chance to write its first real value, that forced re-render
- * would observe (and permanently cache, until the *next* matching write) a property with no value
- * yet - a checkbox that doesn't reflect its own click, a search box or price range that doesn't
- * pick up its own first keystroke, even though the value is written correctly moments later and the
- * generated shape modes/facet/index.tsx eventually submits ends up correct regardless (its own
- * subscription is an unconditional catch-all, unaffected by this ordering).
+ * and a facet's own live read is a useSyncExternalStore subscription (useReactiveRead). Every
+ * sibling facet watches the same wildcard rootNode/sh:property pattern (to notice a completely new
+ * constraint appearing anywhere), so if getFilterConstraintNode's create branch linked a brand-new,
+ * still-empty node into rootNode *before* every one of `entries` got a chance to write its value,
+ * useSyncExternalStore's own dirty-check would read-and-cache (via useReactiveRead's `cache.current`)
+ * a property with only *some* of its values written - a checkbox that doesn't reflect its own click,
+ * a search box or price range that doesn't pick up its own first keystroke. Critically, that
+ * dirty-check recompute also re-tracks the read against the now-existing node itself (no longer the
+ * wildcard), so a *separate*, later write to that same node - e.g. a second, independent call to
+ * this function for one more predicate - lands in the store correctly but is never observed by that
+ * already-cached, already-stale reactive read: nothing re-invalidates it, since the wildcard pattern
+ * it was originally watching no longer applies and the write happened before any subscriber started
+ * watching the node itself. This is why ColorFacet writes its own sh:minInclusive *and*
+ * sh:maxExclusive as one call to this function (via `entries`) rather than two separate calls -
+ * two brand-new-node writes in the same tick would otherwise race exactly like that.
  *
- * This writes a brand-new node's own sh:path and its first value *before* linking it to rootNode,
- * so the one write any sibling's wildcard pattern can actually observe already describes a complete
- * constraint. An already-existing node (found via findFilterConstraintNode) has no such race - it's
- * already linked and already being watched via its own subject-wildcard pattern - so it's just
- * handed straight to setFilterConstraint.
+ * This writes a brand-new node's own sh:path and every one of `entries`' values *before* linking it
+ * to rootNode, so the one write any sibling's wildcard pattern can actually observe already
+ * describes the complete constraint. An already-existing node (found via findFilterConstraintNode)
+ * has no such race - it's already linked and already being watched via its own subject-wildcard
+ * pattern - so each entry is just handed straight to setFilterConstraint.
  */
-export function setFilterConstraintForProperty(
+export function setFilterConstraintsForProperty(
   filterShape: FilterShape,
   property: PropertyUIElement,
-  predicate: NamedNode,
-  value: Term | Term[] | undefined,
+  entries: ReadonlyArray<readonly [NamedNode, Term | Term[] | undefined]>,
 ): void {
   const existing = findFilterConstraintNode(filterShape, property);
   if (existing) {
-    setFilterConstraint(filterShape, existing, predicate, value);
+    for (const [predicate, value] of entries) {
+      setFilterConstraint(filterShape, existing, predicate, value);
+    }
     return;
   }
 
-  const isEmpty = value === undefined || (Array.isArray(value) && value.length === 0);
-  if (isEmpty) return;
+  const nonEmptyEntries = entries.filter(
+    ([, value]) => !(value === undefined || (Array.isArray(value) && value.length === 0)),
+  );
+  if (nonEmptyEntries.length === 0) return;
 
   const { store, rootNode } = filterShape;
   const path = parsePropertyPath(property.propertyShapes[0], property.shapesGraph);
@@ -186,8 +194,20 @@ export function setFilterConstraintForProperty(
     );
   }
   copyRootClass(property, propertyNode, store);
-  setFilterConstraint(filterShape, propertyNode, predicate, value);
+  for (const [predicate, value] of nonEmptyEntries) {
+    setFilterConstraint(filterShape, propertyNode, predicate, value);
+  }
   store.addQuad(factory.quad(rootNode, sh("property"), propertyNode));
+}
+
+/** setFilterConstraintsForProperty for the common case of writing just one predicate. */
+export function setFilterConstraintForProperty(
+  filterShape: FilterShape,
+  property: PropertyUIElement,
+  predicate: NamedNode,
+  value: Term | Term[] | undefined,
+): void {
+  setFilterConstraintsForProperty(filterShape, property, [[predicate, value]]);
 }
 
 /**
@@ -236,6 +256,13 @@ export function setFilterConstraint(
     store.addQuad(factory.quad(constraintNode, predicate, value as Quad_Object));
   }
 
+  if (predicate.equals(st("withinArea"))) {
+    syncWithinAreaSparqlConstraint(store, constraintNode, Array.isArray(value) ? undefined : value);
+  }
+  if (predicate.equals(st("colorBucket"))) {
+    syncColorBucketSparqlConstraint(store, constraintNode, Array.isArray(value) ? undefined : value);
+  }
+
   const stillHasConstraint = store
     .getQuads(constraintNode)
     .some((quad) => !quad.predicate.equals(sh("path")));
@@ -245,6 +272,123 @@ export function setFilterConstraint(
   if (!propertyQuad) return;
   store.removeQuad(propertyQuad);
   deleteBlankNodeClosure(store, constraintNode);
+}
+
+// Minimal SPARQL string-literal escaping for a value about to be spliced into generated query text
+// - mirrors outputs/render/hooks/query.ts's own escapeSparqlLiteral (kept as a separate copy rather
+// than a shared import: that module is the outputs/render/ Comunica-facing layer, this one is the
+// framework-agnostic structure/ layer, and neither should depend on the other for a three-line
+// string escape).
+function escapeSparqlLiteral(value: string): string {
+  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
+}
+
+/**
+ * Keeps constraintNode's own sh:sparql [ a sh:SPARQLConstraint ; sh:select "..." ] entry in sync
+ * with its st:withinArea value (see setFilterConstraint above) - a real, standards-conformant SHACL
+ * "SPARQL-based Constraint" (SHACL Core §3.5), built from the geof:sfWithin GeoSPARQL extension
+ * function (see helpers/geosparqlFunctions.ts, registered on the Comunica engine in
+ * outputs/render/hooks/query.ts), so an external SHACL-SPARQL-aware consumer of the shape this
+ * renderer submits (e.g. shape-t-query, or any conformant SPARQL-based-constraints engine) can
+ * enforce the exact same spatial rule without ever knowing ShapeThing's own st:withinArea
+ * vocabulary. st:withinArea itself is left untouched by this function - it stays the plain value
+ * this renderer's own synchronous facet-narrowing (instanceSatisfiesConstraintNode below,
+ * facetValues.ts's countFacetInstancesWithinArea) reads directly, the same "real SHACL predicate
+ * plus an auxiliary st: value for the app's own fast synchronous path" split copyRootClass already
+ * uses for sh:in's class-taxonomy matching above - re-deriving the drawn area from generated SPARQL
+ * text on every facet-count read would be needless, fragile work for a value already sitting right
+ * there as a literal.
+ *
+ * Always regenerates from scratch (delete-then-rebuild, like rebuildRdfList) rather than trying to
+ * patch the previous sh:select text in place - MapFacet re-calls this on every drawn-shape change
+ * (and its own 400ms poll - see widget.tsx), so there's no meaningful "diff" to preserve, only a
+ * current value to reflect.
+ *
+ * The generated query uses FILTER NOT EXISTS (the spec-correct, portable "for-all" shape - $this
+ * violates unless *some* value satisfies geof:sfWithin) rather than a MINUS-based rewrite - this
+ * renderer never runs the query itself (see above), but if it ever does, note that Comunica 4.5
+ * does *not* correctly correlate $this into a FILTER NOT EXISTS pattern when a custom extension
+ * function (like geof:sfWithin) sits inside it: the nested pattern resolves against the wrong outer
+ * binding regardless of which $this is active (verified against a minimal repro outside this
+ * codebase). A MINUS-based rewrite correlates correctly under Comunica, but silently drops the
+ * "zero values for the path is also a violation" case (MINUS needs $this to already join through
+ * at least one value to appear as a row at all) - not a safe substitute, just a different bug.
+ */
+function syncWithinAreaSparqlConstraint(
+  store: RdfStore,
+  constraintNode: Quad_Subject,
+  area: Term | undefined,
+): void {
+  const existingSparqlQuad = store.getQuads(constraintNode, sh("sparql"))[0];
+  if (existingSparqlQuad) {
+    store.removeQuad(existingSparqlQuad);
+    deleteBlankNodeClosure(store, existingSparqlQuad.object);
+  }
+
+  if (!area || area.termType !== "Literal") return;
+  const path = parsePropertyPath(constraintNode, store);
+  if (!path) return;
+
+  const sparqlNode = factory.blankNode();
+  store.addQuad(factory.quad(sparqlNode, rdf("type"), sh("SPARQLConstraint")));
+  store.addQuad(
+    factory.quad(
+      sparqlNode,
+      sh("select"),
+      factory.literal(
+        `${queryPrefixes}\nselect $this where { filter not exists { $this ${toSparql(path)} ?withinAreaValue . filter(geof:sfWithin(?withinAreaValue, "${escapeSparqlLiteral(area.value)}"^^<${area.datatype.value}>)) } }`,
+      ),
+    ),
+  );
+  store.addQuad(factory.quad(constraintNode, sh("sparql"), sparqlNode as Quad_Object));
+}
+
+/**
+ * Keeps constraintNode's own sh:sparql [ a sh:SPARQLConstraint ; sh:select "..." ] entry in sync
+ * with its st:colorBucket value (see setFilterConstraint above) - the same "bespoke value for this
+ * renderer's own fast synchronous path, standards-form SPARQL text for an external consumer" split
+ * syncWithinAreaSparqlConstraint above uses for MapFacet's st:withinArea. st:colorBucket itself is
+ * left untouched by this function - it stays the plain bucket-name literal
+ * instanceSatisfiesConstraintNode below reads directly (via helpers/colorBuckets.ts's bucketForHsl,
+ * applied to each value's own st:hue/st:saturation/st:lightness triples) - re-deriving the bucket
+ * from generated SPARQL text on every facet-count read would be needless, fragile work for a value
+ * already sitting right there as a literal.
+ *
+ * The generated query reads a value's st:hue/st:saturation/st:lightness directly and applies
+ * helpers/colorBuckets.ts's sparqlFilterForBucket - the SPARQL-text counterpart of the same
+ * classifyHsl cascade bucketForHsl uses in JS - inside the same portable FILTER NOT EXISTS "for-all"
+ * shape syncWithinAreaSparqlConstraint's own doc comment explains (with the same Comunica
+ * FILTER-NOT-EXISTS-plus-extension-function caveat not applying here, since this query uses only
+ * plain SPARQL comparison operators, no extension function).
+ */
+function syncColorBucketSparqlConstraint(
+  store: RdfStore,
+  constraintNode: Quad_Subject,
+  bucket: Term | undefined,
+): void {
+  const existingSparqlQuad = store.getQuads(constraintNode, sh("sparql"))[0];
+  if (existingSparqlQuad) {
+    store.removeQuad(existingSparqlQuad);
+    deleteBlankNodeClosure(store, existingSparqlQuad.object);
+  }
+
+  if (!bucket || bucket.termType !== "Literal") return;
+  const path = parsePropertyPath(constraintNode, store);
+  if (!path) return;
+
+  const filter = sparqlFilterForBucket(bucket.value as ColorBucket);
+  const sparqlNode = factory.blankNode();
+  store.addQuad(factory.quad(sparqlNode, rdf("type"), sh("SPARQLConstraint")));
+  store.addQuad(
+    factory.quad(
+      sparqlNode,
+      sh("select"),
+      factory.literal(
+        `${queryPrefixes}\nselect $this where { filter not exists { $this ${toSparql(path)} ?colorValue . ?colorValue st:hue ?hue ; st:saturation ?sat ; st:lightness ?light . filter(${filter}) } }`,
+      ),
+    ),
+  );
+  store.addQuad(factory.quad(constraintNode, sh("sparql"), sparqlNode as Quad_Object));
 }
 
 /**
@@ -272,12 +416,12 @@ export function removeFilterConstraintsForPaths(
 }
 
 // Whether `instance`'s own values for `constraintNode`'s path satisfy every constraint predicate
-// currently written on it (sh:in, sh:pattern+sh:flags, sh:minInclusive/sh:maxInclusive,
-// st:withinArea - the only predicates any facet widget ever writes via setConstraint) - true if the
-// node declares none of them (a bare sh:property/sh:path skeleton, which auto-vivify never actually
-// leaves lying around, but this stays permissive rather than assuming). A predicate this doesn't
-// recognize is silently ignored rather than excluding every instance - only facet-writable
-// predicates are meaningful here.
+// currently written on it (sh:in, sh:pattern+sh:flags, sh:minInclusive/sh:maxInclusive/
+// sh:minExclusive/sh:maxExclusive, st:withinArea, st:colorBucket - the only predicates any facet
+// widget ever writes via setConstraint) - true if the node declares none of them (a bare
+// sh:property/sh:path skeleton, which auto-vivify never actually leaves lying around, but this
+// stays permissive rather than assuming). A predicate this doesn't recognize is silently ignored
+// rather than excluding every instance - only facet-writable predicates are meaningful here.
 function instanceSatisfiesConstraintNode(
   constraintNode: Quad_Subject,
   instance: Quad_Subject,
@@ -315,15 +459,31 @@ function instanceSatisfiesConstraintNode(
     if (!values.some((value) => regex.test(value.value))) return false;
   }
 
-  const minQuad = store.getQuads(constraintNode, sh("minInclusive"))[0];
-  const maxQuad = store.getQuads(constraintNode, sh("maxInclusive"))[0];
-  if (minQuad || maxQuad) {
-    const minOrder = minQuad ? literalOrder(minQuad.object as Term) : undefined;
-    const maxOrder = maxQuad ? literalOrder(maxQuad.object as Term) : undefined;
+  const minInclusiveQuad = store.getQuads(constraintNode, sh("minInclusive"))[0];
+  const maxInclusiveQuad = store.getQuads(constraintNode, sh("maxInclusive"))[0];
+  const minExclusiveQuad = store.getQuads(constraintNode, sh("minExclusive"))[0];
+  const maxExclusiveQuad = store.getQuads(constraintNode, sh("maxExclusive"))[0];
+  if (minInclusiveQuad || maxInclusiveQuad || minExclusiveQuad || maxExclusiveQuad) {
+    const minInclusiveOrder = minInclusiveQuad
+      ? literalOrder(minInclusiveQuad.object as Term)
+      : undefined;
+    const maxInclusiveOrder = maxInclusiveQuad
+      ? literalOrder(maxInclusiveQuad.object as Term)
+      : undefined;
+    const minExclusiveOrder = minExclusiveQuad
+      ? literalOrder(minExclusiveQuad.object as Term)
+      : undefined;
+    const maxExclusiveOrder = maxExclusiveQuad
+      ? literalOrder(maxExclusiveQuad.object as Term)
+      : undefined;
     const inRange = values.some((value) => {
       const order = literalOrder(value);
-      const aboveMin = minOrder === undefined || order >= minOrder;
-      const belowMax = maxOrder === undefined || order <= maxOrder;
+      const aboveMin =
+        (minInclusiveOrder === undefined || order >= minInclusiveOrder) &&
+        (minExclusiveOrder === undefined || order > minExclusiveOrder);
+      const belowMax =
+        (maxInclusiveOrder === undefined || order <= maxInclusiveOrder) &&
+        (maxExclusiveOrder === undefined || order < maxExclusiveOrder);
       return aboveMin && belowMax;
     });
     if (!inRange) return false;
@@ -331,9 +491,10 @@ function instanceSatisfiesConstraintNode(
 
   // st:withinArea - MapFacet's own constraint predicate (see widgets/implementations/st/facets/
   // MapFacet), holding a GeoSPARQL WKT literal for the Polygon/MultiPolygon area the user drew on
-  // the map. Neither SHACL nor SHACL-UI has a spatial-containment constraint of its own, so this is
-  // a ShapeThing-original addition, the geo analogue of sh:minInclusive/sh:maxInclusive above. An
-  // instance matches if *any* of its own values for this path falls inside the drawn area - see
+  // the map - this renderer's own fast synchronous read of the same value a sibling sh:sparql
+  // SPARQLConstraint entry (see setFilterConstraint/syncWithinAreaSparqlConstraint above) also
+  // expresses in standard, portable SHACL-SPARQL form for an external consumer. An instance matches
+  // if *any* of its own values for this path falls inside the drawn area - see
   // helpers/geometryLiteral.ts's geometryIntersectsArea for what "inside" means here.
   const withinAreaQuad = store.getQuads(constraintNode, st("withinArea"))[0];
   if (withinAreaQuad) {
@@ -345,6 +506,32 @@ function instanceSatisfiesConstraintNode(
       });
       if (!withinArea) return false;
     }
+  }
+
+  // st:colorBucket - ColorFacet's own constraint predicate (see widgets/implementations/st/facets/
+  // ColorFacet), holding the name of the bucket picked (e.g. "blue") - the same fast synchronous
+  // read/write split st:withinArea uses above: a sibling sh:sparql SPARQLConstraint entry (see
+  // setFilterConstraint/syncColorBucketSparqlConstraint above) expresses the identical rule in
+  // standard, portable SHACL-SPARQL form for an external consumer, reading straight off each
+  // value's own st:hue/st:saturation/st:lightness triples - genuine CSS HSL notation, not a derived
+  // property. An instance matches if *any* of its own values for this path (each an HSL-shaped
+  // blank/named node) classifies into the chosen bucket - see helpers/colorBuckets.ts's
+  // bucketForHsl for what "classifies into" means here.
+  const colorBucketQuad = store.getQuads(constraintNode, st("colorBucket"))[0];
+  if (colorBucketQuad) {
+    const bucket = colorBucketQuad.object.value as ColorBucket;
+    const matchesBucket = values.some((value) => {
+      if (value.termType !== "BlankNode" && value.termType !== "NamedNode") return false;
+      const hue = dataGraph.getQuads(value, st("hue"))[0]?.object.value;
+      const saturation = dataGraph.getQuads(value, st("saturation"))[0]?.object.value;
+      const lightness = dataGraph.getQuads(value, st("lightness"))[0]?.object.value;
+      if (hue === undefined || saturation === undefined || lightness === undefined) return false;
+      return (
+        bucketForHsl({ h: parseFloat(hue), s: parseFloat(saturation), l: parseFloat(lightness) }) ===
+        bucket
+      );
+    });
+    if (!matchesBucket) return false;
   }
 
   return true;

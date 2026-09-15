@@ -34,6 +34,14 @@ export type WidgetComponent = ComponentType<WidgetProps>;
  * generated filterShape (see structure/filterShape.ts) - the facet-mode analogue of term/setTerm.
  * setConstraint(predicate, undefined) removes that predicate's current value(s) entirely.
  *
+ * setConstraints writes several predicates as one atomic gesture (e.g. ColorFacet's own
+ * sh:minInclusive+sh:maxExclusive pair for one bucket click) - see
+ * structure/filterShape.ts's setFilterConstraintsForProperty for why a widget that needs to write
+ * more than one predicate for the same user action must use this instead of two separate
+ * setConstraint calls: on a property no facet has touched yet, two separate calls race against
+ * useReactiveRead's own snapshot caching and can silently lose the second write from the live view
+ * (though not from the data actually submitted).
+ *
  * `valueCounts` is only given when Environment.enableFacetOptionCounts is on (see
  * structure/facetValues.ts's aggregateFacetValueCounts) - keyed by termKey, "how many target
  * instances have this value, given every other currently-active facet constraint" (a live,
@@ -51,6 +59,7 @@ export type FacetWidgetProps = {
   values: Term[];
   getConstraint: (predicate: NamedNode) => Term[];
   setConstraint: (predicate: NamedNode, value: Term | Term[] | undefined) => void;
+  setConstraints: (entries: ReadonlyArray<readonly [NamedNode, Term | Term[] | undefined]>) => void;
   valueCounts?: Map<string, number>;
   labelledBy?: string;
 };

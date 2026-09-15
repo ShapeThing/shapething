@@ -2,12 +2,14 @@ import type { Bindings, NamedNode, Term } from "@rdfjs/types";
 import { queryPrefixes, sh } from "@/helpers/namespaces.ts";
 import { localName } from "@/helpers/localName.ts";
 import { withCorsProxy } from "@/helpers/corsProxy.ts";
+import { geosparqlExtensionFunctions } from "@/helpers/geosparqlFunctions.ts";
 import {
   classificationRolePropertyPaths,
   depictionRolePropertyPaths,
   descriptionRolePropertyPaths,
   effectiveLabelPredicates,
   labelRolePropertyPaths,
+  valueNodeColor,
 } from "@/resolution/label.ts";
 import { toSparql } from "@/structure/paths/toSparql.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -32,7 +34,7 @@ const ROLE_LOOKUP_BATCH_DELAY_MS = 100;
 export type ResolvedTerm = {
   term: Term;
   label?: string;
-  classification?: { term: Term; label: string };
+  classification?: { term: Term; label: string; color?: string };
   depiction?: NamedNode;
   description?: string;
 };
@@ -42,7 +44,7 @@ export type ResolvedTerm = {
 export type SearchResult = {
   iri: NamedNode;
   label?: string;
-  classification?: { term: Term; label: string };
+  classification?: { term: Term; label: string; color?: string };
   depiction?: NamedNode;
   description?: string;
 };
@@ -184,6 +186,25 @@ function toSearchResults(results: ResolvedTerm[]): SearchResult[] {
   );
 }
 
+// A ClassificationRole value's own swatch color (st:ColorRole, resolved off its own rdf:type - see
+// resolution/label.ts's valueNodeColor), applied uniformly wherever this module produces a
+// ResolvedTerm with a `classification`. Deliberately a plain local-graph lookup (propertyShape.
+// dataGraph/shapesGraph), not a SPARQL-projected column: unlike LabelRole/ClassificationRole/
+// DepictionRole (resolved statically from propertyShape's own sh:node/sh:class, so their SPARQL
+// path text can be built up front), which node shape's st:ColorRole applies depends on the
+// classification value's own rdf:type - only known once the query has already run. A federated
+// (SERVICE-backed) classification resolves to no color here, since its triples were never
+// materialized into the local dataGraph - the same "gracefully absent" fallback an unset role
+// already has.
+function withClassificationColor(
+  result: ResolvedTerm,
+  propertyShape: PropertyUIElement,
+): ResolvedTerm {
+  if (!result.classification) return result;
+  const color = valueNodeColor({ term: result.classification.term, propertyShape });
+  return color ? { ...result, classification: { ...result.classification, color } } : result;
+}
+
 export async function runQuery(
   query: string,
   propertyShape: PropertyUIElement,
@@ -192,9 +213,15 @@ export async function runQuery(
   const engine = await getEngine();
   const bindingsStream = await engine.queryBindings(query, {
     sources: [propertyShape.dataGraph],
+    // Always registered, not just for a query that's known to use one - a shape-authored
+    // sh:select/shui:searchQuery body is arbitrary text this module never inspects up front, so
+    // there's no cheaper way to know a geof: function is needed before the engine itself hits it.
+    extensionFunctions: geosparqlExtensionFunctions,
     ...(corsProxyUrl ? { fetch: fetchWithCorsProxyFallback(corsProxyUrl) } : {}),
   });
-  return toResolvedTerms(await bindingsStream.toArray());
+  return toResolvedTerms(await bindingsStream.toArray()).map((result) =>
+    withClassificationColor(result, propertyShape),
+  );
 }
 
 /**

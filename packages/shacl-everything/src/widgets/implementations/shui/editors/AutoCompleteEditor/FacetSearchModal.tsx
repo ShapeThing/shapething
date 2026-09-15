@@ -57,6 +57,7 @@ export default function FacetSearchModal({
   const fieldLabel = shape.label([activeInterfaceLanguage]);
   const [filterShape, setFilterShape] = useState<FilterShape>();
 
+  // TODO this function call should just use shacl-engine yes?
   const matchingInstances = useMemo(() => {
     if (!filterShape) return candidateInstances;
     return instancesMatchingOtherConstraints(
