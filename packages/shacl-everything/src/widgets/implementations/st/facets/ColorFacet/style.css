@@ -1,0 +1,46 @@
+.st-color-facet {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2);
+}
+
+.st-color-facet__option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--size-1);
+  cursor: pointer;
+}
+
+.st-color-facet__checkbox {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.st-color-facet__swatch {
+  display: inline-block;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 50%;
+  border: 1px solid var(--st-color-border);
+  box-shadow: 0 0 0 2px transparent;
+  transition: box-shadow 0.1s ease-in-out;
+}
+
+.st-color-facet__swatch[data-checked="true"] {
+  box-shadow: 0 0 0 2px var(--st-primary-color);
+}
+
+.st-color-facet__checkbox:focus-visible + .st-color-facet__swatch {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: 2px;
+}
+
+.st-color-facet__count {
+  color: var(--st-color-text-muted);
+  font-size: 0.75rem;
+}

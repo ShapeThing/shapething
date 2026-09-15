@@ -1,0 +1,61 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Favourite topic"@en ;
+        sh:path ex:favouriteTopic ;
+        sh:class skos:Concept ;
+        sh:node <#conceptShape> ;
+        shui:editor shui:AutoCompleteEditor ;
+    ] ;
+    .
+
+<#conceptShape>
+    sh:property [
+        sh:path skos:prefLabel ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path skos:inScheme ;
+        shui:propertyRole shui:ClassificationRole ;
+    ] .
+
+# st:ColorRole is resolved off a ClassificationRole value's OWN rdf:type (skos:ConceptScheme here),
+# not the property's sh:class (skos:Concept, <#conceptShape> above) - a separate shape, targeting a
+# separate class, is what actually declares it.
+<#schemeShape>
+    a sh:NodeShape ;
+    sh:targetClass skos:ConceptScheme ;
+    sh:property [
+        sh:path skos:prefLabel ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path ex:swatch ;
+        shui:propertyRole st:ColorRole ;
+    ] .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:favouriteTopic ex:bicycle .
+
+ex:bicycle a skos:Concept ;
+    skos:prefLabel "Bicycle"@en ;
+    skos:inScheme ex:transportScheme .
+
+ex:car a skos:Concept ;
+    skos:prefLabel "Car"@en ;
+    skos:inScheme ex:transportScheme .
+
+ex:transportScheme a skos:ConceptScheme ;
+    skos:prefLabel "Transport"@en ;
+    ex:swatch "#22c55e" .

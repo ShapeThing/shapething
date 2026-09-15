@@ -41,6 +41,37 @@ no tooltip) or combine it with either/both label roles. `resolution/label.ts`'s
 `propertyPathsByRole(propertyShape, role)` is the shared, role-agnostic lookup underneath all four
 roles.
 
+## Property Roles extension: `st:ColorRole`
+
+Marks which `sh:property` on a value node's shape holds a **swatch color** — consumed by
+`shui:ClassificationRole`'s own chip (`AutoCompleteOption`/`Teaser`) and by `st:CategoryFacet`'s
+option list. Unlike `st:GeoRole` and the three `shui:` roles above (all resolved via a
+*property's own* `sh:node`/`sh:class`, i.e. what that property declares its values look like),
+`st:ColorRole` is resolved off the value's **own** `rdf:type`: a `ClassificationRole` path can land
+on a resource of a wholly different class than the enclosing property's own `sh:class` (e.g.
+`skos:inScheme` landing on a `skos:ConceptScheme`, not another `skos:Concept`), so its color has to
+come from a shape targeting *that* class, not the property's:
+
+```turtle
+ex:ConceptShape
+    sh:property [ sh:path skos:prefLabel ; shui:propertyRole shui:LabelRole ] ;
+    sh:property [ sh:path skos:inScheme ; shui:propertyRole shui:ClassificationRole ] ;
+    .
+
+ex:SchemeShape
+    a sh:NodeShape ;
+    sh:targetClass skos:ConceptScheme ;
+    sh:property [ sh:path ex:swatch ; shui:propertyRole st:ColorRole ] ;
+    .
+```
+
+`resolution/label.ts`'s `valueNodeColor({ term, propertyShape })` does the lookup: every node shape
+`sh:targetClass`-ing one of `term`'s own `rdf:type` values (`ownClassNodeShapes`) is checked for a
+`st:ColorRole`-annotated `sh:property`, walked from `term` itself. The resolved literal is used
+as-is — typically a `colorDatatype`-typed hex string (see `st:ColorEditor`/`st:ColorViewer`), but
+any CSS color string works. `CategoryFacet` applies the same lookup directly to each option value
+(there's no separate "classification" hop there — the option *is* the value being colored).
+
 ## Node-level stylesheet import: `st:cssImport`
 
 A `sh:NodeShape` can declare one or more `st:cssImport <URL>` triples to load extra, shape-authored
@@ -71,6 +102,7 @@ later shape's stylesheet cascades after an earlier one's. See `resolution/cssImp
 | --------------------------------------------------------------------------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------- |
 | `st:facet`                                                                                                                        | predicate                 | §2                                                             |
 | `st:GeoRole`                                                                                                                      | `shui:propertyRole` value | §4                                                             |
+| `st:ColorRole`                                                                                                                    | `shui:propertyRole` value | §5                                                             |
 | `st:cssImport`                                                                                                                    | predicate                 | §6                                                             |
 | `st:AddressEditor`, `st:IconifyEditor`                                                                                            | editors                   | [Widgets](?path=/docs/shapething-st-built-in-widgets--docs) §1 |
 | `st:AddressViewer`, `st:IconifyViewer`, `st:MapViewer`                                                                            | viewers                   | [Widgets](?path=/docs/shapething-st-built-in-widgets--docs) §2 |

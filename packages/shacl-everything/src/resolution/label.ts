@@ -1,7 +1,8 @@
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
+import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { factory } from "@/helpers/factory.ts";
 import { localName } from "@/helpers/localName.ts";
-import { rdfs, sh, shui, st } from "@/helpers/namespaces.ts";
+import { rdf, rdfs, sh, shui, st } from "@/helpers/namespaces.ts";
 import language, {
   configuredLanguages,
   effectiveLanguages,
@@ -305,9 +306,25 @@ export function propertyPathsByRole(
   propertyShape: PropertyUIElement,
   role: NamedNode,
 ): PropertyPath[] {
-  const { shapesGraph } = propertyShape;
+  return propertyPathsByRoleForNodeShapes(
+    valueNodeShapes(propertyShape),
+    propertyShape.shapesGraph,
+    role,
+  );
+}
 
-  return valueNodeShapes(propertyShape).flatMap((node) =>
+/**
+ * The role-matching half of propertyPathsByRole, taken as plain node shapes rather than derived
+ * from a propertyShape's own sh:node/sh:class - shared with colorRolePropertyPaths below, which
+ * looks up its node shapes a different way (a value's own rdf:type, not a property's configured
+ * class - see ownClassNodeShapes).
+ */
+function propertyPathsByRoleForNodeShapes(
+  nodeShapes: Quad_Subject[],
+  shapesGraph: RdfStore,
+  role: NamedNode,
+): PropertyPath[] {
+  return nodeShapes.flatMap((node) =>
     shapesGraph
       .getQuads(node, sh("property"))
       .filter(
@@ -404,6 +421,47 @@ export function descriptionRolePropertyPaths(
   propertyShape: PropertyUIElement,
 ): PropertyPath[] {
   return propertyPathsByRole(propertyShape, st("DescriptionRole"));
+}
+
+/**
+ * Every node shape in `shapesGraph` that sh:targetClasses one of `term`'s own rdf:type values in
+ * `dataGraph` - what `term` is actually asserted to BE, as opposed to valueNodeShapes' "what a
+ * property declares its values look like" (propertyShape's own sh:node/sh:class). Needed because a
+ * ClassificationRole/CategoryFacet value can land on a resource of a wholly different class than
+ * the enclosing property's own sh:class - e.g. skos:inScheme landing on a skos:ConceptScheme, not
+ * another skos:Concept - so st:ColorRole (below) has to be looked up off the value's own type, not
+ * the property's. No subclass walk (unlike shaclInstancesOfClass's reverse direction): `term` is
+ * matched only against a shape's literal sh:targetClass, not its ancestors.
+ */
+function ownClassNodeShapes(
+  term: Term,
+  dataGraph: RdfStore,
+  shapesGraph: RdfStore,
+): Quad_Subject[] {
+  const classes = dataGraph.getQuads(term as Quad_Subject, rdf("type")).map((quad) => quad.object);
+  return dedupeTerms(
+    classes.flatMap((classIri) => shapesTargetingClass(classIri, shapesGraph)),
+  ) as Quad_Subject[];
+}
+
+/**
+ * The property paths (sh:path) of every property shape on a node shape targeting `term`'s own
+ * rdf:type (see ownClassNodeShapes) that's annotated shui:propertyRole st:ColorRole - i.e. what to
+ * walk from `term` itself (not from some enclosing property's value) to find a swatch color for
+ * it. Not part of the spec; a ShapeThing-original role like st:GeoRole/st:DescriptionRole, but
+ * resolved off the value's own class rather than propertyShape's valueNodeShapes - see
+ * valueNodeColor.
+ */
+export function colorRolePropertyPaths(
+  term: Term,
+  dataGraph: RdfStore,
+  shapesGraph: RdfStore,
+): PropertyPath[] {
+  return propertyPathsByRoleForNodeShapes(
+    ownClassNodeShapes(term, dataGraph, shapesGraph),
+    shapesGraph,
+    st("ColorRole"),
+  );
 }
 
 // 8.2.3 Value Node Labels
@@ -614,4 +672,31 @@ export function valueNodeDescription({
     values.filter((v): v is Literal => v.termType === "Literal"),
     effLanguages,
   )?.value;
+}
+
+type ValueNodeColorOptions = {
+  term: Term;
+  propertyShape: PropertyUIElement;
+};
+
+/**
+ * A swatch color for V (e.g. to color a ClassificationRole chip, or a CategoryFacet option): the
+ * first literal value of a st:ColorRole-annotated path declared on a node shape targeting one of
+ * V's own rdf:type values (see ownClassNodeShapes/colorRolePropertyPaths) - unlike
+ * valueNodeDepiction/valueNodeDescription (resolved via propertyShape's own valueNodeShapes), this
+ * is resolved off what V is actually asserted to BE, not what the enclosing property declares its
+ * values look like. Returned as-is (a plain CSS color string, e.g. "#ff0000" or "red" - unrelated
+ * to st:ColorEditor/st:ColorViewer's own HSL-blank-node convention, which is a different, richer
+ * value shape for editable colors, not a simple swatch-only string) - no language selection, since
+ * color isn't language-dependent. Undefined when V is a literal (no rdf:type of its own) or no
+ * such value exists.
+ */
+export function valueNodeColor({ term, propertyShape }: ValueNodeColorOptions): string | undefined {
+  if (term.termType === "Literal") return undefined;
+
+  const { dataGraph, shapesGraph } = propertyShape;
+
+  return colorRolePropertyPaths(term, dataGraph, shapesGraph)
+    .flatMap((path) => walkPropertyPath(path, term, dataGraph))
+    .find((value): value is Literal => value.termType === "Literal")?.value;
 }

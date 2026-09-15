@@ -19,6 +19,7 @@ import {
   instancesMatchingOtherConstraints,
   pathSparqlFor,
   setFilterConstraintForProperty,
+  setFilterConstraintsForProperty,
   type FilterShape,
 } from "@/structure/filterShape.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -101,19 +102,40 @@ export default function FacetPropertyComponent({ property, filterShape, instance
       .filter((quad) => quad.predicate.equals(predicate))
       .flatMap((quad) => expandListOrTerm(quad.object, filterShape.store));
 
-  // A range widget writes sh:minInclusive/sh:maxInclusive through the very same setConstraint
-  // this component hands it, so getConstraint already reflects whatever the user just typed -
-  // no separate callback needed for a range widget to report its own bounds back up. Only
-  // computed once at least one bound is actually set (an untouched range facet has neither), and
-  // gated the same way valueCounts is.
-  const minBound = getConstraint(sh("minInclusive"))[0];
-  const maxBound = getConstraint(sh("maxInclusive"))[0];
+  // A range widget writes sh:minInclusive/sh:maxInclusive/sh:minExclusive/sh:maxExclusive through
+  // the very same setConstraint this component hands it, so getConstraint already reflects
+  // whatever the user just typed/clicked - no separate callback needed for a range widget to
+  // report its own bounds back up. Only computed once at least one bound is actually set (an
+  // untouched range facet has none), and gated the same way valueCounts is.
+  const minInclusiveBound = getConstraint(sh("minInclusive"))[0];
+  const maxInclusiveBound = getConstraint(sh("maxInclusive"))[0];
+  const minExclusiveBound = getConstraint(sh("minExclusive"))[0];
+  const maxExclusiveBound = getConstraint(sh("maxExclusive"))[0];
+  const hasRangeBound =
+    minInclusiveBound !== undefined ||
+    maxInclusiveBound !== undefined ||
+    minExclusiveBound !== undefined ||
+    maxExclusiveBound !== undefined;
   const rangeMatchCount = useMemo(
     () =>
-      enableFacetOptionCounts && (minBound !== undefined || maxBound !== undefined)
-        ? countFacetInstancesInRange(property, narrowedInstances, minBound, maxBound)
+      enableFacetOptionCounts && hasRangeBound
+        ? countFacetInstancesInRange(property, narrowedInstances, {
+            minInclusive: minInclusiveBound,
+            maxInclusive: maxInclusiveBound,
+            minExclusive: minExclusiveBound,
+            maxExclusive: maxExclusiveBound,
+          })
         : undefined,
-    [enableFacetOptionCounts, property, narrowedInstances, minBound, maxBound],
+    [
+      enableFacetOptionCounts,
+      hasRangeBound,
+      property,
+      narrowedInstances,
+      minInclusiveBound,
+      maxInclusiveBound,
+      minExclusiveBound,
+      maxExclusiveBound,
+    ],
   );
 
   // Same idea as rangeMatchCount, for TextSearchFacet's own sh:pattern instead of a numeric/date
@@ -146,9 +168,10 @@ export default function FacetPropertyComponent({ property, filterShape, instance
     [enableFacetOptionCounts, property, narrowedInstances, areaBound],
   );
 
-  // A range facet only ever sets sh:minInclusive/sh:maxInclusive, a search facet only ever sets
-  // sh:pattern, and a map facet only ever sets st:withinArea - never more than one of these on the
-  // same property - so at most one of these is ever defined; whichever it is becomes this
+  // A range facet only ever sets some combination of sh:minInclusive/sh:maxInclusive/
+  // sh:minExclusive/sh:maxExclusive, a search facet only ever sets sh:pattern, and a map facet
+  // only ever sets st:withinArea - never more than one of these facet *kinds* on the same
+  // property - so at most one of these is ever defined; whichever it is becomes this
   // property's one overall match count, shown on the FormElement label rather than inline in the
   // widget itself (valueCounts has no single-value equivalent, so CategoryFacet/SubClassFacet's
   // per-option counts stay put next to each option).
@@ -165,6 +188,13 @@ export default function FacetPropertyComponent({ property, filterShape, instance
   // written - see that function's own doc comment.
   const setConstraint = (predicate: NamedNode, value: Term | Term[] | undefined) =>
     setFilterConstraintForProperty(filterShape, property, predicate, value);
+
+  // For a widget that needs to write more than one predicate as a single user gesture (e.g.
+  // ColorFacet's own sh:minInclusive+sh:maxExclusive pair per bucket click) - see
+  // setFilterConstraintsForProperty's own doc comment for why two separate setConstraint calls
+  // can't safely stand in for this on a property no facet has touched yet.
+  const setConstraints = (entries: ReadonlyArray<readonly [NamedNode, Term | Term[] | undefined]>) =>
+    setFilterConstraintsForProperty(filterShape, property, entries);
 
   return (
     <FormElement
@@ -183,6 +213,7 @@ export default function FacetPropertyComponent({ property, filterShape, instance
         values={values}
         getConstraint={getConstraint}
         setConstraint={setConstraint}
+        setConstraints={setConstraints}
         valueCounts={valueCounts}
         labelledBy={labelId}
       />

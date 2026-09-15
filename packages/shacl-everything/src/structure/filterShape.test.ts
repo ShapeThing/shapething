@@ -14,6 +14,7 @@ import {
   removeFilterConstraintsForPaths,
   setFilterConstraint,
   setFilterConstraintForProperty,
+  setFilterConstraintsForProperty,
 } from "@/structure/filterShape.ts";
 
 async function propertyFor(pathTurtle: string) {
@@ -415,6 +416,265 @@ test("instancesMatchingOtherConstraints: st:withinArea matches any instance valu
   expect(matching.map((instance) => instance.value).sort()).toEqual(
     [ex("paris").value, ex("tokyo").value].sort(),
   );
+});
+
+test("setFilterConstraintForProperty: st:withinArea also writes a sibling sh:sparql SPARQLConstraint built on geof:sfWithin", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:location .`);
+  const filterShape = createFilterShape();
+
+  setFilterConstraintForProperty(
+    filterShape,
+    property,
+    st("withinArea"),
+    factory.literal("POLYGON ((-10 35, 20 35, 20 60, -10 60, -10 35))", geosparql("wktLiteral")),
+  );
+
+  const constraintNode = findFilterConstraintNode(filterShape, property)!;
+  const sparqlNode = filterShape.store.getQuads(constraintNode, sh("sparql"))[0]?.object;
+  expect(sparqlNode).toBeDefined();
+  expect(filterShape.store.getQuads(sparqlNode, rdf("type"), sh("SPARQLConstraint")).length).toBe(1);
+
+  const selectQuery = filterShape.store.getQuads(sparqlNode, sh("select"))[0]?.object.value;
+  expect(selectQuery).toContain("geof:sfWithin");
+  expect(selectQuery).toContain("POLYGON ((-10 35, 20 35, 20 60, -10 60, -10 35))");
+  expect(selectQuery).toContain("<http://example.org/location>");
+});
+
+test("setFilterConstraintForProperty: clearing st:withinArea removes the sh:sparql entry too (and prunes the whole constraint node)", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:location .`);
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(
+    filterShape,
+    property,
+    st("withinArea"),
+    factory.literal("POLYGON ((-10 35, 20 35, 20 60, -10 60, -10 35))", geosparql("wktLiteral")),
+  );
+
+  setFilterConstraintForProperty(filterShape, property, st("withinArea"), undefined);
+
+  expect(findFilterConstraintNode(filterShape, property)).toBeUndefined();
+  // Just the root's own rdf:type sh:NodeShape triple from createFilterShape - nothing of the
+  // constraint node (sh:path, sh:sparql and its own blank-node closure) survives.
+  expect(filterShape.store.getQuads().length).toBe(1);
+});
+
+test("setFilterConstraintForProperty: the generated sh:select uses a for-all shape (FILTER NOT EXISTS a satisfying value) matching instanceSatisfiesConstraintNode's own 'any value inside, or it's a violation' semantics", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:location .`);
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(
+    filterShape,
+    property,
+    st("withinArea"),
+    factory.literal("POLYGON ((-10 35, 20 35, 20 60, -10 60, -10 35))", geosparql("wktLiteral")),
+  );
+
+  const constraintNode = findFilterConstraintNode(filterShape, property)!;
+  const sparqlNode = filterShape.store.getQuads(constraintNode, sh("sparql"))[0].object;
+  const selectQuery = filterShape.store.getQuads(sparqlNode, sh("select"))[0].object.value;
+
+  // Not run end-to-end through this app's own Comunica engine: FILTER NOT EXISTS with a custom
+  // extension function nested inside it doesn't correlate $this correctly in Comunica 4.5 (verified
+  // separately against a minimal repro - MINUS-shaped negation correlates fine, FILTER NOT EXISTS
+  // doesn't). That's a real limitation of this app's own bundled engine, not of the generated query
+  // text - this constraint is meant for an external SHACL-SPARQL-conformant consumer, which
+  // FILTER NOT EXISTS is the spec-correct, portable shape for (and matches this renderer's own
+  // "zero values for the path is also a violation" edge case - a MINUS-based rewrite, which requires
+  // $this to already have at least one matching value to appear as a row at all, would silently drop
+  // that case).
+  expect(selectQuery).toMatch(/select \$this where/);
+  expect(selectQuery).toMatch(/filter not exists \{/);
+  expect(selectQuery).toContain("$this <http://example.org/location> ?withinAreaValue");
+  expect(selectQuery).toContain(
+    'geof:sfWithin(?withinAreaValue, "POLYGON ((-10 35, 20 35, 20 60, -10 60, -10 35))"^^<http://www.opengis.net/ont/geosparql#wktLiteral>)',
+  );
+});
+
+test("instancesMatchingOtherConstraints: st:colorBucket (ColorFacet) matches an instance whose color value classifies into the chosen bucket", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:property1 sh:path ex:color .`,
+    "text/turtle",
+  );
+  const redColor = factory.blankNode();
+  const blueColor = factory.blankNode();
+  const dataGraph = await parseRdf("", "text/turtle");
+  dataGraph.addQuad(factory.quad(ex("fireTruck"), ex("color"), redColor));
+  dataGraph.addQuad(factory.quad(redColor, st("hue"), factory.literal("0", xsd("decimal"))));
+  dataGraph.addQuad(factory.quad(redColor, st("saturation"), factory.literal("100", xsd("decimal"))));
+  dataGraph.addQuad(factory.quad(redColor, st("lightness"), factory.literal("50", xsd("decimal"))));
+  dataGraph.addQuad(factory.quad(ex("sky"), ex("color"), blueColor));
+  dataGraph.addQuad(factory.quad(blueColor, st("hue"), factory.literal("240", xsd("decimal"))));
+  dataGraph.addQuad(
+    factory.quad(blueColor, st("saturation"), factory.literal("100", xsd("decimal"))),
+  );
+  dataGraph.addQuad(factory.quad(blueColor, st("lightness"), factory.literal("50", xsd("decimal"))));
+
+  const property = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("unused"),
+    propertyShapes: [ex("property1")],
+  });
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(filterShape, property, st("colorBucket"), factory.literal("red"));
+
+  const matching = instancesMatchingOtherConstraints(
+    filterShape,
+    dataGraph,
+    shapesGraph,
+    [ex("fireTruck"), ex("sky")],
+    undefined,
+  );
+
+  expect(matching.map((instance) => instance.value)).toEqual([ex("fireTruck").value]);
+});
+
+test("setFilterConstraintForProperty: st:colorBucket also writes a sibling sh:sparql SPARQLConstraint built on sparqlFilterForBucket", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:color .`);
+  const filterShape = createFilterShape();
+
+  setFilterConstraintForProperty(filterShape, property, st("colorBucket"), factory.literal("blue"));
+
+  const constraintNode = findFilterConstraintNode(filterShape, property)!;
+  const sparqlNode = filterShape.store.getQuads(constraintNode, sh("sparql"))[0]?.object;
+  expect(sparqlNode).toBeDefined();
+  expect(filterShape.store.getQuads(sparqlNode, rdf("type"), sh("SPARQLConstraint")).length).toBe(1);
+
+  const selectQuery = filterShape.store.getQuads(sparqlNode, sh("select"))[0]?.object.value;
+  expect(selectQuery).toContain("st:hue");
+  expect(selectQuery).toContain("?hue >= 200 && ?hue < 260");
+  expect(selectQuery).toContain("<http://example.org/color>");
+});
+
+test("setFilterConstraintForProperty: clearing st:colorBucket removes the sh:sparql entry too (and prunes the whole constraint node)", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:color .`);
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(filterShape, property, st("colorBucket"), factory.literal("blue"));
+
+  setFilterConstraintForProperty(filterShape, property, st("colorBucket"), undefined);
+
+  expect(findFilterConstraintNode(filterShape, property)).toBeUndefined();
+  // Just the root's own rdf:type sh:NodeShape triple from createFilterShape - nothing of the
+  // constraint node (sh:path, sh:sparql and its own blank-node closure) survives.
+  expect(filterShape.store.getQuads().length).toBe(1);
+});
+
+test("setFilterConstraintForProperty: the generated sh:select for st:colorBucket uses a for-all shape (FILTER NOT EXISTS a satisfying value)", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:color .`);
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(filterShape, property, st("colorBucket"), factory.literal("red"));
+
+  const constraintNode = findFilterConstraintNode(filterShape, property)!;
+  const sparqlNode = filterShape.store.getQuads(constraintNode, sh("sparql"))[0].object;
+  const selectQuery = filterShape.store.getQuads(sparqlNode, sh("select"))[0].object.value;
+
+  expect(selectQuery).toMatch(/select \$this where/);
+  expect(selectQuery).toMatch(/filter not exists \{/);
+  expect(selectQuery).toContain("$this <http://example.org/color> ?colorValue");
+  expect(selectQuery).toContain("?colorValue st:hue ?hue ; st:saturation ?sat ; st:lightness ?light");
+  expect(selectQuery).toContain("(?hue < 15 || ?hue >= 345)");
+});
+
+test("instancesMatchingOtherConstraints: sh:minInclusive/sh:maxInclusive keep only instances whose value falls in range", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:price .`);
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:widget ex:price 15 . ex:gadget ex:price 25 . ex:novel ex:price 5 .`,
+    "text/turtle",
+  );
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(
+    filterShape,
+    property,
+    sh("minInclusive"),
+    factory.literal("10", xsd("integer")),
+  );
+  setFilterConstraintForProperty(
+    filterShape,
+    property,
+    sh("maxInclusive"),
+    factory.literal("20", xsd("integer")),
+  );
+
+  const matching = instancesMatchingOtherConstraints(
+    filterShape,
+    dataGraph,
+    property.shapesGraph,
+    [ex("widget"), ex("gadget"), ex("novel")],
+    undefined,
+  );
+
+  expect(matching.map((instance) => instance.value)).toEqual([ex("widget").value]);
+});
+
+test("instancesMatchingOtherConstraints: sh:minExclusive/sh:maxExclusive exclude their own boundary value", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:price .`);
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:widget ex:price 10 . ex:gadget ex:price 15 . ex:novel ex:price 20 .`,
+    "text/turtle",
+  );
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(
+    filterShape,
+    property,
+    sh("minExclusive"),
+    factory.literal("10", xsd("integer")),
+  );
+  setFilterConstraintForProperty(
+    filterShape,
+    property,
+    sh("maxExclusive"),
+    factory.literal("20", xsd("integer")),
+  );
+
+  const matching = instancesMatchingOtherConstraints(
+    filterShape,
+    dataGraph,
+    property.shapesGraph,
+    [ex("widget"), ex("gadget"), ex("novel")],
+    undefined,
+  );
+
+  // widget (10) and novel (20) sit exactly on the exclusive boundaries, so only gadget (15) matches.
+  expect(matching.map((instance) => instance.value)).toEqual([ex("gadget").value]);
+});
+
+test("setFilterConstraintsForProperty: writing two predicates as one call on a brand-new node is visible to a reactive subscriber in a single notification, not split across two", async () => {
+  // Reproduces ColorFacet's own bucket-click handler: two predicates written for one user gesture,
+  // on a property no facet has touched yet. This must go through setFilterConstraintsForProperty
+  // (one call, both entries) rather than two separate setFilterConstraintForProperty calls: a
+  // sibling's reactive read (useReactiveRead, simulated here via reactivity.track/subscribe the
+  // same way it's actually used) re-tracks its own read pattern against the node itself the first
+  // time it's notified - so a *second*, separate call writing to that same brand-new node moments
+  // later would write correctly into the store but never re-notify a subscriber that's still
+  // watching the (now-stale) pattern it tracked before the node existed. Writing both predicates in
+  // one call avoids ever exposing that intermediate half-written state to begin with.
+  const property = await propertyFor(`ex:property1 sh:path ex:color .`);
+  const filterShape = createFilterShape();
+  const reactivity = getReactivity(filterShape.store)!;
+
+  const track = () => {
+    const node = findFilterConstraintNode(filterShape, property);
+    return node
+      ? {
+          minInclusive: filterShape.store.getQuads(node, sh("minInclusive"))[0]?.object.value,
+          maxExclusive: filterShape.store.getQuads(node, sh("maxExclusive"))[0]?.object.value,
+        }
+      : undefined;
+  };
+
+  let lastSeen: ReturnType<typeof track> | undefined;
+  const { patterns } = reactivity.track(() => {
+    lastSeen = track();
+  });
+  reactivity.subscribe(patterns, () => {
+    lastSeen = track();
+  });
+
+  setFilterConstraintsForProperty(filterShape, property, [
+    [sh("minInclusive"), factory.literal("-15", xsd("decimal"))],
+    [sh("maxExclusive"), factory.literal("15", xsd("decimal"))],
+  ]);
+
+  expect(lastSeen).toEqual({ minInclusive: "-15", maxExclusive: "15" });
 });
 
 test("removeFilterConstraintsForPaths: an empty path set is a no-op", async () => {

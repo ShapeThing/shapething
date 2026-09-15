@@ -85,6 +85,30 @@ export const stCategoryFacet: Story = {
   },
 };
 
+// st:ColorRole (see resolution/label.ts's valueNodeColor): each option shows a swatch when a
+// shape targeting *its own* rdf:type declares one - independently of this property's own sh:class.
+export const stCategoryFacetColorRole: Story = {
+  name: "Options show a swatch when st:ColorRole is resolved off their own class",
+  args: argsByTestFile("st-category-facet-color-role.ttl", import.meta.url),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const electronics = await canvas.findByLabelText("Electronics");
+    const electronicsSwatch = electronics
+      .closest("label")
+      ?.querySelector<HTMLElement>(".st-category-facet__swatch");
+    if (!electronicsSwatch) throw new Error("Could not find Electronics' own swatch");
+    expect(getComputedStyle(electronicsSwatch).backgroundColor).toBe("rgb(59, 130, 246)");
+
+    const books = await canvas.findByLabelText("Books");
+    const booksSwatch = books
+      .closest("label")
+      ?.querySelector<HTMLElement>(".st-category-facet__swatch");
+    if (!booksSwatch) throw new Error("Could not find Books' own swatch");
+    expect(getComputedStyle(booksSwatch).backgroundColor).toBe("rgb(245, 158, 11)");
+  },
+};
+
 export const stCategoryFacetFederated: Story = {
   name: "sh:in [ sh:select ] - options and labels come from a federated query",
   args: {

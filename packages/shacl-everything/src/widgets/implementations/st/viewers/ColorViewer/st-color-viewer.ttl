@@ -12,7 +12,7 @@
     sh:property [
         sh:name "Favorite color"@en, "Lievelingskleur"@nl ;
         sh:path ex:favoriteColor ;
-        shui:editor st:ColorEditor ;
+        shui:viewer st:ColorViewer ;
     ] ;
     .
 

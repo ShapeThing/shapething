@@ -54,15 +54,6 @@ export const iconifyDatatype: NamedNode = factory.namedNode(
   "https://iconify.design",
 );
 
-/** ShapeThing convention: sh:datatype/a literal's datatype marking its lexical value as a
- * 6-digit hex CSS color (e.g. "#3b82f6") - not a registered/dereferenceable datatype IRI, just a
- * sentinel st:ColorEditor keys off of (see its score.ttl), same idiom as iconifyDatatype above.
- * Points at the CSS Color spec that actually defines this hex-color syntax, rather than an
- * st:-namespaced IRI, since the convention itself isn't ShapeThing-original. */
-export const colorDatatype: NamedNode = factory.namedNode(
-  "https://www.w3.org/TR/css-color-4/",
-);
-
 /** DASH namespace */
 export const dash: NamespaceBuilder<string> = namespace(
   "http://datashapes.org/dash#",
@@ -183,6 +174,13 @@ export const geosparql: NamespaceBuilder<string> = namespace(
   { factory },
 );
 
+/** GeoSPARQL functions namespace (`geof:`) - the extension-function IRIs (e.g. geof:sfIntersects),
+ * distinct from `geosparql` above (the ontology/datatype namespace, e.g. geosparql:wktLiteral). */
+export const geof: NamespaceBuilder<string> = namespace(
+  "http://www.opengis.net/def/function/geosparql/",
+  { factory },
+);
+
 /** ActivityStreams namespace */
 export const as: NamespaceBuilder<string> = namespace(
   "https://www.w3.org/ns/activitystreams#",
@@ -248,6 +246,7 @@ export const prefixes: Record<string, string> = Object.fromEntries(
     time,
     geo,
     geosparql,
+    geof,
     as,
     vs,
     dbo,
