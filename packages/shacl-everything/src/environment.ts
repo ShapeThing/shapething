@@ -88,6 +88,15 @@ export type Environment = {
   enableWidgetSwitching?: boolean;
   // When a property has sh:or/sh:xone branches, allow switching between them. If false, the first matching branch will be used and no switching will be possible.
   enableLogicalBranchSwitching?: boolean;
+  // When a property's sh:path is a top-level sh:alternativePath whose every branch is a plain
+  // predicate (e.g. `sh:alternativePath (dc:title rdfs:label)`), allow switching which branch
+  // predicate an existing value is stored under (see PropertyUIElement.setAlternativePathBranch). A
+  // "complex" alternative (any branch that's itself a sequence/inverse/nested alternative) has no
+  // single, unambiguous place to move a value to or from and is unaffected by this flag - it always
+  // stays read-only for writes, the same as before this flag existed. If false, the first branch
+  // already holding a value (or the first declared branch, if none do) is used for every write and
+  // no switching is possible.
+  enableAlternativePathSwitching?: boolean;
   // When true, ContentLanguageSwitcher (languageMode "switcher") and each value's own
   // ValueLanguageSelect (languageMode "individual") offer an option to create a brand new BCP47
   // language at runtime, in addition to the ones supplied via `languages`/found in the graphs/
@@ -252,6 +261,7 @@ export const defaultEnvironment: Environment = {
   viewModeLabelLayout: "block",
   enableWidgetSwitching: true,
   enableLogicalBranchSwitching: true,
+  enableAlternativePathSwitching: true,
   enableContentLanguageCreation: true,
   enableShPathInLabelTitle: true,
   enableFullLanguageRemoval: true,
@@ -289,6 +299,7 @@ export const minimalEnvironment: Omit<
   viewModeLabelLayout: "block",
   enableWidgetSwitching: false,
   enableLogicalBranchSwitching: false,
+  enableAlternativePathSwitching: false,
   enableContentLanguageCreation: false,
   enableShPathInLabelTitle: false,
   enableFullLanguageRemoval: false,
@@ -333,6 +344,7 @@ export const testingEnvironment: Omit<
   viewModeLabelLayout: "block",
   enableWidgetSwitching: true,
   enableLogicalBranchSwitching: true,
+  enableAlternativePathSwitching: true,
   enableContentLanguageCreation: true,
   enableShPathInLabelTitle: true,
   enableFullLanguageRemoval: true,

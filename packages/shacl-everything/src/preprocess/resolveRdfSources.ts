@@ -2,7 +2,7 @@ import "@/polyfills/ensureProcess.ts";
 import "@/polyfills/ensureBuffer.ts";
 import type { Quad, Quad_Subject, Stream } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
-import { rdfParser } from "rdf-parse";
+import { rdfParser, type ParseOptions } from "rdf-parse";
 import stringToStream from "string-to-stream";
 import type { Environment, RawEnvironment } from "@/environment.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
@@ -32,19 +32,30 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 // with a short backoff before being treated as a real, permanent failure.
 const RETRY_DELAYS_MS = [100, 300, 800, 1500];
 
-const fetchText = async (url: URL, corsProxyUrl: string | undefined): Promise<string> => {
-  for (let attempt = 0; ; attempt++) {
+type FetchedText = { text: string; contentType: string | undefined };
+
+const toFetchedText = async (response: Response): Promise<FetchedText> => ({
+  text: await response.text(),
+  contentType: response.headers.get("content-type") ?? undefined,
+});
+
+const fetchText = async (
+  url: URL,
+  corsProxyUrl: string | undefined,
+): Promise<FetchedText> => {
+  for (let attempt = 0;; attempt++) {
     const response = await fetch(url).catch((error: Error) => error);
-    if (response instanceof Response && response.ok) return response.text();
+    if (response instanceof Response && response.ok) return toFetchedText(response);
 
     if (attempt >= RETRY_DELAYS_MS.length) {
       // Direct retries are exhausted - fall back to the configured CORS proxy once, rather than
       // failing outright, before giving up and reporting the original direct-fetch failure.
       if (corsProxyUrl) {
-        const proxied = await fetch(withCorsProxy(url.href, corsProxyUrl)).catch(
-          (error: Error) => error,
-        );
-        if (proxied instanceof Response && proxied.ok) return proxied.text();
+        const proxied = await fetch(withCorsProxy(url.href, corsProxyUrl))
+          .catch(
+            (error: Error) => error,
+          );
+        if (proxied instanceof Response && proxied.ok) return toFetchedText(proxied);
       }
 
       if (response instanceof Response) {
@@ -66,7 +77,7 @@ const fetchText = async (url: URL, corsProxyUrl: string | undefined): Promise<st
 // changed) and mutation isolation between the returned stores is preserved - only the network
 // round trip and parse are shared, each caller still gets its own RdfStore instance built from a
 // fresh copy of the parsed quads.
-const dereferenceUrl = async (
+export const dereferenceUrl = async (
   url: URL,
   quadCache: Map<string, Promise<Quad[]>>,
   corsProxyUrl: string | undefined,
@@ -76,12 +87,19 @@ const dereferenceUrl = async (
   let quadsPromise = quadCache.get(hashlessUrl.href);
   if (!quadsPromise) {
     quadsPromise = (async () => {
-      const text = await fetchText(hashlessUrl, corsProxyUrl);
+      const { text, contentType } = await fetchText(hashlessUrl, corsProxyUrl);
+      // Content-negotiated ontology namespace IRIs (skos:, dct:, foaf:, ...) have no file
+      // extension for rdf-parse to detect a format from, so the server's own declared
+      // Content-Type is used instead in that case - the corsProxy explicitly requests one via an
+      // RDF-shaped Accept header. A URL with a real extension (.ttl, .jsonld, ...) keeps using
+      // that, since it's a more reliable signal than whatever a plain static file server happens
+      // to default its Content-Type header to.
+      const parseOptions: ParseOptions =
+        rdfParser.getContentTypeFromExtension(hashlessUrl.href) || !contentType
+          ? { path: hashlessUrl.href, baseIRI: url.href }
+          : { contentType: contentType.split(";")[0].trim(), baseIRI: url.href };
       const store = await storeFromStream(
-        rdfParser.parse(stringToStream(text), {
-          path: hashlessUrl.href,
-          baseIRI: url.href,
-        }),
+        rdfParser.parse(stringToStream(text), parseOptions),
       );
       return store.getQuads();
     })();
@@ -92,7 +110,9 @@ const dereferenceUrl = async (
 };
 
 const parseRdfText = (text: string): Promise<RdfStore> =>
-  storeFromStream(rdfParser.parse(stringToStream(text), { contentType: "text/turtle" }));
+  storeFromStream(
+    rdfParser.parse(stringToStream(text), { contentType: "text/turtle" }),
+  );
 
 // owl:imports is resolved transitively: importing graph B into A can itself declare further
 // imports, so the store is rescanned after every merge until a pass turns up nothing new.
@@ -110,7 +130,10 @@ const resolveOwlImports = async (
 ): Promise<void> => {
   const importUrls = new Set<string>();
   for (const quad of store.getQuads(null, owl("imports"), null, null)) {
-    if (quad.object.termType === "NamedNode" && !visitedImports.has(quad.object.value)) {
+    if (
+      quad.object.termType === "NamedNode" &&
+      !visitedImports.has(quad.object.value)
+    ) {
       importUrls.add(quad.object.value);
     }
   }
@@ -206,14 +229,16 @@ const isQuad = (value: unknown): value is Quad =>
 const isRdfSourceList = (source: RdfSource): source is readonly RdfSource[] =>
   Array.isArray(source) && source.length > 0 && !isQuad(source[0]);
 
-const resolveRdfSource = async (
+export const resolveRdfSource = async (
   source: RdfSource,
   quadCache: Map<string, Promise<Quad[]>>,
   corsProxyUrl: string | undefined,
 ): Promise<RdfStore> => {
   if (isRdfSourceList(source)) {
     const stores = await Promise.all(
-      source.map((nestedSource) => resolveRdfSource(nestedSource, quadCache, corsProxyUrl)),
+      source.map((nestedSource) =>
+        resolveRdfSource(nestedSource, quadCache, corsProxyUrl)
+      ),
     );
     const merged = RdfStore.createDefault();
     for (const store of stores) {
@@ -222,37 +247,39 @@ const resolveRdfSource = async (
     return merged;
   }
 
-  const store =
-    source instanceof RdfStore
-      ? source
-      : source instanceof URL
-        ? await dereferenceUrl(source, quadCache, corsProxyUrl)
-        : Array.isArray(source)
-          ? storeFromQuads(source)
-          : typeof source === "string"
-            ? await parseRdfText(source)
-            : storeFromQuads(source);
+  const store = source instanceof RdfStore
+    ? source
+    : source instanceof URL
+    ? await dereferenceUrl(source, quadCache, corsProxyUrl)
+    : Array.isArray(source)
+    ? storeFromQuads(source)
+    : typeof source === "string"
+    ? await parseRdfText(source)
+    : storeFromQuads(source);
 
   await resolveOwlImports(store, quadCache, new Set<string>(), corsProxyUrl);
   return store;
 };
 
-export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environment> => {
+export const resolveRdfSources = async (
+  raw: RawEnvironment,
+): Promise<Environment> => {
   const quadCache = new Map<string, Promise<Quad[]>>();
   const { corsProxyUrl } = raw;
-  const [resolvedShapesGraph, dataGraph, scoresGraph, readOnlyGraph] = await Promise.all([
-    resolveRdfSource(raw.shapesGraph, quadCache, corsProxyUrl),
-    resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl),
-    resolveRdfSource(raw.scoresGraph, quadCache, corsProxyUrl),
-    raw.readOnlyGraph !== undefined
-      ? resolveRdfSource(raw.readOnlyGraph, quadCache, corsProxyUrl)
-      : undefined,
-  ]);
+  const [resolvedShapesGraph, dataGraph, scoresGraph, readOnlyGraph] =
+    await Promise.all([
+      resolveRdfSource(raw.shapesGraph, quadCache, corsProxyUrl),
+      resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl),
+      resolveRdfSource(raw.scoresGraph, quadCache, corsProxyUrl),
+      raw.readOnlyGraph !== undefined
+        ? resolveRdfSource(raw.readOnlyGraph, quadCache, corsProxyUrl)
+        : undefined,
+    ]);
 
-  const shapesGraph =
-    resolvedShapesGraph.size === 0
-      ? ((await dereferenceShapeTargets(dataGraph, quadCache, corsProxyUrl)) ?? resolvedShapesGraph)
-      : resolvedShapesGraph;
+  const shapesGraph = resolvedShapesGraph.size === 0
+    ? ((await dereferenceShapeTargets(dataGraph, quadCache, corsProxyUrl)) ??
+      resolvedShapesGraph)
+    : resolvedShapesGraph;
 
   let nodeShapes: Quad_Subject[] = [];
   if (!raw.nodeShapes?.length) {

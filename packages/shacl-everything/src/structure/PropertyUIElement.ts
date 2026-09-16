@@ -13,6 +13,11 @@ import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import { insertPropertyPath } from "@/structure/paths/insertPropertyPath.ts";
 import { replacePropertyPath } from "@/structure/paths/replacePropertyPath.ts";
 import { removePropertyPath } from "@/structure/paths/removePropertyPath.ts";
+import {
+  branchHoldingValue,
+  defaultWriteBranch,
+  switchableAlternativeBranches,
+} from "@/structure/paths/alternativePathBranches.ts";
 import { transact } from "@/helpers/reactiveRdfStore.ts";
 import { score, select, type WidgetScoreResult } from "@/scoring/score.ts";
 import { createDefaultTerm } from "@/widgets/defaultTerm.ts";
@@ -156,7 +161,13 @@ export class PropertyUIElement {
     if (!path) return;
     transact(
       this.dataGraph,
-      () => insertPropertyPath(path, this.focusNode, this.dataGraph, value),
+      () =>
+        insertPropertyPath(
+          resolveAlternativeWritePath(this, path),
+          this.focusNode,
+          this.dataGraph,
+          value,
+        ),
     );
   }
 
@@ -173,10 +184,15 @@ export class PropertyUIElement {
         .some((term) => term.equals(oldValue));
 
       if (!existing) {
-        insertPropertyPath(path, this.focusNode, this.dataGraph, newValue);
+        insertPropertyPath(
+          resolveAlternativeWritePath(this, path),
+          this.focusNode,
+          this.dataGraph,
+          newValue,
+        );
       } else {
         replacePropertyPath(
-          path,
+          resolveAlternativeWritePath(this, path, oldValue),
           this.focusNode,
           this.dataGraph,
           oldValue,
@@ -196,8 +212,84 @@ export class PropertyUIElement {
     if (!path) return;
     transact(
       this.dataGraph,
-      () => removePropertyPath(path, this.focusNode, this.dataGraph, value),
+      () =>
+        removePropertyPath(
+          resolveAlternativeWritePath(this, path, value),
+          this.focusNode,
+          this.dataGraph,
+          value,
+        ),
     );
+  }
+
+  /**
+   * The branch predicates of this element's own path, when it's a top-level sh:alternativePath
+   * every one of whose branches is a plain predicate (e.g. `sh:alternativePath (dc:title
+   * rdfs:label)`) - see structure/paths/alternativePathBranches.ts's switchableAlternativeBranches.
+   * `undefined` both when this isn't an alternative path at all and when it's a "complex" one (a
+   * branch that's itself a sequence/inverse/nested alternative) - the UI layer's
+   * AlternativePathSwitcher uses this to decide whether there's anything to switch between.
+   */
+  alternativePathBranches(): NamedNode[] | undefined {
+    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    return path ? switchableAlternativeBranches(path) : undefined;
+  }
+
+  /**
+   * Which of alternativePathBranches() currently holds `value` on this.focusNode - undefined both
+   * when this element's path isn't a switchable alternative, and when `value` isn't currently
+   * reachable through any branch (e.g. a not-yet-committed placeholder value). Purely derived from
+   * dataGraph on every call, no separate "which branch was picked" state to keep in sync.
+   */
+  activeAlternativePathBranch(value: Term): NamedNode | undefined {
+    const branches = this.alternativePathBranches();
+    if (!branches) return undefined;
+    return branchHoldingValue(branches, this.focusNode, this.dataGraph, value);
+  }
+
+  /**
+   * Which branch a brand new value for this property would currently be written to - see
+   * structure/paths/alternativePathBranches.ts's defaultWriteBranch. Used by
+   * AlternativePathSwitcher to show a sensible pre-selection before anything has been pinned or
+   * written yet.
+   */
+  defaultAlternativePathBranch(): NamedNode | undefined {
+    const branches = this.alternativePathBranches();
+    if (!branches) return undefined;
+    return defaultWriteBranch(branches, this.focusNode, this.dataGraph);
+  }
+
+  /**
+   * Moves `value` from whichever branch currently holds it to `branch` - the "move" counterpart to
+   * replaceObject()'s "coerce" (see widgets/defaultTerm.ts's coerceTermToBranch, used for sh:or/
+   * sh:xone instead): the term itself is untouched, only which predicate asserts it changes, so this
+   * removes the exact (focusNode, currentBranch, value) triple and adds (focusNode, branch, value)
+   * rather than reusing replacePropertyPath's same-predicate swap. No-ops when this element's path
+   * isn't a switchable alternative, when `value` isn't currently reachable through any branch
+   * (nothing to move), or when it's already under `branch`. Both writes are grouped into a single
+   * transact() so Ctrl+Z undoes the whole move as one step.
+   */
+  setAlternativePathBranch(value: Term, branch: NamedNode): void {
+    const branches = this.alternativePathBranches();
+    if (!branches) return;
+
+    const currentBranch = branchHoldingValue(branches, this.focusNode, this.dataGraph, value);
+    if (!currentBranch || currentBranch.equals(branch)) return;
+
+    transact(this.dataGraph, () => {
+      removePropertyPath(
+        { type: "predicate", predicate: currentBranch },
+        this.focusNode,
+        this.dataGraph,
+        value,
+      );
+      insertPropertyPath(
+        { type: "predicate", predicate: branch },
+        this.focusNode,
+        this.dataGraph,
+        value,
+      );
+    });
   }
 
   /**
@@ -352,6 +444,29 @@ export class PropertyUIElement {
     if (!widget || widget.termType !== "NamedNode") return undefined;
     return createDefaultTerm(widget, this, { contentLanguage });
   }
+}
+
+// The concrete predicate path to actually write through for a given (possibly-alternative) path -
+// see structure/paths/alternativePathBranches.ts. Resolves to `path` unchanged unless it's a
+// top-level sh:alternativePath whose every branch is a plain predicate; anything else (any other
+// path type, or a "complex" alternative) falls straight through to insertPropertyPath/
+// replacePropertyPath/removePropertyPath's own existing behavior, including their throw for "no
+// single, well-defined place to write to". `value` is the value already being written/removed,
+// when there is one (omitted for addObject, and for replaceObject's not-yet-existing-anywhere
+// case) - when given, whichever branch already holds it wins over defaultWriteBranch's "first
+// non-empty branch" fallback.
+function resolveAlternativeWritePath(
+  element: PropertyUIElement,
+  path: PropertyPath,
+  value?: Term,
+): PropertyPath {
+  const branches = switchableAlternativeBranches(path);
+  if (!branches) return path;
+
+  const branch =
+    (value && branchHoldingValue(branches, element.focusNode, element.dataGraph, value)) ??
+    defaultWriteBranch(branches, element.focusNode, element.dataGraph);
+  return { type: "predicate", predicate: branch };
 }
 
 // The scoring system validates a single shape node's own direct triples (sh:datatype, sh:class,

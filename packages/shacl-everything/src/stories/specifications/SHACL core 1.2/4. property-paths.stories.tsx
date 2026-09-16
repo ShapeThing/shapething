@@ -1,12 +1,14 @@
 import type { StoryObj } from "@storybook/react-vite";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
+import { minimalEnvironment } from "@/environment.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
   title: "Specifications/SHACL core 1.2/4. SHACL Property Paths",
   component: ShaclRenderer,
+  args: minimalEnvironment,
 };
 
 export const PredicatePath: Story = {
@@ -21,7 +23,15 @@ export const SequencePath: Story = {
 
 export const AlternativePath: Story = {
   name: "4.3 Alternative Paths",
-  args: argsByTestFile("4.3 alternative-paths.ttl", import.meta.url),
+  args: argsByTestFile("4.3.a alternative-paths.ttl", import.meta.url),
+};
+
+export const AlternativePathDcTitleRdfsLabel: Story = {
+  name: "4.3 Alternative Paths (dc:title / rdfs:label)",
+  args: {
+    ...argsByTestFile("4.3.b alternative-paths-dc-title-rdfs-label.ttl", import.meta.url),
+    enableAlternativePathSwitching: true,
+  },
 };
 
 export const InversePath: Story = {

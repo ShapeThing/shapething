@@ -815,6 +815,274 @@ test("removeObject() does nothing when the property shape has no sh:path", async
   expect(element.getObjects()).toEqual([]);
 });
 
+const alternativeTitleShape =
+  `ex:titleShape a sh:PropertyShape ; sh:path [ sh:alternativePath (ex:title ex:label) ] .`;
+
+test("addObject() on a switchable alternativePath writes to whichever branch already has a value", async () => {
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:label "Existing" .`,
+    "text/turtle",
+  );
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("titleShape")],
+  });
+
+  element.addObject(factory.literal("New"));
+
+  expect(dataGraph.getQuads(ex("Alice"), ex("title")).length).toBe(0);
+  expect(dataGraph.getQuads(ex("Alice"), ex("label")).map((quad) => quad.object.value).sort()).toEqual(
+    ["Existing", "New"].sort(),
+  );
+});
+
+test("addObject() on a switchable alternativePath falls back to the first declared branch when neither has a value yet", async () => {
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
+  const dataGraph = await parseRdf("", "text/turtle");
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("titleShape")],
+  });
+
+  element.addObject(factory.literal("New"));
+
+  expect(dataGraph.getQuads(ex("Alice"), ex("title")).map((quad) => quad.object.value)).toEqual([
+    "New",
+  ]);
+});
+
+test("replaceObject() on a switchable alternativePath swaps the value on whichever branch actually holds it", async () => {
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:label "Old" .`,
+    "text/turtle",
+  );
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("titleShape")],
+  });
+
+  element.replaceObject(factory.literal("Old"), factory.literal("New"));
+
+  expect(dataGraph.getQuads(ex("Alice"), ex("title")).length).toBe(0);
+  expect(dataGraph.getQuads(ex("Alice"), ex("label")).map((quad) => quad.object.value)).toEqual([
+    "New",
+  ]);
+});
+
+test("replaceObject()'s not-yet-existing fallback on a switchable alternativePath resolves via the same default-branch heuristic as addObject()", async () => {
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:label "Existing" .`,
+    "text/turtle",
+  );
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("titleShape")],
+  });
+
+  // "Not yet written" (the placeholder default term) being replaced with a real value - the same
+  // path PropertyUIComponentObject's setTerm takes for a brand new value.
+  element.replaceObject(factory.literal("placeholder"), factory.literal("New"));
+
+  expect(dataGraph.getQuads(ex("Alice"), ex("label")).map((quad) => quad.object.value).sort()).toEqual(
+    ["Existing", "New"].sort(),
+  );
+});
+
+test("removeObject() on a switchable alternativePath removes from whichever branch actually holds the value", async () => {
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:title "T" ; ex:label "L" .`,
+    "text/turtle",
+  );
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("titleShape")],
+  });
+
+  element.removeObject(factory.literal("L"));
+
+  expect(dataGraph.getQuads(ex("Alice"), ex("label")).length).toBe(0);
+  expect(dataGraph.getQuads(ex("Alice"), ex("title")).map((quad) => quad.object.value)).toEqual([
+    "T",
+  ]);
+});
+
+const complexAlternativeShape = `
+  ex:byMotherOrFatherShape a sh:PropertyShape ;
+    sh:path [ sh:alternativePath ( (ex:mother ex:name) (ex:father ex:name) ) ] .
+`;
+
+test("addObject()/replaceObject()/removeObject() still throw for a complex alternativePath (a branch that's itself a sequence)", async () => {
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${complexAlternativeShape}`, "text/turtle");
+  const dataGraph = await parseRdf("", "text/turtle");
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("byMotherOrFatherShape")],
+  });
+
+  expect(() => element.addObject(factory.literal("Name"))).toThrow(
+    /Cannot insert a value through a alternative path/,
+  );
+  expect(() => element.replaceObject(factory.literal("Old"), factory.literal("New"))).toThrow(
+    /Cannot insert a value through a alternative path/,
+  );
+  expect(() => element.removeObject(factory.literal("Name"))).toThrow(
+    /Cannot remove a value through a alternative path/,
+  );
+});
+
+test("alternativePathBranches() returns the branch predicates in declaration order for a switchable alternativePath", async () => {
+  const element = await createElement(alternativeTitleShape, [ex("titleShape")]);
+  expect(element.alternativePathBranches()?.map((term) => term.value)).toEqual([
+    ex("title").value,
+    ex("label").value,
+  ]);
+});
+
+test("alternativePathBranches() is undefined for a plain predicate path", async () => {
+  const element = await createElement(
+    `ex:nameShape a sh:PropertyShape ; sh:path ex:name .`,
+    [ex("nameShape")],
+  );
+  expect(element.alternativePathBranches()).toBeUndefined();
+});
+
+test("alternativePathBranches() is undefined for a complex alternativePath", async () => {
+  const element = await createElement(complexAlternativeShape, [ex("byMotherOrFatherShape")]);
+  expect(element.alternativePathBranches()).toBeUndefined();
+});
+
+test("activeAlternativePathBranch() returns which branch currently holds the value", async () => {
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:label "L" .`,
+    "text/turtle",
+  );
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("titleShape")],
+  });
+
+  expect(element.activeAlternativePathBranch(factory.literal("L"))?.value).toBe(ex("label").value);
+  expect(element.activeAlternativePathBranch(factory.literal("Missing"))).toBeUndefined();
+});
+
+test("defaultAlternativePathBranch() prefers a branch that already has data, else the first declared branch", async () => {
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
+
+  const withData = new PropertyUIElement({
+    shapesGraph,
+    dataGraph: await parseRdf(`${queryPrefixes}\n\n ex:Alice ex:label "L" .`, "text/turtle"),
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("titleShape")],
+  });
+  expect(withData.defaultAlternativePathBranch()?.value).toBe(ex("label").value);
+
+  const withoutData = new PropertyUIElement({
+    shapesGraph,
+    dataGraph: await parseRdf("", "text/turtle"),
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("titleShape")],
+  });
+  expect(withoutData.defaultAlternativePathBranch()?.value).toBe(ex("title").value);
+});
+
+test("setAlternativePathBranch() moves a value from its current branch to a new one", async () => {
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:title "T" .`,
+    "text/turtle",
+  );
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("titleShape")],
+  });
+
+  element.setAlternativePathBranch(factory.literal("T"), ex("label"));
+
+  expect(dataGraph.getQuads(ex("Alice"), ex("title")).length).toBe(0);
+  expect(dataGraph.getQuads(ex("Alice"), ex("label")).map((quad) => quad.object.value)).toEqual([
+    "T",
+  ]);
+});
+
+test("setAlternativePathBranch() is a no-op when the value is already on the target branch", async () => {
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:title "T" .`,
+    "text/turtle",
+  );
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("titleShape")],
+  });
+
+  element.setAlternativePathBranch(factory.literal("T"), ex("title"));
+
+  expect(dataGraph.getQuads(ex("Alice"), ex("title")).map((quad) => quad.object.value)).toEqual([
+    "T",
+  ]);
+});
+
+test("setAlternativePathBranch() is a no-op when the value isn't reachable through any branch", async () => {
+  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
+  const dataGraph = await parseRdf("", "text/turtle");
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("titleShape")],
+  });
+
+  element.setAlternativePathBranch(factory.literal("Missing"), ex("label"));
+
+  expect(dataGraph.getQuads(ex("Alice")).length).toBe(0);
+});
+
+test("setAlternativePathBranch() is a no-op when the path isn't a switchable alternative", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:nameShape a sh:PropertyShape ; sh:path ex:name .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:Alice ex:name "Alice" .`,
+    "text/turtle",
+  );
+  const element = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("nameShape")],
+  });
+
+  element.setAlternativePathBranch(factory.literal("Alice"), ex("otherPredicate"));
+
+  expect(dataGraph.getQuads(ex("Alice"), ex("name")).map((quad) => quad.object.value)).toEqual([
+    "Alice",
+  ]);
+});
+
 test("dataId() is undefined when the property has no sh:path", async () => {
   const element = await createElement(`ex:property1 a sh:PropertyShape .`, [ex("property1")]);
   expect(element.dataId()).toBeUndefined();
