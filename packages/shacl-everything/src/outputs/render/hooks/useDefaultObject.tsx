@@ -1,5 +1,6 @@
+import { useEffect } from "react";
 import type { Term } from "@rdfjs/types";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { logicalBranches, withBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
@@ -13,17 +14,34 @@ import { noRefetch } from "@/helpers/noRefetch.ts";
  * A property constrained by sh:or/sh:xone has no value yet to detect a branch from, so the first
  * declared branch is used to seed it - otherwise this would fall back to a datatype-less generic
  * default, blind to any of the branches' own constraints (see structure/logicalBranches.ts).
+ *
+ * `existingObjects` (the property's own current live values) lets this self-correct once the
+ * cached default has actually become one of them: most widgets swap their placeholder for a
+ * differently-valued term on commit (a literal's replaceObject moves to a new, differently-valued
+ * term), so the cached "fresh" default staying cached is harmless - it never coincides with a
+ * real value. A compound-node widget (DetailsEditor) is different: it deliberately keeps the
+ * placeholder's own identity across the commit (see DetailsEditor's own setTerm re-affirm), so
+ * without this check, the exact same now-linked term would be handed out again as "the next fresh
+ * slot" the moment "+" is clicked - rendering (and re-linking) the same value a second time instead
+ * of seeding a genuinely new one.
  */
-export function useDefaultObject(property: PropertyUIElement, enabled: boolean): Term | undefined {
+export function useDefaultObject(
+  property: PropertyUIElement,
+  enabled: boolean,
+  existingObjects: readonly Term[] = [],
+): Term | undefined {
   const { activeLanguage } = useContentLanguage();
+  const queryClient = useQueryClient();
+
+  const queryKey = [
+    "default-object",
+    property.propertyShapes.map((shape) => shape.value),
+    activeLanguage,
+    enabled,
+  ];
 
   const { data } = useQuery({
-    queryKey: [
-      "default-object",
-      property.propertyShapes.map((shape) => shape.value),
-      activeLanguage,
-      enabled,
-    ],
+    queryKey,
     ...noRefetch,
     // react-query treats a resolved `undefined` as an error ("Query data cannot be undefined"),
     // so "nothing to seed" is represented as `null` instead.
@@ -35,5 +53,15 @@ export function useDefaultObject(property: PropertyUIElement, enabled: boolean):
     },
   });
 
-  return data ?? undefined;
+  const cachedDefaultIsNowLinked =
+    data != null && existingObjects.some((object) => object.equals(data));
+  useEffect(() => {
+    if (cachedDefaultIsNowLinked) queryClient.invalidateQueries({ queryKey });
+    // queryKey is a fresh array every render - keying this off cachedDefaultIsNowLinked alone
+    // (recomputed from the same property/data/existingObjects every render) is what actually
+    // determines whether there's new work to do here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cachedDefaultIsNowLinked]);
+
+  return cachedDefaultIsNowLinked ? undefined : (data ?? undefined);
 }
