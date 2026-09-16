@@ -129,7 +129,7 @@ export default function PropertyUIComponentValues({
 
   // getDefaultObject() resolves the widget via score() (async, runs SHACL validation), so it's
   // fetched through a hook rather than called inline here.
-  const defaultObject = useDefaultObject(propertyUIElement, true);
+  const defaultObject = useDefaultObject(propertyUIElement, true, existingObjects);
   // Warms useWidget()'s cache for this exact (property, defaultObject) pair ahead of time, so that
   // when "Add" is clicked and PropertyUIComponentObject mounts with this same object, its own
   // useWidget() call - same query key - hits cache instead of suspending behind the per-item

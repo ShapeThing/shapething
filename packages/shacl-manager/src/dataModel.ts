@@ -1,6 +1,7 @@
 import type { NamedNode, Quad } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
-import { owl } from "@/helpers/namespaces.ts";
+import { select } from "@/helpers/runQuery.ts";
+import owlImportsQuery from "@/queries/owlImports.rq";
 
 export type LoadGraph = (graph: NamedNode) => Promise<Quad[]>;
 
@@ -19,10 +20,14 @@ async function resolveOwlImports(
   loadGraph: LoadGraph,
   visited: Set<string>,
 ): Promise<NamedNode[]> {
+  const owlImportEntries = await select(owlImportsQuery, store);
   const imports = new Map<string, NamedNode>();
-  for (const quad of store.getQuads(null, owl("imports"), null, null)) {
-    if (quad.object.termType === "NamedNode" && !visited.has(quad.object.value)) {
-      imports.set(quad.object.value, quad.object);
+  for (const { importedGraph } of owlImportEntries) {
+    if (
+      importedGraph.termType === "NamedNode" &&
+      !visited.has(importedGraph.value)
+    ) {
+      imports.set(importedGraph.value, importedGraph);
     }
   }
   if (imports.size === 0) return [];
@@ -33,11 +38,15 @@ async function resolveOwlImports(
   // A dead/unreachable import (moved doc, expired domain) must not fail the whole data model -
   // it's someone else's standard, not this data model's own content - so each import is resolved
   // independently and a failure is only logged, not thrown.
-  const results = await Promise.allSettled(graphs.map((graph) => loadGraph(graph)));
+  const results = await Promise.allSettled(
+    graphs.map((graph) => loadGraph(graph)),
+  );
   for (const [index, result] of results.entries()) {
     if (result.status === "rejected") {
       console.warn(
-        `[shacl-manager] Failed to resolve owl:imports <${graphs[index].value}>:`,
+        `[shacl-manager] Failed to resolve owl:imports <${
+          graphs[index].value
+        }>:`,
         result.reason,
       );
       continue;

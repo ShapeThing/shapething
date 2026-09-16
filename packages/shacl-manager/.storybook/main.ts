@@ -3,6 +3,7 @@ import type { StorybookConfig } from "@storybook/react-vite";
 import { dirname } from "path";
 
 import { fileURLToPath } from "url";
+import { typedSparql } from "@shapething/typed-sparql";
 import { corsProxy } from "./corsProxy.ts";
 
 /**
@@ -23,7 +24,7 @@ const config: StorybookConfig = {
   framework: getAbsolutePath("@storybook/react-vite"),
   async viteFinal(config) {
     config.plugins ??= [];
-    config.plugins.push(corsProxy());
+    config.plugins.push(corsProxy(), typedSparql());
     return config;
   },
 };

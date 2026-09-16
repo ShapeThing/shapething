@@ -33,6 +33,30 @@ function rawImportFallback() {
   };
 }
 
+// l10n/locales.ts fetches locale bundles at runtime via `new URL("./ftl/xx-XX.ftl",
+// import.meta.url)`, relative to wherever that code ends up compiled to - but `vp pack`'s
+// tsdown/rolldown bundler, unlike Vite's own dev/app-build asset handling, never detects or
+// copies a file that's only referenced through a runtime `new URL(...)` call (there's no
+// static `import` for it to follow). Left alone, every *published* consumer of this package
+// (as opposed to this package's own Storybook, which imports source directly and never hits
+// this) 404s trying to load its interface-language bundles. This mirrors src/l10n/ftl next to
+// the built output so the existing relative fetch keeps resolving, without requiring a
+// consumer to vendor/copy these files into their own public dir themselves.
+function copyFtlAssets() {
+  const ftlSourceDir = path.join(dirname, "src/l10n/ftl");
+  return {
+    name: "copy-ftl-assets",
+    async writeBundle(options: { dir?: string }) {
+      const outDir = options.dir ?? path.join(dirname, "dist");
+      const destDir = path.join(outDir, "ftl");
+      await fs.mkdir(destDir, { recursive: true });
+      for (const file of await fs.readdir(ftlSourceDir)) {
+        await fs.copyFile(path.join(ftlSourceDir, file), path.join(destDir, file));
+      }
+    },
+  };
+}
+
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
   plugins: [react(), Icons({ compiler: "jsx", jsx: "react" })],
@@ -53,7 +77,7 @@ export default defineConfig({
       tsgo: true,
     },
     exports: true,
-    plugins: [Icons({ compiler: "jsx", jsx: "react" }), rawImportFallback()],
+    plugins: [Icons({ compiler: "jsx", jsx: "react" }), rawImportFallback(), copyFtlAssets()],
   },
   fmt: {},
   test: {

@@ -568,6 +568,9 @@ importers:
 
   packages/shacl-manager:
     dependencies:
+      '@comunica/query-sparql-rdfjs':
+        specifier: ^5.1.3
+        version: 5.2.3
       '@rdfjs/namespace':
         specifier: ^2.0.1
         version: 2.0.1
@@ -599,6 +602,9 @@ importers:
       '@chromatic-com/storybook':
         specifier: latest
         version: 5.3.1(storybook@10.6.0(@types/react@19.2.17)(prettier@3.9.4)(react@19.2.7)(vite-plus@0.2.8(@types/node@26.6.0)(@vitest/browser-playwright@4.1.9)(@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10(vite@8.1.3(@types/node@26.6.0)(esbuild@0.28.1)(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.101.0)(yaml@2.9.0))(vitest@4.1.10))(vitest@4.1.10))(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(sass-embedded@1.100.0)(sass@1.101.0)(typescript@7.0.2)(vite@8.1.3(@types/node@26.6.0)(esbuild@0.28.1)(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.101.0)(yaml@2.9.0))(yaml@2.9.0)))
+      '@shapething/typed-sparql':
+        specifier: workspace:*
+        version: link:../typed-sparql
       '@storybook/addon-a11y':
         specifier: ^10.6.0
         version: 10.6.0(storybook@10.6.0(@types/react@19.2.17)(prettier@3.9.4)(react@19.2.7)(vite-plus@0.2.8(@types/node@26.6.0)(@vitest/browser-playwright@4.1.9)(@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10(vite@8.1.3(@types/node@26.6.0)(esbuild@0.28.1)(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.101.0)(yaml@2.9.0))(vitest@4.1.10))(vitest@4.1.10))(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(sass-embedded@1.100.0)(sass@1.101.0)(typescript@7.0.2)(vite@8.1.3(@types/node@26.6.0)(esbuild@0.28.1)(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.101.0)(yaml@2.9.0))(yaml@2.9.0)))
