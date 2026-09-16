@@ -1,0 +1,25 @@
+@prefix dc: <http://purl.org/dc/elements/1.1/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:CreativeWork ;
+    sh:property [
+        sh:name "Title"@en, "Titel"@nl ;
+        sh:path [
+            sh:alternativePath (dc:title rdfs:label) ;
+        ] ;
+        sh:minCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:CreativeWork ;
+    dc:title "On the Origin of Species" ;
+    rdfs:label "A Brief History of Time" ;
+    .

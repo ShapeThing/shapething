@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { sh, shui } from "@/helpers/namespaces.ts";
 import WidgetSwitcher from "@/outputs/render/modes/edit/WidgetSwitcher.tsx";
 import LogicalConstraintSwitcher from "@/outputs/render/modes/edit/LogicalConstraintSwitcher.tsx";
+import AlternativePathSwitcher from "@/outputs/render/modes/edit/AlternativePathSwitcher.tsx";
 
 // A read-only value (see Environment.readOnlyGraph) still gets a setTerm prop - a no-op mirrors
 // view mode's own WidgetSlot, keeping every widget implementation's setTerm always callable.
@@ -60,6 +61,26 @@ export default function WidgetSlot({
       setPinnedBranchKey(undefined);
     }
   }, [detectedBranch, pinnedBranchKey]);
+
+  // Same "pinned until real data resolves" idea as pinnedBranchKey above, for an
+  // sh:alternativePath's own branches (see structure/paths/alternativePathBranches.ts) instead of
+  // sh:or/sh:xone: AlternativePathSwitcher.setAlternativePathBranch only moves an already-written
+  // triple, so picking a branch before the value exists yet has nothing to move - the pick is kept
+  // here instead, and applied the moment the value actually lands (by default, wherever
+  // defaultWriteBranch put it) by moving it to the pinned branch, then clearing the pin now that
+  // activeAlternativePathBranch can resolve it directly.
+  const [pinnedAlternativeBranch, setPinnedAlternativeBranch] = useState<NamedNode | undefined>(
+    undefined,
+  );
+  useEffect(() => {
+    if (!pinnedAlternativeBranch) return;
+    const actual = propertyUIElement.activeAlternativePathBranch(object);
+    if (!actual) return;
+    if (!actual.equals(pinnedAlternativeBranch)) {
+      propertyUIElement.setAlternativePathBranch(object, pinnedAlternativeBranch);
+    }
+    setPinnedAlternativeBranch(undefined);
+  }, [propertyUIElement, object, pinnedAlternativeBranch]);
 
   const activeBranch =
     detectedBranch ?? branches.find((branch) => branch.shape.value === pinnedBranchKey);
@@ -141,6 +162,12 @@ export default function WidgetSlot({
           setTerm={setTerm}
           activeBranch={activeBranch}
           onBranchSelected={(branch: LogicalBranch) => setPinnedBranchKey(branch.shape.value)}
+        />
+        <AlternativePathSwitcher
+          shape={propertyUIElement}
+          term={object}
+          pinnedBranch={pinnedAlternativeBranch}
+          onBranchSelected={setPinnedAlternativeBranch}
         />
         {nearestFocused && (
           <WidgetSwitcher

@@ -1,0 +1,51 @@
+{
+  "name": "@shapething/shacl-manager",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check",
+    "prepublishOnly": "vp run build",
+    "storybook": "storybook dev -p 6008",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "@rdfjs/namespace": "^2.0.1",
+    "@rdfjs/types": "^2.0.1",
+    "@shapething/shacl-everything": "workspace:*",
+    "@tanstack/react-query": "^5.101.2",
+    "@types/rdfjs__namespace": "^2.0.10",
+    "rdf-data-factory": "^2.0.2",
+    "rdf-stores": "^2.2.0",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "latest",
+    "@storybook/addon-a11y": "^10.6.0",
+    "@storybook/addon-docs": "^10.6.0",
+    "@storybook/addon-vitest": "^10.6.0",
+    "@storybook/react-vite": "^10.6.0",
+    "@types/node": "^26.1.1",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitest/browser-playwright": "4.1.9",
+    "playwright": "latest",
+    "storybook": "^10.6.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.1.0",
+    "vite-plus": "^0.2.8",
+    "vitest": "4.1.9"
+  }
+}
