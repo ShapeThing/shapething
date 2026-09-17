@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 
-type SelectListboxProps<T extends string> = {
+type SelectListboxProps<T extends any> = {
   triggerId?: string;
   ariaLabelledby?: string;
   wrapperClassName?: string;
@@ -20,7 +20,7 @@ type SelectListboxProps<T extends string> = {
   autoFocus?: boolean;
 };
 
-export default function SelectListbox<T extends string>({
+export default function SelectListbox<T extends any>({
   triggerId,
   ariaLabelledby,
   wrapperClassName,
@@ -137,7 +137,7 @@ export default function SelectListbox<T extends string>({
         <div id={listboxId} role="listbox" className={`${classPrefix}__listbox`}>
           {options.map((option, index) => (
             <div
-              key={option}
+              key={option + ""}
               id={`${listboxId}-option-${index}`}
               ref={(el) => {
                 optionRefs.current[index] = el;

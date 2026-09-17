@@ -1,0 +1,17 @@
+.st-predicate-path,
+.st-sequence-path,
+.st-alternative-path,
+.st-inverse-path,
+.st-zero-or-more-path,
+.st-one-or-more-path,
+.st-zero-or-one-path {
+  padding: var(--size-2);
+  border-radius: var(--radius-2);
+  background-color: var(--blue-2);
+
+  display: flex;
+}
+
+.st-alternative-path {
+  flex-direction: column;
+}

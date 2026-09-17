@@ -1,0 +1,20 @@
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+st:PropertyPathEditor rdfs:label "Property path"@en, "Eigenschapspad"@nl .
+
+st:propertyPathEditorScore40
+    a shui:WidgetScore ;
+    shui:editor st:PropertyPathEditor ;
+    shui:score 40 ;
+    shui:shapesGraphShape [
+        a sh:NodeShape ;
+
+        sh:property [
+            sh:path sh:path ;
+            sh:hasValue sh:path ;
+        ] ;
+    ] ;
+.

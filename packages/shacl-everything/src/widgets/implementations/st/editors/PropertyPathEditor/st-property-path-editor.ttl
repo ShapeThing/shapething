@@ -1,0 +1,34 @@
+@prefix skosxl: <http://www.w3.org/2008/05/skos-xl#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix ex: <http://example.org/> .
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass sh:PropertyShape ;
+
+    sh:property [
+        sh:name "Path"@en, "Pad"@nl ;
+        sh:path sh:path ;
+    ] ;
+    .
+
+
+<#data>
+    a sh:PropertyShape ;
+
+    sh:path 
+        rdfs:label, 
+        (ex:parent ex:firstName),
+        [sh:alternativePath ( ex:father ex:mother )],
+        [sh:inversePath ex:parent ],
+        [sh:zeroOrMorePath rdfs:subClassOf],
+        [sh:oneOrMorePath rdfs:subClassOf],
+        [sh:zeroOrOnePath rdfs:subClassOf],
+        (rdf:type[ sh:zeroOrMorePath rdfs:subClassOf ]),
+        (skosxl:literalFormskosxl:literalForm) ;
+    .
