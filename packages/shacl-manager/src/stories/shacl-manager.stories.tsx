@@ -7,6 +7,7 @@ import { CORS_PROXY_PATH } from "../../.storybook/corsProxy.ts";
 import { owl, rdf } from "@/helpers/namespaces.ts";
 
 const modelUrl = new URL("../examples/nl-sbb-begrippenkader/model.ttl", import.meta.url);
+const dataModelIRI = factory.namedNode("https://data.norg.nl/def/begrippenkader#");
 const skosapnlUrl = new URL(
   "../examples/nl-sbb-begrippenkader/imports/skosapnl.ttl",
   import.meta.url,
@@ -18,8 +19,10 @@ const skosapnlUrl = new URL(
 // that IRI actually being reachable. Anything else loadGraph is asked for (skosapnl's own further
 // owl:imports - skos, iso-thes, dct, foaf - all real, live-dereferenceable namespaces) falls
 // through to a real fetch.
-const localGraphs = new Map<string, URL>([["http://nlbegrip.nl/def/skosapnl#", skosapnlUrl]]);
-const dataModelIRI: NamedNode = factory.namedNode(modelUrl.href);
+const localGraphs = new Map<string, URL>([
+  ["http://nlbegrip.nl/def/skosapnl#", skosapnlUrl],
+  ["https://data.norg.nl/def/begrippenkader#", modelUrl],
+]);
 const quadCache = new Map<string, Promise<Quad[]>>();
 
 // Routes every non-local graph through .storybook/corsProxy.ts's dev-server middleware up front,
@@ -34,6 +37,7 @@ const proxiedUrl = (target: string): URL =>
 const loadGraph = async (graph: NamedNode): Promise<Quad[]> => {
   console.log(`Loading graph for ${graph.value}`);
   const url = localGraphs.get(graph.value) ?? proxiedUrl(graph.value);
+  console.log(`Dereferencing URL: ${url}`);
   const store = await dereferenceUrl(url, quadCache, undefined);
   const ontologyQuads = store.getQuads(undefined, rdf("type"), owl("Ontology"));
   const ontologyIri = ontologyQuads[0]?.subject;

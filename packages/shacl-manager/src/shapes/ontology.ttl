@@ -24,8 +24,6 @@
     sh:property [
         sh:name "Description"@en ;
         sh:path [ sh:alternativePath (rdfs:comment dc:description dct:description) ] ;
-        sh:minCount 1 ;
-        sh:message "A description is required for the data model."@en ;
         sh:uniqueLang true ;
         sh:datatype ( xsd:string rdf:langString ) ;
     ] ;
