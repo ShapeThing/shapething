@@ -7,6 +7,7 @@ import GroupUIElementComponent from "@/outputs/render/modes/edit/GroupUIElementC
 // Same reasoning as GroupUIElementComponent above: which tab is active is a display choice with no
 // edit-vs-view distinction, so this shared family/nav also lives under modes/edit/.
 import TabbedPropertyGroupFamily from "@/outputs/render/modes/edit/TabbedPropertyGroupFamily.tsx";
+import VerticalTabbedPropertyGroupFamily from "@/outputs/render/modes/edit/VerticalTabbedPropertyGroupFamily.tsx";
 import PropertyUIElementComponent from "@/outputs/render/modes/view/PropertyUIComponent.tsx";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { elementKey } from "@/structure/elementKey.ts";
@@ -20,17 +21,19 @@ export default function UIElementChildren({
 }) {
   return (
     <TabbedPropertyGroupFamily elements={elements}>
-      {elements.map((element) => (
-        <Fragment key={elementKey(element)}>
-          {element.kind === "property" ? (
-            <PropertyUIElementComponent propertyUIElement={element} />
-          ) : element.kind === "choice" ? (
-            <ChoiceElementComponent choiceElement={element} />
-          ) : (
-            <GroupUIElementComponent group={element} />
-          )}
-        </Fragment>
-      ))}
+      <VerticalTabbedPropertyGroupFamily elements={elements}>
+        {elements.map((element) => (
+          <Fragment key={elementKey(element)}>
+            {element.kind === "property" ? (
+              <PropertyUIElementComponent propertyUIElement={element} />
+            ) : element.kind === "choice" ? (
+              <ChoiceElementComponent choiceElement={element} />
+            ) : (
+              <GroupUIElementComponent group={element} />
+            )}
+          </Fragment>
+        ))}
+      </VerticalTabbedPropertyGroupFamily>
     </TabbedPropertyGroupFamily>
   );
 }

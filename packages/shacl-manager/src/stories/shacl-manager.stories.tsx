@@ -35,9 +35,7 @@ const proxiedUrl = (target: string): URL =>
   new URL(`${CORS_PROXY_PATH}?url=${encodeURIComponent(target)}`, import.meta.url);
 
 const loadGraph = async (graph: NamedNode): Promise<Quad[]> => {
-  console.log(`Loading graph for ${graph.value}`);
   const url = localGraphs.get(graph.value) ?? proxiedUrl(graph.value);
-  console.log(`Dereferencing URL: ${url}`);
   const store = await dereferenceUrl(url, quadCache, undefined);
   const ontologyQuads = store.getQuads(undefined, rdf("type"), owl("Ontology"));
   const ontologyIri = ontologyQuads[0]?.subject;

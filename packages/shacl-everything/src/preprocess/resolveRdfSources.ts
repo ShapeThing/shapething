@@ -8,6 +8,7 @@ import type { Environment, RawEnvironment } from "@/environment.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
 import { owl, rdf, sh } from "@/helpers/namespaces.ts";
 import { withCorsProxy } from "@/helpers/corsProxy.ts";
+import { isKnownNotFound, rememberNotFound } from "@/helpers/notFoundCache.ts";
 
 const storeFromStream = (stream: Stream<Quad>): Promise<RdfStore> => {
   const store = RdfStore.createDefault();
@@ -39,26 +40,70 @@ const toFetchedText = async (response: Response): Promise<FetchedText> => ({
   contentType: response.headers.get("content-type") ?? undefined,
 });
 
+// A cross-origin host with no permissive CORS headers will never succeed as a direct
+// browser-origin request no matter how many times it's retried - the browser blocks it as an
+// opaque failure with no readable status at all, so it can't even be told apart from a transient
+// network blip. `location` is unavailable outside a browser (SSR, Node test runs), in which case
+// origin can't be compared at all - treated as same-origin so the (only sensible there) direct
+// path is used.
+const isCrossOrigin = (url: URL): boolean => {
+  try {
+    return url.origin !== location.origin;
+  } catch {
+    return false;
+  }
+};
+
 const fetchText = async (
   url: URL,
   corsProxyUrl: string | undefined,
 ): Promise<FetchedText> => {
+  // A URL already known (from a previous page load) to 404 is skipped outright, rather than
+  // paying the full retry+proxy-fallback cost again for a resource that's already confirmed gone.
+  if (isKnownNotFound(url.href)) {
+    throw new Error(`Failed to dereference ${url.href}: previously returned 404, not retrying`);
+  }
+
+  // A known-cross-origin URL goes straight through the proxy (once configured), rather than
+  // wasting several retries plus their backoff delay on a direct attempt that's doomed to repeat
+  // the exact same outcome every time - it also means the browser only ever logs one "blocked by
+  // CORS" console entry (from the very first, unproxied real-world attempt at this URL) instead
+  // of one per retry. A same-origin URL keeps trying directly first, since that's the cheaper,
+  // proxy-independent path and it can plausibly recover from a transient failure.
+  const proxyOnly = corsProxyUrl !== undefined && isCrossOrigin(url);
+  const fetchUrl = proxyOnly ? withCorsProxy(url.href, corsProxyUrl) : url;
+
   for (let attempt = 0;; attempt++) {
-    const response = await fetch(url).catch((error: Error) => error);
+    const response = await fetch(fetchUrl).catch((error: Error) => error);
     if (response instanceof Response && response.ok) return toFetchedText(response);
 
     if (attempt >= RETRY_DELAYS_MS.length) {
       // Direct retries are exhausted - fall back to the configured CORS proxy once, rather than
       // failing outright, before giving up and reporting the original direct-fetch failure.
-      if (corsProxyUrl) {
+      // (Already routed through the proxy from the start above when proxyOnly, so there's no
+      // separate fallback attempt left to make here.)
+      if (corsProxyUrl && !proxyOnly) {
         const proxied = await fetch(withCorsProxy(url.href, corsProxyUrl))
           .catch(
             (error: Error) => error,
           );
-        if (proxied instanceof Response && proxied.ok) return toFetchedText(proxied);
+        if (proxied instanceof Response) {
+          if (proxied.ok) return toFetchedText(proxied);
+          // The proxied response is a same-origin, fully readable status - a stronger signal
+          // than the direct attempt's opaque CORS failure below (which carries no status at
+          // all) - so a definitive 404 here is remembered even when the direct attempt wasn't a
+          // real Response to begin with.
+          if (proxied.status === 404) rememberNotFound(url.href);
+          throw new Error(
+            `Failed to dereference ${url.href}: ${proxied.status} ${proxied.statusText}`,
+          );
+        }
       }
 
       if (response instanceof Response) {
+        // Only a genuine, persistent 404 is remembered - a network error/other status might well
+        // be transient, and caching that as permanent would wrongly hide the resource forever.
+        if (response.status === 404) rememberNotFound(url.href);
         throw new Error(
           `Failed to dereference ${url.href}: ${response.status} ${response.statusText}`,
         );

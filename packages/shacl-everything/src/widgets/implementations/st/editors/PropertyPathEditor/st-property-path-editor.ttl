@@ -12,6 +12,17 @@
     sh:targetClass sh:PropertyShape ;
 
     sh:property [
+        sh:name "Property"@en, "Eigenschap"@nl ;
+        sh:path sh:name ;
+    ] ;
+
+    sh:property [
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:path sh:description ;
+    ] ;
+
+
+    sh:property [
         sh:name "Path"@en, "Pad"@nl ;
         sh:path sh:path ;
     ] ;
@@ -20,6 +31,10 @@
 
 <#data>
     a sh:PropertyShape ;
+
+    sh:name "Given name"@en, "Voornaam"@nl ;
+
+    sh:description "The given name of the person"@en, "De voornaam van de persoon"@nl ;
 
     sh:path 
         rdfs:label, 

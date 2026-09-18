@@ -3,6 +3,7 @@ import ChoiceElementComponent from "@/outputs/render/modes/edit/ChoiceElementCom
 import GroupUIElementComponent from "@/outputs/render/modes/edit/GroupUIElementComponent.tsx";
 import PropertyUIElementComponent from "@/outputs/render/modes/edit/PropertyUIComponent.tsx";
 import TabbedPropertyGroupFamily from "@/outputs/render/modes/edit/TabbedPropertyGroupFamily.tsx";
+import VerticalTabbedPropertyGroupFamily from "@/outputs/render/modes/edit/VerticalTabbedPropertyGroupFamily.tsx";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { elementKey } from "@/structure/elementKey.ts";
 import type { GroupUIElement } from "@/structure/GroupUIElement.ts";
@@ -20,20 +21,22 @@ export default function UIElementChildren({
 }) {
   return (
     <TabbedPropertyGroupFamily elements={elements}>
-      {elements.map((element, index) => (
-        <Fragment key={elementKey(element)}>
-          {element.kind === "property" ? (
-            <PropertyUIElementComponent
-              propertyUIElement={element}
-              autoFocusFirst={index === 0 && autoFocusFirst}
-            />
-          ) : element.kind === "choice" ? (
-            <ChoiceElementComponent choiceElement={element} />
-          ) : (
-            <GroupUIElementComponent group={element} />
-          )}
-        </Fragment>
-      ))}
+      <VerticalTabbedPropertyGroupFamily elements={elements}>
+        {elements.map((element, index) => (
+          <Fragment key={elementKey(element)}>
+            {element.kind === "property" ? (
+              <PropertyUIElementComponent
+                propertyUIElement={element}
+                autoFocusFirst={index === 0 && autoFocusFirst}
+              />
+            ) : element.kind === "choice" ? (
+              <ChoiceElementComponent choiceElement={element} />
+            ) : (
+              <GroupUIElementComponent group={element} />
+            )}
+          </Fragment>
+        ))}
+      </VerticalTabbedPropertyGroupFamily>
     </TabbedPropertyGroupFamily>
   );
 }

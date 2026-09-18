@@ -6,6 +6,14 @@
   width: 100%;
   color: var(--gray-8);
   font-family: var(--st-font-family);
+  /* The <dialog> element's own UA default clips/scrolls its content by default - a form field's
+     absolutely-positioned dropdown (e.g. SelectListbox/a combobox's results, both of which
+     deliberately overflow their own trigger's box) would otherwise get cut off at the dialog's
+     own edge instead of floating over the rest of the page like they do outside a modal. Tall
+     content that genuinely needs to scroll (e.g. the large facet-search modal) manages that
+     itself on its own inner element instead (see AutoCompleteEditor's
+     .st-autocomplete__facet-search-results), not by relying on this clipping the dialog's edge. */
+  overflow: visible;
 
   &::backdrop {
     background-color: var(--gray-12);

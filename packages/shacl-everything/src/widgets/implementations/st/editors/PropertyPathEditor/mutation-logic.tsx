@@ -4,7 +4,7 @@
 // switching to sequence/alternative starts a one-item list holding the current path (grown further
 // via "Add Item"), and switching back to a bare predicate walks down to the first predicate it
 
-import { rdf } from "@/helpers/namespaces.ts";
+import type { NamedNode } from "@rdfjs/types";
 import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 
 // still contains.
@@ -71,6 +71,13 @@ export function withItemRemoved(
   return remaining.length === 1 ? remaining[0] : { ...path, items: remaining };
 }
 
-export function defaultPredicatePath(): Extract<PropertyPath, { type: "predicate" }> {
-  return { type: "predicate", predicate: rdf("type") };
+export function predicatePath(predicate: NamedNode): Extract<PropertyPath, { type: "predicate" }> {
+  return { type: "predicate", predicate };
+}
+
+// Builds a fresh path node of `type` wrapping `predicate` - the user-chosen predicate/type pair
+// from AddPathButton's modal. Reuses convertPathType's own wrapping rules (sequence/alternative
+// start a one-item list, the unary wrappers wrap it directly) instead of duplicating them here.
+export function buildPathNode(predicate: NamedNode, type: PropertyPath["type"]): PropertyPath {
+  return convertPathType(predicatePath(predicate), type);
 }

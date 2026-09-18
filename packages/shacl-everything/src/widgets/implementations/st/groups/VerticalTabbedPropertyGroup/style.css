@@ -1,0 +1,42 @@
+/* Drupal-style vertical tabs: a fixed-width column of .st-button tab triggers on the left, the
+   active tab's own .st-property-group panel to the right - both rendered by the same widget
+   instance (see widget.tsx), so a plain flex row is enough; no adjacent-sibling CSS tricks
+   needed. */
+.st-vertical-tabbed-group {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--size-5);
+  margin-bottom: var(--size-5);
+}
+
+.st-vertical-tabbed-group-nav {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 14rem;
+  gap: var(--size-1);
+}
+
+.st-vertical-tabbed-group-nav__tab {
+  width: 100%;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.st-vertical-tabbed-group-nav__icon {
+  flex: 0 0 auto;
+  width: 1.1em;
+  height: 1.1em;
+  object-fit: contain;
+}
+
+.st-vertical-tabbed-group-nav__label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.st-vertical-tabbed-group__panel {
+  flex: 1 1 auto;
+  min-width: 0;
+}

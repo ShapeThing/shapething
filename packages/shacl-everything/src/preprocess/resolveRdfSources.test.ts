@@ -3,6 +3,22 @@ import { RdfStore } from "rdf-stores";
 import { resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
 import { defaultEnvironment, type RawEnvironment } from "@/environment.ts";
 import { ex } from "@/helpers/namespaces.ts";
+import { isKnownNotFound } from "@/helpers/notFoundCache.ts";
+
+// The Node test environment has no global localStorage - this reproduces just enough of its
+// synchronous Storage API for notFoundCache.ts to read/write against, in-memory, per test.
+const stubLocalStorage = (): void => {
+  const store = new Map<string, string>();
+  vi.stubGlobal("localStorage", {
+    getItem: (key: string) => store.get(key) ?? null,
+    setItem: (key: string, value: string) => {
+      store.set(key, value);
+    },
+    removeItem: (key: string) => {
+      store.delete(key);
+    },
+  });
+};
 
 let fixtures: Record<string, string> = {};
 let fetchCalls: string[] = [];
@@ -12,10 +28,13 @@ beforeEach(() => {
   fetchCalls = [];
   vi.stubGlobal(
     "fetch",
-    vi.fn(async (url: URL) => {
-      fetchCalls.push(url.href);
-      const text = fixtures[url.href];
-      if (text === undefined) throw new Error(`Unexpected fetch: ${url.href}`);
+    // Accepts a plain string too, not just a URL - dereferenceUrl fetches a proxied URL as a
+    // plain string (withCorsProxy's return type), not a URL instance.
+    vi.fn(async (url: URL | string) => {
+      const href = String(url);
+      fetchCalls.push(href);
+      const text = fixtures[href];
+      if (text === undefined) throw new Error(`Unexpected fetch: ${href}`);
       return new Response(text, { status: 200 });
     }),
   );
@@ -256,3 +275,120 @@ test("the same import reached from multiple sources is only fetched once", async
   expect(environment.dataGraph.getQuads(ex("shared"), ex("name")).length).toBe(1);
   expect(fetchCalls.filter((href) => href === "http://example.org/shared.ttl").length).toBe(1);
 });
+
+test(
+  "a 404 owl:imports URL is remembered in localStorage and skipped on a later resolve",
+  async () => {
+    stubLocalStorage();
+    fixtures["http://example.org/a.ttl"] = `
+      @prefix owl: <http://www.w3.org/2002/07/owl#> .
+      @prefix ex: <http://example.org/> .
+      ex:a owl:imports <http://example.org/dead-404.ttl> .
+      ex:a ex:name "A" .
+    `;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: URL) => {
+        fetchCalls.push(url.href);
+        const text = fixtures[url.href];
+        if (text !== undefined) return new Response(text, { status: 200 });
+        return new Response("Not Found", { status: 404, statusText: "Not Found" });
+      }),
+    );
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    await resolveRdfSources(
+      rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }),
+    );
+
+    expect(isKnownNotFound("http://example.org/dead-404.ttl")).toBe(true);
+    const fetchesAfterFirstResolve = fetchCalls.filter(
+      (href) => href === "http://example.org/dead-404.ttl",
+    ).length;
+    expect(fetchesAfterFirstResolve).toBeGreaterThan(0);
+
+    await resolveRdfSources(
+      rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }),
+    );
+
+    expect(
+      fetchCalls.filter((href) => href === "http://example.org/dead-404.ttl").length,
+    ).toBe(fetchesAfterFirstResolve);
+
+    warnSpy.mockRestore();
+  },
+  10000,
+);
+
+test("a cross-origin owl:imports URL with a proxy configured skips the direct attempt entirely", async () => {
+  vi.stubGlobal("location", { origin: "http://example.org" });
+  fixtures["http://example.org/a.ttl"] = `
+    @prefix owl: <http://www.w3.org/2002/07/owl#> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://cross-origin.example/b.ttl> .
+    ex:a ex:name "A" .
+  `;
+  const proxiedUrl = "http://example.org/proxy?url=http%3A%2F%2Fcross-origin.example%2Fb.ttl";
+  fixtures[proxiedUrl] = `
+    @prefix ex: <http://example.org/> .
+    ex:b ex:name "B" .
+  `;
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({
+      dataGraph: new URL("http://example.org/a.ttl"),
+      corsProxyUrl: "http://example.org/proxy?url=",
+    }),
+  );
+
+  expect(environment.dataGraph.getQuads(ex("b"), ex("name")).length).toBe(1);
+  expect(fetchCalls).not.toContain("http://cross-origin.example/b.ttl");
+  // Exactly one fetch, straight to the proxy - no retries against the doomed direct URL first.
+  expect(fetchCalls.filter((href) => href === proxiedUrl).length).toBe(1);
+});
+
+test("a same-origin owl:imports URL still tries directly first even with a proxy configured", async () => {
+  vi.stubGlobal("location", { origin: "http://example.org" });
+  fixtures["http://example.org/a.ttl"] = `
+    @prefix owl: <http://www.w3.org/2002/07/owl#> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://example.org/b.ttl> .
+    ex:a ex:name "A" .
+  `;
+  fixtures["http://example.org/b.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:b ex:name "B" .
+  `;
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({
+      dataGraph: new URL("http://example.org/a.ttl"),
+      corsProxyUrl: "http://example.org/proxy?url=",
+    }),
+  );
+
+  expect(environment.dataGraph.getQuads(ex("b"), ex("name")).length).toBe(1);
+  expect(fetchCalls).toContain("http://example.org/b.ttl");
+  expect(fetchCalls).not.toContain("http://example.org/proxy?url=http%3A%2F%2Fexample.org%2Fb.ttl");
+});
+
+test("a non-404 fetch failure is not remembered as a 404", async () => {
+  stubLocalStorage();
+  fixtures["http://example.org/a.ttl"] = `
+    @prefix owl: <http://www.w3.org/2002/07/owl#> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://example.org/dead.ttl> .
+    ex:a ex:name "A" .
+  `;
+  // "http://example.org/dead.ttl" is deliberately absent from fixtures, so the default
+  // beforeEach fetch stub throws a plain network error for it, not an HTTP 404 response.
+  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+  await resolveRdfSources(
+    rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }),
+  );
+
+  expect(isKnownNotFound("http://example.org/dead.ttl")).toBe(false);
+
+  warnSpy.mockRestore();
+}, 10000);

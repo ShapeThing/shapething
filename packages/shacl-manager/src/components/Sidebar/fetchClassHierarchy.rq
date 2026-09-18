@@ -1,8 +1,9 @@
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX sh: <http://www.w3.org/ns/shacl#>
 PREFIX owl: <http://www.w3.org/2002/07/owl#>
 
-SELECT distinct ?class ?shape WHERE {
+SELECT distinct ?class ?superClass ?shape ?label WHERE {
     VALUES ?rdfOwlClass { rdf:Class owl:Class }
     {
         # Target classes
@@ -13,7 +14,19 @@ SELECT distinct ?class ?shape WHERE {
         ?class a ?rdfOwlClass, sh:NodeShape .
         bind(?class as ?shape)
     } union {
+        # SHACL implicit class targets
+        ?class a sh:ShapeClass .
+        bind(?class as ?shape)
+    } union {
         # Maybe there is some data in the data graph
         ?s a ?class .
+    }
+
+    optional {
+        ?class rdfs:subClassOf ?superClass .
+    }
+
+    optional {
+        ?class rdfs:label ?label .
     }
 }

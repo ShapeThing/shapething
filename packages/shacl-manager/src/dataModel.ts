@@ -73,7 +73,5 @@ export async function loadDataModel(
     new Set([dataModelIRI.value]),
   );
 
-  console.log(store.getQuads());
-
   return { dataModelIRI, store, importedGraphIRIs };
 }

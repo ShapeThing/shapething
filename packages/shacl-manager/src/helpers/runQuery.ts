@@ -21,8 +21,12 @@ export async function select<TRow extends object>(
   store: RdfStore,
 ): Promise<TRow[]> {
   const engine = await getEngine();
+  // dataModel.ts tags every quad with an explicit named graph (the ontology IRI, or the fetched
+  // graph URL as a fallback) - nothing ever lands in the default graph - so a GRAPH-less query
+  // like owlImports.rq needs unionDefaultGraph to see any quads at all.
   const bindingsStream = await engine.queryBindings(query, {
     sources: [store],
+    unionDefaultGraph: true,
   });
   const bindings = await bindingsStream.toArray();
   return bindings.map(

@@ -1,0 +1,16 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+SELECT distinct ?shape ?label WHERE {
+    ?shape a sh:NodeShape .
+    filter not exists { ?shape sh:targetClass ?targetClass } .
+    filter not exists { ?shape a rdfs:Class } .
+    filter not exists { ?shape a owl:Class } .
+    optional {
+        ?shape rdfs:label|sh:name ?label .
+    }
+}

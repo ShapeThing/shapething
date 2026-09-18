@@ -2,6 +2,7 @@ import type { Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { st } from "@/helpers/namespaces.ts";
 import { groupDescription, groupLabel } from "@/resolution/label.ts";
 import { defaultWidgets, getGroupWidget } from "@/widgets/registry.ts";
 import type { GroupWidgetRegistryEntry, Widgets } from "@/widgets/types.ts";
@@ -63,5 +64,15 @@ export class GroupUIElement {
    */
   widget(): GroupWidgetRegistryEntry | undefined {
     return getGroupWidget(this.node, this.shapesGraph, this.widgetRegistry);
+  }
+
+  /**
+   * This group's own st:icon value, if declared - either an Iconify icon name (a literal typed
+   * with the iconifyDatatype sentinel, see namespaces.ts) or a plain image IRI/URL literal, left
+   * for the caller to distinguish. Not part of the SHACL/SHACL-UI spec; a ShapeThing-original
+   * group metadata convention (currently consumed by st:VerticalTabbedPropertyGroup's tab nav).
+   */
+  icon(): Term | undefined {
+    return this.shapesGraph.getQuads(this.node, st("icon"), null)[0]?.object;
   }
 }
