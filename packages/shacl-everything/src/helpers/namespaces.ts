@@ -219,6 +219,14 @@ export const dbp: NamespaceBuilder<string> = namespace(
   },
 );
 
+/** SKOS-XL namespace */
+export const skosxl: NamespaceBuilder<string> = namespace(
+  "http://www.w3.org/2008/05/skos-xl#",
+  {
+    factory,
+  },
+);
+
 /** All prefixes used in Shapething, plus common vocabularies used by third-party data (e.g. for
  * best-effort turtle display in the Storybook graph-inspector/submit-preview addons) */
 export const prefixes: Record<string, string> = Object.fromEntries(
@@ -252,6 +260,7 @@ export const prefixes: Record<string, string> = Object.fromEntries(
     dbo,
     dbr,
     dbp,
+    skosxl,
   }).map(([alias, namespace]) => [alias, namespace("").value]),
 );
 

@@ -124,41 +124,27 @@ export function groupDescription({
   return undefined;
 }
 
-// 8.2.2 Property Labels
-export function propertyLabel({
-  term,
-  propertyShape,
-  languages,
-  isPropertyPath,
-}: PropertyLabelOptions): string {
+type OntologyLabelOptions = {
+  term: Term;
+  propertyShape: PropertyUIElement;
+  languages?: BCP47[];
+};
+
+/**
+ * propertyLabel()'s steps 2-4 alone: P's own configured label path(s), DATA graph then SHAPES
+ * graph then scoresGraph - no step 1 (the enclosing property shape's own sh:name) and, unlike
+ * propertyLabel() itself, no final local-name fallback. Returns undefined rather than falling back
+ * so a caller can tell "no real ontology label" apart from "the label happens to read the same as
+ * the local name" (e.g. ex:parent's own rdfs:label is literally "parent" - a string-equality check
+ * against localName() would wrongly treat that as no label at all). Exported for exactly that kind
+ * of caller: one that wants propertyLabel()'s ontology lookup but its own, more useful fallback
+ * when nothing is found (e.g. PropertyAutoComplete falling back to a prefixed IRI, not a bare local
+ * name, when picking an arbitrary predicate/class IRI that has no shape of its own to speak of).
+ */
+export function ontologyLabel({ term, propertyShape, languages }: OntologyLabelOptions): string | undefined {
   const { scoresGraph, shapesGraph, dataGraph } = propertyShape;
   // Chrome (a label), not content - deliberately excludes sh:languageIn, see configuredLanguages.
   const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
-
-  // 1. The property shape's own configured label-predicate value(s) - shape-local metadata, so only
-  // "predicate"-typed configured paths apply (a complex path can't be read as direct shape metadata).
-  //
-  // Deliberate divergence from the spec's literal step order: a strict language match only (or a
-  // language-less value - see bestByLanguage's `strict` option), not PropertyUIElement.get()'s usual
-  // loose "fall back to whatever language is there" behavior. sh:name is authored per shape and often
-  // only translated into some languages, while the ontology's own rdfs:label (steps 2/3 below) may
-  // cover a language sh:name doesn't - silently accepting a wrong-language sh:name here would
-  // permanently hide a better-matching ontology label behind it. Any wrong-language value found here
-  // is kept as `fallbackPropertyShapeValue` and only used once the ontology has also had its chance
-  // (see the bottom of this function), so a translated ontology term still wins, but a shape that
-  // simply has no ontology label at all still shows *something* better than the raw local name.
-  let fallbackPropertyShapeValue: string | undefined;
-  if (isPropertyPath) {
-    for (const path of effectiveLabelPredicates(shapesGraph, "propertyShape")) {
-      if (path.type !== "predicate") continue;
-      const values = orderedValues(propertyShape, path.predicate);
-      const value = bestByLanguage(values, effLanguages, { strict: true });
-      if (value) return value.value;
-      fallbackPropertyShapeValue ??= bestByLanguage(values, effLanguages)
-        ?.value;
-    }
-  }
-
   const termLabelPaths = effectiveLabelPredicates(shapesGraph, "term");
 
   // 2. DATA graph, subject P, configured label path(s) - checked before the shapes graph (order
@@ -197,6 +183,48 @@ export function propertyLabel({
     effLanguages,
   );
   if (scoresLabel) return scoresLabel.value;
+
+  return undefined;
+}
+
+// 8.2.2 Property Labels
+export function propertyLabel({
+  term,
+  propertyShape,
+  languages,
+  isPropertyPath,
+}: PropertyLabelOptions): string {
+  const { shapesGraph } = propertyShape;
+  // Chrome (a label), not content - deliberately excludes sh:languageIn, see configuredLanguages.
+  const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
+
+  // 1. The property shape's own configured label-predicate value(s) - shape-local metadata, so only
+  // "predicate"-typed configured paths apply (a complex path can't be read as direct shape metadata).
+  //
+  // Deliberate divergence from the spec's literal step order: a strict language match only (or a
+  // language-less value - see bestByLanguage's `strict` option), not PropertyUIElement.get()'s usual
+  // loose "fall back to whatever language is there" behavior. sh:name is authored per shape and often
+  // only translated into some languages, while the ontology's own rdfs:label (steps 2/3 below) may
+  // cover a language sh:name doesn't - silently accepting a wrong-language sh:name here would
+  // permanently hide a better-matching ontology label behind it. Any wrong-language value found here
+  // is kept as `fallbackPropertyShapeValue` and only used once the ontology has also had its chance
+  // (see the bottom of this function), so a translated ontology term still wins, but a shape that
+  // simply has no ontology label at all still shows *something* better than the raw local name.
+  let fallbackPropertyShapeValue: string | undefined;
+  if (isPropertyPath) {
+    for (const path of effectiveLabelPredicates(shapesGraph, "propertyShape")) {
+      if (path.type !== "predicate") continue;
+      const values = orderedValues(propertyShape, path.predicate);
+      const value = bestByLanguage(values, effLanguages, { strict: true });
+      if (value) return value.value;
+      fallbackPropertyShapeValue ??= bestByLanguage(values, effLanguages)
+        ?.value;
+    }
+  }
+
+  // 2-4. The ontology's own label for P, across data graph / shapes graph / scoresGraph.
+  const ontology = ontologyLabel({ term, propertyShape, languages });
+  if (ontology) return ontology;
 
   // The ontology (steps 2-4) had nothing in any language either - a wrong-language sh:name is still
   // more useful than the raw local name, so restore the value step 1 set aside above.
