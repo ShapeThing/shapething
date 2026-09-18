@@ -2,7 +2,12 @@
   display: flex;
   gap: var(--size-2);
   align-items: center;
-  padding-block: var(--size-2);
+  border-radius: var(--radius-2);
+  border: 1px dotted var(--gray-7);
+  padding: var(--size-2);
+  margin-block-end: var(--size-3);
+  width: 100%;
+  overflow-x: auto;
 }
 
 .st-predicate-path {
@@ -11,10 +16,12 @@
   flex-direction: column;
   gap: var(--size-2);
   align-items: start;
+  justify-content: center;
   position: relative;
-  background: var(--gray-1);
+  background: var(--gray-2);
   cursor: pointer;
-  padding: var(--size-2);
+  min-height: 33px;
+  padding: var(--size-1) var(--size-3);
 }
 
 .st-add-path {
@@ -39,37 +46,36 @@
   display: flex;
   flex-direction: column;
   gap: var(--size-2);
+  position: relative;
+  padding-right: var(--size-3);
+  margin-inline-end: var(--size-2);
+  border-right: 1px dashed var(--gray-6);
 }
 
-.st-alternative-path[data-branches="1"] + .st-add-path {
-  transform: translateY(calc(-1 * (35px / 1)));
+*:has(
+  > .st-sequence-path > .st-sequence-path-items > .st-sequence-path-item > .st-alternative-path
+),
+.st-property-path-editor:has(> .st-alternative-path) {
+  padding-bottom: 2.8rem;
 }
-.st-alternative-path[data-branches="2"] + .st-add-path {
-  transform: translateY(calc(-1 * (35px / 2)));
-}
-.st-alternative-path[data-branches="3"] + .st-add-path {
-  transform: translateY(calc(-1 * (35px / 3)));
-}
-.st-alternative-path[data-branches="4"] + .st-add-path {
-  transform: translateY(calc(-1 * (35px / 4)));
-}
-.st-alternative-path[data-branches="5"] + .st-add-path {
-  transform: translateY(calc(-1 * (35px / 5)));
-}
-.st-alternative-path[data-branches="6"] + .st-add-path {
-  transform: translateY(calc(-1 * (35px / 6)));
-}
-.st-alternative-path[data-branches="7"] + .st-add-path {
-  transform: translateY(calc(-1 * (35px / 7)));
-}
-.st-alternative-path[data-branches="8"] + .st-add-path {
-  transform: translateY(calc(-1 * (35px / 8)));
-}
-.st-alternative-path[data-branches="9"] + .st-add-path {
-  transform: translateY(calc(-1 * (35px / 9)));
-}
-.st-alternative-path[data-branches="10"] + .st-add-path {
-  transform: translateY(calc(-1 * (35px / 10)));
+
+.st-alternative-path-add {
+  position: absolute;
+  top: calc(100% - 3.2rem);
+  left: var(--size-2);
+  background: var(--green-1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border-radius: var(--radius-2);
+  border: none;
+  padding: var(--size-1) var(--size-2);
+
+  &:hover,
+  &:focus {
+    background: var(--green-3);
+  }
 }
 
 .st-path-type {
@@ -87,15 +93,6 @@
   z-index: 1;
 }
 
-.st-alternative-icon {
-  background: var(--green-3);
-  font-size: 0.8rem;
-}
-
-.st-alternative-path-add {
-  background: var(--green-1);
-}
-
 .st-alternative-path-branches {
   display: flex;
   flex-direction: column;
@@ -111,17 +108,15 @@
   position: relative;
 }
 
-.st-alternative-path-branch:last-child .st-alternative-icon {
-  display: none;
-}
-
-.st-alternative-path-branch > .st-predicate-path {
-  background-color: var(--green-1);
+.st-one-or-more-path,
+.st-zero-or-more-path,
+.st-zero-or-one-path {
+  position: relative;
 }
 
 .st-zero-or-more-path > .st-predicate-path {
   background-color: var(--yellow-1);
-  outline: 1px dashed var(--gray-5);
+  outline: 1px dashed var(--gray-6);
 }
 
 .st-zero-or-more-icon {
@@ -136,7 +131,7 @@
 
 .st-zero-or-one-path > .st-predicate-path {
   background-color: var(--blue-1);
-  outline: 1px dashed var(--gray-5);
+  outline: 1px dashed var(--gray-6);
 }
 
 .st-zero-or-one-icon {
@@ -150,7 +145,6 @@
 
 .st-one-or-more-path > .st-predicate-path {
   background-color: var(--purple-1);
-  outline: 1px dashed var(--gray-5);
 }
 
 .st-one-or-more-icon {
@@ -164,7 +158,6 @@
 
 .st-inverse-path > .st-predicate-path {
   background-color: var(--red-1);
-  outline: 1px dashed var(--gray-5);
 }
 
 .st-inverse-icon {
@@ -185,19 +178,102 @@
   align-content: center;
 }
 
+.st-inverse-path {
+  position: relative;
+}
+
+.st-alternative-icon {
+  background: var(--green-3);
+  font-size: 0.8rem;
+}
+
+.st-alternative-icon-inner {
+  transform: translate(0, -1px);
+}
+
+.st-alternative-tooltip,
 .st-zero-or-more-tooltip,
 .st-zero-or-one-tooltip,
 .st-one-or-more-tooltip,
 .st-inverse-tooltip {
   position: absolute;
-  left: -0.4rem;
-  top: -0.1rem;
+  left: var(--size-2);
+  top: 0.45rem;
   z-index: 1;
 }
 
-.st-alternative-tooltip {
-  position: absolute;
-  left: -0.4rem;
-  top: calc(100% - 0.3rem);
-  z-index: 1;
+.tooltip-wrapper + .st-predicate-path,
+.tooltip-wrapper
+  + .st-sequence-path
+  > .st-sequence-path-items
+  > .st-sequence-path-item:first-child
+  > .st-predicate-path {
+  padding-left: 2.3rem;
+}
+
+.st-add-path-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-3);
+  min-width: 20rem;
+
+  .st-input {
+    width: 100%;
+  }
+}
+
+.st-add-path-form-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+}
+
+.st-add-path-form-actions-primary {
+  display: flex;
+  gap: var(--size-2);
+  margin-inline-start: auto;
+}
+
+.st-add-path-predicate-combo {
+  position: relative;
+  width: 100%;
+}
+
+.st-add-path-predicate-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-block: var(--size-1);
+  padding-inline-start: var(--size-2);
+}
+
+.st-add-path-predicate-option__iri {
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+}
+
+.st-add-path-predicate-group-label {
+  padding-block: var(--size-1);
+  padding-inline-start: var(--size-2);
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+/* Overrides theme/comboBox.css's shared position:absolute for this one spot: this dropdown sits
+   directly above the Path type field and the Save button in the same small modal, and once local
+   + LOV suggestions merge, even a handful of rows is tall enough to visually cover them. An
+   absolutely-positioned overlay covering a still-interactive control doesn't just look wrong - a
+   click meant for what's underneath can land on the overlay instead and silently do nothing (see
+   ClassHierarchyTree's own onMouseDown comment for the same "click intermittently does nothing"
+   failure mode elsewhere in this codebase). Letting it flow normally instead pushes the rest of
+   the form down rather than covering it - max-height/overflow-y still cap its own height with an
+   internal scrollbar, so a long result list grows the modal, not the dropdown, without bound.
+   */
+.st-add-path-predicate-combo .st-combo-results {
+  position: static;
+  width: auto;
+  margin-block-start: var(--size-1);
 }

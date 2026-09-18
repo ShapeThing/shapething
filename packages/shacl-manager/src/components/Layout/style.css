@@ -1,0 +1,10 @@
+.st-manager-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--size-3);
+}
+
+.st-manager-layout__content {
+  flex: 1;
+  min-width: 0;
+}

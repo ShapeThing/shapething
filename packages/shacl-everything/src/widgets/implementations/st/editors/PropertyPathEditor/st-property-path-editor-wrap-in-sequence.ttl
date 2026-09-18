@@ -1,0 +1,20 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix ex: <http://example.org/> .
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass sh:PropertyShape ;
+
+    sh:property [
+        sh:name "Path"@en ;
+        sh:path sh:path ;
+    ] ;
+    .
+
+<#data>
+    a sh:PropertyShape ;
+    sh:path ex:name .
+
+ex:name
+    rdfs:label "name"@en .

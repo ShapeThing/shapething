@@ -21,6 +21,24 @@ export function parsePropertyPath(propertyShape: Term, shapesGraph: RdfStore): P
   return parsePathNode(pathQuads[0].object, shapesGraph);
 }
 
+// True for a freshly-minted, still-untouched BlankNode that carries none of the structural
+// triples parsePathNode dispatches on below - not a valid sh:path value on its own (spec has no
+// "empty path" concept), but the shape a widget's meta.ts createTerm hands back before the user
+// has chosen anything yet (see PropertyPathEditor/meta.ts). Callers that mint their own fresh path
+// term this way must check this before calling parsePathNode, which throws on it.
+export function isUnsetPathNode(pathNode: Term, shapesGraph: RdfStore): boolean {
+  if (pathNode.termType !== "BlankNode") return false;
+
+  return (
+    shapesGraph.getQuads(pathNode, sh("alternativePath")).length === 0 &&
+    shapesGraph.getQuads(pathNode, sh("inversePath")).length === 0 &&
+    shapesGraph.getQuads(pathNode, sh("zeroOrMorePath")).length === 0 &&
+    shapesGraph.getQuads(pathNode, sh("oneOrMorePath")).length === 0 &&
+    shapesGraph.getQuads(pathNode, sh("zeroOrOnePath")).length === 0 &&
+    shapesGraph.getQuads(pathNode, rdf("first")).length === 0
+  );
+}
+
 export function parsePathNode(pathNode: Term, shapesGraph: RdfStore): PropertyPath {
   if (pathNode.termType === "Literal") {
     throw new Error(

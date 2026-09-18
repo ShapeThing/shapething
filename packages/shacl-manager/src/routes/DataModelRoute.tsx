@@ -3,15 +3,13 @@ import { ShaclRenderer } from "@shapething/shacl-everything";
 import "@shapething/shacl-everything/style.css";
 import { factory } from "@/helpers/factory.ts";
 import { useDataModel } from "@/hooks/useDataModel";
+import { dataModelRoute } from "@/router";
 
 const ontologyShapesGraphUrl = new URL("../../shapes/ontology.ttl#shape", import.meta.url);
 const ontologyNodeShapes: NamedNode[] = [factory.namedNode(ontologyShapesGraphUrl.href)];
 
-type Props = {
-  corsProxyUrl?: string;
-};
-
-export default function DatamodelMetadata({ corsProxyUrl }: Props) {
+export default function DataModelRoute() {
+  const { corsProxyUrl } = dataModelRoute.useRouteContext();
   const { dataModelIRI, store } = useDataModel();
 
   return (
@@ -21,6 +19,7 @@ export default function DatamodelMetadata({ corsProxyUrl }: Props) {
       interfaceLocales={{ "nl-NL": null }}
       focusNode={dataModelIRI}
       nodeShapes={ontologyNodeShapes}
+      enableInterfaceLanguageWithShapesLabelsOnly={false}
       enableWidgetSwitching={false}
       enableLogicalBranchSwitching={false}
       corsProxyUrl={corsProxyUrl}

@@ -49,3 +49,10 @@ default flat rendering.
 Renders member properties laid out in a row (flex, wrapping) instead of the default stacked
 column, for a small set of properties that read naturally side by side (e.g. a name group's given
 name + family name).
+
+#### `st:VerticalTabbedPropertyGroup`
+
+Drupal-style vertical tabs: sibling groups of this type share one column of tab buttons on the
+left, with the active tab's fields shown in a panel to the right. A tab can carry an `st:icon` -
+either an Iconify icon name (a literal typed `^^<https://iconify.design>`, same convention as
+`st:IconifyEditor`/`st:IconifyViewer`) or a plain image IRI, rendered as an `<img>`.
