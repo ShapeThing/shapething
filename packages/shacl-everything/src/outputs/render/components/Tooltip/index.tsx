@@ -9,6 +9,7 @@ type Props = {
   tip: ReactNode;
   children: ReactNode;
   enabled: boolean;
+  className?: string;
   severity?: Severity;
   bare?: boolean;
   // Preferred side, used whenever there's room for it. Falls back to whichever other side
@@ -31,6 +32,7 @@ export default function Tooltip({
   tip,
   children,
   enabled,
+  className,
   severity,
   bare,
   placement: preferredPlacement = "left",
@@ -137,6 +139,7 @@ export default function Tooltip({
         "tooltip-wrapper",
         severity && `severity-${severity}`,
         bare && "tooltip-wrapper--bare",
+        className,
       )}
       style={{ "--tooltip-anchor": anchorName } as React.CSSProperties}
       // Only needed when children aren't already a focusable element of their own (e.g. a

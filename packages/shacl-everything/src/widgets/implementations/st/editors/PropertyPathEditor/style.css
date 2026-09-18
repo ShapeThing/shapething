@@ -1,17 +1,203 @@
-.st-predicate-path,
-.st-sequence-path,
-.st-alternative-path,
-.st-inverse-path,
-.st-zero-or-more-path,
-.st-one-or-more-path,
-.st-zero-or-one-path {
-  padding: var(--size-2);
-  border-radius: var(--radius-2);
-  background-color: var(--blue-2);
-
+.st-property-path-editor {
   display: flex;
+  gap: var(--size-2);
+  align-items: center;
+  padding-block: var(--size-2);
+}
+
+.st-predicate-path {
+  border-radius: var(--radius-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+  align-items: start;
+  position: relative;
+  background: var(--gray-1);
+  cursor: pointer;
+  padding: var(--size-2);
+}
+
+.st-add-path {
+  background: var(--gray-2);
+  border-radius: 50%;
+  aspect-ratio: 1;
+  display: flex;
+  width: var(--size-6);
+  height: var(--size-6);
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  border: none;
+
+  &:hover,
+  &:focus {
+    background: var(--gray-4);
+  }
 }
 
 .st-alternative-path {
+  display: flex;
   flex-direction: column;
+  gap: var(--size-2);
+}
+
+.st-alternative-path[data-branches="1"] + .st-add-path {
+  transform: translateY(calc(-1 * (35px / 1)));
+}
+.st-alternative-path[data-branches="2"] + .st-add-path {
+  transform: translateY(calc(-1 * (35px / 2)));
+}
+.st-alternative-path[data-branches="3"] + .st-add-path {
+  transform: translateY(calc(-1 * (35px / 3)));
+}
+.st-alternative-path[data-branches="4"] + .st-add-path {
+  transform: translateY(calc(-1 * (35px / 4)));
+}
+.st-alternative-path[data-branches="5"] + .st-add-path {
+  transform: translateY(calc(-1 * (35px / 5)));
+}
+.st-alternative-path[data-branches="6"] + .st-add-path {
+  transform: translateY(calc(-1 * (35px / 6)));
+}
+.st-alternative-path[data-branches="7"] + .st-add-path {
+  transform: translateY(calc(-1 * (35px / 7)));
+}
+.st-alternative-path[data-branches="8"] + .st-add-path {
+  transform: translateY(calc(-1 * (35px / 8)));
+}
+.st-alternative-path[data-branches="9"] + .st-add-path {
+  transform: translateY(calc(-1 * (35px / 9)));
+}
+.st-alternative-path[data-branches="10"] + .st-add-path {
+  transform: translateY(calc(-1 * (35px / 10)));
+}
+
+.st-path-type {
+  border-radius: 50%;
+  aspect-ratio: 1;
+  display: flex;
+  width: var(--size-4);
+  height: var(--size-4);
+  justify-content: center;
+  align-items: center;
+  border: none;
+  font-size: var(--size-2);
+  cursor: help;
+  font-weight: bold;
+  z-index: 1;
+}
+
+.st-alternative-icon {
+  background: var(--green-3);
+  font-size: 0.8rem;
+}
+
+.st-alternative-path-add {
+  background: var(--green-1);
+}
+
+.st-alternative-path-branches {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2);
+  align-items: start;
+  align-content: stretch;
+}
+
+.st-alternative-path-branch {
+  display: flex;
+  align-items: center;
+  gap: var(--size-1);
+  position: relative;
+}
+
+.st-alternative-path-branch:last-child .st-alternative-icon {
+  display: none;
+}
+
+.st-alternative-path-branch > .st-predicate-path {
+  background-color: var(--green-1);
+}
+
+.st-zero-or-more-path > .st-predicate-path {
+  background-color: var(--yellow-1);
+  outline: 1px dashed var(--gray-5);
+}
+
+.st-zero-or-more-icon {
+  font-size: var(--size-5);
+  background: var(--yellow-5);
+}
+
+.st-zero-or-more-icon-inner {
+  font-size: var(--size-6);
+  transform: translateY(10%);
+}
+
+.st-zero-or-one-path > .st-predicate-path {
+  background-color: var(--blue-1);
+  outline: 1px dashed var(--gray-5);
+}
+
+.st-zero-or-one-icon {
+  font-size: var(--size-5);
+  background: var(--blue-3);
+}
+
+.st-zero-or-one-icon-inner {
+  font-size: var(--size-3);
+}
+
+.st-one-or-more-path > .st-predicate-path {
+  background-color: var(--purple-1);
+  outline: 1px dashed var(--gray-5);
+}
+
+.st-one-or-more-icon {
+  font-size: var(--size-5);
+  background: var(--purple-3);
+}
+
+.st-one-or-more-icon-inner {
+  font-size: var(--size-3);
+}
+
+.st-inverse-path > .st-predicate-path {
+  background-color: var(--red-1);
+  outline: 1px dashed var(--gray-5);
+}
+
+.st-inverse-icon {
+  font-size: var(--size-5);
+  background: var(--red-3);
+}
+
+.st-inverse-icon-inner {
+  font-size: var(--size-3);
+  transform: translateY(15%);
+}
+
+.st-sequence-path-items {
+  display: flex;
+  flex-direction: row;
+  gap: var(--size-2);
+  align-items: center;
+  align-content: center;
+}
+
+.st-zero-or-more-tooltip,
+.st-zero-or-one-tooltip,
+.st-one-or-more-tooltip,
+.st-inverse-tooltip {
+  position: absolute;
+  left: -0.4rem;
+  top: -0.1rem;
+  z-index: 1;
+}
+
+.st-alternative-tooltip {
+  position: absolute;
+  left: -0.4rem;
+  top: calc(100% - 0.3rem);
+  z-index: 1;
 }

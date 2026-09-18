@@ -1,6 +1,7 @@
 import { factory } from "@/helpers/factory.ts";
 import { sh, xsd } from "@/helpers/namespaces.ts";
 import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
+import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import type { NamedNode } from "@rdfjs/types";
 
@@ -16,14 +17,18 @@ export default function NumberFieldEditor({
   const min = shape.get(sh("minInclusive"));
   const max = shape.get(sh("maxInclusive"));
   const datatype = (shape.get(sh("datatype")) ?? xsd("integer")) as NamedNode;
+  const { localValue, onChange, onBlur } = useDeferredInput(term, (value: string) =>
+    setTerm(factory.literal(value, datatype)),
+  );
   const ref = useAutoFocusRef<HTMLInputElement>(autoFocus);
 
   return (
     <input
       ref={ref}
       type="number"
-      value={term.value}
-      onChange={(e) => setTerm(factory.literal(e.target.value, datatype))}
+      value={localValue}
+      onChange={onChange}
+      onBlur={onBlur}
       className="st-input"
       min={min}
       max={max}

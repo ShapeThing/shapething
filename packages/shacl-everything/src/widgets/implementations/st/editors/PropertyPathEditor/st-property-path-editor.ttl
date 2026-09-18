@@ -30,5 +30,32 @@
         [sh:oneOrMorePath rdfs:subClassOf],
         [sh:zeroOrOnePath rdfs:subClassOf],
         (rdf:type[ sh:zeroOrMorePath rdfs:subClassOf ]),
-        (skosxl:literalFormskosxl:literalForm) ;
+        (skosxl:prefLabel skosxl:literalForm) ;
     .
+
+rdfs:label
+    rdfs:label "label"@en, "label"@nl .
+
+ex:parent
+    rdfs:label "parent"@en, "ouder"@nl .
+
+ex:firstName
+    rdfs:label "first name"@en, "voornaam"@nl .
+
+ex:father
+    rdfs:label "father"@en, "vader"@nl .
+
+ex:mother
+    rdfs:label "mother"@en, "moeder"@nl .
+
+rdfs:subClassOf
+    rdfs:label "subclass of"@en, "subklasse van"@nl .
+
+rdf:type
+    rdfs:label "type"@en, "type"@nl .
+
+skosxl:prefLabel
+    rdfs:label "pref label"@en, "voorkeurslabel"@nl .
+
+skosxl:literalForm
+    rdfs:label "literal form"@en, "literaire vorm"@nl .

@@ -1,9 +1,21 @@
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 import { parsePathNode, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
-import type { NamedNode } from "@rdfjs/types";
-import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
-import { useState, type ReactNode } from "react";
+import { clearPropertyPath, writePropertyPath } from "@/structure/paths/writePropertyPath.ts";
+import { transact } from "@/helpers/reactiveRdfStore.ts";
+import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { useState } from "react";
+import { Plus } from "@/helpers/icons.tsx";
+import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
+import { Localized } from "@fluent/react";
+import { prefixedIri } from "@/helpers/prefixedIri.ts";
+
+type OnPathChange = (newPath: PropertyPath) => void;
+type PathNodeProps<T extends PropertyPath = PropertyPath> = {
+  path: T;
+  shape: PropertyUIElement;
+  onChange: OnPathChange;
+};
 
 export default function PropertyPathEditor({
   shape,
@@ -14,128 +26,207 @@ export default function PropertyPathEditor({
 }: WidgetProps) {
   const [path, setPath] = useState<PropertyPath | null>(parsePathNode(term, shape.dataGraph));
 
-  return <div className="st-property-path-editor">{path && <PathNode path={path} />}</div>;
+  function handleChange(newPath: PropertyPath) {
+    transact(shape.dataGraph, () => {
+      clearPropertyPath(term, shape.dataGraph);
+      setTerm(writePropertyPath(newPath, shape.dataGraph));
+    });
+    setPath(newPath);
+  }
+
+  return (
+    <div className="st-property-path-editor">
+      {path && <PathNode path={path} shape={shape} onChange={handleChange} />}
+
+      <button type="button" className="st-add-path" onClick={() => {}}>
+        <Plus />
+      </button>
+    </div>
+  );
 }
 
-function PathNode({ path }: { path: PropertyPath }) {
+function PathNode({ path, shape, onChange }: PathNodeProps) {
   switch (path.type) {
     case "predicate":
-      return <PredicatePath path={path} />;
+      return <PredicatePath path={path} shape={shape} onChange={onChange} />;
     case "sequence":
-      return <SequencePath path={path} />;
+      return <SequencePath path={path} shape={shape} onChange={onChange} />;
     case "alternative":
-      return <AlternativePath path={path} />;
+      return <AlternativePath path={path} shape={shape} onChange={onChange} />;
     case "inverse":
-      return <InversePath path={path} />;
+      return <InversePath path={path} shape={shape} onChange={onChange} />;
     case "zeroOrMore":
-      return <ZeroOrMorePath path={path} />;
+      return <ZeroOrMorePath path={path} shape={shape} onChange={onChange} />;
     case "oneOrMore":
-      return <OneOrMorePath path={path} />;
+      return <OneOrMorePath path={path} shape={shape} onChange={onChange} />;
     case "zeroOrOne":
-      return <ZeroOrOnePath path={path} />;
+      return <ZeroOrOnePath path={path} shape={shape} onChange={onChange} />;
   }
 }
 
-const pathTypeOptions = [
-  { value: "predicate", label: <>Predicate</> },
-  { value: "sequence", label: <>Sequence</> },
-  { value: "alternative", label: <>Alternative</> },
-  { value: "inverse", label: <>Inverse</> },
-  { value: "zeroOrMore", label: <>Zero or More</> },
-  { value: "oneOrMore", label: <>One or More</> },
-  { value: "zeroOrOne", label: <>Zero or One</> },
-];
-
-function ChangeType({ path }: { path: PropertyPath }) {
+function PredicatePath({
+  path,
+  shape,
+  onChange,
+}: PathNodeProps<Extract<PropertyPath, { type: "predicate" }>>) {
   return (
-    <SelectListbox<{ value: string; label: ReactNode }>
-      value={pathTypeOptions.find((option) => option.value === path.type) ?? pathTypeOptions[0]}
-      options={pathTypeOptions}
-      onChange={(newValue) => {
-        console.log("Change type to:", newValue);
-      }}
-      renderTriggerContent={(selectedOption) => selectedOption.label}
-      renderOption={(option) => option.label}
-    />
+    <>
+      <div className="st-predicate-path">{prefixedIri(path.predicate) ?? path.predicate.value}</div>
+    </>
   );
 }
 
-function PropertyAutoComplete({ predicate }: { predicate: NamedNode }) {
-  return <div className="st-property-auto-complete">{predicate.value}</div>;
-}
-
-function PredicatePath({ path }: { path: Extract<PropertyPath, { type: "predicate" }> }) {
-  return (
-    <div className="st-predicate-path">
-      <PropertyAutoComplete predicate={path.predicate} />
-      <ChangeType path={path} />
-    </div>
-  );
-}
-
-function SequencePath({ path }: { path: Extract<PropertyPath, { type: "sequence" }> }) {
+function SequencePath({
+  path,
+  shape,
+  onChange,
+}: PathNodeProps<Extract<PropertyPath, { type: "sequence" }>>) {
   return (
     <div className="st-sequence-path">
-      {path.items.map((item, index) => (
-        <PathNode key={index} path={item} />
-      ))}
-      <button
-        type="button"
-        className="st-button st-button-primary"
-        onClick={() => console.log("Add sequence item")}
-      >
-        Add Item
-      </button>
-      <ChangeType path={path} />
+      <div className="st-sequence-path-items">
+        {path.items.map((item, index) => (
+          <div key={index} className="st-sequence-path-item">
+            <PathNode path={item} shape={shape} onChange={(newItem) => {}} />
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
 
-function AlternativePath({ path }: { path: Extract<PropertyPath, { type: "alternative" }> }) {
+function AlternativePath({
+  path,
+  shape,
+  onChange,
+}: PathNodeProps<Extract<PropertyPath, { type: "alternative" }>>) {
   return (
-    <div className="st-alternative-path">
-      {path.items.map((item, index) => (
-        <div key={index} className="st-alternative-path-branch">
-          <PathNode path={item} />
-        </div>
-      ))}
-      <ChangeType path={path} />
+    <div className="st-alternative-path" data-branches={path.items.length}>
+      <div className="st-alternative-path-branches">
+        {path.items.map((item, index) => (
+          <div key={index} className="st-alternative-path-branch">
+            <PathNode path={item} shape={shape} onChange={(newItem) => {}} />
+            <button type="button" className="st-add-path" onClick={() => {}}>
+              <Plus />
+            </button>
+            <Tooltip
+              className="st-alternative-tooltip"
+              bare
+              enabled
+              tip={<Localized id="property-path-editor-alternative-tooltip" />}
+            >
+              <span className="st-alternative-icon st-path-type">|</span>
+            </Tooltip>
+          </div>
+        ))}
+      </div>
+
+      <button type="button" className="st-add-path st-alternative-path-add" onClick={() => {}}>
+        <Plus />
+      </button>
     </div>
   );
 }
 
-function InversePath({ path }: { path: Extract<PropertyPath, { type: "inverse" }> }) {
+function InversePath({
+  path,
+  shape,
+  onChange,
+}: PathNodeProps<Extract<PropertyPath, { type: "inverse" }>>) {
   return (
     <div className="st-inverse-path">
-      <PathNode path={path.path} />
-      <ChangeType path={path} />
+      <Tooltip
+        className="st-inverse-tooltip"
+        bare
+        enabled
+        tip={<Localized id="property-path-editor-inverse-tooltip" />}
+      >
+        <span className="st-inverse-icon st-path-type">
+          <span className="st-inverse-icon-inner">^</span>
+        </span>
+      </Tooltip>
+      <PathNode
+        path={path.path}
+        shape={shape}
+        onChange={(newInner) => onChange({ ...path, path: newInner })}
+      />
     </div>
   );
 }
 
-function ZeroOrMorePath({ path }: { path: Extract<PropertyPath, { type: "zeroOrMore" }> }) {
+function ZeroOrMorePath({
+  path,
+  shape,
+  onChange,
+}: PathNodeProps<Extract<PropertyPath, { type: "zeroOrMore" }>>) {
   return (
     <div className="st-zero-or-more-path">
-      <PathNode path={path.path} />
-      <ChangeType path={path} />
+      <Tooltip
+        className="st-zero-or-more-tooltip"
+        bare
+        enabled
+        tip={<Localized id="property-path-editor-zero-or-more-tooltip" />}
+      >
+        <span className="st-zero-or-more-icon st-path-type">
+          <span className="st-zero-or-more-icon-inner">*</span>
+        </span>
+      </Tooltip>
+      <PathNode
+        path={path.path}
+        shape={shape}
+        onChange={(newInner) => onChange({ ...path, path: newInner })}
+      />
     </div>
   );
 }
 
-function OneOrMorePath({ path }: { path: Extract<PropertyPath, { type: "oneOrMore" }> }) {
+function OneOrMorePath({
+  path,
+  shape,
+  onChange,
+}: PathNodeProps<Extract<PropertyPath, { type: "oneOrMore" }>>) {
   return (
     <div className="st-one-or-more-path">
-      <PathNode path={path.path} />
-      <ChangeType path={path} />
+      <Tooltip
+        className="st-one-or-more-tooltip"
+        bare
+        enabled
+        tip={<Localized id="property-path-editor-one-or-more-tooltip" />}
+      >
+        <span className="st-one-or-more-icon st-path-type">
+          <span className="st-one-or-more-icon-inner">+</span>
+        </span>
+      </Tooltip>
+      <PathNode
+        path={path.path}
+        shape={shape}
+        onChange={(newInner) => onChange({ ...path, path: newInner })}
+      />
     </div>
   );
 }
 
-function ZeroOrOnePath({ path }: { path: Extract<PropertyPath, { type: "zeroOrOne" }> }) {
+function ZeroOrOnePath({
+  path,
+  shape,
+  onChange,
+}: PathNodeProps<Extract<PropertyPath, { type: "zeroOrOne" }>>) {
   return (
     <div className="st-zero-or-one-path">
-      <PathNode path={path.path} />
-      <ChangeType path={path} />
+      <Tooltip
+        className="st-zero-or-one-tooltip"
+        bare
+        enabled
+        tip="Zero or one (?) — this path is optional"
+      >
+        <span className="st-zero-or-one-icon st-path-type">
+          <span className="st-zero-or-one-icon-inner">?</span>
+        </span>
+      </Tooltip>
+      <PathNode
+        path={path.path}
+        shape={shape}
+        onChange={(newInner) => onChange({ ...path, path: newInner })}
+      />
     </div>
   );
 }
