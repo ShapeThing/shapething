@@ -10,6 +10,7 @@ import IndexRoute from "@/routes/index";
 import DataModelRoute from "@/routes/DataModelRoute";
 import ClassRoute from "@/routes/ClassRoute";
 import ShapeRoute from "@/routes/ShapeRoute";
+import PropertyShapeRoute from "@/routes/PropertyShapeRoute";
 
 export type RouterContext = {
   corsProxyUrl?: string;
@@ -47,7 +48,19 @@ export const shapeRoute = createRoute({
   component: ShapeRoute,
 });
 
-const routeTree = rootRoute.addChildren([indexRoute, dataModelRoute, classRoute, shapeRoute]);
+export const propertyShapeRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: "/property-shape/$propertyShapeIri",
+  component: PropertyShapeRoute,
+});
+
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  dataModelRoute,
+  classRoute,
+  shapeRoute,
+  propertyShapeRoute,
+]);
 
 const STORAGE_KEY_PREFIX = "shacl-manager:route:";
 

@@ -23,7 +23,7 @@ import { score, select, type WidgetScoreResult } from "@/scoring/score.ts";
 import { createDefaultTerm } from "@/widgets/defaultTerm.ts";
 import { defaultWidgets } from "@/widgets/registry.ts";
 import type { Widgets } from "@/widgets/types.ts";
-import { toSparql } from "@/structure/paths/toSparql.ts";
+import { toSparql, type ToSparqlOptions } from "@/structure/paths/toSparql.ts";
 import { resolutions } from "@/structure/constraintResolutions.ts";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { propertyDescription, propertyLabel } from "@/resolution/label.ts";
@@ -309,10 +309,17 @@ export class PropertyUIElement {
     );
   }
 
-  pathAsSparql(): string | undefined {
+  /**
+   * `prefixed: true` renders predicates as `prefix:localName` (toSparql's own ToSparqlOptions)
+   * for human-facing display - e.g. a title tooltip - where a known vocabulary prefix makes the
+   * path far more readable than its full `<iri>` form. Leave it unset for any use tied to this
+   * path's identity (dataId(), nestedAncestorPath(), elementKey.ts, groupPropertyShapesByPath's
+   * equality check): those need the exact, unambiguous `<iri>` form to stay stable/comparable.
+   */
+  pathAsSparql(options?: ToSparqlOptions): string | undefined {
     const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
     if (!path) return undefined;
-    return toSparql(path);
+    return toSparql(path, options);
   }
 
   /**

@@ -1,7 +1,9 @@
-import { useId, useMemo } from "react";
+import { useId, useMemo, useRef } from "react";
 import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 import { sh, st } from "@/helpers/namespaces.ts";
+import { noRefetch } from "@/helpers/noRefetch.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
@@ -69,24 +71,44 @@ export default function FacetPropertyComponent({ property, filterShape, instance
   // `instances` narrowed to whatever satisfies every *other* currently-active facet constraint -
   // what makes valueCounts/rangeMatchCount below real faceted counts ("how many results would this
   // leave, given what's already selected elsewhere") instead of a static tally against every
-  // target instance regardless of other filters. Reactive for the same reason constraintQuads is
-  // above: the read touches every sh:property node's own constraint quads, so a sibling facet's
-  // own setConstraint call - anywhere - correctly retriggers this. Skipped (falls back to the full
-  // `instances`, no per-instance walk) when counts are off.
-  const narrowedInstances = useReactiveRead(
+  // target instance regardless of other filters. instancesMatchingOtherConstraints now runs a real
+  // shacl-engine validation pass (plus a direct Comunica query for MapFacet's own st:withinArea),
+  // so unlike constraintQuads above this can't stay a plain synchronous useReactiveRead - the
+  // revision counter below tracks the same "every sh:property node's own constraint quads" pattern
+  // constraintQuads' own reactive read used to narrow itself, just to know *when* to re-run the
+  // async narrowing, not to compute the result directly. Mirrors useTargetWhereFragments' own
+  // "reactive revision feeds an async useQuery" split. Skipped (falls back to the full `instances`)
+  // when counts are off.
+  const narrowRevisionRef = useRef(0);
+  const narrowRevision = useReactiveRead(
     filterShape.store,
-    `${filterShape.rootNode.value}|narrow|${pathSparqlFor(property) ?? ""}`,
-    () =>
-      enableFacetOptionCounts
-        ? instancesMatchingOtherConstraints(
-            filterShape,
-            property.dataGraph,
-            property.shapesGraph,
-            instances,
-            pathSparqlFor(property),
-          )
-        : instances,
+    `${filterShape.rootNode.value}|narrow-revision|${pathSparqlFor(property) ?? ""}`,
+    () => {
+      for (const quad of filterShape.store.getQuads(filterShape.rootNode, sh("property"))) {
+        filterShape.store.getQuads(quad.object as Quad_Subject);
+      }
+      return ++narrowRevisionRef.current;
+    },
   );
+  const { data: narrowedInstancesData } = useQuery({
+    queryKey: [
+      "facet-narrowed-instances",
+      filterShape.rootNode.value,
+      pathSparqlFor(property) ?? "",
+      narrowRevision,
+    ],
+    queryFn: () =>
+      instancesMatchingOtherConstraints(
+        filterShape,
+        property.dataGraph,
+        instances,
+        pathSparqlFor(property),
+      ),
+    enabled: enableFacetOptionCounts,
+    placeholderData: keepPreviousData,
+    ...noRefetch,
+  });
+  const narrowedInstances = enableFacetOptionCounts ? (narrowedInstancesData ?? instances) : instances;
 
   const valueCounts = useMemo(
     () =>

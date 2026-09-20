@@ -45,14 +45,15 @@ const BUCKET_LABEL_FALLBACKS: Record<ColorBucket, string> = {
  * hex parsing involved. Renders one clickable circle per non-empty bucket, colored with that
  * bucket's own canonical swatch rather than any one member's exact shade.
  *
- * Clicking a bucket writes a single st:colorBucket value (the bucket's own name, e.g. "blue") -
- * this renderer's own fast synchronous match (structure/filterShape.ts's
- * instanceSatisfiesConstraintNode) reads it directly and reclassifies each candidate's own HSL
- * values the same way this widget does. A sibling sh:sparql SPARQLConstraint, built from
- * helpers/colorBuckets.ts's sparqlFilterForBucket, is kept in sync alongside it (see
- * structure/filterShape.ts's syncColorBucketSparqlConstraint) so a real SHACL-SPARQL-conformant
- * engine can enforce the exact same rule without knowing st:colorBucket at all - the same
- * "bespoke value plus a portable SPARQL sibling" split MapFacet's own st:withinArea uses.
+ * Clicking a bucket writes a single st:colorBucket value (the bucket's own name, e.g. "blue") - a
+ * sibling sh:sparql SPARQLConstraint, built from helpers/colorBuckets.ts's sparqlFilterForBucket,
+ * is kept in sync alongside it (see structure/filterShape.ts's syncColorBucketSparqlConstraint).
+ * That sh:sparql is what this renderer's own facet narrowing actually runs, via a real shacl-engine
+ * validation pass (structure/filterShape.ts's instancesConformingViaEngine) - not a hand-rolled
+ * reclassification of each candidate's own HSL values, though the *effect* is the same as if it
+ * were. The same sh:sparql also lets any external SHACL-SPARQL-conformant engine enforce the exact
+ * same rule without knowing st:colorBucket at all - the same "bespoke value plus a portable SPARQL
+ * sibling" split MapFacet's own st:withinArea uses.
  *
  * Single-select: clicking one replaces any previous selection, and clicking the already-selected
  * bucket clears it. Per-bucket counts (valueCounts) still reflect every raw value in that bucket,

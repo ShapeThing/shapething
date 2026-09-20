@@ -64,7 +64,9 @@ export default function MemberShapeListHeader({
                           </span>
                         ) : undefined
                       }
-                      labelTitle={enableShPathInLabelTitle ? column.pathAsSparql() : undefined}
+                      labelTitle={enableShPathInLabelTitle
+                        ? column.pathAsSparql({ prefixed: true })
+                        : undefined}
                       required={(column.get(sh("minCount")) ?? 0) > 0}
                       labelId={columnLabelId(index)}
                     />

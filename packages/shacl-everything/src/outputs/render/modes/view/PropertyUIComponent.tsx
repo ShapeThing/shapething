@@ -67,7 +67,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
     <FormElement
       label={label}
       showColon={true}
-      labelTitle={propertyUIElement.pathAsSparql()}
+      labelTitle={propertyUIElement.pathAsSparql({ prefixed: true })}
       labelId={labelId}
       dataId={propertyUIElement.dataId()}
       tooltip={description}

@@ -1,10 +1,11 @@
-import type { NamedNode, Quad, Quad_Object, Term } from "@rdfjs/types";
+import type { Literal, NamedNode, Quad, Quad_Object, Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import type { Preprocessor } from "@/preprocess/index.ts";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 import { factory } from "@/helpers/factory.ts";
 import { rdf, rdfs, sh, st, xsd } from "@/helpers/namespaces.ts";
-import { rebuildRdfList } from "@/helpers/rdfList.ts";
+import { getRdfList, rebuildRdfList } from "@/helpers/rdfList.ts";
+import { termKey } from "@/helpers/termKey.ts";
 import { facetableRootShapes, shapesTargetingClass } from "@/resolution/targets.ts";
 
 // Every distinct rdf:type object used anywhere in `dataGraph`. Blank-node "classes" are excluded -
@@ -23,16 +24,13 @@ function classesUsedInData(dataGraph: RdfStore): NamedNode[] {
 }
 
 // Same target kinds resolution/targets.ts's targetsOfShape recognizes as covering a class: an
-// explicit sh:targetClass (3.1.3.2), or an implicit class-shape/sh:ShapeClass declaration
-// (3.1.3.3). A class covered this way is left alone entirely, even if the shape doesn't declare
-// every property its instances actually carry in dataGraph - that's the shape author's own choice,
-// not something this preprocessor should second-guess by bolting extra sh:property entries onto an
-// already-authored shape.
-function classAlreadyHasShape(
-  classIri: NamedNode,
-  shapesGraph: RdfStore,
-): boolean {
-  if (shapesTargetingClass(classIri, shapesGraph).length > 0) return true;
+// explicit sh:targetClass (3.1.3.2) declarer, or classIri acting as its own implicit class-shape/
+// sh:ShapeClass (3.1.3.3). Used both to find what a class already has declared
+// (predicatesCoveredByShapeNodes) and, when something's still missing, which existing shape node to
+// attach the gap-filling sh:property to - so an already-authored shape's own identity/groups/etc
+// are left untouched and only the gap itself is added (see addMissingShapes below).
+function shapeNodesForClass(classIri: NamedNode, shapesGraph: RdfStore): Quad_Subject[] {
+  const nodes = shapesTargetingClass(classIri, shapesGraph);
 
   const isShapeClass =
     shapesGraph.getQuads(classIri, rdf("type"), sh("ShapeClass")).length > 0;
@@ -41,7 +39,71 @@ function classAlreadyHasShape(
       shapesGraph.getQuads(classIri, rdf("type"), sh("PropertyShape")).length >
         0) &&
     shapesGraph.getQuads(classIri, rdf("type"), rdfs("Class")).length > 0;
-  return isShapeClass || isExplicitShapeAndClass;
+  if (isShapeClass || isExplicitShapeAndClass) nodes.push(classIri);
+
+  return nodes;
+}
+
+// Every predicate already declared via a plain sh:property/sh:path on any shape node in
+// `shapeNodes` (shapeNodesForClass's own result for a class) OR on a shape reachable from one of
+// them via sh:and/sh:node, plus every predicate any of those shape nodes lists under
+// sh:ignoredProperties (7.9.1's sh:closed companion - a shape author explicitly declaring a
+// predicate as ignored is declaring it out of scope for that shape just as deliberately as
+// declaring it via sh:property, so it must not get a synthesized bare property either). The
+// sh:and/sh:node recursion (with a `visited` cycle guard, same shape graph acyclic-by-assumption
+// as childrenForShape.ts) mirrors childrenForShape.ts's own walk exactly: that's what actually
+// renders a node shape's properties, flattening any sh:and/sh:node-referenced shape's sh:property
+// entries into the same focus node - so a predicate only covered through a referenced shape (e.g.
+// a shared "NamedThingShape" pulled in via sh:node for shape composition) still counts as covered
+// here, rather than getting a redundant, unlabeled bare property minted alongside the real one.
+// A plain NamedNode path counts directly; an sh:alternativePath also counts, one predicate per
+// plain-NamedNode branch (e.g. mergeFacetTextSearchProperties's own generated
+// `sh:alternativePath (dc:title rdfs:label)` shape below) - a predicate already reachable through
+// one branch of an existing alternative doesn't need a redundant bare property of its own. Any other
+// compound path (a sequence, inverse, zeroOrMore, ...) still isn't recognized as covered here,
+// matching predicatesUsedByInstancesOf's own predicate-only granularity - a predicate only reachable
+// that way could still get a redundant bare property minted alongside it. That's acceptable:
+// sh:property entries are conjunctive, not exclusive, so a false "still missing" call just adds a
+// harmless duplicate field rather than breaking anything.
+function predicatesCoveredByShapeNodes(
+  shapeNodes: Quad_Subject[],
+  shapesGraph: RdfStore,
+): Set<string> {
+  const covered = new Set<string>();
+  const visited = new Set<string>();
+
+  function walk(shapeNode: Term): void {
+    const key = termKey(shapeNode);
+    if (visited.has(key)) return;
+    visited.add(key);
+
+    for (const propertyLink of shapesGraph.getQuads(shapeNode, sh("property"))) {
+      const pathQuad = shapesGraph.getQuads(propertyLink.object, sh("path"))[0];
+      if (!pathQuad) continue;
+      if (pathQuad.object.termType === "NamedNode") {
+        covered.add(pathQuad.object.value);
+        continue;
+      }
+      const alternativePathQuad = shapesGraph.getQuads(pathQuad.object, sh("alternativePath"))[0];
+      if (!alternativePathQuad) continue;
+      for (const branch of expandListOrTerm(alternativePathQuad.object, shapesGraph)) {
+        if (branch.termType === "NamedNode") covered.add(branch.value);
+      }
+    }
+    for (const ignoredQuad of shapesGraph.getQuads(shapeNode, sh("ignoredProperties"))) {
+      for (const ignored of expandListOrTerm(ignoredQuad.object, shapesGraph)) {
+        if (ignored.termType === "NamedNode") covered.add(ignored.value);
+      }
+    }
+
+    for (const listQuad of shapesGraph.getQuads(shapeNode, sh("and"))) {
+      for (const branchShape of getRdfList(listQuad.object, shapesGraph)) walk(branchShape);
+    }
+    for (const nodeQuad of shapesGraph.getQuads(shapeNode, sh("node"))) walk(nodeQuad.object);
+  }
+
+  for (const shapeNode of shapeNodes) walk(shapeNode);
+  return covered;
 }
 
 // Every predicate actually used on dataGraph's own instances of `classIri` - rdf:type itself
@@ -71,26 +133,116 @@ function predicatesUsedByInstancesOf(
   return predicates;
 }
 
+// Every object value dataGraph actually holds for `predicate` on any of dataGraph's own instances
+// of `classIri` - the same instance walk predicatesUsedByInstancesOf does, just collecting values
+// for one already-known-missing predicate instead of discovering predicates in the first place.
+function valuesUsedFor(
+  classIri: NamedNode,
+  predicate: NamedNode,
+  dataGraph: RdfStore,
+): Quad_Object[] {
+  const values: Quad_Object[] = [];
+  for (const { subject: instance } of dataGraph.getQuads(null, rdf("type"), classIri)) {
+    for (const quad of dataGraph.getQuads(instance, predicate)) {
+      values.push(quad.object);
+    }
+  }
+  return values;
+}
+
+// SHACL's three leaf node kinds (7.7.1's compound BlankNodeOrIRI/BlankNodeOrLiteral/IRIOrLiteral
+// are for genuinely mixed data, not synthesized here) keyed by the RDF/JS termType that maps to
+// each one.
+const nodeKindByTermType: Partial<Record<Term["termType"], NamedNode>> = {
+  NamedNode: sh("IRI"),
+  BlankNode: sh("BlankNode"),
+  Literal: sh("Literal"),
+};
+
+// Every rdf:type value dataGraph gives `value` - used only to look for a class every value of a
+// predicate agrees on (inferredConstraints below), so this is only ever consulted for a resource
+// value (IRI or blank node); a Literal never reaches it.
+function typesOf(value: Quad_Object, dataGraph: RdfStore): Set<string> {
+  return new Set(dataGraph.getQuads(value, rdf("type")).map((quad) => quad.object.value));
+}
+
+// A generated property shape can safely take the liberty of a narrower sh:nodeKind/sh:datatype/
+// sh:class than "anything goes" when every value dataGraph actually has for that predicate -
+// across every instance of the class, not just one - already agrees: sh:nodeKind once every value
+// shares the same RDF/JS termType; sh:datatype (literals only) once every value additionally
+// shares the same literal datatype IRI (rdf:langString included, so an all-langString predicate
+// still gets one); sh:class (IRIs/blank nodes only) once every value shares exactly one rdf:type
+// in dataGraph in common. A predicate with no values yet, a genuinely mixed one (an IRI here, a
+// literal there), or resource values whose rdf:type sets don't all agree on a single class, gets
+// none of these - no false narrowing of data that hasn't actually settled on one shape. When
+// several values happen to share more than one rdf:type in common (e.g. every value is both
+// ex:Cat and ex:Pet), no single one is picked automatically either - guessing which of several
+// equally-true classes the shape author actually meant would be a real assertion, not just
+// restating what the data already shows.
+function inferredConstraints(
+  values: Quad_Object[],
+  dataGraph: RdfStore,
+): { nodeKind?: NamedNode; datatype?: NamedNode; classIri?: NamedNode } {
+  const [first, ...rest] = values;
+  if (!first || !rest.every((value) => value.termType === first.termType)) return {};
+
+  const nodeKind = nodeKindByTermType[first.termType];
+  if (!nodeKind) return {};
+
+  if (first.termType === "Literal") {
+    const literals = values as Literal[];
+    const datatype = literals[0].datatype;
+    const sameDatatype = literals.every((literal) => literal.datatype.equals(datatype));
+    return sameDatatype ? { nodeKind, datatype } : { nodeKind };
+  }
+
+  const [firstTypes, ...restTypes] = values.map((value) => typesOf(value, dataGraph));
+  const commonTypes = restTypes.reduce(
+    (common, types) => new Set([...common].filter((type) => types.has(type))),
+    firstTypes,
+  );
+  return commonTypes.size === 1
+    ? { nodeKind, classIri: factory.namedNode([...commonTypes][0]) }
+    : { nodeKind };
+}
+
 /**
  * Opt-in (Environment.enableMissingShapesGeneration, off by default) shape inference: for every
- * class found via rdf:type anywhere in dataGraph that no shape in shapesGraph already covers (see
- * classAlreadyHasShape), mints a node shape with one bare sh:property/sh:path per predicate
- * actually used by that class's own instances, so data that otherwise has no shape at all still
- * renders as something editable.
+ * class found via rdf:type anywhere in dataGraph, tops up one bare sh:property/sh:path for each
+ * predicate actually used by that class's own instances that isn't already covered by any shape
+ * node already targeting the class (shapeNodesForClass/predicatesCoveredByShapeNodes) - this is a
+ * per-predicate gap-fill, not an all-or-nothing "does this class have a shape at all" check: a
+ * class with an existing-but-incomplete shape still gets its missing predicates added, right onto
+ * that same existing shape node, so data that's only partially shaped still renders every field
+ * it actually carries, not just the ones the shape author happened to declare.
  *
- * The generated shape's own subject is `classIri` itself, typed both sh:NodeShape and rdfs:Class -
- * 3.1.3.3's "implicit class target" pattern, already recognized everywhere else in this codebase
- * that resolves targets (resolution/targets.ts's targetsOfShape, facetableRootShapes) - rather than
- * a fresh sh:targetClass-pointing blank/synthetic node. This makes the generated shape's identity
+ * A predicate listed under any of those shape nodes' own sh:ignoredProperties is treated as
+ * covered too, not just "still missing" - sh:ignoredProperties is how a shape author says a
+ * predicate is deliberately out of scope for this shape (typically alongside sh:closed), so
+ * synthesizing a bare property for it here would defeat that authorial intent.
+ *
+ * When a class has no shape at all yet, one is minted first: the generated shape's own subject is
+ * `classIri` itself, typed both sh:NodeShape and rdfs:Class - 3.1.3.3's "implicit class target"
+ * pattern, already recognized everywhere else in this codebase that resolves targets
+ * (resolution/targets.ts's targetsOfShape, facetableRootShapes) - rather than a fresh
+ * sh:targetClass-pointing blank/synthetic node. This makes the generated shape's identity
  * predictable: a caller who already knows the class IRI (e.g. to set Environment.nodeShapes) can
  * reference it directly, with no need to inspect the generated shapesGraph first to find an opaque
- * generated id.
+ * generated id. When the class already has at least one shape node, the missing properties are
+ * attached to the first one shapeNodesForClass finds instead, so an existing shape's own
+ * identity/groups/etc are left completely untouched - only the properties it's missing are added.
  *
- * Deliberately minimal: a generated property shape carries no sh:datatype/sh:class/sh:name/
- * sh:maxCount/etc, so widget scoring falls back to its own generic-value heuristics the same as it
- * would for any other under-specified property shape - this is a fallback for unshaped data, not a
- * replacement for actually authoring a shape. Classes already covered by some shape are left
- * completely untouched, even if that shape doesn't declare every property its instances carry.
+ * Deliberately minimal beyond that: a generated property shape carries no sh:name/sh:maxCount/
+ * etc, so widget scoring falls back to its own generic-value heuristics the same as it would for
+ * any other under-specified property shape - this is a fallback for unshaped/under-shaped data,
+ * not a replacement for actually authoring a shape. The one liberty taken is sh:nodeKind/
+ * sh:datatype/sh:class (inferredConstraints above): when every value the predicate actually has
+ * across every instance of the class already agrees on a termType (and, for literals, a datatype;
+ * for IRIs/blank nodes, one single common rdf:type), that much is safe to state outright rather
+ * than leaving it generic - it narrows widget scoring (e.g. towards an IRI- or literal-specific
+ * widget, or one aware of the value's class) without asserting anything the data doesn't already
+ * show. A predicate with no values yet, genuinely mixed ones, or resource values that don't agree
+ * on a single class, gets none of these.
  *
  * Copies shapesGraph into a fresh RdfStore rather than mutating the caller-supplied one in place -
  * shapesGraph is frequently a shared, module-level fixture reused across multiple
@@ -112,18 +264,34 @@ export const addMissingShapes: Preprocessor = (environment) => {
   }
 
   for (const classIri of classesUsedInData(dataGraph)) {
-    if (classAlreadyHasShape(classIri, shapesGraph)) continue;
+    const shapeNodes = shapeNodesForClass(classIri, shapesGraph);
+    const coveredPredicates = predicatesCoveredByShapeNodes(shapeNodes, shapesGraph);
 
-    const predicates = predicatesUsedByInstancesOf(classIri, dataGraph);
+    const predicates = predicatesUsedByInstancesOf(classIri, dataGraph).filter(
+      (predicate) => !coveredPredicates.has(predicate.value),
+    );
     if (predicates.length === 0) continue;
 
-    shapesGraph.addQuad(factory.quad(classIri, rdf("type"), sh("NodeShape")));
-    shapesGraph.addQuad(factory.quad(classIri, rdf("type"), rdfs("Class")));
+    let targetShapeNode: Quad_Subject | undefined = shapeNodes[0];
+    if (!targetShapeNode) {
+      shapesGraph.addQuad(factory.quad(classIri, rdf("type"), sh("NodeShape")));
+      shapesGraph.addQuad(factory.quad(classIri, rdf("type"), rdfs("Class")));
+      targetShapeNode = classIri;
+    }
 
     for (const predicate of predicates) {
       const propertyNode = factory.blankNode();
       shapesGraph.addQuad(factory.quad(propertyNode, sh("path"), predicate));
-      shapesGraph.addQuad(factory.quad(classIri, sh("property"), propertyNode));
+
+      const { nodeKind, datatype, classIri: valueClass } = inferredConstraints(
+        valuesUsedFor(classIri, predicate, dataGraph),
+        dataGraph,
+      );
+      if (nodeKind) shapesGraph.addQuad(factory.quad(propertyNode, sh("nodeKind"), nodeKind));
+      if (datatype) shapesGraph.addQuad(factory.quad(propertyNode, sh("datatype"), datatype));
+      if (valueClass) shapesGraph.addQuad(factory.quad(propertyNode, sh("class"), valueClass));
+
+      shapesGraph.addQuad(factory.quad(targetShapeNode, sh("property"), propertyNode));
     }
   }
 

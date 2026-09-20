@@ -21,7 +21,9 @@ export const withMaxWidth: Decorator = (Story, context) =>
   context.parameters.maxWidth === false ? (
     Story()
   ) : (
-    <div style={{ maxWidth: 600, marginInline: "auto" }}>{Story()}</div>
+    <div style={{ maxWidth: context.parameters.maxWidth ?? 600, marginInline: "auto" }}>
+      {Story()}
+    </div>
   );
 
 type RdfTerm = { termType: string; value: string };

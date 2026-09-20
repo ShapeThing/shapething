@@ -123,7 +123,8 @@ export const stSubClassFacetShowsRolledUpCounts: Story = {
 };
 
 // A class-taxonomy pick narrows sibling facets by hierarchy, not just exact value (see
-// structure/filterShape.ts's copyRootClass/instanceSatisfiesConstraintNode): Laptop is tagged
+// structure/filterShape.ts's copyRootClass, which relies on sh:rootClass's own real SHACL Core
+// semantics rather than a bespoke check): Laptop is tagged
 // ex:Computers, a subclass of ex:Electronics, not ex:Electronics itself - selecting "Electronics"
 // must still count it alongside Widget (tagged ex:Electronics directly), the same way a real
 // taxonomy facet implies everything more specific filed under the picked category.

@@ -105,3 +105,19 @@ export function filterToShapedClasses(nodes: ClassHierarchyNode[]): ClassHierarc
   });
   return result.sort((a, b) => a.label.localeCompare(b.label));
 }
+
+// Every shapeIri that has its own entry (and so its own Link) somewhere in the tree - a property
+// shape can be reached through several rootShape candidates (e.g. both the shape that declares it
+// and one that reuses it via sh:node, see fetchPropertyShapes.rq), and only one of those
+// candidates is ever an actual node here.
+export function collectShapeIris(nodes: ClassHierarchyNode[]): Set<string> {
+  const shapeIris = new Set<string>();
+  const visit = (list: ClassHierarchyNode[]) => {
+    for (const node of list) {
+      if (node.shapeIri) shapeIris.add(node.shapeIri);
+      visit(node.children);
+    }
+  };
+  visit(nodes);
+  return shapeIris;
+}

@@ -50,10 +50,18 @@ export const GraphInspectorPanel = ({ active }: Props) => {
         {!payload ? (
           <p style={{ opacity: 0.6, fontSize: 13 }}>No shapes or data graph on this story.</p>
         ) : sameSource ? (
-          <GraphSection title="Shapes & data graph" graph={payload.shapesGraph} />
+          <GraphSection
+            title="Shapes & data graph"
+            graph={payload.shapesGraph}
+            materializedText={payload.shapesGraphMaterialized}
+          />
         ) : (
           <>
-            <GraphSection title="Shapes graph" graph={payload.shapesGraph} />
+            <GraphSection
+              title="Shapes graph"
+              graph={payload.shapesGraph}
+              materializedText={payload.shapesGraphMaterialized}
+            />
             <GraphSection title="Data graph" graph={payload.dataGraph} />
           </>
         )}
@@ -178,38 +186,69 @@ const graphFilesKey = (graph?: GraphText): string | undefined => {
   return graph.files.map((file) => file.href).join("\n");
 };
 
-const GraphSection = ({ title, graph }: { title: string; graph?: GraphText }) => {
+// "Source files" shows each fixture file as authored; "Shapes graph" shows the single, already-
+// merged/resolved shapesGraph RdfStore re-serialized as one turtle document (see
+// withGraphInspector.tsx's shapesGraphMaterialized) - most useful once a story's shapesGraph is
+// several files merged together, or shapes+data share one file and you want just the shapes.
+type GraphSectionView = "source" | "materialized";
+
+const GraphSection = ({
+  title,
+  graph,
+  materializedText,
+}: {
+  title: string;
+  graph?: GraphText;
+  materializedText?: string;
+}) => {
+  const [view, setView] = useState<GraphSectionView>("source");
   if (!graph || graph.files.length === 0) return null;
 
   const sectionSlug = title.replace(/[^A-Za-z0-9]+/g, "-").toLowerCase();
+  const showMaterialized = materializedText !== undefined && view === "materialized";
   // Most stories have exactly one file - keep that case's header identical to before (filename
-  // inline, next to the section title) rather than introducing a redundant nested heading.
-  const singleFile = graph.files.length === 1 ? graph.files[0] : undefined;
+  // inline, next to the section title) rather than introducing a redundant nested heading. Not
+  // meaningful once showing the merged materialized graph instead of one particular file.
+  const singleFile = !showMaterialized && graph.files.length === 1 ? graph.files[0] : undefined;
 
   return (
     <section
       style={{ flex: 1, minWidth: 0, minHeight: 0, display: "flex", flexDirection: "column" }}
     >
-      <h3 style={{ margin: "0 0 6px", fontSize: 13, fontWeight: 600, flexShrink: 0 }}>
-        {title}
-        {singleFile && (
-          <span style={{ fontWeight: 400, opacity: 0.6 }}>
-            {" "}
-            —{" "}
-            {singleFile.href ? (
-              <a
-                href={singleFile.href}
-                target="_blank"
-                rel="noreferrer"
-                style={{ color: "inherit" }}
-              >
-                {decodeURI(singleFile.label)}
-              </a>
-            ) : (
-              singleFile.label
-            )}
-          </span>
-        )}
+      <h3
+        style={{
+          margin: "0 0 6px",
+          fontSize: 13,
+          fontWeight: 600,
+          flexShrink: 0,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+        }}
+      >
+        <span>
+          {title}
+          {singleFile && (
+            <span style={{ fontWeight: 400, opacity: 0.6 }}>
+              {" "}
+              —{" "}
+              {singleFile.href ? (
+                <a
+                  href={singleFile.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  style={{ color: "inherit" }}
+                >
+                  {decodeURI(singleFile.label)}
+                </a>
+              ) : (
+                singleFile.label
+              )}
+            </span>
+          )}
+        </span>
+        {materializedText !== undefined && <GraphSectionViewToggle view={view} onChange={setView} />}
       </h3>
       <div
         style={{
@@ -221,18 +260,69 @@ const GraphSection = ({ title, graph }: { title: string; graph?: GraphText }) =>
           overflow: "auto",
         }}
       >
-        {graph.files.map((file, index) => (
+        {showMaterialized ? (
           <GraphFileSection
-            key={file.href ?? `${sectionSlug}-${index}`}
-            file={file}
-            idPrefix={`${sectionSlug}-${index}`}
-            showHeading={graph.files.length > 1}
+            file={{ label: "Shapes graph", text: materializedText }}
+            idPrefix={`${sectionSlug}-materialized`}
+            showHeading={false}
           />
-        ))}
+        ) : (
+          graph.files.map((file, index) => (
+            <GraphFileSection
+              key={file.href ?? `${sectionSlug}-${index}`}
+              file={file}
+              idPrefix={`${sectionSlug}-${index}`}
+              showHeading={graph.files.length > 1}
+            />
+          ))
+        )}
       </div>
     </section>
   );
 };
+
+const GraphSectionViewToggle = ({
+  view,
+  onChange,
+}: {
+  view: GraphSectionView;
+  onChange: (view: GraphSectionView) => void;
+}) => (
+  <div
+    style={{
+      display: "flex",
+      fontSize: 11,
+      fontWeight: 400,
+      flexShrink: 0,
+      border: "1px solid rgba(128, 128, 128, 0.3)",
+      borderRadius: 4,
+      overflow: "hidden",
+    }}
+  >
+    {(
+      [
+        ["source", "Source files"],
+        ["materialized", "Shapes graph"],
+      ] as const
+    ).map(([option, label]) => (
+      <button
+        key={option}
+        type="button"
+        onClick={() => onChange(option)}
+        style={{
+          padding: "2px 8px",
+          border: "none",
+          cursor: "pointer",
+          fontSize: 11,
+          background: view === option ? "#1a1a1a" : "transparent",
+          color: view === option ? "#fff" : "#1a1a1a",
+        }}
+      >
+        {label}
+      </button>
+    ))}
+  </div>
+);
 
 const GraphFileSection = ({
   file,

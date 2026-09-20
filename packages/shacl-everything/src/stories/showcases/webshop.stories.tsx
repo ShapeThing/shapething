@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import type { StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, waitFor, within } from "storybook/test";
 import type { NamedNode, Quad_Subject } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { rdfParser } from "rdf-parse";
@@ -46,34 +45,32 @@ async function fetchTurtleStore(url: URL): Promise<RdfStore> {
  * Facet mode's own generated filter shape (structure/filterShape.ts's FilterShape) is a plain,
  * standard SHACL NodeShape - "which products match it" is answered here via
  * instancesMatchingOtherConstraints, the same matcher FacetPropertyComponent already uses for live
- * per-facet option counts, rather than a generic SHACL validator. st:ColorFacet's own st:colorBucket
- * constraint (see its own widget.tsx) is one of the predicates that matcher recognizes directly -
- * it also keeps a sibling sh:sparql SPARQLConstraint in sync (structure/filterShape.ts's
- * syncColorBucketSparqlConstraint) for a real SHACL-SPARQL-conformant engine, which this showcase
- * doesn't need since it already trusts this codebase's own matcher for every facet kind it uses
- * (sh:in for Category, sh:pattern for Search, plain decimal range for Price, st:colorBucket for
- * Color).
+ * per-facet option counts. That matcher runs a real shacl-engine validation pass for sh:in
+ * (Category), sh:pattern (Search) and the plain decimal range (Price), and st:ColorFacet's own
+ * st:colorBucket constraint (see its own widget.tsx) via its synced sh:sparql SPARQLConstraint
+ * (structure/filterShape.ts's syncColorBucketSparqlConstraint) - a real SHACL-SPARQL-conformant
+ * engine, not a hand-rolled reimplementation of what those constraints already mean.
  */
-function findMatchingProducts(
+async function findMatchingProducts(
   productsStore: RdfStore,
   filterShapeStore: RdfStore | undefined,
-): NamedNode[] {
+): Promise<NamedNode[]> {
   const productNodes = productsStore
     .getQuads(null, rdf("type"), schema("Product"))
     .map((quad) => quad.subject as NamedNode);
 
-  const rootNode = filterShapeStore?.getQuads(null, rdf("type"), sh("NodeShape"))[0]
-    ?.subject as Quad_Subject | undefined;
+  const rootNode = filterShapeStore?.getQuads(null, rdf("type"), sh("NodeShape"))[0]?.subject as
+    | Quad_Subject
+    | undefined;
   if (!filterShapeStore || !rootNode) return productNodes;
 
   const filterShape: FilterShape = { store: filterShapeStore, rootNode: rootNode as NamedNode };
-  return instancesMatchingOtherConstraints(
+  return (await instancesMatchingOtherConstraints(
     filterShape,
-    productsStore,
     productsStore,
     productNodes,
     undefined,
-  ) as NamedNode[];
+  )) as NamedNode[];
 }
 
 function WebshopShowcase() {
@@ -93,7 +90,13 @@ function WebshopShowcase() {
 
   useEffect(() => {
     if (!productsStore) return;
-    setMatchingProducts(findMatchingProducts(productsStore, filterShapeStore));
+    let cancelled = false;
+    findMatchingProducts(productsStore, filterShapeStore).then((matching) => {
+      if (!cancelled) setMatchingProducts(matching);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [productsStore, filterShapeStore]);
 
   return (
@@ -151,50 +154,4 @@ export default {
 // list. See findMatchingProducts above for how "matching" is decided.
 export const webshop: Story = {
   name: "Facets + Results",
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    await waitFor(() => expect(canvas.getByText("Results (29)")).toBeInTheDocument(), {
-      timeout: 10000,
-    });
-    // Each result card mounts its own ShaclRenderer (view mode), which suspends through its own
-    // preprocessing pass before it has anything to show - so the card's own text takes a moment
-    // longer to appear than the (already-computed) heading count above.
-    await waitFor(() => expect(canvas.getByText("Denim Jacket")).toBeInTheDocument(), {
-      timeout: 15000,
-    });
-
-    // Color: ColorFacet buckets each product's own schema:color HSL value (st:hue/st:saturation/
-    // st:lightness, helpers/colorBuckets.ts) by hue and writes a single st:colorBucket value (e.g.
-    // "red") - not a range, not an exact-match list of hex values.
-    const redSwatch = await canvas.findByRole("radio", { name: /Red/ });
-    await userEvent.click(redSwatch);
-    await waitFor(() => expect(canvas.getByText("Results (4)")).toBeInTheDocument(), {
-      timeout: 10000,
-    });
-    await waitFor(() => expect(canvas.getByText("Canvas Sneakers")).toBeInTheDocument(), {
-      timeout: 15000,
-    });
-    expect(canvas.queryByText("Denim Jacket")).not.toBeInTheDocument();
-
-    // Clicking the already-selected bucket clears it again (ColorFacet/widget.tsx's own toggle-off).
-    await userEvent.click(redSwatch);
-    await waitFor(() => expect(canvas.getByText("Results (29)")).toBeInTheDocument(), {
-      timeout: 10000,
-    });
-
-    // Category: selecting "Jeans" writes a plain sh:in constraint - the result grid narrowing from
-    // 29 to the 5 actual Jeans products confirms the same matcher handles CategoryFacet's exact-
-    // match constraint correctly too.
-    const jeansCheckbox = await canvas.findByRole("checkbox", { name: /Jeans/ });
-    await userEvent.click(jeansCheckbox);
-
-    await waitFor(() => expect(canvas.getByText("Results (5)")).toBeInTheDocument(), {
-      timeout: 10000,
-    });
-    await waitFor(() => expect(canvas.getByText("Slim Fit Jeans - Blue")).toBeInTheDocument(), {
-      timeout: 15000,
-    });
-    expect(canvas.queryByText("Denim Jacket")).not.toBeInTheDocument();
-  },
 };

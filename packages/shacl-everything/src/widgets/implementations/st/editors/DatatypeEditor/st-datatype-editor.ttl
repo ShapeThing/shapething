@@ -1,0 +1,20 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass sh:PropertyShape ;
+
+    sh:property [
+        sh:name "Datatype"@en, "Datatype"@nl ;
+        sh:path sh:datatype ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+
+<#data>
+    a sh:PropertyShape ;
+    sh:datatype xsd:string ;
+    .

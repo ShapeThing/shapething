@@ -1,0 +1,27 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+st:DatatypeEditor rdfs:label "Datatype Picker"@en, "Datatype kiezer"@nl .
+
+# Only true when the property shape being edited is itself describing a datatype constraint - i.e.
+# its own sh:path is literally sh:datatype. That only happens for a "meta shape" that edits SHACL
+# shapes themselves (see shacl-manager's shape.ttl), so this never fires for an ordinary
+# application-data property. Scored the same tier (30) IconifyEditor uses over its own generic
+# competitors - comfortably beats shui:IRIEditor's own top rule (20, see its score.ttl), which would
+# otherwise win this bare sh:nodeKind sh:IRI property.
+st:datatypeEditorScorePath
+    a shui:WidgetScore ;
+    shui:editor st:DatatypeEditor ;
+    shui:score 30 ;
+    shui:shapesGraphShape st:hasDatatypePathConstraint ;
+.
+
+st:hasDatatypePathConstraint
+    a sh:NodeShape ;
+    sh:property [
+        sh:path sh:path ;
+        sh:hasValue sh:datatype ;
+    ] ;
+.

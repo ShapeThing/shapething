@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { NamedNode, Quad_Subject } from "@rdfjs/types";
 import { Localized } from "@fluent/react";
 import { rdf, sh } from "@/helpers/namespaces.ts";
@@ -41,8 +41,9 @@ type Props = {
  * only ever hands the generated filter shape to onSubmit), so this supplies one: every onSubmit
  * fire re-runs structure/filterShape.ts's own instancesMatchingOtherConstraints against that
  * filter shape - the same narrowing logic a facet's own live option count
- * (Environment.enableFacetOptionCounts) already uses internally - to turn "the constraints the
- * user set" back into "which candidates still qualify."
+ * (Environment.enableFacetOptionCounts) already uses internally, via a real shacl-engine
+ * validation pass - to turn "the constraints the user set" back into "which candidates still
+ * qualify."
  */
 export default function FacetSearchModal({
   onClose,
@@ -57,16 +58,24 @@ export default function FacetSearchModal({
   const fieldLabel = shape.label([activeInterfaceLanguage]);
   const [filterShape, setFilterShape] = useState<FilterShape>();
 
-  // TODO this function call should just use shacl-engine yes?
-  const matchingInstances = useMemo(() => {
-    if (!filterShape) return candidateInstances;
-    return instancesMatchingOtherConstraints(
+  const [matchingInstances, setMatchingInstances] = useState<NamedNode[]>(candidateInstances);
+  useEffect(() => {
+    if (!filterShape) {
+      setMatchingInstances(candidateInstances);
+      return;
+    }
+    let cancelled = false;
+    instancesMatchingOtherConstraints(
       filterShape,
       shape.dataGraph,
-      shape.shapesGraph,
       candidateInstances,
       undefined,
-    ) as NamedNode[];
+    ).then((matching) => {
+      if (!cancelled) setMatchingInstances(matching as NamedNode[]);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [filterShape, candidateInstances, shape.dataGraph]);
 
   const lookups = useOptionLookups(shape, matchingInstances);

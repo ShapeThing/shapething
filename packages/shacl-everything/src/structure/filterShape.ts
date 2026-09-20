@@ -1,17 +1,18 @@
 import type { NamedNode, Quad_Object, Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
-import { bucketForHsl, sparqlFilterForBucket, type ColorBucket } from "@/helpers/colorBuckets.ts";
+import { Engine as ShaclEngine } from "shacl-engine";
+import { constraints as sparqlConstraints, functions as sparqlFunctions } from "shacl-engine/sparql.js";
+import { sparqlFilterForBucket, type ColorBucket } from "@/helpers/colorBuckets.ts";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 import { factory } from "@/helpers/factory.ts";
-import { geometryIntersectsArea, literalToGeometry } from "@/helpers/geometryLiteral.ts";
+import { geosparqlExtensionFunctions } from "@/helpers/geosparqlFunctions.ts";
 import { queryPrefixes, rdf, sh, st } from "@/helpers/namespaces.ts";
 import { rebuildRdfList } from "@/helpers/rdfList.ts";
 import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
+import { termKey } from "@/helpers/termKey.ts";
 import { collectClassAndSubClasses } from "@/structure/classHierarchy.ts";
-import { literalOrder } from "@/structure/constraintResolutions.ts";
-import { parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { toSparql } from "@/structure/paths/toSparql.ts";
-import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import { writePropertyPath } from "@/structure/paths/writePropertyPath.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 
@@ -121,12 +122,14 @@ export function getFilterConstraintNode(
 
 /**
  * Carries `property`'s own sh:rootClass (see shui:SubClassEditor/st:SubClassFacet) over onto the
- * generated filter constraint node, the same way the path itself is copied - so
- * instanceSatisfiesConstraintNode below can tell, from the constraint node alone, that this
- * property's sh:in is a class-taxonomy pick (rollUpClassCounts's own hierarchy - Electronics
- * should also match Computers, a subclass) rather than an ordinary exact-match option list
- * (CategoryFacet), and so the shape modes/facet/index.tsx eventually submits stays self-describing
- * enough for an external consumer to reproduce the same hierarchy-aware matching.
+ * generated filter constraint node, the same way the path itself is copied. sh:rootClass is a real
+ * SHACL 1.2 Core constraint (spec §7.9.4, see stories/specifications/SHACL core 1.2/7.9.4* -
+ * `RootClassConstraintComponent` in shacl-engine's own constraint set) requiring a value to be
+ * rootClass itself or one of its rdfs:subClassOf descendants - exactly the "Electronics should also
+ * match Computers, a subclass" hierarchy-aware behavior a class-taxonomy pick needs, so
+ * buildEngineValidationShape below can hand this straight to a real shacl-engine validation pass
+ * with no bespoke matching logic of its own, and the shape modes/facet/index.tsx eventually submits
+ * stays a real, externally-reproducible SHACL constraint rather than a ShapeThing-only convention.
  */
 function copyRootClass(
   property: PropertyUIElement,
@@ -174,7 +177,7 @@ export function setFilterConstraintsForProperty(
   const existing = findFilterConstraintNode(filterShape, property);
   if (existing) {
     for (const [predicate, value] of entries) {
-      setFilterConstraint(filterShape, existing, predicate, value);
+      setFilterConstraint(filterShape, existing, predicate, value, property.shapesGraph);
     }
     return;
   }
@@ -195,7 +198,7 @@ export function setFilterConstraintsForProperty(
   }
   copyRootClass(property, propertyNode, store);
   for (const [predicate, value] of nonEmptyEntries) {
-    setFilterConstraint(filterShape, propertyNode, predicate, value);
+    setFilterConstraint(filterShape, propertyNode, predicate, value, property.shapesGraph);
   }
   store.addQuad(factory.quad(rootNode, sh("property"), propertyNode));
 }
@@ -230,12 +233,17 @@ export function setFilterConstraintForProperty(
  * deleteBlankNodeClosure cleanup - mirroring getFilterConstraintNode's auto-vivify on the way in,
  * so a facet with no value given (not even one it had earlier but cleared) never leaves a vacuous
  * sh:property/sh:path entry behind in what modes/facet/index.tsx submits.
+ *
+ * `shapesGraph`, when given, is only ever consulted for an sh:in write on a node that also carries
+ * sh:rootClass (see syncRootClassSparqlConstraint) - every other predicate ignores it, and callers
+ * with no class-taxonomy facet in play (most of filterShape.test.ts's direct calls) can omit it.
  */
 export function setFilterConstraint(
   filterShape: FilterShape,
   constraintNode: Quad_Subject,
   predicate: NamedNode,
   value: Term | Term[] | undefined,
+  shapesGraph?: RdfStore,
 ): void {
   const { store, rootNode } = filterShape;
   const existingQuads = store.getQuads(constraintNode, predicate);
@@ -261,6 +269,9 @@ export function setFilterConstraint(
   }
   if (predicate.equals(st("colorBucket"))) {
     syncColorBucketSparqlConstraint(store, constraintNode, Array.isArray(value) ? undefined : value);
+  }
+  if (predicate.equals(sh("in")) && shapesGraph) {
+    syncRootClassSparqlConstraint(store, constraintNode, shapesGraph);
   }
 
   const stillHasConstraint = store
@@ -292,12 +303,9 @@ function escapeSparqlLiteral(value: string): string {
  * renderer submits (e.g. shape-t-query, or any conformant SPARQL-based-constraints engine) can
  * enforce the exact same spatial rule without ever knowing ShapeThing's own st:withinArea
  * vocabulary. st:withinArea itself is left untouched by this function - it stays the plain value
- * this renderer's own synchronous facet-narrowing (instanceSatisfiesConstraintNode below,
- * facetValues.ts's countFacetInstancesWithinArea) reads directly, the same "real SHACL predicate
- * plus an auxiliary st: value for the app's own fast synchronous path" split copyRootClass already
- * uses for sh:in's class-taxonomy matching above - re-deriving the drawn area from generated SPARQL
- * text on every facet-count read would be needless, fragile work for a value already sitting right
- * there as a literal.
+ * facetValues.ts's countFacetInstancesWithinArea reads directly for a single facet's own displayed
+ * match count - re-deriving the drawn area from generated SPARQL text on every facet-count read
+ * would be needless, fragile work for a value already sitting right there as a literal.
  *
  * Always regenerates from scratch (delete-then-rebuild, like rebuildRdfList) rather than trying to
  * patch the previous sh:select text in place - MapFacet re-calls this on every drawn-shape change
@@ -306,13 +314,18 @@ function escapeSparqlLiteral(value: string): string {
  *
  * The generated query uses FILTER NOT EXISTS (the spec-correct, portable "for-all" shape - $this
  * violates unless *some* value satisfies geof:sfWithin) rather than a MINUS-based rewrite - this
- * renderer never runs the query itself (see above), but if it ever does, note that Comunica 4.5
- * does *not* correctly correlate $this into a FILTER NOT EXISTS pattern when a custom extension
+ * exact text is still never run by this renderer's own matching (instancesMatchingOtherConstraints
+ * routes st:withinArea through matchingInstancesWithinArea's own positive-form query instead, for
+ * exactly the reason below), only kept here for an external SHACL-SPARQL-aware consumer. Comunica
+ * 4.5 does *not* correctly correlate $this into a FILTER NOT EXISTS pattern when a custom extension
  * function (like geof:sfWithin) sits inside it: the nested pattern resolves against the wrong outer
  * binding regardless of which $this is active (verified against a minimal repro outside this
- * codebase). A MINUS-based rewrite correlates correctly under Comunica, but silently drops the
- * "zero values for the path is also a violation" case (MINUS needs $this to already join through
- * at least one value to appear as a row at all) - not a safe substitute, just a different bug.
+ * codebase) - shacl-engine's own sh:sparql support runs through that same Comunica engine, so
+ * running this exact text through it for real would silently misclassify results, not just work.
+ * A MINUS-based rewrite correlates correctly under Comunica, but silently drops the "zero values
+ * for the path is also a violation" case (MINUS needs $this to already join through at least one
+ * value to appear as a row at all) - not a safe substitute, just a different bug, and irrelevant to
+ * an external consumer that isn't necessarily Comunica-backed at all.
  */
 function syncWithinAreaSparqlConstraint(
   store: RdfStore,
@@ -345,14 +358,16 @@ function syncWithinAreaSparqlConstraint(
 
 /**
  * Keeps constraintNode's own sh:sparql [ a sh:SPARQLConstraint ; sh:select "..." ] entry in sync
- * with its st:colorBucket value (see setFilterConstraint above) - the same "bespoke value for this
- * renderer's own fast synchronous path, standards-form SPARQL text for an external consumer" split
+ * with its st:colorBucket value (see setFilterConstraint above) - the same "bespoke value for
+ * ColorFacet's own widget display, standards-form SPARQL text for actual matching" split
  * syncWithinAreaSparqlConstraint above uses for MapFacet's st:withinArea. st:colorBucket itself is
- * left untouched by this function - it stays the plain bucket-name literal
- * instanceSatisfiesConstraintNode below reads directly (via helpers/colorBuckets.ts's bucketForHsl,
- * applied to each value's own st:hue/st:saturation/st:lightness triples) - re-deriving the bucket
- * from generated SPARQL text on every facet-count read would be needless, fragile work for a value
- * already sitting right there as a literal.
+ * left untouched by this function - it stays the plain bucket-name literal ColorFacet's own
+ * widget.tsx reads directly to reclassify each candidate's own HSL for its swatch UI - re-deriving
+ * the bucket from generated SPARQL text there would be needless, fragile work for a value already
+ * sitting right there as a literal. instancesConformingViaEngine is what actually matches on this
+ * predicate, by running this sh:sparql for real (unlike its st:withinArea sibling above, this query
+ * has no custom extension function inside its FILTER NOT EXISTS, so it doesn't hit the Comunica
+ * correlation bug and is safe to run through shacl-engine as-is).
  *
  * The generated query reads a value's st:hue/st:saturation/st:lightness directly and applies
  * helpers/colorBuckets.ts's sparqlFilterForBucket - the SPARQL-text counterpart of the same
@@ -392,6 +407,72 @@ function syncColorBucketSparqlConstraint(
 }
 
 /**
+ * Keeps constraintNode's own sh:sparql [ a sh:SPARQLConstraint ; sh:select "..." ] entry in sync
+ * with its sh:in value, for a class-taxonomy pick (sh:rootClass present - see copyRootClass): each
+ * *chosen* sh:in value should also match its own subclasses, not just an exact-term match - a
+ * category faceted as "Electronics" should still count a product tagged "Computers".
+ *
+ * This is deliberately not shacl-engine's own real sh:rootClass/RootClassConstraintComponent (SHACL
+ * 1.2 Core §7.9.4, which copyRootClass's own sh:rootClass triple otherwise is): that constraint
+ * checks a value against the *shape-declared* rootClass (e.g. ex:Category, the whole taxonomy's
+ * root, written once by the shape author to tell SubClassFacet/SubClassEditor where their tree
+ * starts - see structure/classHierarchy.ts), not against whichever *specific* node(s) the user
+ * actually picked into sh:in (e.g. ex:Electronics). Those are different questions - "is this a
+ * Category at all" vs "is this Electronics-or-a-subclass" - so running the real rootClass
+ * constraint component here would validate the wrong thing (every product in the fixture is some
+ * kind of Category, so it would never narrow anything). buildEngineValidationShape drops both
+ * sh:in and sh:rootClass from what it actually validates whenever this sh:sparql exists, for
+ * exactly this reason - this sh:sparql is the one real constraint that expresses "matches one of
+ * the picks, or a descendant of one," and dropping sh:in is the same "AND with an unrelated
+ * component would veto every subclass match" tradeoff already true when this was first written
+ * around class-hierarchy sh:in (see buildEngineValidationShape's own doc comment for the details).
+ *
+ * The allowed-classes closure (collectClassAndSubClasses, over `shapesGraph`'s own rdfs:subClassOf
+ * triples, one call per chosen value) is resolved once here, at write time, into a flat VALUES list
+ * baked directly into the generated query text - not re-derived from a live subclass triple-walk at
+ * validation time, since shapesGraph and dataGraph aren't guaranteed to be the same store a
+ * SPARQL-based constraint would actually run against (see instancesConformingViaEngine, which
+ * validates against dataGraph alone).
+ */
+function syncRootClassSparqlConstraint(
+  store: RdfStore,
+  constraintNode: Quad_Subject,
+  shapesGraph: RdfStore,
+): void {
+  const existingSparqlQuad = store.getQuads(constraintNode, sh("sparql"))[0];
+  if (existingSparqlQuad) {
+    store.removeQuad(existingSparqlQuad);
+    deleteBlankNodeClosure(store, existingSparqlQuad.object);
+  }
+
+  const rootClass = store.getQuads(constraintNode, sh("rootClass"))[0]?.object;
+  const inQuad = store.getQuads(constraintNode, sh("in"))[0];
+  const path = parsePropertyPath(constraintNode, store);
+  if (!rootClass || rootClass.termType !== "NamedNode" || !inQuad || !path) return;
+
+  const allowedClasses = new Set<string>();
+  for (const term of expandListOrTerm(inQuad.object, store)) {
+    if (term.termType !== "NamedNode") continue;
+    for (const iri of collectClassAndSubClasses(shapesGraph, term)) allowedClasses.add(iri);
+  }
+  if (allowedClasses.size === 0) return;
+
+  const valuesList = [...allowedClasses].map((iri) => `<${iri}>`).join(" ");
+  const sparqlNode = factory.blankNode();
+  store.addQuad(factory.quad(sparqlNode, rdf("type"), sh("SPARQLConstraint")));
+  store.addQuad(
+    factory.quad(
+      sparqlNode,
+      sh("select"),
+      factory.literal(
+        `${queryPrefixes}\nselect $this where { filter not exists { $this ${toSparql(path)} ?rootClassValue . values ?rootClassValue { ${valuesList} } } }`,
+      ),
+    ),
+  );
+  store.addQuad(factory.quad(constraintNode, sh("sparql"), sparqlNode as Quad_Object));
+}
+
+/**
  * Removes every sh:property constraint node on `filterShape` whose own path (compared the same
  * canonical way as getFilterConstraintNode's lookup) is in `paths` - each a toSparql() string.
  * Used when the user switches facet mode's active root shape (see modes/facet/NodeUIComponent.tsx)
@@ -415,126 +496,173 @@ export function removeFilterConstraintsForPaths(
   }
 }
 
-// Whether `instance`'s own values for `constraintNode`'s path satisfy every constraint predicate
-// currently written on it (sh:in, sh:pattern+sh:flags, sh:minInclusive/sh:maxInclusive/
-// sh:minExclusive/sh:maxExclusive, st:withinArea, st:colorBucket - the only predicates any facet
-// widget ever writes via setConstraint) - true if the node declares none of them (a bare
-// sh:property/sh:path skeleton, which auto-vivify never actually leaves lying around, but this
-// stays permissive rather than assuming). A predicate this doesn't recognize is silently ignored
-// rather than excluding every instance - only facet-writable predicates are meaningful here.
-function instanceSatisfiesConstraintNode(
-  constraintNode: Quad_Subject,
-  instance: Quad_Subject,
-  store: RdfStore,
-  dataGraph: RdfStore,
-  shapesGraph: RdfStore,
-): boolean {
-  const path = parsePropertyPath(constraintNode, store);
-  if (!path) return true;
-  const values = walkPropertyPath(path, instance, dataGraph);
-
-  const inQuad = store.getQuads(constraintNode, sh("in"))[0];
-  if (inQuad) {
-    const allowed = expandListOrTerm(inQuad.object, store);
-    // A class-taxonomy pick (see copyRootClass above) matches not just the exact class chosen but
-    // anything filed under it too - ex:Electronics also matches a value of ex:Computers, one of
-    // its subclasses - rather than plain sh:in's ordinary exact-term-equality membership test.
-    const isClassHierarchy = store.getQuads(constraintNode, sh("rootClass")).length > 0;
-    const satisfiesIn = (value: Term): boolean =>
-      allowed.some((term) => term.equals(value)) ||
-      (isClassHierarchy &&
-        value.termType === "NamedNode" &&
-        allowed.some(
-          (term) =>
-            term.termType === "NamedNode" &&
-            collectClassAndSubClasses(shapesGraph, term).has(value.value),
-        ));
-    if (!values.some(satisfiesIn)) return false;
+// Copies every triple reachable from `term` through blank-node objects, source store to target
+// store - buildEngineValidationShape's own "bring a constraint node's full description along, not
+// just its direct quads" counterpart to deleteBlankNodeClosure's delete-shaped walk below (an
+// sh:in's rdf:List cells, an sh:sparql node's own rdf:type/sh:select, are all reached this way).
+function copyBlankNodeClosure(source: RdfStore, term: Term, target: RdfStore): void {
+  if (term.termType !== "BlankNode") return;
+  for (const quad of source.getQuads(term)) {
+    target.addQuad(quad);
+    copyBlankNodeClosure(source, quad.object, target);
   }
+}
 
-  const patternQuad = store.getQuads(constraintNode, sh("pattern"))[0];
-  if (patternQuad) {
-    const flags = store.getQuads(constraintNode, sh("flags"))[0]?.object.value ?? "";
-    const regex = new RegExp(patternQuad.object.value, flags);
-    if (!values.some((value) => regex.test(value.value))) return false;
-  }
+// Builds a throwaway SHACL shapes graph containing just `constraintNodes`, wired up under a fresh
+// root NodeShape - the same sh:path/sh:in/sh:pattern/sh:minInclusive/... structure filterShape.store
+// already holds for them, copied out (not validated against filterShape.store in place) so a
+// class-hierarchy pick's own sh:in *and* sh:rootClass can both be dropped from what's actually
+// validated whenever its sibling sh:sparql (syncRootClassSparqlConstraint) is present:
+//
+// - Plain sh:in means "exactly one of these terms" - keeping it alongside a sh:sparql that means
+//   "one of these terms, or a descendant of one" would AND the two together, letting sh:in's
+//   exact-match veto every subclass match the sh:sparql exists to allow (faceting "Electronics"
+//   would then reject a "Computers"-tagged product again).
+// - sh:rootClass is a real, different SHACL 1.2 Core constraint (§7.9.4,
+//   RootClassConstraintComponent) that checks a value against the *shape-declared* taxonomy root
+//   (e.g. ex:Category, written once so SubClassFacet/SubClassEditor know where their tree starts -
+//   see structure/classHierarchy.ts) - not against whichever specific node(s) sh:in actually holds.
+//   Every product in a typical taxonomy fixture *is* some kind of ex:Category, so leaving it in
+//   would validate a real but unrelated question and narrow nothing.
+//
+// The real filterShape.store node is left untouched either way - FacetPropertyComponent's own
+// getConstraint still reads sh:in straight off it for the widget's current-value display, and
+// structure/classHierarchy.ts still reads sh:rootClass off it to render the taxonomy tree.
+function buildEngineValidationShape(
+  filterStore: RdfStore,
+  constraintNodes: readonly Quad_Subject[],
+): { shapeStore: RdfStore; validationRoot: NamedNode } {
+  const shapeStore = RdfStore.createDefault();
+  const validationRoot = factory.namedNode(`urn:uuid:${crypto.randomUUID()}`);
+  shapeStore.addQuad(factory.quad(validationRoot, rdf("type"), sh("NodeShape")));
 
-  const minInclusiveQuad = store.getQuads(constraintNode, sh("minInclusive"))[0];
-  const maxInclusiveQuad = store.getQuads(constraintNode, sh("maxInclusive"))[0];
-  const minExclusiveQuad = store.getQuads(constraintNode, sh("minExclusive"))[0];
-  const maxExclusiveQuad = store.getQuads(constraintNode, sh("maxExclusive"))[0];
-  if (minInclusiveQuad || maxInclusiveQuad || minExclusiveQuad || maxExclusiveQuad) {
-    const minInclusiveOrder = minInclusiveQuad
-      ? literalOrder(minInclusiveQuad.object as Term)
-      : undefined;
-    const maxInclusiveOrder = maxInclusiveQuad
-      ? literalOrder(maxInclusiveQuad.object as Term)
-      : undefined;
-    const minExclusiveOrder = minExclusiveQuad
-      ? literalOrder(minExclusiveQuad.object as Term)
-      : undefined;
-    const maxExclusiveOrder = maxExclusiveQuad
-      ? literalOrder(maxExclusiveQuad.object as Term)
-      : undefined;
-    const inRange = values.some((value) => {
-      const order = literalOrder(value);
-      const aboveMin =
-        (minInclusiveOrder === undefined || order >= minInclusiveOrder) &&
-        (minExclusiveOrder === undefined || order > minExclusiveOrder);
-      const belowMax =
-        (maxInclusiveOrder === undefined || order <= maxInclusiveOrder) &&
-        (maxExclusiveOrder === undefined || order < maxExclusiveOrder);
-      return aboveMin && belowMax;
-    });
-    if (!inRange) return false;
-  }
-
-  // st:withinArea - MapFacet's own constraint predicate (see widgets/implementations/st/facets/
-  // MapFacet), holding a GeoSPARQL WKT literal for the Polygon/MultiPolygon area the user drew on
-  // the map - this renderer's own fast synchronous read of the same value a sibling sh:sparql
-  // SPARQLConstraint entry (see setFilterConstraint/syncWithinAreaSparqlConstraint above) also
-  // expresses in standard, portable SHACL-SPARQL form for an external consumer. An instance matches
-  // if *any* of its own values for this path falls inside the drawn area - see
-  // helpers/geometryLiteral.ts's geometryIntersectsArea for what "inside" means here.
-  const withinAreaQuad = store.getQuads(constraintNode, st("withinArea"))[0];
-  if (withinAreaQuad) {
-    const area = literalToGeometry(withinAreaQuad.object as Term);
-    if (area) {
-      const withinArea = values.some((value) => {
-        const geometry = literalToGeometry(value);
-        return geometry !== undefined && geometryIntersectsArea(geometry, area);
-      });
-      if (!withinArea) return false;
+  for (const node of constraintNodes) {
+    shapeStore.addQuad(factory.quad(validationRoot, sh("property"), node));
+    const isClassHierarchyPick = filterStore.getQuads(node, sh("rootClass")).length > 0;
+    for (const quad of filterStore.getQuads(node)) {
+      if (isClassHierarchyPick && (quad.predicate.equals(sh("in")) || quad.predicate.equals(sh("rootClass")))) {
+        continue;
+      }
+      shapeStore.addQuad(quad);
+      copyBlankNodeClosure(filterStore, quad.object, shapeStore);
     }
   }
+  return { shapeStore, validationRoot };
+}
 
-  // st:colorBucket - ColorFacet's own constraint predicate (see widgets/implementations/st/facets/
-  // ColorFacet), holding the name of the bucket picked (e.g. "blue") - the same fast synchronous
-  // read/write split st:withinArea uses above: a sibling sh:sparql SPARQLConstraint entry (see
-  // setFilterConstraint/syncColorBucketSparqlConstraint above) expresses the identical rule in
-  // standard, portable SHACL-SPARQL form for an external consumer, reading straight off each
-  // value's own st:hue/st:saturation/st:lightness triples - genuine CSS HSL notation, not a derived
-  // property. An instance matches if *any* of its own values for this path (each an HSL-shaped
-  // blank/named node) classifies into the chosen bucket - see helpers/colorBuckets.ts's
-  // bucketForHsl for what "classifies into" means here.
-  const colorBucketQuad = store.getQuads(constraintNode, st("colorBucket"))[0];
-  if (colorBucketQuad) {
-    const bucket = colorBucketQuad.object.value as ColorBucket;
-    const matchesBucket = values.some((value) => {
-      if (value.termType !== "BlankNode" && value.termType !== "NamedNode") return false;
-      const hue = dataGraph.getQuads(value, st("hue"))[0]?.object.value;
-      const saturation = dataGraph.getQuads(value, st("saturation"))[0]?.object.value;
-      const lightness = dataGraph.getQuads(value, st("lightness"))[0]?.object.value;
-      if (hue === undefined || saturation === undefined || lightness === undefined) return false;
-      return (
-        bucketForHsl({ h: parseFloat(hue), s: parseFloat(saturation), l: parseFloat(lightness) }) ===
-        bucket
-      );
+/**
+ * `instances` narrowed to whichever conform to every one of `constraintNodes` via a real
+ * shacl-engine validation pass - sh:in/sh:pattern+sh:flags/sh:minInclusive/.../sh:maxExclusive are
+ * already native SHACL Core constraint components, and the class-hierarchy sh:in/st:colorBucket
+ * cases are real SPARQL-based constraints (sh:sparql - see syncRootClassSparqlConstraint/
+ * syncColorBucketSparqlConstraint), so there is nothing left here to hand-roll: shacl-engine (built
+ * with shacl-engine/sparql.js's functions/constraints, the same way ValidationContextProvider's own
+ * engine is) already means exactly what these predicates mean. Never called with a node carrying
+ * st:withinArea - instancesMatchingOtherConstraints below routes that predicate through
+ * matchingInstancesWithinArea instead (see that function's own doc comment for why).
+ *
+ * Built fresh per call rather than cached - filterShape.store's structure changes on every facet
+ * click, so there's no stable shapes graph to compile an Engine against once the way
+ * ValidationContextProvider caches one for a whole (read-only, unchanging) real shapesGraph - but
+ * Engine construction itself is cheap and synchronous (it doesn't eagerly parse shapes; that's
+ * lazy, per-validate-call work), so rebuilding one here isn't the cost that might suggest.
+ *
+ * A validation failure (a malformed sh:sparql body, say) is logged and treated as "no narrowing" -
+ * `instances` unfiltered - rather than either throwing (taking down the whole facet UI over one bad
+ * constraint) or excluding everything (which would look identical to "nothing matches" and hide the
+ * actual problem worse).
+ */
+async function instancesConformingViaEngine(
+  filterStore: RdfStore,
+  dataGraph: RdfStore,
+  constraintNodes: readonly Quad_Subject[],
+  instances: Quad_Subject[],
+): Promise<Quad_Subject[]> {
+  if (constraintNodes.length === 0 || instances.length === 0) return instances;
+
+  const { shapeStore, validationRoot } = buildEngineValidationShape(filterStore, constraintNodes);
+  try {
+    const engine = new ShaclEngine(shapeStore.asDataset(), {
+      factory,
+      functions: sparqlFunctions,
+      constraints: sparqlConstraints,
     });
-    if (!matchesBucket) return false;
+    const report = await engine.validate(
+      { dataset: dataGraph.asDataset(), terms: instances },
+      [{ terms: [validationRoot] }],
+    );
+    const violating = new Set(report.results.map((result) => termKey(result.focusNode.term)));
+    return instances.filter((instance) => !violating.has(termKey(instance)));
+  } catch (error) {
+    console.warn("[shacl-everything] facet constraint validation failed:", error);
+    return instances;
   }
+}
 
-  return true;
+// One Comunica engine for every st:withinArea narrowing query this module runs - separate from (not
+// shared with) outputs/render/hooks/query.ts's own module-level engine, since importing that module
+// here would run structure/ -> outputs/render/ -> structure/ in a circle (query.ts itself already
+// imports structure/PropertyUIElement.ts/paths/toSparql.ts). Mirrors preprocess/ontologyLabels.ts's
+// dereferenceMissingPropertyNames, which keeps its own separate lazily-imported/cached QueryEngine
+// for exactly the same reason. Dynamically imported and cached so nothing pays for Comunica's
+// SPARQL machinery until a map facet is actually in play.
+let withinAreaEnginePromise: Promise<import("@comunica/query-sparql").QueryEngine> | undefined;
+function getWithinAreaQueryEngine() {
+  withinAreaEnginePromise ??= import("@comunica/query-sparql").then(
+    ({ QueryEngine }) => new QueryEngine(),
+  );
+  return withinAreaEnginePromise;
+}
+
+/**
+ * `instances` narrowed to whichever have at least one value for `path` falling inside `area` - the
+ * st:withinArea half of instancesMatchingOtherConstraints, kept as a real, positive-form SPARQL
+ * query run directly via Comunica rather than a SHACL SPARQLConstraint run through shacl-engine
+ * (see syncWithinAreaSparqlConstraint's own doc comment): that constraint's generated text uses
+ * FILTER NOT EXISTS with geof:sfWithin (a custom extension function) nested inside it, and
+ * shacl-engine's own sh:sparql support runs through the same Comunica engine that pattern doesn't
+ * correlate $this into correctly - silently wrong results, not just a slower path, if run for real
+ * that way. This query sidesteps the bug entirely by asking the positive question directly (`?this
+ * ?path ?value . filter(geof:sfWithin(?value, area))`, no nested EXISTS at all) instead of the
+ * SHACL-SPARQL convention's "which focus nodes violate" negation - the same plain join+filter shape
+ * every other geof: query in this codebase (searchInstances, shui:searchQuery) already relies on.
+ *
+ * Values are inlined into the query text as a `VALUES ?this { <iri> ... }` clause the same way
+ * outputs/render/hooks/query.ts's buildRoleLookupQuery does, so this assumes every instance is a
+ * NamedNode - true for every facetable root shape instance this codebase actually produces.
+ */
+async function matchingInstancesWithinArea(
+  path: PropertyPath,
+  area: Term,
+  dataGraph: RdfStore,
+  instances: Quad_Subject[],
+): Promise<Quad_Subject[]> {
+  if (instances.length === 0 || area.termType !== "Literal") return instances;
+
+  const query = `${queryPrefixes}
+select distinct ?this where {
+  values ?this { ${instances.map((instance) => `<${instance.value}>`).join(" ")} }
+  ?this ${toSparql(path)} ?value .
+  filter(geof:sfWithin(?value, "${escapeSparqlLiteral(area.value)}"^^<${area.datatype.value}>))
+}`;
+
+  try {
+    const engine = await getWithinAreaQueryEngine();
+    const bindingsStream = await engine.queryBindings(query, {
+      sources: [dataGraph],
+      extensionFunctions: geosparqlExtensionFunctions,
+    });
+    const bindings = await bindingsStream.toArray();
+    const matching = new Set(
+      bindings
+        .map((binding) => binding.get("this")?.value)
+        .filter((value): value is string => value !== undefined),
+    );
+    return instances.filter((instance) => matching.has(instance.value));
+  } catch (error) {
+    console.warn("[shacl-everything] st:withinArea facet narrowing query failed:", error);
+    return instances;
+  }
 }
 
 /**
@@ -548,16 +676,21 @@ function instanceSatisfiesConstraintNode(
  * excluded so multi-selecting within the very same sh:in (an OR) doesn't shrink its own sibling
  * options' counts against each other - only *other* facets narrow a given facet's counts.
  *
+ * Every other constraint kind (sh:in, sh:pattern, numeric ranges, sh:rootClass's class-hierarchy
+ * sh:in, st:colorBucket) is answered by instancesConformingViaEngine's real shacl-engine validation
+ * pass; st:withinArea is answered separately by matchingInstancesWithinArea, for the
+ * Comunica-correctness reason explained on that function. Both are async - unlike the JS predicate
+ * this replaced, there is real query-engine work to await here now, not just an in-memory walk.
+ *
  * Returns `instances` unchanged (no filtering, not even an empty result) when there are no other
  * active constraints to check - the common case before the user has touched more than one facet.
  */
-export function instancesMatchingOtherConstraints(
+export async function instancesMatchingOtherConstraints(
   filterShape: FilterShape,
   dataGraph: RdfStore,
-  shapesGraph: RdfStore,
   instances: Quad_Subject[],
   excludePath: string | undefined,
-): Quad_Subject[] {
+): Promise<Quad_Subject[]> {
   const { store, rootNode } = filterShape;
   const otherConstraintNodes = store
     .getQuads(rootNode, sh("property"))
@@ -569,11 +702,20 @@ export function instancesMatchingOtherConstraints(
     });
 
   if (otherConstraintNodes.length === 0) return instances;
-  return instances.filter((instance) =>
-    otherConstraintNodes.every((node) =>
-      instanceSatisfiesConstraintNode(node, instance, store, dataGraph, shapesGraph),
-    ),
+
+  const withinAreaNodes = otherConstraintNodes.filter(
+    (node) => store.getQuads(node, st("withinArea")).length > 0,
   );
+  const engineNodes = otherConstraintNodes.filter((node) => !withinAreaNodes.includes(node));
+
+  let matching = await instancesConformingViaEngine(store, dataGraph, engineNodes, instances);
+  for (const node of withinAreaNodes) {
+    const area = store.getQuads(node, st("withinArea"))[0]?.object;
+    const path = parsePropertyPath(node, store);
+    if (!area || !path) continue;
+    matching = await matchingInstancesWithinArea(path, area, dataGraph, matching);
+  }
+  return matching;
 }
 
 // Deletes every triple reachable from `node` through blank-node objects - the constraint node's own

@@ -163,13 +163,17 @@ export function bucketForHexColor(hex: string): ColorBucket | undefined {
  * Hsl uses) for "this HSL color belongs to `bucket`" - classifyHsl's own cascade above, expressed
  * as SPARQL text instead of JS. structure/filterShape.ts's syncColorBucketSparqlConstraint splices
  * this into a real sh:sparql/SPARQLConstraint alongside st:ColorFacet's own plain st:colorBucket
- * value (the same "bespoke value for this renderer's own fast synchronous path, standards-form
- * SPARQL text for an external consumer" split syncWithinAreaSparqlConstraint already uses for
- * MapFacet's st:withinArea) - this renderer's own instanceSatisfiesConstraintNode never evaluates
- * this text itself, it calls classifyHsl (via bucketForHsl) directly.
+ * value (the same "bespoke value for ColorFacet's own widget display, standards-form SPARQL text
+ * for actual matching" split syncWithinAreaSparqlConstraint already uses for MapFacet's
+ * st:withinArea) - this renderer's own facet narrowing (structure/filterShape.ts's
+ * instancesConformingViaEngine) runs this exact text for real, via shacl-engine; classifyHsl (via
+ * bucketForHsl) is only ever called directly by ColorFacet's own widget, to group values into
+ * swatches for display.
  *
  * Must stay in lock-step with classifyHsl's own thresholds (94/8/15, the same hue cutoffs) by
- * hand - there's no shared code between the two representations, only shared threshold values.
+ * hand - there's no shared code between the two representations, only shared threshold values. A
+ * drift here is no longer just a documentation nit: it would make ColorFacet's own displayed
+ * swatches disagree with what actually gets filtered.
  */
 export function sparqlFilterForBucket(bucket: ColorBucket): string {
   const achromaticGuard = "?light < 94 && ?light > 8 && ?sat > 15";

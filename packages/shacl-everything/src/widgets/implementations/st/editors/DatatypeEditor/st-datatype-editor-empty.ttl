@@ -1,0 +1,19 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass sh:PropertyShape ;
+
+    sh:property [
+        sh:name "Datatype"@en, "Datatype"@nl ;
+        sh:path sh:datatype ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+
+<#data>
+    a sh:PropertyShape ;
+    .

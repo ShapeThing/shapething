@@ -12,7 +12,9 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { buildPathNode } from "./mutation-logic.tsx";
 import { usePredicateSuggestions, type Suggestion } from "./usePredicateSuggestions.ts";
+import { PATH_TYPE_BADGE } from "./pathTypeVisuals.ts";
 import "@/theme/comboBox.css";
+import "./style.css";
 
 const PATH_TYPES: PropertyPath["type"][] = [
   "predicate",
@@ -43,20 +45,36 @@ function PathTypeLabel({ type }: { type: PropertyPath["type"] }) {
   }
 }
 
+// Used for both the select's trigger and its option rows, so the closed trigger already previews
+// the active type's color/icon the same way it'll appear once picked. The badge span uses the
+// exact same classes the rendered path tree uses for it (see widget.tsx) - same size, same color,
+// same glyph - so it's not a separate, independently-tuned variant of the same badge.
+function PathTypeOption({ type }: { type: PropertyPath["type"] }) {
+  const badgeClass = PATH_TYPE_BADGE[type];
+  return (
+    <span className="st-path-type-option">
+      {badgeClass && (
+        <span className={`${badgeClass} st-path-type`} aria-hidden="true" />
+      )}
+      <PathTypeLabel type={type} />
+    </span>
+  );
+}
+
 // The full IRI + a friendlier display name for a suggestion row, regardless of which source it
 // came from - a local match's own prefixedIri() (falling back to its full IRI when no known
 // prefix matches) for a "local" suggestion, LOV's own already-compact prefixedName for a "lov"
 // one (see lovTermSearch.ts - LOV returns this directly, no local prefix lookup needed for it).
 function suggestionDisplay(suggestion: Suggestion): { name: string; iri: string } {
   if (suggestion.kind === "local") {
-    const iri = suggestion.predicate.value;
-    return { name: prefixedIri(suggestion.predicate) ?? iri, iri };
+    const iri = suggestion.iri.value;
+    return { name: prefixedIri(suggestion.iri) ?? iri, iri };
   }
   return { name: suggestion.term.prefixedName, iri: suggestion.term.uri.value };
 }
 
 function suggestionUri(suggestion: Suggestion): NamedNode {
-  return suggestion.kind === "local" ? suggestion.predicate : suggestion.term.uri;
+  return suggestion.kind === "local" ? suggestion.iri : suggestion.term.uri;
 }
 
 function suggestionKey(suggestion: Suggestion): string {
@@ -138,12 +156,8 @@ function PathItemForm({
   const trimmedPredicate = predicateInput.trim();
   const canSave = trimmedPredicate.length > 0;
 
-  const { suggestions, isSearchingLov, lovError } = usePredicateSuggestions(
-    shape,
-    trimmedPredicate,
-  );
-  const hasLovSection = isSearchingLov || lovError !== undefined;
-  const dropdownOpen = suggestionsOpen && (suggestions.length > 0 || hasLovSection);
+  const { suggestions, isSearchingLov } = usePredicateSuggestions(shape, trimmedPredicate);
+  const dropdownOpen = suggestionsOpen && (suggestions.length > 0 || isSearchingLov);
 
   const activateSuggestion = (suggestion: Suggestion) => {
     setPredicateInput(suggestionUri(suggestion).value);
@@ -250,7 +264,7 @@ function PathItemForm({
                     </div>
                   );
                 })}
-                {hasLovSection && !suggestions.some((s) => s.kind === "lov") && (
+                {isSearchingLov && !suggestions.some((s) => s.kind === "lov") && (
                   <div className="st-add-path-predicate-group-label" role="presentation">
                     <Localized id="property-path-editor-add-predicate-from-lov">
                       Suggestions
@@ -261,13 +275,6 @@ function PathItemForm({
                   <div className="st-combo-empty" role="presentation">
                     <Loading />
                     <Localized id="loading">Loading</Localized>
-                  </div>
-                )}
-                {lovError !== undefined && !isSearchingLov && (
-                  <div className="st-combo-empty" role="presentation">
-                    <Localized id="property-path-editor-add-predicate-lov-error">
-                      Search failed
-                    </Localized>
                   </div>
                 )}
               </div>
@@ -281,11 +288,12 @@ function PathItemForm({
         >
           <SelectListbox
             triggerId={pathTypeFieldId}
+            wrapperClassName="st-path-type-select"
             value={pathType}
             options={PATH_TYPES}
             onChange={setPathType}
-            renderTriggerContent={(value) => <PathTypeLabel type={value} />}
-            renderOption={(value) => <PathTypeLabel type={value} />}
+            renderTriggerContent={(value) => <PathTypeOption type={value} />}
+            renderOption={(value) => <PathTypeOption type={value} />}
           />
         </FormElement>
         <div className="st-add-path-form-actions">

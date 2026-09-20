@@ -120,13 +120,13 @@
 }
 
 .st-zero-or-more-icon {
-  font-size: var(--size-5);
   background: var(--yellow-5);
-}
 
-.st-zero-or-more-icon-inner {
-  font-size: var(--size-6);
-  transform: translateY(10%);
+  &::before {
+    content: "*";
+    font-size: var(--size-6);
+    transform: translateY(10%);
+  }
 }
 
 .st-zero-or-one-path > .st-predicate-path {
@@ -135,12 +135,12 @@
 }
 
 .st-zero-or-one-icon {
-  font-size: var(--size-5);
   background: var(--blue-3);
-}
 
-.st-zero-or-one-icon-inner {
-  font-size: var(--size-3);
+  &::before {
+    content: "?";
+    font-size: var(--size-3);
+  }
 }
 
 .st-one-or-more-path > .st-predicate-path {
@@ -148,12 +148,12 @@
 }
 
 .st-one-or-more-icon {
-  font-size: var(--size-5);
   background: var(--purple-3);
-}
 
-.st-one-or-more-icon-inner {
-  font-size: var(--size-3);
+  &::before {
+    content: "+";
+    font-size: var(--size-3);
+  }
 }
 
 .st-inverse-path > .st-predicate-path {
@@ -161,13 +161,13 @@
 }
 
 .st-inverse-icon {
-  font-size: var(--size-5);
   background: var(--red-3);
-}
 
-.st-inverse-icon-inner {
-  font-size: var(--size-3);
-  transform: translateY(15%);
+  &::before {
+    content: "^";
+    font-size: var(--size-3);
+    transform: translateY(15%);
+  }
 }
 
 .st-sequence-path-items {
@@ -183,12 +183,13 @@
 }
 
 .st-alternative-icon {
-  background: var(--green-3);
   font-size: 0.8rem;
-}
+  background: var(--green-3);
 
-.st-alternative-icon-inner {
-  transform: translate(0, -1px);
+  &::before {
+    content: "|";
+    transform: translate(0, -1px);
+  }
 }
 
 .st-alternative-tooltip,
@@ -209,6 +210,34 @@
   > .st-sequence-path-item:first-child
   > .st-predicate-path {
   padding-left: 2.3rem;
+}
+
+.st-path-type-option {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+}
+
+/* The badge itself (.st-path-type + a per-type class like .st-zero-or-more-icon) is styled
+   identically here and in the tree - no separate select-only size/color variant. This only clips
+   a badge's own oversized glyph overflow so it can't inflate the select row's fixed height (the
+   flexbox "automatic minimum size" quirk: an overflow:visible flex item's min-height follows its
+   content, ignoring its own explicit height) - the tree has no such fixed-height row to protect. */
+.st-path-type-select .st-path-type {
+  cursor: inherit;
+  overflow: hidden;
+  line-height: 1;
+}
+
+.st-path-type-select .st-listbox__trigger {
+  padding-block: var(--size-1) !important;
+  padding-inline-start: var(--size-1);
+  font-size: var(--font-size-2);
+}
+
+.st-path-type-select .st-listbox__option {
+  padding-inline: var(--size-1);
+  font-size: var(--font-size-2);
 }
 
 .st-add-path-form {
@@ -262,18 +291,3 @@
   letter-spacing: 0.03em;
 }
 
-/* Overrides theme/comboBox.css's shared position:absolute for this one spot: this dropdown sits
-   directly above the Path type field and the Save button in the same small modal, and once local
-   + LOV suggestions merge, even a handful of rows is tall enough to visually cover them. An
-   absolutely-positioned overlay covering a still-interactive control doesn't just look wrong - a
-   click meant for what's underneath can land on the overlay instead and silently do nothing (see
-   ClassHierarchyTree's own onMouseDown comment for the same "click intermittently does nothing"
-   failure mode elsewhere in this codebase). Letting it flow normally instead pushes the rest of
-   the form down rather than covering it - max-height/overflow-y still cap its own height with an
-   internal scrollbar, so a long result list grows the modal, not the dropdown, without bound.
-   */
-.st-add-path-predicate-combo .st-combo-results {
-  position: static;
-  width: auto;
-  margin-block-start: var(--size-1);
-}

@@ -41,11 +41,11 @@ export const stColorFacet: Story = {
     await waitFor(() => expect(red.checked).toBe(true));
 
     // Clicking the "Red" bucket writes its own name as a single st:colorBucket value, not an
-    // enumerated range - structure/filterShape.ts's instanceSatisfiesConstraintNode reclassifies
-    // each candidate's own st:hue/st:saturation/st:lightness the same way this widget does. A
-    // sibling sh:sparql SPARQLConstraint (built from helpers/colorBuckets.ts's
-    // sparqlFilterForBucket) is kept in sync alongside it for a real SHACL-SPARQL-conformant
-    // consumer.
+    // enumerated range - a sibling sh:sparql SPARQLConstraint (built from helpers/colorBuckets.ts's
+    // sparqlFilterForBucket) is kept in sync alongside it (structure/filterShape.ts's
+    // syncColorBucketSparqlConstraint), and that's what this renderer's own facet narrowing
+    // actually validates against (structure/filterShape.ts's instancesConformingViaEngine) - not a
+    // hand-rolled reclassification of each candidate's own st:hue/st:saturation/st:lightness.
     await waitFor(() => {
       if (!submitResult) throw new Error("onSubmit has not fired yet");
       expect(submitResult.dataGraph.getQuads(null, st("colorBucket"))[0]?.object.value).toEqual(

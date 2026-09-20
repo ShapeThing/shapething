@@ -19,6 +19,52 @@
   width: 100%;
 }
 
+.st-iri-editor__combo {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+
+  .st-input {
+    width: 100%;
+  }
+}
+
+.st-iri-editor-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding-block: var(--size-1);
+  padding-inline-start: var(--size-2);
+}
+
+.st-iri-editor-option__name {
+  display: flex;
+  align-items: center;
+  gap: var(--size-1);
+}
+
+.st-iri-editor-option__type {
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.st-iri-editor-option__iri {
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+}
+
+.st-iri-editor-group-label {
+  padding-block: var(--size-1);
+  padding-inline-start: var(--size-2);
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
 .st-iri-editor__preview {
   width: auto;
   height: auto;

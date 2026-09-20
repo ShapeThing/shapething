@@ -1,0 +1,22 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# ?rootShape sh:node* ?anyShape follows sh:node composition chains (e.g. a NodeShape that reuses
+# another NodeShape's constraints via sh:node) so an inherited property shape shows up under the
+# shape that reuses it, not only under the shape that originally declares it.
+SELECT DISTINCT ?rootShape ?propertyShape ?path ?name ?order WHERE {
+    ?rootShape sh:node* ?anyShape .
+    ?anyShape sh:property ?propertyShape .
+
+    optional {
+        ?propertyShape sh:path ?path .
+        filter(isIRI(?path))
+    }
+
+    optional {
+        ?propertyShape sh:name ?name .
+    }
+
+    optional {
+        ?propertyShape sh:order ?order .
+    }
+}

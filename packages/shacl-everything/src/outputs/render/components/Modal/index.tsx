@@ -39,6 +39,16 @@ export default function Modal({
   size = "default",
 }: Props) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  // Tracks whether the mousedown that started this click sequence was itself on the backdrop.
+  // Some modal content (e.g. PropertyPathEditor's predicate combobox, which - unlike every other
+  // combobox in the app - flows in-place instead of overlaying, see its own style.css) can reflow
+  // between mousedown and click as a side effect of that mousedown (blurring a focused input closes
+  // its suggestions dropdown). If the element originally under the pointer moves or disappears, the
+  // browser can resolve the resulting click's target to the <dialog> itself even though the user
+  // never touched the backdrop - requiring the mousedown to *also* have hit the backdrop rules that
+  // false positive out while still catching a genuine backdrop click (mousedown and click both land
+  // on unmoving backdrop space).
+  const backdropMouseDownRef = useRef(false);
   const titleId = useId();
   const { enableUndoRedo } = useEnvironment();
   const undoRedoScope = useContext(undoRedoScopeContext);
@@ -84,9 +94,14 @@ export default function Modal({
       }}
       // A click landing directly on the <dialog> element (rather than bubbling up from
       // .st-modal__content) is a click on its ::backdrop - the standard way to detect that,
-      // since the backdrop pseudo-element isn't a reachable event target of its own.
+      // since the backdrop pseudo-element isn't a reachable event target of its own. Also requiring
+      // the mousedown to have hit the backdrop (see backdropMouseDownRef above) guards against a
+      // false positive from in-modal content reflowing mid-click.
+      onMouseDown={(event) => {
+        backdropMouseDownRef.current = event.target === dialogRef.current;
+      }}
       onClick={(event) => {
-        if (event.target === dialogRef.current) onClose();
+        if (backdropMouseDownRef.current && event.target === dialogRef.current) onClose();
       }}
     >
       <div className="st-modal__content">

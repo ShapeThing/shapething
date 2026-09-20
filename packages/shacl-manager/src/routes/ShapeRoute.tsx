@@ -23,6 +23,7 @@ export default function ShapeRoute() {
       interfaceLocales={{ "nl-NL": null }}
       focusNode={factory.namedNode(decodedShapeIri)}
       nodeShapes={shapesNodeShapes}
+      enableMissingShapesGeneration={true}
       enableWidgetSwitching={false}
       enableInterfaceLanguageWithShapesLabelsOnly={false}
       enableLogicalBranchSwitching={false}

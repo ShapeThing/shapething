@@ -1,0 +1,79 @@
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix dc: <http://purl.org/dc/elements/1.1/>.
+@prefix dct: <http://purl.org/dc/terms/>.
+@prefix st: <http://shapething.com/>.
+
+<#shape> 
+    a sh:NodeShape ;
+    sh:targetClass owl:Ontology, sh:ShapesGraph ;
+
+    sh:property [
+        sh:name "Title"@en ;
+        sh:path [ sh:alternativePath (rdfs:label dc:title dct:title sh:name) ] ;
+        sh:minCount 1 ;
+        sh:message "A title is required for the data model."@en ;
+        sh:uniqueLang true ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:name "Description"@en ;
+        sh:path [ sh:alternativePath (rdfs:comment dc:description dct:description) ] ;
+        sh:uniqueLang true ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:name "Creator"@en ;
+        sh:path [ sh:alternativePath (dc:creator dct:creator) ] ;
+        sh:datatype ( xsd:string rdf:langString ) ;        
+        sh:uniqueLang true ;
+    ] ;
+
+    sh:property [
+        sh:name "Prefixes"@en ;
+        sh:path sh:declare ;
+        shui:editor shui:DetailsEditor ;
+        shui:viewer shui:DetailsViewer ;
+        sh:node <#prefixShape> ;
+    ] ;
+
+    sh:property [
+        sh:name "Imports"@en ;
+        sh:path owl:imports ;
+        sh:nodeKind sh:IRI ;
+        st:suggestedOptions ( <http://nlbegrip.nl/def/skosapnl#>) ;
+    ] ;
+
+    .
+
+<#prefixGroup>
+    a sh:PropertyGroup, st:HorizontalPropertyGroup ;
+.
+
+<#prefixShape>
+    a sh:NodeShape ;
+
+    sh:property [
+        sh:name "Prefix"@en ;
+        sh:path sh:prefix ;
+        sh:datatype xsd:string ;    
+        sh:maxCount 1 ;
+        sh:minCount 1 ;
+        sh:group <#prefixGroup> ;
+    ] ;
+
+    sh:property [
+        sh:name "Namespace"@en ;
+        sh:path sh:namespace ;
+        sh:maxCount 1 ;
+        sh:minCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:group <#prefixGroup> ;  
+    ] ;
+.

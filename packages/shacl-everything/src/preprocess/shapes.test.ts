@@ -1,11 +1,11 @@
-import type { NamedNode, Quad_Subject } from "@rdfjs/types";
+import type { NamedNode, Quad_Object, Quad_Subject } from "@rdfjs/types";
 import { expect, test } from "vite-plus/test";
 import { RdfStore } from "rdf-stores";
 import { addMissingShapes, mergeFacetTextSearchProperties } from "@/preprocess/shapes.ts";
 import { defaultEnvironment, type RawEnvironment } from "@/environment.ts";
 import { factory } from "@/helpers/factory.ts";
 import { ex, rdf, rdfs, sh, st, xsd } from "@/helpers/namespaces.ts";
-import { getRdfList } from "@/helpers/rdfList.ts";
+import { getRdfList, rebuildRdfList } from "@/helpers/rdfList.ts";
 
 const rawEnvironment = (overrides: Partial<RawEnvironment>): RawEnvironment => ({
   ...defaultEnvironment,
@@ -52,6 +52,134 @@ test("addMissingShapes - mints an implicit class-shape (the class IRI itself) an
   expect(new Set(paths)).toEqual(new Set([ex("name").value, ex("age").value]));
 });
 
+test("addMissingShapes - sets sh:nodeKind and sh:datatype when every instance's value for a predicate agrees", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("owner"), ex("alice")));
+  dataGraph.addQuad(factory.quad(ex("b"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("b"), ex("name"), factory.literal("Jerry")));
+  dataGraph.addQuad(factory.quad(ex("b"), ex("owner"), ex("bob")));
+  dataGraph.addQuad(factory.quad(ex("alice"), rdf("type"), ex("Person")));
+  dataGraph.addQuad(factory.quad(ex("bob"), rdf("type"), ex("Person")));
+
+  const result = await addMissingShapes(
+    rawEnvironment({ dataGraph, enableMissingShapesGeneration: true }),
+  );
+  const shapesGraph = result.shapesGraph as RdfStore;
+
+  const propertyFor = (predicate: NamedNode): Quad_Subject =>
+    shapesGraph
+      .getQuads(ex("Cat"), sh("property"))
+      .map((quad) => quad.object as Quad_Subject)
+      .find((propertyNode) =>
+        shapesGraph.getQuads(propertyNode, sh("path"), predicate).length > 0,
+      )!;
+
+  const nameProperty = propertyFor(ex("name"));
+  expect(shapesGraph.getQuads(nameProperty, sh("nodeKind"), sh("Literal"))).toHaveLength(1);
+  expect(shapesGraph.getQuads(nameProperty, sh("datatype"), xsd("string"))).toHaveLength(1);
+  expect(shapesGraph.getQuads(nameProperty, sh("class"))).toHaveLength(0);
+
+  const ownerProperty = propertyFor(ex("owner"));
+  expect(shapesGraph.getQuads(ownerProperty, sh("nodeKind"), sh("IRI"))).toHaveLength(1);
+  expect(shapesGraph.getQuads(ownerProperty, sh("datatype"))).toHaveLength(0);
+  expect(shapesGraph.getQuads(ownerProperty, sh("class"), ex("Person"))).toHaveLength(1);
+});
+
+test("addMissingShapes - leaves sh:class off a predicate whose IRI values don't all share a common rdf:type", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("owner"), ex("alice")));
+  dataGraph.addQuad(factory.quad(ex("b"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("b"), ex("owner"), ex("bob")));
+  dataGraph.addQuad(factory.quad(ex("alice"), rdf("type"), ex("Person")));
+  dataGraph.addQuad(factory.quad(ex("bob"), rdf("type"), ex("Organization")));
+
+  const result = await addMissingShapes(
+    rawEnvironment({ dataGraph, enableMissingShapesGeneration: true }),
+  );
+  const shapesGraph = result.shapesGraph as RdfStore;
+
+  const ownerProperty = shapesGraph
+    .getQuads(ex("Cat"), sh("property"))
+    .map((quad) => quad.object as Quad_Subject)
+    .find((propertyNode) => shapesGraph.getQuads(propertyNode, sh("path"), ex("owner")).length > 0)!;
+
+  // Still narrowed to sh:nodeKind sh:IRI (both values are IRIs), just not to a single sh:class -
+  // alice and bob don't share a common rdf:type, so nothing is asserted about which class either
+  // one belongs to.
+  expect(shapesGraph.getQuads(ownerProperty, sh("nodeKind"), sh("IRI"))).toHaveLength(1);
+  expect(shapesGraph.getQuads(ownerProperty, sh("class"))).toHaveLength(0);
+});
+
+test("addMissingShapes - leaves sh:class off a predicate whose IRI values share more than one rdf:type in common", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("owner"), ex("alice")));
+  dataGraph.addQuad(factory.quad(ex("b"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("b"), ex("owner"), ex("bob")));
+  dataGraph.addQuad(factory.quad(ex("alice"), rdf("type"), ex("Person")));
+  dataGraph.addQuad(factory.quad(ex("alice"), rdf("type"), ex("Agent")));
+  dataGraph.addQuad(factory.quad(ex("bob"), rdf("type"), ex("Person")));
+  dataGraph.addQuad(factory.quad(ex("bob"), rdf("type"), ex("Agent")));
+
+  const result = await addMissingShapes(
+    rawEnvironment({ dataGraph, enableMissingShapesGeneration: true }),
+  );
+  const shapesGraph = result.shapesGraph as RdfStore;
+
+  const ownerProperty = shapesGraph
+    .getQuads(ex("Cat"), sh("property"))
+    .map((quad) => quad.object as Quad_Subject)
+    .find((propertyNode) => shapesGraph.getQuads(propertyNode, sh("path"), ex("owner")).length > 0)!;
+
+  // Both ex:Person and ex:Agent are shared by every value - no single one is picked automatically.
+  expect(shapesGraph.getQuads(ownerProperty, sh("class"))).toHaveLength(0);
+});
+
+test("addMissingShapes - leaves sh:nodeKind/sh:datatype off a predicate whose values disagree", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("nickname"), factory.literal("Tom")));
+  dataGraph.addQuad(factory.quad(ex("b"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("b"), ex("nickname"), ex("jerry")));
+
+  const result = await addMissingShapes(
+    rawEnvironment({ dataGraph, enableMissingShapesGeneration: true }),
+  );
+  const shapesGraph = result.shapesGraph as RdfStore;
+
+  const nicknameProperty = shapesGraph
+    .getQuads(ex("Cat"), sh("property"))
+    .map((quad) => quad.object as Quad_Subject)
+    .find((propertyNode) => shapesGraph.getQuads(propertyNode, sh("path"), ex("nickname")).length > 0)!;
+
+  expect(shapesGraph.getQuads(nicknameProperty, sh("nodeKind"))).toHaveLength(0);
+  expect(shapesGraph.getQuads(nicknameProperty, sh("datatype"))).toHaveLength(0);
+});
+
+test("addMissingShapes - sets sh:nodeKind but not sh:datatype when literal values agree on kind but not on datatype", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("age"), factory.literal("3")));
+  dataGraph.addQuad(factory.quad(ex("b"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("b"), ex("age"), factory.literal("4", xsd("integer"))));
+
+  const result = await addMissingShapes(
+    rawEnvironment({ dataGraph, enableMissingShapesGeneration: true }),
+  );
+  const shapesGraph = result.shapesGraph as RdfStore;
+
+  const ageProperty = shapesGraph
+    .getQuads(ex("Cat"), sh("property"))
+    .map((quad) => quad.object as Quad_Subject)
+    .find((propertyNode) => shapesGraph.getQuads(propertyNode, sh("path"), ex("age")).length > 0)!;
+
+  expect(shapesGraph.getQuads(ageProperty, sh("nodeKind"), sh("Literal"))).toHaveLength(1);
+  expect(shapesGraph.getQuads(ageProperty, sh("datatype"))).toHaveLength(0);
+});
+
 test("addMissingShapes - never generates a property shape for rdf:type itself", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
@@ -66,28 +194,41 @@ test("addMissingShapes - never generates a property shape for rdf:type itself", 
   expect(shapesGraph.getQuads(ex("Cat"), rdf("type"), sh("NodeShape"))).toHaveLength(0);
 });
 
-test("addMissingShapes - leaves a class alone when it already has an explicit sh:targetClass shape, even if that shape is missing properties", async () => {
+test("addMissingShapes - tops up an explicit sh:targetClass shape with only the predicates it's missing, onto the same shape node", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("age"), factory.literal("3")));
 
   const shapesGraph = RdfStore.createDefault();
   shapesGraph.addQuad(factory.quad(ex("CatShape"), rdf("type"), sh("NodeShape")));
   shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("targetClass"), ex("Cat")));
+  const nameProperty = factory.blankNode();
+  shapesGraph.addQuad(factory.quad(nameProperty, sh("path"), ex("name")));
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("property"), nameProperty));
 
   const result = await addMissingShapes(
     rawEnvironment({ dataGraph, shapesGraph, enableMissingShapesGeneration: true }),
   );
   const resultShapesGraph = result.shapesGraph as RdfStore;
 
-  // No new sh:property was bolted onto the existing shape, and no second (implicit-class-shape)
-  // shape was minted for the class itself.
-  expect(resultShapesGraph.getQuads(ex("CatShape"), sh("property"))).toHaveLength(0);
+  // The already-declared "name" property is untouched (still the very same blank node, not
+  // duplicated), "age" was added onto the existing CatShape node, and no second (implicit-class-
+  // shape) shape was minted for the class itself.
+  const properties = resultShapesGraph.getQuads(ex("CatShape"), sh("property"));
+  expect(properties).toHaveLength(2);
+  expect(properties.some((quad) => quad.object.equals(nameProperty))).toBe(true);
+
+  const paths = properties
+    .flatMap((quad) => resultShapesGraph.getQuads(quad.object, sh("path")))
+    .map((quad) => quad.object.value);
+  expect(new Set(paths)).toEqual(new Set([ex("name").value, ex("age").value]));
+
   expect(resultShapesGraph.getQuads(null, sh("targetClass"), ex("Cat"))).toHaveLength(1);
   expect(resultShapesGraph.getQuads(ex("Cat"), rdf("type"), sh("NodeShape"))).toHaveLength(0);
 });
 
-test("addMissingShapes - leaves a class alone when it's covered by an implicit class-shape (sh:NodeShape + rdfs:Class)", async () => {
+test("addMissingShapes - tops up an implicit class-shape (sh:NodeShape + rdfs:Class) with missing predicates, onto the class IRI itself", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
@@ -102,10 +243,35 @@ test("addMissingShapes - leaves a class alone when it's covered by an implicit c
   const resultShapesGraph = result.shapesGraph as RdfStore;
 
   expect(resultShapesGraph.getQuads(null, sh("targetClass"), ex("Cat"))).toHaveLength(0);
-  expect(resultShapesGraph.getQuads(ex("Cat"), sh("property"))).toHaveLength(0);
+  const paths = resultShapesGraph
+    .getQuads(ex("Cat"), sh("property"))
+    .flatMap((quad) => resultShapesGraph.getQuads(quad.object, sh("path")))
+    .map((quad) => quad.object.value);
+  expect(paths).toEqual([ex("name").value]);
 });
 
-test("addMissingShapes - covers a second, unshaped class found in the same data graph while leaving the shaped one untouched", async () => {
+test("addMissingShapes - does nothing at all once a shape already declares every predicate its instances use", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
+
+  const shapesGraph = RdfStore.createDefault();
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), rdf("type"), sh("NodeShape")));
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("targetClass"), ex("Cat")));
+  const nameProperty = factory.blankNode();
+  shapesGraph.addQuad(factory.quad(nameProperty, sh("path"), ex("name")));
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("property"), nameProperty));
+
+  const result = await addMissingShapes(
+    rawEnvironment({ dataGraph, shapesGraph, enableMissingShapesGeneration: true }),
+  );
+  const resultShapesGraph = result.shapesGraph as RdfStore;
+
+  expect(resultShapesGraph.getQuads(ex("CatShape"), sh("property"))).toHaveLength(1);
+  expect(resultShapesGraph.getQuads(ex("CatShape"), sh("property"))[0]!.object.equals(nameProperty)).toBe(true);
+});
+
+test("addMissingShapes - covers a second, unshaped class found in the same data graph while topping up the already-shaped one", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
   dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
@@ -121,7 +287,11 @@ test("addMissingShapes - covers a second, unshaped class found in the same data 
   );
   const resultShapesGraph = result.shapesGraph as RdfStore;
 
-  expect(resultShapesGraph.getQuads(ex("CatShape"), sh("property"))).toHaveLength(0);
+  const catPaths = resultShapesGraph
+    .getQuads(ex("CatShape"), sh("property"))
+    .flatMap((quad) => resultShapesGraph.getQuads(quad.object, sh("path")))
+    .map((quad) => quad.object.value);
+  expect(catPaths).toEqual([ex("name").value]);
 
   expect(resultShapesGraph.getQuads(ex("Dog"), rdf("type"), sh("NodeShape"))).toHaveLength(1);
   const dogPaths = resultShapesGraph
@@ -129,6 +299,124 @@ test("addMissingShapes - covers a second, unshaped class found in the same data 
     .flatMap((quad) => resultShapesGraph.getQuads(quad.object, sh("path")))
     .map((quad) => quad.object.value);
   expect(dogPaths).toEqual([ex("breed").value]);
+});
+
+test("addMissingShapes - never generates a property shape for a predicate listed under sh:ignoredProperties", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("internalId"), factory.literal("42")));
+
+  const shapesGraph = RdfStore.createDefault();
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), rdf("type"), sh("NodeShape")));
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("targetClass"), ex("Cat")));
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("closed"), factory.literal("true", xsd("boolean"))));
+  const ignoredListHead = rebuildRdfList(rdf("nil"), [ex("internalId")], shapesGraph);
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("ignoredProperties"), ignoredListHead as Quad_Object));
+
+  const result = await addMissingShapes(
+    rawEnvironment({ dataGraph, shapesGraph, enableMissingShapesGeneration: true }),
+  );
+  const resultShapesGraph = result.shapesGraph as RdfStore;
+
+  // Only "name" is topped up - "internalId" is deliberately ignored by the shape author, not
+  // "still missing", so it must not get a synthesized bare property.
+  const paths = resultShapesGraph
+    .getQuads(ex("CatShape"), sh("property"))
+    .flatMap((quad) => resultShapesGraph.getQuads(quad.object, sh("path")))
+    .map((quad) => quad.object.value);
+  expect(paths).toEqual([ex("name").value]);
+});
+
+test("addMissingShapes - never generates a property shape for a predicate already reachable through an existing sh:alternativePath branch", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("title"), factory.literal("Tom")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("age"), factory.literal("3")));
+
+  const shapesGraph = RdfStore.createDefault();
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), rdf("type"), sh("NodeShape")));
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("targetClass"), ex("Cat")));
+  const alternativePathListHead = rebuildRdfList(rdf("nil"), [ex("title"), rdfs("label")], shapesGraph);
+  const alternativePathNode = factory.blankNode();
+  shapesGraph.addQuad(factory.quad(alternativePathNode, sh("alternativePath"), alternativePathListHead as Quad_Object));
+  const titleProperty = factory.blankNode();
+  shapesGraph.addQuad(factory.quad(titleProperty, sh("path"), alternativePathNode));
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("property"), titleProperty));
+
+  const result = await addMissingShapes(
+    rawEnvironment({ dataGraph, shapesGraph, enableMissingShapesGeneration: true }),
+  );
+  const resultShapesGraph = result.shapesGraph as RdfStore;
+
+  // "title" is already reachable via the existing sh:alternativePath's branch, so only "age" is
+  // topped up - no redundant bare property shape is minted for "title" alongside it.
+  const properties = resultShapesGraph.getQuads(ex("CatShape"), sh("property"));
+  expect(properties).toHaveLength(2);
+  expect(properties.some((quad) => quad.object.equals(titleProperty))).toBe(true);
+
+  const bareAgeProperty = properties.find((quad) => !quad.object.equals(titleProperty));
+  const agePath = resultShapesGraph.getQuads(bareAgeProperty!.object, sh("path"))[0]?.object;
+  expect(agePath).toEqual(ex("age"));
+});
+
+test("addMissingShapes - never generates a property shape for a predicate already covered by a shape reached via sh:node", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("age"), factory.literal("3")));
+
+  const shapesGraph = RdfStore.createDefault();
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), rdf("type"), sh("NodeShape")));
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("targetClass"), ex("Cat")));
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("node"), ex("NamedThingShape")));
+
+  shapesGraph.addQuad(factory.quad(ex("NamedThingShape"), rdf("type"), sh("NodeShape")));
+  const nameProperty = factory.blankNode();
+  shapesGraph.addQuad(factory.quad(nameProperty, sh("path"), ex("name")));
+  shapesGraph.addQuad(factory.quad(ex("NamedThingShape"), sh("property"), nameProperty));
+
+  const result = await addMissingShapes(
+    rawEnvironment({ dataGraph, shapesGraph, enableMissingShapesGeneration: true }),
+  );
+  const resultShapesGraph = result.shapesGraph as RdfStore;
+
+  // "name" is only declared on NamedThingShape, reached from CatShape via sh:node - it must not
+  // get a redundant bare property minted directly onto CatShape. Only "age" is topped up.
+  const paths = resultShapesGraph
+    .getQuads(ex("CatShape"), sh("property"))
+    .flatMap((quad) => resultShapesGraph.getQuads(quad.object, sh("path")))
+    .map((quad) => quad.object.value);
+  expect(paths).toEqual([ex("age").value]);
+});
+
+test("addMissingShapes - never generates a property shape for a predicate already covered by a shape reached via sh:and", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("age"), factory.literal("3")));
+
+  const shapesGraph = RdfStore.createDefault();
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), rdf("type"), sh("NodeShape")));
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("targetClass"), ex("Cat")));
+  const andListHead = rebuildRdfList(rdf("nil"), [ex("NamedThingShape")], shapesGraph);
+  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("and"), andListHead as Quad_Object));
+
+  shapesGraph.addQuad(factory.quad(ex("NamedThingShape"), rdf("type"), sh("NodeShape")));
+  const nameProperty = factory.blankNode();
+  shapesGraph.addQuad(factory.quad(nameProperty, sh("path"), ex("name")));
+  shapesGraph.addQuad(factory.quad(ex("NamedThingShape"), sh("property"), nameProperty));
+
+  const result = await addMissingShapes(
+    rawEnvironment({ dataGraph, shapesGraph, enableMissingShapesGeneration: true }),
+  );
+  const resultShapesGraph = result.shapesGraph as RdfStore;
+
+  const paths = resultShapesGraph
+    .getQuads(ex("CatShape"), sh("property"))
+    .flatMap((quad) => resultShapesGraph.getQuads(quad.object, sh("path")))
+    .map((quad) => quad.object.value);
+  expect(paths).toEqual([ex("age").value]);
 });
 
 test("addMissingShapes - does not mutate the caller-supplied shapesGraph in place", () => {

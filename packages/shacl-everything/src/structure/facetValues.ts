@@ -1,6 +1,7 @@
 import type { Quad_Subject, Term } from "@rdfjs/types";
+import { booleanWithin } from "@turf/turf";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
-import { geometryIntersectsArea, literalToGeometry } from "@/helpers/geometryLiteral.ts";
+import { literalToGeometry } from "@/helpers/geometryLiteral.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { literalOrder } from "@/structure/constraintResolutions.ts";
 import { parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
@@ -161,6 +162,12 @@ export function countFacetInstancesMatchingPattern(
  * other count functions do. `area` undefined means nothing has been drawn yet - returns 0, the same
  * "nothing entered" sentinel the other count functions use.
  *
+ * Uses @turf/turf's booleanWithin directly - the same real OGC "within" predicate
+ * structure/filterShape.ts's matchingInstancesWithinArea reaches via geof:sfWithin/Comunica for the
+ * cross-facet narrowing that feeds `instances` here, kept as one shared predicate (not a separate,
+ * cheaper approximation) precisely so this facet's own displayed count can never disagree with what
+ * a sibling facet's narrowing decided about the same instance.
+ *
  * Like the other count functions, this is a plain static tally over whatever `instances` it's given
  * - the live, re-narrowing behavior comes from the caller passing in an already-narrowed instance
  * list (structure/filterShape.ts's instancesMatchingOtherConstraints).
@@ -179,7 +186,7 @@ export function countFacetInstancesWithinArea(
   return instances.filter((instance) =>
     walkPropertyPath(path, instance, property.dataGraph).some((value) => {
       const geometry = literalToGeometry(value);
-      return geometry !== undefined && geometryIntersectsArea(geometry, areaGeometry);
+      return geometry !== undefined && booleanWithin(geometry, areaGeometry);
     }),
   ).length;
 }

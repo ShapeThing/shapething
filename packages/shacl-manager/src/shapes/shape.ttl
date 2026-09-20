@@ -8,9 +8,10 @@
 @prefix dct: <http://purl.org/dc/terms/>.
 @prefix st: <http://shapething.com/>.
 
-<#shape> 
+<#shape>
     a sh:NodeShape ;
     sh:targetClass sh:NodeShape ;
+    sh:ignoredProperties ( sh:property ) ;
 
     sh:name "Shape"@en, "Vorm"@nl ;
     sh:description "A shape defines the structure and constraints for RDF nodes."@en, "Een vorm definieert de structuur en beperkingen voor RDF-knopen."@nl ;
@@ -67,6 +68,104 @@
 
     .
 
+<#propertyShape>
+    a sh:NodeShape ;
+    sh:targetClass sh:PropertyShape ;
+
+    sh:name "Property shape"@en, "Property vorm"@nl ;
+    sh:description "A property shape defines the constraints for one property (its sh:path) of a node."@en, "Een property vorm definieert de beperkingen voor één eigenschap (het sh:path) van een knoop."@nl ;
+
+    sh:property [
+        sh:name "Title"@en, "Titel"@nl ;
+        sh:order 1 ;
+        sh:path [ sh:alternativePath (sh:name rdfs:label ) ] ;
+        sh:uniqueLang true ;
+        sh:group <#metadata> ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:path [ sh:alternativePath (sh:description rdfs:comment ) ] ;
+        sh:group <#metadata> ;
+        sh:uniqueLang true ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Path"@en, "Pad"@nl ;
+        sh:path sh:path ;
+        sh:group <#constraintsInner> ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Minimum count"@en, "Minimum aantal"@nl ;
+        sh:path sh:minCount ;
+        sh:group <#constraintsInner> ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "Maximum count"@en, "Maximum aantal"@nl ;
+        sh:path sh:maxCount ;
+        sh:group <#constraintsInner> ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+    ] ;
+
+    sh:property [
+        sh:order 6 ;
+        sh:name "Datatype"@en, "Datatype"@nl ;
+        sh:path sh:datatype ;
+        sh:group <#constraintsInner> ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 7 ;
+        sh:name "Class"@en, "Klasse"@nl ;
+        sh:path sh:class ;
+        sh:group <#constraintsInner> ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 8 ;
+        sh:name "Node kind"@en, "Node kind"@nl ;
+        sh:path sh:nodeKind ;
+        sh:group <#constraintsInner> ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        sh:in ( sh:IRI sh:BlankNode sh:Literal sh:BlankNodeOrIRI sh:BlankNodeOrLiteral sh:IRIOrLiteral ) ;
+    ] ;
+
+    sh:property [
+        sh:order 9 ;
+        sh:name "Group"@en, "Groep"@nl ;
+        sh:path sh:group ;
+        sh:class sh:PropertyGroup ;
+        sh:group <#constraintsInner> ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+sh:IRI rdfs:label "IRI"@en, "IRI"@nl .
+sh:BlankNode rdfs:label "Blank node"@en, "Blanco node"@nl .
+sh:Literal rdfs:label "Literal"@en, "Literal"@nl .
+sh:BlankNodeOrIRI rdfs:label "Blank node or IRI"@en, "Blanco node of IRI"@nl .
+sh:BlankNodeOrLiteral rdfs:label "Blank node or literal"@en, "Blanco node of literal"@nl .
+sh:IRIOrLiteral rdfs:label "IRI or literal"@en, "IRI of literal"@nl .
+
 <#metadata>
     a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
     sh:name "Metadata"@en, "Metadata"@nl ;
@@ -87,4 +186,18 @@
     a sh:PropertyGroup, st:DrawerPropertyGroup ;
     sh:order 3 ;
     sh:group <#targeting> ;
+    .
+
+<#constraints>
+    a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
+    sh:name "Constraints"@en, "Beperkingen"@nl ;
+    sh:order 2 ;
+    sh:description "Constraints for the property shape."@en, "Beperkingen van de property vorm."@nl ;
+    .
+
+
+<#constraintsInner>
+    a sh:PropertyGroup, st:DrawerPropertyGroup ;
+    sh:order 1 ;
+    sh:group <#constraints> ;
     .

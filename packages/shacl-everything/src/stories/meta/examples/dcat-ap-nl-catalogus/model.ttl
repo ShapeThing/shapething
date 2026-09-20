@@ -1,0 +1,89 @@
+### The data model - the one graph shacl-manager is allowed to write to.
+###
+### Its subject (`:`) is both an owl:Ontology and an sh:ShapesGraph - this is what makes it
+### *the* data model. owl:imports lists two additional graphs (both under imports/, both
+### read-only): the Dutch DCAT-AP-NL profile, which itself builds on the EU DCAT-AP baseline.
+
+@prefix : <https://data.norg.nl/def/opendata#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix vcard: <http://www.w3.org/2006/vcard/ns#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcatapnl-sh: <http://modellen.geostandaarden.nl/dcat-ap-nl/id/shape/> .
+
+:
+  a owl:Ontology, sh:ShapesGraph ;
+  rdfs:label
+    "Datamodel open datacatalogus gemeente Norg"@nl,
+    "Data model for the Norg municipality open data catalogue"@en ;
+  owl:versionInfo "0.1.0" ;
+  owl:imports
+    <https://semiceu.github.io/DCAT-AP/releases/3.0.0/html/shacl/shapes.ttl> ,
+    dcatapnl-sh: .
+
+### Local extension: on top of the national DCAT-AP-NL rules for every dcat:Catalog
+### (imports/dcat-ap-nl-SHACL.ttl), this data model additionally requires its own internal
+### case-reference property.
+
+:CatalogShape
+  a sh:NodeShape ;
+  sh:targetClass dcat:Catalog ;
+  sh:node dcatapnl-sh:CatalogShape ;
+  sh:property :Catalog-interneVerwijzing .
+
+:Catalog-interneVerwijzing
+  a sh:PropertyShape ;
+  sh:path :interneVerwijzing ;
+  sh:name "interne verwijzing"@nl, "internal reference"@en ;
+  sh:description
+    "Het interne zaaknummer waaronder deze catalogus bij de gemeente Norg is geregistreerd."@nl,
+    "The internal case number under which this catalogue is registered at the Norg municipality."@en ;
+  sh:datatype xsd:string ;
+  sh:minCount 1 ;
+  sh:maxCount 1 .
+
+### Example data, conforming to the combined EU/NL DCAT-AP constraints plus the local
+### :interneVerwijzing extension above. :GemeenteNorg, :DataTeamNorg and :OpenDataTeam are named
+### (not blank-node) agents/contact points, reused across the catalog and its dataset.
+
+:GemeenteNorg a foaf:Agent ; foaf:name "Gemeente Norg" .
+
+:DataTeamNorg a foaf:Agent ; foaf:name "Team Data & Informatie, gemeente Norg" .
+
+:OpenDataTeam
+  a vcard:Kind ;
+  vcard:fn "Open data team gemeente Norg" ;
+  vcard:hasEmail <mailto:opendata@norg.nl> .
+
+:Catalogus
+  a dcat:Catalog ;
+  dct:title "Open data gemeente Norg"@nl ;
+  dct:description "Open datacatalogus van de gemeente Norg."@nl ;
+  dct:publisher :GemeenteNorg ;
+  foaf:homepage <https://data.norg.nl/> ;
+  dcat:contactPoint :OpenDataTeam ;
+  dcat:dataset :HuishoudelijkAfvalDataset ;
+  :interneVerwijzing "Z-2026-00142" .
+
+:HuishoudelijkAfvalDataset
+  a dcat:Dataset ;
+  dct:title "Inzamellocaties huishoudelijk afval"@nl ;
+  dct:description "Locaties van ondergrondse containers voor huishoudelijk afval in de gemeente Norg."@nl ;
+  dct:identifier "norg-afval-2026" ;
+  dct:accessRights <http://publications.europa.eu/resource/authority/access-right/PUBLIC> ;
+  dct:creator :DataTeamNorg ;
+  dct:publisher :GemeenteNorg ;
+  dcat:contactPoint :OpenDataTeam ;
+  dcat:theme <http://publications.europa.eu/resource/authority/data-theme/ENVI> ;
+  dcat:distribution :HuishoudelijkAfvalDistributie .
+
+:HuishoudelijkAfvalDistributie
+  a dcat:Distribution ;
+  dct:title "Inzamellocaties huishoudelijk afval (GeoJSON)"@nl ;
+  dct:license <http://creativecommons.org/publicdomain/zero/1.0/> ;
+  dcat:accessURL <https://data.norg.nl/datasets/huishoudelijk-afval> ;
+  dcat:downloadURL <https://data.norg.nl/datasets/huishoudelijk-afval.geojson> .

@@ -23,6 +23,12 @@ export type GraphInspectorPayload = {
   storyId: string;
   shapesGraph?: GraphText;
   dataGraph?: GraphText;
+  // A single turtle serialization of the fully resolved/merged shapesGraph RdfStore (see
+  // resolveGraphStore.ts) - as opposed to shapesGraph's per-file *source* text above, this is what
+  // the story's shapesGraph arg actually resolves to as one graph, e.g. with several fixture files
+  // merged together. Undefined if resolution/serialization failed - the panel falls back to
+  // source-only display in that case.
+  shapesGraphMaterialized?: string;
   // Computed by the library (src/analysis/) from the resolved shapesGraph, over in the preview
   // decorator (withGraphInspector.tsx) - already-serializable results, not a live RdfStore, since
   // this crosses the manager/preview channel boundary.

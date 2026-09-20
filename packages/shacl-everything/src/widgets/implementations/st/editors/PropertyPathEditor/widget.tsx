@@ -17,53 +17,37 @@ import { convertPathType, updateItem, withItemRemoved } from "./mutation-logic.t
 import AddPathButton from "./AddPathButton.tsx";
 import PathItemModal from "./PathItemModal.tsx";
 import { Plus } from "@/helpers/icons.tsx";
+import { PATH_TYPE_BADGE } from "./pathTypeVisuals.ts";
 
 type UnaryWrapperType = "inverse" | "zeroOrMore" | "oneOrMore" | "zeroOrOne";
 
 // InversePath/ZeroOrMorePath/OneOrMorePath/ZeroOrOnePath (see UnaryWrapperPath below) are
-// otherwise identical - each just wraps a single nested PathNode behind its own icon/tooltip.
+// otherwise identical - each just wraps a single nested PathNode behind its own icon/tooltip. The
+// badge itself (glyph + color) is plain CSS, keyed by PATH_TYPE_BADGE's class name (shared with
+// PathItemModal's "Path type" select) - this config only holds the wrapper/tooltip classes.
 const UNARY_WRAPPER_CONFIG: Record<
   UnaryWrapperType,
-  {
-    wrapperClass: string;
-    tooltipClass: string;
-    iconClass: string;
-    iconInnerClass: string;
-    tooltipId: string;
-    icon: string;
-  }
+  { wrapperClass: string; tooltipClass: string; tooltipId: string }
 > = {
   inverse: {
     wrapperClass: "st-inverse-path",
     tooltipClass: "st-inverse-tooltip",
-    iconClass: "st-inverse-icon",
-    iconInnerClass: "st-inverse-icon-inner",
     tooltipId: "property-path-editor-inverse-tooltip",
-    icon: "^",
   },
   zeroOrMore: {
     wrapperClass: "st-zero-or-more-path",
     tooltipClass: "st-zero-or-more-tooltip",
-    iconClass: "st-zero-or-more-icon",
-    iconInnerClass: "st-zero-or-more-icon-inner",
     tooltipId: "property-path-editor-zero-or-more-tooltip",
-    icon: "*",
   },
   oneOrMore: {
     wrapperClass: "st-one-or-more-path",
     tooltipClass: "st-one-or-more-tooltip",
-    iconClass: "st-one-or-more-icon",
-    iconInnerClass: "st-one-or-more-icon-inner",
     tooltipId: "property-path-editor-one-or-more-tooltip",
-    icon: "+",
   },
   zeroOrOne: {
     wrapperClass: "st-zero-or-one-path",
     tooltipClass: "st-zero-or-one-tooltip",
-    iconClass: "st-zero-or-one-icon",
-    iconInnerClass: "st-zero-or-one-icon-inner",
     tooltipId: "property-path-editor-zero-or-one-tooltip",
-    icon: "?",
   },
 };
 
@@ -262,9 +246,7 @@ function AlternativePath({
                 enabled
                 tip={<Localized id="property-path-editor-alternative-tooltip" />}
               >
-                <span className="st-alternative-icon st-path-type">
-                  <span className="st-alternative-icon-inner">|</span>
-                </span>
+                <span className={`${PATH_TYPE_BADGE.alternative} st-path-type`} />
               </Tooltip>
 
               <PathNode
@@ -309,6 +291,7 @@ function UnaryWrapperPath({
   onRemove,
 }: PathNodeProps<Extract<PropertyPath, { type: UnaryWrapperType }>>) {
   const config = UNARY_WRAPPER_CONFIG[path.type];
+  const badgeClass = PATH_TYPE_BADGE[path.type];
 
   return (
     <div className={config.wrapperClass}>
@@ -318,9 +301,7 @@ function UnaryWrapperPath({
         enabled
         tip={<Localized id={config.tooltipId} />}
       >
-        <span className={`${config.iconClass} st-path-type`}>
-          <span className={config.iconInnerClass}>{config.icon}</span>
-        </span>
+        <span className={`${badgeClass} st-path-type`} />
       </Tooltip>
       {path.path.type === "predicate" ? (
         // Directly wraps a bare predicate - the common case, and the only shape the edit modal's

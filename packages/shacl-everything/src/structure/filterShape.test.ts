@@ -288,10 +288,9 @@ test("instancesMatchingOtherConstraints: a class-taxonomy pick (sh:rootClass) al
   const filterShape = createFilterShape();
   setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("Electronics")]);
 
-  const matching = instancesMatchingOtherConstraints(
+  const matching = await instancesMatchingOtherConstraints(
     filterShape,
     dataGraph,
-    shapesGraph,
     [ex("widget"), ex("laptop"), ex("novel")],
     undefined,
   );
@@ -325,10 +324,9 @@ test("instancesMatchingOtherConstraints: without sh:rootClass, sh:in still requi
   const filterShape = createFilterShape();
   setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("Electronics")]);
 
-  const matching = instancesMatchingOtherConstraints(
+  const matching = await instancesMatchingOtherConstraints(
     filterShape,
     dataGraph,
-    shapesGraph,
     [ex("widget"), ex("laptop")],
     undefined,
   );
@@ -362,10 +360,9 @@ test("instancesMatchingOtherConstraints: st:withinArea (MapFacet) matches an ins
     factory.literal("POLYGON ((-10 35, 20 35, 20 60, -10 60, -10 35))", geosparql("wktLiteral")),
   );
 
-  const matching = instancesMatchingOtherConstraints(
+  const matching = await instancesMatchingOtherConstraints(
     filterShape,
     dataGraph,
-    shapesGraph,
     [ex("paris"), ex("tokyo")],
     undefined,
   );
@@ -405,10 +402,9 @@ test("instancesMatchingOtherConstraints: st:withinArea matches any instance valu
     ),
   );
 
-  const matching = instancesMatchingOtherConstraints(
+  const matching = await instancesMatchingOtherConstraints(
     filterShape,
     dataGraph,
-    shapesGraph,
     [ex("paris"), ex("tokyo"), ex("capeTown")],
     undefined,
   );
@@ -458,7 +454,7 @@ test("setFilterConstraintForProperty: clearing st:withinArea removes the sh:spar
   expect(filterShape.store.getQuads().length).toBe(1);
 });
 
-test("setFilterConstraintForProperty: the generated sh:select uses a for-all shape (FILTER NOT EXISTS a satisfying value) matching instanceSatisfiesConstraintNode's own 'any value inside, or it's a violation' semantics", async () => {
+test("setFilterConstraintForProperty: the generated sh:select uses a for-all shape (FILTER NOT EXISTS a satisfying value) matching matchingInstancesWithinArea's own 'any value inside, or it's a violation' semantics", async () => {
   const property = await propertyFor(`ex:property1 sh:path ex:location .`);
   const filterShape = createFilterShape();
   setFilterConstraintForProperty(
@@ -517,10 +513,9 @@ test("instancesMatchingOtherConstraints: st:colorBucket (ColorFacet) matches an 
   const filterShape = createFilterShape();
   setFilterConstraintForProperty(filterShape, property, st("colorBucket"), factory.literal("red"));
 
-  const matching = instancesMatchingOtherConstraints(
+  const matching = await instancesMatchingOtherConstraints(
     filterShape,
     dataGraph,
-    shapesGraph,
     [ex("fireTruck"), ex("sky")],
     undefined,
   );
@@ -594,10 +589,9 @@ test("instancesMatchingOtherConstraints: sh:minInclusive/sh:maxInclusive keep on
     factory.literal("20", xsd("integer")),
   );
 
-  const matching = instancesMatchingOtherConstraints(
+  const matching = await instancesMatchingOtherConstraints(
     filterShape,
     dataGraph,
-    property.shapesGraph,
     [ex("widget"), ex("gadget"), ex("novel")],
     undefined,
   );
@@ -625,10 +619,9 @@ test("instancesMatchingOtherConstraints: sh:minExclusive/sh:maxExclusive exclude
     factory.literal("20", xsd("integer")),
   );
 
-  const matching = instancesMatchingOtherConstraints(
+  const matching = await instancesMatchingOtherConstraints(
     filterShape,
     dataGraph,
-    property.shapesGraph,
     [ex("widget"), ex("gadget"), ex("novel")],
     undefined,
   );

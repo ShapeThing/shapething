@@ -66,7 +66,7 @@ export default function PropertyUIComponent({
     ? undefined
     : propertyUIElement.description([activeInterfaceLanguage]);
   const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
-  const sparqlPath = propertyUIElement.pathAsSparql();
+  const sparqlPath = propertyUIElement.pathAsSparql({ prefixed: true });
   const showLanguageTag = Boolean(activeLanguage) && isRdfLangString && languageMode === "switcher";
   const showSearchIcon = Boolean(searchQueryFor(propertyUIElement));
 

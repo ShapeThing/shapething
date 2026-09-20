@@ -21,9 +21,6 @@ export const travelBlogs: Story = {
     ...argsByTestFile("travel-blogs.ttl", import.meta.url),
     nodeShapes: [ex("TravelBlogPostShape")],
   },
-  parameters: {
-    maxWidth: false,
-  },
 };
 
 export const travelBlogsView: Story = {
@@ -33,9 +30,6 @@ export const travelBlogsView: Story = {
     nodeShapes: [ex("TravelBlogPostShape")],
     mode: "view",
     viewModeLabelLayout: "inline",
-  },
-  parameters: {
-    maxWidth: false,
   },
 };
 
@@ -55,8 +49,5 @@ export const travelBlogsFacets: Story = {
     nodeShapes: [],
     mode: "facet",
     enableFacetOptionCounts: true,
-  },
-  parameters: {
-    maxWidth: false,
   },
 };

@@ -1,0 +1,15 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+# Properties declared in the ontology dimension (rdf:Property/owl:*Property + rdfs:domain),
+# independent of whether a SHACL property shape also constrains them.
+SELECT DISTINCT ?property ?domain ?label WHERE {
+    VALUES ?propertyType { rdf:Property owl:ObjectProperty owl:DatatypeProperty owl:AnnotationProperty }
+    ?property a ?propertyType .
+    ?property rdfs:domain ?domain .
+
+    optional {
+        ?property rdfs:label ?label .
+    }
+}

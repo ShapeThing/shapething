@@ -50,3 +50,25 @@
 .st-manager-sidebar__label--unshaped:hover {
   text-decoration: none;
 }
+
+.st-manager-sidebar__details {
+  margin-left: var(--size-3);
+  padding-left: var(--size-3);
+  border-left: 1px solid var(--st-color-border);
+}
+
+.st-manager-sidebar__details-group + .st-manager-sidebar__details-group {
+  margin-top: var(--size-1);
+}
+
+.st-manager-sidebar__details-title {
+  display: block;
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-x-small, var(--st-font-size-small));
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.st-manager-sidebar__label--detail {
+  color: var(--st-color-text-muted);
+}

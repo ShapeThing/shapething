@@ -2,9 +2,9 @@
    is always loaded alongside this one - see registry.ts, both widgets live under the same
    groups/ category and are bundled together) - only the "add a property" row lives here. */
 .st-drawer-property-group__add {
-  margin-top: var(--size-3);
-  padding-top: var(--size-3);
-  border-top: 1px dashed var(--st-primary-color-lighter);
+  padding: var(--size-3);
+  border-radius: var(--size-2);
+  background-color: var(--st-primary-color-lighter);
 }
 
 /* .st-select's shared rule sets cursor: pointer for its usual <button> trigger - this one is a

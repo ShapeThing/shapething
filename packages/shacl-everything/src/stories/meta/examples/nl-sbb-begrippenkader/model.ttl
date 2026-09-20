@@ -1,0 +1,64 @@
+### The data model - the one graph shacl-manager is allowed to write to.
+###
+### Its subject (`:`) is both an owl:Ontology and an sh:ShapesGraph - this is what makes it
+### *the* data model. owl:imports points at imports/skosapnl.ttl's own subject (`skosapnl:`),
+### which is loaded alongside this graph but is never written to.
+
+@prefix : <https://data.norg.nl/def/begrippenkader#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix skosapnl: <http://nlbegrip.nl/def/skosapnl#> .
+
+:
+  a owl:Ontology, sh:ShapesGraph ;
+  rdfs:label "Begrippenkader gemeente Norg"@nl, "Concept register of the Norg municipality"@en ;
+  owl:versionInfo "0.1.0" ;
+  owl:imports <./imports/skosapnl.ttl> .
+
+### Local extension: on top of the NL-SBB rules for every skos:Concept (imports/skosapnl.ttl),
+### this data model additionally requires its own :beleidsdomein property.
+
+:ConceptShape
+  a sh:NodeShape ;
+  sh:targetClass skos:Concept ;
+  sh:node skosapnl:Concept ;
+  sh:property :Concept-beleidsdomein .
+
+:Concept-beleidsdomein
+  a sh:PropertyShape ;
+  sh:path :beleidsdomein ;
+  sh:name "beleidsdomein"@nl, "policy domain"@en ;
+  sh:description
+    "Het beleidsdomein van de gemeente Norg waarbinnen dit begrip wordt gebruikt."@nl,
+    "The Norg municipality policy domain within which this concept is used."@en ;
+  sh:datatype rdf:langString ;
+  sh:minCount 1 ;
+  sh:nodeKind sh:Literal .
+
+### Example data, conforming to both the imported skosapnl:Concept shape and the local
+### :ConceptShape extension above.
+
+:Begrippenkader
+  a skos:ConceptScheme ;
+  dct:title "Begrippenkader gemeente Norg"@nl ;
+  skos:hasTopConcept :Vergunning, :Melding .
+
+:Vergunning
+  a skos:Concept ;
+  skos:inScheme :Begrippenkader ;
+  skos:topConceptOf :Begrippenkader ;
+  skos:prefLabel "Vergunning"@nl ;
+  skos:definition "Een door het bevoegd gezag verleende toestemming om een bepaalde activiteit uit te voeren."@nl ;
+  :beleidsdomein "Vergunningen, Toezicht en Handhaving"@nl .
+
+:Melding
+  a skos:Concept ;
+  skos:inScheme :Begrippenkader ;
+  skos:topConceptOf :Begrippenkader ;
+  skos:prefLabel "Melding"@nl ;
+  skos:definition "Een kennisgeving van een inwoner of bedrijf aan de gemeente over een situatie die aandacht behoeft."@nl ;
+  :beleidsdomein "Openbare Ruimte"@nl .

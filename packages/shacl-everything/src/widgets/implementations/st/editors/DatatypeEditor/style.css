@@ -1,0 +1,43 @@
+.st-datatype-editor {
+  flex: 1;
+  width: 100%;
+}
+
+.st-datatype-editor__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-2);
+  flex: 1;
+  min-width: 0;
+}
+
+.st-datatype-editor__qname {
+  color: var(--gray-8);
+  font-size: var(--font-size-0);
+  white-space: nowrap;
+}
+
+.st-datatype-editor--custom {
+  display: flex;
+  align-items: center;
+  gap: var(--size-1);
+  width: 100%;
+
+  .st-input {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+.st-datatype-editor__cancel {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  svg {
+    width: 1em;
+    height: 1em;
+  }
+}

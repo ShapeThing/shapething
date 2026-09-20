@@ -1,4 +1,4 @@
-import { useContext } from "react";
+import { useContext, useLayoutEffect, useRef, useState } from "react";
 import type { Term } from "@rdfjs/types";
 import clsx from "clsx";
 import { Icon } from "@iconify/react";
@@ -57,6 +57,33 @@ export default function VerticalTabbedPropertyGroup({ group }: GroupWidgetProps)
   // recurses into its own children, rather than always hard-coding edit's.
   const UIElementChildren = mode === "view" ? ViewUIElementChildren : EditUIElementChildren;
 
+  // Panel min-height tracks the nav column's own stacked height (one tab button's height * tab
+  // count, plus the inter-button gaps that stacking them actually costs), so a short active panel
+  // doesn't collapse shorter than the tab list beside it. Measured off the first tab button plus
+  // the nav's own `gap` rather than assumed as fixed sizes, since both depend on CSS (font size,
+  // icon/description content, the --size-1 token).
+  const firstTabButtonRef = useRef<HTMLButtonElement>(null);
+  const navRef = useRef<HTMLDivElement>(null);
+  const [panelMinHeight, setPanelMinHeight] = useState(0);
+
+  useLayoutEffect(() => {
+    const button = firstTabButtonRef.current;
+    const nav = navRef.current;
+    if (!button || !nav) return;
+    const recompute = () => {
+      const buttonHeight = button.getBoundingClientRect().height;
+      const gap = Number.parseFloat(getComputedStyle(nav).rowGap) || 0;
+      // +10px so the panel always runs slightly past the nav's last tab button - otherwise the
+      // panel's bottom edge can land exactly at (or above) the last tab's bottom, and its bottom
+      // corners would need their own radius trickery depending on which side is taller.
+      setPanelMinHeight(buttonHeight * tabs.length + gap * (tabs.length - 1) + 10);
+    };
+    const observer = new ResizeObserver(recompute);
+    observer.observe(button);
+    observer.observe(nav);
+    return () => observer.disconnect();
+  }, [tabs.length]);
+
   const isFirstTab = tabs[0]?.node.equals(group.node) ?? false;
   if (!isFirstTab) return null;
 
@@ -65,12 +92,18 @@ export default function VerticalTabbedPropertyGroup({ group }: GroupWidgetProps)
 
   return (
     <div className="st-vertical-tabbed-group" data-iri={group.node.value}>
-      <div className="st-vertical-tabbed-group-nav" role="tablist" aria-orientation="vertical">
-        {tabs.map((tab) => {
+      <div
+        ref={navRef}
+        className="st-vertical-tabbed-group-nav"
+        role="tablist"
+        aria-orientation="vertical"
+      >
+        {tabs.map((tab, index) => {
           const active = tab.node.equals(activeTab.node);
           return (
             <button
               key={tab.node.value}
+              ref={index === 0 ? firstTabButtonRef : undefined}
               type="button"
               role="tab"
               id={verticalTabbedGroupTabId(tab.node)}
@@ -86,6 +119,7 @@ export default function VerticalTabbedPropertyGroup({ group }: GroupWidgetProps)
               <TabIcon tab={tab} />
               <span className="st-vertical-tabbed-group-nav__label">
                 {tab.label([activeInterfaceLanguage]) ?? tab.node.value}
+                {description && <p className="st-property-group__description">{description}</p>}
               </span>
             </button>
           );
@@ -97,8 +131,8 @@ export default function VerticalTabbedPropertyGroup({ group }: GroupWidgetProps)
         id={verticalTabbedGroupPanelId(activeTab.node)}
         aria-labelledby={verticalTabbedGroupTabId(activeTab.node)}
         data-iri={activeTab.node.value}
+        style={panelMinHeight ? { minHeight: panelMinHeight } : undefined}
       >
-        {description && <p className="st-property-group__description">{description}</p>}
         <div className="st-property-group__body">
           <UIElementChildren key={activeTab.node.value} elements={activeTab.children} />
         </div>

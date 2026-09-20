@@ -1,0 +1,33 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix ex: <http://example.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "See also"@en ;
+        sh:path rdfs:seeAlso ;
+        sh:nodeKind sh:IRI ;
+        shui:editor shui:IRIEditor ;
+    ] ;
+    sh:property [
+        sh:name "Related type"@en ;
+        sh:path ex:relatedType ;
+        sh:nodeKind sh:IRI ;
+        shui:editor shui:IRIEditor ;
+        st:iriType rdfs:Class ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:relatedProject <http://example.org/project-alpha> ;
+    .

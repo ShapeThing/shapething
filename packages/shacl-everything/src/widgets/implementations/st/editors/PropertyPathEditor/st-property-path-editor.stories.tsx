@@ -265,8 +265,8 @@ export const stPropertyPathEditorPredicateAutocomplete: Story = {
   },
 };
 
-export const stPropertyPathEditorTypeSelectNotCoveredByPredicateSuggestions: Story = {
-  name: "Path type stays selectable even while the predicate suggestions dropdown is open",
+export const stPropertyPathEditorTypeSelectAfterPredicateSuggestion: Story = {
+  name: "Picking a predicate suggestion closes the dropdown so Path type is reachable next",
   args: argsByTestFile("st-property-path-editor-wrap-in-sequence.ttl", import.meta.url),
   play: async ({ canvasElement }) => {
     const addButton = await waitFor(() => {
@@ -282,23 +282,23 @@ export const stPropertyPathEditorTypeSelectNotCoveredByPredicateSuggestions: Sto
     const predicateField = dialogScope.getByRole("combobox", { name: "Predicate" });
 
     // "label" matches this fixture's own already-used rdfs:label, opening the suggestions
-    // dropdown - which used to be absolutely positioned directly over the Path type field right
-    // below it (see style.css's own comment on the fix), so a click meant for Path type could
-    // silently land on the dropdown instead and do nothing.
+    // dropdown - absolutely positioned over the Path type field right below it, same as every
+    // other combobox's results dropdown in the app (see comboBox.css). That means Path type isn't
+    // reachable until the dropdown actually closes, which happens by picking a suggestion (or
+    // blurring away from the field) rather than by the dropdown leaving room for it.
     await userEvent.type(predicateField, "label");
-    const dropdown = await waitFor(() => {
-      const element = dialog.querySelector<HTMLElement>(".st-combo-results");
-      if (!element) throw new Error("Expected the predicate suggestions dropdown to be open");
-      return element;
+    const suggestion = await waitFor(() => {
+      const options = Array.from(dialog.querySelectorAll<HTMLElement>('[role="option"]'));
+      const match = options.find((option) => option.textContent?.startsWith("rdfs:label"));
+      if (!match) throw new Error("Expected an rdfs:label suggestion");
+      return match;
     });
+    await userEvent.click(suggestion);
+    expect(predicateField).toHaveValue("http://www.w3.org/2000/01/rdf-schema#label");
+    expect(dialog.querySelector(".st-combo-results")).toBeNull();
 
+    // Path type is reachable now that the dropdown is closed, and picking one still takes effect.
     const typeTrigger = dialogScope.getByRole("button", { name: "Path type" });
-    const dropdownRect = dropdown.getBoundingClientRect();
-    const triggerRect = typeTrigger.getBoundingClientRect();
-    // The open dropdown must sit entirely above the Path type trigger, not overlap it.
-    expect(dropdownRect.bottom).toBeLessThanOrEqual(triggerRect.top);
-
-    // Picking a type while the dropdown is still open must actually take effect.
     await userEvent.click(typeTrigger);
     await userEvent.click(dialogScope.getByRole("option", { name: "Sequence" }));
     expect(typeTrigger).toHaveTextContent("Sequence");

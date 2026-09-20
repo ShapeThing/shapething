@@ -1,0 +1,22 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix ex: <http://example.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass sh:PropertyShape ;
+
+    sh:property [
+        sh:name "Datatype"@en, "Datatype"@nl ;
+        sh:path sh:datatype ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+
+<#data>
+    a sh:PropertyShape ;
+    # Not part of the curated list - a custom/uncommon datatype IRI, shown via its own localName
+    # fallback (see widget.tsx's renderLabel) rather than a curated FTL translation.
+    sh:datatype ex:customDatatype ;
+    .

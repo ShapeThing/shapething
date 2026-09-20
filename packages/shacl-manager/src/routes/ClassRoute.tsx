@@ -23,6 +23,7 @@ export default function ClassRoute() {
       interfaceLocales={{ "nl-NL": null }}
       focusNode={factory.namedNode(decodedClassIri)}
       nodeShapes={shapesNodeShapes}
+      enableMissingShapesGeneration={true}
       enableWidgetSwitching={false}
       enableInterfaceLanguageWithShapesLabelsOnly={false}
       enableLogicalBranchSwitching={false}
