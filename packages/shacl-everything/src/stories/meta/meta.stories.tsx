@@ -19,7 +19,7 @@ export default {
   args: {
     ...testingEnvironment,
     enableMissingShapesGeneration: true,
-    corsProxyUrl: "/cors-proxy?url=",
+    corsProxyUrl: "https://cors.shapething.com/?url=",
     enableEditInPlace: true,
   },
   parameters: {
