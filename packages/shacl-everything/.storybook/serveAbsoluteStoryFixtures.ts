@@ -28,10 +28,26 @@ const FIXTURE_CONTENT_TYPES: Record<string, string> = {
 // middleware doesn't recognise (it's neither root-relative nor /@fs/-prefixed), so it 404s.
 // This serves any such request whose decoded path exists on disk as a fixture file (a .ttl, or a
 // media asset a .ttl fixture references via a relative IRI, e.g. ImageViewer's own hendrik.svg)
-// inside `srcDir` AND sits next to a *.stories.tsx AND isn't literally named score.ttl (i.e. is an
-// argsByTestFile() fixture, not a widget's own reserved scoring file - see copyStoryFixtures.ts),
-// so those fixtures resolve the same way under `vp test` as they already do in a real browser or
-// a built Storybook.
+// inside `srcDir` AND has a *.stories.tsx somewhere at or above its own directory AND isn't
+// literally named score.ttl (i.e. is an argsByTestFile() fixture, not a widget's own reserved
+// scoring file - see copyStoryFixtures.ts), so those fixtures resolve the same way under `vp test`
+// as they already do in a real browser or a built Storybook.
+//
+// A fixture isn't always a direct sibling of its *.stories.tsx - e.g. src/stories/meta/'s
+// examples/<name>/model.ttl (+ examples/<name>/imports/*.ttl) are grouped into their own
+// subdirectories per example - so this walks up towards srcDir rather than checking dirname(pathname)
+// alone. Kept in sync with copyStoryFixtures.ts's findOwningStoryDir.
+function hasStoryAtOrAbove(dir: string, srcDir: string): boolean {
+  let current = dir;
+  while (true) {
+    if (readdirSync(current).some((entry) => entry.endsWith(".stories.tsx"))) return true;
+    if (current === srcDir) return false;
+    const parent = dirname(current);
+    if (parent === current) return false;
+    current = parent;
+  }
+}
+
 export function serveAbsoluteStoryFixtures(srcDir: string): Plugin {
   return {
     name: "serve-absolute-story-fixtures",
@@ -43,10 +59,7 @@ export function serveAbsoluteStoryFixtures(srcDir: string): Plugin {
         if (!contentType || !pathname.startsWith(srcDir)) return next();
         if (basename(pathname) === "score.ttl") return next();
         if (!existsSync(pathname) || !statSync(pathname).isFile()) return next();
-        const hasSiblingStory = readdirSync(dirname(pathname)).some((entry) =>
-          entry.endsWith(".stories.tsx"),
-        );
-        if (!hasSiblingStory) return next();
+        if (!hasStoryAtOrAbove(dirname(pathname), srcDir)) return next();
         res.setHeader("Content-Type", contentType);
         res.end(readFileSync(pathname));
       });

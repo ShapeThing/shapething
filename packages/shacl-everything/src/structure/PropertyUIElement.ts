@@ -3,7 +3,7 @@ import { RdfStore } from "rdf-stores";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
 import { hashString } from "@/helpers/hashString.ts";
-import { sh, shui } from "@/helpers/namespaces.ts";
+import { dash, sh, shui } from "@/helpers/namespaces.ts";
 import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
 import {
   parsePropertyPath,
@@ -529,6 +529,16 @@ function terminalPredicate(path: PropertyPath): NamedNode | undefined {
   }
 }
 
+// A handful of SHACL 1.2 Core predicates were promoted from the legacy DASH vocabulary
+// (http://datashapes.org/dash#) with the same local name and semantics - a shape authored against
+// DASH still uses the dash: form. orderedValues() falls back to a shape's dash: value when its
+// sh: value is absent, so both forms read the same. Keep this list to only pairs actually confirmed
+// equivalent (not just same local name) - guessing wrong here would silently misread a shape.
+const DASH_ALIASES = new Map<string, NamedNode>([
+  [sh("singleLine").value, dash("singleLine")],
+  [sh("rootClass").value, dash("rootClass")],
+]);
+
 // Raw values for `predicate` across every grouped shape, in ascending sh:order - the ordering
 // both a keepFirst-style resolution and language selection rely on to break ties consistently.
 // Exported for propertyLabel (resolution/label.ts), which needs the raw, un-language-resolved list
@@ -541,7 +551,11 @@ export function orderedValues(
     (a, b) =>
       shapeOrder(a, element.shapesGraph) - shapeOrder(b, element.shapesGraph),
   );
-  return orderedShapes.flatMap((shape) =>
-    element.shapesGraph.getQuads(shape, predicate).map((quad) => quad.object)
-  );
+  const alias = DASH_ALIASES.get(predicate.value);
+  return orderedShapes.flatMap((shape) => {
+    const values = element.shapesGraph.getQuads(shape, predicate).map((quad) => quad.object);
+    return values.length || !alias
+      ? values
+      : element.shapesGraph.getQuads(shape, alias).map((quad) => quad.object);
+  });
 }

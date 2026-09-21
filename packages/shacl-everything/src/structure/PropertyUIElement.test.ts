@@ -3,7 +3,7 @@ import type { BlankNode, NamedNode } from "@rdfjs/types";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
-import { ex, queryPrefixes, sh, shui } from "@/helpers/namespaces.ts";
+import { dash, ex, queryPrefixes, sh, shui } from "@/helpers/namespaces.ts";
 
 const createElement = async (turtle: string, propertyShapes: NamedNode[]) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${turtle}`, "text/turtle");
@@ -27,6 +27,41 @@ test("get() passes a single value through unchanged for predicates without a res
     [ex("property1")],
   );
   expect(element.get(ex("customPredicate")).map((term) => term.value)).toEqual(["hello"]);
+});
+
+test("get() falls back to a shape's dash: value when the sh: predicate is absent (sh:singleLine/dash:singleLine)", async () => {
+  const element = await createElement(
+    `ex:property1 a sh:PropertyShape ; dash:singleLine true .`,
+    [ex("property1")],
+  );
+  expect(element.get(sh("singleLine"))).toBe(true);
+});
+
+test("get() prefers a shape's own sh: value over its dash: alias when both are present", async () => {
+  const element = await createElement(
+    `ex:property1 a sh:PropertyShape ; sh:singleLine false ; dash:singleLine true .`,
+    [ex("property1")],
+  );
+  expect(element.get(sh("singleLine"))).toBe(false);
+});
+
+test("get() resolves the dash: alias per shape when grouping several property shapes", async () => {
+  const element = await createElement(
+    `
+        ex:property1 a sh:PropertyShape ; sh:order 1 ; sh:name "Name" .
+        ex:property2 a sh:PropertyShape ; sh:order 2 ; dash:singleLine true .
+    `,
+    [ex("property1"), ex("property2")],
+  );
+  expect(element.get(sh("singleLine"))).toBe(true);
+});
+
+test("get() falls back to dash:rootClass when sh:rootClass is absent", async () => {
+  const element = await createElement(
+    `ex:property1 a sh:PropertyShape ; dash:rootClass ex:Animal .`,
+    [ex("property1")],
+  );
+  expect(element.get(sh("rootClass")).map((term) => term.value)).toEqual([ex("Animal").value]);
 });
 
 test("sh:class keeps only the most specific classes across shapes", async () => {

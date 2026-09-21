@@ -10,10 +10,11 @@ export type { Suggestion };
 export function usePredicateSuggestions(
   shape: PropertyUIElement,
   query: string,
+  enabled: boolean,
 ): {
   suggestions: Suggestion[];
   isSearchingLov: boolean;
 } {
   const candidates = knownPredicates(shape.dataGraph, shape.shapesGraph);
-  return useLovSuggestions(candidates, query, ["property"]);
+  return useLovSuggestions(candidates, query, { lovTypes: ["property"], enabled });
 }

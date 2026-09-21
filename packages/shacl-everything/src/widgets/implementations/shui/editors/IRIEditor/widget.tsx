@@ -55,12 +55,23 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
   const [activeIndex, setActiveIndex] = useState(-1);
   const listboxId = useId();
 
+  // `localValue` starts (and, after a blur/reopen, restarts) as the field's already-committed
+  // value, not empty - so it alone can't tell "the user typed a search" apart from "this field
+  // just opened on its existing value". This tracks the former: reset false on every focus, set
+  // true only by the onChange handler below (a real keystroke), so suggestions stay hidden until
+  // the user actually edits something, even though the field itself shows text right away.
+  const [hasTypedSinceFocus, setHasTypedSinceFocus] = useState(false);
+
   const trimmedValue = localValue.trim();
+  const searchQuery = hasTypedSinceFocus ? trimmedValue : "";
   // st:iriType (see iriType.ts) lets the shape scope suggestions to just classes or just
   // properties; undefined (the default) searches LOV for both.
   const lovTypes = iriTypesFor(shape);
   const candidates = knownIris(shape.dataGraph, shape.shapesGraph);
-  const { suggestions, isSearchingLov } = useLovSuggestions(candidates, trimmedValue, lovTypes);
+  const { suggestions, isSearchingLov } = useLovSuggestions(candidates, searchQuery, {
+    lovTypes,
+    enabled: suggestionsOpen,
+  });
   const dropdownOpen = suggestionsOpen && (suggestions.length > 0 || isSearchingLov);
 
   const commit = (value: string) => {
@@ -126,9 +137,13 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
                 onChange={(event) => {
                   setLocalValue(event.target.value);
                   setSuggestionsOpen(true);
+                  setHasTypedSinceFocus(true);
                   setActiveIndex(-1);
                 }}
-                onFocus={() => setSuggestionsOpen(true)}
+                onFocus={() => {
+                  setSuggestionsOpen(true);
+                  setHasTypedSinceFocus(false);
+                }}
                 onBlur={() => {
                   commit(localValue);
                   setSuggestionsOpen(false);

@@ -158,10 +158,21 @@ function PathItemForm({
   const pathTypeFieldId = useId();
   const listboxId = useId();
 
+  // Editing an existing path item seeds `predicateInput` from its current value (not empty), and
+  // the field autofocuses on open - so without this, suggestions for that already-set predicate
+  // would appear the instant the modal opens, before the user has typed anything. Mirrors
+  // IRIEditor's own `hasTypedSinceFocus` gate: reset false on focus, set true only by onChange.
+  const [hasTypedSinceFocus, setHasTypedSinceFocus] = useState(false);
+
   const trimmedPredicate = predicateInput.trim();
   const canSave = trimmedPredicate.length > 0;
+  const searchQuery = hasTypedSinceFocus ? trimmedPredicate : "";
 
-  const { suggestions, isSearchingLov } = usePredicateSuggestions(shape, trimmedPredicate);
+  const { suggestions, isSearchingLov } = usePredicateSuggestions(
+    shape,
+    searchQuery,
+    suggestionsOpen,
+  );
   const dropdownOpen = suggestionsOpen && (suggestions.length > 0 || isSearchingLov);
 
   const activateSuggestion = (suggestion: Suggestion) => {
@@ -200,9 +211,13 @@ function PathItemForm({
               onChange={(event) => {
                 setPredicateInput(event.target.value);
                 setSuggestionsOpen(true);
+                setHasTypedSinceFocus(true);
                 setActiveIndex(-1);
               }}
-              onFocus={() => setSuggestionsOpen(true)}
+              onFocus={() => {
+                setSuggestionsOpen(true);
+                setHasTypedSinceFocus(false);
+              }}
               onBlur={() => setSuggestionsOpen(false)}
               onKeyDown={(event) => {
                 if (event.key === "ArrowDown" && suggestions.length > 0) {
