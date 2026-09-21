@@ -8,6 +8,7 @@ import { Loading } from "@/helpers/icons.tsx";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { buildPathNode } from "./mutation-logic.tsx";
@@ -65,10 +66,13 @@ function PathTypeOption({ type }: { type: PropertyPath["type"] }) {
 // came from - a local match's own prefixedIri() (falling back to its full IRI when no known
 // prefix matches) for a "local" suggestion, LOV's own already-compact prefixedName for a "lov"
 // one (see lovTermSearch.ts - LOV returns this directly, no local prefix lookup needed for it).
-function suggestionDisplay(suggestion: Suggestion): { name: string; iri: string } {
+function suggestionDisplay(
+  suggestion: Suggestion,
+  sourcePrefixes: Record<string, string>,
+): { name: string; iri: string } {
   if (suggestion.kind === "local") {
     const iri = suggestion.iri.value;
-    return { name: prefixedIri(suggestion.iri) ?? iri, iri };
+    return { name: prefixedIri(suggestion.iri, sourcePrefixes) ?? iri, iri };
   }
   return { name: suggestion.term.prefixedName, iri: suggestion.term.uri.value };
 }
@@ -145,6 +149,7 @@ function PathItemForm({
   onSave,
   onRemove,
 }: Omit<Props, "open">) {
+  const { sourcePrefixes } = useEnvironment();
   const [predicateInput, setPredicateInput] = useState(initialPredicate?.value ?? "");
   const [pathType, setPathType] = useState<PropertyPath["type"]>(initialType ?? "predicate");
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
@@ -227,7 +232,7 @@ function PathItemForm({
                 {suggestions.map((suggestion, index) => {
                   const isFirstOfGroup =
                     index === 0 || suggestions[index - 1].kind !== suggestion.kind;
-                  const display = suggestionDisplay(suggestion);
+                  const display = suggestionDisplay(suggestion, sourcePrefixes);
                   return (
                     <div key={suggestionKey(suggestion)}>
                       {isFirstOfGroup && (

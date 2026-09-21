@@ -13,6 +13,7 @@ import { useState } from "react";
 import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
 import { Localized } from "@fluent/react";
 import { prefixedIri } from "@/helpers/prefixedIri.ts";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { convertPathType, updateItem, withItemRemoved } from "./mutation-logic.tsx";
 import AddPathButton from "./AddPathButton.tsx";
 import PathItemModal from "./PathItemModal.tsx";
@@ -164,6 +165,7 @@ function EditablePathLeaf({
   onChange,
   onRemove,
 }: EditablePathLeafProps) {
+  const { sourcePrefixes } = useEnvironment();
   const [open, setOpen] = useState(false);
 
   return (
@@ -179,7 +181,7 @@ function EditablePathLeaf({
           setOpen(true);
         }}
       >
-        {prefixedIri(displayPredicate) ?? displayPredicate.value}
+        {prefixedIri(displayPredicate, sourcePrefixes) ?? displayPredicate.value}
       </div>
       <PathItemModal
         open={open}

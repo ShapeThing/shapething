@@ -1,11 +1,13 @@
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
+import type { NamedNode } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
 import { Link, Loading } from "@/helpers/icons.tsx";
 import { sh } from "@/helpers/namespaces.ts";
 import { knownIris } from "@/helpers/knownIris.ts";
 import { prefixedIri } from "@/helpers/prefixedIri.ts";
 import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useLovSuggestions, type Suggestion } from "@/outputs/render/hooks/useLovSuggestions.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import { iriTypesFor } from "./iriType.ts";
@@ -20,10 +22,13 @@ const IMAGE_EXTENSION_PATTERN = /\.(jpg|jpeg|png|gif|bmp|svg|webp|avif)$/i;
 // came from - a local match's own prefixedIri() (falling back to its full IRI when no known
 // prefix matches) for a "local" suggestion, LOV's own already-compact prefixedName for a "lov"
 // one (see helpers/lovTermSearch.ts).
-function suggestionDisplay(suggestion: Suggestion): { name: string; iri: string } {
+function suggestionDisplay(
+  suggestion: Suggestion,
+  sourcePrefixes: Record<string, string>,
+): { name: string; iri: string } {
   if (suggestion.kind === "local") {
     const iri = suggestion.iri.value;
-    return { name: prefixedIri(suggestion.iri) ?? iri, iri };
+    return { name: prefixedIri(suggestion.iri, sourcePrefixes) ?? iri, iri };
   }
   return { name: suggestion.term.prefixedName, iri: suggestion.term.uri.value };
 }
@@ -37,6 +42,7 @@ function suggestionKey(suggestion: Suggestion): string {
 }
 
 export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus }: WidgetProps) {
+  const { sourcePrefixes } = useEnvironment();
   const pattern = shape.get(sh("pattern"))?.source;
   const minLength = shape.get(sh("minLength"));
   const maxLength = shape.get(sh("maxLength"));
@@ -70,6 +76,25 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
 
   const ref = useAutoFocusRef<HTMLInputElement>(autoFocus);
 
+  // A value already present starts collapsed to its prefixedIri text; clicking it opens the
+  // input on the full IRI. A freshly added (empty) value has nothing to show, so it opens
+  // straight into the input - and committing back down to empty (the value was cleared) falls
+  // back to the input too, since there's nothing left to display.
+  const [isEditing, setIsEditing] = useState(() => term.value.length === 0);
+  const showInput = isEditing || term.value.length === 0;
+
+  const focusOnOpenRef = useRef(false);
+  const openForEdit = () => {
+    focusOnOpenRef.current = true;
+    setIsEditing(true);
+  };
+  useEffect(() => {
+    if (isEditing && focusOnOpenRef.current) {
+      focusOnOpenRef.current = false;
+      ref.current?.focus();
+    }
+  }, [isEditing, ref]);
+
   // Reset once the committed value moves on - a broken image at one IRI shouldn't suppress the
   // preview forever once the user points this property at a different one.
   const [previewFailed, setPreviewFailed] = useState(false);
@@ -82,111 +107,134 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
     <div className="st-iri-editor">
       <div className="st-iri-editor__row">
         <div className="st-iri-editor__combo">
-          <input
-            ref={ref}
-            type="text"
-            className="st-input"
-            role="combobox"
-            aria-expanded={dropdownOpen}
-            aria-autocomplete="list"
-            aria-controls={listboxId}
-            aria-activedescendant={
-              dropdownOpen && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
-            }
-            value={localValue}
-            onChange={(event) => {
-              setLocalValue(event.target.value);
-              setSuggestionsOpen(true);
-              setActiveIndex(-1);
-            }}
-            onFocus={() => setSuggestionsOpen(true)}
-            onBlur={() => {
-              commit(localValue);
-              setSuggestionsOpen(false);
-            }}
-            onKeyDown={(event) => {
-              if (event.key === "ArrowDown" && suggestions.length > 0) {
-                event.preventDefault();
-                setSuggestionsOpen(true);
-                setActiveIndex((current) => (current + 1) % suggestions.length);
-              } else if (event.key === "ArrowUp" && suggestions.length > 0) {
-                event.preventDefault();
-                setSuggestionsOpen(true);
-                setActiveIndex(
-                  (current) => (current - 1 + suggestions.length) % suggestions.length,
-                );
-              } else if (event.key === "Escape") {
-                setSuggestionsOpen(false);
-              } else if (event.key === "Enter" && dropdownOpen && activeIndex >= 0) {
-                // Only fills the field - doesn't submit the enclosing form.
-                event.preventDefault();
-                activateSuggestion(suggestions[activeIndex]);
-              }
-            }}
-            autoComplete="off"
-            pattern={pattern}
-            minLength={minLength}
-            maxLength={maxLength}
-            aria-labelledby={labelledBy}
-          />
-          {dropdownOpen && (
-            <div id={listboxId} className="st-combo-results" role="listbox">
-              {suggestions.map((suggestion, index) => {
-                const isFirstOfGroup =
-                  index === 0 || suggestions[index - 1].kind !== suggestion.kind;
-                const display = suggestionDisplay(suggestion);
-                return (
-                  <div key={suggestionKey(suggestion)}>
-                    {isFirstOfGroup && (
-                      <div className="st-iri-editor-group-label" role="presentation">
-                        {suggestion.kind === "local" ? (
-                          <Localized id="iri-editor-suggestion-in-use">Already in use</Localized>
-                        ) : (
-                          <Localized id="iri-editor-suggestion-from-lov">Suggestions</Localized>
-                        )}
-                      </div>
-                    )}
-                    <div
-                      id={`${listboxId}-option-${index}`}
-                      role="option"
-                      data-group={suggestion.kind}
-                      aria-selected={display.iri === trimmedValue}
-                      className={`st-combo-result st-iri-editor-option${
-                        index === activeIndex ? " st-combo-result--active" : ""
-                      }`}
-                      // Keeps focus on the input during the click so onBlur above never fires.
-                      onMouseDown={(event) => event.preventDefault()}
-                      onMouseEnter={() => setActiveIndex(index)}
-                      onClick={() => activateSuggestion(suggestion)}
-                    >
-                      <span className="st-iri-editor-option__name">
-                        {display.name}
-                        {suggestion.kind === "lov" && (
-                          <span className="st-iri-editor-option__type">
-                            {suggestion.term.type === "class" ? (
-                              <Localized id="iri-editor-suggestion-type-class">class</Localized>
+          {showInput ? (
+            <>
+              <input
+                ref={ref}
+                type="text"
+                className="st-input"
+                role="combobox"
+                aria-expanded={dropdownOpen}
+                aria-autocomplete="list"
+                aria-controls={listboxId}
+                aria-activedescendant={
+                  dropdownOpen && activeIndex >= 0
+                    ? `${listboxId}-option-${activeIndex}`
+                    : undefined
+                }
+                value={localValue}
+                onChange={(event) => {
+                  setLocalValue(event.target.value);
+                  setSuggestionsOpen(true);
+                  setActiveIndex(-1);
+                }}
+                onFocus={() => setSuggestionsOpen(true)}
+                onBlur={() => {
+                  commit(localValue);
+                  setSuggestionsOpen(false);
+                  setIsEditing(false);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "ArrowDown" && suggestions.length > 0) {
+                    event.preventDefault();
+                    setSuggestionsOpen(true);
+                    setActiveIndex((current) => (current + 1) % suggestions.length);
+                  } else if (event.key === "ArrowUp" && suggestions.length > 0) {
+                    event.preventDefault();
+                    setSuggestionsOpen(true);
+                    setActiveIndex(
+                      (current) => (current - 1 + suggestions.length) % suggestions.length,
+                    );
+                  } else if (event.key === "Escape") {
+                    setSuggestionsOpen(false);
+                  } else if (event.key === "Enter" && dropdownOpen && activeIndex >= 0) {
+                    // Only fills the field - doesn't submit the enclosing form.
+                    event.preventDefault();
+                    activateSuggestion(suggestions[activeIndex]);
+                  }
+                }}
+                autoComplete="off"
+                pattern={pattern}
+                minLength={minLength}
+                maxLength={maxLength}
+                aria-labelledby={labelledBy}
+              />
+              {dropdownOpen && (
+                <div id={listboxId} className="st-combo-results" role="listbox">
+                  {suggestions.map((suggestion, index) => {
+                    const isFirstOfGroup =
+                      index === 0 || suggestions[index - 1].kind !== suggestion.kind;
+                    const display = suggestionDisplay(suggestion, sourcePrefixes);
+                    return (
+                      <div key={suggestionKey(suggestion)}>
+                        {isFirstOfGroup && (
+                          <div className="st-iri-editor-group-label" role="presentation">
+                            {suggestion.kind === "local" ? (
+                              <Localized id="iri-editor-suggestion-in-use">
+                                Already in use
+                              </Localized>
                             ) : (
-                              <Localized id="iri-editor-suggestion-type-property">
-                                property
+                              <Localized id="iri-editor-suggestion-from-lov">
+                                Suggestions
                               </Localized>
                             )}
-                          </span>
+                          </div>
                         )}
-                      </span>
-                      {display.name !== display.iri && (
-                        <span className="st-iri-editor-option__iri">{display.iri}</span>
-                      )}
+                        <div
+                          id={`${listboxId}-option-${index}`}
+                          role="option"
+                          data-group={suggestion.kind}
+                          aria-selected={display.iri === trimmedValue}
+                          className={`st-combo-result st-iri-editor-option${
+                            index === activeIndex ? " st-combo-result--active" : ""
+                          }`}
+                          // Keeps focus on the input during the click so onBlur above never fires.
+                          onMouseDown={(event) => event.preventDefault()}
+                          onMouseEnter={() => setActiveIndex(index)}
+                          onClick={() => activateSuggestion(suggestion)}
+                        >
+                          <span className="st-iri-editor-option__name">
+                            {display.name}
+                            {suggestion.kind === "lov" && (
+                              <span className="st-iri-editor-option__type">
+                                {suggestion.term.type === "class" ? (
+                                  <Localized id="iri-editor-suggestion-type-class">
+                                    class
+                                  </Localized>
+                                ) : (
+                                  <Localized id="iri-editor-suggestion-type-property">
+                                    property
+                                  </Localized>
+                                )}
+                              </span>
+                            )}
+                          </span>
+                          {display.name !== display.iri && (
+                            <span className="st-iri-editor-option__iri">{display.iri}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                  {isSearchingLov && (
+                    <div className="st-combo-empty" role="presentation">
+                      <Loading />
+                      <Localized id="loading">Loading</Localized>
                     </div>
-                  </div>
-                );
-              })}
-              {isSearchingLov && (
-                <div className="st-combo-empty" role="presentation">
-                  <Loading />
-                  <Localized id="loading">Loading</Localized>
+                  )}
                 </div>
               )}
-            </div>
+            </>
+          ) : (
+            <button
+              type="button"
+              className="st-input st-iri-editor__display"
+              aria-labelledby={labelledBy}
+              title={term.value}
+              onClick={openForEdit}
+            >
+              {prefixedIri(term as NamedNode, sourcePrefixes) ?? term.value}
+            </button>
           )}
         </div>
         {term.value ? (

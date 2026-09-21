@@ -19,9 +19,11 @@ export default {
   args: {
     ...testingEnvironment,
     enableMissingShapesGeneration: true,
+    corsProxyUrl: "/cors-proxy?url=",
+    enableEditInPlace: true,
   },
   parameters: {
-    maxWidth: "1400px",
+    maxWidth: "1000px",
   },
 };
 

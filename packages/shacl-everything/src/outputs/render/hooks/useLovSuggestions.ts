@@ -4,6 +4,7 @@ import type { NamedNode } from "@rdfjs/types";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import { prefixedIri } from "@/helpers/prefixedIri.ts";
 import { searchLovTerms, type LovTerm, type LovTermType } from "@/helpers/lovTermSearch.ts";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 
 const LOV_SEARCH_DEBOUNCE_MS = 200;
 // LOV's own page_size=10 (see lovTermSearch.ts) already caps that half of the list - this caps
@@ -30,6 +31,7 @@ export function useLovSuggestions(
   suggestions: Suggestion[];
   isSearchingLov: boolean;
 } {
+  const { sourcePrefixes } = useEnvironment();
   const [debounced, setDebounced] = useState<string>();
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export function useLovSuggestions(
       if (!query) return true;
       const lowerQuery = query.toLowerCase();
       if (candidate.value.toLowerCase().includes(lowerQuery)) return true;
-      const prefixed = prefixedIri(candidate);
+      const prefixed = prefixedIri(candidate, sourcePrefixes);
       return prefixed !== undefined && prefixed.toLowerCase().includes(lowerQuery);
     })
     .slice(0, MAX_LOCAL_SUGGESTIONS);

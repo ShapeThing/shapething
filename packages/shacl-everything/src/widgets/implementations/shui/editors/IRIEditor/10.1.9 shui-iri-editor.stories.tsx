@@ -16,8 +16,28 @@ export const shuiIRIEditor: Story = {
   name: "Free-text IRI entry",
   args: argsByTestFile("10.1.9 shui-iri-editor.ttl", import.meta.url),
   play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
     // A non-image IRI (https://example.org/more-info) must not render a preview thumbnail.
     expect(canvasElement.querySelector(".st-iri-editor__preview")).toBeNull();
+
+    // An already-set value starts collapsed to its display text, not the raw input.
+    expect(canvas.queryByRole("combobox", { name: "See also" })).toBeNull();
+    const display = await canvas.findByRole("button", { name: "See also" });
+    expect(display).toHaveTextContent("https://example.org/more-info");
+
+    // Clicking it opens the input on the full IRI, focused and ready to edit.
+    await userEvent.click(display);
+    const input = await canvas.findByRole("combobox", { name: "See also" });
+    expect(input).toHaveValue("https://example.org/more-info");
+    expect(input).toHaveFocus();
+
+    // Blurring without changing anything collapses it back to the display text.
+    await userEvent.tab();
+    expect(canvas.queryByRole("combobox", { name: "See also" })).toBeNull();
+    expect(await canvas.findByRole("button", { name: "See also" })).toHaveTextContent(
+      "https://example.org/more-info",
+    );
   },
 };
 
@@ -27,8 +47,10 @@ export const shuiIRIEditorImagePreview: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    const input = await canvas.findByDisplayValue(/hendrik\.svg$/);
-    expect(input).toBeVisible();
+    // The preview renders off the committed term value directly - it's visible even while the
+    // field itself is still collapsed to its display text, not opened into the input.
+    const display = await canvas.findByRole("button", { name: "Photo URL" });
+    expect(display).toHaveTextContent(/hendrik\.svg$/);
 
     const preview = await waitFor(() => {
       const element = canvasElement.querySelector<HTMLImageElement>(

@@ -10,6 +10,29 @@ import { owl, rdf, sh } from "@/helpers/namespaces.ts";
 import { withCorsProxy } from "@/helpers/corsProxy.ts";
 import { isKnownNotFound, rememberNotFound } from "@/helpers/notFoundCache.ts";
 
+// Populates Environment.sourcePrefixes by scanning a source's own raw text for `@prefix alias:
+// <iri> .` (Turtle/TriG) and SPARQL-style `PREFIX alias: <iri>` declarations - a parsed RdfStore
+// keeps only quads, so the source text itself is the only place this is ever observable at all.
+// Deliberately NOT sourced from rdf-parse's own 'prefix' stream event: that event is forwarded
+// onto its returned stream only once Comunica's actor-bus mediation resolves (see RdfParser.js's
+// `mediatorRdfParseHandle.mediate(...).then(...)`), but the underlying N3 StreamParser it wraps
+// already starts flowing (and firing 'prefix') the moment `actor.data.pipe(...)` runs inside that
+// same mediation - a genuine race in rdf-parse itself, not something a listener placement on our
+// end can fix. It reliably loses in this package's actual Vite/browser bundle (readable-stream's
+// browser build schedules differently than Node's native streams), silently dropping every
+// prefix - confirmed by instrumenting rdf-parse's own forwarding call directly. Scanning the text
+// synchronously, before any streaming parse begins, sidesteps the race entirely. A format with no
+// prefix concept (N-Triples, JSON-LD, ...) simply matches nothing, which is fine - `sink` just
+// stays unfilled for that source.
+const AT_PREFIX_PATTERN = /@prefix\s+([A-Za-z][\w.-]*)?:\s*<([^>\s]*)>\s*\./g;
+const SPARQL_PREFIX_PATTERN = /(?:^|\s)PREFIX\s+([A-Za-z][\w.-]*)?:\s*<([^>\s]*)>/gi;
+
+const extractSourcePrefixes = (text: string, sink: Map<string, string> | undefined): void => {
+  if (!sink) return;
+  for (const match of text.matchAll(AT_PREFIX_PATTERN)) sink.set(match[1] ?? "", match[2]);
+  for (const match of text.matchAll(SPARQL_PREFIX_PATTERN)) sink.set(match[1] ?? "", match[2]);
+};
+
 const storeFromStream = (stream: Stream<Quad>): Promise<RdfStore> => {
   const store = RdfStore.createDefault();
   return new Promise((resolve, reject) => {
@@ -122,10 +145,18 @@ const fetchText = async (
 // changed) and mutation isolation between the returned stores is preserved - only the network
 // round trip and parse are shared, each caller still gets its own RdfStore instance built from a
 // fresh copy of the parsed quads.
+// A URL fetched once (quadCache hit) for, say, shapesGraph must still contribute its own
+// `@prefix` declarations to a second caller resolving the very same URL for dataGraph - even
+// though the text is only ever fetched (and scanned for prefixes) once. Passing the very same
+// `prefixSink` Map in for both callers (see resolveRdfSources below) sidesteps that entirely:
+// whichever caller's fetch actually runs writes into the one shared destination, and that scan
+// happens synchronously right after the text arrives, strictly before the cached promise
+// resolves - so it's always fully populated by the time any awaiter of it proceeds.
 export const dereferenceUrl = async (
   url: URL,
   quadCache: Map<string, Promise<Quad[]>>,
   corsProxyUrl: string | undefined,
+  prefixSink?: Map<string, string>,
 ): Promise<RdfStore> => {
   const hashlessUrl = new URL(url.href.split("#")[0]);
 
@@ -133,6 +164,7 @@ export const dereferenceUrl = async (
   if (!quadsPromise) {
     quadsPromise = (async () => {
       const { text, contentType } = await fetchText(hashlessUrl, corsProxyUrl);
+      extractSourcePrefixes(text, prefixSink);
       // Content-negotiated ontology namespace IRIs (skos:, dct:, foaf:, ...) have no file
       // extension for rdf-parse to detect a format from, so the server's own declared
       // Content-Type is used instead in that case - the corsProxy explicitly requests one via an
@@ -143,9 +175,7 @@ export const dereferenceUrl = async (
         rdfParser.getContentTypeFromExtension(hashlessUrl.href) || !contentType
           ? { path: hashlessUrl.href, baseIRI: url.href }
           : { contentType: contentType.split(";")[0].trim(), baseIRI: url.href };
-      const store = await storeFromStream(
-        rdfParser.parse(stringToStream(text), parseOptions),
-      );
+      const store = await storeFromStream(rdfParser.parse(stringToStream(text), parseOptions));
       return store.getQuads();
     })();
     quadCache.set(hashlessUrl.href, quadsPromise);
@@ -154,10 +184,10 @@ export const dereferenceUrl = async (
   return storeFromQuads(await quadsPromise);
 };
 
-const parseRdfText = (text: string): Promise<RdfStore> =>
-  storeFromStream(
-    rdfParser.parse(stringToStream(text), { contentType: "text/turtle" }),
-  );
+const parseRdfText = (text: string, prefixSink?: Map<string, string>): Promise<RdfStore> => {
+  extractSourcePrefixes(text, prefixSink);
+  return storeFromStream(rdfParser.parse(stringToStream(text), { contentType: "text/turtle" }));
+};
 
 // owl:imports is resolved transitively: importing graph B into A can itself declare further
 // imports, so the store is rescanned after every merge until a pass turns up nothing new.
@@ -172,6 +202,7 @@ const resolveOwlImports = async (
   quadCache: Map<string, Promise<Quad[]>>,
   visitedImports: Set<string>,
   corsProxyUrl: string | undefined,
+  prefixSink?: Map<string, string>,
 ): Promise<void> => {
   const importUrls = new Set<string>();
   for (const quad of store.getQuads(null, owl("imports"), null, null)) {
@@ -193,7 +224,7 @@ const resolveOwlImports = async (
   // logged, not thrown.
   const hrefs = [...importUrls];
   const importedStores = await Promise.allSettled(
-    hrefs.map((href) => dereferenceUrl(new URL(href), quadCache, corsProxyUrl)),
+    hrefs.map((href) => dereferenceUrl(new URL(href), quadCache, corsProxyUrl, prefixSink)),
   );
   for (const [index, result] of importedStores.entries()) {
     if (result.status === "rejected") {
@@ -206,7 +237,7 @@ const resolveOwlImports = async (
     for (const quad of result.value.getQuads()) store.addQuad(quad);
   }
 
-  await resolveOwlImports(store, quadCache, visitedImports, corsProxyUrl);
+  await resolveOwlImports(store, quadCache, visitedImports, corsProxyUrl, prefixSink);
 };
 
 // Bootstraps shapesGraph from the DATA graph's own sh:shape declarations (3.1.3.7 Explicit shape
@@ -231,6 +262,7 @@ const dereferenceShapeTargets = async (
   dataGraph: RdfStore,
   quadCache: Map<string, Promise<Quad[]>>,
   corsProxyUrl: string | undefined,
+  prefixSink?: Map<string, string>,
 ): Promise<RdfStore | undefined> => {
   const shapeIris = new Set<string>();
   for (const quad of dataGraph.getQuads(null, sh("shape"))) {
@@ -240,7 +272,7 @@ const dereferenceShapeTargets = async (
 
   const hrefs = [...shapeIris];
   const dereferenced = await Promise.allSettled(
-    hrefs.map((href) => dereferenceUrl(new URL(href), quadCache, corsProxyUrl)),
+    hrefs.map((href) => dereferenceUrl(new URL(href), quadCache, corsProxyUrl, prefixSink)),
   );
 
   const merged = RdfStore.createDefault();
@@ -256,7 +288,7 @@ const dereferenceShapeTargets = async (
   }
   if (merged.size === 0) return undefined;
 
-  await resolveOwlImports(merged, quadCache, new Set<string>(), corsProxyUrl);
+  await resolveOwlImports(merged, quadCache, new Set<string>(), corsProxyUrl, prefixSink);
   return merged;
 };
 
@@ -278,11 +310,12 @@ export const resolveRdfSource = async (
   source: RdfSource,
   quadCache: Map<string, Promise<Quad[]>>,
   corsProxyUrl: string | undefined,
+  prefixSink?: Map<string, string>,
 ): Promise<RdfStore> => {
   if (isRdfSourceList(source)) {
     const stores = await Promise.all(
       source.map((nestedSource) =>
-        resolveRdfSource(nestedSource, quadCache, corsProxyUrl)
+        resolveRdfSource(nestedSource, quadCache, corsProxyUrl, prefixSink)
       ),
     );
     const merged = RdfStore.createDefault();
@@ -295,14 +328,14 @@ export const resolveRdfSource = async (
   const store = source instanceof RdfStore
     ? source
     : source instanceof URL
-    ? await dereferenceUrl(source, quadCache, corsProxyUrl)
+    ? await dereferenceUrl(source, quadCache, corsProxyUrl, prefixSink)
     : Array.isArray(source)
     ? storeFromQuads(source)
     : typeof source === "string"
-    ? await parseRdfText(source)
+    ? await parseRdfText(source, prefixSink)
     : storeFromQuads(source);
 
-  await resolveOwlImports(store, quadCache, new Set<string>(), corsProxyUrl);
+  await resolveOwlImports(store, quadCache, new Set<string>(), corsProxyUrl, prefixSink);
   return store;
 };
 
@@ -310,11 +343,15 @@ export const resolveRdfSources = async (
   raw: RawEnvironment,
 ): Promise<Environment> => {
   const quadCache = new Map<string, Promise<Quad[]>>();
+  // Shared by both graphs (rather than one Map each) so a source URL dereferenced once for, say,
+  // shapesGraph but then cache-hit by dataGraph's own resolveRdfSource call still contributes its
+  // `@prefix` declarations to the result - see dereferenceUrl's doc comment.
+  const sourcePrefixes = new Map<string, string>();
   const { corsProxyUrl } = raw;
   const [resolvedShapesGraph, dataGraph, scoresGraph, readOnlyGraph] =
     await Promise.all([
-      resolveRdfSource(raw.shapesGraph, quadCache, corsProxyUrl),
-      resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl),
+      resolveRdfSource(raw.shapesGraph, quadCache, corsProxyUrl, sourcePrefixes),
+      resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl, sourcePrefixes),
       resolveRdfSource(raw.scoresGraph, quadCache, corsProxyUrl),
       raw.readOnlyGraph !== undefined
         ? resolveRdfSource(raw.readOnlyGraph, quadCache, corsProxyUrl)
@@ -322,7 +359,7 @@ export const resolveRdfSources = async (
     ]);
 
   const shapesGraph = resolvedShapesGraph.size === 0
-    ? ((await dereferenceShapeTargets(dataGraph, quadCache, corsProxyUrl)) ??
+    ? ((await dereferenceShapeTargets(dataGraph, quadCache, corsProxyUrl, sourcePrefixes)) ??
       resolvedShapesGraph)
     : resolvedShapesGraph;
 
@@ -340,5 +377,6 @@ export const resolveRdfSources = async (
     scoresGraph,
     readOnlyGraph,
     nodeShapes: raw.nodeShapes?.length ? raw.nodeShapes : nodeShapes,
+    sourcePrefixes: Object.fromEntries(sourcePrefixes),
   };
 };

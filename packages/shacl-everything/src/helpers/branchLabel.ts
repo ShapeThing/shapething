@@ -1,6 +1,6 @@
 import type { Literal, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { localName } from "@/helpers/localName.ts";
+import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import { getLabelPreference } from "@/resolution/globalConfiguration.ts";
 import language, { configuredLanguages } from "@/resolution/language.ts";
@@ -32,9 +32,9 @@ export function branchLabel(branchShape: Term, shapesGraph: RdfStore, languages:
   }
 
   return (
-    localName(shapesGraph.getQuads(branchShape, sh("datatype"))[0]?.object) ??
-    localName(shapesGraph.getQuads(branchShape, sh("class"))[0]?.object) ??
-    localName(shapesGraph.getQuads(branchShape, sh("node"))[0]?.object) ??
+    localNameLabel(shapesGraph.getQuads(branchShape, sh("datatype"))[0]?.object) ??
+    localNameLabel(shapesGraph.getQuads(branchShape, sh("class"))[0]?.object) ??
+    localNameLabel(shapesGraph.getQuads(branchShape, sh("node"))[0]?.object) ??
     branchShape.value
   );
 }

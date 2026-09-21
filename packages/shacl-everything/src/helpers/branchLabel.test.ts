@@ -18,7 +18,7 @@ test("branchLabel falls back through sh:datatype, sh:class, sh:node, then the br
   expect(branchLabel(ex("branch2"), classOnly, [])).toBe("Animal");
 
   const nodeOnly = await graph(`ex:branch3 sh:node ex:AnimalShape .`);
-  expect(branchLabel(ex("branch3"), nodeOnly, [])).toBe("AnimalShape");
+  expect(branchLabel(ex("branch3"), nodeOnly, [])).toBe("Animal Shape");
 
   const nothing = await graph(`ex:branch4 a sh:PropertyShape .`);
   expect(branchLabel(ex("branch4"), nothing, [])).toBe(ex("branch4").value);

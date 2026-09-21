@@ -410,7 +410,7 @@ test("label() falls back to the property shape's own local name for an alternati
     [ex("property1")],
   );
 
-  expect(element.label()).toBe("property1");
+  expect(element.label()).toBe("property 1");
 });
 
 test("label() honors a globally configured shui:languagePreference when no explicit languages are passed", async () => {
@@ -431,7 +431,7 @@ test("label() falls back to the ontology term's local name when neither sh:name 
     ex("property1"),
   ]);
 
-  expect(element.label()).toBe("givenName");
+  expect(element.label()).toBe("given Name");
 });
 
 test("label() prefers the ontology's rdfs:label in the interface language over sh:name in a different language", async () => {

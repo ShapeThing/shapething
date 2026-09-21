@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { NamedNode, Term } from "@rdfjs/types";
 import { stringToGradient } from "string-to-color-gradient";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
-import { localName } from "@/helpers/localName.ts";
+import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
 import "./style.css";
 
@@ -36,7 +36,7 @@ export default function Teaser({
   highlight,
 }: Props) {
   const [hasError, setHasError] = useState<boolean | undefined>(undefined);
-  const displayLabel = label ?? localName(term) ?? term.value;
+  const displayLabel = label ?? localNameLabel(term) ?? term.value;
   const isDirectRenderable =
     depiction?.value.includes(".svg") || depiction?.value.includes("data:");
   const classificationGradient = stringToGradient(classification?.label ?? "", {

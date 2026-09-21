@@ -9,6 +9,11 @@ export type ToSparqlOptions = {
   // (dataId(), nestedAncestorPath(), elementKey.ts, groupPropertyShapesByPath's path-equality
   // check) need the exact, unambiguous `<iri>` form untouched.
   prefixed?: boolean;
+  // Passed straight through to prefixedIri() as its own source-declared-prefixes override
+  // (typically Environment.sourcePrefixes) - ignored unless `prefixed` is also true. This layer
+  // deliberately has no Environment access of its own (see PropertyUIElement.isReadOnly's same
+  // note), so a caller that wants a document's own alias reflected here has to hand it in.
+  sourcePrefixes?: Record<string, string>;
 };
 
 /**
@@ -21,7 +26,7 @@ export function toSparql(path: PropertyPath, options?: ToSparqlOptions): string 
   switch (path.type) {
     case "predicate":
       return options?.prefixed
-        ? prefixedIri(path.predicate) ?? `<${path.predicate.value}>`
+        ? prefixedIri(path.predicate, options.sourcePrefixes) ?? `<${path.predicate.value}>`
         : `<${path.predicate.value}>`;
 
     case "sequence":

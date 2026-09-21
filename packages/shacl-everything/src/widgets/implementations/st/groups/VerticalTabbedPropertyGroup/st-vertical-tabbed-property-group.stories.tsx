@@ -17,7 +17,7 @@ export default {
 };
 
 export const stVerticalTabbedPropertyGroup: Story = {
-  name: "A Drupal-style vertical tab nav, one tab with an st:icon Iconify name, one with a plain image IRI",
+  name: "A Drupal-style vertical tab nav, one tab with an st:icon Iconify name and st:color, one with a plain image IRI",
   args: argsByTestFile("st-vertical-tabbed-property-group.ttl", import.meta.url),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
@@ -49,6 +49,17 @@ export const stVerticalTabbedPropertyGroup: Story = {
     // network call to api.iconify.design (same convention as IconifyEditor/IconifyViewer's own
     // stories, which don't assert on the resolved icon markup either).
     expect(within(personalDetailsTab).getByText("Personal details")).toBeInTheDocument();
+
+    // st:color on the personal-details tab (h=217.22, s=91.22, l=59.80) round-trips to "#3b82f6"
+    // via helpers/colorBuckets.ts's hslToHex - same fixture HSL as st-color-viewer.ttl. The
+    // address tab declares no st:color, so it renders no swatch at all.
+    const colorSwatch = personalDetailsTab.querySelector(
+      ".st-vertical-tabbed-group-nav__color-swatch",
+    );
+    expect(colorSwatch).toHaveStyle({ backgroundColor: "rgb(59, 130, 246)" });
+    expect(
+      addressTab.querySelector(".st-vertical-tabbed-group-nav__color-swatch"),
+    ).not.toBeInTheDocument();
 
     // Switching tabs swaps which tab's fields are mounted, without touching any data - "Dam 1"
     // (already in the fixture data) simply wasn't shown before, not created by switching to it.

@@ -27,7 +27,7 @@ export default function AlternativePathSwitcher({
   pinnedBranch,
   onBranchSelected,
 }: Props) {
-  const { enableAlternativePathSwitching } = useEnvironment();
+  const { enableAlternativePathSwitching, sourcePrefixes } = useEnvironment();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const selectId = useId();
 
@@ -42,7 +42,7 @@ export default function AlternativePathSwitcher({
   const label = (branchIri: string) => {
     const branch = branches.find((b) => b.value === branchIri) ?? branches[0];
     const text = propertyLabel({ term: branch, propertyShape: shape, languages: [activeInterfaceLanguage] });
-    const prefixed = prefixedIri(branch);
+    const prefixed = prefixedIri(branch, sourcePrefixes);
     return prefixed ? `${text} (${prefixed})` : text;
   };
 

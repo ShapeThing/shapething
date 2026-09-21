@@ -12,6 +12,8 @@
     a sh:NodeShape ;
     sh:targetClass sh:Shape ;
 
+    owl:imports sh: ;
+
     sh:property [
         sh:name "Title"@en, "Titel"@nl ;
         sh:order 1 ;
@@ -30,12 +32,44 @@
         sh:datatype ( xsd:string rdf:langString ) ;
     ] ;
 
+    sh:property [
+        sh:order 3 ;
+        sh:name "Sparql based constraints"@en, "Sparql gebaseerde beperkingen"@nl ;
+        sh:path sh:sparql ;
+        sh:group <#constraints> ;
+        sh:class sh:SPARQLConstraint ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Severity"@en, "Ernst"@nl ;
+        sh:path sh:severity ;
+        sh:group <#metadata> ;
+        sh:class sh:Severity ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Imports"@en, "Imports"@nl ;
+        sh:path owl:imports ;
+        sh:group <#metadata> ;
+        sh:nodeKind sh:IRI ;
+        sh:class owl:Ontology ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "Properties"@en, "Eigenschappen"@nl ;
+        sh:path sh:property ;
+        sh:group <#properties> ;
+        sh:nodeKind ( sh:IRI sh:BlankNode ) ;
+    ] ;
+
     .
 
 <#nodeShape>
     a sh:NodeShape ;
     sh:targetClass sh:NodeShape ;
-    sh:ignoredProperties ( sh:property ) ;
 
     sh:name "Shape"@en, "Vorm"@nl ;
     sh:description "A shape defines the structure and constraints for RDF nodes."@en, "Een vorm definieert de structuur en beperkingen voor RDF-knopen."@nl ;
@@ -188,6 +222,12 @@ sh:IRIOrLiteral rdfs:label "IRI or literal"@en, "IRI of literal"@nl .
     a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
     sh:name "Metadata"@en, "Metadata"@nl ;
     sh:order 1 ;
+    st:icon "iconmind:tag-outline-thin"^^<https://iconify.design> ;
+    st:color [
+        st:hue "17.2192513368984"^^xsd:decimal ;
+        st:saturation "91.21951219512198"^^xsd:decimal ;
+        st:lightness "59.80392156862745"^^xsd:decimal ;
+    ] ;
     sh:description "Metadata for the shape."@en, "Metadata voor de vorm."@nl ;
     .
 
@@ -196,13 +236,19 @@ sh:IRIOrLiteral rdfs:label "IRI or literal"@en, "IRI of literal"@nl .
     a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
     sh:name "Targeting"@en, "Targeting"@nl ;
     sh:order 2 ;
+    st:icon "iconmind:goal-outline-thin"^^<https://iconify.design> ;
+    st:color [
+        st:hue "117.2192513368984"^^xsd:decimal ;
+        st:saturation "91.21951219512198"^^xsd:decimal ;
+        st:lightness "59.80392156862745"^^xsd:decimal ;
+    ] ;
     sh:description "Targeting for the shape."@en, "Doelselectie van de vorm."@nl ;
     .
 
 
 <#targetingInner>
     a sh:PropertyGroup, st:DrawerPropertyGroup ;
-    sh:order 3 ;
+    sh:order 1000 ;
     sh:group <#targeting> ;
     .
 
@@ -210,12 +256,31 @@ sh:IRIOrLiteral rdfs:label "IRI or literal"@en, "IRI of literal"@nl .
     a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
     sh:name "Constraints"@en, "Beperkingen"@nl ;
     sh:order 3 ;
+    st:color [
+        st:hue "217.2192513368984"^^xsd:decimal ;
+        st:saturation "91.21951219512198"^^xsd:decimal ;
+        st:lightness "59.80392156862745"^^xsd:decimal ;
+    ] ;
+    st:icon "iconmind:list-checks-outline-thin"^^<https://iconify.design> ;
     sh:description "Constraints for the shape."@en, "Beperkingen van de vorm."@nl ;
     .
 
 
 <#constraintsInner>
     a sh:PropertyGroup, st:DrawerPropertyGroup ;
-    sh:order 1 ;
+    sh:order 1000 ;
     sh:group <#constraints> ;
+    .
+
+<#properties>
+    a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
+    sh:name "Properties"@en, "Eigenschappen"@nl ;
+    sh:order 4 ;
+    st:color [
+        st:hue "67.2192513368984"^^xsd:decimal ;
+        st:saturation "91.21951219512198"^^xsd:decimal ;
+        st:lightness "59.80392156862745"^^xsd:decimal ;
+    ] ;
+    st:icon "iconmind:dean-list-outline-thin"^^<https://iconify.design> ;
+    sh:description "Properties for the shape."@en, "Eigenschappen van de vorm."@nl ;
     .

@@ -37,11 +37,20 @@
 # st:icon here is a literal typed with the iconifyDatatype sentinel (sh:datatype
 # <https://iconify.design>, see namespaces.ts) - the same "<collection>:<icon>" convention
 # st:IconifyEditor/st:IconifyViewer use, resolved live by @iconify/react's <Icon/>.
+# st:color is a blank node carrying st:hue/st:saturation/st:lightness - the same genuine-CSS-HSL
+# convention st:ColorEditor/st:ColorViewer use for a property's own value (see
+# st-color-viewer.ttl), just declared as shape metadata here. This HSL round-trips to "#3b82f6"
+# via helpers/colorBuckets.ts's hslToHex.
 <#personalDetails>
     a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
     sh:name "Personal details"@en ;
     sh:order 0 ;
     st:icon "mdi:account"^^<https://iconify.design> ;
+    st:color [
+        st:hue "217.2192513368984"^^xsd:decimal ;
+        st:saturation "91.21951219512198"^^xsd:decimal ;
+        st:lightness "59.80392156862745"^^xsd:decimal ;
+    ] ;
     .
 
 # st:icon here is a plain IRI, not an iconify-typed literal - the "else" branch, rendered as a

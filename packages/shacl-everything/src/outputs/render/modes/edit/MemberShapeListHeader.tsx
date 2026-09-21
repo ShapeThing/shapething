@@ -30,6 +30,7 @@ export default function MemberShapeListHeader({
     enableWidgetSwitching,
     enableShPathInLabelTitle,
     languageMode,
+    sourcePrefixes,
   } = useEnvironment();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const { activeLanguage } = useContentLanguage();
@@ -65,7 +66,7 @@ export default function MemberShapeListHeader({
                         ) : undefined
                       }
                       labelTitle={enableShPathInLabelTitle
-                        ? column.pathAsSparql({ prefixed: true })
+                        ? column.pathAsSparql({ prefixed: true, sourcePrefixes })
                         : undefined}
                       required={(column.get(sh("minCount")) ?? 0) > 0}
                       labelId={columnLabelId(index)}

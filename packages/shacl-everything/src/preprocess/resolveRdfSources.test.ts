@@ -372,6 +372,54 @@ test("a same-origin owl:imports URL still tries directly first even with a proxy
   expect(fetchCalls).not.toContain("http://example.org/proxy?url=http%3A%2F%2Fexample.org%2Fb.ttl");
 });
 
+test("sourcePrefixes collects @prefix declarations from both shapesGraph and dataGraph", async () => {
+  const environment = await resolveRdfSources(
+    rawEnvironment({
+      shapesGraph: `@prefix sh: <http://www.w3.org/ns/shacl#> . @prefix ex: <http://example.org/> . ex:PersonShape a sh:NodeShape .`,
+      dataGraph: `@prefix ex: <http://example.org/> . @prefix foaf: <http://xmlns.com/foaf/0.1/> . ex:alice a foaf:Person .`,
+    }),
+  );
+
+  expect(environment.sourcePrefixes).toMatchObject({
+    sh: "http://www.w3.org/ns/shacl#",
+    ex: "http://example.org/",
+    foaf: "http://xmlns.com/foaf/0.1/",
+  });
+});
+
+test("sourcePrefixes is collected from a URL source, even when cache-hit by a second graph", async () => {
+  fixtures["http://example.org/combined.ttl"] = `
+    @prefix sh: <http://www.w3.org/ns/shacl#> .
+    @prefix ex: <http://example.org/> .
+    ex:PersonShape a sh:NodeShape .
+    ex:alice a ex:Person .
+  `;
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({
+      shapesGraph: new URL("http://example.org/combined.ttl"),
+      dataGraph: new URL("http://example.org/combined.ttl"),
+    }),
+  );
+
+  expect(environment.sourcePrefixes).toMatchObject({
+    sh: "http://www.w3.org/ns/shacl#",
+    ex: "http://example.org/",
+  });
+  expect(fetchCalls.filter((href) => href === "http://example.org/combined.ttl").length).toBe(1);
+});
+
+test("sourcePrefixes is empty when every source is already a materialized RdfStore", async () => {
+  const environment = await resolveRdfSources(
+    rawEnvironment({
+      shapesGraph: RdfStore.createDefault(),
+      dataGraph: RdfStore.createDefault(),
+    }),
+  );
+
+  expect(environment.sourcePrefixes).toEqual({});
+});
+
 test("a non-404 fetch failure is not remembered as a 404", async () => {
   stubLocalStorage();
   fixtures["http://example.org/a.ttl"] = `

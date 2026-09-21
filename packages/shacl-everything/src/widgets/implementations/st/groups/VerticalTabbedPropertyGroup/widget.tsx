@@ -35,6 +35,21 @@ function TabIcon({ tab }: { tab: GroupUIElement }) {
   );
 }
 
+// st:color here is a blank node carrying st:hue/st:saturation/st:lightness sibling triples (see
+// GroupUIElement.color()) - resolved to a hex string once there, so this only has to hand it
+// straight to a swatch's own background-color.
+function TabColorSwatch({ tab }: { tab: GroupUIElement }) {
+  const color = tab.color();
+  if (!color) return null;
+  return (
+    <span
+      className="st-vertical-tabbed-group-nav__color-swatch"
+      style={{ backgroundColor: color }}
+      aria-hidden="true"
+    />
+  );
+}
+
 /**
  * Drupal-style "vertical tabs": a column of tab buttons on the left (each optionally carrying its
  * own st:icon), the active tab's fields in a panel to the right. Unlike st:TabbedPropertyGroup -
@@ -88,7 +103,6 @@ export default function VerticalTabbedPropertyGroup({ group }: GroupWidgetProps)
   if (!isFirstTab) return null;
 
   const activeTab = tabs.find((tab) => tab.node.equals(activeTabIri)) ?? tabs[0];
-  const description = activeTab.description([activeInterfaceLanguage]);
 
   return (
     <div className="st-vertical-tabbed-group" data-iri={group.node.value}>
@@ -100,6 +114,7 @@ export default function VerticalTabbedPropertyGroup({ group }: GroupWidgetProps)
       >
         {tabs.map((tab, index) => {
           const active = tab.node.equals(activeTab.node);
+          const description = tab.description([activeInterfaceLanguage]);
           return (
             <button
               key={tab.node.value}
@@ -116,6 +131,7 @@ export default function VerticalTabbedPropertyGroup({ group }: GroupWidgetProps)
               )}
               onClick={() => setActiveTabIri(tab.node)}
             >
+              <TabColorSwatch tab={tab} />
               <TabIcon tab={tab} />
               <span className="st-vertical-tabbed-group-nav__label">
                 {tab.label([activeInterfaceLanguage]) ?? tab.node.value}

@@ -66,7 +66,7 @@ test("valueToFeature() walks one hop into an IRI value's own st:GeoRole property
   expect(valueToFeature(shape, ex("geometry1"), ["en-GB"])).toEqual({
     type: "Feature",
     geometry: { type: "Point", coordinates: [5, 52] },
-    properties: { title: "geometry1" },
+    properties: { title: "geometry 1" },
   });
 });
 

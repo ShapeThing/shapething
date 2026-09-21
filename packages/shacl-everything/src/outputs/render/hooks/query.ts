@@ -1,6 +1,6 @@
 import type { Bindings, NamedNode, Term } from "@rdfjs/types";
 import { queryPrefixes, sh } from "@/helpers/namespaces.ts";
-import { localName } from "@/helpers/localName.ts";
+import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { withCorsProxy } from "@/helpers/corsProxy.ts";
 import { geosparqlExtensionFunctions } from "@/helpers/geosparqlFunctions.ts";
 import {
@@ -167,7 +167,7 @@ function toResolvedTerms(bindings: Bindings[]): ResolvedTerm[] {
                   ? classificationLabelTerm.value
                   : classificationTerm.termType === "Literal"
                     ? classificationTerm.value
-                    : (localName(classificationTerm) ?? classificationTerm.value),
+                    : (localNameLabel(classificationTerm) ?? classificationTerm.value),
             }
           : undefined,
         depiction: depictionTerm?.termType === "NamedNode" ? depictionTerm : undefined,

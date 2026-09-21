@@ -1,7 +1,7 @@
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { factory } from "@/helpers/factory.ts";
-import { localName } from "@/helpers/localName.ts";
+import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { rdf, rdfs, sh, shui, st } from "@/helpers/namespaces.ts";
 import language, {
   configuredLanguages,
@@ -230,8 +230,9 @@ export function propertyLabel({
   // more useful than the raw local name, so restore the value step 1 set aside above.
   if (fallbackPropertyShapeValue) return fallbackPropertyShapeValue;
 
-  // 4/5. Local-name resolution of P (or, for a non-IRI/complex term, its own value).
-  return localName(term) ?? term.value;
+  // 4/5. Local-name resolution of P (or, for a non-IRI/complex term, its own value), humanized by
+  // splitting into words at camelCase/acronym and letter-digit boundaries.
+  return localNameLabel(term) ?? term.value;
 }
 
 type PropertyDescriptionOptions = {
@@ -545,10 +546,11 @@ export function valueNodeLabel(
     if (literal) return literal;
   }
 
-  // 5. If V is an IRI, use local-name resolution of V.
+  // 5. If V is an IRI, use local-name resolution of V, humanized by splitting into words at
+  // camelCase/acronym and letter-digit boundaries.
   // 6. If V is a blank node, use an implementation-specific placeholder.
   if (term.termType === "BlankNode") return factory.literal(term.value);
-  return factory.literal(localName(term) ?? term.value);
+  return factory.literal(localNameLabel(term) ?? term.value);
 }
 
 /**

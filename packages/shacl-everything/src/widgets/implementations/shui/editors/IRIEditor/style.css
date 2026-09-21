@@ -29,6 +29,17 @@
   }
 }
 
+.st-iri-editor__display {
+  display: block;
+  overflow: hidden;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+  resize: none;
+  background-color: white;
+}
+
 .st-iri-editor-option {
   display: flex;
   flex-direction: column;

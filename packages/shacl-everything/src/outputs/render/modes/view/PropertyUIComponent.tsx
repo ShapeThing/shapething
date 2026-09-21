@@ -23,7 +23,7 @@ type PropertyUIComponentProps = {
  * values to show renders nothing at all rather than an empty field waiting to be filled in.
  */
 export default function PropertyUIComponent({ propertyUIElement }: PropertyUIComponentProps) {
-  const { languageMode, viewModeLabelLayout } = useEnvironment();
+  const { languageMode, viewModeLabelLayout, sourcePrefixes } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const isRdfLangString = propertyUIElement.get(sh("datatype"))?.equals(rdf("langString"));
@@ -67,7 +67,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
     <FormElement
       label={label}
       showColon={true}
-      labelTitle={propertyUIElement.pathAsSparql({ prefixed: true })}
+      labelTitle={propertyUIElement.pathAsSparql({ prefixed: true, sourcePrefixes })}
       labelId={labelId}
       dataId={propertyUIElement.dataId()}
       tooltip={description}

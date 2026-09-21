@@ -1,7 +1,7 @@
 import { useId, useMemo, useState } from "react";
 import type { NamedNode, Term } from "@rdfjs/types";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
-import { localName } from "@/helpers/localName.ts";
+import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
@@ -116,7 +116,7 @@ function RadiosCheckboxesOption({
   onToggle,
 }: OptionProps) {
   const [hasError, setHasError] = useState(false);
-  const displayLabel = option.label ?? localName(option.term) ?? option.term.value;
+  const displayLabel = option.label ?? localNameLabel(option.term) ?? option.term.value;
 
   const input = (
     <input

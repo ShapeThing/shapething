@@ -2,6 +2,7 @@ import type { Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { hslToHex } from "@/helpers/colorBuckets.ts";
 import { st } from "@/helpers/namespaces.ts";
 import { groupDescription, groupLabel } from "@/resolution/label.ts";
 import { defaultWidgets, getGroupWidget } from "@/widgets/registry.ts";
@@ -74,5 +75,27 @@ export class GroupUIElement {
    */
   icon(): Term | undefined {
     return this.shapesGraph.getQuads(this.node, st("icon"), null)[0]?.object;
+  }
+
+  /**
+   * This group's own st:color value, if declared - a blank node carrying st:hue/st:saturation/
+   * st:lightness sibling triples in shapesGraph (genuine CSS HSL notation, same convention
+   * st:ColorEditor/st:ColorViewer use for a property's own value, see helpers/colorBuckets.ts's
+   * Hsl type), just declared as shape metadata here instead of a data-graph value - same
+   * ShapeThing-original, out-of-spec status as icon() above. Returns a hex string, ready to use as
+   * a CSS color directly, or undefined if not declared (or incomplete).
+   */
+  color(): string | undefined {
+    const colorNode = this.shapesGraph.getQuads(this.node, st("color"), null)[0]?.object as
+      | Quad_Subject
+      | undefined;
+    if (!colorNode) return undefined;
+    const read = (predicate: ReturnType<typeof st>) =>
+      this.shapesGraph.getQuads(colorNode, predicate)[0]?.object.value;
+    const h = read(st("hue"));
+    const s = read(st("saturation"));
+    const l = read(st("lightness"));
+    if (h === undefined || s === undefined || l === undefined) return undefined;
+    return hslToHex({ h: parseFloat(h), s: parseFloat(s), l: parseFloat(l) });
   }
 }

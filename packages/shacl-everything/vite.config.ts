@@ -6,10 +6,12 @@ import { fileURLToPath } from "node:url";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
 import { serveAbsoluteStoryFixtures } from "./.storybook/serveAbsoluteStoryFixtures.ts";
-const dirname =
-  typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
+const dirname = typeof __dirname !== "undefined"
+  ? __dirname
+  : path.dirname(fileURLToPath(import.meta.url));
 import Icons from "unplugin-icons/vite";
 import react from "@vitejs/plugin-react";
+import { corsProxy } from "./.storybook/corsProxy.ts";
 
 // Vite's dev server understands the `?raw` suffix (import a file's contents as a string)
 // natively, but `vp pack`'s tsdown/rolldown bundler doesn't - it has no equivalent to Vite's
@@ -20,9 +22,13 @@ function rawImportFallback() {
     name: "raw-import-fallback",
     async resolveId(source: string, importer: string | undefined) {
       if (!source.endsWith("?raw")) return null;
-      const resolved = await this.resolve(source.slice(0, -"?raw".length), importer, {
-        skipSelf: true,
-      });
+      const resolved = await this.resolve(
+        source.slice(0, -"?raw".length),
+        importer,
+        {
+          skipSelf: true,
+        },
+      );
       return resolved ? `${resolved.id}?raw` : null;
     },
     async load(id: string) {
@@ -51,7 +57,10 @@ function copyFtlAssets() {
       const destDir = path.join(outDir, "ftl");
       await fs.mkdir(destDir, { recursive: true });
       for (const file of await fs.readdir(ftlSourceDir)) {
-        await fs.copyFile(path.join(ftlSourceDir, file), path.join(destDir, file));
+        await fs.copyFile(
+          path.join(ftlSourceDir, file),
+          path.join(destDir, file),
+        );
       }
     },
   };
@@ -59,7 +68,7 @@ function copyFtlAssets() {
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
-  plugins: [react(), Icons({ compiler: "jsx", jsx: "react" })],
+  plugins: [react(), Icons({ compiler: "jsx", jsx: "react" }), corsProxy()],
   resolve: {
     alias: {
       "@": path.join(dirname, "src"),
@@ -77,7 +86,11 @@ export default defineConfig({
       tsgo: true,
     },
     exports: true,
-    plugins: [Icons({ compiler: "jsx", jsx: "react" }), rawImportFallback(), copyFtlAssets()],
+    plugins: [
+      Icons({ compiler: "jsx", jsx: "react" }),
+      rawImportFallback(),
+      copyFtlAssets(),
+    ],
   },
   fmt: {},
   test: {

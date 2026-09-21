@@ -105,7 +105,7 @@ test("propertyLabel falls back to the local name when nothing matches at any ste
   });
 
   expect(propertyLabel({ term: ex("givenName"), propertyShape: shape, isPropertyPath: true })).toBe(
-    "givenName",
+    "given Name",
   );
 });
 
@@ -286,7 +286,7 @@ test("valueNodeLabel falls back to the IRI's local name resolution when nothing 
   });
 
   expect(valueNodeLabel({ term: ex("someUnlabeledResource"), propertyShape: shape }).value).toBe(
-    "someUnlabeledResource",
+    "some Unlabeled Resource",
   );
 });
 

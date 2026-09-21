@@ -7,7 +7,7 @@ import { Localized } from "@fluent/react";
 import { RdfStore } from "rdf-stores";
 import { Edit, Link } from "@/helpers/icons.tsx";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
-import { localName } from "@/helpers/localName.ts";
+import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
 import { makeReactive, transact } from "@/helpers/reactiveRdfStore.ts";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
@@ -65,7 +65,7 @@ export default function AutoCompleteOption({
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const { enableEditInPlace, enableLinksToResources } = useEnvironment();
   const queryClient = useQueryClient();
-  const displayLabel = label ?? localName(term) ?? term.value;
+  const displayLabel = label ?? localNameLabel(term) ?? term.value;
   const isDirectRenderable =
     depiction?.value.includes(".svg") || depiction?.value.includes("data:");
 

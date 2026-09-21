@@ -43,7 +43,7 @@ export default function PropertyUIComponent({
   hideLabel = false,
   labelledBy: labelledByOverride,
 }: PropertyUIComponentProps) {
-  const { languageMode, enableShPathInLabelTitle } = useEnvironment();
+  const { languageMode, enableShPathInLabelTitle, sourcePrefixes } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const isRdfLangString = propertyUIElement.get(sh("datatype"))?.equals(rdf("langString"));
@@ -66,7 +66,7 @@ export default function PropertyUIComponent({
     ? undefined
     : propertyUIElement.description([activeInterfaceLanguage]);
   const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
-  const sparqlPath = propertyUIElement.pathAsSparql({ prefixed: true });
+  const sparqlPath = propertyUIElement.pathAsSparql({ prefixed: true, sourcePrefixes });
   const showLanguageTag = Boolean(activeLanguage) && isRdfLangString && languageMode === "switcher";
   const showSearchIcon = Boolean(searchQueryFor(propertyUIElement));
 
