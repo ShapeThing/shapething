@@ -202,7 +202,16 @@ export default function AddressEditor({
           aria-labelledby={labelledBy}
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          onBlur={closeEditor}
+          onBlur={(event) => {
+            // Focus moving to this value's own fly-out (WidgetSwitcher, LogicalConstraintSwitcher,
+            // AlternativePathSwitcher - see WidgetSlot) isn't the user leaving this field, just
+            // clicking a control that lives outside the <input> itself - closeEditor here would
+            // yank the search box away mid-click, back to "view" mode. Mirrors AutoCompleteEditor's
+            // own onBlur guard.
+            const nextFocus = event.relatedTarget as Element | null;
+            if (nextFocus?.closest(".st-property-object__fly-out")) return;
+            closeEditor();
+          }}
           onKeyDown={(event) => {
             if (event.key === "Escape") {
               inputRef.current?.blur();

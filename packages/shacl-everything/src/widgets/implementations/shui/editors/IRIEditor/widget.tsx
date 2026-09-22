@@ -144,9 +144,17 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
                   setSuggestionsOpen(true);
                   setHasTypedSinceFocus(false);
                 }}
-                onBlur={() => {
+                onBlur={(event) => {
                   commit(localValue);
                   setSuggestionsOpen(false);
+                  // Focus moving to this value's own fly-out (WidgetSwitcher, LogicalConstraint-
+                  // Switcher, AlternativePathSwitcher - see WidgetSlot) isn't the user leaving this
+                  // field, just clicking a control that lives outside the <input> itself. Collapsing
+                  // back to the display button here would yank the field out from under them mid-
+                  // click. Scoped to the fly-out specifically (not the whole widget wrapper), so
+                  // tabbing to this same value's own external-link suffix still collapses as usual.
+                  const nextFocus = event.relatedTarget as Element | null;
+                  if (nextFocus?.closest(".st-property-object__fly-out")) return;
                   setIsEditing(false);
                 }}
                 onKeyDown={(event) => {

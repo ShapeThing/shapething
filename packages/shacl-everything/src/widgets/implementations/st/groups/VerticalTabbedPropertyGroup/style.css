@@ -35,6 +35,7 @@
   width: 2.1em;
   height: 2.1em;
   object-fit: contain;
+  aspect-ratio: 1 / 1;
   margin-right: var(--size-1);
 }
 

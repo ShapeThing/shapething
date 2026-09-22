@@ -3,7 +3,11 @@ import { Loading } from "@/helpers/icons.tsx";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import type { Environment, RawEnvironment } from "@/environment.ts";
 import { defaultEnvironment } from "@/environment.ts";
-import { runPreprocessors, defaultPreprocessors, type Preprocessor } from "@/preprocess/index.ts";
+import {
+  runPreprocessorsDeduped,
+  defaultPreprocessors,
+  type Preprocessor,
+} from "@/preprocess/index.ts";
 import { environmentContext } from "@/outputs/render/contexts/environmentContext.tsx";
 import ContentLanguageProvider from "@/outputs/render/contexts/ContentLanguageProvider.tsx";
 import { Localized } from "@fluent/react";
@@ -28,7 +32,7 @@ export default function EnvironmentContextProvider({
     [],
   );
 
-  const run: () => Promise<Environment> = () => runPreprocessors(initialEnvironment, steps);
+  const run: () => Promise<Environment> = () => runPreprocessorsDeduped(initialEnvironment, steps);
 
   return (
     <Suspense

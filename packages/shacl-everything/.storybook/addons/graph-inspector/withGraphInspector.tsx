@@ -8,7 +8,7 @@ import { detectPatterns } from "../../../src/analysis/patterns.ts";
 import { prefixes } from "../../../src/helpers/namespaces.ts";
 import { defaultEnvironment } from "../../../src/environment.ts";
 import type { RawEnvironment } from "../../../src/environment.ts";
-import { runPreprocessors, defaultPreprocessors } from "../../../src/preprocess/index.ts";
+import { runPreprocessorsDeduped, defaultPreprocessors } from "../../../src/preprocess/index.ts";
 import type { Preprocessor } from "../../../src/preprocess/index.ts";
 import React from "react";
 
@@ -32,7 +32,10 @@ export const withGraphInspector: Decorator = (Story, context) => {
     // Same merge + preprocess call EnvironmentContextProvider.tsx makes when this exact story
     // actually mounts, so "the shapes graph" here is the real Environment.shapesGraph the library
     // renders against (post resolveRdfSources/addMissingShapes/ontology dereferencing/etc.), not
-    // just the raw fixture text merged together.
+    // just the raw fixture text merged together. Both this call and EnvironmentContextProvider's
+    // own resolve the same story's environment at essentially the same moment - runPreprocessorsDeduped
+    // (rather than runPreprocessors directly) lets them share the one in-flight run instead of each
+    // independently redoing every step, including the network-touching ones.
     const { preprocessors, ...rawProps } = context.args as Partial<RawEnvironment> & {
       preprocessors?: readonly Preprocessor[];
     };
@@ -45,7 +48,7 @@ export const withGraphInspector: Decorator = (Story, context) => {
       // Best-effort: a story whose environment fails to preprocess (e.g. an unreachable fixture
       // URL) still gets its raw text shown above, just without the materialized-graph view or the
       // spec-usage/pattern analysis.
-      runPreprocessors(initialEnvironment, steps).catch(() => undefined),
+      runPreprocessorsDeduped(initialEnvironment, steps).catch(() => undefined),
     ]).then(async ([shapesGraphText, dataGraphText, environment]) => {
       if (cancelled) return;
       // Best-effort, same as environment above - falls back to source-only display.
