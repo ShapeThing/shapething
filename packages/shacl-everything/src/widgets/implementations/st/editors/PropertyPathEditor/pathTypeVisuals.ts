@@ -10,4 +10,5 @@ export const PATH_TYPE_BADGE: Partial<Record<PropertyPath["type"], string>> = {
   zeroOrMore: "st-zero-or-more-icon",
   oneOrMore: "st-one-or-more-icon",
   zeroOrOne: "st-zero-or-one-icon",
+  sequence: "st-sequence-icon",
 };

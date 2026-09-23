@@ -6,7 +6,7 @@ import { sparqlFilterForBucket, type ColorBucket } from "@/helpers/colorBuckets.
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 import { factory } from "@/helpers/factory.ts";
 import { geosparqlExtensionFunctions } from "@/helpers/geosparqlFunctions.ts";
-import { queryPrefixes, rdf, sh, st } from "@/helpers/namespaces.ts";
+import { queryPrefixes, rdf, sh, st, xsd } from "@/helpers/namespaces.ts";
 import { rebuildRdfList } from "@/helpers/rdfList.ts";
 import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
 import { termKey } from "@/helpers/termKey.ts";
@@ -539,8 +539,21 @@ function buildEngineValidationShape(
   for (const node of constraintNodes) {
     shapeStore.addQuad(factory.quad(validationRoot, sh("property"), node));
     const isClassHierarchyPick = filterStore.getQuads(node, sh("rootClass")).length > 0;
+    let someValueShape: Quad_Subject | undefined;
     for (const quad of filterStore.getQuads(node)) {
       if (isClassHierarchyPick && (quad.predicate.equals(sh("in")) || quad.predicate.equals(sh("rootClass")))) {
+        continue;
+      }
+      if (SOME_VALUE_PREDICATES.some((predicate) => predicate.equals(quad.predicate))) {
+        if (!someValueShape) {
+          someValueShape = factory.blankNode();
+          shapeStore.addQuad(factory.quad(node, sh("qualifiedValueShape"), someValueShape));
+          shapeStore.addQuad(
+            factory.quad(node, sh("qualifiedMinCount"), factory.literal("1", xsd("integer"))),
+          );
+        }
+        shapeStore.addQuad(factory.quad(someValueShape, quad.predicate, quad.object));
+        copyBlankNodeClosure(filterStore, quad.object, shapeStore);
         continue;
       }
       shapeStore.addQuad(quad);
@@ -549,6 +562,23 @@ function buildEngineValidationShape(
   }
   return { shapeStore, validationRoot };
 }
+
+// Value-level constraints a facet means as "at least one value matches", not SHACL's own "every
+// value matches" - TextSearchFacet's sh:pattern/sh:flags and a range facet's bounds. Plain SHACL
+// would reject a chef whose sh:alternativePath-merged search (preprocess/shapes.ts's
+// mergeFacetTextSearchProperties) matches schema:name but not schema:nationality, or a product with
+// one price inside the range and one outside it. buildEngineValidationShape moves these into an
+// sh:qualifiedValueShape with sh:qualifiedMinCount 1, the same "some value" semantics
+// structure/facetValues.ts's countFacetInstancesMatchingPattern/countFacetInstancesInRange already
+// use for the count badge - so the badge and the actual result list agree.
+const SOME_VALUE_PREDICATES = [
+  sh("pattern"),
+  sh("flags"),
+  sh("minInclusive"),
+  sh("maxInclusive"),
+  sh("minExclusive"),
+  sh("maxExclusive"),
+];
 
 /**
  * `instances` narrowed to whichever conform to every one of `constraintNodes` via a real

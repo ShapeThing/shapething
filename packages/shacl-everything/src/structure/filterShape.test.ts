@@ -679,3 +679,79 @@ test("removeFilterConstraintsForPaths: an empty path set is a no-op", async () =
 
   expect(filterShape.store.getQuads(filterShape.rootNode, sh("property")).length).toBe(1);
 });
+
+test("instancesMatchingOtherConstraints: sh:pattern (TextSearchFacet) matches when any one value on an sh:alternativePath matches, not every value", async () => {
+  // Mirrors preprocess/shapes.ts's mergeFacetTextSearchProperties: one search box across several
+  // text predicates. Plain SHACL sh:pattern would demand the nationality match "Gordon" too.
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}
+
+     ex:property1 sh:path [ sh:alternativePath ( ex:name ex:nationality ) ] .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}
+
+     ex:gordon ex:name "Gordon Ramsay"@en ; ex:nationality "British"@en .
+     ex:massimo ex:name "Massimo Bottura"@en ; ex:nationality "Italian"@en .`,
+    "text/turtle",
+  );
+  const property = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("unused"),
+    propertyShapes: [ex("property1")],
+  });
+  const filterShape = createFilterShape();
+  setFilterConstraintsForProperty(filterShape, property, [
+    [sh("pattern"), factory.literal("gordon", xsd("string"))],
+    [sh("flags"), factory.literal("i", xsd("string"))],
+  ]);
+
+  const matching = await instancesMatchingOtherConstraints(
+    filterShape,
+    dataGraph,
+    [ex("gordon"), ex("massimo")],
+    undefined,
+  );
+
+  expect(matching.map((instance) => instance.value)).toEqual([ex("gordon").value]);
+});
+
+test("instancesMatchingOtherConstraints: a range bound matches when any one value falls inside it, not every value", async () => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}
+
+     ex:property1 sh:path ex:price .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}
+
+     ex:mixed ex:price 5, 50 .
+     ex:cheap ex:price 5 .`,
+    "text/turtle",
+  );
+  const property = new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("unused"),
+    propertyShapes: [ex("property1")],
+  });
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(
+    filterShape,
+    property,
+    sh("minInclusive"),
+    factory.literal("10", xsd("integer")),
+  );
+
+  const matching = await instancesMatchingOtherConstraints(
+    filterShape,
+    dataGraph,
+    [ex("mixed"), ex("cheap")],
+    undefined,
+  );
+
+  expect(matching.map((instance) => instance.value)).toEqual([ex("mixed").value]);
+});

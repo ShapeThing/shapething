@@ -213,18 +213,26 @@ function SequencePath({
 }: PathNodeProps<Extract<PropertyPath, { type: "sequence" }>>) {
   return (
     <div className="st-sequence-path">
+      <Tooltip
+        className="st-sequence-tooltip"
+        bare
+        enabled
+        tip={<Localized id="property-path-editor-sequence-tooltip" />}
+      >
+        <span className={`${PATH_TYPE_BADGE.sequence} st-path-type`} />
+      </Tooltip>
+
       <div className="st-sequence-path-items">
         {path.items.map((item, index) => (
-          <div key={index} className="st-sequence-path-item">
-            <PathNode
-              path={item}
-              shape={shape}
-              onChange={(newItem) =>
-                onChange({ ...path, items: updateItem(path.items, index, newItem) })
-              }
-              onRemove={() => onChange(withItemRemoved(path, index))}
-            />
-          </div>
+          <PathNode
+            key={index}
+            path={item}
+            shape={shape}
+            onChange={(newItem) =>
+              onChange({ ...path, items: updateItem(path.items, index, newItem) })
+            }
+            onRemove={() => onChange(withItemRemoved(path, index))}
+          />
         ))}
       </div>
     </div>

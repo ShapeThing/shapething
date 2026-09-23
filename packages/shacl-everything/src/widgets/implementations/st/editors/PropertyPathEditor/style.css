@@ -22,6 +22,7 @@
   cursor: pointer;
   min-height: 33px;
   padding: var(--size-1) var(--size-3);
+  background: var(--gray-2);
 }
 
 .st-add-path {
@@ -119,6 +120,16 @@
   outline: 1px dashed var(--gray-6);
 }
 
+.st-sequence-icon {
+  background: var(--orange-5);
+
+  &::before {
+    content: "..";
+    font-size: var(--size-6);
+    transform: translateY(-25%);
+  }
+}
+
 .st-zero-or-more-icon {
   background: var(--yellow-5);
 
@@ -192,17 +203,6 @@
   }
 }
 
-.st-alternative-tooltip,
-.st-zero-or-more-tooltip,
-.st-zero-or-one-tooltip,
-.st-one-or-more-tooltip,
-.st-inverse-tooltip {
-  position: absolute;
-  left: var(--size-2);
-  top: 0.45rem;
-  z-index: 1;
-}
-
 .tooltip-wrapper + .st-predicate-path,
 .tooltip-wrapper
   + .st-sequence-path
@@ -211,6 +211,8 @@
   > .st-predicate-path {
   padding-left: 2.3rem;
 }
+
+/* ======================================================= */
 
 .st-path-type-option {
   display: flex;
@@ -290,4 +292,3 @@
   text-transform: uppercase;
   letter-spacing: 0.03em;
 }
-

@@ -1,5 +1,5 @@
 import type { StoryObj } from "@storybook/react-vite";
-import { expect, within } from "storybook/test";
+import { expect, userEvent, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import { ex } from "@/helpers/namespaces.ts";
@@ -38,6 +38,37 @@ export const recipesAndChefs: Story = {
       'link[rel="stylesheet"][href$="recipes-and-chefs.css"]',
     );
     expect(link).not.toBeNull();
+  },
+};
+
+// The Chef field's facet-search modal (enableFacetSearchForAutocomplete) merges every plain text
+// property of ChefShape into one "Search" box over an sh:alternativePath
+// (enableFacetTextSearchMerging). A search must keep a chef when *any* of those fields matches -
+// Gordon Ramsay's name does, his nationality "British" doesn't - so the result cards have to follow
+// the count badge rather than SHACL's own "every value matches" sh:pattern reading.
+export const recipesAndChefsChefFacetSearch: Story = {
+  name: "Chef facet search",
+  args: recipesAndChefs.args,
+  parameters: {
+    maxWidth: false,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText("Gordon Ramsay", {}, { timeout: 5000 });
+    await userEvent.click((await canvas.findAllByRole("button", { name: "Edit" }))[0]);
+
+    const dialog = within(await canvas.findByRole("dialog"));
+    await expect(dialog.findByText("Julia Child")).resolves.toBeVisible();
+
+    await userEvent.type(await dialog.findByRole("searchbox", { name: "Search" }), "Gordon");
+
+    await waitFor(
+      () => {
+        expect(dialog.queryByText("Julia Child")).toBeNull();
+        expect(dialog.getByText("Gordon Ramsay")).toBeVisible();
+      },
+      { timeout: 5000 },
+    );
   },
 };
 
