@@ -5,12 +5,22 @@
   margin-inline-start: var(--size-1);
 }
 
+/* The globe + endpoint hostname(s) as one chip - same border/fill/radius as .st-value-chip, but
+   not that component itself, since there's no RDF term (or IRI link) behind it. */
+.st-property-search-chip {
+  margin-inline-start: var(--size-2);
+  translate: 0 2px;
+  cursor: help;
+}
+
+.st-property-search-chip:has(.st-property-search-icon:focus),
+.st-property-search-chip:hover {
+  color: var(--st-primary-color);
+}
+
 .st-property-search-icon {
   display: inline-flex;
   align-items: center;
-  margin-inline-start: var(--size-1);
-  color: var(--st-color-text-muted);
-  cursor: help;
 }
 
 .st-property-search-icon svg {
@@ -18,9 +28,12 @@
   height: var(--size-3);
 }
 
-.st-property-search-icon:hover,
-.st-property-search-icon:focus {
-  color: var(--st-primary-color);
+.st-property-search-endpoints {
+  display: block;
+  margin-block-start: var(--size-1);
+  font-family: var(--font-mono, monospace);
+  font-size: var(--st-font-size-small);
+  white-space: nowrap;
 }
 
 .st-property-items {

@@ -73,7 +73,9 @@ export const shuiEnumSelectEditor3: Story = {
     const body = within(document.body);
     const dialog = await body.findByRole("dialog");
     const dialogScope = within(dialog);
-    await expect(dialogScope.findByText("Pride and Prejudice")).resolves.toBeVisible();
+    // The modal's "Edit <label>" title - a regex, since Fluent wraps the interpolated label in
+    // Unicode isolation marks.
+    await expect(dialogScope.findByText(/Pride and Prejudice/)).resolves.toBeVisible();
     const authorInput = await dialogScope.findByDisplayValue("Jane Austen");
     expect(authorInput).toBeVisible();
 

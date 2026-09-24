@@ -39,10 +39,8 @@ export const stVerticalTabbedPropertyGroup: Story = {
     // buttons render together (see widget.tsx), only the panel content switches.
     const addressIcon = addressTab.querySelector("img");
     if (!addressIcon) throw new Error("expected the address tab to render an <img> icon");
-    expect(addressIcon).toHaveAttribute(
-      "src",
-      "https://upload.wikimedia.org/wikipedia/commons/e/ec/Home-icon.svg",
-    );
+    // The fixture's relative <./pepperoni.svg> resolves against the .ttl file's own location.
+    expect(addressIcon).toHaveAttribute("src", expect.stringMatching(/\/pepperoni\.svg$/));
 
     // st:icon as an iconify-typed literal (the personal-details tab) renders via @iconify/react's
     // <Icon/> instead - not asserted further here since resolving its SVG depends on a live

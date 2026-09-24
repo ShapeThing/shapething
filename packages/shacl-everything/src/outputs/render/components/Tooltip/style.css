@@ -13,7 +13,7 @@
   width: max-content;
   font-size: var(--font-size-small);
   line-height: 1.5;
-  max-width: var(--size-14);
+  max-width: 100%;
   min-width: var(--size-10);
   white-space: normal;
   font-weight: 400;

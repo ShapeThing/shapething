@@ -12,6 +12,7 @@ import PropertyUIComponentValues from "@/outputs/render/modes/edit/PropertyUICom
 import { localName } from "@/helpers/localName.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
 import { Globe } from "@/helpers/icons.tsx";
+import { extractServiceEndpoints } from "@/outputs/render/hooks/query.ts";
 import language, { configuredLanguages } from "@/resolution/language.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
@@ -68,7 +69,23 @@ export default function PropertyUIComponent({
   const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
   const sparqlPath = propertyUIElement.pathAsSparql({ prefixed: true, sourcePrefixes });
   const showLanguageTag = Boolean(activeLanguage) && isRdfLangString && languageMode === "switcher";
-  const showSearchIcon = Boolean(searchQueryFor(propertyUIElement));
+  const searchQuery = searchQueryFor(propertyUIElement);
+  const showSearchIcon = Boolean(searchQuery);
+  const searchEndpoints = searchQuery ? extractServiceEndpoints(searchQuery) : [];
+  const listFormat = new Intl.ListFormat(activeInterfaceLanguage, { type: "conjunction" });
+  // Shown right after the globe icon as a compact "where does this come from" hint - just the
+  // hostname(s), so the label row stays short; the tooltip keeps the full endpoint URLs.
+  const searchHosts = [
+    ...new Set(
+      searchEndpoints.map((endpoint) => {
+        try {
+          return new URL(endpoint).hostname;
+        } catch {
+          return endpoint;
+        }
+      }),
+    ),
+  ];
 
   // Real SHACL validation results for this property (see ValidationContextProvider) - both
   // property-wide (e.g. sh:minCount, no `value`) and per-value (e.g. sh:pattern tied to one
@@ -93,21 +110,30 @@ export default function PropertyUIComponent({
                 bare
                 enabled
                 tip={
-                  <Localized id="property-federated-search-tooltip">
-                    This field searches an external data source
-                  </Localized>
+                  <>
+                    <Localized id="property-federated-search-tooltip">
+                      This field searches an external data source
+                    </Localized>
+                    {searchEndpoints.length > 0 && (
+                      <span className="st-property-search-endpoints">
+                        {listFormat.format(searchEndpoints)}
+                      </span>
+                    )}
+                  </>
                 }
               >
-                <Localized id="property-federated-search-label" attrs={{ "aria-label": true }}>
-                  <span
-                    className="st-property-search-icon"
-                    role="img"
-                    aria-label="Federated search"
-                    tabIndex={-1}
-                  >
-                    <Globe />
-                  </span>
-                </Localized>
+                <span className="st-property-search-chip">
+                  <Localized id="property-federated-search-label" attrs={{ "aria-label": true }}>
+                    <span
+                      className="st-property-search-icon"
+                      role="img"
+                      aria-label="Federated search"
+                      tabIndex={-1}
+                    >
+                      <Globe />
+                    </span>
+                  </Localized>
+                </span>
               </Tooltip>
             )}
             {showLanguageTag && (

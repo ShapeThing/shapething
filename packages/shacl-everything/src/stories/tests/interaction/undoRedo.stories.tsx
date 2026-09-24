@@ -113,7 +113,8 @@ export const undoRestoringARemovedValueLeavesNoStrayEmptyField: Story = {
   play: async ({ canvasElement }) => {
     submittedResult = undefined;
     const canvas = within(canvasElement);
-    await canvas.findByRole("textbox");
+    // IRIEditor starts collapsed to its display button for an already-set value.
+    await canvas.findByRole("button", { name: "Photo" });
 
     // PropertyUIComponentValues tracks whether to show a trailing empty "add another" widget as
     // its own local state (showEmptyWidget), synced via this property's onRemove/onTermSet
@@ -123,9 +124,7 @@ export const undoRestoringARemovedValueLeavesNoStrayEmptyField: Story = {
     // helpers/reactiveRdfStore.ts's History), bypassing that callback entirely - so
     // PropertyUIComponentValues must resync from the data itself, or the restored value renders
     // alongside a leftover empty field nothing ever closes.
-    const removeButton = canvasElement.querySelector<HTMLButtonElement>(
-      ".st-property-object-wrapper button",
-    )!;
+    const removeButton = canvas.getByRole("button", { name: "Remove value" });
     await userEvent.click(removeButton);
     await waitFor(() =>
       expect(canvasElement.querySelectorAll('input[type="text"]').length).toBe(1),
@@ -135,11 +134,13 @@ export const undoRestoringARemovedValueLeavesNoStrayEmptyField: Story = {
     (submitButton as HTMLButtonElement).focus();
     await userEvent.keyboard("{Control>}z{/Control}");
 
+    // The restored value collapses back to its display button, with no empty input left over.
     await waitFor(() => {
-      const inputs = [...canvasElement.querySelectorAll('input[type="text"]')];
-      expect(inputs.map((el) => (el as HTMLInputElement).value)).toEqual([
+      expect(canvas.getByRole("button", { name: "Photo" })).toHaveAttribute(
+        "title",
         "https://example.com/existing.jpg",
-      ]);
+      );
+      expect(canvasElement.querySelectorAll('input[type="text"]').length).toBe(0);
     });
 
     await userEvent.click(submitButton);

@@ -21,6 +21,9 @@ export const shuiAutoCompleteEditorFederatedSearch: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
+    // Right after the globe: just the endpoint's hostname, the full URL is in the tooltip below.
+    await expect(canvas.findByText("dbpedia.org")).resolves.toBeVisible();
+
     // The federated-search globe icon carries its own Tooltip, nested inside the same <label> as
     // FormElement's labelTitle (the property's SPARQL path, shown as a debug Tooltip too) - they
     // must never both show at once for the same hover (see FormElement's labelSuffix, which keeps
@@ -52,6 +55,11 @@ export const shuiAutoCompleteEditorFederatedSearch: Story = {
     tooltips = canvasElement.querySelectorAll(".tooltip");
     expect(tooltips).toHaveLength(1);
     expect(tooltips[0].textContent).not.toContain("favouritePhilosopher");
+    // Lists every SERVICE endpoint the shui:searchQuery reaches, deduped (the fixture's query
+    // uses dbpedia in two SERVICE clauses).
+    expect(tooltips[0].querySelector(".st-property-search-endpoints")?.textContent).toBe(
+      "https://dbpedia.org/sparql",
+    );
   },
 };
 
@@ -140,7 +148,9 @@ export const shuiAutoCompleteEditorFacetSearch: Story = {
 
     const dialog = await canvas.findByRole("dialog");
     const dialogScope = within(dialog);
-    await expect(dialogScope.findByText("Search")).resolves.toBeVisible();
+    await expect(
+      dialogScope.findByRole("heading", { name: /Select a value for.*Born in/ }),
+    ).resolves.toBeVisible();
 
     // Every ex:Country instance shows up as a selectable result before any facet is touched, each
     // as a Teaser card - including its own st:DescriptionRole blurb (ex:blurb), not just its label.

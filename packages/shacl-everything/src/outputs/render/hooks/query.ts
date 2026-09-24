@@ -96,6 +96,14 @@ export function extractServiceEndpoint(query: string): string | undefined {
   return query.match(/\bSERVICE\s*(?:SILENT\s+)?<([^>]+)>/i)?.[1];
 }
 
+// Every distinct endpoint a query's SERVICE clauses reach, in first-appearance order - unlike
+// extractServiceEndpoint, this is purely informational (e.g. listing them to the user), so a
+// query federating across several endpoints lists all of them.
+export function extractServiceEndpoints(query: string): string[] {
+  const matches = query.matchAll(/\bSERVICE\s*(?:SILENT\s+)?<([^>]+)>/gi);
+  return [...new Set(Array.from(matches, (match) => match[1]))];
+}
+
 // Matches a SELECT clause's first projected variable, e.g. "?value1" in "SELECT DISTINCT ?value1
 // WHERE" or "?value" in "SELECT ?value {" - mirrors toResolvedTerms's own convention (the first
 // projected variable, so sh:select queries need not name it ?value), but as a text-level

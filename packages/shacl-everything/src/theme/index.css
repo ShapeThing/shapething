@@ -18,6 +18,7 @@
   --st-color-text: var(--gray-9);
   --st-color-text-muted: var(--gray-6);
   --st-font-size-small: var(--font-size-0);
+  --st-font-size-smallest: 0.8rem;
   --st-font-size-big: var(--font-size-3);
   --st-severity-warning: var(--yellow-6);
   --st-severity-error: var(--red-6);

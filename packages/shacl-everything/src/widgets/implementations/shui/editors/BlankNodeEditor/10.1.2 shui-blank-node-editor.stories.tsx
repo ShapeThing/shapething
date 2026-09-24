@@ -44,14 +44,21 @@ export const shuiBlankNodeEditorAssignIdentifier: Story = {
     // The assigned identifier is a freshly generated, non-empty urn:uuid: - never the empty
     // string, which rdf-stores' own dictionary would otherwise round-trip back as DefaultGraph
     // rather than the NamedNode this widget actually assigned.
-    const iriInput = within(iriWidget).getByRole("textbox") as HTMLInputElement;
-    expect(iriInput.value).toMatch(/^urn:uuid:[0-9a-f-]{36}$/);
+    // IRIEditor starts collapsed to its display button (full IRI in its title) - clicking it opens
+    // the input on that same IRI.
+    const display = within(iriWidget).getByRole("button", { name: "Address" });
+    expect(display.title).toMatch(/^urn:uuid:[0-9a-f-]{36}$/);
+    await userEvent.click(display);
+    const iriInput = (await within(iriWidget).findByRole("combobox")) as HTMLInputElement;
+    expect(iriInput.value).toBe(display.title);
 
     // The handed-off IRIEditor must be a real, live widget - not a dead husk - so typing into it
     // and committing on blur has to actually write the identifier back to the data graph.
     await userEvent.clear(iriInput);
     await userEvent.type(iriInput, "https://example.com/hendrik/address");
     await userEvent.tab();
-    await expect(iriInput).toHaveValue("https://example.com/hendrik/address");
+    await expect(
+      within(iriWidget).findByRole("button", { name: "Address" }),
+    ).resolves.toHaveAttribute("title", "https://example.com/hendrik/address");
   },
 };

@@ -92,8 +92,12 @@ export const runPreprocessorsDeduped = (
 
   const promise = runPreprocessors(raw, steps);
   inFlight.set(key, promise);
-  promise.finally(() => {
+  // Cleanup on both outcomes via then(onFulfilled, onRejected), not .finally(): .finally()'s own
+  // derived promise re-rejects on failure, and nothing ever handles *that* one - every failed run
+  // would surface as an unhandled rejection even when the caller catches the returned promise.
+  const cleanup = () => {
     if (inFlight.get(key) === promise) inFlight.delete(key);
-  });
+  };
+  promise.then(cleanup, cleanup);
   return promise;
 };

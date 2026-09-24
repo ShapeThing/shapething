@@ -21,10 +21,12 @@ export const shuiIRIEditor: Story = {
     // A non-image IRI (https://example.org/more-info) must not render a preview thumbnail.
     expect(canvasElement.querySelector(".st-iri-editor__preview")).toBeNull();
 
-    // An already-set value starts collapsed to its display text, not the raw input.
+    // An already-set value starts collapsed to its resolved label (here the humanized local name,
+    // since the IRI has no rdfs:label), not the raw input - the full IRI stays on hover.
     expect(canvas.queryByRole("combobox", { name: "See also" })).toBeNull();
     const display = await canvas.findByRole("button", { name: "See also" });
-    expect(display).toHaveTextContent("https://example.org/more-info");
+    expect(display).toHaveTextContent("more info");
+    expect(display).toHaveAttribute("title", "https://example.org/more-info");
 
     // Clicking it opens the input on the full IRI, focused and ready to edit.
     await userEvent.click(display);
@@ -36,7 +38,7 @@ export const shuiIRIEditor: Story = {
     await userEvent.tab();
     expect(canvas.queryByRole("combobox", { name: "See also" })).toBeNull();
     expect(await canvas.findByRole("button", { name: "See also" })).toHaveTextContent(
-      "https://example.org/more-info",
+      "more info",
     );
   },
 };
@@ -50,7 +52,7 @@ export const shuiIRIEditorImagePreview: Story = {
     // The preview renders off the committed term value directly - it's visible even while the
     // field itself is still collapsed to its display text, not opened into the input.
     const display = await canvas.findByRole("button", { name: "Photo URL" });
-    expect(display).toHaveTextContent(/hendrik\.svg$/);
+    expect(display).toHaveAttribute("title", expect.stringMatching(/hendrik\.svg$/));
 
     const preview = await waitFor(() => {
       const element = canvasElement.querySelector<HTMLImageElement>(

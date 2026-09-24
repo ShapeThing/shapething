@@ -135,7 +135,7 @@ export const iriEditorDisabled: Story = {
   args: { ...iriEditorArgs, enableEditInPlace: false } as ShaclRendererProps,
   play: async ({ canvasElement }) => {
     const editor = await findIriEditor(canvasElement);
-    await within(editor).findAllByText("ex:Acme", {}, { timeout: 5000 });
+    await within(editor).findAllByText("Acme Corp", {}, { timeout: 5000 });
     expect(within(editor).queryByRole("button", { name: /edit/i })).toBeNull();
   },
 };

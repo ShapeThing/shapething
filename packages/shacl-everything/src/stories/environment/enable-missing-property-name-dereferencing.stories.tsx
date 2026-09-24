@@ -25,14 +25,14 @@ const baseArgs: ShaclRendererProps = argsByTestFile(
 );
 
 export const withoutDereferencing: Story = {
-  name: "Without the flag, an unnamed property falls back to its raw local name",
+  name: "Without the flag, an unnamed property falls back to its humanized local name",
   args: baseArgs,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findByDisplayValue("Acme", {}, { timeout: 5000 });
     // No sh:name and nothing dereferenced - propertyLabel() falls all the way back to the sh:path
-    // predicate's own local name (see resolution/label.ts).
-    await canvas.findByText(/enable-missing-property-name-dereferencing\.term\.ttl/, {}, {
+    // predicate's own local name, humanized (see resolution/label.ts, localNameLabel.ts).
+    await canvas.findByText("enable missing property name dereferencing term ttl", {}, {
       timeout: 5000,
     });
   },

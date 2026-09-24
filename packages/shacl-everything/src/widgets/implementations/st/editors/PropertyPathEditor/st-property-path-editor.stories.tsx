@@ -25,6 +25,21 @@ async function fillAndSavePathModal(predicateIri: string) {
   await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
 }
 
+// SequencePath renders each item's PathNode straight into `.st-sequence-path-items`, with no
+// per-item wrapper - and an AlternativePath item also renders its "+ alternative" button as a
+// sibling right after it - so a sequence's items are its path-node root elements specifically,
+// not every child element.
+const PATH_NODE_ROOT =
+  ":is(.st-predicate-path, .st-sequence-path, .st-alternative-path, .st-inverse-path, .st-zero-or-more-path, .st-one-or-more-path, .st-zero-or-one-path)";
+const SEQUENCE_ITEM = `.st-sequence-path-items > ${PATH_NODE_ROOT}`;
+
+// The predicate text of a sequence item - itself when it's a bare predicate box, otherwise the
+// first predicate box nested inside it.
+function predicateText(item: Element): string | null | undefined {
+  if (item.matches(".st-predicate-path")) return item.textContent;
+  return item.querySelector(".st-predicate-path")?.textContent;
+}
+
 // A short signature for whatever PropertyPathEditor rendered in this "sh:path value" row - used
 // to tell rows apart after a removal shifts everything below it up by one slot.
 function pathSignature(row: Element): string {
@@ -82,12 +97,12 @@ export const stPropertyPathEditorWrapInSequence: Story = {
 
     // The original predicate becomes item 1, the freshly entered predicate is appended as item 2.
     const items = await waitFor(() => {
-      const elements = canvasElement.querySelectorAll<HTMLElement>(".st-sequence-path-item");
+      const elements = canvasElement.querySelectorAll<HTMLElement>(SEQUENCE_ITEM);
       if (elements.length !== 2) throw new Error("Expected a two-item sequence path");
       return elements;
     });
-    expect(items[0].querySelector(".st-predicate-path")?.textContent).toBe("ex:name");
-    expect(items[1].querySelector(".st-predicate-path")?.textContent).toBe("rdf:type");
+    expect(predicateText(items[0])).toBe("ex:name");
+    expect(predicateText(items[1])).toBe("rdf:type");
   },
 };
 
@@ -114,18 +129,19 @@ export const stPropertyPathEditorSequenceWithNestedAlternative: Story = {
     // rather than nesting a new outer sequence around it.
     const outerItems = await waitFor(() => {
       const elements = canvasElement.querySelectorAll<HTMLElement>(
-        ".st-property-path-editor > .st-sequence-path > .st-sequence-path-items > .st-sequence-path-item",
+        `.st-property-path-editor > .st-sequence-path > ${SEQUENCE_ITEM}`,
       );
       if (elements.length !== 3) throw new Error("Expected the root sequence to grow to 3 items");
       return elements;
     });
-    expect(outerItems[0].querySelector(".st-predicate-path")?.textContent).toBe("ex:parent");
-    expect(outerItems[2].querySelector(".st-predicate-path")?.textContent).toBe("rdf:type");
+    expect(predicateText(outerItems[0])).toBe("ex:parent");
+    expect(predicateText(outerItems[2])).toBe("rdf:type");
 
-    const alternativeAddButton = outerItems[1].querySelector<HTMLButtonElement>(
-      ".st-alternative-path-add",
-    );
-    if (!alternativeAddButton) throw new Error("Could not find the alternative's add-branch button");
+    // AlternativePath renders its "+ alternative" button right after itself, as a sibling.
+    const alternativeAddButton = outerItems[1].nextElementSibling;
+    if (!(alternativeAddButton instanceof HTMLButtonElement)) {
+      throw new Error("Could not find the alternative's add-branch button");
+    }
 
     await userEvent.click(alternativeAddButton);
     await fillAndSavePathModal("http://www.w3.org/1999/02/22-rdf-syntax-ns#type");
@@ -141,8 +157,8 @@ export const stPropertyPathEditorSequenceWithNestedAlternative: Story = {
     expect(branches[1].querySelector(".st-predicate-path")?.textContent).toBe("ex:mother");
     expect(branches[2].querySelector(".st-predicate-path")?.textContent).toBe("rdf:type");
 
-    expect(outerItems[0].querySelector(".st-predicate-path")?.textContent).toBe("ex:parent");
-    expect(outerItems[2].querySelector(".st-predicate-path")?.textContent).toBe("rdf:type");
+    expect(predicateText(outerItems[0])).toBe("ex:parent");
+    expect(predicateText(outerItems[2])).toBe("rdf:type");
   },
 };
 
@@ -177,12 +193,12 @@ export const stPropertyPathEditorAlternativeBranchWrapInSequence: Story = {
     });
 
     const wrappedItems = await waitFor(() => {
-      const elements = branchesAfter[0].querySelectorAll<HTMLElement>(".st-sequence-path-item");
+      const elements = branchesAfter[0].querySelectorAll<HTMLElement>(SEQUENCE_ITEM);
       if (elements.length !== 2) throw new Error("Expected branch 1 to become a two-item sequence");
       return elements;
     });
-    expect(wrappedItems[0].querySelector(".st-predicate-path")?.textContent).toBe("ex:father");
-    expect(wrappedItems[1].querySelector(".st-predicate-path")?.textContent).toBe("rdf:type");
+    expect(predicateText(wrappedItems[0])).toBe("ex:father");
+    expect(predicateText(wrappedItems[1])).toBe("rdf:type");
 
     expect(branchesAfter[1].querySelector(".st-predicate-path")?.textContent).toBe("ex:mother");
     expect(branchesAfter[1].querySelector(".st-sequence-path")).toBeNull();
@@ -257,11 +273,11 @@ export const stPropertyPathEditorPredicateAutocomplete: Story = {
     await waitFor(() => expect(body.queryByRole("dialog")).toBeNull());
 
     const items = await waitFor(() => {
-      const elements = canvasElement.querySelectorAll<HTMLElement>(".st-sequence-path-item");
+      const elements = canvasElement.querySelectorAll<HTMLElement>(SEQUENCE_ITEM);
       if (elements.length !== 2) throw new Error("Expected a two-item sequence path");
       return elements;
     });
-    expect(items[1].querySelector(".st-predicate-path")?.textContent).toBe("rdfs:label");
+    expect(predicateText(items[1])).toBe("rdfs:label");
   },
 };
 
@@ -360,12 +376,12 @@ export const stPropertyPathEditorRemoveAlternativeBranch: Story = {
     // sequence's own 2nd item, rather than leaving a one-branch alternative behind.
     expect(canvasElement.querySelector(".st-alternative-path")).toBeNull();
     const items = await waitFor(() => {
-      const elements = canvasElement.querySelectorAll<HTMLElement>(".st-sequence-path-item");
+      const elements = canvasElement.querySelectorAll<HTMLElement>(SEQUENCE_ITEM);
       if (elements.length !== 2) throw new Error("Expected a two-item sequence path");
       return elements;
     });
-    expect(items[0].querySelector(".st-predicate-path")?.textContent).toBe("ex:parent");
-    expect(items[1].querySelector(".st-predicate-path")?.textContent).toBe("ex:father");
+    expect(predicateText(items[0])).toBe("ex:parent");
+    expect(predicateText(items[1])).toBe("ex:father");
   },
 };
 
