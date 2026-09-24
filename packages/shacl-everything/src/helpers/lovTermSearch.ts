@@ -1,206 +1,187 @@
 import type { NamedNode } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
+import { owl, rdf, rdfs } from "@/helpers/namespaces.ts";
+import { parseRdf } from "@/helpers/rdf.ts";
 
 export type LovTermType = "class" | "property";
 
 export type LovTerm = {
   uri: NamedNode;
   prefixedName: string;
-  vocabularyPrefix: string | undefined;
+  vocabularyPrefix: string;
   type: LovTermType;
 };
 
-type LovSearchResponse = {
-  results?: {
-    type?: string;
-    uri: string;
-    prefixedName: string;
-    vocabulary?: { prefix?: string };
-  }[];
-};
+// A static GitHub Pages mirror of LOV (Linked Open Vocabularies, lov.linkeddata.es): every LOV
+// vocabulary re-published as one plain Turtle file under its LOV prefix, next to a small
+// meta.json carrying the vocabulary's declared namespace. CORS-open (`Access-Control-Allow-
+// Origin: *`, verified directly) and CDN-served, so this is a plain unauthenticated fetch - no
+// Environment.corsProxyUrl needed. Being static files, there is no search API or SPARQL endpoint
+// here at all: the mirror can only answer "which terms does vocabulary <prefix> have", never a
+// free-text "which vocabulary has a term like <word>" - see searchLovTerms below.
+export const LOV_MIRROR_URL = "https://ajuvercr.github.io/lov-mirror/";
 
-type LovSparqlBinding = Record<string, { value: string } | undefined>;
-type LovSparqlResponse = { results?: { bindings?: LovSparqlBinding[] } };
+// Mirrors the page size the previous live LOV search used, so the dropdown's LOV half stays the
+// same length (useLovSuggestions caps its local half to match).
+const PREFIX_MATCH_LIMIT = 10;
 
 const ALL_LOV_TYPES: LovTermType[] = ["property", "class"];
 
-// The rdf:type IRIs LOV's own crawled vocabulary triples use for each kind of term - matched
-// against LOV's SPARQL endpoint (see searchTermsByNamespacePrefix below), not against term/search
-// (which reports its own "type" field directly per result, no mapping needed there).
-const TYPE_RDF_TERMS: Record<LovTermType, string[]> = {
-  property: ["rdf:Property", "owl:ObjectProperty", "owl:DatatypeProperty", "owl:AnnotationProperty"],
-  class: ["rdfs:Class", "owl:Class"],
-};
+// The rdf:type IRIs the crawled vocabulary files themselves use for each kind of term.
+const KIND_BY_TYPE_IRI = new Map<string, LovTermType>([
+  [rdf("Property").value, "property"],
+  [owl("ObjectProperty").value, "property"],
+  [owl("DatatypeProperty").value, "property"],
+  [owl("AnnotationProperty").value, "property"],
+  [rdfs("Class").value, "class"],
+  [owl("Class").value, "class"],
+]);
 
-// LOV's own search index (both this API and https://lov.linkeddata.es/dataset/terms itself)
-// matches local names/labels, not "prefix:localName" CURIE syntax as one token - a literal query
-// of "skos:broader" returns zero results there, even though "broader" alone finds skos:broader as
-// its own top-ranked match. Splitting the typed prefix off first means a user who already knows
-// (or copied) the CURIE they want still finds it - see searchLovTerms below for how the
-// stripped-off prefix is put back to work re-ranking the results instead of just being discarded.
+// Turtle's own PN_PREFIX grammar, near enough: letters, digits, "." "-" "_" (the mirror has
+// prefixes like dbpedia-owl, juso.kr and authn_provider), starting with a letter. Anything else
+// before the first colon isn't a vocabulary prefix worth a request - and it keeps every prefix
+// URL-path-safe as-is, so no encoding is needed below.
+const PREFIX_PATTERN = /^[A-Za-z][\w.-]*$/;
+
+// Splits "skos:bro" into the vocabulary prefix ("skos") and the local text typed after it ("bro",
+// possibly empty - a bare "skos:" is a legitimate "show me this vocabulary" query). A query with
+// no colon, an invalid prefix, or a full IRI being typed/pasted ("http://...", where the text
+// after the colon starts with "/") has no prefix, and so nothing the mirror can look up.
 function splitCurieQuery(query: string): { prefix: string | undefined; localQuery: string } {
   const colonIndex = query.indexOf(":");
-  if (colonIndex <= 0 || colonIndex === query.length - 1) {
+  if (colonIndex <= 0) return { prefix: undefined, localQuery: query };
+
+  const prefix = query.slice(0, colonIndex);
+  const localQuery = query.slice(colonIndex + 1);
+  if (!PREFIX_PATTERN.test(prefix) || localQuery.startsWith("/")) {
     return { prefix: undefined, localQuery: query };
   }
-  return { prefix: query.slice(0, colonIndex), localQuery: query.slice(colonIndex + 1) };
+  return { prefix, localQuery };
 }
 
-const LOV_SPARQL_ENDPOINT = "https://lov.linkeddata.es/dataset/sparql";
-// Mirrors term/search's own page_size=10 (see searchLovTerms below).
-const SPARQL_PREFIX_MATCH_LIMIT = 10;
-
-// Neutralizes characters the SPARQL grammar treats specially inside a '"'-delimited string
-// literal - both the typed prefix and the typed local text land here as raw user input.
-function escapeSparqlLiteral(value: string): string {
-  return value
-    .replace(/\\/g, "\\\\")
-    .replace(/"/g, '\\"')
-    .replace(/\n/g, "\\n")
-    .replace(/\r/g, "\\r")
-    .replace(/\t/g, "\\t");
+// Whether searchLovTerms can answer `query` at all (i.e. it names a vocabulary prefix) - lets a
+// caller skip the whole async round-trip, loading state included, for a query it already knows
+// will come back empty.
+export function isLovSearchable(query: string): boolean {
+  return splitCurieQuery(query).prefix !== undefined;
 }
 
-async function runLovSparqlSelect(query: string): Promise<LovSparqlBinding[]> {
-  const url = `${LOV_SPARQL_ENDPOINT}?query=${encodeURIComponent(query)}`;
-  const response = await fetch(url, { headers: { Accept: "application/sparql-results+json" } });
-  if (!response.ok) {
-    throw new Error(`LOV SPARQL query failed: ${response.status} ${response.statusText}`);
-  }
-  const body = (await response.json()) as LovSparqlResponse;
-  return body.results?.bindings ?? [];
-}
+type VocabularyTerm = { localName: string; kinds: ReadonlySet<LovTermType> };
+// `terms` is sorted by local name (codepoint order, the same as the previous SPARQL ORDER BY) and
+// only holds terms inside the vocabulary's own namespace - some LOV files also type terms from
+// other vocabularies they build on, which would carry the wrong prefix if reported here.
+type MirrorVocabulary = { namespace: string; terms: VocabularyTerm[] };
+type MirrorMeta = { namespace?: string };
 
-// LOV's dataset/sparql endpoint hosts the actual crawled vocabulary triples (not just LOV's own
-// term-search index), including each vocabulary's vann:preferredNamespacePrefix/-Uri declaration.
-// Resolving a typed CURIE prefix against it is what lets searchTermsByNamespacePrefix below do a
-// real starts-with match instead of term/search's tokenized full-text one.
-async function resolveLovNamespace(prefix: string): Promise<string | undefined> {
-  const bindings = await runLovSparqlSelect(`PREFIX vann: <http://purl.org/vocab/vann/>
-SELECT ?ns WHERE {
-  ?vocab vann:preferredNamespacePrefix ?p .
-  ?vocab vann:preferredNamespaceUri ?ns .
-  FILTER(LCASE(STR(?p)) = "${escapeSparqlLiteral(prefix.toLowerCase())}")
-} LIMIT 1`);
-  return bindings[0]?.ns?.value;
-}
-
-// One `{ ?prop a ?type . FILTER(?type IN (...)) BIND("<kind>" AS ?kind) }` block per requested
-// type, joined with UNION - so a single query can still report which kind (class vs property)
-// each matched IRI actually is, the same way term/search's own "type" field already does.
-function typeUnionClauses(types: LovTermType[]): string {
-  return types
-    .map(
-      (type) =>
-        `{ ?prop a ?type . FILTER(?type IN (${TYPE_RDF_TERMS[type].join(", ")})) BIND("${type}" AS ?kind) }`,
-    )
-    .join("\nUNION\n");
-}
-
-// True prefix (starts-with) search over one already-resolved vocabulary namespace. The namespace
-// is baked into the query text as a literal rather than left as a joined `?ns` variable - doing
-// vocabulary-prefix resolution and this term scan as one combined query reliably times out on
-// LOV's backend, so the two stay separate round-trips (resolveLovNamespace above, then this).
-async function searchTermsByNamespacePrefix(
-  namespace: string,
-  localQuery: string,
-  types: LovTermType[],
-): Promise<{ uri: string; type: LovTermType }[]> {
-  const prefixText = escapeSparqlLiteral((namespace + localQuery).toLowerCase());
-  const bindings = await runLovSparqlSelect(`PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX owl: <http://www.w3.org/2002/07/owl#>
-SELECT DISTINCT ?prop ?kind WHERE {
-  ${typeUnionClauses(types)}
-  FILTER(STRSTARTS(LCASE(STR(?prop)), "${prefixText}"))
-} ORDER BY ?prop LIMIT ${SPARQL_PREFIX_MATCH_LIMIT}`);
-  return bindings
-    .filter((binding) => binding.prop?.value && binding.prop.value.length > namespace.length)
-    .map((binding) => ({ uri: binding.prop!.value, type: binding.kind!.value as LovTermType }));
-}
-
-// Resolves a typed CURIE prefix to its vocabulary namespace, then finds terms whose IRI actually
-// starts with `namespace + localQuery` - unlike term/search's tokenized full-text index, this
-// returns nothing for a typed prefix LOV doesn't recognize, and a genuine (if empty) result set
-// for one it does. `prefixedName`/`vocabularyPrefix` are reconstructed from the typed prefix
-// itself rather than re-resolved, since resolveLovNamespace already confirmed it maps to this
-// namespace. Returns undefined (not []) when the prefix itself doesn't resolve, so callers can
-// tell "no vocabulary by that prefix" apart from "vocabulary found, nothing starts with that text".
-async function searchByResolvedPrefix(
-  prefix: string,
-  localQuery: string,
-  types: LovTermType[],
-): Promise<LovTerm[] | undefined> {
-  const namespace = await resolveLovNamespace(prefix);
-  if (!namespace) return undefined;
-
-  const terms = await searchTermsByNamespacePrefix(namespace, localQuery, types);
-  return terms.map(({ uri, type }) => ({
-    uri: factory.namedNode(uri),
-    prefixedName: `${prefix}:${uri.slice(namespace.length)}`,
-    vocabularyPrefix: prefix,
-    type,
-  }));
-}
-
-// LOV (Linked Open Vocabularies, lov.linkeddata.es) indexes classes and properties across
-// hundreds of published vocabularies - querying it live means callers don't need to bundle/
-// maintain any vocabulary term data of their own. `term/search` (not the sibling `term/
-// autocomplete` endpoint, which errors on LOV's own current deployment regardless of parameters)
-// is CORS-open (`Access-Control-Allow-Origin: *`, verified directly), so this is a plain
-// unauthenticated fetch - no Environment.corsProxyUrl needed. `query` must be non-empty; LOV's
-// own API 400s on an empty `q`.
-//
-// `types` restricts the search to just classes, just properties, or (the default, when omitted -
-// LOV itself has no other term kinds worth surfacing here) both at once. A single requested type
-// is passed straight through as term/search's own `type` filter; two (or none) omits it entirely,
-// since LOV's API doesn't accept a comma-separated list and dropping the param already returns
-// every kind mixed together, each tagged with its own "type" field.
-export async function searchLovTerms(query: string, types?: LovTermType[]): Promise<LovTerm[]> {
-  const requestedTypes = types && types.length > 0 ? types : ALL_LOV_TYPES;
-  const { prefix, localQuery } = splitCurieQuery(query);
-
-  // A typed CURIE prefix gets one shot at a real starts-with match against LOV's SPARQL endpoint
-  // first (see searchByResolvedPrefix) - term/search's own tokenized index can badly rank (or miss
-  // entirely) a short in-progress local name like "br". Any failure here (network error, LOV's
-  // SPARQL backend down, an unresolvable prefix) just falls through to the existing term/search
-  // flow below rather than breaking the search - this is a best-effort enhancement, not the only path.
-  if (prefix && localQuery) {
-    try {
-      const prefixTerms = await searchByResolvedPrefix(prefix, localQuery, requestedTypes);
-      if (prefixTerms && prefixTerms.length > 0) return prefixTerms;
-    } catch {
-      // fall through to term/search below
+async function fetchVocabulary(prefix: string): Promise<MirrorVocabulary | undefined> {
+  const folder = `${LOV_MIRROR_URL}by-prefix/${prefix}/`;
+  const [metaResponse, ontologyResponse] = await Promise.all([
+    fetch(`${folder}meta.json`),
+    fetch(`${folder}ontology.ttl`),
+  ]);
+  // A prefix LOV itself doesn't know has no folder on the mirror; the handful of LOV vocabularies
+  // the mirror failed to fetch/convert have a meta.json but no ontology.ttl. Either way: nothing.
+  if (metaResponse.status === 404 || ontologyResponse.status === 404) return undefined;
+  for (const response of [metaResponse, ontologyResponse]) {
+    if (!response.ok) {
+      throw new Error(`LOV mirror request failed: ${response.status} ${response.statusText}`);
     }
   }
 
-  const typeParam = requestedTypes.length === 1 ? `type=${requestedTypes[0]}&` : "";
-  const url = `https://lov.linkeddata.es/dataset/api/v2/term/search?${typeParam}page_size=10&q=${encodeURIComponent(localQuery)}`;
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`LOV term search failed: ${response.status} ${response.statusText}`);
+  const [meta, turtle] = await Promise.all([
+    metaResponse.json() as Promise<MirrorMeta>,
+    ontologyResponse.text(),
+  ]);
+  const namespace = meta.namespace;
+  if (!namespace) return undefined;
+
+  const kindsByLocalName = new Map<string, Set<LovTermType>>();
+  const store = await parseRdf(turtle, "text/turtle");
+  for (const quad of store.getQuads(null, rdf("type"), null)) {
+    const kind = KIND_BY_TYPE_IRI.get(quad.object.value);
+    if (!kind || quad.subject.termType !== "NamedNode") continue;
+    if (!quad.subject.value.startsWith(namespace)) continue;
+    const localName = quad.subject.value.slice(namespace.length);
+    if (!localName) continue;
+    kindsByLocalName.set(localName, (kindsByLocalName.get(localName) ?? new Set()).add(kind));
   }
 
-  const body = (await response.json()) as LovSearchResponse;
-  const terms = (body.results ?? []).map(
-    (result): LovTerm => ({
-      uri: factory.namedNode(result.uri),
-      prefixedName: result.prefixedName,
-      vocabularyPrefix: result.vocabulary?.prefix,
-      type: result.type === "class" ? "class" : "property",
-    }),
-  );
-  if (!prefix) return terms;
+  const terms = [...kindsByLocalName]
+    .map(([localName, kinds]): VocabularyTerm => ({ localName, kinds }))
+    .sort((a, b) => (a.localName < b.localName ? -1 : a.localName > b.localName ? 1 : 0));
+  return { namespace, terms };
+}
 
-  // Re-ranks (doesn't filter) by the typed prefix - a match is put first when one exists, but a
-  // prefix LOV doesn't recognize (e.g. this project's own "ex"/"st") still leaves every other
-  // local-name match in place rather than hiding them all.
-  const lowerPrefix = prefix.toLowerCase();
-  return terms.toSorted((a, b) => {
-    const aMatches = a.vocabularyPrefix?.toLowerCase() === lowerPrefix;
-    const bMatches = b.vocabularyPrefix?.toLowerCase() === lowerPrefix;
-    return aMatches === bMatches ? 0 : aMatches ? -1 : 1;
-  });
+// One parsed vocabulary per prefix for the lifetime of the page: the same prefix is searched
+// again on every keystroke after it ("skos:b", "skos:br", ...), and a vocabulary file can run to
+// several MB (schema.org's is ~0.8 MB, a few outliers are far larger) - refetching and reparsing
+// it per keystroke is out of the question. The in-flight promise is what's cached, so concurrent
+// searches for one prefix share a single load. A prefix the mirror doesn't know (`undefined`) is
+// cached too, so an unknown prefix costs one 404 rather than one per keystroke; a failed load
+// (network error, 5xx) is evicted instead, so the next keystroke simply retries.
+const vocabularyCache = new Map<string, Promise<MirrorVocabulary | undefined>>();
+
+function loadVocabulary(prefix: string): Promise<MirrorVocabulary | undefined> {
+  const cached = vocabularyCache.get(prefix);
+  if (cached) return cached;
+
+  const loading = fetchVocabulary(prefix);
+  vocabularyCache.set(prefix, loading);
+  loading.catch(() => vocabularyCache.delete(prefix));
+  return loading;
+}
+
+// Test-only: the module-level cache above would otherwise leak one test's mocked vocabularies
+// into the next.
+export function clearLovVocabularyCache(): void {
+  vocabularyCache.clear();
+}
+
+// True prefix (starts-with, case-insensitive) match over the typed local text, reporting each
+// term as the first requested kind it has - so a `types` of just ["property"] never surfaces a
+// class, and the default (both) still tags each match with what it actually is.
+function searchVocabulary(
+  vocabulary: MirrorVocabulary,
+  prefix: string,
+  localQuery: string,
+  types: LovTermType[],
+): LovTerm[] {
+  const lowerQuery = localQuery.toLowerCase();
+  const matches: LovTerm[] = [];
+  for (const term of vocabulary.terms) {
+    if (!term.localName.toLowerCase().startsWith(lowerQuery)) continue;
+    const type = types.find((candidate) => term.kinds.has(candidate));
+    if (!type) continue;
+    matches.push({
+      uri: factory.namedNode(vocabulary.namespace + term.localName),
+      prefixedName: `${prefix}:${term.localName}`,
+      vocabularyPrefix: prefix,
+      type,
+    });
+    if (matches.length === PREFIX_MATCH_LIMIT) break;
+  }
+  return matches;
+}
+
+// Looks a typed CURIE ("skos:bro") up on the LOV mirror: the typed prefix is the mirror's own
+// folder name, so the vocabulary is fetched on the fly the first time a prefix is typed (see
+// loadVocabulary) and its terms starting with the typed local text are returned - a genuine (if
+// empty) result set for a vocabulary LOV knows, nothing for a prefix it doesn't (e.g. this
+// project's own "ex"/"st" style local prefixes... though note LOV does list vocabularies under
+// both of those). A query with no prefix at all ("label") returns nothing: the mirror has no
+// cross-vocabulary index that a static file host could serve at a sensible size, and querying it
+// live means callers don't need to bundle/maintain any vocabulary term data of their own.
+//
+// `types` restricts the search to just classes, just properties, or (the default, when omitted -
+// LOV itself has no other term kinds worth surfacing here) both at once.
+export async function searchLovTerms(query: string, types?: LovTermType[]): Promise<LovTerm[]> {
+  const requestedTypes = types && types.length > 0 ? types : ALL_LOV_TYPES;
+  const { prefix, localQuery } = splitCurieQuery(query);
+  if (prefix === undefined) return [];
+
+  const vocabulary = await loadVocabulary(prefix);
+  if (!vocabulary) return [];
+  return searchVocabulary(vocabulary, prefix, localQuery, requestedTypes);
 }
 
 // Predicate-only convenience wrapper - PathItemModal's own suggestion source, kept as a named

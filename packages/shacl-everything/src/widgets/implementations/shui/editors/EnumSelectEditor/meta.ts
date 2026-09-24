@@ -1,5 +1,5 @@
 import { factory } from "@/helpers/factory.ts";
-import { sh } from "@/helpers/namespaces.ts";
+import { sh, st } from "@/helpers/namespaces.ts";
 import { selectQueryFor } from "@/structure/selectQuery.ts";
 import type { WidgetMeta } from "@/widgets/types.ts";
 
@@ -10,7 +10,8 @@ export default {
   // the common case for federated entity lookups (e.g. Wikidata IRIs).
   createTerm: (_context, shape) => {
     if (selectQueryFor(shape)) return factory.namedNode("");
-    const options = shape.get(sh("in"));
+    const inOptions = shape.get(sh("in"));
+    const options = inOptions.length > 0 ? inOptions : shape.get(st("suggestedValues"));
     return options[0]?.termType === "NamedNode" ? factory.namedNode("") : factory.literal("");
   },
 } satisfies WidgetMeta;

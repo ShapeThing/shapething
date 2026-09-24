@@ -1,0 +1,51 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+# st:suggestedValues: values worth offering first. Not a constraint (unlike sh:in) - any other
+# value satisfying the real constraints still validates.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Born in"@en, "Geboren in"@nl ;
+        sh:path ex:bornIn ;
+        sh:class ex:Country ;
+        sh:nodeKind sh:IRI ;
+        sh:order 0 ;
+        shui:editor shui:AutoCompleteEditor ;
+        st:suggestedValues ( ex:Netherlands ex:Belgium ) ;
+    ] ;
+    sh:property [
+        sh:name "State"@en, "Staat"@nl ;
+        sh:path schema:addressRegion ;
+        sh:order 1 ;
+        shui:editor shui:EnumSelectEditor ;
+        st:suggestedValues ( "ACT" "NSW" "VIC" ) ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    schema:addressRegion "NSW" ;
+    .
+
+ex:Netherlands a ex:Country ; rdfs:label "Netherlands"@en, "Nederland"@nl .
+ex:Belgium a ex:Country ; rdfs:label "Belgium"@en, "België"@nl .
+ex:Germany a ex:Country ; rdfs:label "Germany"@en, "Duitsland"@nl .
+ex:France a ex:Country ; rdfs:label "France"@en, "Frankrijk"@nl .
+
+<#countryShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Country ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:datatype xsd:string ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    .

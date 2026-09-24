@@ -1,3 +1,11 @@
+/* showModal() already makes everything outside the dialog inert (no clicks/focus), but it doesn't
+   stop the page behind it from scrolling. Lock the root scroller while any st-modal is open - a
+   :has() selector rather than JS bookkeeping, so nested modals (e.g. view-in-place drilling into a
+   nested IRI) need no open-count tracking: the lock lifts only once the last one closes. */
+html:has(dialog.st-modal[open]) {
+  overflow: hidden;
+}
+
 .st-modal {
   border: none;
   border-radius: var(--radius-2);
@@ -14,6 +22,7 @@
      itself on its own inner element instead (see AutoCompleteEditor's
      .st-autocomplete__facet-search-results), not by relying on this clipping the dialog's edge. */
   overflow: visible;
+  max-height: 80vh;
 
   &::backdrop {
     background-color: var(--gray-12);
@@ -33,8 +42,13 @@
 
 .st-modal__content {
   padding: var(--size-4);
+  padding-top: 0;
   display: flex;
   flex-direction: column;
+  max-height: inherit;
+  overflow-y: scroll;
+  /* Don't chain scrolling past the content's own top/bottom edge through to whatever's behind. */
+  overscroll-behavior: contain;
 }
 
 .st-modal--large .st-modal__content {
@@ -48,7 +62,12 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--size-3);
-  padding-bottom: var(--size-3);
+  position: sticky;
+  top: 0;
+  margin-inline: calc(var(--size-4) * -1);
+  padding: var(--size-4);
+  z-index: 3;
+  background-color: white;
   margin-bottom: var(--size-3);
   border-bottom: 1px solid var(--st-color-border);
 }

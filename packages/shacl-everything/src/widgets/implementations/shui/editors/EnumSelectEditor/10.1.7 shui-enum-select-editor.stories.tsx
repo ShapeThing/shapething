@@ -20,6 +20,24 @@ export const shuiEnumSelectEditor1: Story = {
   args: argsByTestFile("10.1.7 shui-enum-select-editor.ttl", import.meta.url),
 };
 
+export const shuiEnumSelectEditorSuggestedValues: Story = {
+  name: "Drop-down of st:suggestedValues (no sh:in)",
+  args: argsByTestFile("10.1.7 shui-enum-select-editor-suggested-values.ttl", import.meta.url),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = await waitFor(() => {
+      const element = canvasElement.querySelector<HTMLButtonElement>(".st-enum-select__trigger");
+      if (!element) throw new Error("Could not find the EnumSelectEditor trigger");
+      return element;
+    });
+    await userEvent.click(trigger);
+    const listbox = await canvas.findByRole("listbox");
+    const options = within(listbox).getAllByRole("option");
+    expect(options.map((option) => option.textContent?.trim())).toEqual(["ACT", "NSW", "VIC"]);
+    await userEvent.keyboard("{Escape}");
+  },
+};
+
 export const shuiEnumSelectEditor2: Story = {
   name: "Federated values",
   args: argsByTestFile("10.1.7 shui-enum-select-editor-federated-data.ttl", import.meta.url),

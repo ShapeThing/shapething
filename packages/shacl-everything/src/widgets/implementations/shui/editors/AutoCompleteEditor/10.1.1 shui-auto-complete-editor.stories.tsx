@@ -55,6 +55,41 @@ export const shuiAutoCompleteEditorFederatedSearch: Story = {
   },
 };
 
+// st:suggestedValues: offered as soon as the (still empty) search box is focused, replaced by
+// ordinary sh:class search results once something is typed.
+export const shuiAutoCompleteEditorSuggestedValues: Story = {
+  name: "Suggested values before typing (st:suggestedValues)",
+  args: argsByTestFile("10.1.1 shui-auto-complete-editor-suggested-values.ttl", import.meta.url),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const editButton = await waitFor(() => {
+      const element = canvasElement.querySelector<HTMLButtonElement>(".st-autocomplete .st-edit-button");
+      if (!element) throw new Error("Could not find the AutoCompleteEditor search button");
+      return element;
+    });
+    await userEvent.click(editButton);
+
+    const listbox = await canvas.findByRole("listbox");
+    await waitFor(() => {
+      const labels = within(listbox)
+        .getAllByRole("option")
+        .filter((option) => !option.classList.contains("st-autocomplete__result--create"))
+        .map((option) => option.textContent?.trim());
+      expect(labels).toEqual(["Netherlands", "Belgium"]);
+    });
+
+    // Typed text is highlighted inside each result (<mark>), so match on the option's whole text.
+    await userEvent.keyboard("Germ");
+    await waitFor(() => {
+      const labels = within(canvas.getByRole("listbox"))
+        .getAllByRole("option")
+        .filter((option) => !option.classList.contains("st-autocomplete__result--create"))
+        .map((option) => option.textContent?.trim());
+      expect(labels).toEqual(["Germany"]);
+    });
+  },
+};
+
 // st:ColorRole (see resolution/label.ts's valueNodeColor): a ClassificationRole value's chip
 // (here, the "Transport" skos:ConceptScheme) is colored via a swatch property declared on a shape
 // targeting *its own* rdf:type - resolved independently of the property's own sh:class/sh:node.

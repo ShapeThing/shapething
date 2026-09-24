@@ -14,6 +14,7 @@ import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { buildPathNode } from "./mutation-logic.tsx";
 import { usePredicateSuggestions, type Suggestion } from "./usePredicateSuggestions.ts";
 import { PATH_TYPE_BADGE } from "./pathTypeVisuals.ts";
+import { useDropdownEscapeModal } from "@/outputs/render/hooks/useDropdownEscapeModal.ts";
 import "@/theme/comboBox.css";
 import "./style.css";
 
@@ -64,8 +65,8 @@ function PathTypeOption({ type }: { type: PropertyPath["type"] }) {
 
 // The full IRI + a friendlier display name for a suggestion row, regardless of which source it
 // came from - a local match's own prefixedIri() (falling back to its full IRI when no known
-// prefix matches) for a "local" suggestion, LOV's own already-compact prefixedName for a "lov"
-// one (see lovTermSearch.ts - LOV returns this directly, no local prefix lookup needed for it).
+// prefix matches) for a "local" suggestion, the already-compact prefixedName lovTermSearch.ts
+// built from the typed prefix for a "lov" one (no local prefix lookup needed for it).
 function suggestionDisplay(
   suggestion: Suggestion,
   sourcePrefixes: Record<string, string>,
@@ -157,6 +158,7 @@ function PathItemForm({
   const predicateFieldId = useId();
   const pathTypeFieldId = useId();
   const listboxId = useId();
+  const dropdownRef = useDropdownEscapeModal<HTMLDivElement>();
 
   // Editing an existing path item seeds `predicateInput` from its current value (not empty), and
   // the field autofocuses on open - so without this, suggestions for that already-set predicate
@@ -243,7 +245,7 @@ function PathItemForm({
               autoFocus
             />
             {dropdownOpen && (
-              <div id={listboxId} className="st-combo-results" role="listbox">
+              <div ref={dropdownRef} id={listboxId} className="st-combo-results" role="listbox">
                 {suggestions.map((suggestion, index) => {
                   const isFirstOfGroup =
                     index === 0 || suggestions[index - 1].kind !== suggestion.kind;

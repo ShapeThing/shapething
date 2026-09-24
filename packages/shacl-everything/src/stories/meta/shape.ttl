@@ -1,3 +1,5 @@
+@prefix schema: <http://schema.org/>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
 @prefix shui: <http://www.w3.org/ns/shacl-ui/>.
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
@@ -34,14 +36,6 @@
 
     sh:property [
         sh:order 3 ;
-        sh:name "Sparql based constraints"@en, "Sparql gebaseerde beperkingen"@nl ;
-        sh:path sh:sparql ;
-        sh:group <#constraints> ;
-        sh:class sh:SPARQLConstraint ;
-    ] ;
-
-    sh:property [
-        sh:order 3 ;
         sh:name "Severity"@en, "Ernst"@nl ;
         sh:path sh:severity ;
         sh:group <#metadata> ;
@@ -55,6 +49,11 @@
         sh:group <#metadata> ;
         sh:nodeKind sh:IRI ;
         sh:class owl:Ontology ;
+        st:suggestedValues (
+            owl:
+            skos:
+            schema:
+        ) ;
     ] ;
 
     sh:property [
@@ -64,6 +63,15 @@
         sh:group <#properties> ;
         sh:nodeKind ( sh:IRI sh:BlankNode ) ;
     ] ;
+
+    sh:property [
+        sh:order 6 ;
+        sh:name "Order"@en, "Volgorde"@nl ;
+        sh:path sh:order ;
+        sh:group <#metadata> ;
+        sh:datatype xsd:integer ;
+    ] ;
+
 
     .
 
@@ -112,16 +120,23 @@
         sh:order 7 ;
         sh:name "Node"@en, "Knoop"@nl ;
         sh:path sh:node ;
-        sh:group <#constraintsInner> ;
+        sh:group <#nodeConstraintsInner> ;
         sh:nodeKind (sh:IRI sh:BlankNode) ;
     ] ;
 
+    sh:property [
+        sh:order 3 ;
+        sh:name "Sparql based constraints"@en, "Sparql gebaseerde beperkingen"@nl ;
+        sh:path sh:sparql ;
+        sh:group <#nodeConstraints> ;
+        sh:class sh:SPARQLConstraint ;
+    ] ;
 
     sh:property [
         sh:order 8 ;
         sh:name "Ignored properties"@en, "Genegeerde eigenschappen"@nl ;
         sh:path sh:ignoredProperties ;
-        sh:group <#constraintsInner> ;
+        sh:group <#nodeConstraintsInner> ;
         sh:nodeKind sh:IRI ;
         sh:class sh:PropertyShape ;
     ] ;
@@ -141,7 +156,7 @@
         sh:order 3 ;
         sh:name "Path"@en, "Pad"@nl ;
         sh:path sh:path ;
-        sh:group <#constraintsInner> ;
+        sh:group <#propertyConstraintsInner> ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
     ] ;
@@ -150,7 +165,7 @@
         sh:order 4 ;
         sh:name "Minimum count"@en, "Minimum aantal"@nl ;
         sh:path sh:minCount ;
-        sh:group <#constraintsInner> ;
+        sh:group <#propertyConstraintsInner> ;
         sh:maxCount 1 ;
         sh:datatype xsd:integer ;
     ] ;
@@ -159,7 +174,7 @@
         sh:order 5 ;
         sh:name "Maximum count"@en, "Maximum aantal"@nl ;
         sh:path sh:maxCount ;
-        sh:group <#constraintsInner> ;
+        sh:group <#propertyConstraintsInner> ;
         sh:maxCount 1 ;
         sh:datatype xsd:integer ;
     ] ;
@@ -168,7 +183,7 @@
         sh:order 6 ;
         sh:name "Datatype"@en, "Datatype"@nl ;
         sh:path sh:datatype ;
-        sh:group <#constraintsInner> ;
+        sh:group <#propertyConstraintsInner> ;
         sh:maxCount 1 ;
         sh:nodeKind sh:IRI ;
     ] ;
@@ -177,7 +192,7 @@
         sh:order 7 ;
         sh:name "Class"@en, "Klasse"@nl ;
         sh:path sh:class ;
-        sh:group <#constraintsInner> ;
+        sh:group <#propertyConstraintsInner> ;
         sh:maxCount 1 ;
         sh:nodeKind sh:IRI ;
     ] ;
@@ -186,7 +201,7 @@
         sh:order 8 ;
         sh:name "Node kind"@en, "Node kind"@nl ;
         sh:path sh:nodeKind ;
-        sh:group <#constraintsInner> ;
+        sh:group <#propertyConstraintsInner> ;
         sh:maxCount 1 ;
         sh:nodeKind sh:IRI ;
         sh:in ( sh:IRI sh:BlankNode sh:Literal sh:BlankNodeOrIRI sh:BlankNodeOrLiteral sh:IRIOrLiteral ) ;
@@ -197,7 +212,7 @@
         sh:name "Group"@en, "Groep"@nl ;
         sh:path sh:group ;
         sh:class sh:PropertyGroup ;
-        sh:group <#constraintsInner> ;
+        sh:group <#propertyConstraintsInner> ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
     ] ;
@@ -206,9 +221,43 @@
         sh:order 10 ;
         sh:name "Node"@en, "Knoop"@nl ;
         sh:path sh:node ;
-        sh:group <#constraintsInner> ;
+        sh:group <#propertyConstraintsInner> ;
         sh:nodeKind (sh:IRI sh:BlankNode) ;
     ] ;
+
+
+    sh:property [
+        sh:order 11 ;
+        sh:name "Disjoint"@en, "Disjunct"@nl ;
+        sh:path sh:disjoint ;
+        sh:group <#propertyConstraintsInner> ;
+        sh:nodeKind (sh:IRI sh:BlankNode) ;
+    ] ;
+
+    sh:property [
+        sh:order 12 ;
+        sh:name "Or"@en, "Of"@nl ;
+        sh:path sh:or ;
+        sh:group <#propertyConstraintsInner> ;
+        sh:nodeKind (sh:IRI sh:BlankNode) ;
+    ] ;
+
+    sh:property [
+        sh:order 13 ;
+        sh:name "And"@en, "En"@nl ;
+        sh:path sh:and ;
+        sh:group <#propertyConstraintsInner> ;
+        sh:nodeKind (sh:IRI sh:BlankNode) ;
+    ] ;
+
+    sh:property [
+        sh:order 14 ;
+        sh:name "Not"@en, "Niet"@nl ;
+        sh:path sh:not ;
+        sh:group <#propertyConstraintsInner> ;
+        sh:nodeKind (sh:IRI sh:BlankNode) ;
+    ] ;
+
     .
 
 sh:IRI rdfs:label "IRI"@en, "IRI"@nl .
@@ -252,9 +301,9 @@ sh:IRIOrLiteral rdfs:label "IRI or literal"@en, "IRI of literal"@nl .
     sh:group <#targeting> ;
     .
 
-<#constraints>
+<#nodeConstraints>
     a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
-    sh:name "Constraints"@en, "Beperkingen"@nl ;
+    sh:name "Node constraints"@en, "Knoop beperkingen"@nl ;
     sh:order 3 ;
     st:color [
         st:hue "217.2192513368984"^^xsd:decimal ;
@@ -262,14 +311,34 @@ sh:IRIOrLiteral rdfs:label "IRI or literal"@en, "IRI of literal"@nl .
         st:lightness "59.80392156862745"^^xsd:decimal ;
     ] ;
     st:icon "iconmind:list-checks-outline-thin"^^<https://iconify.design> ;
-    sh:description "Constraints for the shape."@en, "Beperkingen van de vorm."@nl ;
+    sh:description "Constraints for the node shape."@en, "Beperkingen van de knoopvorm."@nl ;
     .
 
 
-<#constraintsInner>
+<#nodeConstraintsInner>
     a sh:PropertyGroup, st:DrawerPropertyGroup ;
     sh:order 1000 ;
-    sh:group <#constraints> ;
+    sh:group <#nodeConstraints> ;
+    .
+
+<#propertyConstraints>
+    a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
+    sh:name "Property constraints"@en, "Eigenschap beperkingen"@nl ;
+    sh:order 3 ;
+    st:color [
+        st:hue "217.2192513368984"^^xsd:decimal ;
+        st:saturation "91.21951219512198"^^xsd:decimal ;
+        st:lightness "59.80392156862745"^^xsd:decimal ;
+    ] ;
+    st:icon "iconmind:list-checks-outline-thin"^^<https://iconify.design> ;
+    sh:description "Constraints for the property shape."@en, "Beperkingen van de eigenschapsvorm."@nl ;
+    .
+
+
+<#propertyConstraintsInner>
+    a sh:PropertyGroup, st:DrawerPropertyGroup ;
+    sh:order 1000 ;
+    sh:group <#propertyConstraints> ;
     .
 
 <#properties>

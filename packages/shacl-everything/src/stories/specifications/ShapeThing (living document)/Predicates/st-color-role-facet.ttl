@@ -1,0 +1,36 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Category"@en, "Categorie"@nl ;
+        sh:path schema:category ;
+        sh:class ex:Category ;
+    ] ;
+    .
+
+# st:CategoryFacet applies st:ColorRole directly to each option value - the option IS the value
+# being colored, again resolved via a shape targeting that value's own rdf:type.
+<#categoryShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Category ;
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path ex:swatch ;
+        shui:propertyRole st:ColorRole ;
+    ] .
+
+ex:Electronics a ex:Category ; rdfs:label "Electronics"@en ; ex:swatch "#3b82f6" .
+ex:Books a ex:Category ; rdfs:label "Books"@en ; ex:swatch "#f59e0b" .
+
+<#data> a schema:Product ; schema:name "Widget" ; schema:category ex:Electronics .
+<#product2> a schema:Product ; schema:name "Novel" ; schema:category ex:Books .

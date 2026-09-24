@@ -58,6 +58,7 @@ autocomplete-edit-value =
     .aria-label = Edit
 autocomplete-option-edit-resource =
     .aria-label = Edit { $label }
+autocomplete-option-edit-resource-title = Edit <label>{ $label }</label>
 autocomplete-option-discard-title = Discard changes?
 autocomplete-option-discard-message = Discard your changes to { $label }? This cannot be undone.
 autocomplete-option-discard-cancel = Keep editing

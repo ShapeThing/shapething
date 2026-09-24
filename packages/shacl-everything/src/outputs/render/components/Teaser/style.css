@@ -38,6 +38,14 @@
   min-width: 0;
 }
 
+/* Title and classification chip share one row; both may shrink (ellipsis) on a narrow card. */
+.st-teaser__heading {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  min-width: 0;
+}
+
 .st-teaser__title {
   font-weight: var(--font-weight-6);
   overflow: hidden;

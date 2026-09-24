@@ -86,3 +86,117 @@ export const enabled: Story = {
     await waitFor(() => expect(canvasElement.querySelector("dialog.st-modal[open]")).toBeNull());
   },
 };
+
+// shui:IRIEditor (edit mode): its link suffix gets the same view-in-place behavior as
+// LabelViewer - here for a plain IRI property with no sh:class/sh:node, whose value is still
+// targeted by ex:organizationShape (see IRIEditor's resourceShapes).
+const iriEditorShapesGraph = `
+  @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+  @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+  @prefix schema: <http://schema.org/> .
+  @prefix ex: <http://example.org/> .
+  @prefix sh: <http://www.w3.org/ns/shacl#> .
+  @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+  ex:shape a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+      sh:name "Employer"@en ;
+      sh:path ex:employer ;
+      sh:nodeKind sh:IRI ;
+      shui:editor shui:IRIEditor ;
+    ] .
+  ex:organizationShape a sh:NodeShape ;
+    sh:targetClass ex:Organization ;
+    sh:property [
+      sh:name "Email"@en ;
+      sh:path schema:email ;
+      sh:datatype xsd:string ;
+    ] .
+`;
+
+const iriEditorArgs = { ...baseArgs, shapesGraph: iriEditorShapesGraph, mode: "edit" };
+
+async function findIriEditorLink(canvasElement: HTMLElement): Promise<HTMLAnchorElement> {
+  return waitFor(
+    () => {
+      const element = canvasElement.querySelector<HTMLAnchorElement>(
+        ".st-iri-editor a.st-input-suffix",
+      );
+      if (!element) throw new Error("Could not find the IRIEditor's link");
+      return element;
+    },
+    { timeout: 5000 },
+  );
+}
+
+export const iriEditorDisabled: Story = {
+  name: "Off: shui:IRIEditor's link is a plain external link",
+  args: { ...iriEditorArgs, enableViewInPlace: false } as ShaclRendererProps,
+  play: async ({ canvasElement }) => {
+    const link = await findIriEditorLink(canvasElement);
+    expect(link).toHaveAttribute("target", "_blank");
+    expect(link.getAttribute("aria-haspopup")).toBeNull();
+  },
+};
+
+export const iriEditorEnabled: Story = {
+  name: "On: shui:IRIEditor's link opens the shaped, local value read-only in a modal",
+  args: { ...iriEditorArgs, enableViewInPlace: true } as ShaclRendererProps,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const link = await findIriEditorLink(canvasElement);
+    await waitFor(() => expect(link.getAttribute("target")).toBeNull());
+    expect(link).toHaveAttribute("aria-haspopup", "dialog");
+
+    await userEvent.click(link);
+    const dialog = await canvas.findByRole("dialog");
+    await expect(within(dialog).findByText("info@acme.example")).resolves.toBeVisible();
+  },
+};
+
+// Same as above, but the referenced resource's shape puts its properties in an sh:PropertyGroup:
+// group widgets pick edit vs view children off Environment.mode, which is still "edit" here - the
+// modal's view-mode tree has to override it or the grouped properties render as editors.
+const iriEditorGroupedShapesGraph = `
+  @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+  @prefix schema: <http://schema.org/> .
+  @prefix ex: <http://example.org/> .
+  @prefix sh: <http://www.w3.org/ns/shacl#> .
+  @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+  ex:shape a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+      sh:name "Employer"@en ;
+      sh:path ex:employer ;
+      sh:nodeKind sh:IRI ;
+      shui:editor shui:IRIEditor ;
+    ] .
+  ex:contactGroup a sh:PropertyGroup ; sh:name "Contact"@en .
+  ex:organizationShape a sh:NodeShape ;
+    sh:targetClass ex:Organization ;
+    sh:property [
+      sh:name "Email"@en ;
+      sh:path schema:email ;
+      sh:datatype xsd:string ;
+      sh:group ex:contactGroup ;
+    ] .
+`;
+
+export const iriEditorEnabledGrouped: Story = {
+  name: "On: grouped properties in shui:IRIEditor's modal still render read-only",
+  args: {
+    ...iriEditorArgs,
+    shapesGraph: iriEditorGroupedShapesGraph,
+    enableViewInPlace: true,
+  } as ShaclRendererProps,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const link = await findIriEditorLink(canvasElement);
+    await waitFor(() => expect(link.getAttribute("aria-haspopup")).toBe("dialog"));
+
+    await userEvent.click(link);
+    const dialog = await canvas.findByRole("dialog");
+    await expect(within(dialog).findByText("info@acme.example")).resolves.toBeVisible();
+    expect(dialog.querySelector("input, textarea, select")).toBeNull();
+  },
+};

@@ -33,9 +33,9 @@ const SIMPLE_FEATURES_RELATIONS: Record<string, SpatialRelation> = {
 };
 
 // Comunica's own `extensionFunctions` context-entry shape (see outputs/render/hooks/query.ts) -
-// declared locally rather than imported, since it's Comunica's own untyped convention
-// (Record<string, (args: RDF.Term[]) => RDF.Term>), not an exported type of theirs.
-export type ExtensionFunction = (args: Term[]) => Term;
+// declared locally rather than imported, since Comunica only types it inline on its query context
+// (Record<string, (args: RDF.Term[]) => Promise<RDF.Term>>), not as an exported type of its own.
+export type ExtensionFunction = (args: Term[]) => Promise<Term>;
 
 /**
  * geof: Simple Features spatial relation functions, registered as Comunica extension functions (see
@@ -50,7 +50,7 @@ export type ExtensionFunction = (args: Term[]) => Term;
 export const geosparqlExtensionFunctions: Record<string, ExtensionFunction> = Object.fromEntries(
   Object.entries(SIMPLE_FEATURES_RELATIONS).map(([localName, relation]) => [
     geof(localName).value,
-    (args: Term[]): Term => {
+    async (args: Term[]): Promise<Term> => {
       const a = args[0] && literalToGeometry(args[0]);
       const b = args[1] && literalToGeometry(args[1]);
       const result = a !== undefined && b !== undefined && relation(a, b);

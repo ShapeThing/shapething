@@ -51,6 +51,7 @@ ex:ChefShape a sh:NodeShape ;
         sh:minCount 1 ;
         shui:editor shui:SubClassEditor ;
         sh:order 3 ;
+        shui:propertyRole shui:ClassificationRole ;
         sh:name "Signature cuisine"@en, "Signatuurkeuken"@nl ;
     ] ;
     sh:property [

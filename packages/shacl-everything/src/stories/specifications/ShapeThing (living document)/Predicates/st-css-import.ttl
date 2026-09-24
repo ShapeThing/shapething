@@ -1,0 +1,35 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+
+# st:cssImport loads a shape-authored stylesheet whenever a node conforming to this shape renders.
+# The relative URL resolves against this shapes graph's own document URL.
+<#shape>
+    a sh:NodeShape ;
+    st:cssImport <./st-css-import.css> ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:group ex:highlightedGroup ;
+        sh:name "Given name"@en, "Voornaam"@nl ;
+        sh:path schema:givenName ;
+        sh:datatype xsd:string ;
+        sh:order 0 ;
+    ] ;
+    sh:property [
+        sh:group ex:highlightedGroup ;
+        sh:name "Family name"@en, "Achternaam"@nl ;
+        sh:path schema:familyName ;
+        sh:datatype xsd:string ;
+        sh:order 1 ;
+    ] ;
+    .
+
+ex:highlightedGroup a sh:PropertyGroup .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    schema:familyName "Lorentz" ;
+    .

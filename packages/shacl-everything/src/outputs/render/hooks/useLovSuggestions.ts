@@ -5,6 +5,7 @@ import { localName } from "@/helpers/localName.ts";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import { prefixedIri } from "@/helpers/prefixedIri.ts";
 import {
+  isLovSearchable,
   type LovTerm,
   type LovTermType,
   searchLovTerms,
@@ -12,8 +13,8 @@ import {
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 
 const LOV_SEARCH_DEBOUNCE_MS = 200;
-// LOV's own page_size=10 (see lovTermSearch.ts) already caps that half of the list - this caps
-// the local half the same way, so a large candidate list can't make the dropdown unbounded.
+// lovTermSearch.ts's own 10-result cap already bounds that half of the list - this caps the local
+// half the same way, so a large candidate list can't make the dropdown unbounded.
 const MAX_LOCAL_SUGGESTIONS = 20;
 
 export type Suggestion = { kind: "local"; iri: NamedNode } | {
@@ -24,11 +25,13 @@ export type Suggestion = { kind: "local"; iri: NamedNode } | {
 // Two suggestion sources for an IRI-typed autocomplete field: IRIs the caller already knows are
 // relevant (instant, zero-latency, and the only source that can ever know about a project-
 // specific/custom term LOV has never heard of - see knownPredicates.ts/knownIris.ts for the two
-// current callers), and a live search against LOV (Linked Open Vocabularies) for published-
-// vocabulary terms (debounced, async - see lovTermSearch.ts for why this is a real network call
-// rather than a bundled term list). `suggestions` puts local matches first since they're already
-// visible by the time LOV's request round-trips, so results only ever append, never reshuffle,
-// once LOV responds. `lovTypes` scopes the LOV half to just classes, just properties, or (when
+// current callers), and a live lookup against a static mirror of LOV (Linked Open Vocabularies)
+// for published-vocabulary terms, once a vocabulary prefix has been typed ("skos:bro") -
+// debounced, async, and only ever for a prefixed query, since the mirror has nothing to answer an
+// unprefixed one with (see lovTermSearch.ts, also for why this is a network call rather than a
+// bundled term list). `suggestions` puts local matches first since they're already visible by
+// the time the mirror's request round-trips, so results only ever append, never reshuffle, once
+// it responds. `lovTypes` scopes the LOV half to just classes, just properties, or (when
 // omitted) both - see PathItemModal's usePredicateSuggestions (properties only) and IRIEditor's
 // use (shape-configurable via st:iriType) for the two current callers.
 //
@@ -61,13 +64,18 @@ export function useLovSuggestions(
     return () => clearTimeout(timeout);
   }, [query, enabled]);
 
+  // Only a query naming a vocabulary prefix can be answered at all (see lovTermSearch.ts) - an
+  // unprefixed one is left disabled here rather than fired and answered empty, so the dropdown
+  // never flashes the LOV half's loading row for it.
+  const lovQuery = debounced !== undefined && isLovSearchable(debounced) ? debounced : undefined;
+
   // A LOV network failure degrades to "no LOV results" rather than being surfaced anywhere, so
   // React Query's own error state is deliberately left unread - `retry: false` avoids silently
   // triple-retrying (React Query's default) before giving up on something nobody sees anyway.
   const { data: lovResults, isLoading: isSearchingLov } = useQuery({
-    queryKey: ["lov-term-search", debounced, lovTypes?.join(",")],
-    queryFn: () => searchLovTerms(debounced ?? "", lovTypes),
-    enabled: debounced !== undefined,
+    queryKey: ["lov-term-search", lovQuery, lovTypes?.join(",")],
+    queryFn: () => searchLovTerms(lovQuery ?? "", lovTypes),
+    enabled: lovQuery !== undefined,
     ...noRefetch,
   });
 
@@ -94,9 +102,9 @@ export function useLovSuggestions(
       .slice(0, MAX_LOCAL_SUGGESTIONS)
     : [];
 
-  // A candidate already offered as a "local" match can also come back from LOV's own search - e.g.
-  // lovTermSearch's SPARQL prefix search finds an already-in-use skos:broader just as reliably as
-  // a brand-new one. Drop it from the "lov" half so it doesn't render twice.
+  // A candidate already offered as a "local" match can also come back from the LOV mirror - its
+  // prefix search finds an already-in-use skos:broader just as reliably as a brand-new one. Drop
+  // it from the "lov" half so it doesn't render twice.
   const localUris = new Set(localMatches.map((candidate) => candidate.value));
   const lovMatches = (lovResults ?? []).filter((term) =>
     !localUris.has(term.uri.value)
@@ -109,6 +117,6 @@ export function useLovSuggestions(
 
   return {
     suggestions,
-    isSearchingLov: debounced !== undefined && isSearchingLov,
+    isSearchingLov: lovQuery !== undefined && isSearchingLov,
   };
 }

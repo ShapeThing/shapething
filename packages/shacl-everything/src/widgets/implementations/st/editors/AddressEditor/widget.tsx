@@ -12,6 +12,7 @@ import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import type { BCP47 } from "@/types/BCP47.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import { useAddressSearch, type OsmAddress, type OsmSearchResult } from "./useAddressSearch.ts";
+import { useDropdownEscapeModal } from "@/outputs/render/hooks/useDropdownEscapeModal.ts";
 import "@/theme/comboBox.css";
 import "./style.css";
 
@@ -106,6 +107,7 @@ export default function AddressEditor({
   const inputRef = useRef<HTMLInputElement>(null);
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const listboxId = useId();
+  const dropdownRef = useDropdownEscapeModal<HTMLDivElement>();
 
   const fields = useReactiveRead(
     shape.dataGraph,
@@ -236,7 +238,7 @@ export default function AddressEditor({
       </Localized>
 
       {dropdownOpen && (
-        <div id={listboxId} className="st-address-editor__results st-combo-results" role="listbox">
+        <div ref={dropdownRef} id={listboxId} className="st-address-editor__results st-combo-results" role="listbox">
           {error ? (
             <div className="st-combo-empty" role="alert">
               <Localized id="autocomplete-search-error">Search failed</Localized>

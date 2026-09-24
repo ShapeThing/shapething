@@ -1,0 +1,25 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+# No sh:in, so the drop-down lists st:suggestedValues instead - a hint, not a constraint: any
+# other value would still validate.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "State"@en, "Staat"@nl ;
+        sh:path schema:addressRegion ;
+        shui:editor shui:EnumSelectEditor ;
+        st:suggestedValues ( "ACT" "NSW" "VIC" ) ;
+    ] ;
+    .
+
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    schema:addressRegion "NSW" ;
+    .

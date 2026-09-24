@@ -15,9 +15,13 @@ const recordedQueries: string[] = [];
 
 vi.mock("@comunica/query-sparql", () => {
   class FakeQueryEngine {
-    async queryBindings(query: string) {
+    async query(query: string) {
       recordedQueries.push(query);
-      return { toArray: async () => [] };
+      return {
+        resultType: "bindings",
+        metadata: async () => ({ variables: [] }),
+        execute: async () => ({ toArray: async () => [] }),
+      };
     }
   }
   return { QueryEngine: FakeQueryEngine };

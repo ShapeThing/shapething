@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useDropdownEscapeModal } from "@/outputs/render/hooks/useDropdownEscapeModal.ts";
 
 type SelectListboxProps<T extends any> = {
   triggerId?: string;
@@ -40,6 +41,7 @@ export default function SelectListbox<T extends any>({
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const generatedId = useId();
   const listboxId = useId();
+  const dropdownRef = useDropdownEscapeModal<HTMLDivElement>("min-width");
   const triggerId_ = triggerId ?? generatedId;
 
   const rowCount = options.length + (extraRow ? 1 : 0);
@@ -134,7 +136,7 @@ export default function SelectListbox<T extends any>({
       <span className="st-select-arrow" aria-hidden="true" />
 
       {open && (
-        <div id={listboxId} role="listbox" className={`${classPrefix}__listbox`}>
+        <div ref={dropdownRef} id={listboxId} role="listbox" className={`${classPrefix}__listbox`}>
           {options.map((option, index) => (
             <div
               key={option + ""}

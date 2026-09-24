@@ -1,0 +1,35 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+
+# st:facet is facet mode's counterpart of shui:editor/shui:viewer: it names the facet widget to use
+# for a property, overriding widget scoring. Without it, an sh:in property scores highest for
+# st:CategoryFacet (checkboxes).
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Book ;
+    sh:property [
+        sh:name "Format"@en, "Formaat"@nl ;
+        sh:path schema:bookFormat ;
+        sh:datatype xsd:string ;
+        sh:in ( "Hardcover" "Paperback" "E-book" ) ;
+    ] ;
+    .
+
+# The same property, forced onto st:TextSearchFacet instead.
+<#overrideShape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Book ;
+    sh:property [
+        sh:name "Format"@en, "Formaat"@nl ;
+        sh:path schema:bookFormat ;
+        sh:datatype xsd:string ;
+        sh:in ( "Hardcover" "Paperback" "E-book" ) ;
+        st:facet st:TextSearchFacet ;
+    ] ;
+    .
+
+<#data> a schema:Book ; schema:name "Dune" ; schema:bookFormat "Paperback" .
+<#book2> a schema:Book ; schema:name "Neuromancer" ; schema:bookFormat "E-book" .
+<#book3> a schema:Book ; schema:name "Foundation" ; schema:bookFormat "Hardcover" .

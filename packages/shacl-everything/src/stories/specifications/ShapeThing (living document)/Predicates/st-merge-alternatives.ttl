@@ -1,0 +1,54 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+# st:mergeAlternatives true on a shui:LabelRole property whose sh:path is an sh:alternativePath:
+# every branch is resolved and joined into one composed label ("500 Gram Puff pastry") instead of
+# SHACL's own alternation (the first branch with a value wins). sh:path itself stays spec-legal.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Recipe ;
+    sh:property [
+        sh:path schema:recipeIngredient ;
+        sh:name "Ingredients"@en, "Ingrediënten"@nl ;
+        shui:viewer shui:LabelViewer ;
+        sh:node [
+            sh:property [
+                sh:path [ sh:alternativePath ( schema:value schema:unitCode schema:name ) ] ;
+                shui:propertyRole shui:LabelRole ;
+                st:mergeAlternatives true ;
+            ] ;
+        ] ;
+    ] ;
+    .
+
+# The same shape without st:mergeAlternatives, for comparison: plain alternation, so only the
+# first branch with a value (schema:value) becomes the label.
+<#plainShape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Recipe ;
+    sh:property [
+        sh:path schema:recipeIngredient ;
+        sh:name "Ingredients"@en, "Ingrediënten"@nl ;
+        shui:viewer shui:LabelViewer ;
+        sh:node [
+            sh:property [
+                sh:path [ sh:alternativePath ( schema:value schema:unitCode schema:name ) ] ;
+                shui:propertyRole shui:LabelRole ;
+            ] ;
+        ] ;
+    ] ;
+    .
+
+<#data>
+    a schema:Recipe ;
+    schema:name "Beef Wellington"@en ;
+    schema:recipeIngredient
+        [ schema:name "Puff pastry"@en ; schema:value 500 ; schema:unitCode ex:gram ],
+        [ schema:name "Egg yolks"@en ; schema:value 2 ] ;
+    .
+
+ex:gram rdfs:label "Gram"@en, "Gram"@nl .

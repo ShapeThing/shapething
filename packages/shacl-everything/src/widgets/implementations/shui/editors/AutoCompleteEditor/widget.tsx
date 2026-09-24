@@ -4,7 +4,7 @@ import type { NamedNode, Quad } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
 import { Loading, Plus, Search } from "@/helpers/icons.tsx";
-import { rdf, sh } from "@/helpers/namespaces.ts";
+import { rdf, sh, st } from "@/helpers/namespaces.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
 import { makeReactive, transact } from "@/helpers/reactiveRdfStore.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
@@ -21,6 +21,7 @@ import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChil
 import FacetSearchModal from "@/widgets/implementations/shui/editors/AutoCompleteEditor/FacetSearchModal.tsx";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
+import { useDropdownEscapeModal } from "@/outputs/render/hooks/useDropdownEscapeModal.ts";
 import "@/theme/comboBox.css";
 import "./style.css";
 
@@ -57,7 +58,7 @@ export default function AutoCompleteEditor({
   // that instead declares shui:searchQuery - a shape author's explicit federated/remote search -
   // must keep using the ordinary typeahead (see useInstanceSearch), not this local-only modal.
   const canFacetSearch =
-    Boolean(enableFacetSearchForAutocomplete) && nodeShapes.length > 0 && !searchQueryFor(shape);
+    enableFacetSearchForAutocomplete && nodeShapes.length > 0 && !searchQueryFor(shape);
   const [facetSearching, setFacetSearching] = useState(false);
   // Every existing sh:class instance the facet-search modal's own facets narrow down - mirrors
   // InstancesSelectEditor's own equivalent "subjects" computation. Only worth computing at all when
@@ -96,6 +97,7 @@ export default function AutoCompleteEditor({
   const inputRef = useRef<HTMLInputElement>(null);
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const listboxId = useId();
+  const dropdownRef = useDropdownEscapeModal<HTMLDivElement>();
 
   // Fires on an actual view->edit transition (the search icon clicked, or a value just cleared -
   // see closeEditor/the empty-state view below) as well as on mount when autoFocus seeded "edit"
@@ -124,6 +126,29 @@ export default function AutoCompleteEditor({
       : [];
   const lookups = useOptionLookups(shape, currentIris);
   const current = selected?.iri.value === term.value ? selected : lookups[0];
+
+  // st:suggestedValues (only when there's no sh:in): offered in place of search results while
+  // nothing has been typed yet. Only NamedNodes, since this widget only ever applies IRI values.
+  const suggestedValues = useMemo(
+    () =>
+      shape.get(sh("in")).length > 0
+        ? []
+        : shape
+            .get(st("suggestedValues"))
+            .filter((value): value is NamedNode => value.termType === "NamedNode"),
+    [shape],
+  );
+  const showSuggestions = search.trim() === "" && suggestedValues.length > 0;
+  // Labels/depictions are only looked up once the dropdown is actually showing them, so a form
+  // with several of these editors doesn't fan every lookup out on page load.
+  const suggestionIris = useMemo(
+    () => (focused && showSuggestions ? suggestedValues : []),
+    [focused, showSuggestions, suggestedValues],
+  );
+  const suggestionLookups = useOptionLookups(shape, suggestionIris);
+  const suggestions: SearchResult[] = suggestedValues.map(
+    (iri) => suggestionLookups.find((lookup) => lookup.iri.value === iri.value) ?? { iri },
+  );
 
   // Always back to "view" on blur, even with no value selected - the view render below has its
   // own empty state for that case, so there's no need to keep the search box open just because
@@ -216,14 +241,14 @@ export default function AutoCompleteEditor({
 
   // Values already used elsewhere for this (possibly multi-valued) property shouldn't be offered
   // again, other than the one this widget instance currently holds - mirrors InstancesSelectEditor.
-  const options = (results ?? []).filter(
+  const options = (showSuggestions ? suggestions : (results ?? [])).filter(
     (result) =>
       !existingObjects.some((obj) => obj.value === result.iri.value && obj.value !== term.value),
   );
   // The create row (when offered) is appended after every search result as one more navigable
   // row of the same listbox - see the dropdown markup below.
   const rowCount = options.length + (canCreate ? 1 : 0);
-  const dropdownOpen = focused && (results !== undefined || canCreate);
+  const dropdownOpen = focused && (results !== undefined || showSuggestions || canCreate);
 
   // Rendered from both modes below - creating stays in "edit" mode until the modal is submitted
   // (see submitCreate), so the modal has to stay reachable from the "edit" mode search UI that
@@ -373,12 +398,12 @@ export default function AutoCompleteEditor({
       </Localized>
 
       {dropdownOpen && (
-        <div id={listboxId} className="st-autocomplete__results st-combo-results" role="listbox">
-          {error ? (
+        <div ref={dropdownRef} id={listboxId} className="st-autocomplete__results st-combo-results" role="listbox">
+          {error && !showSuggestions ? (
             <div className="st-autocomplete__empty st-combo-empty" role="alert">
               <Localized id="autocomplete-search-error">Search failed</Localized>
             </div>
-          ) : isLoading ? (
+          ) : isLoading && !showSuggestions ? (
             <div className="st-autocomplete__empty st-combo-empty">
               <Loading />
               <Localized id="loading">Loading</Localized>
@@ -409,7 +434,7 @@ export default function AutoCompleteEditor({
                 />
               </div>
             ))
-          ) : results !== undefined ? (
+          ) : results !== undefined && !showSuggestions ? (
             <div className="st-autocomplete__empty st-combo-empty">
               <Localized id="autocomplete-no-results">No results found</Localized>
             </div>

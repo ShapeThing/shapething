@@ -240,9 +240,9 @@ export const stPropertyPathEditorPredicateAutocomplete: Story = {
     // rdfs:label is already used in this fixture's own data graph (ex:name rdfs:label "name"@en)
     // - typing part of it offers it as a suggestion without needing the full IRI typed out, and
     // free text still works regardless (see the other stories, none of which ever match a
-    // suggestion). Scoped to the "already in use" group specifically (not a plain findByText)
-    // since "label" is also a very live match against LOV's own real term search - asserting on
-    // an actual "From LOV" result here would make this test depend on a third-party network call.
+    // suggestion). Scoped to the "already in use" group specifically (not a plain findByText) -
+    // an unprefixed "label" never reaches the LOV mirror lookup (see lovTermSearch.ts), and this
+    // test shouldn't come to depend on that third-party network call either way.
     await userEvent.type(predicateField, "label");
     const suggestion = await waitFor(() => {
       const element = dialog.querySelector<HTMLElement>('[data-group="local"]');

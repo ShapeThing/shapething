@@ -1,16 +1,27 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
-import type { NamedNode } from "@rdfjs/types";
+import type { Quad_Subject } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
 import { Link, Loading } from "@/helpers/icons.tsx";
 import { sh } from "@/helpers/namespaces.ts";
 import { knownIris } from "@/helpers/knownIris.ts";
 import { prefixedIri } from "@/helpers/prefixedIri.ts";
+import Modal from "@/outputs/render/components/Modal/index.tsx";
+import ResourceEditButton, {
+  type ResourceEditor,
+} from "@/outputs/render/components/ResourceEditButton/index.tsx";
 import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
+import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useLovSuggestions, type Suggestion } from "@/outputs/render/hooks/useLovSuggestions.ts";
+import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
+import ViewNodeUIElementChildren from "@/outputs/render/modes/view/NodeUIElementChildren.tsx";
+import { valueNodeLabel, valueNodeShapes } from "@/resolution/label.ts";
+import { shapesTargetingNode } from "@/resolution/targets.ts";
+import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import { iriTypesFor } from "./iriType.ts";
+import { useDropdownEscapeModal } from "@/outputs/render/hooks/useDropdownEscapeModal.ts";
 import "@/theme/comboBox.css";
 import "./style.css";
 
@@ -20,8 +31,8 @@ const IMAGE_EXTENSION_PATTERN = /\.(jpg|jpeg|png|gif|bmp|svg|webp|avif)$/i;
 
 // The full IRI + a friendlier display name for a suggestion row, regardless of which source it
 // came from - a local match's own prefixedIri() (falling back to its full IRI when no known
-// prefix matches) for a "local" suggestion, LOV's own already-compact prefixedName for a "lov"
-// one (see helpers/lovTermSearch.ts).
+// prefix matches) for a "local" suggestion, the already-compact prefixedName lovTermSearch.ts
+// built from the typed prefix for a "lov" one (no local prefix lookup needed for it).
 function suggestionDisplay(
   suggestion: Suggestion,
   sourcePrefixes: Record<string, string>,
@@ -42,7 +53,8 @@ function suggestionKey(suggestion: Suggestion): string {
 }
 
 export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus }: WidgetProps) {
-  const { sourcePrefixes } = useEnvironment();
+  const { sourcePrefixes, enableEditInPlace, enableViewInPlace } = useEnvironment();
+  const { activeLanguage } = useContentLanguage();
   const pattern = shape.get(sh("pattern"))?.source;
   const minLength = shape.get(sh("minLength"));
   const maxLength = shape.get(sh("maxLength"));
@@ -54,6 +66,7 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
   const listboxId = useId();
+  const dropdownRef = useDropdownEscapeModal<HTMLDivElement>();
 
   // `localValue` starts (and, after a blur/reopen, restarts) as the field's already-committed
   // value, not empty - so it alone can't tell "the user typed a search" apart from "this field
@@ -87,7 +100,7 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
 
   const ref = useAutoFocusRef<HTMLInputElement>(autoFocus);
 
-  // A value already present starts collapsed to its prefixedIri text; clicking it opens the
+  // A value already present starts collapsed to its resolved label (displayName below); clicking it opens the
   // input on the full IRI. A freshly added (empty) value has nothing to show, so it opens
   // straight into the input - and committing back down to empty (the value was cleared) falls
   // back to the input too, since there's nothing left to display.
@@ -113,6 +126,62 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
 
   const showPreview =
     term.value.length > 0 && !previewFailed && IMAGE_EXTENSION_PATTERN.test(term.value);
+
+  // The collapsed value's text - the same shui:LabelRole/rdfs:label resolution every other value-
+  // node label goes through (valueNodeLabel), kept live via useReactiveRead so a later edit to the
+  // referenced resource's label triples shows up here too. Content, not chrome: follows content
+  // language. The full IRI stays available on hover (title) and in the input once opened.
+  const displayName = useReactiveRead(
+    shape.dataGraph,
+    `iri-editor-label@${term.value}@${activeLanguage}`,
+    () => valueNodeLabel({ term, propertyShape: shape, languages: [activeLanguage] }).value,
+  );
+
+  // The shape(s) to render the referenced resource with for Environment.enableEditInPlace/
+  // enableViewInPlace - only when it already exists in dataGraph (same gate as
+  // AutoCompleteOption's edit icon and LabelViewer's view modal). The property's own declared
+  // value shapes (sh:node, or shapes targeting its sh:class - see valueNodeShapes) win; a plain IRI
+  // property usually declares neither, so it falls back to whichever shapes target the value
+  // itself (shapesTargetingNode, as LabelViewer does).
+  const declaredNodeShapes = useMemo(() => valueNodeShapes(shape), [shape]);
+  const resourceShapes = useReactiveRead(
+    shape.dataGraph,
+    `iri-editor-resource-shapes@${term.value}@${enableEditInPlace}@${enableViewInPlace}@${declaredNodeShapes
+      .map((nodeShape) => nodeShape.value)
+      .join(" ")}`,
+    (): Quad_Subject[] => {
+      if (!enableEditInPlace && !enableViewInPlace) return [];
+      if (term.termType !== "NamedNode" || term.value.length === 0) return [];
+      if (shape.dataGraph.getQuads(term, null, null).length === 0) return [];
+      if (declaredNodeShapes.length > 0) return declaredNodeShapes;
+      return shapesTargetingNode(term, shape.shapesGraph, shape.dataGraph);
+    },
+  );
+
+  const resourceEditor = useMemo<ResourceEditor>(
+    () => ({
+      shapesGraph: shape.shapesGraph,
+      dataGraph: shape.dataGraph,
+      scoresGraph: shape.scoresGraph,
+      widgetRegistry: shape.widgetRegistry,
+      nodeShapes: resourceShapes,
+    }),
+    [shape, resourceShapes],
+  );
+
+  const canViewInPlace = Boolean(enableViewInPlace) && resourceShapes.length > 0;
+  const [viewing, setViewing] = useState(false);
+  const viewNodeUiElement = useMemo(() => {
+    if (!viewing || !canViewInPlace || term.termType !== "NamedNode") return undefined;
+    return new NodeUIElement({
+      shapesGraph: shape.shapesGraph,
+      dataGraph: shape.dataGraph,
+      scoresGraph: shape.scoresGraph,
+      widgetRegistry: shape.widgetRegistry,
+      focusNode: term,
+      nodeShapes: resourceShapes,
+    });
+  }, [viewing, canViewInPlace, shape, term, resourceShapes]);
 
   return (
     <div className="st-iri-editor">
@@ -183,7 +252,7 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
                 aria-labelledby={labelledBy}
               />
               {dropdownOpen && (
-                <div id={listboxId} className="st-combo-results" role="listbox">
+                <div ref={dropdownRef} id={listboxId} className="st-combo-results" role="listbox">
                   {suggestions.map((suggestion, index) => {
                     const isFirstOfGroup =
                       index === 0 || suggestions[index - 1].kind !== suggestion.kind;
@@ -256,16 +325,42 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
               title={term.value}
               onClick={openForEdit}
             >
-              {prefixedIri(term as NamedNode, sourcePrefixes) ?? term.value}
+              {displayName}
             </button>
           )}
         </div>
+        <ResourceEditButton
+          term={term}
+          label={displayName}
+          resourceEditor={resourceEditor}
+          className="st-input-suffix st-iri-editor__edit"
+        />
         {term.value ? (
           <a
             className="st-input-suffix has-value"
             href={term.value}
-            target="_blank"
+            target={canViewInPlace ? undefined : "_blank"}
             rel="noopener noreferrer"
+            aria-haspopup={canViewInPlace ? "dialog" : undefined}
+            onClick={
+              canViewInPlace
+                ? (event) => {
+                    // Same as LabelViewer: a modifier or middle click still follows href as a
+                    // normal link - only a plain left click opens the read-only modal.
+                    if (
+                      event.button !== 0 ||
+                      event.metaKey ||
+                      event.ctrlKey ||
+                      event.shiftKey ||
+                      event.altKey
+                    ) {
+                      return;
+                    }
+                    event.preventDefault();
+                    setViewing(true);
+                  }
+                : undefined
+            }
           >
             <Link />
           </a>
@@ -275,6 +370,11 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
           </span>
         )}
       </div>
+      {canViewInPlace && (
+        <Modal open={viewing} onClose={() => setViewing(false)} title={displayName}>
+          {viewNodeUiElement && <ViewNodeUIElementChildren nodeUiElement={viewNodeUiElement} />}
+        </Modal>
+      )}
       {showPreview && (
         <div className="st-iri-editor__preview">
           <img

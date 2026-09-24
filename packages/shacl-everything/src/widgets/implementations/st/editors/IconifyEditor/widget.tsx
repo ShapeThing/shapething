@@ -6,6 +6,7 @@ import { Loading, Search } from "@/helpers/icons.tsx";
 import { iconifyDatatype } from "@/helpers/namespaces.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import { useIconifySearch } from "./useIconifySearch.ts";
+import { useDropdownEscapeModal } from "@/outputs/render/hooks/useDropdownEscapeModal.ts";
 import "@/theme/comboBox.css";
 import "./style.css";
 
@@ -31,6 +32,7 @@ export default function IconifyEditor({
   const inputRef = useRef<HTMLInputElement>(null);
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const listboxId = useId();
+  const dropdownRef = useDropdownEscapeModal<HTMLDivElement>();
 
   useEffect(() => {
     if (mode === "edit") inputRef.current?.focus();
@@ -140,7 +142,7 @@ export default function IconifyEditor({
       </Localized>
 
       {dropdownOpen && (
-        <div id={listboxId} className="st-iconify-editor__results st-combo-results" role="listbox">
+        <div ref={dropdownRef} id={listboxId} className="st-iconify-editor__results st-combo-results" role="listbox">
           {error ? (
             <div className="st-combo-empty" role="alert">
               <Localized id="autocomplete-search-error">Search failed</Localized>

@@ -6,6 +6,18 @@
   color: var(--gray-6);
 }
 
+/* The edit-in-place suffix (see ResourceEditButton) sits between the input and the link suffix,
+   so only the link keeps the rounded outer corners. Only rendered when it's actionable, hence
+   always the active color. */
+.st-input-suffix.st-iri-editor__edit {
+  border-radius: 0;
+  font-size: inherit;
+
+  svg {
+    color: var(--st-primary-color);
+  }
+}
+
 .st-iri-editor {
   display: flex;
   flex-direction: column;

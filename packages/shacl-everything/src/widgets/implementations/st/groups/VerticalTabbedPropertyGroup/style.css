@@ -2,9 +2,13 @@
    active tab's own .st-property-group panel to the right - both rendered by the same widget
    instance (see widget.tsx), so a plain flex row is enough; no adjacent-sibling CSS tricks
    needed. */
+/* align-items: stretch (the default) keeps the panel at least as tall as the whole tab column, whatever
+   each tab's own height (labels wrap differently in narrow containers such as a modal); the nav's
+   padding-bottom makes the panel always run slightly past the last tab, so the panel's bottom
+   edge never lands exactly on (or above) the last tab's bottom. */
 .st-vertical-tabbed-group {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   margin-bottom: var(--size-5);
 }
 
@@ -14,6 +18,7 @@
   flex: 0 0 auto;
   width: 14rem;
   gap: var(--size-1);
+  padding-bottom: 10px;
 }
 
 .st-vertical-tabbed-group-nav__tab {

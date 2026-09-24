@@ -1,0 +1,65 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+
+# View mode only: <#address>'s one property has no value in <#data>, so its tab (and its empty
+# panel) must not render at all - same for <#notes>, a plain sh:PropertyGroup with no values.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Given name"@en ;
+        sh:path schema:givenName ;
+        sh:datatype xsd:string ;
+        sh:group <#personalDetails> ;
+    ] ;
+    sh:property [
+        sh:name "Street address"@en ;
+        sh:path schema:streetAddress ;
+        sh:datatype xsd:string ;
+        sh:group <#address> ;
+    ] ;
+    sh:property [
+        sh:name "Email"@en ;
+        sh:path schema:email ;
+        sh:datatype xsd:string ;
+        sh:group <#contact> ;
+    ] ;
+    sh:property [
+        sh:name "Remark"@en ;
+        sh:path ex:remark ;
+        sh:datatype xsd:string ;
+        sh:group <#notes> ;
+    ] ;
+    .
+
+<#personalDetails>
+    a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
+    sh:name "Personal details"@en ;
+    sh:order 0 ;
+    .
+
+<#address>
+    a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
+    sh:name "Address"@en ;
+    sh:order 1 ;
+    .
+
+<#contact>
+    a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
+    sh:name "Contact"@en ;
+    sh:order 2 ;
+    .
+
+<#notes>
+    a sh:PropertyGroup ;
+    sh:name "Notes"@en ;
+    sh:order 3 ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    schema:email "hendrik@example.org" .

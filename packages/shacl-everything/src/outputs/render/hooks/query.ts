@@ -97,8 +97,8 @@ export function extractServiceEndpoint(query: string): string | undefined {
 }
 
 // Matches a SELECT clause's first projected variable, e.g. "?value1" in "SELECT DISTINCT ?value1
-// WHERE" or "?value" in "SELECT ?value {" - mirrors toResolvedTerms's own convention ("Use the
-// first projected variable, so sh:select queries need not name it ?value"), but as a text-level
+// WHERE" or "?value" in "SELECT ?value {" - mirrors toResolvedTerms's own convention (the first
+// projected variable, so sh:select queries need not name it ?value), but as a text-level
 // parse rather than a binding-level one, since here the point is to inject a same-named VALUES
 // clause into the query text itself, before it's ever run.
 export const FIRST_PROJECTED_VARIABLE: RegExp = /select\s+(?:distinct\s+|reduced\s+)?[?$](\w+)/i;
@@ -138,10 +138,13 @@ export function insertValuesClause(query: string, variable: string, values: Name
   return query.slice(0, braceIndex + 1) + valuesClause + query.slice(braceIndex + 1);
 }
 
-function toResolvedTerms(bindings: Bindings[]): ResolvedTerm[] {
+// `valueVariable` is the query's first projected variable (see runQuery), so sh:select queries need
+// not name it ?value. It has to come from the query's own projection rather than from `binding`
+// itself: a Bindings' iteration order follows the engine's join order, not the SELECT clause's -
+// e.g. a nested ClassificationRole optional can put ?classification ahead of ?value.
+function toResolvedTerms(bindings: Bindings[], valueVariable: string): ResolvedTerm[] {
   return bindings.flatMap((binding): ResolvedTerm[] => {
-    // Use the first projected variable, so sh:select queries need not name it ?value.
-    const term = [...binding][0]?.[1];
+    const term = binding.get(valueVariable);
     if (!term) return [];
 
     const labelTerm = binding.get("label");
@@ -211,7 +214,7 @@ export async function runQuery(
   corsProxyUrl?: string,
 ): Promise<ResolvedTerm[]> {
   const engine = await getEngine();
-  const bindingsStream = await engine.queryBindings(query, {
+  const result = await engine.query(query, {
     sources: [propertyShape.dataGraph],
     // Always registered, not just for a query that's known to use one - a shape-authored
     // sh:select/shui:searchQuery body is arbitrary text this module never inspects up front, so
@@ -219,8 +222,14 @@ export async function runQuery(
     extensionFunctions: geosparqlExtensionFunctions,
     ...(corsProxyUrl ? { fetch: fetchWithCorsProxyFallback(corsProxyUrl) } : {}),
   });
-  return toResolvedTerms(await bindingsStream.toArray()).map((result) =>
-    withClassificationColor(result, propertyShape),
+  if (result.resultType !== "bindings") return [];
+
+  const [valueVariable] = (await result.metadata()).variables;
+  if (!valueVariable) return [];
+
+  const bindings = await (await result.execute()).toArray();
+  return toResolvedTerms(bindings, valueVariable.value).map((resolved) =>
+    withClassificationColor(resolved, propertyShape),
   );
 }
 
@@ -383,10 +392,10 @@ function labelPathsFor(propertyShape: PropertyUIElement) {
 // SPARQL path expressions for a given shape.
 function rolePathsFor(propertyShape: PropertyUIElement) {
   return {
-    labelPaths: labelPathsFor(propertyShape).map(toSparql),
-    classificationPaths: classificationRolePropertyPaths(propertyShape).map(toSparql),
-    depictionPaths: depictionRolePropertyPaths(propertyShape).map(toSparql),
-    descriptionPaths: descriptionRolePropertyPaths(propertyShape).map(toSparql),
+    labelPaths: labelPathsFor(propertyShape).map((path) => toSparql(path)),
+    classificationPaths: classificationRolePropertyPaths(propertyShape).map((path) => toSparql(path)),
+    depictionPaths: depictionRolePropertyPaths(propertyShape).map((path) => toSparql(path)),
+    descriptionPaths: descriptionRolePropertyPaths(propertyShape).map((path) => toSparql(path)),
   };
 }
 
@@ -461,10 +470,10 @@ export async function searchInstances(
   const classIri = shape.get(sh("class"))[0] as NamedNode | undefined;
   if (!classIri) return [];
 
-  const labelPaths = labelPathsFor(shape).map(toSparql);
-  const classificationPaths = classificationRolePropertyPaths(shape).map(toSparql);
-  const depictionPaths = depictionRolePropertyPaths(shape).map(toSparql);
-  const descriptionPaths = descriptionRolePropertyPaths(shape).map(toSparql);
+  const labelPaths = labelPathsFor(shape).map((path) => toSparql(path));
+  const classificationPaths = classificationRolePropertyPaths(shape).map((path) => toSparql(path));
+  const depictionPaths = depictionRolePropertyPaths(shape).map((path) => toSparql(path));
+  const descriptionPaths = descriptionRolePropertyPaths(shape).map((path) => toSparql(path));
   const query = buildSearchQuery(
     classIri,
     labelPaths,

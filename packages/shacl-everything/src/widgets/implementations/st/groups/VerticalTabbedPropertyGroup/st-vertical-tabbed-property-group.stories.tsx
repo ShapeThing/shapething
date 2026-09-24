@@ -70,3 +70,27 @@ export const stVerticalTabbedPropertyGroup: Story = {
     expect(canvas.queryByDisplayValue("Hendrik")).not.toBeInTheDocument();
   },
 };
+
+export const stVerticalTabbedPropertyGroupViewHidesEmptyTabs: Story = {
+  name: "View mode hides a tab (and a plain group) whose properties have no values",
+  args: {
+    ...argsByTestFile("st-vertical-tabbed-property-group-view-empty.ttl", import.meta.url),
+    mode: "view",
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const tablist = await canvas.findByRole("tablist");
+    expect(within(tablist).getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
+      "Personal details",
+      "Contact",
+    ]);
+    expect(await canvas.findByText("Hendrik")).toBeInTheDocument();
+
+    await userEvent.click(within(tablist).getByRole("tab", { name: /Contact/ }));
+    expect(await canvas.findByText("hendrik@example.org")).toBeInTheDocument();
+
+    expect(canvas.queryByText("Address")).not.toBeInTheDocument();
+    expect(canvas.queryByText("Notes")).not.toBeInTheDocument();
+  },
+};

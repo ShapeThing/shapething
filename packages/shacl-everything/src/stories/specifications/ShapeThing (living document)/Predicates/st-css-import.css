@@ -1,0 +1,7 @@
+/* Loaded via st:cssImport (st-css-import.ttl) - targets that shape's own sh:PropertyGroup by the
+   data-iri every built-in group widget renders. */
+[data-iri="http://example.org/highlightedGroup"] {
+  outline: 3px dashed rgb(236, 72, 153);
+  outline-offset: 4px;
+  padding: 1rem;
+}

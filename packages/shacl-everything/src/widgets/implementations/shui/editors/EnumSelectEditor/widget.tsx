@@ -2,7 +2,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
 import type { NamedNode } from "@rdfjs/types";
 import { Loading } from "@/helpers/icons.tsx";
-import { sh } from "@/helpers/namespaces.ts";
+import { sh, st } from "@/helpers/namespaces.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
 import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
@@ -13,6 +13,7 @@ import { valueNodeShapes } from "@/resolution/label.ts";
 import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import { selectQueryFor } from "@/structure/selectQuery.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
+import { useDropdownEscapeModal } from "@/outputs/render/hooks/useDropdownEscapeModal.ts";
 import "@/theme/comboBox.css";
 import "./style.css";
 
@@ -42,7 +43,16 @@ export default function EnumSelectEditor({
           ),
     [inOptions, selectQuery, shClasses, shape],
   );
-  const options = inOptions.length > 0 ? inOptions : classOptions;
+  // st:suggestedValues - offered only when there's no sh:in (plain or sh:select) to enumerate,
+  // listed ahead of (and deduped against) any sh:class instances from classOptions above.
+  const suggestedValues = useMemo(
+    () => (inOptions.length > 0 || selectQuery ? [] : shape.get(st("suggestedValues"))),
+    [inOptions, selectQuery, shape],
+  );
+  const options = useMemo(
+    () => (inOptions.length > 0 ? inOptions : dedupeTerms([...suggestedValues, ...classOptions])),
+    [inOptions, suggestedValues, classOptions],
+  );
   // The shape describing the currently selected value (its own sh:node, or - failing that - any
   // node shape targeting its sh:class via sh:targetClass, see valueNodeShapes) - when present (and
   // enableEditInPlace hasn't turned the feature off), the value can be opened and edited in place
@@ -114,6 +124,7 @@ export default function EnumSelectEditor({
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
   const triggerRef = useAutoFocusRef<HTMLButtonElement>(autoFocus);
   const listboxId = useId();
+  const dropdownRef = useDropdownEscapeModal<HTMLDivElement>();
 
   useEffect(() => {
     if (open && activeIndex >= 0)
@@ -216,7 +227,7 @@ export default function EnumSelectEditor({
       </button>
 
       {open && (
-        <div id={listboxId} className="st-enum-select__results st-combo-results" role="listbox">
+        <div ref={dropdownRef} id={listboxId} className="st-enum-select__results st-combo-results" role="listbox">
           {selectError ? (
             <div className="st-enum-select__empty st-combo-empty" role="alert">
               <Localized id="autocomplete-search-error">Search failed</Localized>

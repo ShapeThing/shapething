@@ -6,7 +6,11 @@ import { localName } from "@/helpers/localName.ts";
 // Only for a human-facing label: don't use this in place of localName() for a data-widget
 // attribute, a generated code identifier, or any other place the raw, unsplit local name is
 // itself the value being matched against (CSS selectors, story queries, SEVERITY_RANK keys, etc).
+//
+// A namespace IRI itself (e.g. `http://www.w3.org/2004/02/skos/core#`, written `skos:`) has an
+// empty local name - null rather than "", so callers' `?? term.value` fallback still kicks in
+// instead of rendering a blank label.
 export function localNameLabel(term?: Term): string | null {
   const name = localName(term);
-  return name !== null ? humanizeLocalName(name) : null;
+  return name ? humanizeLocalName(name) : null;
 }

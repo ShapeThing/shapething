@@ -16,7 +16,7 @@ const nodeShapeNodeShapes = [
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Showcases/Meta",
+  title: "Meta",
   component: ShaclRenderer,
   args: {
     ...testingEnvironment,

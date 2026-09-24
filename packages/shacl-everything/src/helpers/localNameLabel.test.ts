@@ -15,3 +15,8 @@ test("localNameLabel - humanizes the IRI's local name", () => {
     "Given Name",
   );
 });
+
+test("localNameLabel - returns null for a namespace IRI with an empty local name (e.g. skos:)", () => {
+  expect(localNameLabel(factory.namedNode("http://www.w3.org/2004/02/skos/core#"))).toBeNull();
+  expect(localNameLabel(factory.namedNode("http://schema.org/"))).toBeNull();
+});

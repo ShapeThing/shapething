@@ -2,7 +2,7 @@ import type { Literal, NamedNode, Term } from "@rdfjs/types";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 
 import { localName } from "@/helpers/localName.ts";
-import { rdfs, sh, xsd } from "@/helpers/namespaces.ts";
+import { rdfs, sh, st, xsd } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
@@ -251,6 +251,9 @@ export const resolutions = new Map<string, ResolutionFunction<any>>([
   [sh("ignoredProperties").value, keepAllListItems],
   [sh("hasValue").value, enforceSingular(keepAll)],
   [sh("in").value, keepListIntersection],
+  // Unlike sh:in, not a constraint - just a hint of values worth offering first (see
+  // EnumSelectEditor/AutoCompleteEditor), so every grouped shape's suggestions are kept.
+  [st("suggestedValues").value, keepAllListItems],
   [sh("rootClass").value, keepMostSpecificClasses],
   [sh("uniqueValuesFor").value, keepAllListItems],
   [sh("severity").value, keepMostSevere],

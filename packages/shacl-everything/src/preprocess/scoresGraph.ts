@@ -19,11 +19,13 @@ export const resolveScoresGraph: Preprocessor = async (environment) => {
   // value found there needs to resolve a shui:viewer widget too (see PropertyUIElement.isReadOnly()/
   // outputs/render/modes/edit/WidgetSlot.tsx), which requires viewer score.ttl rules to be present
   // in this same scoresGraph (there is only ever this one - see scoring/score.ts's score(), which
-  // filters by category itself rather than relying on separate graphs per category).
+  // filters by category itself rather than relying on separate graphs per category). The same
+  // goes for Environment.enableViewInPlace: IRIEditor's link can open a referenced resource
+  // read-only (through the view-mode render tree) from inside edit mode.
+  const needsViewerScores =
+    environment.readOnlyGraph !== undefined || Boolean(environment.enableViewInPlace);
   const modes: WidgetMode[] =
-    environment.mode === "edit" && environment.readOnlyGraph !== undefined
-      ? ["edit", "view"]
-      : [environment.mode];
+    environment.mode === "edit" && needsViewerScores ? ["edit", "view"] : [environment.mode];
 
   if (modes.length === 1) {
     return { ...environment, scoresGraph: await getScoringGraph(modes[0], widgets) };

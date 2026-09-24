@@ -123,6 +123,35 @@ test("fetchOptions() resolves every requested iri's label in a single batched qu
   expect(results.find((result) => result.iri.value === ex("p3").value)?.label).toBe("Carol");
 });
 
+// Comunica's Bindings iteration order follows its join order, not the SELECT clause - a nested
+// ClassificationRole optional used to put ?classification ahead of ?value, so each result was
+// keyed on its classification IRI instead of the instance itself.
+test("searchInstances()/fetchOptions() key results on ?value, not on whichever variable a ClassificationRole binds first", async () => {
+  const shape = await createShape(
+    `
+      ex:property1 a sh:PropertyShape ; sh:class ex:Chef ; sh:node ex:ChefShape .
+      ex:ChefShape sh:property ex:nameProperty, ex:cuisineProperty, ex:imageProperty .
+      ex:nameProperty sh:path ex:name ; shui:propertyRole shui:LabelRole .
+      ex:cuisineProperty sh:path ex:cuisine ; shui:propertyRole shui:ClassificationRole .
+      ex:imageProperty sh:path ex:image ; shui:propertyRole shui:DepictionRole .
+    `,
+    `
+      ex:gordon a ex:Chef ; ex:name "Gordon" ; ex:cuisine ex:British ; ex:image <http://example.org/gordon.jpg> .
+      ex:British rdfs:label "British" .
+    `,
+  );
+
+  const [searched] = await searchInstances(shape, "gordon");
+  expect(searched?.iri.value).toBe(ex("gordon").value);
+  expect(searched?.depiction?.value).toBe("http://example.org/gordon.jpg");
+
+  const [fetched] = await fetchOptions(shape, [ex("gordon")]);
+  expect(fetched?.iri.value).toBe(ex("gordon").value);
+  expect(fetched?.label).toBe("Gordon");
+  expect(fetched?.classification?.label).toBe("British");
+  expect(fetched?.depiction?.value).toBe("http://example.org/gordon.jpg");
+});
+
 test("fetchOptions() returns nothing for an empty iri list", async () => {
   const shape = await createShape(`ex:property1 a sh:PropertyShape ; sh:class ex:Person .`, ``);
 
@@ -225,4 +254,28 @@ test("insertValuesClause() binds every candidate in one VALUES clause, inside th
     [ex("a"), ex("b")],
   );
   expect(local).toContain(`VALUES ?value { <${ex("a").value}> <${ex("b").value}> }`);
+});
+
+test("fetchOptions() keys results on ?value even when a ClassificationRole IRI is projected alongside depiction/description", async () => {
+  const shape = await createShape(
+    `
+      ex:property1 a sh:PropertyShape ; sh:class ex:Chef ; sh:node ex:ChefShape .
+      ex:ChefShape sh:property
+        [ sh:path ex:name ; shui:propertyRole shui:LabelRole ],
+        [ sh:path ex:image ; shui:propertyRole shui:DepictionRole ],
+        [ sh:path ex:bio ; shui:propertyRole st:DescriptionRole ],
+        [ sh:path ex:cuisine ; shui:propertyRole shui:ClassificationRole ] .
+    `,
+    `
+      ex:French rdfs:label "French" .
+      ex:julia a ex:Chef ; ex:name "Julia Child" ; ex:image <http://example.org/julia.jpg> ;
+        ex:bio "Mastered the art of French cooking." ; ex:cuisine ex:French .
+    `,
+  );
+
+  const [result] = await fetchOptions(shape, [ex("julia")]);
+
+  expect(result.iri.value).toBe(ex("julia").value);
+  expect(result.label).toBe("Julia Child");
+  expect(result.classification?.label).toBe("French");
 });

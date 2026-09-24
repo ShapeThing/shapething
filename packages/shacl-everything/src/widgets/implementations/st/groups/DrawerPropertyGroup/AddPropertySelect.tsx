@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { useDropdownEscapeModal } from "@/outputs/render/hooks/useDropdownEscapeModal.ts";
 
 type Props = {
   triggerId?: string;
@@ -30,6 +31,7 @@ export default function AddPropertySelect({
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const listboxId = useId();
+  const dropdownRef = useDropdownEscapeModal<HTMLDivElement>("min-width");
   const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const normalizedQuery = query.trim().toLowerCase();
@@ -100,7 +102,7 @@ export default function AddPropertySelect({
       />
       <span className="st-select-arrow" aria-hidden="true" />
       {open && filtered.length > 0 && (
-        <div id={listboxId} role="listbox" className="st-listbox__listbox">
+        <div ref={dropdownRef} id={listboxId} role="listbox" className="st-listbox__listbox">
           {filtered.map((property, index) => (
             <div
               key={property.pathAsSparql() ?? index}

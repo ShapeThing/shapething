@@ -1,0 +1,43 @@
+/* Class names keep their original st-autocomplete-option__ prefix - this was extracted from
+   AutoCompleteOption, and existing embedder styles/tests target these names. */
+.st-autocomplete-option__edit {
+  color: var(--st-color-text-muted);
+  display: flex;
+  align-items: center;
+  font-size: var(--st-font-size-small);
+  cursor: pointer;
+
+  &:focus,
+  &:hover {
+    color: var(--st-primary-color);
+  }
+}
+
+.st-autocomplete-option__resource-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.st-autocomplete-option__resource-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--size-5);
+  position: sticky;
+  bottom: 0;
+  z-index: 4;
+
+  > *:not(:hover):not(:focus) {
+    background-color: white;
+  }
+}
+
+.st-autocomplete-option__discard-modal p {
+  margin: 0;
+}
+
+.st-autocomplete-option__discard-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--size-2);
+  margin-top: var(--size-4);
+}

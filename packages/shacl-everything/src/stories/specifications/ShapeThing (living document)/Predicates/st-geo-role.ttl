@@ -1,0 +1,63 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix schema: <https://schema.org/>.
+@prefix geosparql: <http://www.opengis.net/ont/geosparql#>.
+
+# st:GeoRole marks which property on a value node's shape holds its geometry - read by
+# st:MapViewer to place a marker, next to shui:LabelRole/shui:ClassificationRole for its tooltip.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:TouristTrip ;
+    sh:property [
+        sh:path schema:name ;
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path schema:itinerary ;
+        sh:name "Stops"@en, "Stops"@nl ;
+        shui:viewer st:MapViewer ;
+        sh:node <#stopShape> ;
+    ] ;
+    .
+
+<#stopShape>
+    a sh:NodeShape ;
+    sh:property [
+        sh:path geosparql:asWKT ;
+        shui:propertyRole st:GeoRole ;
+    ] ;
+    sh:property [
+        sh:path schema:name ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:additionalType ;
+        shui:propertyRole shui:ClassificationRole ;
+    ] ;
+    .
+
+<#data>
+    a schema:TouristTrip ;
+    schema:name "A day in Amsterdam"@en, "Een dag in Amsterdam"@nl ;
+    schema:itinerary <#rijksmuseum>, <#anneFrankHouse>, <#vondelpark> ;
+    .
+
+<#rijksmuseum>
+    schema:name "Rijksmuseum"@en ;
+    schema:additionalType "Museum"@en ;
+    geosparql:asWKT "POINT (4.8852 52.3600)"^^geosparql:wktLiteral ;
+    .
+
+<#anneFrankHouse>
+    schema:name "Anne Frank House"@en ;
+    schema:additionalType "Museum"@en ;
+    geosparql:asWKT "POINT (4.8840 52.3752)"^^geosparql:wktLiteral ;
+    .
+
+<#vondelpark>
+    schema:name "Vondelpark"@en ;
+    schema:additionalType "Park"@en ;
+    geosparql:asWKT "POINT (4.8680 52.3580)"^^geosparql:wktLiteral ;
+    .

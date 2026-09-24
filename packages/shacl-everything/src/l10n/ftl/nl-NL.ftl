@@ -58,6 +58,7 @@ autocomplete-edit-value =
     .aria-label = Bewerken
 autocomplete-option-edit-resource =
     .aria-label = { $label } bewerken
+autocomplete-option-edit-resource-title = <label>{ $label }</label> bewerken
 autocomplete-option-discard-title = Wijzigingen negeren?
 autocomplete-option-discard-message = Wijzigingen aan { $label } negeren? Dit kan niet ongedaan worden gemaakt.
 autocomplete-option-discard-cancel = Verder bewerken
