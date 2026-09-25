@@ -1,8 +1,13 @@
+import { memo } from "react";
 import type { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { groupChildren } from "@/structure/groupChildren.ts";
 import UIElementChildren from "@/outputs/render/modes/edit/UIElementChildren.tsx";
 
-export default function NodeUIElementChildren({
+// Memoized: NodeUIComponent re-renders whenever useTargetWhereFragments sees a write to a
+// predicate a sh:targetWhere shape watches, but nodeUiElement (and so groupChildren's cached
+// result) only changes when the attached fragments actually do - without this, every such write
+// re-rendered the whole form. Everything below reads its own data reactively.
+export default memo(function NodeUIElementChildren({
   nodeUiElement,
   autoFocusFirst,
 }: {
@@ -20,4 +25,4 @@ export default function NodeUIElementChildren({
     nodeUiElement.widgetRegistry,
   );
   return <UIElementChildren elements={elements} autoFocusFirst={autoFocusFirst} />;
-}
+});

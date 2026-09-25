@@ -36,9 +36,23 @@ function isEditableTarget(target: EventTarget | null): boolean {
   );
 }
 
+// Which edit form Ctrl+Z/Ctrl+Y belongs to when several are on one page (ShaclUIApplication, web
+// components, a nested renderer): the one the user last focused or clicked in. Focus alone isn't
+// enough - a widget swap can drop focus to <body> (see the keydown listener below) - so the claim
+// sticks until another form takes it. The first form to mount holds it until then.
+let undoOwner: symbol | undefined;
+
 export default function EditModeWrapper({ children }: Props) {
-  const { focusNode, shapesGraph, dataGraph, nodeShapes, readOnlyGraph, onSubmit, enableUndoRedo } =
-    useEnvironment();
+  const {
+    focusNode,
+    shapesGraph,
+    dataGraph,
+    importedDataGraph,
+    nodeShapes,
+    readOnlyGraph,
+    onSubmit,
+    enableUndoRedo,
+  } = useEnvironment();
   const hasTriples = useReactiveRead(
     dataGraph,
     focusNode.value,
@@ -110,8 +124,16 @@ export default function EditModeWrapper({ children }: Props) {
     const finalQuads = dataGraph.getQuads();
     const { additions, deletions } = diffQuads(originalQuads, finalQuads);
 
+    // Vocabulary merged in from owl:imports (see Environment.importedDataGraph) isn't the
+    // embedder's own data, so it's left out of the returned graph. It never shows up in additions
+    // (it was already part of the mount-time snapshot); removing one does show up in deletions.
     const store = RdfStore.createDefault();
-    for (const quad of finalQuads) store.addQuad(quad);
+    for (const quad of finalQuads) {
+      const isImported =
+        importedDataGraph !== undefined &&
+        importedDataGraph.getQuads(quad.subject, quad.predicate, quad.object, quad.graph).length > 0;
+      if (!isImported) store.addQuad(quad);
+    }
 
     onSubmit?.({ dataGraph: store, additions, deletions });
   };
@@ -136,8 +158,23 @@ export default function EditModeWrapper({ children }: Props) {
     [],
   );
 
+  const [undoToken] = useState(() => Symbol("edit-form"));
+  useEffect(() => {
+    undoOwner ??= undoToken;
+    return () => {
+      if (undoOwner === undoToken) undoOwner = undefined;
+    };
+  }, [undoToken]);
+  // React focus/pointer events bubble through portals, so a Modal opened from a widget in this
+  // form (portaled to <body>) still claims undo for this form - and a nested form's own claim,
+  // made after its ancestors' in the capture order, wins.
+  const claimUndo = () => {
+    undoOwner = undoToken;
+  };
+
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (undoOwner !== undoToken) return;
       const scope = undoRedoStackRef.current.at(-1) ?? {
         dataGraph,
         enabled: enableUndoRedo ?? true,
@@ -159,13 +196,18 @@ export default function EditModeWrapper({ children }: Props) {
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [dataGraph, enableUndoRedo]);
+  }, [dataGraph, enableUndoRedo, undoToken]);
 
   return (
     <undoRedoScopeContext.Provider value={undoRedoScope}>
       <submitAttemptContext.Provider value={{ hasAttemptedSubmit, markSubmitAttempted }}>
         <ValidationContextProvider latestResultsRef={latestValidationResultsRef}>
-          <form onSubmit={handleSubmit} className="st-edit-mode">
+          <form
+            onSubmit={handleSubmit}
+            onFocusCapture={claimUndo}
+            onPointerDownCapture={claimUndo}
+            className="st-edit-mode"
+          >
             <header className="st-header">
               <InterfaceLanguageSwitcher />
               <ContentLanguageSwitcher />

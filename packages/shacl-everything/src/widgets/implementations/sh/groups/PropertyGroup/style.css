@@ -44,7 +44,6 @@
   font-family: var(--st-font-family);
   display: flex;
   align-items: center;
-  margin-bottom: var(--size-1);
   gap: 8px;
 
   svg {

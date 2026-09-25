@@ -4,6 +4,7 @@ import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import type { GroupWidgetProps } from "@/widgets/types.ts";
 import { Chevron } from "@/helpers/icons.tsx";
+import "./style.css";
 
 export default function CollapsiblePropertyGroup({ group }: GroupWidgetProps) {
   const { mode } = useEnvironment();
@@ -16,8 +17,12 @@ export default function CollapsiblePropertyGroup({ group }: GroupWidgetProps) {
   const UIElementChildren = mode === "view" ? ViewUIElementChildren : EditUIElementChildren;
 
   return (
-    <details className="st-property-group" open data-iri={group.node.value}>
-      <summary className="st-property-group__title st-property-group__legend">
+    <details
+      className="st-property-group st-collapsible-property-group"
+      open
+      data-iri={group.node.value}
+    >
+      <summary className="st-property-group__title st-collapsible-property-group__title st-property-group__legend">
         <Chevron />
         {label}
       </summary>

@@ -1,11 +1,16 @@
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 import type { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { groupChildren } from "@/structure/groupChildren.ts";
 import { environmentContext } from "@/outputs/render/contexts/environmentContext.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import UIElementChildren from "@/outputs/render/modes/view/UIElementChildren.tsx";
 
-export default function NodeUIElementChildren({ nodeUiElement }: { nodeUiElement: NodeUIElement }) {
+// Memoized for the same reason as modes/edit/NodeUIElementChildren.tsx.
+export default memo(function NodeUIElementChildren({
+  nodeUiElement,
+}: {
+  nodeUiElement: NodeUIElement;
+}) {
   const environment = useEnvironment();
   // This view-mode tree can be mounted from inside edit mode (IRIEditor/LabelViewer's
   // enableViewInPlace modal, DetailsViewer for a readOnlyGraph value). Group widgets and editors
@@ -27,4 +32,4 @@ export default function NodeUIElementChildren({ nodeUiElement }: { nodeUiElement
       <UIElementChildren elements={elements} />
     </environmentContext.Provider>
   );
-}
+});

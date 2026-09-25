@@ -64,7 +64,7 @@
   gap: var(--size-1);
   display: flex;
   flex-direction: column;
-  max-width: 100%;
+  min-width: 0;
 }
 
 .st-property-object > *:has(+ .st-property-object__unit) {
@@ -128,6 +128,7 @@
   align-items: center;
   position: relative;
   gap: var(--size-2);
+  min-width: 0;
 }
 
 /* A read-only value's widget (see Environment.readOnlyGraph) is a shui:viewer - typically bare

@@ -2,7 +2,8 @@ import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { RdfStore } from "rdf-stores";
 import { resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
 import { defaultEnvironment, type RawEnvironment } from "@/environment.ts";
-import { ex } from "@/helpers/namespaces.ts";
+import { ex, owl } from "@/helpers/namespaces.ts";
+import { factory } from "@/helpers/factory.ts";
 import { isKnownNotFound } from "@/helpers/notFoundCache.ts";
 
 // The Node test environment has no global localStorage - this reproduces just enough of its
@@ -440,3 +441,69 @@ test("a non-404 fetch failure is not remembered as a 404", async () => {
 
   warnSpy.mockRestore();
 }, 10000);
+
+test("a caller-supplied RdfStore is copied, never mutated by owl:imports merging", async () => {
+  fixtures["http://example.org/b.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:b ex:name "B" .
+  `;
+  const callerStore = RdfStore.createDefault();
+  callerStore.addQuad(
+    factory.quad(ex("a"), owl("imports"), factory.namedNode("http://example.org/b.ttl")),
+  );
+
+  const environment = await resolveRdfSources(rawEnvironment({ dataGraph: callerStore }));
+
+  expect(environment.dataGraph).not.toBe(callerStore);
+  expect(environment.dataGraph.getQuads(ex("b"), ex("name")).length).toBe(1);
+  expect(callerStore.size).toBe(1);
+});
+
+test("importedDataGraph records exactly the triples owl:imports added to dataGraph", async () => {
+  fixtures["http://example.org/a.ttl"] = `
+    @prefix owl: <http://www.w3.org/2002/07/owl#> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://example.org/b.ttl> .
+    ex:a ex:name "A" .
+    ex:shared ex:name "Shared" .
+  `;
+  fixtures["http://example.org/b.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:b ex:name "B" .
+    ex:shared ex:name "Shared" .
+  `;
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }),
+  );
+
+  // ex:shared is asserted by the data itself too, so it isn't "imported".
+  const imported = environment.importedDataGraph!.getQuads().map((quad) => quad.subject.value);
+  expect(imported).toEqual([ex("b").value]);
+});
+
+test("importedDataGraph leaves out a triple one source imports but another asserts", async () => {
+  fixtures["http://example.org/a.ttl"] = `
+    @prefix owl: <http://www.w3.org/2002/07/owl#> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://example.org/b.ttl> .
+  `;
+  fixtures["http://example.org/b.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:b ex:name "B" .
+    ex:c ex:name "C" .
+  `;
+  fixtures["http://example.org/c.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:c ex:name "C" .
+  `;
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({
+      dataGraph: [new URL("http://example.org/a.ttl"), new URL("http://example.org/c.ttl")],
+    }),
+  );
+
+  const imported = environment.importedDataGraph!.getQuads().map((quad) => quad.subject.value);
+  expect(imported).toEqual([ex("b").value]);
+});

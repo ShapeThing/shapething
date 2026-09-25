@@ -1,4 +1,4 @@
-import type { Quad, Quad_Subject, Term } from "@rdfjs/types";
+import type { Quad_Subject, Term } from "@rdfjs/types";
 import "./style.css";
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -6,8 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Localized } from "@fluent/react";
 import { RdfStore } from "rdf-stores";
 import { Edit } from "@/helpers/icons.tsx";
-import { diffQuads } from "@/helpers/diffQuads.ts";
-import { makeReactive, transact } from "@/helpers/reactiveRdfStore.ts";
+import { createStagingGraph, type StagingGraph } from "@/helpers/stagingGraph.ts";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
@@ -31,10 +30,9 @@ export type ResourceEditor = {
   nodeShapes: Quad_Subject[];
 };
 
-// The nested editor works against its own copy of the whole graph rather than
+// The nested editor works against a StagingGraph (helpers/stagingGraph.ts) rather than
 // `resourceEditor.dataGraph` directly, so edits only become real once Update is clicked - closing
 // without submitting (or discarding a confirm prompt) can throw them away with nothing to undo.
-type Staging = { dataGraph: RdfStore; originalQuads: Quad[] };
 
 type Props = {
   term: Term;
@@ -52,7 +50,7 @@ type Props = {
  * and IRIEditor.
  */
 export default function ResourceEditButton({ term, label, resourceEditor, className }: Props) {
-  const [staging, setStaging] = useState<Staging | undefined>(undefined);
+  const [staging, setStaging] = useState<StagingGraph | undefined>(undefined);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
   const { enableEditInPlace } = useEnvironment();
   const queryClient = useQueryClient();
@@ -87,26 +85,15 @@ export default function ResourceEditButton({ term, label, resourceEditor, classN
 
   const openEditor = () => {
     if (!resourceEditor) return;
-    const originalQuads = resourceEditor.dataGraph.getQuads();
-    // Populated *before* wrapping in makeReactive(), so copying the whole outer graph into the
-    // staging store isn't itself recorded as undo-able history - undo/redo inside this modal
-    // should only ever see the user's own edits, not the initial snapshot they started from.
-    const plainStore = RdfStore.createDefault();
-    for (const quad of originalQuads) plainStore.addQuad(quad);
-    const stagingDataGraph = makeReactive(plainStore);
-    setStaging({ dataGraph: stagingDataGraph, originalQuads });
+    setStaging(createStagingGraph(resourceEditor.dataGraph));
     setConfirmDiscard(false);
   };
 
   // Applies the staged edits as the additions/deletions they actually are (not a blanket
   // replace-everything), the same way the outer form's own submit does - see EditModeWrapper.
   const commitEditor = () => {
-    if (!staging || !resourceEditor) return;
-    const { additions, deletions } = diffQuads(staging.originalQuads, staging.dataGraph.getQuads());
-    transact(resourceEditor.dataGraph, () => {
-      for (const quad of deletions) resourceEditor.dataGraph.removeQuad(quad);
-      for (const quad of additions) resourceEditor.dataGraph.addQuad(quad);
-    });
+    if (!staging) return;
+    staging.commit();
     setStaging(undefined);
     setConfirmDiscard(false);
     // The edited resource's own label/classification/depiction (shown on the closed trigger and in the
@@ -122,7 +109,7 @@ export default function ResourceEditButton({ term, label, resourceEditor, classN
   // asks first, since the staged edits would otherwise be silently thrown away.
   const requestCloseEditor = () => {
     if (!staging) return;
-    const { additions, deletions } = diffQuads(staging.originalQuads, staging.dataGraph.getQuads());
+    const { additions, deletions } = staging.changes();
     if (additions.length === 0 && deletions.length === 0) {
       setStaging(undefined);
       return;

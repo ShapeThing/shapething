@@ -94,8 +94,13 @@ export const doneWritesTheNewInstanceAndLinksIt: Story = {
     await userEvent.click(within(dialog).getByRole("button", { name: "Done" }));
     await waitFor(() => expect(canvas.queryByRole("dialog")).toBeNull());
 
-    // (Not asserting the closed trigger's label here: InstancesSelectEditor doesn't re-resolve it
-    // for the freshly-adopted value today - same before useCreateInPlace existed.)
+    // The closed trigger shows the freshly-adopted instance by its new label.
+    await waitFor(() => {
+      const trigger = canvasElement.querySelector(
+        '[data-widget="InstancesSelectEditor"] [aria-haspopup="listbox"], [data-widget="InstancesSelectEditor"] .st-select',
+      );
+      expect(trigger?.textContent).toContain("Umbrella Corp");
+    });
     const result = await submit(canvasElement);
     expect(result.deletions).toEqual([]);
     const subject = result.additions.find((quad) => quad.predicate.value.endsWith("#type"))?.subject;

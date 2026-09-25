@@ -194,3 +194,39 @@ export const writingOneValueOnlyRerendersThatSlot: Story = {
     for (const letter of letters.filter((letter) => letter !== "b")) expect(delta[letter]).toBe(0);
   },
 };
+
+// Same form plus a sh:targetWhere fragment that watches ex:b - so a write to "b" does re-run
+// useTargetWhereFragments (and re-render NodeUIComponent), but the fragment never matches, so the
+// attached set stays empty and nothing below NodeUIComponent may re-render for it.
+const targetWhereArgs = {
+  ...args,
+  shapesGraph: `${shapesGraph}
+  ex:fragment a sh:NodeShape ;
+    sh:targetWhere [ sh:property [ sh:path ex:b ; sh:hasValue "never" ] ] ;
+    sh:property [ sh:name "Extra"@en ; sh:path ex:extra ] .
+`,
+};
+
+export const writingAWatchedValueOnlyRerendersThatSlot: Story = {
+  name: "Writing a sh:targetWhere-watched value doesn't re-render the other values' slots",
+  render: (storyArgs) => <ShaclRenderer {...storyArgs} widgets={widgets} />,
+  args: targetWhereArgs,
+  play: async ({ canvasElement }) => {
+    const inputs = await findInputs(canvasElement);
+    await settle(500);
+    const before = new Map(renderCounts);
+
+    inputs[1].focus();
+    await userEvent.type(inputs[1], "2");
+    inputs[1].blur();
+    await settle(500);
+
+    const delta = rendersSince(before);
+    console.info("[slot-render-isolation] renders per slot for one watched write:", delta);
+
+    expect(delta.b).toBeGreaterThan(0);
+    for (const letter of letters.filter((letter) => letter !== "b")) expect(delta[letter]).toBe(0);
+    // The fragment never matched, so its field never appeared.
+    expect(canvasElement.textContent).not.toContain("Extra");
+  },
+};

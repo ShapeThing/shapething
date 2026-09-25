@@ -28,6 +28,11 @@ export type Environment = {
   // be directly editable. Unset (the default) means nothing is read-only, same as before this field
   // existed. Ignored outside mode "edit".
   readOnlyGraph?: RdfStore;
+  // Filled in by preprocessing, not by callers: the triples dataGraph gained from its owl:imports
+  // (and not asserted by the data itself). They stay in dataGraph so labels/class hierarchies from
+  // imported vocabulary still resolve, but this separate record lets SubmitResult.dataGraph leave
+  // them out - an embedder gets back only its own data, not the vocabulary it pulled in.
+  importedDataGraph?: RdfStore;
   // The pluggable widget set to resolve editors/viewers/groups from (see widgets/types.ts's
   // Widgets, widgets/registry.ts's defaultWidgets). Left unset here - same convention as
   // scoresGraph starting empty - and filled in by preprocess/widgets.ts's resolveWidgets, which

@@ -198,12 +198,16 @@ const parseRdfText = (text: string, prefixSink?: Map<string, string>): Promise<R
 // into its own store, and quadCache (shared across all of them) already dedups the fetch itself -
 // sharing visitedImports too would make whichever store claims an href first "consume" it, leaving
 // the others without the merge.
+//
+// `importedSink`, when given, receives every quad an import actually added (one the store didn't
+// already assert itself), so a caller can tell asserted triples from merged-in vocabulary.
 const resolveOwlImports = async (
   store: RdfStore,
   quadCache: Map<string, Promise<Quad[]>>,
   visitedImports: Set<string>,
   corsProxyUrl: string | undefined,
   prefixSink?: Map<string, string>,
+  importedSink?: RdfStore,
 ): Promise<void> => {
   const importUrls = new Set<string>();
   for (const quad of store.getQuads(null, owl("imports"), null, null)) {
@@ -235,10 +239,12 @@ const resolveOwlImports = async (
       );
       continue;
     }
-    for (const quad of result.value.getQuads()) store.addQuad(quad);
+    for (const quad of result.value.getQuads()) {
+      if (store.addQuad(quad)) importedSink?.addQuad(quad);
+    }
   }
 
-  await resolveOwlImports(store, quadCache, visitedImports, corsProxyUrl, prefixSink);
+  await resolveOwlImports(store, quadCache, visitedImports, corsProxyUrl, prefixSink, importedSink);
 };
 
 // Bootstraps shapesGraph from the DATA graph's own sh:shape declarations (3.1.3.7 Explicit shape
@@ -307,27 +313,51 @@ const isQuad = (value: unknown): value is Quad =>
 const isRdfSourceList = (source: RdfSource): source is readonly RdfSource[] =>
   Array.isArray(source) && source.length > 0 && !isQuad(source[0]);
 
+// An already-materialized RdfStore source is copied, never used as-is: the result gets owl:imports
+// merged into it, preprocessing may add to it (missing shapes, dereferenced labels), and a
+// dataGraph is then edited in place by widgets - none of which may leak into a store the caller
+// still holds (and may be sharing with other renderers, e.g. ShaclUIApplication's items).
+const copyStore = (source: RdfStore): RdfStore => {
+  const copy = RdfStore.createDefault();
+  for (const quad of source.getQuads()) copy.addQuad(quad);
+  return copy;
+};
+
 export const resolveRdfSource = async (
   source: RdfSource,
   quadCache: Map<string, Promise<Quad[]>>,
   corsProxyUrl: string | undefined,
   prefixSink?: Map<string, string>,
+  importedSink?: RdfStore,
 ): Promise<RdfStore> => {
   if (isRdfSourceList(source)) {
+    const sinks = source.map(() => RdfStore.createDefault());
     const stores = await Promise.all(
-      source.map((nestedSource) =>
-        resolveRdfSource(nestedSource, quadCache, corsProxyUrl, prefixSink)
+      source.map((nestedSource, index) =>
+        resolveRdfSource(nestedSource, quadCache, corsProxyUrl, prefixSink, sinks[index])
       ),
     );
     const merged = RdfStore.createDefault();
     for (const store of stores) {
       for (const quad of store.getQuads()) merged.addQuad(quad);
     }
+    // A quad counts as imported only when no source in the list asserts it itself.
+    if (importedSink) {
+      const has = (store: RdfStore, quad: Quad) =>
+        store.getQuads(quad.subject, quad.predicate, quad.object, quad.graph).length > 0;
+      const assertedElsewhere = (quad: Quad) =>
+        stores.some((store, index) => has(store, quad) && !has(sinks[index], quad));
+      for (const sink of sinks) {
+        for (const quad of sink.getQuads()) {
+          if (!assertedElsewhere(quad)) importedSink.addQuad(quad);
+        }
+      }
+    }
     return merged;
   }
 
   const store = source instanceof RdfStore
-    ? source
+    ? copyStore(source)
     : source instanceof URL
     ? await dereferenceUrl(source, quadCache, corsProxyUrl, prefixSink)
     : Array.isArray(source)
@@ -336,7 +366,14 @@ export const resolveRdfSource = async (
     ? await parseRdfText(source, prefixSink)
     : storeFromQuads(source);
 
-  await resolveOwlImports(store, quadCache, new Set<string>(), corsProxyUrl, prefixSink);
+  await resolveOwlImports(
+    store,
+    quadCache,
+    new Set<string>(),
+    corsProxyUrl,
+    prefixSink,
+    importedSink,
+  );
   return store;
 };
 
@@ -349,10 +386,11 @@ export const resolveRdfSources = async (
   // `@prefix` declarations to the result - see dereferenceUrl's doc comment.
   const sourcePrefixes = new Map<string, string>();
   const { corsProxyUrl } = raw;
+  const importedDataGraph = RdfStore.createDefault();
   const [resolvedShapesGraph, dataGraph, scoresGraph, readOnlyGraph] =
     await Promise.all([
       resolveRdfSource(raw.shapesGraph, quadCache, corsProxyUrl, sourcePrefixes),
-      resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl, sourcePrefixes),
+      resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl, sourcePrefixes, importedDataGraph),
       resolveRdfSource(raw.scoresGraph, quadCache, corsProxyUrl),
       raw.readOnlyGraph !== undefined
         ? resolveRdfSource(raw.readOnlyGraph, quadCache, corsProxyUrl)
@@ -386,6 +424,7 @@ export const resolveRdfSources = async (
     dataGraph,
     scoresGraph,
     readOnlyGraph,
+    importedDataGraph,
     nodeShapes: raw.nodeShapes?.length ? raw.nodeShapes : nodeShapes,
     sourcePrefixes: Object.fromEntries(sourcePrefixes),
   };

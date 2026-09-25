@@ -33,8 +33,10 @@ jobs:
 
       # turbo.json's test task depends on ^build, so workspace dependencies (resource-fetcher's
       # dist for shacl-everything's Storybook fixtures, shacl-everything's dist for shacl-manager)
-      # are built first.
+      # are built first. --concurrency=1 keeps the two browser-mode suites from running headless
+      # Chromium side by side: together they exhausted the runner's memory and the page crashed
+      # mid-run ("Browser connection was closed while running tests").
       - name: Run tests
-        run: pnpm run test
+        run: pnpm exec turbo run test --concurrency=1
         env:
           CI: true

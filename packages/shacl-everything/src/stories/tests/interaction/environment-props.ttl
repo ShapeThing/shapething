@@ -1,0 +1,27 @@
+@prefix ex: <http://example.org/>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Given name"@en ;
+        sh:path schema:givenName ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    owl:imports <environment-props-vocabulary.ttl> ;
+    .
+
+<#other>
+    a schema:Person ;
+    schema:givenName "Grace" ;
+    .

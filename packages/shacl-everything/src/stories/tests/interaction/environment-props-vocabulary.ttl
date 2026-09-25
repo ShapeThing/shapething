@@ -1,0 +1,5 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+
+# Imported (via owl:imports) by environment-props.ttl's own data - vocabulary, not data.
+ex:Person rdfs:label "Person"@en .

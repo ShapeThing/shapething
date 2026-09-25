@@ -14,6 +14,13 @@ export default function InterfaceLanguageProvider({
   children: ReactNode;
 }) {
   const [activeInterfaceLanguage, setActiveInterfaceLanguage] = useState<BCP47>(interfaceLanguage);
+  // interfaceLanguage is a live prop (see environmentProps.ts): a new value from the embedder
+  // switches the active language, while the user's own switcher pick sticks until then.
+  const [seededFrom, setSeededFrom] = useState(interfaceLanguage);
+  if (seededFrom !== interfaceLanguage) {
+    setSeededFrom(interfaceLanguage);
+    setActiveInterfaceLanguage(interfaceLanguage);
+  }
 
   return (
     <interfaceLanguageContext.Provider
