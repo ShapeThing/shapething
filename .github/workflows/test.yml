@@ -40,3 +40,6 @@ jobs:
         run: pnpm exec turbo run test --concurrency=1
         env:
           CI: true
+          # Playwright's browser-process log: when headless Chromium dies mid-run ("Browser
+          # connection was closed while running tests"), this records why (OOM kill, renderer crash).
+          DEBUG: pw:browser

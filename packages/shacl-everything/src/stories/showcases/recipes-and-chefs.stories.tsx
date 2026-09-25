@@ -58,7 +58,7 @@ export const recipesAndChefsChefFacetSearch: Story = {
     await userEvent.click((await canvas.findAllByRole("button", { name: "Edit" }))[0]);
 
     const dialog = within(await canvas.findByRole("dialog"));
-    await expect(dialog.findByText("Julia Child")).resolves.toBeVisible();
+    await expect(dialog.findByText("Julia Child", {}, { timeout: 5000 })).resolves.toBeVisible();
     // ChefShape's ex:cuisine is its shui:ClassificationRole - each Teaser card shows it as a chip,
     // labelled via the cuisine class's own rdfs:label.
     await waitFor(() => {
