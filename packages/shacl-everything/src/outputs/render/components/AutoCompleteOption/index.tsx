@@ -5,8 +5,9 @@ import { Link } from "@/helpers/icons.tsx";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
-import { stringToGradient } from "string-to-color-gradient";
-import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
+import ClassificationChip, {
+  type Classification,
+} from "@/outputs/render/components/ClassificationChip/index.tsx";
 import ResourceEditButton, {
   type ResourceEditor,
 } from "@/outputs/render/components/ResourceEditButton/index.tsx";
@@ -16,7 +17,7 @@ export type { ResourceEditor };
 type Props = {
   term: Term;
   label?: string;
-  classification?: { term: Term; label: string; color?: string };
+  classification?: Classification;
   depiction?: NamedNode;
   highlight?: string;
   // Only passed for the currently selected value (never for a row in a dropdown list) - see
@@ -39,13 +40,6 @@ export default function AutoCompleteOption({
   const displayLabel = label ?? localNameLabel(term) ?? term.value;
   const isDirectRenderable =
     depiction?.value.includes(".svg") || depiction?.value.includes("data:");
-
-  // st:ColorRole (resolved via classification.color, see resolution/label.ts's valueNodeColor)
-  // wins when the classification's own class declares one - the hash-derived gradient is only a
-  // fallback for the (far more common) case where no such role is declared.
-  const classificationColors = classification?.color
-    ? [classification.color]
-    : stringToGradient(classification?.label ?? "", { brightness: "light" });
 
   return (
     <span className="st-autocomplete-option">
@@ -70,16 +64,7 @@ export default function AutoCompleteOption({
           {highlightMatches(displayLabel, highlight, "st-autocomplete-option__match")}
           &nbsp;&nbsp;
         </span>
-        {classification && (
-          <>
-            <ValueChip
-              colors={classificationColors}
-              label={classification.label}
-              size="small"
-              term={classification.term}
-            />
-          </>
-        )}
+        {classification && <ClassificationChip classification={classification} />}
       </span>
       <span className="st-autocomplete-option__content">
         {term.termType === "NamedNode" && (

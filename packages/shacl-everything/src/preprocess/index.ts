@@ -8,6 +8,7 @@ import { resolveScoresGraph } from "@/preprocess/scoresGraph.ts";
 import { resolveWidgets } from "@/preprocess/widgets.ts";
 import {
   addMissingShapes,
+  addSuperClassShapes,
   mergeFacetTextSearchProperties,
 } from "@/preprocess/shapes.ts";
 import { dereferenceMissingPropertyNames } from "@/preprocess/ontologyLabels.ts";
@@ -25,6 +26,7 @@ export const defaultPreprocessors: readonly Preprocessor[] = [
   resolveWidgets,
   resolveScoresGraph,
   addMissingShapes,
+  addSuperClassShapes,
   dereferenceMissingPropertyNames,
   mergeFacetTextSearchProperties,
 ];

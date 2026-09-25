@@ -54,6 +54,7 @@ autocomplete-search-error = Search failed
 autocomplete-facet-search-title = Select a value for { $label }
 address-search-placeholder =
     .placeholder = Search for an address…
+editor-js-placeholder = Add some content…
 autocomplete-edit-value =
     .aria-label = Edit
 autocomplete-option-edit-resource =

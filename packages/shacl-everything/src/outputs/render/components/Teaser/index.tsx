@@ -1,15 +1,16 @@
 import { useState } from "react";
 import type { NamedNode, Term } from "@rdfjs/types";
-import { stringToGradient } from "string-to-color-gradient";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
-import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
+import ClassificationChip, {
+  type Classification,
+} from "@/outputs/render/components/ClassificationChip/index.tsx";
 import "./style.css";
 
 type Props = {
   term: Term;
   label?: string;
-  classification?: { term: Term; label: string; color?: string };
+  classification?: Classification;
   depiction?: NamedNode;
   // A longer, free-text summary (see resolution/label.ts's valueNodeDescription/st:DescriptionRole
   // - a ShapeThing-original property role, not part of the shui: spec) - shown as a clamped
@@ -39,11 +40,6 @@ export default function Teaser({
   const displayLabel = label ?? localNameLabel(term) ?? term.value;
   const isDirectRenderable =
     depiction?.value.includes(".svg") || depiction?.value.includes("data:");
-  // st:ColorRole (classification.color, see resolution/label.ts's valueNodeColor) wins over the
-  // hash-derived gradient, same as AutoCompleteOption's own chip.
-  const classificationColors = classification?.color
-    ? [classification.color]
-    : stringToGradient(classification?.label ?? "", { brightness: "light" });
 
   return (
     <span className="st-teaser">
@@ -68,14 +64,7 @@ export default function Teaser({
           <span className="st-teaser__title">
             {highlightMatches(displayLabel, highlight, "st-teaser__match")}
           </span>
-          {classification && (
-            <ValueChip
-              colors={classificationColors}
-              label={classification.label}
-              size="small"
-              term={classification.term}
-            />
-          )}
+          {classification && <ClassificationChip classification={classification} />}
         </span>
         {description && <span className="st-teaser__description">{description}</span>}
       </span>

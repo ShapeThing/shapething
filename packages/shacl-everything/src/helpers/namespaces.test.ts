@@ -47,6 +47,7 @@ test("prefixes - maps every namespace alias to its base IRI", () => {
     faker: "https://fakerjs.dev/",
     skos: "http://www.w3.org/2004/02/skos/core#",
     skosxl: "http://www.w3.org/2008/05/skos-xl#",
+    ed: "https://editorjs.io/",
     shui: "http://www.w3.org/ns/shacl-ui/",
     st: "http://shapething.com/",
     foaf: "http://xmlns.com/foaf/0.1/",

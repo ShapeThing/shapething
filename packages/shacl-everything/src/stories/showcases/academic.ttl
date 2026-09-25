@@ -192,7 +192,6 @@ ex:ResearcherShape a sh:NodeShape ;
         sh:order 6;
         sh:minCount 1 ;
         sh:name "Nationality"@en, "Nationaliteit"@nl ;
-        sh:description "Link to a country IRI (e.g., ISO 3166 vocabulary)."@en, "Link naar een land-IRI (bijv. ISO 3166-vocabulaire)."@nl ;
     ] ;
 
     sh:property [

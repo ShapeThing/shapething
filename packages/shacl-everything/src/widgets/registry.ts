@@ -40,6 +40,7 @@ const lazyComponentLoaders = import.meta.glob([
   "/src/widgets/implementations/st/editors/GeoEditor/widget.tsx",
   "/src/widgets/implementations/shui/editors/RichTextEditor/widget.tsx",
   "/src/widgets/implementations/shui/viewers/HTMLViewer/widget.tsx",
+  "/src/widgets/implementations/st/editors/EditorJsEditor/widget.tsx",
 ]) as Record<string, () => Promise<{ default: WidgetComponent }>>;
 
 // MapFacet shares MapViewer/GeoEditor's own maplibre-gl+geoman+maplibre-gl-geo-editor footprint -
@@ -58,6 +59,7 @@ const eagerComponents = import.meta.glob(
     "!/src/widgets/implementations/shui/editors/RichTextEditor/widget.tsx",
     "!/src/widgets/implementations/shui/viewers/HTMLViewer/widget.tsx",
     "!/src/widgets/implementations/st/facets/MapFacet/widget.tsx",
+    "!/src/widgets/implementations/st/editors/EditorJsEditor/widget.tsx",
   ],
   { eager: true, import: "default" },
 ) as Record<

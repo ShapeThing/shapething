@@ -68,6 +68,7 @@ export default function FormElement({
         {label && (
           <label
             className="st-form-element__label"
+            data-show-colon={showColon || undefined}
             id={labelId}
             htmlFor={htmlFor}
             lang={activeInterfaceLanguage}
@@ -93,11 +94,6 @@ export default function FormElement({
                   </span>
                 </Localized>
               </Tooltip>
-            )}
-            {showColon && label && (
-              <span className="st-form-element__label-colon" aria-hidden>
-                :
-              </span>
             )}
           </label>
         )}

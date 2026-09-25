@@ -1,4 +1,5 @@
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
+import { hslToHex } from "@/helpers/colorBuckets.ts";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { factory } from "@/helpers/factory.ts";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
@@ -725,18 +726,35 @@ type ValueNodeColorOptions = {
  * V's own rdf:type values (see ownClassNodeShapes/colorRolePropertyPaths) - unlike
  * valueNodeDepiction/valueNodeDescription (resolved via propertyShape's own valueNodeShapes), this
  * is resolved off what V is actually asserted to BE, not what the enclosing property declares its
- * values look like. Returned as-is (a plain CSS color string, e.g. "#ff0000" or "red" - unrelated
- * to st:ColorEditor/st:ColorViewer's own HSL-blank-node convention, which is a different, richer
- * value shape for editable colors, not a simple swatch-only string) - no language selection, since
- * color isn't language-dependent. Undefined when V is a literal (no rdf:type of its own) or no
- * such value exists.
+ * values look like. A literal value is returned as-is (a plain CSS color string, e.g. "#ff0000" or
+ * "red"); a blank node in st:ColorEditor/st:ColorViewer's own HSL convention (st:hue/
+ * st:saturation/st:lightness, see helpers/colorBuckets.ts's Hsl) is converted to hex, same as
+ * ColorViewer does for display - no language selection, since color isn't language-dependent.
+ * Undefined when V is a literal (no rdf:type of its own) or no such value exists.
  */
 export function valueNodeColor({ term, propertyShape }: ValueNodeColorOptions): string | undefined {
   if (term.termType === "Literal") return undefined;
 
   const { dataGraph, shapesGraph } = propertyShape;
 
-  return colorRolePropertyPaths(term, dataGraph, shapesGraph)
-    .flatMap((path) => walkPropertyPath(path, term, dataGraph))
-    .find((value): value is Literal => value.termType === "Literal")?.value;
+  for (const value of colorRolePropertyPaths(term, dataGraph, shapesGraph)
+    .flatMap((path) => walkPropertyPath(path, term, dataGraph))) {
+    if (value.termType === "Literal") return value.value;
+    const hex = hslNodeToHex(value, dataGraph);
+    if (hex) return hex;
+  }
+  return undefined;
+}
+
+// An st:ColorEditor-style HSL blank node's hex, or undefined when it doesn't carry all three
+// st:hue/st:saturation/st:lightness triples (yet) - same partial-node handling as ColorViewer.
+function hslNodeToHex(node: Term, dataGraph: RdfStore): string | undefined {
+  if (node.termType !== "BlankNode" && node.termType !== "NamedNode") return undefined;
+  const read = (predicate: NamedNode) =>
+    dataGraph.getQuads(node as Quad_Subject, predicate)[0]?.object.value;
+  const h = read(st("hue"));
+  const s = read(st("saturation"));
+  const l = read(st("lightness"));
+  if (h === undefined || s === undefined || l === undefined) return undefined;
+  return hslToHex({ h: parseFloat(h), s: parseFloat(s), l: parseFloat(l) });
 }

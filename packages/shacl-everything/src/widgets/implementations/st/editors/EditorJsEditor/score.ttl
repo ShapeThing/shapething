@@ -1,0 +1,41 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX ed: <https://editorjs.io/>
+
+st:EditorJsEditor rdfs:label "Block Editor"@en, "Blokeditor"@nl .
+
+# Unlike AddressEditor/ColorEditor, an Editor.js document does carry a signal of its own:
+# outputData.ts always types the node ed:OutputData. Same two rules as shacl-renderer's own
+# EditorJsEditor/meta.ts score() (a value already typed so, or a property shape declaring
+# sh:class ed:OutputData), but reweighted: the original's 20/10 only had to beat DetailsEditor's
+# 0, whereas here BlankNodeEditor scores 30 for any blank node, and AutoCompleteEditor/
+# InstancesSelectEditor 40 for any IRI value under a sh:class constraint.
+st:editorJsEditorScore60
+    a shui:WidgetScore ;
+    shui:editor st:EditorJsEditor ;
+    shui:score 60 ;
+    shui:dataGraphShape st:isEditorJsOutputData ;
+.
+
+st:editorJsEditorScore40
+    a shui:WidgetScore ;
+    shui:editor st:EditorJsEditor ;
+    shui:score 40 ;
+    shui:shapesGraphShape st:hasEditorJsOutputDataClassConstraint ;
+.
+
+st:isEditorJsOutputData
+    a sh:NodeShape ;
+    sh:class ed:OutputData ;
+.
+
+st:hasEditorJsOutputDataClassConstraint
+    a sh:NodeShape ;
+    sh:property [
+        sh:path sh:class ;
+        sh:minCount 1 ;
+        sh:hasValue ed:OutputData ;
+    ] ;
+.

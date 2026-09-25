@@ -33,6 +33,26 @@ export const stColorRoleClassificationChip: Story = {
   },
 };
 
+// Same chip, but the swatch is an st:ColorEditor-style HSL blank node instead of a CSS literal -
+// resolved to hex the same way st:ColorViewer displays it.
+export const stColorRoleClassificationChipHsl: Story = {
+  name: "Classification chip colored via an HSL st:ColorRole node",
+  args: argsByTestFile("st-color-role-classification-hsl.ttl", import.meta.url),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(canvas.findByText("Transport")).resolves.toBeVisible();
+    const chip = await waitFor(() => {
+      const element = canvasElement.querySelector<HTMLElement>(".st-value-chip");
+      if (!element) throw new Error("Could not find the classification chip");
+      return element;
+    });
+
+    expect(chip.className).toContain("st-value-chip--colored--1");
+    expect(chip.style.getPropertyValue("--color-0")).toBe("#a855f7");
+  },
+};
+
 // st:CategoryFacet applies the same lookup to each option value directly.
 export const stColorRoleCategoryFacet: Story = {
   name: "Facet options show a st:ColorRole swatch",

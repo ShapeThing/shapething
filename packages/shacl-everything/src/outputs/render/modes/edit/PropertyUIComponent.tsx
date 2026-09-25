@@ -73,19 +73,6 @@ export default function PropertyUIComponent({
   const showSearchIcon = Boolean(searchQuery);
   const searchEndpoints = searchQuery ? extractServiceEndpoints(searchQuery) : [];
   const listFormat = new Intl.ListFormat(activeInterfaceLanguage, { type: "conjunction" });
-  // Shown right after the globe icon as a compact "where does this come from" hint - just the
-  // hostname(s), so the label row stays short; the tooltip keeps the full endpoint URLs.
-  const searchHosts = [
-    ...new Set(
-      searchEndpoints.map((endpoint) => {
-        try {
-          return new URL(endpoint).hostname;
-        } catch {
-          return endpoint;
-        }
-      }),
-    ),
-  ];
 
   // Real SHACL validation results for this property (see ValidationContextProvider) - both
   // property-wide (e.g. sh:minCount, no `value`) and per-value (e.g. sh:pattern tied to one

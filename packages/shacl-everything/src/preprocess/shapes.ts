@@ -6,7 +6,11 @@ import { factory } from "@/helpers/factory.ts";
 import { rdf, rdfs, sh, st, xsd } from "@/helpers/namespaces.ts";
 import { getRdfList, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { termKey } from "@/helpers/termKey.ts";
-import { facetableRootShapes, shapesTargetingClass } from "@/resolution/targets.ts";
+import {
+  facetableRootShapes,
+  shapesForClass,
+  withSuperClassShapes,
+} from "@/resolution/targets.ts";
 
 // Every distinct rdf:type object used anywhere in `dataGraph`. Blank-node "classes" are excluded -
 // sh:targetClass can only ever point at a NamedNode, so a blank-node type could never be covered by
@@ -23,29 +27,8 @@ function classesUsedInData(dataGraph: RdfStore): NamedNode[] {
   return classes;
 }
 
-// Same target kinds resolution/targets.ts's targetsOfShape recognizes as covering a class: an
-// explicit sh:targetClass (3.1.3.2) declarer, or classIri acting as its own implicit class-shape/
-// sh:ShapeClass (3.1.3.3). Used both to find what a class already has declared
-// (predicatesCoveredByShapeNodes) and, when something's still missing, which existing shape node to
-// attach the gap-filling sh:property to - so an already-authored shape's own identity/groups/etc
-// are left untouched and only the gap itself is added (see addMissingShapes below).
-function shapeNodesForClass(classIri: NamedNode, shapesGraph: RdfStore): Quad_Subject[] {
-  const nodes = shapesTargetingClass(classIri, shapesGraph);
-
-  const isShapeClass =
-    shapesGraph.getQuads(classIri, rdf("type"), sh("ShapeClass")).length > 0;
-  const isExplicitShapeAndClass =
-    (shapesGraph.getQuads(classIri, rdf("type"), sh("NodeShape")).length > 0 ||
-      shapesGraph.getQuads(classIri, rdf("type"), sh("PropertyShape")).length >
-        0) &&
-    shapesGraph.getQuads(classIri, rdf("type"), rdfs("Class")).length > 0;
-  if (isShapeClass || isExplicitShapeAndClass) nodes.push(classIri);
-
-  return nodes;
-}
-
 // Every predicate already declared via a plain sh:property/sh:path on any shape node in
-// `shapeNodes` (shapeNodesForClass's own result for a class) OR on a shape reachable from one of
+// `shapeNodes` (shapesForClass's own result for a class) OR on a shape reachable from one of
 // them via sh:and/sh:node, plus every predicate any of those shape nodes lists under
 // sh:ignoredProperties (7.9.1's sh:closed companion - a shape author explicitly declaring a
 // predicate as ignored is declaring it out of scope for that shape just as deliberately as
@@ -210,7 +193,7 @@ function inferredConstraints(
  * Opt-in (Environment.enableMissingShapesGeneration, off by default) shape inference: for every
  * class found via rdf:type anywhere in dataGraph, tops up one bare sh:property/sh:path for each
  * predicate actually used by that class's own instances that isn't already covered by any shape
- * node already targeting the class (shapeNodesForClass/predicatesCoveredByShapeNodes) - this is a
+ * node already targeting the class (shapesForClass/predicatesCoveredByShapeNodes) - this is a
  * per-predicate gap-fill, not an all-or-nothing "does this class have a shape at all" check: a
  * class with an existing-but-incomplete shape still gets its missing predicates added, right onto
  * that same existing shape node, so data that's only partially shaped still renders every field
@@ -229,7 +212,7 @@ function inferredConstraints(
  * predictable: a caller who already knows the class IRI (e.g. to set Environment.nodeShapes) can
  * reference it directly, with no need to inspect the generated shapesGraph first to find an opaque
  * generated id. When the class already has at least one shape node, the missing properties are
- * attached to the first one shapeNodesForClass finds instead, so an existing shape's own
+ * attached to the first one shapesForClass finds instead, so an existing shape's own
  * identity/groups/etc are left completely untouched - only the properties it's missing are added.
  *
  * Deliberately minimal beyond that: a generated property shape carries no sh:name/sh:maxCount/
@@ -264,7 +247,7 @@ export const addMissingShapes: Preprocessor = (environment) => {
   }
 
   for (const classIri of classesUsedInData(dataGraph)) {
-    const shapeNodes = shapeNodesForClass(classIri, shapesGraph);
+    const shapeNodes = shapesForClass(classIri, shapesGraph);
     const coveredPredicates = predicatesCoveredByShapeNodes(shapeNodes, shapesGraph);
 
     const predicates = predicatesUsedByInstancesOf(classIri, dataGraph).filter(
@@ -375,4 +358,23 @@ export const mergeFacetTextSearchProperties: Preprocessor = (environment) => {
   }
 
   return { ...environment, shapesGraph };
+};
+
+/**
+ * Expands `nodeShapes` with the shapes of every superclass of a class they cover (see
+ * resolution/targets.ts's withSuperClassShapes), so naming only the most specific shape - e.g.
+ * ManagerShape for a Manager ⊑ Employee ⊑ Person chain - still renders Employee's and Person's
+ * fields too. Runs after addMissingShapes so a minted class-shape participates as well. Facet mode
+ * has no focus node and treats nodeShapes as an allow-list instead, so it's left untouched there.
+ */
+export const addSuperClassShapes: Preprocessor = (environment) => {
+  if (environment.mode === "facet" || environment.nodeShapes.length === 0) return environment;
+  return {
+    ...environment,
+    nodeShapes: withSuperClassShapes(
+      environment.nodeShapes,
+      environment.shapesGraph as RdfStore,
+      environment.dataGraph as RdfStore,
+    ),
+  };
 };

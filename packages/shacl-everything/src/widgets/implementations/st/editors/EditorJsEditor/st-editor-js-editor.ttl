@@ -1,0 +1,68 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ed: <https://editorjs.io/>.
+
+# No shui:editor declared - sh:class ed:OutputData alone is enough for st:EditorJsEditor to
+# outscore DetailsEditor (see score.ttl).
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:BlogPosting ;
+
+    sh:property [
+        sh:name "Title"@en, "Titel"@nl ;
+        sh:path schema:headline ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:name "Body"@en, "Inhoud"@nl ;
+        sh:path schema:articleBody ;
+        sh:class ed:OutputData ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+# Same RDF layout shacl-renderer's own EditorJsEditor fixture used (editor-js.data.ttl), extended
+# with a header and a nested list - block data shapes the original's bundled, sh:closed shape
+# couldn't hold.
+<#data>
+    a schema:BlogPosting ;
+    schema:headline "Hello Editor.js" ;
+    schema:articleBody [
+        a ed:OutputData ;
+        ed:time 1234 ;
+        ed:version "2.31.6" ;
+        ed:blocks (
+            [
+                ed:id "hdr1" ;
+                ed:type "header" ;
+                ed:data [ ed:text "A heading" ; ed:level 2 ] ;
+            ]
+            [
+                ed:id "par1" ;
+                ed:type "paragraph" ;
+                ed:data [ ed:text "Lorem ipsum dolor sit amet." ] ;
+            ]
+            [
+                ed:id "lst1" ;
+                ed:type "list" ;
+                ed:data [
+                    ed:style "unordered" ;
+                    ed:meta [] ;
+                    ed:items (
+                        [ ed:content "First item" ; ed:meta [] ; ed:items () ]
+                        [ ed:content "Second item" ; ed:meta [] ; ed:items () ]
+                    ) ;
+                ] ;
+            ]
+        ) ;
+    ] ;
+    .
+
+<#empty>
+    a schema:BlogPosting ;
+    schema:headline "An empty post" ;
+    .

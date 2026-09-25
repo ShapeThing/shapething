@@ -4,12 +4,12 @@ import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.ts
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { useResolvedValueNode } from "@/outputs/render/hooks/useResolvedValueNode.tsx";
+import ClassificationChip from "@/outputs/render/components/ClassificationChip/index.tsx";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
 import NodeUIElementChildren from "@/outputs/render/modes/view/NodeUIElementChildren.tsx";
 import { shapesTargetingNode } from "@/resolution/targets.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
-import "@/outputs/render/components/ValueChip/style.css";
 import "./style.css";
 
 /**
@@ -27,8 +27,8 @@ import "./style.css";
  *
  * A shui:ClassificationRole, when one resolves, renders as a chip alongside the main label - the
  * same secondary disambiguating text AutoCompleteOption/EnumSelectEditor already resolve for this
- * same value while editing (see useResolvedValueNode), so view mode doesn't lose it either. Reuses
- * ValueChip's own pill styling (not the component itself - there's nothing to remove here).
+ * same value while editing (see useResolvedValueNode), so view mode doesn't lose it either - via the
+ * same ClassificationChip, so st:ColorRole/gradient coloring matches edit mode.
  *
  * When Environment.enableViewInPlace is on and the value both already exists in dataGraph and is
  * targeted by at least one shape in shapesGraph (resolution/targets.ts's shapesTargetingNode),
@@ -73,9 +73,7 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
   }, [open, canViewInPlace, shape, term, nodeShapes]);
 
   const classificationChip = classification && (
-    <span className="st-value-chip">
-      <span className="st-value-chip__label">{classification.label}</span>
-    </span>
+    <ClassificationChip classification={classification} />
   );
 
   const image = depiction && !hasImageError && (

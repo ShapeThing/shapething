@@ -227,6 +227,13 @@ export const skosxl: NamespaceBuilder<string> = namespace(
   },
 );
 
+/** Editor.js namespace - the vocabulary st:EditorJsEditor stores an Editor.js OutputData document
+ * in (same IRI shacl-renderer's own EditorJsEditor used, so data written by either one reads back
+ * in the other) */
+export const ed: NamespaceBuilder<string> = namespace("https://editorjs.io/", {
+  factory,
+});
+
 /** All prefixes used in Shapething, plus common vocabularies used by third-party data (e.g. for
  * best-effort turtle display in the Storybook graph-inspector/submit-preview addons) */
 export const prefixes: Record<string, string> = Object.fromEntries(
@@ -261,6 +268,7 @@ export const prefixes: Record<string, string> = Object.fromEntries(
     dbr,
     dbp,
     skosxl,
+    ed,
   }).map(([alias, namespace]) => [alias, namespace("").value]),
 );
 

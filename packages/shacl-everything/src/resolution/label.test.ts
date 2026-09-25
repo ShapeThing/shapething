@@ -314,6 +314,34 @@ test("valueNodeColor resolves a swatch color declared via st:ColorRole on a shap
   expect(valueNodeColor({ term: ex("someScheme"), propertyShape: shape })).toBe("#3b82f6");
 });
 
+test("valueNodeColor converts an st:ColorEditor-style HSL blank node to hex", async () => {
+  const shape = await createShape({
+    shapes: `
+      ex:property1 a sh:PropertyShape ; sh:path ex:favouriteColor .
+      ex:SchemeShape a sh:NodeShape ; sh:targetClass ex:Scheme ;
+        sh:property [ sh:path ex:swatch ; shui:propertyRole st:ColorRole ] .
+    `,
+    data: `ex:someScheme a ex:Scheme ; ex:swatch [ st:hue 271 ; st:saturation 91 ; st:lightness 65 ] .`,
+    propertyShapes: [ex("property1")],
+  });
+
+  expect(valueNodeColor({ term: ex("someScheme"), propertyShape: shape })).toBe("#a855f7");
+});
+
+test("valueNodeColor ignores an HSL blank node missing one of its three triples", async () => {
+  const shape = await createShape({
+    shapes: `
+      ex:property1 a sh:PropertyShape ; sh:path ex:favouriteColor .
+      ex:SchemeShape a sh:NodeShape ; sh:targetClass ex:Scheme ;
+        sh:property [ sh:path ex:swatch ; shui:propertyRole st:ColorRole ] .
+    `,
+    data: `ex:someScheme a ex:Scheme ; ex:swatch [ st:hue 271 ; st:saturation 91 ] .`,
+    propertyShapes: [ex("property1")],
+  });
+
+  expect(valueNodeColor({ term: ex("someScheme"), propertyShape: shape })).toBeUndefined();
+});
+
 test("valueNodeColor is resolved off the value's own class, not propertyShape's sh:class/sh:node", async () => {
   const shape = await createShape({
     shapes: `

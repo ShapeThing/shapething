@@ -9,6 +9,7 @@ import {
   shapesTargetingClass,
   shapesWhereTargetingFocusNode,
   targetsOfShape,
+  withSuperClassShapes,
 } from "@/resolution/targets.ts";
 
 async function graphs({ shapes, data }: { shapes?: string; data?: string }) {
@@ -366,4 +367,36 @@ test("orphanedTargetWhereObjects: no sh:targetWhere declared at all yields an em
   });
 
   expect(await orphanedTargetWhereObjects(ex("thing1"), shapesGraph, dataGraph, [])).toEqual([]);
+});
+
+test("withSuperClassShapes: adds every superclass's shape, given shape first, nearest superclass next", async () => {
+  const { shapesGraph, dataGraph } = await graphs({
+    shapes: `
+      ex:Employee rdfs:subClassOf ex:Person .
+      ex:Manager rdfs:subClassOf ex:Employee .
+      ex:Student rdfs:subClassOf ex:Person .
+      ex:PersonShape a sh:NodeShape ; sh:targetClass ex:Person .
+      ex:EmployeeShape a sh:NodeShape ; sh:targetClass ex:Employee .
+      ex:ManagerShape a sh:NodeShape ; sh:targetClass ex:Manager .
+      ex:StudentShape a sh:NodeShape ; sh:targetClass ex:Student .`,
+  });
+
+  const shapes = withSuperClassShapes([ex("ManagerShape")], shapesGraph, dataGraph);
+  expect(shapes.map((t) => t.value)).toEqual([
+    ex("ManagerShape").value,
+    ex("EmployeeShape").value,
+    ex("PersonShape").value,
+  ]);
+});
+
+test("withSuperClassShapes: follows an implicit class-shape's own rdfs:subClassOf, and terminates on a cycle", async () => {
+  const { shapesGraph, dataGraph } = await graphs({
+    shapes: `
+      ex:Person a sh:NodeShape, rdfs:Class .
+      ex:Manager a sh:NodeShape, rdfs:Class ; rdfs:subClassOf ex:Person .
+      ex:Person rdfs:subClassOf ex:Manager .`,
+  });
+
+  const shapes = withSuperClassShapes([ex("Manager")], shapesGraph, dataGraph);
+  expect(shapes.map((t) => t.value)).toEqual([ex("Manager").value, ex("Person").value]);
 });

@@ -42,14 +42,27 @@
 }
 
 .st-iri-editor__display {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  gap: var(--size-2);
   overflow: hidden;
   text-align: left;
-  text-overflow: ellipsis;
   white-space: nowrap;
   cursor: pointer;
   resize: none;
   background-color: white;
+}
+
+/* Each part truncates on its own; the IRI gives up its space long before the label does. */
+.st-iri-editor__display-label,
+.st-iri-editor__display-iri {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.st-iri-editor__display-label {
+  flex: 0 1 auto;
 }
 
 .st-iri-editor-option {
@@ -71,6 +84,15 @@
   font-size: var(--st-font-size-small);
   text-transform: uppercase;
   letter-spacing: 0.03em;
+}
+
+.st-iri-editor__display-iri {
+  flex: 0 1000 auto;
+  color: var(--st-color-text-muted);
+  font-style: italic;
+  /* Room for the slanted last glyph, which overflow: hidden would otherwise clip. */
+  padding-inline-end: 0.15em;
+  font-size: var(--st-font-size-small);
 }
 
 .st-iri-editor-option__iri {

@@ -121,7 +121,11 @@
   }
 }
 
-.st-form-element__label-colon {
+/* Generated content rather than a real span, so it's never part of the label's textContent
+   (getByLabelText("Name") keeps matching) - the "/ \"\"" alt text keeps it out of the
+   accessible name too. */
+.st-form-element__label[data-show-colon]::after {
+  content: ":" / "";
   font-weight: bold;
 }
 

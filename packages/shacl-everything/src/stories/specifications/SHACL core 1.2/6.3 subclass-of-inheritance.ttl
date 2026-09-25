@@ -1,0 +1,115 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+# Class hierarchy (kept in the shapes graph, see 6.3 subClassOfInShapesGraph):
+#
+#   ex:Person
+#   ├── ex:Employee
+#   │   └── ex:Manager
+#   └── ex:Student
+
+ex:Person a rdfs:Class ; rdfs:label "Person"@en, "Persoon"@nl .
+ex:Employee a rdfs:Class ; rdfs:subClassOf ex:Person ; rdfs:label "Employee"@en, "Medewerker"@nl .
+ex:Manager a rdfs:Class ; rdfs:subClassOf ex:Employee ; rdfs:label "Manager"@en, "Manager"@nl .
+ex:Student a rdfs:Class ; rdfs:subClassOf ex:Person ; rdfs:label "Student"@en, "Student"@nl .
+
+# One shape per class, each only declaring the fields its own class adds. A node is a SHACL
+# instance of every superclass of its rdf:type, so every shape up the chain targets it.
+
+<#personShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Person ;
+    sh:property [
+        sh:name "Given name"@en, "Voornaam"@nl ;
+        sh:path schema:givenName ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:order 0 ;
+        sh:group <#personGroup> ;
+    ] ;
+    sh:property [
+        sh:name "Family name"@en, "Achternaam"@nl ;
+        sh:path schema:familyName ;
+        sh:datatype xsd:string ;
+        sh:order 1 ;
+        sh:group <#personGroup> ;
+    ] ;
+    .
+
+<#employeeShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Employee ;
+    sh:property [
+        sh:name "Job title"@en, "Functie"@nl ;
+        sh:path schema:jobTitle ;
+        sh:datatype xsd:string ;
+        sh:order 0 ;
+        sh:group <#employeeGroup> ;
+    ] ;
+    sh:property [
+        sh:name "Employee number"@en, "Personeelsnummer"@nl ;
+        sh:path ex:employeeNumber ;
+        sh:datatype xsd:integer ;
+        sh:maxCount 1 ;
+        sh:order 1 ;
+        sh:group <#employeeGroup> ;
+    ] ;
+    .
+
+<#managerShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Manager ;
+    sh:property [
+        sh:name "Budget"@en, "Budget"@nl ;
+        sh:path ex:budget ;
+        sh:datatype xsd:decimal ;
+        sh:maxCount 1 ;
+        sh:order 0 ;
+        sh:group <#managerGroup> ;
+    ] ;
+    .
+
+<#studentShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Student ;
+    sh:property [
+        sh:name "Student number"@en, "Studentnummer"@nl ;
+        sh:path ex:studentNumber ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:order 0 ;
+        sh:group <#studentGroup> ;
+    ] ;
+    .
+
+<#personGroup> a sh:PropertyGroup ; sh:order 0 ; rdfs:label "Person"@en, "Persoon"@nl .
+<#employeeGroup> a sh:PropertyGroup ; sh:order 1 ; rdfs:label "Employee"@en, "Medewerker"@nl .
+<#managerGroup> a sh:PropertyGroup ; sh:order 2 ; rdfs:label "Manager"@en, "Manager"@nl .
+<#studentGroup> a sh:PropertyGroup ; sh:order 1 ; rdfs:label "Student"@en, "Student"@nl .
+
+<#data>
+    a ex:Manager ;
+    schema:givenName "Ada" ;
+    schema:familyName "Lovelace" ;
+    schema:jobTitle "Head of Engineering" ;
+    ex:employeeNumber 42 ;
+    ex:budget 125000.00 ;
+    .
+
+<#employee>
+    a ex:Employee ;
+    schema:givenName "Charles" ;
+    schema:familyName "Babbage" ;
+    schema:jobTitle "Engineer" ;
+    ex:employeeNumber 7 ;
+    .
+
+<#student>
+    a ex:Student ;
+    schema:givenName "Grace" ;
+    schema:familyName "Hopper" ;
+    ex:studentNumber "S-1906" ;
+    .

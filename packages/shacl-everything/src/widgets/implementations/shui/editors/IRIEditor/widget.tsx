@@ -100,7 +100,7 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
 
   const ref = useAutoFocusRef<HTMLInputElement>(autoFocus);
 
-  // A value already present starts collapsed to its resolved label (displayName below); clicking it opens the
+  // A value already present starts collapsed to its resolved label + prefixed IRI (displayName/displayIri below); clicking it opens the
   // input on the full IRI. A freshly added (empty) value has nothing to show, so it opens
   // straight into the input - and committing back down to empty (the value was cleared) falls
   // back to the input too, since there's nothing left to display.
@@ -136,6 +136,11 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
     `iri-editor-label@${term.value}@${activeLanguage}`,
     () => valueNodeLabel({ term, propertyShape: shape, languages: [activeLanguage] }).value,
   );
+
+  // Shown muted after displayName in the collapsed value: the compact prefix:localName form
+  // (falling back to the full IRI when no known prefix matches).
+  const displayIri =
+    (term.termType === "NamedNode" ? prefixedIri(term, sourcePrefixes) : undefined) ?? term.value;
 
   // The shape(s) to render the referenced resource with for Environment.enableEditInPlace/
   // enableViewInPlace - only when it already exists in dataGraph (same gate as
@@ -325,7 +330,10 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
               title={term.value}
               onClick={openForEdit}
             >
-              {displayName}
+              <span className="st-iri-editor__display-label">{displayName}</span>
+              {displayIri !== displayName && (
+                <span className="st-iri-editor__display-iri">{displayIri}</span>
+              )}
             </button>
           )}
         </div>

@@ -4,7 +4,8 @@ import type { Quad, Quad_Subject, Stream } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { rdfParser, type ParseOptions } from "rdf-parse";
 import stringToStream from "string-to-stream";
-import type { Environment, RawEnvironment } from "@/environment.ts";
+import { defaultEnvironment, type Environment, type RawEnvironment } from "@/environment.ts";
+import { shapesTargetingNode } from "@/resolution/targets.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
 import { owl, rdf, sh } from "@/helpers/namespaces.ts";
 import { withCorsProxy } from "@/helpers/corsProxy.ts";
@@ -363,11 +364,20 @@ export const resolveRdfSources = async (
       resolvedShapesGraph)
     : resolvedShapesGraph;
 
+  // With no nodeShapes given but a real focusNode (not defaultEnvironment's placeholder), render
+  // whatever shapes actually target that node (3.1.3, via rdf:type + rdfs:subClassOf etc). Without
+  // a focusNode, or when nothing targets it yet (e.g. an untyped new resource), every sh:NodeShape
+  // in the shapes graph is used instead.
   let nodeShapes: Quad_Subject[] = [];
   if (!raw.nodeShapes?.length) {
-    nodeShapes = shapesGraph
-      .getQuads(null, rdf("type"), sh("NodeShape"), null)
-      .map((quad) => quad.subject);
+    const hasFocusNode =
+      raw.mode !== "facet" && raw.focusNode && !raw.focusNode.equals(defaultEnvironment.focusNode);
+    if (hasFocusNode) nodeShapes = shapesTargetingNode(raw.focusNode, shapesGraph, dataGraph);
+    if (nodeShapes.length === 0) {
+      nodeShapes = shapesGraph
+        .getQuads(null, rdf("type"), sh("NodeShape"), null)
+        .map((quad) => quad.subject);
+    }
   }
 
   return {

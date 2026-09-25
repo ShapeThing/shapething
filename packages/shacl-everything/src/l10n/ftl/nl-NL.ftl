@@ -54,6 +54,7 @@ autocomplete-search-error = Zoeken mislukt
 autocomplete-facet-search-title = Selecteer een waarde voor { $label }
 address-search-placeholder =
     .placeholder = Zoek een adres…
+editor-js-placeholder = Voeg inhoud toe…
 autocomplete-edit-value =
     .aria-label = Bewerken
 autocomplete-option-edit-resource =

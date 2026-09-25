@@ -1,0 +1,20 @@
+.st-editor-js-editor {
+  flex: 1;
+  width: 100%;
+  min-height: 6em;
+  /* Room for Editor.js's own "+"/settings toolbar, which it positions left of each block. */
+  padding-block: var(--size-2) var(--size-4);
+  padding-inline: var(--size-5) var(--size-3);
+  border: 1px solid var(--gray-5);
+  border-radius: var(--radius-2);
+
+  &:focus-within {
+    outline: 2px solid var(--st-primary-color);
+  }
+
+  /* Editor.js centres its content in a 650px column by default - fill the field instead. */
+  .ce-block__content,
+  .ce-toolbar__content {
+    max-width: none;
+  }
+}

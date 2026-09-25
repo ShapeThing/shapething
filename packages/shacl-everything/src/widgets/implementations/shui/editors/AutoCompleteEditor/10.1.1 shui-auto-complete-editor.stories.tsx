@@ -21,9 +21,6 @@ export const shuiAutoCompleteEditorFederatedSearch: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    // Right after the globe: just the endpoint's hostname, the full URL is in the tooltip below.
-    await expect(canvas.findByText("dbpedia.org")).resolves.toBeVisible();
-
     // The federated-search globe icon carries its own Tooltip, nested inside the same <label> as
     // FormElement's labelTitle (the property's SPARQL path, shown as a debug Tooltip too) - they
     // must never both show at once for the same hover (see FormElement's labelSuffix, which keeps

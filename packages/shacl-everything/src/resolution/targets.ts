@@ -67,6 +67,85 @@ export function shapesTargetingClass(classIri: Term, shapesGraph: RdfStore): Qua
 }
 
 /**
+ * Every shape node that covers `classIri` as a whole: an explicit sh:targetClass (3.1.3.2)
+ * declarer, or classIri acting as its own implicit class-shape/sh:ShapeClass (3.1.3.3).
+ */
+export function shapesForClass(classIri: Term, shapesGraph: RdfStore): Quad_Subject[] {
+  const nodes = shapesTargetingClass(classIri, shapesGraph);
+  if (classIri.termType !== "NamedNode" && classIri.termType !== "BlankNode") return nodes;
+
+  const isShapeClass = shapesGraph.getQuads(classIri, rdf("type"), sh("ShapeClass")).length > 0;
+  const isExplicitShapeAndClass =
+    (shapesGraph.getQuads(classIri, rdf("type"), sh("NodeShape")).length > 0 ||
+      shapesGraph.getQuads(classIri, rdf("type"), sh("PropertyShape")).length > 0) &&
+    shapesGraph.getQuads(classIri, rdf("type"), rdfs("Class")).length > 0;
+  if (isShapeClass || isExplicitShapeAndClass) nodes.push(classIri);
+
+  return nodes;
+}
+
+/**
+ * Upward counterpart of descendantClasses: every class `classIri` is (transitively) an
+ * rdfs:subClassOf, nearest first, excluding `classIri` itself. Same both-graphs lookup (6.3
+ * subClassOfInShapesGraph) and cycle guard.
+ */
+function ancestorClasses(classIri: Term, graphs: RdfStore[]): Term[] {
+  const seen = new Set<string>([termKey(classIri)]);
+  const result: Term[] = [];
+  let frontier = [classIri];
+
+  while (frontier.length > 0) {
+    const next: Term[] = [];
+    for (const node of frontier) {
+      if (node.termType !== "NamedNode" && node.termType !== "BlankNode") continue;
+      for (const graph of graphs) {
+        for (const quad of graph.getQuads(node, rdfs("subClassOf"))) {
+          const key = termKey(quad.object);
+          if (seen.has(key)) continue;
+          seen.add(key);
+          result.push(quad.object);
+          next.push(quad.object);
+        }
+      }
+    }
+    frontier = next;
+  }
+
+  return result;
+}
+
+/**
+ * `nodeShapes` plus every shape covering a superclass of a class one of them covers (its
+ * sh:targetClass values, or itself as an implicit class-shape). An instance of a subclass is a
+ * SHACL instance of every superclass (3.1.3.2), so each superclass's shape targets it too - this
+ * lets a caller name only the most specific shape (e.g. ManagerShape) and still get the whole
+ * Person → Employee → Manager chain. The given shapes keep their order and come first (so e.g.
+ * NodeUIElement.description() still prefers the most specific shape's text), followed by the
+ * inherited ones, nearest superclass first.
+ */
+export function withSuperClassShapes(
+  nodeShapes: Quad_Subject[],
+  shapesGraph: RdfStore,
+  dataGraph: RdfStore,
+): Quad_Subject[] {
+  const inherited: Quad_Subject[] = [];
+  for (const shapeNode of nodeShapes) {
+    const classes = [
+      ...shapesGraph.getQuads(shapeNode, sh("targetClass")).map((quad) => quad.object),
+      ...(shapesForClass(shapeNode, shapesGraph).some((node) => node.equals(shapeNode))
+        ? [shapeNode]
+        : []),
+    ];
+    for (const classIri of classes) {
+      for (const ancestor of ancestorClasses(classIri, [shapesGraph, dataGraph])) {
+        inherited.push(...shapesForClass(ancestor, shapesGraph));
+      }
+    }
+  }
+  return dedupeTerms([...nodeShapes, ...inherited]) as Quad_Subject[];
+}
+
+/**
  * 3.1.3 Targets: the full target node set of `shapeNode` - every kind of target declaration SHACL
  * Core defines, except 3.1.3.6 (sh:targetWhere, see below). This is the one place in the codebase
  * that should compute "what does this shape apply to" - callers that only need one specific slice

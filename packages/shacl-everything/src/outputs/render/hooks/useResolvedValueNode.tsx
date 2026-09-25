@@ -1,13 +1,19 @@
 import type { NamedNode, Term } from "@rdfjs/types";
+import type { Classification } from "@/outputs/render/components/ClassificationChip/index.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
-import { valueNodeClassification, valueNodeDepiction, valueNodeLabel } from "@/resolution/label.ts";
+import {
+  valueNodeClassification,
+  valueNodeColor,
+  valueNodeDepiction,
+  valueNodeLabel,
+} from "@/resolution/label.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 
 export type ResolvedValueNode = {
   label: string;
-  classification?: { term: Term; label: string };
+  classification?: Classification;
   depiction?: NamedNode;
 };
 
@@ -35,11 +41,17 @@ export function useResolvedValueNode(
   const { localLabel, localClassification, localDepiction } = useReactiveRead(
     shape.dataGraph,
     `resolved-value-node@${term.value}@${languages.join(",")}`,
-    () => ({
-      localLabel: valueNodeLabel({ term, propertyShape: shape, languages }),
-      localClassification: valueNodeClassification({ term, propertyShape: shape, languages }),
-      localDepiction: valueNodeDepiction({ term, propertyShape: shape }),
-    }),
+    () => {
+      const classification = valueNodeClassification({ term, propertyShape: shape, languages });
+      // Same st:ColorRole enrichment query.ts's withClassificationColor gives a remote result.
+      const color =
+        classification && valueNodeColor({ term: classification.term, propertyShape: shape });
+      return {
+        localLabel: valueNodeLabel({ term, propertyShape: shape, languages }),
+        localClassification: classification && color ? { ...classification, color } : classification,
+        localDepiction: valueNodeDepiction({ term, propertyShape: shape }),
+      };
+    },
   );
 
   const hasLocalTriples =

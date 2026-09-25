@@ -22,10 +22,14 @@ export const shuiIRIEditor: Story = {
     expect(canvasElement.querySelector(".st-iri-editor__preview")).toBeNull();
 
     // An already-set value starts collapsed to its resolved label (here the humanized local name,
-    // since the IRI has no rdfs:label), not the raw input - the full IRI stays on hover.
+    // since the IRI has no rdfs:label) followed by its prefixed IRI (here the full IRI, since no
+    // known prefix matches https://example.org/), not the raw input.
     expect(canvas.queryByRole("combobox", { name: "See also" })).toBeNull();
     const display = await canvas.findByRole("button", { name: "See also" });
     expect(display).toHaveTextContent("more info");
+    expect(display.querySelector(".st-iri-editor__display-iri")).toHaveTextContent(
+      "https://example.org/more-info",
+    );
     expect(display).toHaveAttribute("title", "https://example.org/more-info");
 
     // Clicking it opens the input on the full IRI, focused and ready to edit.
