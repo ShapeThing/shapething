@@ -1,6 +1,6 @@
 import type { Quad_Subject } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { sh } from "@/helpers/namespaces.ts";
+import { isDeactivated } from "@/helpers/isDeactivated.ts";
 import { facetableRootShapes, shapesTargetingNode, targetsOfShape } from "@/resolution/targets.ts";
 
 /**
@@ -20,11 +20,6 @@ export type FocusNodeAndNodeShapeResolutionOptions = {
   focusNode?: Quad_Subject;
   nodeShape?: Quad_Subject;
 };
-
-const isDeactivated = (shapeNode: Quad_Subject, shapesGraph: RdfStore): boolean =>
-  shapesGraph
-    .getQuads(shapeNode, sh("deactivated"), null)
-    .some((quad) => quad.object.value === "true");
 
 /**
  * Spec 3.2.1 "Focus Node and Node Shape Resolution": from a (possibly partial) focus node/node

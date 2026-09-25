@@ -1,6 +1,7 @@
 import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { getRdfList } from "@/helpers/rdfList.ts";
+import { isDeactivated } from "@/helpers/isDeactivated.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import { CHOICE_CONNECTIVES, ChoiceElement } from "@/structure/ChoiceElement.ts";
@@ -24,6 +25,11 @@ import type { Widgets } from "@/widgets/types.ts";
  * assumed acyclic, but nothing upstream actually enforces that) and so a shape reachable two ways
  * (e.g. listed directly in nodeShapes AND pulled in via another listed shape's sh:node) doesn't
  * contribute duplicate property-shape entries into the merge.
+ *
+ * A `sh:deactivated true` shape reached via sh:property/sh:and/sh:node is skipped entirely, like
+ * SHACL itself skips evaluating it - neither rendered nor merged into a co-path group's
+ * constraints. The start shapes themselves are left to the caller (see
+ * resolution/focusNodeAndNodeShapeResolution.ts, which already filters deactivated node shapes).
  *
  * sh:or/sh:xone are wrapped as a ChoiceElement instead of being folded into the path merge - each
  * branch is an alternative, not a conjunction, so ChoiceElement.children() deliberately starts
@@ -51,16 +57,19 @@ export function childrenForShape(
     visited.add(key);
 
     for (const quad of shapesGraph.getQuads(current, sh("property"))) {
+      if (isDeactivated(quad.object, shapesGraph)) continue;
       propertyShapes.push(quad.object as NamedNode);
     }
 
     for (const listQuad of shapesGraph.getQuads(current, sh("and"))) {
       for (const branchShape of getRdfList(listQuad.object, shapesGraph)) {
+        if (isDeactivated(branchShape, shapesGraph)) continue;
         walk(branchShape);
       }
     }
 
     for (const nodeQuad of shapesGraph.getQuads(current, sh("node"))) {
+      if (isDeactivated(nodeQuad.object, shapesGraph)) continue;
       walk(nodeQuad.object);
     }
 

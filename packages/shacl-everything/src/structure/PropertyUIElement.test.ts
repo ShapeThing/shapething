@@ -223,10 +223,10 @@ test("sh:equals resolves when every shape targets the same path", async () => {
     [ex("property1"), ex("property2")],
   );
 
-  expect(element.get(sh("equals"))?.value).toBe(ex("pathA").value);
+  expect(element.get(sh("equals")).map((term) => term.value)).toEqual([ex("pathA").value]);
 });
 
-test("sh:equals throws when shapes target different paths", async () => {
+test("sh:equals keeps every path when shapes target different ones (conjunctive, not a conflict)", async () => {
   const element = await createElement(
     `
         ex:property1 a sh:PropertyShape ; sh:equals ex:pathA .
@@ -235,7 +235,10 @@ test("sh:equals throws when shapes target different paths", async () => {
     [ex("property1"), ex("property2")],
   );
 
-  expect(() => element.get(sh("equals"))).toThrow(/Conflicting values for property/);
+  expect(element.get(sh("equals")).map((term) => term.value)).toEqual([
+    ex("pathA").value,
+    ex("pathB").value,
+  ]);
 });
 
 test("sh:disjoint keeps every distinct value in declaration order, deduplicated", async () => {
@@ -254,7 +257,7 @@ test("sh:disjoint keeps every distinct value in declaration order, deduplicated"
   ]);
 });
 
-test("sh:hasValue throws when shapes target different values", async () => {
+test("sh:hasValue keeps every value when shapes declare different ones (both are required)", async () => {
   const element = await createElement(
     `
         ex:property1 a sh:PropertyShape ; sh:hasValue ex:valueA .
@@ -263,9 +266,71 @@ test("sh:hasValue throws when shapes target different values", async () => {
     [ex("property1"), ex("property2")],
   );
 
-  expect(() => element.get(sh("hasValue"))).toThrow(
-    "Expected a singular value for hasValue but found disjoint values: valueA, valueB",
+  expect(element.get(sh("hasValue")).map((term) => term.value)).toEqual([
+    ex("valueA").value,
+    ex("valueB").value,
+  ]);
+});
+
+test("sh:datatype resolves a list of alternatives to its first entry, not the list node", async () => {
+  const element = await createElement(
+    `ex:property1 a sh:PropertyShape ; sh:datatype ( xsd:string rdf:langString ) .`,
+    [ex("property1")],
   );
+
+  expect(element.get(sh("datatype"))?.value).toBe(
+    "http://www.w3.org/2001/XMLSchema#string",
+  );
+});
+
+test("sh:datatype intersects a list of alternatives with another shape's single datatype", async () => {
+  const element = await createElement(
+    `
+        ex:property1 a sh:PropertyShape ; sh:datatype ( xsd:string rdf:langString ) .
+        ex:property2 a sh:PropertyShape ; sh:datatype rdf:langString .
+    `,
+    [ex("property1"), ex("property2")],
+  );
+
+  expect(element.get(sh("datatype"))?.value).toBe(
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#langString",
+  );
+});
+
+test("sh:datatype throws when a list of alternatives shares nothing with another shape's", async () => {
+  const element = await createElement(
+    `
+        ex:property1 a sh:PropertyShape ; sh:datatype ( xsd:string rdf:langString ) .
+        ex:property2 a sh:PropertyShape ; sh:datatype xsd:integer .
+    `,
+    [ex("property1"), ex("property2")],
+  );
+
+  expect(() => element.get(sh("datatype"))).toThrow(/No intersection found for datatype/);
+});
+
+test("sh:in throws when declared lists share no member, instead of looking unconstrained", async () => {
+  const element = await createElement(
+    `
+        ex:property1 a sh:PropertyShape ; sh:in ( ex:a ex:b ) .
+        ex:property2 a sh:PropertyShape ; sh:in ( ex:c ) .
+    `,
+    [ex("property1"), ex("property2")],
+  );
+
+  expect(() => element.get(sh("in"))).toThrow(/No intersection found for in/);
+});
+
+test("sh:order keeps decimal values instead of truncating them", async () => {
+  const element = await createElement(
+    `
+        ex:property1 a sh:PropertyShape ; sh:order 2.5 .
+        ex:property2 a sh:PropertyShape ; sh:order 3 .
+    `,
+    [ex("property1"), ex("property2")],
+  );
+
+  expect(element.get(sh("order"))).toBe(2.5);
 });
 
 test("sh:name keeps the value from the lowest sh:order shape", async () => {

@@ -71,8 +71,6 @@ type SingleTermPredicates = ShIri<
   | "codeIdentifier"
   | "group"
   | "severity"
-  | "equals"
-  | "hasValue"
   | "datatype"
 >;
 
@@ -503,7 +501,7 @@ function widgetShapeSource(
 
 function shapeOrder(shape: Term, shapesGraph: RdfStore): number {
   const value = shapesGraph.getQuads(shape, sh("order"))[0]?.object.value;
-  const parsed = value !== undefined ? parseInt(value) : NaN;
+  const parsed = value !== undefined ? parseFloat(value) : NaN;
   return Number.isNaN(parsed) ? 0 : parsed;
 }
 

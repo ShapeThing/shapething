@@ -75,10 +75,24 @@ export const keepAllListItems: ResolutionFunction<Term[]> = (values, element) =>
   return dedupeTerms(values.flatMap((value) => expandListOrTerm(value, element.shapesGraph)));
 };
 
-export const keepListIntersection: ResolutionFunction<Term[]> = (values, element) => {
+// sh:in/sh:languageIn lists combine conjunctively, so a value must appear in every declared list.
+// Declared lists that share no member leave no valid value at all. That throws (the same way a
+// disjoint sh:nodeKind does) instead of returning [], since an empty result is indistinguishable
+// from "no constraint" and would let EnumSelectEditor/AutoCompleteEditor offer free input.
+export const keepListIntersection: ResolutionFunction<Term[]> = (values, element, predicate) => {
   if (!values.length) return [];
   const sets = values.map((value) => dedupeTerms(expandListOrTerm(value, element.shapesGraph)));
-  return sets.reduce((acc, set) => acc.filter((term) => set.some((other) => other.equals(term))));
+  const intersection = sets.reduce((acc, set) =>
+    acc.filter((term) => set.some((other) => other.equals(term))),
+  );
+  if (intersection.length === 0 && sets.length > 1 && sets.every((set) => set.length > 0)) {
+    throw new Error(
+      `No intersection found for ${localName(predicate)}: ${sets
+        .map((set) => set.map((term) => localName(term) ?? term.value).join(", "))
+        .join(" | ")}`,
+    );
+  }
+  return intersection;
 };
 
 // sh:pattern applies conjunctively: a value must match every declared pattern. Combined into one
@@ -95,18 +109,6 @@ export const combinePatterns: ResolutionFunction<RegExp | undefined> = (values) 
 export const resolveBooleans: ResolutionFunction<boolean | undefined> = (values) => {
   if (!values.length) return undefined;
   return values.some((term) => term.value === "true");
-};
-
-export const enforceSame: ResolutionFunction<Term | undefined> = (values, _element, predicate) => {
-  const unique = dedupeTerms(values);
-  if (unique.length > 1) {
-    throw new Error(
-      `Conflicting values for property ${predicate.value}: ${unique
-        .map((term) => term.value)
-        .join(", ")}`,
-    );
-  }
-  return unique[0];
 };
 
 export function enforceSingular(
@@ -166,6 +168,34 @@ const SEVERITY_RANK = new Map<string, number>([
   [sh("Info").value, 0],
 ]);
 
+// sh:datatype may hold a SHACL 1.2 list of alternatives (a value must have one of them), and
+// several co-path shapes each declaring one combine conjunctively. With only single-term values
+// this keeps the old behavior: the most specific datatype, via rdfs:subClassOf (e.g. a custom
+// ex:HumanAge rdfs:subClassOf xsd:integer). Once any value is a list, the declared alternatives
+// are intersected and the first surviving one (in the author's own list order) is returned - it's
+// what a fresh value should be created with. Callers only ever need one datatype to write.
+export const resolveDatatype: ResolutionFunction<Term | undefined> = (
+  values,
+  element,
+  predicate,
+) => {
+  const sets = values.map((value) => dedupeTerms(expandListOrTerm(value, element.shapesGraph)));
+  if (sets.every((set) => set.length === 1)) {
+    return enforceSingular(keepMostSpecificClasses)(values, element, predicate);
+  }
+  const intersection = sets.reduce((acc, set) =>
+    acc.filter((term) => set.some((other) => other.equals(term))),
+  );
+  if (intersection.length === 0) {
+    throw new Error(
+      `No intersection found for datatype: ${sets
+        .map((set) => set.map((term) => localName(term) ?? term.value).join(", "))
+        .join(" | ")}`,
+    );
+  }
+  return intersection[0];
+};
+
 export const keepMostSevere: ResolutionFunction<Term | undefined> = (values) => {
   if (!values.length) return undefined;
   return values.reduce((mostSevere, term) =>
@@ -213,7 +243,7 @@ export const nodeKindIntersection: ResolutionFunction<Term[]> = (values, element
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const resolutions = new Map<string, ResolutionFunction<any>>([
   [sh("class").value, keepMostSpecificClasses],
-  [sh("datatype").value, enforceSingular(keepMostSpecificClasses)],
+  [sh("datatype").value, resolveDatatype],
   [sh("nodeKind").value, nodeKindIntersection],
   [sh("minCount").value, keepHighestInteger],
   [sh("maxCount").value, keepLowestInteger],
@@ -231,7 +261,10 @@ export const resolutions = new Map<string, ResolutionFunction<any>>([
   [sh("minListLength").value, keepHighestInteger],
   [sh("maxListLength").value, keepLowestInteger],
   [sh("uniqueMembers").value, resolveBooleans],
-  [sh("equals").value, enforceSame],
+  // Conjunctive, like every other constraint: sh:equals ex:a plus sh:equals ex:b means the value
+  // set must equal both - satisfiable whenever ex:a and ex:b hold the same values, so not a
+  // conflict to throw on.
+  [sh("equals").value, keepAll],
   [sh("disjoint").value, keepAll],
   [sh("subsetOf").value, keepAll],
   [sh("lessThan").value, keepAll],
@@ -249,7 +282,8 @@ export const resolutions = new Map<string, ResolutionFunction<any>>([
   [sh("reificationRequired").value, resolveBooleans],
   [sh("closed").value, resolveBooleans],
   [sh("ignoredProperties").value, keepAllListItems],
-  [sh("hasValue").value, enforceSingular(keepAll)],
+  // Conjunctive: two sh:hasValue values mean both must be present among the property's values.
+  [sh("hasValue").value, keepAll],
   [sh("in").value, keepListIntersection],
   // Unlike sh:in, not a constraint - just a hint of values worth offering first (see
   // EnumSelectEditor/AutoCompleteEditor), so every grouped shape's suggestions are kept.
@@ -263,6 +297,7 @@ export const resolutions = new Map<string, ResolutionFunction<any>>([
   [sh("agentInstruction").value, keepAll],
   [sh("codeIdentifier").value, keepFirst],
   [sh("unit").value, keepAll],
-  [sh("order").value, keepLowestInteger],
+  // sh:order is a decimal, so parsed as a float rather than truncated to an integer.
+  [sh("order").value, keepLowestLiteral],
   [sh("group").value, keepFirst],
 ]);

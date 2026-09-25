@@ -5,6 +5,7 @@ import { logicalBranches, withBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { noRefetch } from "@/helpers/noRefetch.ts";
+import { termKey } from "@/helpers/termKey.ts";
 
 /**
  * The term a fresh value for `property` should start as (see PropertyUIElement.getDefaultObject),
@@ -33,8 +34,12 @@ export function useDefaultObject(
   const { activeLanguage } = useContentLanguage();
   const queryClient = useQueryClient();
 
+  // Keyed on the focus node too: a minted default (e.g. DetailsEditor's fresh blank node) must be
+  // per-parent, or two sibling nested forms of the same shape (two authors, each with an empty
+  // address) would be handed the same placeholder term and end up sharing one value.
   const queryKey = [
     "default-object",
+    termKey(property.focusNode),
     property.propertyShapes.map((shape) => shape.value),
     activeLanguage,
     enabled,

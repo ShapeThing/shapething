@@ -1,0 +1,46 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+# Two sibling nested forms of the same shape (two authors), each with a still-empty nested
+# address - every author's empty address slot must be seeded with its own fresh blank node.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Book ;
+    sh:property [
+        sh:name "Author"@en ;
+        sh:path schema:author ;
+        sh:nodeKind sh:BlankNode ;
+        shui:editor shui:DetailsEditor ;
+        sh:node <#author> ;
+    ] ;
+    .
+
+<#author>
+    a sh:NodeShape ;
+    sh:property [
+        sh:name "Name"@en ;
+        sh:path schema:name ;
+        sh:order 1 ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:name "Address"@en ;
+        sh:path schema:address ;
+        sh:order 2 ;
+        sh:nodeKind sh:BlankNode ;
+        shui:editor shui:DetailsEditor ;
+        sh:node [
+            sh:property [
+                sh:name "Street"@en ;
+                sh:path schema:streetAddress ;
+                shui:propertyRole shui:LabelRole ;
+            ] ;
+        ] ;
+    ] ;
+    .
+
+<#data>
+    a schema:Book ;
+    schema:author [ schema:name "Ada" ], [ schema:name "Grace" ] ;
+    .

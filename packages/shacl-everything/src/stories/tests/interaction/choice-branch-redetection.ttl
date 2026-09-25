@@ -1,0 +1,25 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+# A node-level sh:or whose branches differ only in which value one shared property holds - so
+# editing that value is a replaceObject (remove + add) that leaves the focus node's quad count
+# unchanged, yet flips which branch the node conforms to.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Thing ;
+    sh:or (
+        [
+            sh:name "Starts with A"@en ;
+            sh:property [ sh:name "Name"@en ; sh:path schema:name ; sh:minCount 1 ; sh:pattern "^A" ] ;
+        ]
+        [
+            sh:name "Starts with B"@en ;
+            sh:property [ sh:name "Name"@en ; sh:path schema:name ; sh:minCount 1 ; sh:pattern "^B" ] ;
+        ]
+    ) ;
+    .
+
+<#data>
+    a schema:Thing ;
+    schema:name "Apple" ;
+    .

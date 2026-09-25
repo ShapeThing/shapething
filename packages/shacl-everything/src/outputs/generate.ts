@@ -218,7 +218,7 @@ async function generateValue(
   property: PropertyUIElement,
   context: GenerationContext,
 ): Promise<unknown> {
-  const hasValue = property.get(sh("hasValue"));
+  const [hasValue] = property.get(sh("hasValue"));
   if (hasValue) return termToPlainValue(hasValue);
 
   const nodeShapes = property.get(sh("node")) as Term[];

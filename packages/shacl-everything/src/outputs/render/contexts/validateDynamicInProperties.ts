@@ -5,6 +5,7 @@ import { sh } from "@/helpers/namespaces.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { selectQueryFor } from "@/structure/selectQuery.ts";
 import {
+  extractServiceEndpoint,
   FIRST_PROJECTED_VARIABLE,
   insertValuesClause,
   runQuery,
@@ -31,6 +32,12 @@ import type { ValidationResult } from "@/outputs/render/contexts/validationConte
  * endpoint never blocks or clears validation results for every other property - mirrors
  * useOptionLookups.tsx/useSelectOptions.tsx's own "log and continue" convention for a failed
  * federated query.
+ *
+ * `cache` (optional, owned by the caller - ValidationContextProvider keeps one per Environment)
+ * memoizes the conforming-value set per rewritten query, so a live-validation pass triggered by an
+ * edit to some *other* property doesn't re-hit every federated endpoint. Only queries with a
+ * SERVICE clause are cached: a purely local sh:select reads dataGraph itself, whose contents the
+ * very edit that triggered this pass may have changed. A failed query is evicted, not cached.
  */
 export async function validateDynamicInProperties(
   shapesGraph: RdfStore,
@@ -38,6 +45,7 @@ export async function validateDynamicInProperties(
   nodeShapes: Quad_Subject[],
   focusNode: Quad_Subject,
   corsProxyUrl?: string,
+  cache?: Map<string, Promise<Set<string>>>,
 ): Promise<ValidationResult[]> {
   const properties = childrenForShape(shapesGraph, dataGraph, nodeShapes, focusNode).filter(
     (element) => element.kind === "property",
@@ -59,8 +67,20 @@ export async function validateDynamicInProperties(
 
     try {
       const rewritten = insertValuesClause(query, variable, values);
-      const conforming = await runQuery(rewritten, shape, corsProxyUrl);
-      const conformingValues = new Set(conforming.map((result) => result.term.value));
+      const run = async () =>
+        new Set(
+          (await runQuery(rewritten, shape, corsProxyUrl)).map((result) => result.term.value),
+        );
+      const cacheable = cache !== undefined && extractServiceEndpoint(query) !== undefined;
+      let pending = cacheable ? cache.get(rewritten) : undefined;
+      if (!pending) {
+        pending = run();
+        if (cacheable) {
+          cache.set(rewritten, pending);
+          pending.catch(() => cache.delete(rewritten));
+        }
+      }
+      const conformingValues = await pending;
       const severity = shape.get(sh("severity")) ?? sh("Violation");
 
       for (const value of values) {

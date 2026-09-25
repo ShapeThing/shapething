@@ -386,3 +386,21 @@ test("valueNodeColor returns undefined when the term's own class declares no st:
 
   expect(valueNodeColor({ term: ex("someScheme"), propertyShape: shape })).toBeUndefined();
 });
+
+test("valueNodeLabel terminates on cyclic LabelRole data, falling back to the resource's own label steps", async () => {
+  const shape = await createShape({
+    shapes: `
+      ex:property1 a sh:PropertyShape ; sh:node [
+        sh:property [ sh:path ex:sameAs ; shui:propertyRole shui:LabelRole ] ;
+      ] .
+    `,
+    data: `
+      ex:a ex:sameAs ex:b .
+      ex:b ex:sameAs ex:a .
+    `,
+    propertyShapes: [ex("property1")],
+  });
+
+  // a -> b -> a: the second visit to ex:a skips the LabelRole step and resolves by local name.
+  expect(valueNodeLabel({ term: ex("a"), propertyShape: shape }).value).toBe("a");
+});

@@ -4,6 +4,7 @@ import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { factory } from "@/helpers/factory.ts";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { rdf, rdfs, sh, shui, st } from "@/helpers/namespaces.ts";
+import { termKey } from "@/helpers/termKey.ts";
 import language, {
   configuredLanguages,
   effectiveLanguages,
@@ -505,8 +506,17 @@ export function colorRolePropertyPaths(
 }
 
 // 8.2.3 Value Node Labels
-export function valueNodeLabel(
+export function valueNodeLabel(options: ValueNodeLabelOptions): Literal {
+  return resolveValueNodeLabel(options, new Set());
+}
+
+// `visiting` holds the terms whose labels are currently being resolved further up this call
+// stack. A LabelRole path that lands on a resource recurses (step 2), so cyclic data along that
+// path (A -> B -> A, none with a literal label) would otherwise recurse forever. A term reached a
+// second time skips step 2 and falls through to steps 3-6 instead.
+function resolveValueNodeLabel(
   { term, propertyShape, languages }: ValueNodeLabelOptions,
+  visiting: Set<string>,
 ): Literal {
   const { shapesGraph, dataGraph } = propertyShape;
 
@@ -525,10 +535,26 @@ export function valueNodeLabel(
   // resolves to a resource rather than a literal (e.g. schema:unitCode, an IRI) recurses through
   // this same function - e.g. resolving to the unit's own rdfs:label - instead of being silently
   // dropped by a literal-only filter.
-  const roleLabelParts = labelRolePathEntries(propertyShape)
-    .flatMap(({ path, mergeAlternatives }) =>
-      resolveLabelRolePathParts(path, term, propertyShape, effLanguages, languages, mergeAlternatives)
-    );
+  const key = termKey(term);
+  let roleLabelParts: string[] = [];
+  if (!visiting.has(key)) {
+    visiting.add(key);
+    try {
+      roleLabelParts = labelRolePathEntries(propertyShape).flatMap(({ path, mergeAlternatives }) =>
+        resolveLabelRolePathParts(
+          path,
+          term,
+          propertyShape,
+          effLanguages,
+          languages,
+          mergeAlternatives,
+          visiting,
+        )
+      );
+    } finally {
+      visiting.delete(key);
+    }
+  }
   if (roleLabelParts.length > 0) {
     return factory.literal(roleLabelParts.join(" "));
   }
@@ -583,11 +609,20 @@ function resolveLabelRolePathParts(
   effLanguages: LanguageRange[],
   languages: BCP47[] | undefined,
   mergeAlternatives: boolean,
+  visiting: Set<string>,
 ): string[] {
   if (path.type === "alternative") {
     if (mergeAlternatives) {
       return path.items.flatMap((item) =>
-        resolveLabelRolePathParts(item, term, propertyShape, effLanguages, languages, mergeAlternatives)
+        resolveLabelRolePathParts(
+          item,
+          term,
+          propertyShape,
+          effLanguages,
+          languages,
+          mergeAlternatives,
+          visiting,
+        )
       );
     }
 
@@ -599,6 +634,7 @@ function resolveLabelRolePathParts(
         effLanguages,
         languages,
         mergeAlternatives,
+        visiting,
       );
       if (parts.length > 0) return parts;
     }
@@ -613,7 +649,9 @@ function resolveLabelRolePathParts(
   if (literal) return [literal.value];
 
   const resource = values.find((v) => v.termType !== "Literal");
-  return resource ? [valueNodeLabel({ term: resource, propertyShape, languages }).value] : [];
+  return resource
+    ? [resolveValueNodeLabel({ term: resource, propertyShape, languages }, visiting).value]
+    : [];
 }
 
 type ValueNodeClassificationOptions = {

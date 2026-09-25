@@ -63,11 +63,20 @@ export default function ValidationContextProvider({ children, latestResultsRef }
     constraints: sparqlConstraints,
   });
 
+  // Federated dynamic sh:in results, reused across revalidations - see validateDynamicInProperties.
+  const dynamicInCacheRef = useRef(new Map<string, Promise<Set<string>>>());
+
   useEffect(() => {
     let cancelled = false;
     let timeout: ReturnType<typeof setTimeout> | undefined;
+    // Each run is independent async work, so a slow earlier run (e.g. a federated sh:in query)
+    // can finish after a newer one - only the most recently started run may publish its results,
+    // or stale results would overwrite fresh ones.
+    let latestRun = 0;
 
     const runValidation = async () => {
+      const run = ++latestRun;
+      const isCurrent = () => !cancelled && run === latestRun;
       setIsValidating(true);
       try {
         const report = await engineRef.current!.validate(
@@ -80,8 +89,9 @@ export default function ValidationContextProvider({ children, latestResultsRef }
           nodeShapes,
           focusNode,
           corsProxyUrl,
+          dynamicInCacheRef.current,
         );
-        if (!cancelled) {
+        if (isCurrent()) {
           const combined = [...flattenResults(report.results), ...dynamicInResults];
           setResults(combined);
           if (latestResultsRef) latestResultsRef.current = combined;
@@ -99,7 +109,7 @@ export default function ValidationContextProvider({ children, latestResultsRef }
         // conformance information to report.
         console.warn("[shacl-everything] SHACL validation failed:", error);
       } finally {
-        if (!cancelled) setIsValidating(false);
+        if (isCurrent()) setIsValidating(false);
       }
     };
 

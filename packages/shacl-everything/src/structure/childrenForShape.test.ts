@@ -167,3 +167,42 @@ test("a plain sh:property-only shape matches propertiesForShape directly", async
     expected.map((element) => element.propertyShapes[0].value),
   );
 });
+
+test("a sh:deactivated property shape is neither rendered nor merged into its co-path group", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+
+        ex:Person a sh:NodeShape ;
+            sh:property ex:nameShape, ex:strictNameShape, ex:ageShape .
+
+        ex:nameShape sh:path ex:name .
+        ex:strictNameShape sh:path ex:name ; sh:minCount 1 ; sh:deactivated true .
+        ex:ageShape sh:path ex:age ; sh:deactivated true .
+    `,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf("", "text/turtle");
+
+  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Alice"));
+  expect(elements).toHaveLength(1);
+  const [name] = elements as PropertyUIElement[];
+  expect(name.propertyShapes.map((shape) => shape.value)).toEqual([ex("nameShape").value]);
+});
+
+test("a sh:deactivated shape reached via sh:node contributes no properties", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+
+        ex:Recipe a sh:NodeShape ; sh:node ex:Metadata .
+        ex:Metadata a sh:NodeShape ; sh:deactivated true ; sh:property [ sh:path ex:title ] .
+    `,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf("", "text/turtle");
+
+  expect(childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"))).toHaveLength(0);
+});
