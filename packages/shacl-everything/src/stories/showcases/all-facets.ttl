@@ -1,0 +1,142 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix geosparql: <http://www.opengis.net/ont/geosparql#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+
+# Every facet widget on one root shape, in the same order Storybook's sidebar lists the
+# ShapeThing (living document) facets - facets have no SHACL UI spec clause, so all of them are
+# st: widgets. Each property declares its st:facet explicitly (so auto-scoring never picks a
+# different widget), uses its own predicate, and carries the widget's compact IRI as its sh:name
+# and full IRI as its sh:description. Data is lifted from each widget's own fixture (see
+# src/widgets/implementations/st/facets/<Name>/).
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Product ;
+
+    sh:property [
+        sh:name "st:CategoryFacet" ;
+        sh:description "http://shapething.com/CategoryFacet" ;
+        sh:path ex:categoryFacet ;
+        sh:class ex:Category ;
+        st:facet st:CategoryFacet ;
+        sh:order 1 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:ColorFacet" ;
+        sh:description "http://shapething.com/ColorFacet" ;
+        sh:path ex:colorFacet ;
+        st:facet st:ColorFacet ;
+        sh:order 2 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:DateRangeFacet" ;
+        sh:description "http://shapething.com/DateRangeFacet" ;
+        sh:path ex:dateRangeFacet ;
+        sh:datatype xsd:date ;
+        st:facet st:DateRangeFacet ;
+        sh:order 3 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:DateTimeRangeFacet" ;
+        sh:description "http://shapething.com/DateTimeRangeFacet" ;
+        sh:path ex:dateTimeRangeFacet ;
+        sh:datatype xsd:dateTime ;
+        st:facet st:DateTimeRangeFacet ;
+        sh:order 4 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:MapFacet" ;
+        sh:description "http://shapething.com/MapFacet" ;
+        sh:path ex:mapFacet ;
+        sh:datatype geosparql:wktLiteral ;
+        st:facet st:MapFacet ;
+        sh:order 5 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:NumberRangeFacet" ;
+        sh:description "http://shapething.com/NumberRangeFacet" ;
+        sh:path ex:numberRangeFacet ;
+        sh:datatype xsd:decimal ;
+        st:facet st:NumberRangeFacet ;
+        sh:order 6 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:SubClassFacet" ;
+        sh:description "http://shapething.com/SubClassFacet" ;
+        sh:path ex:subClassFacet ;
+        sh:rootClass ex:ProductType ;
+        st:facet st:SubClassFacet ;
+        sh:order 7 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:TextSearchFacet" ;
+        sh:description "http://shapething.com/TextSearchFacet" ;
+        sh:path [ sh:alternativePath ( schema:name schema:description ) ] ;
+        st:facet st:TextSearchFacet ;
+        sh:order 8 ;
+    ] ;
+    .
+
+ex:Electronics a ex:Category ; rdfs:label "Electronics"@en, "Elektronica"@nl .
+ex:Books a ex:Category ; rdfs:label "Books"@en, "Boeken"@nl .
+ex:Toys a ex:Category ; rdfs:label "Toys"@en, "Speelgoed"@nl .
+
+ex:ProductType a rdfs:Class ; rdfs:label "Product type"@en .
+ex:Gadget rdfs:subClassOf ex:ProductType ; rdfs:label "Gadget"@en .
+ex:Computer rdfs:subClassOf ex:Gadget ; rdfs:label "Computer"@en .
+ex:Printed rdfs:subClassOf ex:ProductType ; rdfs:label "Printed matter"@en .
+
+<#data> a ex:Product ;
+    schema:name "Fire truck" ;
+    schema:description "A bright red toy fire truck" ;
+    ex:categoryFacet ex:Toys ;
+    ex:colorFacet [ st:hue "0"^^xsd:decimal ; st:saturation "100"^^xsd:decimal ; st:lightness "50"^^xsd:decimal ] ;
+    ex:dateRangeFacet "2026-03-01"^^xsd:date ;
+    ex:dateTimeRangeFacet "2026-03-01T09:00:00"^^xsd:dateTime ;
+    ex:mapFacet "POINT (2.3522 48.8566)"^^geosparql:wktLiteral ;
+    ex:numberRangeFacet 19.99 ;
+    ex:subClassFacet ex:Gadget .
+
+<#laptop> a ex:Product ;
+    schema:name "Laptop" ;
+    schema:description "A light laptop with a blue lid" ;
+    ex:categoryFacet ex:Electronics ;
+    ex:colorFacet [ st:hue "240"^^xsd:decimal ; st:saturation "100"^^xsd:decimal ; st:lightness "50"^^xsd:decimal ] ;
+    ex:dateRangeFacet "2026-05-15"^^xsd:date ;
+    ex:dateTimeRangeFacet "2026-05-15T14:00:00"^^xsd:dateTime ;
+    ex:mapFacet "POINT (13.4050 52.5200)"^^geosparql:wktLiteral ;
+    ex:numberRangeFacet 42.50 ;
+    ex:subClassFacet ex:Computer .
+
+<#novel> a ex:Product ;
+    schema:name "Novel" ;
+    schema:description "A paperback with a green cover" ;
+    ex:categoryFacet ex:Books ;
+    ex:colorFacet [ st:hue "120"^^xsd:decimal ; st:saturation "100"^^xsd:decimal ; st:lightness "50"^^xsd:decimal ] ;
+    ex:dateRangeFacet "2026-08-20"^^xsd:date ;
+    ex:dateTimeRangeFacet "2026-08-20T18:30:00"^^xsd:dateTime ;
+    ex:mapFacet "POINT (139.6917 35.6895)"^^geosparql:wktLiteral ;
+    ex:numberRangeFacet 5.00 ;
+    ex:subClassFacet ex:Printed .
+
+<#speaker> a ex:Product ;
+    schema:name "Speaker" ;
+    schema:description "A grey concrete-look bluetooth speaker" ;
+    ex:categoryFacet ex:Electronics ;
+    ex:colorFacet [ st:hue "0"^^xsd:decimal ; st:saturation "0"^^xsd:decimal ; st:lightness "50"^^xsd:decimal ] ;
+    ex:dateRangeFacet "2026-11-02"^^xsd:date ;
+    ex:dateTimeRangeFacet "2026-11-02T08:15:00"^^xsd:dateTime ;
+    ex:mapFacet "POINT (-74.0060 40.7128)"^^geosparql:wktLiteral ;
+    ex:numberRangeFacet 29.00 ;
+    ex:subClassFacet ex:Gadget .

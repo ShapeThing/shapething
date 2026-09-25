@@ -13,6 +13,14 @@
   position: relative;
 }
 
+.st-enum-select__placeholder {
+  display: flex;
+  align-items: center;
+  min-height: 2rem;
+  padding-inline-start: var(--size-2);
+  color: var(--st-color-text-muted);
+}
+
 .st-enum-select__arrow {
   position: absolute;
   top: 50%;

@@ -13,13 +13,15 @@ type Props = FacetWidgetProps & {
 // Also used (parameterized) by DateTimeRangeFacet's own widget.tsx, the same way
 // DateTimePickerEditor delegates to DatePickerEditor's sibling TextFieldEditor.
 export default function DateRangeFacet({
+  getConstraint,
   setConstraint,
   labelledBy,
   type = "date",
   datatype = xsd("date"),
 }: Props) {
-  const [from, setFrom] = useState("");
-  const [till, setTill] = useState("");
+  // Seeded from an already-applied constraint (e.g. a restored filter shape).
+  const [from, setFrom] = useState(() => getConstraint(sh("minInclusive"))[0]?.value ?? "");
+  const [till, setTill] = useState(() => getConstraint(sh("maxInclusive"))[0]?.value ?? "");
 
   return (
     <div className="st-date-range-facet">

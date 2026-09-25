@@ -30,10 +30,7 @@ const DATE_DATATYPES = new Set(
   ].map((datatype) => datatype.value),
 );
 
-// Exported for facets/facetValues.ts's countFacetInstancesInRange, which needs the same
-// numeric-vs-date-aware comparison to check whether a raw value falls within a facet's currently
-// entered bounds, rather than reimplementing it.
-export function literalOrder(term: Term): number {
+function literalOrder(term: Term): number {
   const datatype = (term as Literal).datatype?.value;
   return datatype && DATE_DATATYPES.has(datatype)
     ? new Date(term.value).getTime()

@@ -47,6 +47,12 @@ export { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 export { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 export { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 export {
+  useFacetColorBuckets,
+  useFacetValueBounds,
+  useFacetValueCounts,
+  useFacetValues,
+} from "@/outputs/render/modes/facet/facetData.tsx";
+export {
   nestedNodeElement,
   type NestedNodeOptions,
   useNestedNode,

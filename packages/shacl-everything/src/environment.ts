@@ -184,11 +184,10 @@ export type Environment = {
   enableFacetTypeUnion?: boolean;
   // Facet mode only. When true, an ordinary facet (CategoryFacet's options, a range facet's
   // min/max once at least one bound is filled in, or TextSearchFacet once something is typed)
-  // shows a count - how many target instances currently qualify (see
-  // structure/facetValues.ts's aggregateFacetValueCounts/countFacetInstancesInRange/
-  // countFacetInstancesMatchingPattern). This is a *live, re-narrowing* count: it excludes instances that
-  // fail any *other* currently-active facet constraint (see structure/filterShape.ts's
-  // instancesMatchingOtherConstraints), so selecting a value in one facet updates the counts shown
+  // shows a count - how many target instances currently qualify, each a COUNT(DISTINCT) query
+  // against the facet source (see facets/facetQueries.ts). This is a *live, re-narrowing* count:
+  // it excludes instances that fail any *other* currently-active facet constraint (see
+  // facets/compileFilter.ts), so selecting a value in one facet updates the counts shown
   // on every other facet - typical faceted-search behavior. A facet's own constraint is excluded
   // from narrowing its own counts, so multi-selecting within the same sh:in (an OR) doesn't shrink
   // its sibling options' counts against each other. The option list itself (which values/range
@@ -231,8 +230,8 @@ export type Environment = {
   // user can narrow candidates down through facets instead of only free-text search - handy once a
   // class has enough properties that typing a label isn't the fastest way to find one. Facet mode
   // has no results list of its own (see FacetModeWrapper's doc comment - it only ever hands the
-  // generated filter shape to onSubmit); AutoCompleteEditor's own modal supplies one by re-running
-  // structure/filterShape.ts's instancesMatchingOtherConstraints against that filter shape itself.
+  // generated filter shape to onSubmit); AutoCompleteEditor's own modal supplies one by applying
+  // that filter shape to its candidates (facets/facetQueries.ts's instancesMatchingFilterShape).
   // Only takes effect when the property actually has a known value node shape to facet against
   // (see resolution/label.ts's valueNodeShapes - the same emptiness check enableCreateInPlace/
   // enableEditInPlace already gate on); when false (the default) or when there's no such shape, the
@@ -244,6 +243,13 @@ export type Environment = {
   // same within one embedder. Defaults to a public OpenFreeMap style; override to point at a
   // self-hosted or branded style instead.
   mapStyleUrl?: string;
+  // Facet mode only. A SPARQL endpoint URL the facets query instead of the local dataGraph - option
+  // values, counts, range bounds and the matching instances are all answered by SPARQL queries sent
+  // to this endpoint (see facets/facetQueries.ts), so facet mode works over a dataset far too large
+  // to load into the browser. Each query is shipped whole, in one request, so the endpoint does the
+  // aggregation. Unset (the default) runs the exact same queries against the local dataGraph via
+  // Comunica. The shapes graph (targets, facet widgets, class taxonomies) is still read locally.
+  facetsEndpoint?: string;
 };
 
 // What flows through the preprocessor chain before it's fully resolved: the graph fields may

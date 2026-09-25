@@ -1,30 +1,23 @@
-import { useId, useMemo, useRef } from "react";
-import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
+import { useId, useMemo } from "react";
+import type { NamedNode, Term } from "@rdfjs/types";
 import { sh, st } from "@/helpers/namespaces.ts";
-import { noRefetch } from "@/helpers/noRefetch.ts";
-import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import {
-  aggregateFacetValueCounts,
-  aggregateFacetValues,
-  countFacetInstancesInRange,
-  countFacetInstancesMatchingPattern,
-  countFacetInstancesWithValueIn,
-  countFacetInstancesWithinArea,
-} from "@/facets/facetValues.ts";
-import {
   findFilterConstraintNode,
-  instancesMatchingOtherConstraints,
+  hasFilterConstraint,
   pathSparqlFor,
+  readFilterConstraint,
   setFilterConstraintForProperty,
   setFilterConstraintsForProperty,
   type FilterShape,
 } from "@/facets/filterShape.ts";
+import {
+  FacetPropertyDataProvider,
+  useFacetMatchCount,
+} from "@/outputs/render/modes/facet/facetData.tsx";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
 import type { FacetWidgetComponent } from "@/widgets/types.ts";
@@ -33,23 +26,31 @@ import WidgetErrorBoundary from "@/outputs/render/components/WidgetErrorBoundary
 type Props = {
   property: PropertyUIElement;
   filterShape: FilterShape;
-  instances: Quad_Subject[];
 };
+
+// The predicates whose presence means this facet narrows by one overall condition (a range, a text
+// search, a drawn area) rather than by picking options - such a facet shows a single match count on
+// its label instead of per-option counts.
+const SINGLE_CONDITION_PREDICATES = [
+  sh("minInclusive"),
+  sh("maxInclusive"),
+  sh("minExclusive"),
+  sh("maxExclusive"),
+  sh("pattern"),
+  st("withinArea"),
+];
 
 /**
  * Renders one property as a facet: resolves the highest-scoring st:facet widget (same scoring
- * engine as edit/view's shui:editor/shui:viewer, see scoring/score.ts), aggregates this property's
- * actual values across every target instance (structure/facetValues.ts - there is no single
- * focusNode in facet mode), and binds the widget's getConstraint/setConstraint to this property's
- * own constraint node on the live, generated filterShape (structure/filterShape.ts).
+ * engine as edit/view's shui:editor/shui:viewer, see scoring/score.ts), binds the widget's
+ * getConstraint/setConstraint to this property's own constraint node on the live, generated
+ * filterShape (facets/filterShape.ts), and provides the property's path to the facet data hooks
+ * (modes/facet/facetData.tsx) the widget pulls its values/counts/bounds through.
  */
-export default function FacetPropertyComponent({ property, filterShape, instances }: Props) {
+export default function FacetPropertyComponent({ property, filterShape }: Props) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
-  const { enableFacetOptionCounts } = useEnvironment();
   const widget = useWidget<FacetWidgetComponent>(st("facet"), property);
-  // The option list itself (values) always reflects every target instance, so an option with
-  // (currently) zero matches still shows up rather than disappearing - only its *count* narrows.
-  const values = useMemo(() => aggregateFacetValues(property, instances), [property, instances]);
+  const pathSparql = useMemo(() => pathSparqlFor(property), [property]);
 
   const labelId = useId();
   const label = property.label([activeInterfaceLanguage]);
@@ -58,183 +59,57 @@ export default function FacetPropertyComponent({ property, filterShape, instance
   // Reactive (see helpers/reactiveRdfStore.ts) - a facet widget's own setConstraint call mutates
   // filterShape.store directly, not through React state, so without this the widget would never
   // re-render to reflect its own write (e.g. a controlled checkbox's `checked` prop would go stale
-  // the instant it's clicked, snapping back visually). The find itself (not just a resolved node's
-  // quads) is tracked, so that when setConstraint later auto-vivifies this property's sh:property
-  // node for the first time, the write (which touches rootNode/sh:property) retriggers this read
-  // rather than leaving it stuck on "nothing found yet".
-  const constraintQuads = useReactiveRead(
+  // the instant it's clicked). The find itself is tracked too, so the write that auto-vivifies this
+  // property's sh:property node for the first time retriggers this read. Resolves every predicate's
+  // value(s) inside the read - including ones nested in the node's sh:qualifiedValueShape and RDF
+  // list cells - so all of it is tracked.
+  const constraint = useReactiveRead(
     filterShape.store,
-    `${filterShape.rootNode.value}|${pathSparqlFor(property) ?? ""}`,
+    `${filterShape.rootNode.value}|${pathSparql ?? ""}`,
     () => {
       const node = findFilterConstraintNode(filterShape, property);
-      return node ? filterShape.store.getQuads(node) : [];
-    },
-  );
-
-  // `instances` narrowed to whatever satisfies every *other* currently-active facet constraint -
-  // what makes valueCounts/rangeMatchCount below real faceted counts ("how many results would this
-  // leave, given what's already selected elsewhere") instead of a static tally against every
-  // target instance regardless of other filters. instancesMatchingOtherConstraints now runs a real
-  // shacl-engine validation pass (plus a direct Comunica query for MapFacet's own st:withinArea),
-  // so unlike constraintQuads above this can't stay a plain synchronous useReactiveRead - the
-  // revision counter below tracks the same "every sh:property node's own constraint quads" pattern
-  // constraintQuads' own reactive read used to narrow itself, just to know *when* to re-run the
-  // async narrowing, not to compute the result directly. Mirrors useTargetWhereFragments' own
-  // "reactive revision feeds an async useQuery" split. Skipped (falls back to the full `instances`)
-  // when counts are off.
-  const narrowRevisionRef = useRef(0);
-  const narrowRevision = useReactiveRead(
-    filterShape.store,
-    `${filterShape.rootNode.value}|narrow-revision|${pathSparqlFor(property) ?? ""}`,
-    () => {
-      for (const quad of filterShape.store.getQuads(filterShape.rootNode, sh("property"))) {
-        filterShape.store.getQuads(quad.object as Quad_Subject);
+      const values = new Map<string, Term[]>();
+      const present = new Set<string>();
+      if (node) {
+        for (const predicate of [...SINGLE_CONDITION_PREDICATES, sh("in"), sh("flags"), st("colorBucket"), st("classIn")]) {
+          values.set(predicate.value, readFilterConstraint(filterShape, node, predicate));
+          if (hasFilterConstraint(filterShape, node, predicate)) present.add(predicate.value);
+        }
+        for (const quad of filterShape.store.getQuads(node)) {
+          if (!values.has(quad.predicate.value)) {
+            values.set(quad.predicate.value, readFilterConstraint(filterShape, node, quad.predicate as NamedNode));
+            present.add(quad.predicate.value);
+          }
+        }
       }
-      return ++narrowRevisionRef.current;
+      return { values, present };
     },
   );
-  const { data: narrowedInstancesData } = useQuery({
-    queryKey: [
-      "facet-narrowed-instances",
-      filterShape.rootNode.value,
-      pathSparqlFor(property) ?? "",
-      narrowRevision,
-    ],
-    queryFn: () =>
-      instancesMatchingOtherConstraints(
-        filterShape,
-        property.dataGraph,
-        instances,
-        pathSparqlFor(property),
-      ),
-    enabled: enableFacetOptionCounts,
-    placeholderData: keepPreviousData,
-    ...noRefetch,
-  });
-  const narrowedInstances = enableFacetOptionCounts ? (narrowedInstancesData ?? instances) : instances;
 
-  const valueCounts = useMemo(
-    () =>
-      enableFacetOptionCounts ? aggregateFacetValueCounts(property, narrowedInstances) : undefined,
-    [enableFacetOptionCounts, property, narrowedInstances],
-  );
+  const getConstraint = (predicate: NamedNode): Term[] => constraint.values.get(predicate.value) ?? [];
 
-  // sh:in-style predicates point at an rdf:List head, not the values directly - expandListOrTerm
-  // (the same helper constraintResolutions.ts's own sh:in handling uses) normalizes both that and
-  // a plain single-valued predicate (e.g. sh:minInclusive) to "the actual current value(s)".
-  const getConstraint = (predicate: NamedNode): Term[] =>
-    constraintQuads
-      .filter((quad) => quad.predicate.equals(predicate))
-      .flatMap((quad) => expandListOrTerm(quad.object, filterShape.store));
-
-  // A range widget writes sh:minInclusive/sh:maxInclusive/sh:minExclusive/sh:maxExclusive through
-  // the very same setConstraint this component hands it, so getConstraint already reflects
-  // whatever the user just typed/clicked - no separate callback needed for a range widget to
-  // report its own bounds back up. Only computed once at least one bound is actually set (an
-  // untouched range facet has none), and gated the same way valueCounts is.
-  const minInclusiveBound = getConstraint(sh("minInclusive"))[0];
-  const maxInclusiveBound = getConstraint(sh("maxInclusive"))[0];
-  const minExclusiveBound = getConstraint(sh("minExclusive"))[0];
-  const maxExclusiveBound = getConstraint(sh("maxExclusive"))[0];
-  const hasRangeBound =
-    minInclusiveBound !== undefined ||
-    maxInclusiveBound !== undefined ||
-    minExclusiveBound !== undefined ||
-    maxExclusiveBound !== undefined;
-  const rangeMatchCount = useMemo(
-    () =>
-      enableFacetOptionCounts && hasRangeBound
-        ? countFacetInstancesInRange(property, narrowedInstances, {
-            minInclusive: minInclusiveBound,
-            maxInclusive: maxInclusiveBound,
-            minExclusive: minExclusiveBound,
-            maxExclusive: maxExclusiveBound,
-          })
-        : undefined,
-    [
-      enableFacetOptionCounts,
-      hasRangeBound,
-      property,
-      narrowedInstances,
-      minInclusiveBound,
-      maxInclusiveBound,
-      minExclusiveBound,
-      maxExclusiveBound,
-    ],
-  );
-
-  // Same idea as rangeMatchCount, for TextSearchFacet's own sh:pattern instead of a numeric/date
-  // range - only computed once something has actually been typed (an untouched search facet has
-  // no sh:pattern yet).
-  const patternBound = getConstraint(sh("pattern"))[0];
-  const flagsBound = getConstraint(sh("flags"))[0];
-  const searchMatchCount = useMemo(
-    () =>
-      enableFacetOptionCounts && patternBound !== undefined
-        ? countFacetInstancesMatchingPattern(
-            property,
-            narrowedInstances,
-            patternBound.value,
-            flagsBound?.value,
-          )
-        : undefined,
-    [enableFacetOptionCounts, property, narrowedInstances, patternBound, flagsBound],
-  );
-
-  // TextSearchFacet over a property declaring shui:searchQuery writes the query's matches as an
-  // sh:in instead of an sh:pattern (see its widget.tsx) - counted the same way, but only for such a
-  // property, since CategoryFacet/SubClassFacet also write sh:in and show per-option counts instead.
-  // The sh:in quad's own presence (not getConstraint's expanded list) is what says a search is
-  // active: a search with no matches is written as an explicit empty list (rdf:nil).
+  // A search facet over a property declaring shui:searchQuery writes the query's matches as an
+  // sh:in instead of an sh:pattern (see TextSearchFacet) - still a single overall condition, unlike
+  // CategoryFacet/SubClassFacet's option picks. An explicit empty sh:in (no search results) counts.
   const hasSearchQuery = useMemo(() => searchQueryFor(property) !== undefined, [property]);
-  const searchInActive = constraintQuads.some((quad) => quad.predicate.equals(sh("in")));
-  const searchInValues = getConstraint(sh("in"));
-  const searchInKey = searchInValues.map((term) => term.value).join("\n");
-  const searchInMatchCount = useMemo(
-    () =>
-      enableFacetOptionCounts && hasSearchQuery && searchInActive
-        ? countFacetInstancesWithValueIn(property, narrowedInstances, searchInValues)
-        : undefined,
-    // searchInKey stands in for searchInValues, a fresh array every render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [enableFacetOptionCounts, hasSearchQuery, searchInActive, property, narrowedInstances, searchInKey],
-  );
+  const singleConditionActive =
+    SINGLE_CONDITION_PREDICATES.some((predicate) => constraint.present.has(predicate.value)) ||
+    (hasSearchQuery && constraint.present.has(sh("in").value));
+  const matchCount = useFacetMatchCount(singleConditionActive);
 
-  // Same idea again, for MapFacet's own st:withinArea instead of a numeric/date range or text
-  // pattern - only computed once the user has actually drawn a selection area (an untouched map
-  // facet has no st:withinArea yet).
-  const areaBound = getConstraint(st("withinArea"))[0];
-  const areaMatchCount = useMemo(
-    () =>
-      enableFacetOptionCounts && areaBound !== undefined
-        ? countFacetInstancesWithinArea(property, narrowedInstances, areaBound)
-        : undefined,
-    [enableFacetOptionCounts, property, narrowedInstances, areaBound],
-  );
-
-  // A range facet only ever sets some combination of sh:minInclusive/sh:maxInclusive/
-  // sh:minExclusive/sh:maxExclusive, a search facet only ever sets sh:pattern, and a map facet
-  // only ever sets st:withinArea - never more than one of these facet *kinds* on the same
-  // property - so at most one of these is ever defined; whichever it is becomes this
-  // property's one overall match count, shown on the FormElement label rather than inline in the
-  // widget itself (valueCounts has no single-value equivalent, so CategoryFacet/SubClassFacet's
-  // per-option counts stay put next to each option).
-  const matchCount = rangeMatchCount ?? searchMatchCount ?? searchInMatchCount ?? areaMatchCount;
+  const propertyData = useMemo(() => ({ pathSparql }), [pathSparql]);
 
   if (!widget) return null;
   const { Widget } = widget;
 
   // Only auto-vivifies this property's sh:property/sh:path node on an actual write - clearing a
-  // value back to "empty" (undefined, or a `[]`) never creates one, and if none exists yet there's
-  // nothing to clear, so no property path is written until the user has actually given some input.
-  // setFilterConstraintForProperty (not getFilterConstraintNode + setFilterConstraint as two
-  // separate calls) is what keeps a brand-new node's own reactive read from observing it half-
-  // written - see that function's own doc comment.
+  // value back to "empty" (undefined, or a `[]`) never creates one. setFilterConstraintForProperty
+  // (not getFilterConstraintNode + setFilterConstraint as two separate calls) is what keeps a
+  // brand-new node's own reactive read from observing it half-written - see its doc comment.
   const setConstraint = (predicate: NamedNode, value: Term | Term[] | undefined) =>
     setFilterConstraintForProperty(filterShape, property, predicate, value);
 
-  // For a widget that needs to write more than one predicate as a single user gesture (e.g.
-  // ColorFacet's own sh:minInclusive+sh:maxExclusive pair per bucket click) - see
+  // For a widget that needs to write more than one predicate as a single user gesture - see
   // setFilterConstraintsForProperty's own doc comment for why two separate setConstraint calls
   // can't safely stand in for this on a property no facet has touched yet.
   const setConstraints = (entries: ReadonlyArray<readonly [NamedNode, Term | Term[] | undefined]>) =>
@@ -244,9 +119,8 @@ export default function FacetPropertyComponent({ property, filterShape, instance
     <FormElement
       label={label}
       actions={
-        matchCount !== undefined && (
-          <span className="st-form-element__count-badge">{matchCount}</span>
-        )
+        singleConditionActive &&
+        matchCount !== undefined && <span className="st-form-element__count-badge">{matchCount}</span>
       }
       showColon
       labelId={labelId}
@@ -255,15 +129,15 @@ export default function FacetPropertyComponent({ property, filterShape, instance
       {/* Same per-widget isolation as edit/view mode's WidgetSlot - a crashing facet widget
           replaces only itself, not the whole facet form. */}
       <WidgetErrorBoundary resetKeys={[widget.iri.value]} widget={widget.iri.value}>
-        <Widget
-          shape={property}
-          values={values}
-          getConstraint={getConstraint}
-          setConstraint={setConstraint}
-          setConstraints={setConstraints}
-          valueCounts={valueCounts}
-          labelledBy={labelId}
-        />
+        <FacetPropertyDataProvider value={propertyData}>
+          <Widget
+            shape={property}
+            getConstraint={getConstraint}
+            setConstraint={setConstraint}
+            setConstraints={setConstraints}
+            labelledBy={labelId}
+          />
+        </FacetPropertyDataProvider>
       </WidgetErrorBoundary>
     </FormElement>
   );

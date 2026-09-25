@@ -18,7 +18,7 @@ import { groupShapesByPath, walkShapeComposition } from "@/structure/shapeCompos
  * shapes graph instead (see SubClassEditor's own downward walk), so both are searched here.
  * Cycle-safe: a class already seen is never re-queried, so a cyclical subClassOf graph terminates.
  */
-function descendantClasses(classIri: Term, graphs: RdfStore[]): Term[] {
+export function descendantClasses(classIri: Term, graphs: RdfStore[]): Term[] {
   const seen = new Set<string>([classIri.value]);
   const result: Term[] = [classIri];
   let frontier = [classIri];

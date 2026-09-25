@@ -6,7 +6,7 @@ import { literalToGeometry } from "@/helpers/geometryLiteral.ts";
 import { geosparql } from "@/helpers/namespaces.ts";
 
 /**
- * Every value this property actually has (facets/facetValues.ts's aggregateFacetValues),
+ * The values this property has across the target instances (useFacetValues),
  * resolved to a GeoJSON Feature for plotting on the map - values this widget doesn't recognize as
  * geometry (see helpers/geometryLiteral.ts's literalToGeometry) are silently dropped. The facet-mode
  * analogue of MapViewer/geometry.ts's own valueToFeature, minus the st:GeoRole one-hop fallback:

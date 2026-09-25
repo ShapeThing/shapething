@@ -3,35 +3,15 @@ import { RdfStore } from "rdf-stores";
 import type { Preprocessor } from "@/preprocess/index.ts";
 import { factory } from "@/helpers/factory.ts";
 import { sh } from "@/helpers/namespaces.ts";
-import { withCorsProxy } from "@/helpers/corsProxy.ts";
+import { fetchWithCorsProxyFallback, getQueryEngine } from "@/helpers/queryEngine.ts";
 import { effectiveLabelPredicates } from "@/resolution/label.ts";
 
-// Lazily imported and cached, mirroring outputs/render/hooks/query.ts's own getEngine() - a
-// separate instance here since this runs during preprocessing, a different layer, so nothing here
-// should pay for Comunica's SPARQL-over-HTTP machinery unless this opt-in preprocessor actually
-// runs. Comunica (rather than a hand-rolled fetch) is what actually dereferences each predicate's
-// IRI: given as a bare URL `source`, it performs real HTTP content negotiation (an Accept header
-// covering every RDF serialization it has a parser for) and picks the matching parser from the
-// response's own Content-Type - unlike guessing a format from the URL's file extension, which an
-// ontology term IRI (e.g. https://xmlns.com/foaf/0.1/name) typically doesn't have.
-let enginePromise: Promise<import("@comunica/query-sparql").QueryEngine> | undefined;
-function getEngine() {
-  enginePromise ??= import("@comunica/query-sparql").then(({ QueryEngine }) => new QueryEngine());
-  return enginePromise;
-}
-
-// Mirrors query.ts's own fetchWithCorsProxyFallback: passed as Comunica's `context.fetch` so a
-// failed direct dereference falls back to the configured CORS proxy, the same "try direct first"
-// fallback resolveRdfSources.ts applies to shapesGraph/dataGraph/scoresGraph URLs.
-function fetchWithCorsProxyFallback(corsProxyUrl: string): typeof fetch {
-  return async (input, init) => {
-    const direct = await fetch(input, init).catch((error: Error) => error);
-    if (direct instanceof Response && direct.ok) return direct;
-
-    const url = input instanceof Request ? input.url : input.toString();
-    return fetch(withCorsProxy(url, corsProxyUrl), init);
-  };
-}
+// Comunica (rather than a hand-rolled fetch) is what actually dereferences each predicate's IRI:
+// given as a bare URL `source`, it performs real HTTP content negotiation (an Accept header covering
+// every RDF serialization it has a parser for) and picks the matching parser from the response's
+// own Content-Type - unlike guessing a format from the URL's file extension, which an ontology term
+// IRI (e.g. https://xmlns.com/foaf/0.1/name) typically doesn't have. Shares helpers/queryEngine.ts's
+// one engine with every other query in this package.
 
 // The predicate(s) that count as "this property shape already has a name" - sh:name by default, or
 // whatever shui:labelPreference (3.4) configures instead. Only a plain-predicate path can be shape
@@ -91,7 +71,7 @@ async function fetchPropertyLabelBindings(
   labelPredicates: NamedNode[],
   corsProxyUrl: string | undefined,
 ): Promise<Bindings[]> {
-  const engine = await getEngine();
+  const engine = await getQueryEngine();
   const valuesClause = `values ?labelPredicate { ${labelPredicates
     .map((labelPredicate) => `<${labelPredicate.value}>`)
     .join(" ")} }`;

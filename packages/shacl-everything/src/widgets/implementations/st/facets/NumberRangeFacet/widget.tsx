@@ -1,30 +1,36 @@
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import type { NamedNode } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
 import { sh, xsd } from "@/helpers/namespaces.ts";
+import { useFacetValueBounds } from "@/outputs/render/modes/facet/facetData.tsx";
 import type { FacetWidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
 const INTEGER_DATATYPES = new Set([xsd("integer").value]);
 
+function parseBound(value: string | undefined): number | undefined {
+  const parsed = value === undefined ? Number.NaN : parseFloat(value);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
 export default function NumberRangeFacet({
   shape,
-  values,
+  getConstraint,
   setConstraint,
   labelledBy,
 }: FacetWidgetProps) {
   const datatype = (shape.get(sh("datatype")) ?? xsd("decimal")) as NamedNode;
   const isInteger = INTEGER_DATATYPES.has(datatype.value);
 
-  const numericValues = useMemo(
-    () => values.map((value) => parseFloat(value.value)).filter((value) => !Number.isNaN(value)),
-    [values],
-  );
-  const dataMin = numericValues.length > 0 ? Math.min(...numericValues) : undefined;
-  const dataMax = numericValues.length > 0 ? Math.max(...numericValues) : undefined;
+  // The data's own range, computed by the facet source (MIN/MAX) rather than by pulling every value.
+  const bounds = useFacetValueBounds();
+  const dataMin = parseBound(bounds.min?.value);
+  const dataMax = parseBound(bounds.max?.value);
 
-  const [min, setMin] = useState("");
-  const [max, setMax] = useState("");
+  // Seeded from an already-applied constraint (e.g. a restored filter shape), then owned locally so
+  // typing is never fought mid-value.
+  const [min, setMin] = useState(() => getConstraint(sh("minInclusive"))[0]?.value ?? "");
+  const [max, setMax] = useState(() => getConstraint(sh("maxInclusive"))[0]?.value ?? "");
 
   // The HTML min/max attributes below only get enforced by the browser at form submission, and
   // facet mode's default "live" mode never submits a form - so an out-of-bounds value typed here

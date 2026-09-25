@@ -27,40 +27,30 @@ export type WidgetComponent = ComponentType<WidgetProps>;
 /**
  * Facet mode has no single focus node, so a facet widget's props look nothing like an editor's/
  * viewer's term+setTerm: `shape` is still the (possibly synthetic, see the root type/category
- * selector) PropertyUIElement metadata comes from, `values` is every value found for this
- * property across every target instance (see facets/facetValues.ts's aggregateFacetValues -
- * used to derive range bounds/option lists, not a single current value), and
- * getConstraint/setConstraint read/write this property's own constraint node on the live,
- * generated filterShape (see facets/filterShape.ts) - the facet-mode analogue of term/setTerm.
- * setConstraint(predicate, undefined) removes that predicate's current value(s) entirely.
+ * selector) PropertyUIElement metadata comes from, and getConstraint/setConstraint read/write this
+ * property's own constraint node on the live, generated filterShape (see facets/filterShape.ts) -
+ * the facet-mode analogue of term/setTerm. setConstraint(predicate, undefined) removes that
+ * predicate's current value(s) entirely. A widget reads and writes plain predicates (sh:in,
+ * sh:minInclusive, ...); where they physically live in the generated shape is filterShape.ts's
+ * concern.
  *
- * setConstraints writes several predicates as one atomic gesture (e.g. ColorFacet's own
- * sh:minInclusive+sh:maxExclusive pair for one bucket click) - see
- * facets/filterShape.ts's setFilterConstraintsForProperty for why a widget that needs to write
- * more than one predicate for the same user action must use this instead of two separate
- * setConstraint calls: on a property no facet has touched yet, two separate calls race against
- * useReactiveRead's own snapshot caching and can silently lose the second write from the live view
- * (though not from the data actually submitted).
+ * setConstraints writes several predicates as one atomic gesture - see facets/filterShape.ts's
+ * setFilterConstraintsForProperty for why a widget that needs to write more than one predicate for
+ * the same user action must use this instead of two separate setConstraint calls.
  *
- * `valueCounts` is only given when Environment.enableFacetOptionCounts is on (see
- * facets/facetValues.ts's aggregateFacetValueCounts) - keyed by termKey, "how many target
- * instances have this value, given every other currently-active facet constraint" (a live,
- * re-narrowing count - see facets/filterShape.ts's instancesMatchingOtherConstraints, which
- * FacetPropertyComponent applies before counting). Option-based widgets (CategoryFacet) use it to
- * show a count next to each option; a widget with no notion of discrete options
- * (TextSearchFacet, the range facets) simply ignores it.
- *
- * A range/search widget (NumberRangeFacet/DateRangeFacet/DateTimeRangeFacet/TextSearchFacet) has
- * no per-option count of its own - its single overall match count is instead rendered by
- * FacetPropertyComponent onto the surrounding FormElement's label, not passed down here.
+ * Data derived from the facet source (the local dataGraph, or Environment.facetsEndpoint) is not
+ * passed as props: a widget pulls exactly what it needs through the facet data hooks
+ * (outputs/render/modes/facet/facetData.tsx, re-exported from the widget SDK) - useFacetValues for
+ * its option list, useFacetValueCounts for live per-option counts, useFacetValueBounds for a range,
+ * useFacetColorBuckets for color swatches - each one a SPARQL query, so a widget that shows no
+ * counts never costs a count query. A range/search widget's single overall match count is rendered
+ * by FacetPropertyComponent onto the surrounding FormElement's label, not by the widget itself.
  */
 export type FacetWidgetProps = {
   shape: PropertyUIElement;
-  values: Term[];
   getConstraint: (predicate: NamedNode) => Term[];
   setConstraint: (predicate: NamedNode, value: Term | Term[] | undefined) => void;
-  setConstraints: (entries: ReadonlyArray<readonly [NamedNode, Term | Term[] | undefined]>) => void;
-  valueCounts?: Map<string, number>;
+  setConstraints?: (entries: ReadonlyArray<readonly [NamedNode, Term | Term[] | undefined]>) => void;
   labelledBy?: string;
 };
 

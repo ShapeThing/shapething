@@ -165,10 +165,9 @@ export function bucketForHexColor(hex: string): ColorBucket | undefined {
  * this into a real sh:sparql/SPARQLConstraint alongside st:ColorFacet's own plain st:colorBucket
  * value (the same "bespoke value for ColorFacet's own widget display, standards-form SPARQL text
  * for actual matching" split syncWithinAreaSparqlConstraint already uses for MapFacet's
- * st:withinArea) - this renderer's own facet narrowing (facets/filterShape.ts's
- * instancesConformingViaEngine) runs this exact text for real, via shacl-engine; classifyHsl (via
- * bucketForHsl) is only ever called directly by ColorFacet's own widget, to group values into
- * swatches for display.
+ * st:withinArea), and facets/compileFilter.ts/facetQueries.ts compile the same text into this
+ * renderer's own facet queries (the bucket filter, and ColorFacet's per-bucket counts) - so the
+ * swatches shown and what a bucket pick filters are classified by the same expression.
  *
  * Must stay in lock-step with classifyHsl's own thresholds (94/8/15, the same hue cutoffs) by
  * hand - there's no shared code between the two representations, only shared threshold values. A

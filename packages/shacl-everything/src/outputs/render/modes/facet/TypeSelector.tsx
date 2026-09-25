@@ -2,16 +2,24 @@ import { useId, useMemo } from "react";
 import { Localized } from "@fluent/react";
 import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
-import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 import { factory } from "@/helpers/factory.ts";
 import { rdf, sh, st, xsd } from "@/helpers/namespaces.ts";
 import { rebuildRdfList } from "@/helpers/rdfList.ts";
+import { termToSparql } from "@/helpers/sparqlLiteral.ts";
+import { compileTargets } from "@/facets/compileFilter.ts";
+import { keyedCountsQuery, parseKeyedCounts } from "@/facets/facetQueries.ts";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
+import {
+  FacetPropertyDataProvider,
+  useFacetQueryResult,
+  useFacetSource,
+} from "@/outputs/render/modes/facet/facetData.tsx";
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import {
   findFilterConstraintNode,
   pathSparqlFor,
+  readFilterConstraint,
   setFilterConstraintForProperty,
   type FilterShape,
 } from "@/facets/filterShape.ts";
@@ -22,17 +30,13 @@ import { resolvedWidgets } from "@/preprocess/widgets.ts";
 type Props = {
   rootShapes: Quad_Subject[];
   classFor: (rootShape: Quad_Subject) => Term;
+  shapesGraph: RdfStore;
   dataGraph: RdfStore;
   scoresGraph: RdfStore;
   widgets?: Widgets;
   filterShape: FilterShape;
   selectedRootShape: Quad_Subject;
   onSelectRootShape: (rootShape: Quad_Subject) => void;
-  // Only given when Environment.enableFacetOptionCounts is on (see NodeUIComponent, which is the
-  // one that actually has shapesGraph in hand to compute it) - keyed by termKey(classFor(rootShape))
-  // the same way CategoryFacet keys its own valueCounts, since a root shape's "value" here is its
-  // own class term.
-  valueCounts?: Map<string, number>;
 };
 
 /**
@@ -48,14 +52,15 @@ type Props = {
 export default function TypeSelector({
   rootShapes,
   classFor,
+  shapesGraph,
   dataGraph,
   scoresGraph,
   widgets,
   filterShape,
   selectedRootShape,
   onSelectRootShape,
-  valueCounts,
 }: Props) {
+  const { compileOptions, countsEnabled } = useFacetSource();
   const placeholderFocusNode = useMemo(() => factory.blankNode(), []);
 
   const property = useMemo(() => {
@@ -81,6 +86,24 @@ export default function TypeSelector({
   }, [rootShapes, classFor, dataGraph, scoresGraph, widgets, placeholderFocusNode]);
 
   const widget = useWidget<FacetWidgetComponent>(st("facet"), property);
+
+  // Each root shape's own target-instance count (Environment.enableFacetOptionCounts), keyed by
+  // termKey(classFor(rootShape)) the same way CategoryFacet keys its valueCounts, since a root
+  // shape's "value" here is its class. Deliberately static - not narrowed by other facets, since
+  // those belong to whichever type is currently selected.
+  const countsQuery = useMemo(() => {
+    if (!countsEnabled) return undefined;
+    const branches = rootShapes.flatMap((rootShape) => {
+      const key = termToSparql(classFor(rootShape));
+      return key ? [{ key, targets: compileTargets([rootShape], shapesGraph, compileOptions) }] : [];
+    });
+    return branches.length > 0 ? keyedCountsQuery(branches) : undefined;
+  }, [countsEnabled, rootShapes, classFor, shapesGraph, compileOptions]);
+  const valueCounts = useFacetQueryResult(countsQuery, parseKeyedCounts).data;
+  const propertyData = useMemo(
+    () => ({ pathSparql: undefined, overrides: { values: [], valueCounts } }),
+    [valueCounts],
+  );
   const labelId = useId();
 
   // Reactive - see FacetPropertyComponent's identical use of this; without it the widget's own
@@ -88,12 +111,14 @@ export default function TypeSelector({
   // button's `checked` prop going stale the instant it's clicked). Tracking the find itself (not
   // just a resolved node's quads) means no type gets pre-selected in the submitted shape until the
   // user actually picks one - see setConstraint below.
-  const constraintQuads = useReactiveRead(
+  const constraint = useReactiveRead(
     filterShape.store,
     `${filterShape.rootNode.value}|${pathSparqlFor(property) ?? ""}`,
     () => {
       const node = findFilterConstraintNode(filterShape, property);
-      return node ? filterShape.store.getQuads(node) : [];
+      return new Map<string, Term[]>(
+        node ? [[sh("in").value, readFilterConstraint(filterShape, node, sh("in"))]] : [],
+      );
     },
   );
 
@@ -101,9 +126,7 @@ export default function TypeSelector({
   const { Widget } = widget;
 
   const getConstraint = (predicate: NamedNode): Term[] =>
-    constraintQuads
-      .filter((quad) => quad.predicate.equals(predicate))
-      .flatMap((quad) => expandListOrTerm(quad.object, filterShape.store));
+    constraint.get(predicate.value) ?? [];
 
   // Only auto-vivifies this facet's sh:property/sh:path node on an actual selection - see
   // setFilterConstraintForProperty's own doc comment for why it (not getFilterConstraintNode +
@@ -124,14 +147,14 @@ export default function TypeSelector({
       labelId={labelId}
       showColon
     >
-      <Widget
-        shape={property}
-        values={[]}
-        getConstraint={getConstraint}
-        setConstraint={setConstraint}
-        valueCounts={valueCounts}
-        labelledBy={labelId}
-      />
+      <FacetPropertyDataProvider value={propertyData}>
+        <Widget
+          shape={property}
+          getConstraint={getConstraint}
+          setConstraint={setConstraint}
+          labelledBy={labelId}
+        />
+      </FacetPropertyDataProvider>
     </FormElement>
   );
 }

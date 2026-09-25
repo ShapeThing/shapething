@@ -38,8 +38,10 @@
         sh:order 3 ;
         sh:name "Severity"@en, "Ernst"@nl ;
         sh:path sh:severity ;
+        shui:editor shui:EnumSelectEditor ;
         sh:group <#metadata> ;
         sh:class sh:Severity ;
+        sh:maxCount 1 ;
     ] ;
 
     sh:property [

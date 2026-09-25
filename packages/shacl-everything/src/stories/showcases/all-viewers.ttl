@@ -1,0 +1,283 @@
+@prefix ex: <http://example.org/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix schema: <http://schema.org/>.
+@prefix geosparql: <http://www.opengis.net/ont/geosparql#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+# Every viewer widget on one focus node, in spec order: SHACL UI 1.2 §10.2.1-10.2.10 first, then
+# the ShapeThing (living document) st: viewers in the same order Storybook's sidebar lists them.
+# Each property declares its shui:viewer explicitly (so auto-scoring never picks a different
+# widget), uses its own predicate (so no two viewers share values), and carries the widget's
+# compact IRI as its sh:name and full IRI as its sh:description. Data is lifted from each
+# widget's own fixture (see src/widgets/implementations/<ns>/viewers/<Name>/).
+
+<#shuiGroup>
+    a sh:PropertyGroup ;
+    sh:name "SHACL UI 1.2 - 10.2 Viewers" ;
+    sh:order 0 ;
+    .
+
+<#stGroup>
+    a sh:PropertyGroup ;
+    sh:name "ShapeThing (living document) - Viewers" ;
+    sh:order 1 ;
+    .
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass ex:WidgetShowcase ;
+
+    sh:property [
+        sh:name "10.2.1 shui:BlankNodeViewer" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/BlankNodeViewer" ;
+        sh:path ex:blankNodeViewer ;
+        sh:nodeKind sh:BlankNode ;
+        shui:viewer shui:BlankNodeViewer ;
+        sh:group <#shuiGroup> ;
+        sh:order 1 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.2.2 shui:DetailsViewer" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/DetailsViewer" ;
+        sh:path ex:detailsViewer ;
+        shui:viewer shui:DetailsViewer ;
+        sh:node [
+            sh:property [
+                sh:name "Street"@en, "Straat"@nl ;
+                sh:path schema:streetAddress ;
+            ] ;
+            sh:property [
+                sh:name "Postal code"@en, "Postcode"@nl ;
+                sh:path schema:postalCode ;
+            ] ;
+        ] ;
+        sh:group <#shuiGroup> ;
+        sh:order 2 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.2.3 shui:HTMLViewer" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/HTMLViewer" ;
+        sh:path ex:htmlViewer ;
+        sh:datatype rdf:HTML ;
+        shui:viewer shui:HTMLViewer ;
+        sh:group <#shuiGroup> ;
+        sh:order 3 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.2.4 shui:HyperlinkViewer" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/HyperlinkViewer" ;
+        sh:path ex:hyperlinkViewer ;
+        sh:datatype xsd:anyURI ;
+        shui:viewer shui:HyperlinkViewer ;
+        sh:group <#shuiGroup> ;
+        sh:order 4 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.2.5 shui:ImageViewer" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/ImageViewer" ;
+        sh:path ex:imageViewer ;
+        sh:nodeKind sh:IRI ;
+        shui:viewer shui:ImageViewer ;
+        sh:group <#shuiGroup> ;
+        sh:order 5 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.2.6 shui:IRIViewer" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/IRIViewer" ;
+        sh:path ex:iriViewer ;
+        sh:nodeKind sh:IRI ;
+        shui:viewer shui:IRIViewer ;
+        sh:group <#shuiGroup> ;
+        sh:order 6 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.2.7 shui:LabelViewer" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/LabelViewer" ;
+        sh:path ex:labelViewer ;
+        sh:class schema:Organization ;
+        shui:viewer shui:LabelViewer ;
+        sh:group <#shuiGroup> ;
+        sh:order 7 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.2.8 shui:LangStringViewer" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/LangStringViewer" ;
+        sh:path ex:langStringViewer ;
+        sh:datatype rdf:langString ;
+        shui:viewer shui:LangStringViewer ;
+        sh:group <#shuiGroup> ;
+        sh:order 8 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.2.9 shui:LiteralViewer" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/LiteralViewer" ;
+        sh:path ex:literalViewer ;
+        shui:viewer shui:LiteralViewer ;
+        sh:group <#shuiGroup> ;
+        sh:order 9 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.2.10 shui:ValueTableViewer" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/ValueTableViewer" ;
+        sh:path [ sh:inversePath skos:broader ] ;
+        shui:viewer shui:ValueTableViewer ;
+        sh:node <#conceptTableShape> ;
+        sh:group <#shuiGroup> ;
+        sh:order 10 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:AddressViewer" ;
+        sh:description "http://shapething.com/AddressViewer" ;
+        sh:path ex:addressViewer ;
+        shui:viewer st:AddressViewer ;
+        sh:group <#stGroup> ;
+        sh:order 11 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:ColorViewer" ;
+        sh:description "http://shapething.com/ColorViewer" ;
+        sh:path ex:colorViewer ;
+        shui:viewer st:ColorViewer ;
+        sh:group <#stGroup> ;
+        sh:order 12 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:DurationViewer" ;
+        sh:description "http://shapething.com/DurationViewer" ;
+        sh:path ex:durationViewer ;
+        sh:datatype xsd:duration ;
+        sh:maxCount 1 ;
+        shui:viewer st:DurationViewer ;
+        sh:group <#stGroup> ;
+        sh:order 13 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:IconifyViewer" ;
+        sh:description "http://shapething.com/IconifyViewer" ;
+        sh:path ex:iconifyViewer ;
+        sh:datatype <https://iconify.design> ;
+        shui:viewer st:IconifyViewer ;
+        sh:group <#stGroup> ;
+        sh:order 14 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:MapViewer" ;
+        sh:description "http://shapething.com/MapViewer" ;
+        sh:path ex:mapViewer ;
+        shui:viewer st:MapViewer ;
+        sh:node <#landmarkShape> ;
+        sh:group <#stGroup> ;
+        sh:order 15 ;
+    ] ;
+    .
+
+<#conceptTableShape>
+    a sh:NodeShape ;
+    sh:property [
+        sh:path ex:self ;
+        sh:name "narrower concept"@en, "specifieker concept"@nl ;
+        sh:nodeKind sh:IRI ;
+        sh:order 0 ;
+        sh:values sh:this ;
+    ] ;
+    sh:property [
+        sh:path skos:altLabel ;
+        sh:name "alt labels"@en, "alternatieve labels"@nl ;
+        sh:order 1 ;
+    ] ;
+    .
+
+<#landmarkShape>
+    a sh:NodeShape ;
+    sh:property [
+        sh:path geosparql:asWKT ;
+        shui:propertyRole st:GeoRole ;
+    ] ;
+    sh:property [
+        sh:path schema:name ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:additionalType ;
+        shui:propertyRole shui:ClassificationRole ;
+    ] ;
+    .
+
+ex:acme a schema:Organization ; rdfs:label "ACME Corp"@en, "ACME Corp"@nl .
+
+ex:dog
+    a skos:Concept ;
+    skos:prefLabel "Dog"@en ;
+    skos:altLabel "Canine"@en ;
+    skos:broader <#data> ;
+    .
+
+ex:cat
+    a skos:Concept ;
+    skos:prefLabel "Cat"@en ;
+    skos:altLabel "Feline"@en ;
+    skos:broader <#data> ;
+    .
+
+ex:rijksmuseum
+    schema:name "Rijksmuseum"@en, "Rijksmuseum"@nl ;
+    schema:additionalType "Museum"@en, "Museum"@nl ;
+    geosparql:asWKT "POINT (4.8852 52.3600)"^^geosparql:wktLiteral ;
+    .
+
+<#data>
+    a ex:WidgetShowcase ;
+    ex:blankNodeViewer [
+        rdfs:label "Dam 1, 1012 AB Amsterdam"@en, "Dam 1, 1012 AB Amsterdam"@nl ;
+        schema:postalCode "1012 AB" ;
+    ] ;
+    ex:detailsViewer [
+        schema:streetAddress "Dam 1" ;
+        schema:postalCode "1012 AB" ;
+    ] ;
+    ex:htmlViewer "<p>Loves <strong>hiking</strong></p>"^^rdf:HTML ;
+    ex:hyperlinkViewer "https://example.org/hendrik"^^xsd:anyURI ;
+    ex:imageViewer <https://upload.wikimedia.org/wikipedia/commons/2/20/Flag_of_the_Netherlands.svg> ;
+    ex:iriViewer <https://example.org/more-info> ;
+    ex:labelViewer ex:acme ;
+    ex:langStringViewer "Loves hiking"@en, "Houdt van wandelen"@nl ;
+    ex:literalViewer "NL" ;
+    ex:addressViewer [
+        a schema:PostalAddress ;
+        schema:streetAddress "Breestraat 1" ;
+        schema:addressLocality "Amersfoort" ;
+        schema:addressRegion "Utrecht" ;
+        schema:postalCode "3811 BH" ;
+        schema:addressCountry "Netherlands" ;
+    ] ;
+    # #3b82f6 as HSL (see st-color-viewer.ttl).
+    ex:colorViewer [
+        st:hue "217.2192513368984"^^xsd:decimal ;
+        st:saturation "91.21951219512198"^^xsd:decimal ;
+        st:lightness "59.80392156862745"^^xsd:decimal ;
+    ] ;
+    ex:durationViewer "P2Y6M"^^xsd:duration ;
+    ex:iconifyViewer "mdi:home"^^<https://iconify.design> ;
+    ex:mapViewer
+        "POINT (4.9041 52.3676)"^^geosparql:wktLiteral,
+        ex:rijksmuseum ;
+    .

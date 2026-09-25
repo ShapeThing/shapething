@@ -33,12 +33,9 @@ function parseJsonGeometry(value: string): Feature | Geometry | undefined {
 /**
  * A value literal directly typed as a GeoSPARQL WKT literal, or - falling back for a plain string/
  * custom datatype - one whose lexical value happens to parse as GeoJSON text. Shared between
- * MapViewer (reading arbitrary shape-author data), MapFacet (plotting facet-aggregated values and
- * reading/writing a drawn selection area) and facets/facetValues.ts's own
- * countFacetInstancesWithinArea (evaluating a MapFacet selection's own spatial constraint - see
- * that function's own doc comment for why facets/filterShape.ts's own narrowing goes through
- * geof:sfWithin/Comunica instead, sharing the same underlying @turf/turf predicate rather than this
- * module) - one parsing rule for "is this term a geometry", kept in one place rather than
+ * MapViewer (reading arbitrary shape-author data), MapFacet (plotting facet values and
+ * reading/writing a drawn selection area) and helpers/geosparqlFunctions.ts's geof: functions
+ * (evaluating a MapFacet selection's spatial constraint locally) - one parsing rule for "is this term a geometry", kept in one place rather than
  * duplicated across widgets. GeoEditor/geometry.ts keeps its own narrower copy on purpose (see its
  * own comment) - it only ever round-trips what its own drawing toolbar can produce.
  */

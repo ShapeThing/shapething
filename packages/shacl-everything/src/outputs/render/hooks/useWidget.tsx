@@ -44,7 +44,7 @@ export function widgetQueryOptions(
  * `valueNode` additionally scores the property's actual value against each rule's
  * shui:dataGraphShape (e.g. picking a different widget for a URL than for plain text sharing the
  * same property) - omit it to score on the property shape(s) alone. Facet mode never has a single
- * value to pass here (see structure/facetValues.ts) - it always scores on the property shape(s)
+ * value to pass here (see modes/facet/facetData.tsx) - it always scores on the property shape(s)
  * alone.
  *
  * `T` lets a facet-mode caller narrow `Widget`'s type to `FacetWidgetComponent` instead of the

@@ -206,23 +206,29 @@ export default function EnumSelectEditor({
           }
         }}
       >
-        <AutoCompleteOption
-          term={term}
-          label={current?.label}
-          classification={current?.classification}
-          depiction={current?.depiction}
-          resourceEditor={
-            enableEditInPlace
-              ? {
-                  shapesGraph: shape.shapesGraph,
-                  dataGraph: shape.dataGraph,
-                  scoresGraph: shape.scoresGraph,
-                  widgetRegistry: shape.widgetRegistry,
-                  nodeShapes,
-                }
-              : undefined
-          }
-        />
+        {term.value === "" ? (
+          <span className="st-enum-select__placeholder">
+            <Localized id="select-an-option">- Select an option -</Localized>
+          </span>
+        ) : (
+          <AutoCompleteOption
+            term={term}
+            label={current?.label}
+            classification={current?.classification}
+            depiction={current?.depiction}
+            resourceEditor={
+              enableEditInPlace
+                ? {
+                    shapesGraph: shape.shapesGraph,
+                    dataGraph: shape.dataGraph,
+                    scoresGraph: shape.scoresGraph,
+                    widgetRegistry: shape.widgetRegistry,
+                    nodeShapes,
+                  }
+                : undefined
+            }
+          />
+        )}
         <span className="st-enum-select__arrow" aria-hidden="true" />
       </button>
 

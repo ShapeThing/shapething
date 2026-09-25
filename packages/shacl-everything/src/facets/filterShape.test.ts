@@ -5,18 +5,54 @@ import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import { ex, geosparql, queryPrefixes, rdf, sh, st, xsd } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import type { Quad_Subject, Term } from "@rdfjs/types";
+import type { RdfStore } from "rdf-stores";
 import {
   createFilterShape,
   findFilterConstraintNode,
   getFilterConstraintNode,
-  instancesMatchingOtherConstraints,
   pathSparqlFor,
+  readFilterConstraint,
   removeFilterConstraintsForPaths,
   setFilterConstraint,
   setFilterConstraintForProperty,
   setFilterConstraintsForProperty,
+  type FilterShape,
 } from "@/facets/filterShape.ts";
+import { instancesMatchingFilterShape } from "@/facets/facetQueries.ts";
+import { sparqlEndpointFetch } from "@/facets/testing/sparqlEndpointShim.ts";
 import { defaultWidgets } from "@/widgets/registry.ts";
+
+// Value-level constraints (sh:in, sh:pattern, the range bounds) live inside the constraint node's
+// sh:qualifiedValueShape - this returns the quads for `predicate` wherever they physically live.
+function valueQuads(filterShape: FilterShape, node: Quad_Subject, predicate: Parameters<typeof sh>[0]) {
+  const qualified = filterShape.store.getQuads(node, sh("qualifiedValueShape"))[0]?.object as
+    | Quad_Subject
+    | undefined;
+  return qualified ? filterShape.store.getQuads(qualified, sh(predicate)) : [];
+}
+
+// Runs the filter both against the local store and through a SPARQL endpoint (the fetch shim
+// serving the same store over the SPARQL protocol) - the two must always agree.
+async function matching(
+  filterShape: FilterShape,
+  dataGraph: RdfStore,
+  shapesGraph: RdfStore,
+  candidates: Term[],
+): Promise<string[]> {
+  const local = await instancesMatchingFilterShape(filterShape, candidates, {
+    source: { kind: "local", store: dataGraph },
+    shapesGraph,
+  });
+  const endpoint = await instancesMatchingFilterShape(filterShape, candidates, {
+    source: { kind: "endpoint", url: "http://endpoint.test/sparql" },
+    shapesGraph,
+    queryOptions: { fetch: sparqlEndpointFetch(dataGraph) },
+  });
+  const localValues = local.map((instance) => instance.value).sort();
+  expect(endpoint.map((instance) => instance.value).sort()).toEqual(localValues);
+  return localValues;
+}
 
 async function propertyFor(pathTurtle: string) {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${pathTurtle}`, "text/turtle");
@@ -92,15 +128,15 @@ test("setFilterConstraint: writes, replaces, and removes a plain single value", 
   const node = getFilterConstraintNode(filterShape, property);
 
   setFilterConstraint(filterShape, node, sh("minInclusive"), factory.literal("10", xsd("integer")));
-  expect(filterShape.store.getQuads(node, sh("minInclusive"))[0]?.object.value).toEqual("10");
+  expect(valueQuads(filterShape, node, "minInclusive")[0]?.object.value).toEqual("10");
 
   setFilterConstraint(filterShape, node, sh("minInclusive"), factory.literal("20", xsd("integer")));
   expect(
-    filterShape.store.getQuads(node, sh("minInclusive")).map((quad) => quad.object.value),
+    valueQuads(filterShape, node, "minInclusive").map((quad) => quad.object.value),
   ).toEqual(["20"]);
 
   setFilterConstraint(filterShape, node, sh("minInclusive"), undefined);
-  expect(filterShape.store.getQuads(node, sh("minInclusive"))).toEqual([]);
+  expect(valueQuads(filterShape, node, "minInclusive")).toEqual([]);
 });
 
 test("setFilterConstraint: writes a multi-valued constraint as a fresh SHACL list", async () => {
@@ -110,7 +146,7 @@ test("setFilterConstraint: writes a multi-valued constraint as a fresh SHACL lis
 
   setFilterConstraint(filterShape, node, sh("in"), [ex("Cat"), ex("Dog")]);
 
-  const listHead = filterShape.store.getQuads(node, sh("in"))[0]?.object;
+  const listHead = valueQuads(filterShape, node, "in")[0]?.object;
   expect(listHead).toBeDefined();
   expect(getRdfList(listHead!, filterShape.store).map((term) => term.value)).toEqual([
     ex("Cat").value,
@@ -144,7 +180,7 @@ test("setFilterConstraint: clearing one of two constraints on the same node keep
   // maxInclusive is still set, so the sh:property entry must survive.
   expect(filterShape.store.getQuads(filterShape.rootNode, sh("property")).length).toBe(1);
   expect(filterShape.store.getQuads(node, sh("path")).length).toBe(1);
-  expect(filterShape.store.getQuads(node, sh("maxInclusive"))[0]?.object.value).toEqual("20");
+  expect(valueQuads(filterShape, node, "maxInclusive")[0]?.object.value).toEqual("20");
 });
 
 test("setFilterConstraint: clearing a list-valued constraint deletes the old list's own cells", async () => {
@@ -153,7 +189,7 @@ test("setFilterConstraint: clearing a list-valued constraint deletes the old lis
   const node = getFilterConstraintNode(filterShape, property);
 
   setFilterConstraint(filterShape, node, sh("in"), [ex("Cat"), ex("Dog")]);
-  const listHead = filterShape.store.getQuads(node, sh("in"))[0]?.object;
+  const listHead = valueQuads(filterShape, node, "in")[0]?.object;
 
   setFilterConstraint(filterShape, node, sh("in"), undefined);
 
@@ -171,12 +207,12 @@ test("setFilterConstraint: rewriting a list-valued constraint cleans up the old 
   setFilterConstraint(filterShape, node, sh("in"), [ex("Cat"), ex("Dog"), ex("Bird")]);
   setFilterConstraint(filterShape, node, sh("in"), [ex("Cat")]);
 
-  const listHead = filterShape.store.getQuads(node, sh("in"))[0]?.object;
+  const listHead = valueQuads(filterShape, node, "in")[0]?.object;
   expect(getRdfList(listHead!, filterShape.store).map((term) => term.value)).toEqual([
     ex("Cat").value,
   ]);
   // Exactly one sh:in triple should remain pointing at the (rebuilt) list.
-  expect(filterShape.store.getQuads(node, sh("in")).length).toBe(1);
+  expect(valueQuads(filterShape, node, "in").length).toBe(1);
 });
 
 test("setFilterConstraintForProperty: a brand-new node's own value is visible to a wildcard subscriber the moment it's linked in, not one write later", async () => {
@@ -198,7 +234,7 @@ test("setFilterConstraintForProperty: a brand-new node's own value is visible to
   let valuesSeenAtNotifyTime: string[] | undefined;
   reactivity.subscribe(patterns, () => {
     const node = findFilterConstraintNode(filterShape, property);
-    const listHead = node ? filterShape.store.getQuads(node, sh("in"))[0]?.object : undefined;
+    const listHead = node ? valueQuads(filterShape, node, "in")[0]?.object : undefined;
     valuesSeenAtNotifyTime = listHead
       ? getRdfList(listHead, filterShape.store).map((term) => term.value)
       : undefined;
@@ -218,7 +254,7 @@ test("setFilterConstraintForProperty: routes to the ordinary find-and-write path
 
   expect(filterShape.store.getQuads(filterShape.rootNode, sh("property")).length).toBe(1);
   const node = findFilterConstraintNode(filterShape, property)!;
-  const listHead = filterShape.store.getQuads(node, sh("in"))[0]?.object;
+  const listHead = valueQuads(filterShape, node, "in")[0]?.object;
   expect(getRdfList(listHead!, filterShape.store).map((term) => term.value)).toEqual([
     ex("Electronics").value,
     ex("Books").value,
@@ -258,18 +294,19 @@ test("removeFilterConstraintsForPaths: drops only the constraints whose path is 
   expect(filterShape.store.getQuads(filterShape.rootNode, sh("property"))[0]?.object.value).toEqual(
     nameNode.value,
   );
-  const listHead = filterShape.store.getQuads(nameNode, sh("in"))[0]?.object;
+  const listHead = valueQuads(filterShape, nameNode, "in")[0]?.object;
   expect(getRdfList(listHead!, filterShape.store).map((term) => term.value)).toEqual([
     ex("Alice").value,
     ex("Bob").value,
   ]);
 });
 
-test("instancesMatchingOtherConstraints: a class-taxonomy pick (sh:rootClass) also matches an instance tagged with a subclass", async () => {
+test("instancesMatchingFilterShape: a class-taxonomy pick (st:classIn, SubClassFacet) also matches an instance tagged with a subclass", async () => {
   const shapesGraph = await parseRdf(
     `${queryPrefixes}
 
-     ex:property1 sh:path ex:category ; sh:rootClass ex:Electronics .
+     ex:property1 sh:path ex:category ; sh:rootClass ex:Category .
+     ex:Electronics rdfs:subClassOf ex:Category .
      ex:Computers rdfs:subClassOf ex:Electronics .`,
     "text/turtle",
   );
@@ -289,21 +326,16 @@ test("instancesMatchingOtherConstraints: a class-taxonomy pick (sh:rootClass) al
     propertyShapes: [ex("property1")],
   });
   const filterShape = createFilterShape();
-  setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("Electronics")]);
+  setFilterConstraintForProperty(filterShape, property, st("classIn"), [ex("Electronics")]);
 
-  const matching = await instancesMatchingOtherConstraints(
-    filterShape,
-    dataGraph,
-    [ex("widget"), ex("laptop"), ex("novel")],
-    undefined,
-  );
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("widget"), ex("laptop"), ex("novel")]);
 
-  expect(matching.map((instance) => instance.value).sort()).toEqual(
+  expect(matchingValues).toEqual(
     [ex("widget").value, ex("laptop").value].sort(),
   );
 });
 
-test("instancesMatchingOtherConstraints: without sh:rootClass, sh:in still requires an exact match despite a subClassOf relation existing", async () => {
+test("instancesMatchingFilterShape: plain sh:in (CategoryFacet) still requires an exact match despite a subClassOf relation existing", async () => {
   const shapesGraph = await parseRdf(
     `${queryPrefixes}
 
@@ -328,17 +360,12 @@ test("instancesMatchingOtherConstraints: without sh:rootClass, sh:in still requi
   const filterShape = createFilterShape();
   setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("Electronics")]);
 
-  const matching = await instancesMatchingOtherConstraints(
-    filterShape,
-    dataGraph,
-    [ex("widget"), ex("laptop")],
-    undefined,
-  );
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("widget"), ex("laptop")]);
 
-  expect(matching.map((instance) => instance.value)).toEqual([ex("widget").value]);
+  expect(matchingValues).toEqual([ex("widget").value]);
 });
 
-test("instancesMatchingOtherConstraints: st:withinArea (MapFacet) matches an instance whose value falls inside the drawn polygon", async () => {
+test("instancesMatchingFilterShape: st:withinArea (MapFacet) matches an instance whose value falls inside the drawn polygon", async () => {
   const shapesGraph = await parseRdf(
     `${queryPrefixes}\n\n ex:property1 sh:path ex:location .`,
     "text/turtle",
@@ -365,17 +392,12 @@ test("instancesMatchingOtherConstraints: st:withinArea (MapFacet) matches an ins
     factory.literal("POLYGON ((-10 35, 20 35, 20 60, -10 60, -10 35))", geosparql("wktLiteral")),
   );
 
-  const matching = await instancesMatchingOtherConstraints(
-    filterShape,
-    dataGraph,
-    [ex("paris"), ex("tokyo")],
-    undefined,
-  );
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("paris"), ex("tokyo")]);
 
-  expect(matching.map((instance) => instance.value)).toEqual([ex("paris").value]);
+  expect(matchingValues).toEqual([ex("paris").value]);
 });
 
-test("instancesMatchingOtherConstraints: st:withinArea matches any instance value against any drawn polygon (a MultiPolygon selection is an OR)", async () => {
+test("instancesMatchingFilterShape: st:withinArea matches any instance value against any drawn polygon (a MultiPolygon selection is an OR)", async () => {
   const shapesGraph = await parseRdf(
     `${queryPrefixes}\n\n ex:property1 sh:path ex:location .`,
     "text/turtle",
@@ -408,14 +430,9 @@ test("instancesMatchingOtherConstraints: st:withinArea matches any instance valu
     ),
   );
 
-  const matching = await instancesMatchingOtherConstraints(
-    filterShape,
-    dataGraph,
-    [ex("paris"), ex("tokyo"), ex("capeTown")],
-    undefined,
-  );
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("paris"), ex("tokyo"), ex("capeTown")]);
 
-  expect(matching.map((instance) => instance.value).sort()).toEqual(
+  expect(matchingValues).toEqual(
     [ex("paris").value, ex("tokyo").value].sort(),
   );
 });
@@ -460,7 +477,7 @@ test("setFilterConstraintForProperty: clearing st:withinArea removes the sh:spar
   expect(filterShape.store.getQuads().length).toBe(1);
 });
 
-test("setFilterConstraintForProperty: the generated sh:select uses a for-all shape (FILTER NOT EXISTS a satisfying value) matching matchingInstancesWithinArea's own 'any value inside, or it's a violation' semantics", async () => {
+test("setFilterConstraintForProperty: the generated sh:select uses a for-all shape (FILTER NOT EXISTS a satisfying value) meaning 'some value inside, or it's a violation'", async () => {
   const property = await propertyFor(`ex:property1 sh:path ex:location .`);
   const filterShape = createFilterShape();
   setFilterConstraintForProperty(
@@ -491,7 +508,7 @@ test("setFilterConstraintForProperty: the generated sh:select uses a for-all sha
   );
 });
 
-test("instancesMatchingOtherConstraints: st:colorBucket (ColorFacet) matches an instance whose color value classifies into the chosen bucket", async () => {
+test("instancesMatchingFilterShape: st:colorBucket (ColorFacet) matches an instance whose color value classifies into the chosen bucket", async () => {
   const shapesGraph = await parseRdf(
     `${queryPrefixes}\n\n ex:property1 sh:path ex:color .`,
     "text/turtle",
@@ -520,14 +537,9 @@ test("instancesMatchingOtherConstraints: st:colorBucket (ColorFacet) matches an 
   const filterShape = createFilterShape();
   setFilterConstraintForProperty(filterShape, property, st("colorBucket"), factory.literal("red"));
 
-  const matching = await instancesMatchingOtherConstraints(
-    filterShape,
-    dataGraph,
-    [ex("fireTruck"), ex("sky")],
-    undefined,
-  );
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("fireTruck"), ex("sky")]);
 
-  expect(matching.map((instance) => instance.value)).toEqual([ex("fireTruck").value]);
+  expect(matchingValues).toEqual([ex("fireTruck").value]);
 });
 
 test("setFilterConstraintForProperty: st:colorBucket also writes a sibling sh:sparql SPARQLConstraint built on sparqlFilterForBucket", async () => {
@@ -576,7 +588,7 @@ test("setFilterConstraintForProperty: the generated sh:select for st:colorBucket
   expect(selectQuery).toContain("(?hue < 15 || ?hue >= 345)");
 });
 
-test("instancesMatchingOtherConstraints: sh:minInclusive/sh:maxInclusive keep only instances whose value falls in range", async () => {
+test("instancesMatchingFilterShape: sh:minInclusive/sh:maxInclusive keep only instances whose value falls in range", async () => {
   const property = await propertyFor(`ex:property1 sh:path ex:price .`);
   const dataGraph = await parseRdf(
     `${queryPrefixes}\n\n ex:widget ex:price 15 . ex:gadget ex:price 25 . ex:novel ex:price 5 .`,
@@ -596,17 +608,12 @@ test("instancesMatchingOtherConstraints: sh:minInclusive/sh:maxInclusive keep on
     factory.literal("20", xsd("integer")),
   );
 
-  const matching = await instancesMatchingOtherConstraints(
-    filterShape,
-    dataGraph,
-    [ex("widget"), ex("gadget"), ex("novel")],
-    undefined,
-  );
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("widget"), ex("gadget"), ex("novel")]);
 
-  expect(matching.map((instance) => instance.value)).toEqual([ex("widget").value]);
+  expect(matchingValues).toEqual([ex("widget").value]);
 });
 
-test("instancesMatchingOtherConstraints: sh:minExclusive/sh:maxExclusive exclude their own boundary value", async () => {
+test("instancesMatchingFilterShape: sh:minExclusive/sh:maxExclusive exclude their own boundary value", async () => {
   const property = await propertyFor(`ex:property1 sh:path ex:price .`);
   const dataGraph = await parseRdf(
     `${queryPrefixes}\n\n ex:widget ex:price 10 . ex:gadget ex:price 15 . ex:novel ex:price 20 .`,
@@ -626,15 +633,10 @@ test("instancesMatchingOtherConstraints: sh:minExclusive/sh:maxExclusive exclude
     factory.literal("20", xsd("integer")),
   );
 
-  const matching = await instancesMatchingOtherConstraints(
-    filterShape,
-    dataGraph,
-    [ex("widget"), ex("gadget"), ex("novel")],
-    undefined,
-  );
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("widget"), ex("gadget"), ex("novel")]);
 
   // widget (10) and novel (20) sit exactly on the exclusive boundaries, so only gadget (15) matches.
-  expect(matching.map((instance) => instance.value)).toEqual([ex("gadget").value]);
+  expect(matchingValues).toEqual([ex("gadget").value]);
 });
 
 test("setFilterConstraintsForProperty: writing two predicates as one call on a brand-new node is visible to a reactive subscriber in a single notification, not split across two", async () => {
@@ -655,8 +657,8 @@ test("setFilterConstraintsForProperty: writing two predicates as one call on a b
     const node = findFilterConstraintNode(filterShape, property);
     return node
       ? {
-          minInclusive: filterShape.store.getQuads(node, sh("minInclusive"))[0]?.object.value,
-          maxExclusive: filterShape.store.getQuads(node, sh("maxExclusive"))[0]?.object.value,
+          minInclusive: valueQuads(filterShape, node, "minInclusive")[0]?.object.value,
+          maxExclusive: valueQuads(filterShape, node, "maxExclusive")[0]?.object.value,
         }
       : undefined;
   };
@@ -687,7 +689,7 @@ test("removeFilterConstraintsForPaths: an empty path set is a no-op", async () =
   expect(filterShape.store.getQuads(filterShape.rootNode, sh("property")).length).toBe(1);
 });
 
-test("instancesMatchingOtherConstraints: sh:pattern (TextSearchFacet) matches when any one value on an sh:alternativePath matches, not every value", async () => {
+test("instancesMatchingFilterShape: sh:pattern (TextSearchFacet) matches when any one value on an sh:alternativePath matches, not every value", async () => {
   // Mirrors preprocess/shapes.ts's mergeFacetTextSearchProperties: one search box across several
   // text predicates. Plain SHACL sh:pattern would demand the nationality match "Gordon" too.
   const shapesGraph = await parseRdf(
@@ -716,17 +718,12 @@ test("instancesMatchingOtherConstraints: sh:pattern (TextSearchFacet) matches wh
     [sh("flags"), factory.literal("i", xsd("string"))],
   ]);
 
-  const matching = await instancesMatchingOtherConstraints(
-    filterShape,
-    dataGraph,
-    [ex("gordon"), ex("massimo")],
-    undefined,
-  );
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("gordon"), ex("massimo")]);
 
-  expect(matching.map((instance) => instance.value)).toEqual([ex("gordon").value]);
+  expect(matchingValues).toEqual([ex("gordon").value]);
 });
 
-test("instancesMatchingOtherConstraints: a range bound matches when any one value falls inside it, not every value", async () => {
+test("instancesMatchingFilterShape: a range bound matches when any one value falls inside it, not every value", async () => {
   const shapesGraph = await parseRdf(
     `${queryPrefixes}
 
@@ -755,12 +752,52 @@ test("instancesMatchingOtherConstraints: a range bound matches when any one valu
     factory.literal("10", xsd("integer")),
   );
 
-  const matching = await instancesMatchingOtherConstraints(
-    filterShape,
-    dataGraph,
-    [ex("mixed"), ex("cheap")],
-    undefined,
-  );
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("mixed"), ex("cheap")]);
 
-  expect(matching.map((instance) => instance.value)).toEqual([ex("mixed").value]);
+  expect(matchingValues).toEqual([ex("mixed").value]);
+});
+
+test("setFilterConstraint: value-level constraints are written inside sh:qualifiedValueShape with sh:qualifiedMinCount 1", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:category .`);
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("A")]);
+
+  const node = findFilterConstraintNode(filterShape, property)!;
+  // "At least one value is in (A)" - never plain sh:in on the property node, which in SHACL means
+  // "every value is in (A)" and lets an instance with no value at all conform.
+  expect(filterShape.store.getQuads(node, sh("in"))).toEqual([]);
+  expect(filterShape.store.getQuads(node, sh("qualifiedMinCount"))[0]?.object.value).toBe("1");
+  expect(readFilterConstraint(filterShape, node, sh("in")).map((term) => term.value)).toEqual([
+    ex("A").value,
+  ]);
+
+  setFilterConstraintForProperty(filterShape, property, sh("in"), undefined);
+  expect(filterShape.store.getQuads().length).toBe(1);
+});
+
+test("instancesMatchingFilterShape: sh:in matches an instance with several values when any one is picked, and never one with no value", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:category .`);
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:both ex:category ex:A, ex:B . ex:onlyA ex:category ex:A . ex:none ex:other ex:x .`,
+    "text/turtle",
+  );
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("A")]);
+
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [
+    ex("both"),
+    ex("onlyA"),
+    ex("none"),
+  ]);
+
+  expect(matchingValues).toEqual([ex("both").value, ex("onlyA").value].sort());
+});
+
+test("instancesMatchingFilterShape: an explicit empty sh:in (a search with no results) matches nothing", async () => {
+  const property = await propertyFor(`ex:property1 sh:path ex:name .`);
+  const dataGraph = await parseRdf(`${queryPrefixes}\n\n ex:a ex:name "A" . ex:b ex:other "B" .`, "text/turtle");
+  const filterShape = createFilterShape();
+  setFilterConstraintForProperty(filterShape, property, sh("in"), rdf("nil"));
+
+  expect(await matching(filterShape, dataGraph, property.shapesGraph, [ex("a"), ex("b")])).toEqual([]);
 });

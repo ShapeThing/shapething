@@ -63,7 +63,7 @@ export function filterClassTree(node: ClassNode, query: string): ClassNode | und
 
 /**
  * Rolls st:SubClassFacet's own exact-match counts (Environment.enableFacetOptionCounts's
- * aggregateFacetValueCounts - "how many instances have this exact class as their value") up
+ * useFacetValueCounts - "how many instances have this exact class as their value") up
  * through the rdfs:subClassOf tree, so a class's displayed count includes everything filed under
  * it too: ex:Electronics's count becomes its own direct matches plus ex:Computers's (and so on,
  * recursively), the same way picking a broad category in a real taxonomy facet implies everything

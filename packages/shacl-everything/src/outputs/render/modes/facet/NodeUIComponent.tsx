@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { factory } from "@/helpers/factory.ts";
 import { sh } from "@/helpers/namespaces.ts";
-import { termKey } from "@/helpers/termKey.ts";
 import { cssImportsForShapes } from "@/resolution/cssImports.ts";
-import { facetableRootShapes, targetsOfShape } from "@/resolution/targets.ts";
+import { facetableRootShapes } from "@/resolution/targets.ts";
+import { compileTargets } from "@/facets/compileFilter.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
 import {
   pathSparqlFor,
@@ -18,6 +17,7 @@ import { useCssImports } from "@/outputs/render/hooks/useCssImports.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import FacetPropertyComponent from "@/outputs/render/modes/facet/FacetPropertyComponent.tsx";
 import TypeSelector from "@/outputs/render/modes/facet/TypeSelector.tsx";
+import { FacetSourceProvider, useFacetSourceValue } from "@/outputs/render/modes/facet/facetData.tsx";
 import { resolvedWidgets } from "@/preprocess/widgets.ts";
 
 // The class a root shape represents for the type/category selector - its own sh:targetClass when
@@ -51,6 +51,8 @@ export default function NodeUIComponent({ filterShape }: { filterShape: FilterSh
     nodeShapes,
     enableFacetTypeUnion,
     enableFacetOptionCounts,
+    facetsEndpoint,
+    corsProxyUrl,
   } = useEnvironment();
 
   const rootShapes = useMemo(() => {
@@ -124,33 +126,26 @@ export default function NodeUIComponent({ filterShape }: { filterShape: FilterSh
     removeFilterConstraintsForPaths(filterShape, stalePaths);
   }, [enableFacetTypeUnion, activeRootShape, properties, filterShape]);
 
-  // The instances facet widgets aggregate data-derived values/ranges from (structure/
-  // facetValues.ts): every active shape's own targets, unioned - in union mode that's every
+  // Which instances the facets are about: every active shape's own targets, unioned, as a SPARQL
+  // pattern (facets/compileFilter.ts) - never an enumerated list, so this works the same against a
+  // huge Environment.facetsEndpoint as against the local dataGraph. In union mode that's every
   // discovered type's instances together, since a property only some of them have (e.g. Product's
-  // own schema:category) should still see Product's instances' actual category values even though
-  // Person instances contribute nothing for that particular facet.
-  const instances = useMemo(
-    () =>
-      dedupeTerms(
-        activeShapes.flatMap((shape) => targetsOfShape(shape, shapesGraph, dataGraph)),
-      ) as Quad_Subject[],
-    [activeShapes, shapesGraph, dataGraph],
+  // own schema:category) should still see Product's instances' values even though Person instances
+  // contribute nothing for that particular facet.
+  const facetSourceBase = useFacetSourceValue({
+    dataGraph,
+    shapesGraph,
+    facetsEndpoint,
+    corsProxyUrl,
+    filterShape,
+    targets: "",
+    countsEnabled: !!enableFacetOptionCounts,
+  });
+  const targets = useMemo(
+    () => compileTargets(activeShapes, shapesGraph, facetSourceBase.compileOptions),
+    [activeShapes, shapesGraph, facetSourceBase.compileOptions],
   );
-
-  // TypeSelector's own counts (Environment.enableFacetOptionCounts) - each root shape's own
-  // target-instance count, keyed by termKey(classFor(rootShape)) the same way CategoryFacet keys
-  // its own valueCounts, since a root shape's "value" in that radio/checkbox group is its class.
-  const rootShapeCounts = useMemo(() => {
-    if (!enableFacetOptionCounts) return undefined;
-    const counts = new Map<string, number>();
-    for (const rootShape of rootShapes) {
-      counts.set(
-        termKey(classFor(rootShape, shapesGraph)),
-        targetsOfShape(rootShape, shapesGraph, dataGraph).length,
-      );
-    }
-    return counts;
-  }, [enableFacetOptionCounts, rootShapes, shapesGraph, dataGraph]);
+  const facetSource = useMemo(() => ({ ...facetSourceBase, targets }), [facetSourceBase, targets]);
 
   if (activeShapes.length === 0) return null;
 
@@ -161,18 +156,19 @@ export default function NodeUIComponent({ filterShape }: { filterShape: FilterSh
   const facetKeyPrefix = enableFacetTypeUnion ? "union" : (activeRootShape?.value ?? "");
 
   return (
+    <FacetSourceProvider value={facetSource}>
     <div className="st-facet-node-ui-component">
       {!enableFacetTypeUnion && rootShapes.length > 1 && activeRootShape && (
         <TypeSelector
           rootShapes={rootShapes}
           classFor={(rootShape) => classFor(rootShape, shapesGraph)}
+          shapesGraph={shapesGraph}
           dataGraph={dataGraph}
           scoresGraph={scoresGraph}
           widgets={widgets}
           filterShape={filterShape}
           selectedRootShape={activeRootShape}
           onSelectRootShape={setSelectedRootShape}
-          valueCounts={rootShapeCounts}
         />
       )}
       {properties.map((property, index) => (
@@ -187,9 +183,9 @@ export default function NodeUIComponent({ filterShape }: { filterShape: FilterSh
           key={`${facetKeyPrefix}|${pathSparqlFor(property) ?? index}`}
           property={property}
           filterShape={filterShape}
-          instances={instances}
         />
       ))}
     </div>
+    </FacetSourceProvider>
   );
 }

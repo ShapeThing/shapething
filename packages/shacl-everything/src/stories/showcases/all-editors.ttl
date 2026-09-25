@@ -1,0 +1,431 @@
+@prefix ex: <http://example.org/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix schema: <http://schema.org/>.
+@prefix geosparql: <http://www.opengis.net/ont/geosparql#>.
+@prefix foaf: <http://xmlns.com/foaf/0.1/>.
+@prefix ed: <https://editorjs.io/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+# Every editor widget on one focus node, in spec order: SHACL UI 1.2 §10.1.1-10.1.16 first, then
+# the ShapeThing (living document) st: editors in the same order Storybook's sidebar lists them.
+# Each property declares its shui:editor explicitly (so auto-scoring never picks a different
+# widget), uses its own predicate (so no two editors share values), and carries the widget's
+# compact IRI as its sh:name and full IRI as its sh:description. Data is lifted from each
+# widget's own fixture (see src/widgets/implementations/<ns>/editors/<Name>/).
+
+<#shuiGroup>
+    a sh:PropertyGroup ;
+    sh:name "SHACL UI 1.2 - 10.1 Editors" ;
+    sh:order 0 ;
+    .
+
+<#stGroup>
+    a sh:PropertyGroup ;
+    sh:name "ShapeThing (living document) - Editors" ;
+    sh:order 1 ;
+    .
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass ex:WidgetShowcase ;
+
+    sh:property [
+        sh:name "10.1.1 shui:AutoCompleteEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/AutoCompleteEditor" ;
+        sh:path ex:autoCompleteEditor ;
+        sh:class ex:Country ;
+        sh:nodeKind sh:IRI ;
+        shui:editor shui:AutoCompleteEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 1 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.2 shui:BlankNodeEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/BlankNodeEditor" ;
+        sh:path ex:blankNodeEditor ;
+        sh:nodeKind sh:BlankNode ;
+        shui:editor shui:BlankNodeEditor ;
+        sh:property [
+            sh:name "Postal code"@en, "Postcode"@nl ;
+            sh:path schema:postalCode ;
+        ] ;
+        sh:group <#shuiGroup> ;
+        sh:order 2 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.3 shui:BooleanEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/BooleanEditor" ;
+        sh:path ex:booleanEditor ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+        shui:editor shui:BooleanEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 3 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.4 shui:DatePickerEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/DatePickerEditor" ;
+        sh:path ex:datePickerEditor ;
+        sh:datatype xsd:date ;
+        shui:editor shui:DatePickerEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 4 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.5 shui:DateTimePickerEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/DateTimePickerEditor" ;
+        sh:path ex:dateTimePickerEditor ;
+        sh:datatype xsd:dateTime ;
+        shui:editor shui:DateTimePickerEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 5 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.6 shui:DetailsEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/DetailsEditor" ;
+        sh:path ex:detailsEditor ;
+        sh:nodeKind sh:BlankNode ;
+        shui:editor shui:DetailsEditor ;
+        sh:node [
+            sh:property [
+                sh:name "Street"@en, "Straat"@nl ;
+                sh:path schema:streetAddress ;
+                sh:minCount 1 ;
+                shui:propertyRole shui:LabelRole ;
+            ] ;
+            sh:property [
+                sh:name "Postal code"@en, "Postcode"@nl ;
+                sh:path schema:postalCode ;
+                sh:minCount 1 ;
+            ] ;
+        ] ;
+        sh:group <#shuiGroup> ;
+        sh:order 6 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.7 shui:EnumSelectEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/EnumSelectEditor" ;
+        sh:path ex:enumSelectEditor ;
+        sh:in ( "ACT" "NSW" "NT" "QLD" "SA" "TAS" "VIC" "WA" ) ;
+        shui:editor shui:EnumSelectEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 7 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.8 shui:InstancesSelectEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/InstancesSelectEditor" ;
+        sh:path ex:instancesSelectEditor ;
+        sh:class ex:Country ;
+        shui:editor shui:InstancesSelectEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 8 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.9 shui:IRIEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/IRIEditor" ;
+        sh:path ex:iriEditor ;
+        sh:nodeKind sh:IRI ;
+        shui:editor shui:IRIEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 9 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.10 shui:NumberFieldEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/NumberFieldEditor" ;
+        sh:path ex:numberFieldEditor ;
+        sh:datatype xsd:decimal ;
+        shui:editor shui:NumberFieldEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 10 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.11 shui:RichTextEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/RichTextEditor" ;
+        sh:path ex:richTextEditor ;
+        sh:datatype rdf:HTML ;
+        sh:maxCount 1 ;
+        shui:editor shui:RichTextEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 11 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.12 shui:SubClassEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/SubClassEditor" ;
+        sh:path ex:subClassEditor ;
+        sh:rootClass ex:Animal ;
+        shui:editor shui:SubClassEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 12 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.13 shui:TextAreaEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/TextAreaEditor" ;
+        sh:path ex:textAreaEditor ;
+        sh:datatype xsd:string ;
+        sh:singleLine false ;
+        shui:editor shui:TextAreaEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 13 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.14 shui:TextAreaWithLangEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/TextAreaWithLangEditor" ;
+        sh:path ex:textAreaWithLangEditor ;
+        sh:datatype rdf:langString ;
+        sh:singleLine false ;
+        shui:editor shui:TextAreaWithLangEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 14 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.15 shui:TextFieldEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/TextFieldEditor" ;
+        sh:path ex:textFieldEditor ;
+        sh:datatype xsd:string ;
+        shui:editor shui:TextFieldEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 15 ;
+    ] ;
+
+    sh:property [
+        sh:name "10.1.16 shui:TextFieldWithLangEditor" ;
+        sh:description "http://www.w3.org/ns/shacl-ui/TextFieldWithLangEditor" ;
+        sh:path ex:textFieldWithLangEditor ;
+        sh:datatype rdf:langString ;
+        shui:editor shui:TextFieldWithLangEditor ;
+        sh:group <#shuiGroup> ;
+        sh:order 16 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:AddressEditor" ;
+        sh:description "http://shapething.com/AddressEditor" ;
+        sh:path ex:addressEditor ;
+        shui:editor st:AddressEditor ;
+        sh:group <#stGroup> ;
+        sh:order 17 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:ColorEditor" ;
+        sh:description "http://shapething.com/ColorEditor" ;
+        sh:path ex:colorEditor ;
+        shui:editor st:ColorEditor ;
+        sh:group <#stGroup> ;
+        sh:order 18 ;
+    ] ;
+
+    # DatatypeEditor/PropertyPathEditor edit SHACL shapes themselves, so they keep the real
+    # sh:datatype/sh:path predicates their own fixtures use.
+    sh:property [
+        sh:name "st:DatatypeEditor" ;
+        sh:description "http://shapething.com/DatatypeEditor" ;
+        sh:path sh:datatype ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        shui:editor st:DatatypeEditor ;
+        sh:group <#stGroup> ;
+        sh:order 19 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:DurationEditor" ;
+        sh:description "http://shapething.com/DurationEditor" ;
+        sh:path ex:durationEditor ;
+        sh:datatype xsd:duration ;
+        sh:maxCount 1 ;
+        shui:editor st:DurationEditor ;
+        st:durationPattern "{hh}{mm}" ;
+        sh:group <#stGroup> ;
+        sh:order 20 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:EditorJsEditor" ;
+        sh:description "http://shapething.com/EditorJsEditor" ;
+        sh:path ex:editorJsEditor ;
+        sh:class ed:OutputData ;
+        sh:maxCount 1 ;
+        shui:editor st:EditorJsEditor ;
+        sh:group <#stGroup> ;
+        sh:order 21 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:FileUploadEditor" ;
+        sh:description "http://shapething.com/FileUploadEditor" ;
+        sh:path ex:fileUploadEditor ;
+        sh:nodeKind sh:IRI ;
+        shui:editor st:FileUploadEditor ;
+        st:uploadUrl "/storage-service-worker" ;
+        sh:group <#stGroup> ;
+        sh:order 22 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:GeoEditor" ;
+        sh:description "http://shapething.com/GeoEditor" ;
+        sh:path ex:geoEditor ;
+        sh:datatype geosparql:wktLiteral ;
+        shui:editor st:GeoEditor ;
+        sh:group <#stGroup> ;
+        sh:order 23 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:IconifyEditor" ;
+        sh:description "http://shapething.com/IconifyEditor" ;
+        sh:path ex:iconifyEditor ;
+        sh:datatype <https://iconify.design> ;
+        shui:editor st:IconifyEditor ;
+        sh:group <#stGroup> ;
+        sh:order 24 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:PropertyPathEditor" ;
+        sh:description "http://shapething.com/PropertyPathEditor" ;
+        sh:path sh:path ;
+        shui:editor st:PropertyPathEditor ;
+        sh:group <#stGroup> ;
+        sh:order 25 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:RadiosCheckboxesEditor" ;
+        sh:description "http://shapething.com/RadiosCheckboxesEditor" ;
+        sh:path ex:radiosCheckboxesEditor ;
+        sh:class ex:Topping ;
+        sh:nodeKind sh:IRI ;
+        shui:editor st:RadiosCheckboxesEditor ;
+        sh:group <#stGroup> ;
+        sh:order 26 ;
+    ] ;
+    .
+
+<#countryShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Country ;
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path foaf:depiction ;
+        shui:propertyRole shui:DepictionRole ;
+    ] ;
+    .
+
+<#toppingShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Topping ;
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    .
+
+ex:Netherlands a ex:Country ;
+    foaf:depiction <https://upload.wikimedia.org/wikipedia/commons/2/20/Flag_of_the_Netherlands.svg> ;
+    rdfs:label "Netherlands"@en, "Nederland"@nl .
+
+ex:Germany a ex:Country ;
+    foaf:depiction <https://upload.wikimedia.org/wikipedia/en/b/ba/Flag_of_Germany.svg> ;
+    rdfs:label "Germany"@en, "Duitsland"@nl .
+
+ex:Animal a rdfs:Class .
+ex:Mammal rdfs:subClassOf ex:Animal .
+ex:Dog rdfs:subClassOf ex:Mammal .
+
+ex:pepperoni a ex:Topping ; rdfs:label "Pepperoni"@en, "Pepperoni"@nl .
+ex:mushroom a ex:Topping ; rdfs:label "Mushroom"@en, "Champignons"@nl .
+ex:olives a ex:Topping ; rdfs:label "Olives"@en, "Olijven"@nl .
+ex:basil a ex:Topping ; rdfs:label "Basil"@en, "Basilicum"@nl .
+
+ex:parent rdfs:label "parent"@en, "ouder"@nl .
+ex:father rdfs:label "father"@en, "vader"@nl .
+ex:mother rdfs:label "mother"@en, "moeder"@nl .
+
+<#data>
+    a ex:WidgetShowcase ;
+    ex:autoCompleteEditor ex:Netherlands ;
+    ex:blankNodeEditor [
+        schema:postalCode "1012 AB" ;
+    ] ;
+    ex:booleanEditor true ;
+    ex:datePickerEditor "1990-05-05"^^xsd:date ;
+    ex:dateTimePickerEditor "2026-01-01T10:30:00"^^xsd:dateTime ;
+    ex:detailsEditor [
+        schema:streetAddress "Dam 1" ;
+        schema:postalCode "1012 AB" ;
+    ] ;
+    ex:enumSelectEditor "NSW" ;
+    ex:instancesSelectEditor ex:Germany ;
+    ex:iriEditor <https://example.org/more-info> ;
+    ex:numberFieldEditor 19.99 ;
+    ex:richTextEditor "<p>Loves <strong>hiking</strong></p>"^^rdf:HTML ;
+    ex:subClassEditor ex:Dog ;
+    ex:textAreaEditor "Loves hiking and reading.\nAnd a second line." ;
+    ex:textAreaWithLangEditor "Loves hiking and reading."@en, "Houdt van wandelen en lezen."@nl ;
+    ex:textFieldEditor "NL" ;
+    ex:textFieldWithLangEditor "Redhead"@en, "Roodharige"@nl ;
+    ex:addressEditor [
+        a schema:PostalAddress ;
+        schema:streetAddress "Breestraat 1" ;
+        schema:addressLocality "Amersfoort" ;
+        schema:addressRegion "Utrecht" ;
+        schema:postalCode "3811 BH" ;
+        schema:addressCountry "Netherlands" ;
+    ] ;
+    # #3b82f6 as HSL (see st-color-editor.ttl).
+    ex:colorEditor [
+        st:hue "217.2192513368984"^^xsd:decimal ;
+        st:saturation "91.21951219512198"^^xsd:decimal ;
+        st:lightness "59.80392156862745"^^xsd:decimal ;
+    ] ;
+    sh:datatype xsd:string ;
+    ex:durationEditor "PT1H15M"^^xsd:duration ;
+    ex:editorJsEditor [
+        a ed:OutputData ;
+        ed:time 1234 ;
+        ed:version "2.31.6" ;
+        ed:blocks (
+            [
+                ed:id "hdr1" ;
+                ed:type "header" ;
+                ed:data [ ed:text "A heading" ; ed:level 2 ] ;
+            ]
+            [
+                ed:id "par1" ;
+                ed:type "paragraph" ;
+                ed:data [ ed:text "Lorem ipsum dolor sit amet." ] ;
+            ]
+        ) ;
+    ] ;
+    ex:fileUploadEditor <https://upload.wikimedia.org/wikipedia/commons/2/20/Flag_of_the_Netherlands.svg> ;
+    ex:geoEditor
+        "POINT (4.8852 52.3600)"^^geosparql:wktLiteral,
+        "POINT (4.9041 52.3676)"^^geosparql:wktLiteral ;
+    ex:iconifyEditor "mdi:home"^^<https://iconify.design> ;
+    sh:path (ex:parent [sh:alternativePath (ex:father ex:mother)]) ;
+    ex:radiosCheckboxesEditor ex:mushroom, ex:basil ;
+    .

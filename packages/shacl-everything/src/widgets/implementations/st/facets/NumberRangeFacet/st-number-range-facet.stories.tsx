@@ -36,11 +36,14 @@ export const stNumberRangeFacet: Story = {
 
     // The bounds shown (as placeholders, and as the native <input min>/<max>) are derived from
     // the actual data graph - the lowest/highest schema:price found across all three products
-    // (19.99, 42.50, 5.00), not anything declared on the shape itself.
-    expect(minInput).toHaveAttribute("placeholder", "5");
-    expect(minInput).toHaveAttribute("min", "5");
-    expect(minInput).toHaveAttribute("max", "42.5");
-    expect(maxInput).toHaveAttribute("placeholder", "42.5");
+    // (19.99, 42.50, 5.00), not anything declared on the shape itself. Computed by the facet source
+    // (a MIN/MAX query), so they arrive asynchronously.
+    await waitFor(() => {
+      expect(minInput).toHaveAttribute("placeholder", "5");
+      expect(minInput).toHaveAttribute("min", "5");
+      expect(minInput).toHaveAttribute("max", "42.5");
+      expect(maxInput).toHaveAttribute("placeholder", "42.5");
+    });
 
     await userEvent.type(minInput, "10");
 
@@ -65,6 +68,8 @@ export const clampsOutOfBoundsOnBlur: Story = {
     submitResult = undefined;
     const canvas = within(canvasElement);
     const [minInput, maxInput] = await canvas.findAllByRole("spinbutton");
+    // The data bounds come from an async MIN/MAX query - wait for them before clamping against them.
+    await waitFor(() => expect(minInput).toHaveAttribute("min", "5"));
 
     await userEvent.type(minInput, "999");
     await userEvent.tab();

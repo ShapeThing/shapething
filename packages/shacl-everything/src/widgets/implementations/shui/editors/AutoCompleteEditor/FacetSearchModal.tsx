@@ -11,7 +11,8 @@ import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguag
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import type { SearchResult } from "@/outputs/render/hooks/query.ts";
 import type { SubmitResult } from "@/environment.ts";
-import { instancesMatchingOtherConstraints, type FilterShape } from "@/facets/filterShape.ts";
+import type { FilterShape } from "@/facets/filterShape.ts";
+import { instancesMatchingFilterShape } from "@/facets/facetQueries.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import "./style.css";
 
@@ -39,11 +40,10 @@ type Props = {
  *
  * Facet mode never renders a results list of its own (see FacetModeWrapper's own doc comment - it
  * only ever hands the generated filter shape to onSubmit), so this supplies one: every onSubmit
- * fire re-runs facets/filterShape.ts's own instancesMatchingOtherConstraints against that
- * filter shape - the same narrowing logic a facet's own live option count
- * (Environment.enableFacetOptionCounts) already uses internally, via a real shacl-engine
- * validation pass - to turn "the constraints the user set" back into "which candidates still
- * qualify."
+ * fire runs facets/facetQueries.ts's instancesMatchingFilterShape - the filter shape compiled to
+ * the same SPARQL a facet's own live counts use - over `candidateInstances`, to turn "the
+ * constraints the user set" back into "which candidates still qualify." Edit mode's autocomplete
+ * picks from the local dataGraph, so this always queries that.
  */
 export default function FacetSearchModal({
   onClose,
@@ -65,18 +65,16 @@ export default function FacetSearchModal({
       return;
     }
     let cancelled = false;
-    instancesMatchingOtherConstraints(
-      filterShape,
-      shape.dataGraph,
-      candidateInstances,
-      undefined,
-    ).then((matching) => {
+    instancesMatchingFilterShape(filterShape, candidateInstances, {
+      source: { kind: "local", store: shape.dataGraph },
+      shapesGraph: shape.shapesGraph,
+    }).then((matching) => {
       if (!cancelled) setMatchingInstances(matching as NamedNode[]);
     });
     return () => {
       cancelled = true;
     };
-  }, [filterShape, candidateInstances, shape.dataGraph]);
+  }, [filterShape, candidateInstances, shape.dataGraph, shape.shapesGraph]);
 
   const lookups = useOptionLookups(shape, matchingInstances);
   const lookupByIri = useMemo(

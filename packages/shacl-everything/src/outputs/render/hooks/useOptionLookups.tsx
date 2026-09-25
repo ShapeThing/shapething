@@ -18,15 +18,22 @@ import { extractServiceEndpoint, fetchOptions, type SearchResult } from "./query
  * ... ]` (see searchQueryFor/selectQueryFor), `iris` are resolved against that same remote
  * endpoint instead of the local dataGraph - otherwise
  * a value whose roles only exist remotely (e.g. either editor's currently applied value,
- * re-hydrated on mount) would resolve to nothing every time.
+ * re-hydrated on mount) would resolve to nothing every time. `endpointOverride` resolves against a
+ * given endpoint regardless (facet mode's Environment.facetsEndpoint, whose data never reaches the
+ * local dataGraph).
  */
-export function useOptionLookups(shape: PropertyUIElement, iris: NamedNode[]): SearchResult[] {
+export function useOptionLookups(
+  shape: PropertyUIElement,
+  iris: NamedNode[],
+  endpointOverride?: string,
+): SearchResult[] {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const { corsProxyUrl } = useEnvironment();
   const endpoint = useMemo(() => {
+    if (endpointOverride) return endpointOverride;
     const federatedQuery = searchQueryFor(shape) ?? selectQueryFor(shape);
     return federatedQuery ? extractServiceEndpoint(federatedQuery) : undefined;
-  }, [shape]);
+  }, [shape, endpointOverride]);
 
   const { data } = useQuery({
     queryKey: [

@@ -1,7 +1,8 @@
 import type { Bindings, NamedNode, Term } from "@rdfjs/types";
 import { queryPrefixes, sh } from "@/helpers/namespaces.ts";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
-import { withCorsProxy } from "@/helpers/corsProxy.ts";
+import { escapeSparqlLiteral } from "@/helpers/sparqlLiteral.ts";
+import { fetchWithCorsProxyFallback, getQueryEngine } from "@/helpers/queryEngine.ts";
 import { geosparqlExtensionFunctions } from "@/helpers/geosparqlFunctions.ts";
 import {
   classificationRolePropertyPaths,
@@ -48,38 +49,6 @@ export type SearchResult = {
   depiction?: NamedNode;
   description?: string;
 };
-
-// One Comunica engine for every query this module runs, whether it only ever touches the already-
-// loaded local dataGraph (a class-instance search, a batched sh:in lookup) or reaches out over a
-// SERVICE clause (a federated sh:select/shui:searchQuery) - Comunica treats a local RDF/JS source
-// and a remote SPARQL endpoint the same way, so there's no need for two separate engines/code
-// paths for "local" vs "federated" queries, just different query text run against the same one.
-// Dynamically imported and cached so nothing pays for Comunica's SPARQL-over-HTTP machinery until
-// a query actually runs.
-let enginePromise: Promise<import("@comunica/query-sparql").QueryEngine> | undefined;
-function getEngine() {
-  enginePromise ??= import("@comunica/query-sparql").then(({ QueryEngine }) => new QueryEngine());
-  return enginePromise;
-}
-
-// Passed as Comunica's `context.fetch` when a corsProxyUrl is configured, so every HTTP request
-// Comunica makes for this query (e.g. a federated SERVICE endpoint) falls back to the proxy on a
-// failed direct attempt, the same "try direct first" fallback resolveRdfSources.ts applies to
-// shapesGraph/dataGraph/scoresGraph URLs. Left unset entirely when no corsProxyUrl is configured,
-// so Comunica's own default fetch behavior is unaffected.
-function fetchWithCorsProxyFallback(corsProxyUrl: string): typeof fetch {
-  return async (input, init) => {
-    const direct = await fetch(input, init).catch((error: Error) => error);
-    if (direct instanceof Response && direct.ok) return direct;
-
-    const url = input instanceof Request ? input.url : input.toString();
-    return fetch(withCorsProxy(url, corsProxyUrl), init);
-  };
-}
-
-function escapeSparqlLiteral(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
-}
 
 // dbpedia-style data tags literals with a bare language subtag ("en"), not a full BCP47 tag
 // ("en-GB") - matching just the primary subtag is a reasonable approximation of proper language
@@ -216,20 +185,25 @@ function withClassificationColor(
   return color ? { ...result, classification: { ...result.classification, color } } : result;
 }
 
+// `endpoint`, when given (facet mode's Environment.facetsEndpoint), runs the query against that
+// SPARQL endpoint instead of the local dataGraph - e.g. a TextSearchFacet's shui:searchQuery body,
+// which searches the same data the facets themselves are querying.
 export async function runQuery(
   query: string,
   propertyShape: PropertyUIElement,
   corsProxyUrl?: string,
+  endpoint?: string,
 ): Promise<ResolvedTerm[]> {
-  const engine = await getEngine();
+  const engine = await getQueryEngine();
   const result = await engine.query(query, {
-    sources: [propertyShape.dataGraph],
-    // Always registered, not just for a query that's known to use one - a shape-authored
-    // sh:select/shui:searchQuery body is arbitrary text this module never inspects up front, so
-    // there's no cheaper way to know a geof: function is needed before the engine itself hits it.
-    extensionFunctions: geosparqlExtensionFunctions,
+    sources: endpoint ? [{ type: "sparql", value: endpoint }] : [propertyShape.dataGraph],
+    // Always registered for the local dataGraph, not just for a query that's known to use one - a
+    // shape-authored sh:select/shui:searchQuery body is arbitrary text this module never inspects
+    // up front, so there's no cheaper way to know a geof: function is needed before the engine
+    // itself hits it. An endpoint evaluates geof: itself.
+    ...(endpoint ? {} : { extensionFunctions: geosparqlExtensionFunctions }),
     ...(corsProxyUrl ? { fetch: fetchWithCorsProxyFallback(corsProxyUrl) } : {}),
-  });
+  } as never);
   if (result.resultType !== "bindings") return [];
 
   const [valueVariable] = (await result.metadata()).variables;

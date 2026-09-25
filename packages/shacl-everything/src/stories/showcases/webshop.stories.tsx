@@ -9,7 +9,8 @@ import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import { testingEnvironment, type SubmitResult } from "@/environment.ts";
 import { factory } from "@/helpers/factory.ts";
 import { rdf, schema, sh } from "@/helpers/namespaces.ts";
-import { instancesMatchingOtherConstraints, type FilterShape } from "@/facets/filterShape.ts";
+import type { FilterShape } from "@/facets/filterShape.ts";
+import { instancesMatchingFilterShape } from "@/facets/facetQueries.ts";
 import "./webshop.css";
 
 const WEBSHOP_URL = new URL("webshop.ttl", import.meta.url);
@@ -44,12 +45,9 @@ async function fetchTurtleStore(url: URL): Promise<RdfStore> {
 /**
  * Facet mode's own generated filter shape (facets/filterShape.ts's FilterShape) is a plain,
  * standard SHACL NodeShape - "which products match it" is answered here via
- * instancesMatchingOtherConstraints, the same matcher FacetPropertyComponent already uses for live
- * per-facet option counts. That matcher runs a real shacl-engine validation pass for sh:in
- * (Category), sh:pattern (Search) and the plain decimal range (Price), and st:ColorFacet's own
- * st:colorBucket constraint (see its own widget.tsx) via its synced sh:sparql SPARQLConstraint
- * (facets/filterShape.ts's syncColorBucketSparqlConstraint) - a real SHACL-SPARQL-conformant
- * engine, not a hand-rolled reimplementation of what those constraints already mean.
+ * instancesMatchingFilterShape, which compiles it to the same SPARQL the facets' own live counts
+ * run (facets/compileFilter.ts): sh:in (Category), sh:pattern (Search), the decimal range (Price)
+ * and ColorFacet's st:colorBucket all become one query over the products store.
  */
 async function findMatchingProducts(
   productsStore: RdfStore,
@@ -65,12 +63,10 @@ async function findMatchingProducts(
   if (!filterShapeStore || !rootNode) return productNodes;
 
   const filterShape: FilterShape = { store: filterShapeStore, rootNode: rootNode as NamedNode };
-  return (await instancesMatchingOtherConstraints(
-    filterShape,
-    productsStore,
-    productNodes,
-    undefined,
-  )) as NamedNode[];
+  return (await instancesMatchingFilterShape(filterShape, productNodes, {
+    source: { kind: "local", store: productsStore },
+    shapesGraph: productsStore,
+  })) as NamedNode[];
 }
 
 function WebshopShowcase() {

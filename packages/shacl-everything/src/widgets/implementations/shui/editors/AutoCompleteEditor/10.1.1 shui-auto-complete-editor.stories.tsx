@@ -158,8 +158,8 @@ export const shuiAutoCompleteEditorFacetSearch: Story = {
       dialogScope.findByText(/famous for its canals, tulips and windmills/),
     ).resolves.toBeVisible();
 
-    // Narrowing the nested facet mode's own Continent facet down to Asia re-runs
-    // instancesMatchingOtherConstraints against the modal's own results list.
+    // Narrowing the nested facet mode's own Continent facet down to Asia re-applies the filter shape
+    // (instancesMatchingFilterShape) to the modal's own results list.
     await userEvent.click(await dialogScope.findByLabelText("Asia"));
 
     await waitFor(() => {

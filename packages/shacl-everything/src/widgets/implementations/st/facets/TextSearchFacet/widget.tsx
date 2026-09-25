@@ -33,7 +33,7 @@ export default function TextSearchFacet({ shape, setConstraint, labelledBy }: Fa
   // is needed - only the matching values themselves matter here, not their labels.
   const searchQuery = useMemo(() => searchQueryFor(shape), [shape]);
   const { activeInterfaceLanguage } = useInterfaceLanguage();
-  const { corsProxyUrl } = useEnvironment();
+  const { corsProxyUrl, facetsEndpoint } = useEnvironment();
   const [debounced, setDebounced] = useState("");
 
   useEffect(() => {
@@ -49,6 +49,7 @@ export default function TextSearchFacet({ shape, setConstraint, labelledBy }: Fa
       searchQuery,
       debounced,
       activeInterfaceLanguage,
+      facetsEndpoint,
     ],
     queryFn: async (): Promise<Term[]> =>
       dedupeTerms(
@@ -57,6 +58,8 @@ export default function TextSearchFacet({ shape, setConstraint, labelledBy }: Fa
             substituteSearchParameters(searchQuery!, debounced, activeInterfaceLanguage),
             shape,
             corsProxyUrl,
+            // The search runs over the same data the facets query - the endpoint, when set.
+            facetsEndpoint,
           )
         ).map(({ term }) => term),
       ),

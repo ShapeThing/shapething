@@ -10,6 +10,7 @@ import { defaultEnvironment } from "@/environment.ts";
 import "@/helpers/configureMaplibreWorker.ts";
 import { st } from "@/helpers/namespaces.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { useFacetValues } from "@/outputs/render/modes/facet/facetData.tsx";
 import { featureCollectionBounds } from "@/widgets/implementations/st/viewers/MapViewer/geometry.ts";
 import type { FacetWidgetProps } from "@/widgets/types.ts";
 import {
@@ -23,8 +24,8 @@ const SOURCE_ID = "st-map-facet-values";
 const POLL_INTERVAL_MS = 400;
 
 /**
- * A map-based facet for geometry-valued properties (sh:datatype geosparql:wktLiteral): plots every
- * value found across every target instance (facets/facetValues.ts's aggregateFacetValues) as
+ * A map-based facet for geometry-valued properties (sh:datatype geosparql:wktLiteral): plots the
+ * values found across the target instances (useFacetValues, capped at FACET_VALUE_LIMIT) as
  * markers, and lets the user draw one or more rectangles/polygons - via the same
  * @geoman-io/maplibre-geoman-free + maplibre-gl-geo-editor toolbar GeoEditor uses for actually
  * editing geometry - to select an area. Every value falling inside any drawn shape narrows the
@@ -32,8 +33,7 @@ const POLL_INTERVAL_MS = 400;
  *
  * Unlike GeoEditor, the drawn shape(s) here are never a data value themselves: they're combined
  * into a single MultiPolygon st:withinArea literal on the generated filter shape (see
- * facets/filterShape.ts's matchingInstancesWithinArea, which this renderer's own facet
- * narrowing actually runs it through) - the facet-mode analogue of NumberRangeFacet's
+ * facets/compileFilter.ts, which compiles it into the facet queries) - the facet-mode analogue of NumberRangeFacet's
  * sh:minInclusive/sh:maxInclusive. setFilterConstraint also derives a real, standards-conformant
  * SHACL SPARQL-based Constraint (sh:sparql [ a sh:SPARQLConstraint ; sh:select "..." ], built on the
  * geof:sfWithin GeoSPARQL extension function - see facets/filterShape.ts's
@@ -43,7 +43,8 @@ const POLL_INTERVAL_MS = 400;
  * sh:sparql text, for a documented shacl-engine/Comunica correctness reason (see
  * syncWithinAreaSparqlConstraint's own doc comment).
  */
-export default function MapFacet({ values, getConstraint, setConstraint, labelledBy }: FacetWidgetProps) {
+export default function MapFacet({ getConstraint, setConstraint, labelledBy }: FacetWidgetProps) {
+  const { values } = useFacetValues();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const { mapStyleUrl } = useEnvironment();
@@ -81,11 +82,15 @@ export default function MapFacet({ values, getConstraint, setConstraint, labelle
       map.once("gm:loaded" as "load", () => {
         if (disposed) return;
 
-        const syncSelection = () =>
-          setConstraint(
-            st("withinArea"),
-            drawnFeaturesToAreaLiteral(editor.getAllFeatureCollection()),
-          );
+        // Also run on a poll (see below) - only writes when the drawn area actually changed, since
+        // every write re-queries every other facet and (in live mode) re-fires onSubmit.
+        let lastArea: string | undefined = initialAreaRef.current?.value;
+        const syncSelection = () => {
+          const area = drawnFeaturesToAreaLiteral(editor.getAllFeatureCollection());
+          if (area?.value === lastArea) return;
+          lastArea = area?.value;
+          setConstraint(st("withinArea"), area);
+        };
 
         // Only rectangle/polygon draw modes - a selection *area*, not general-purpose geometry
         // editing (contrast GeoEditor's marker/line/polygon/rectangle/circle). "select" lets the

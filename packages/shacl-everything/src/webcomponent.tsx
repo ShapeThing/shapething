@@ -28,6 +28,7 @@ const webComponentProps = {
   facetChangeMode: "string",
   corsProxyUrl: "string",
   mapStyleUrl: "string",
+  facetsEndpoint: "string",
   // r2wc's boolean transform only parses an attribute with a value ("true"/"false", "1"/"0") - a
   // bare `enable-edit-in-place` attribute with no value is ignored, same as in shacl-renderer.
   enableWidgetSwitching: "boolean",
@@ -112,6 +113,7 @@ function Wrapper(props: WrapperProps) {
     facetChangeMode: attributes.facetChangeMode as Environment["facetChangeMode"],
     corsProxyUrl: attributes.corsProxyUrl,
     mapStyleUrl: attributes.mapStyleUrl,
+    facetsEndpoint: attributes.facetsEndpoint,
     enableWidgetSwitching: attributes.enableWidgetSwitching,
     enableLogicalBranchSwitching: attributes.enableLogicalBranchSwitching,
     enableAlternativePathSwitching: attributes.enableAlternativePathSwitching,

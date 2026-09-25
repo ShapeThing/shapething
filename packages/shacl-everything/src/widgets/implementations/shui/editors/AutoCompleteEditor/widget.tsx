@@ -46,7 +46,7 @@ export default function AutoCompleteEditor({
   // Whether the search icon opens the facet-search modal instead of the ordinary inline typeahead
   // (see openSearch below) - gated the same way canCreate/canEditResource are, on there being a
   // known shape to actually render something against. Facet search only ever narrows local
-  // dataGraph instances (see FacetSearchModal/instancesMatchingOtherConstraints), so a property
+  // dataGraph instances (see FacetSearchModal/instancesMatchingFilterShape), so a property
   // that instead declares shui:searchQuery - a shape author's explicit federated/remote search -
   // must keep using the ordinary typeahead (see useInstanceSearch), not this local-only modal.
   const canFacetSearch =

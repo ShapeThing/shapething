@@ -1,11 +1,12 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
 import type { NamedNode, Term } from "@rdfjs/types";
-import { sh } from "@/helpers/namespaces.ts";
+import { sh, st } from "@/helpers/namespaces.ts";
 import { valueNodeLabel } from "@/resolution/label.ts";
 import ClassHierarchyTree from "@/outputs/render/components/ClassHierarchyTree/index.tsx";
 import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
+import { useFacetValueCounts } from "@/outputs/render/modes/facet/facetData.tsx";
 import {
   buildClassHierarchy,
   filterClassTree,
@@ -20,10 +21,12 @@ import "./style.css";
  * shapesGraph) - the facet-mode counterpart of shui:SubClassEditor, sharing its rootClass/
  * subClassOf tree (structure/classHierarchy.ts, outputs/render/components/ClassHierarchyTree) and
  * its whole chips+search-input combobox shape, since a flat always-expanded tree doesn't scale to
- * a taxonomy of any real size. Writes sh:in the same way CategoryFacet does - an ordinary
- * exact-match constraint - via `selected`/`setConstraint` in place of the editor's single term/
- * setTerm pair, since a facet has no single current value and no dataGraph object set of its own
- * to own; any node in the tree (not just leaves) is independently selectable.
+ * a taxonomy of any real size. Writes the picked classes as st:classIn, which matches a value that
+ * is one of them *or any of their subclasses* (picking Electronics also matches a product tagged
+ * Computers) - facets/filterShape.ts keeps an equivalent sh:sparql constraint alongside it for
+ * external consumers. `selected`/`setConstraint` stand in for the editor's single term/setTerm
+ * pair, since a facet has no single current value; any node in the tree (not just leaves) is
+ * independently selectable.
  *
  * `sh:maxCount 1` renders as single-select (radio buttons sharing one native group, picking a new
  * node anywhere in the tree deselects whichever was picked before and closes the panel, same as
@@ -34,14 +37,14 @@ export default function SubClassFacet({
   shape,
   getConstraint,
   setConstraint,
-  valueCounts,
   labelledBy,
 }: FacetWidgetProps) {
+  const valueCounts = useFacetValueCounts();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const rootClass = shape.get(sh("rootClass"))[0];
   const singleSelect = shape.get(sh("maxCount")) === 1;
   const inputType: "checkbox" | "radio" = singleSelect ? "radio" : "checkbox";
-  const selected = getConstraint(sh("in"));
+  const selected = getConstraint(st("classIn"));
   const groupName = useId();
   const chips: Term[] = selected;
   const [isOpen, setIsOpen] = useState(false);
@@ -59,7 +62,7 @@ export default function SubClassFacet({
     [shape, rootClass, activeInterfaceLanguage],
   );
 
-  // valueCounts (see FacetWidgetProps) is only ever an exact-match tally - rolled up here through
+  // valueCounts (useFacetValueCounts) is only ever an exact-match tally - rolled up here through
   // the same tree so a non-leaf node's count reflects everything filed under it too, not just what
   // happens to be tagged with that exact class (see rollUpClassCounts's own doc comment).
   const rolledUpValueCounts = useMemo(
@@ -103,7 +106,7 @@ export default function SubClassFacet({
 
   const removeChip = (chip: Term) => {
     const next = selected.filter((term) => !term.equals(chip));
-    setConstraint(sh("in"), next.length > 0 ? next : undefined);
+    setConstraint(st("classIn"), next.length > 0 ? next : undefined);
   };
 
   // Single-select: picking a class replaces the whole sh:in constraint and closes the panel, same
@@ -113,7 +116,7 @@ export default function SubClassFacet({
   // so typing continues right away without a click back into the input.
   const toggle = (candidate: NamedNode, checked: boolean) => {
     if (singleSelect) {
-      setConstraint(sh("in"), checked ? [candidate] : undefined);
+      setConstraint(st("classIn"), checked ? [candidate] : undefined);
       setSearch("");
       setIsOpen(false);
       return;
@@ -121,7 +124,7 @@ export default function SubClassFacet({
     const next = checked
       ? [...selected, candidate]
       : selected.filter((term) => !term.equals(candidate));
-    setConstraint(sh("in"), next.length > 0 ? next : undefined);
+    setConstraint(st("classIn"), next.length > 0 ? next : undefined);
     searchRef.current?.focus();
   };
 

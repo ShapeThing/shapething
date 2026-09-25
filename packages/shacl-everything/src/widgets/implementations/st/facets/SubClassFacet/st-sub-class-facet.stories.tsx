@@ -3,7 +3,7 @@ import { expect, userEvent, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import { minimalEnvironment } from "@/environment.ts";
-import { ex, sh } from "@/helpers/namespaces.ts";
+import { ex, st } from "@/helpers/namespaces.ts";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import type { SubmitResult } from "@/environment.ts";
 
@@ -53,8 +53,8 @@ export const stSubClassFacet: Story = {
 
     await waitFor(() => {
       if (!submitResult) throw new Error("onSubmit has not fired yet");
-      const listHead = submitResult.dataGraph.getQuads(null, sh("in"))[0]?.object;
-      if (!listHead) throw new Error("sh:in has not been written yet");
+      const listHead = submitResult.dataGraph.getQuads(null, st("classIn"))[0]?.object;
+      if (!listHead) throw new Error("st:classIn has not been written yet");
       expect(getRdfList(listHead, submitResult.dataGraph).map((term) => term.value)).toEqual([
         ex("Computers").value,
       ]);
@@ -69,7 +69,7 @@ export const stSubClassFacet: Story = {
     expect(computers.checked).toBe(true);
 
     await waitFor(() => {
-      const listHead = submitResult!.dataGraph.getQuads(null, sh("in"))[0]?.object;
+      const listHead = submitResult!.dataGraph.getQuads(null, st("classIn"))[0]?.object;
       expect(
         getRdfList(listHead!, submitResult!.dataGraph)
           .map((term) => term.value)
@@ -83,7 +83,7 @@ export const stSubClassFacet: Story = {
     expect(books.checked).toBe(true);
 
     await waitFor(() => {
-      const listHead = submitResult!.dataGraph.getQuads(null, sh("in"))[0]?.object;
+      const listHead = submitResult!.dataGraph.getQuads(null, st("classIn"))[0]?.object;
       expect(getRdfList(listHead!, submitResult!.dataGraph).map((term) => term.value)).toEqual([
         ex("Books").value,
       ]);
@@ -94,7 +94,7 @@ export const stSubClassFacet: Story = {
     const removeButton = await canvas.findByRole("button", { name: /remove/i });
     await userEvent.click(removeButton);
     await waitFor(() => {
-      expect(submitResult!.dataGraph.getQuads(null, sh("in"))).toHaveLength(0);
+      expect(submitResult!.dataGraph.getQuads(null, st("classIn"))).toHaveLength(0);
     });
   },
 };
@@ -122,9 +122,8 @@ export const stSubClassFacetShowsRolledUpCounts: Story = {
   },
 };
 
-// A class-taxonomy pick narrows sibling facets by hierarchy, not just exact value (see
-// facets/filterShape.ts's copyRootClass, which relies on sh:rootClass's own real SHACL Core
-// semantics rather than a bespoke check): Laptop is tagged
+// A class-taxonomy pick narrows sibling facets by hierarchy, not just exact value (st:classIn - see
+// facets/filterShape.ts's syncClassInSparqlConstraint and facets/compileFilter.ts): Laptop is tagged
 // ex:Computers, a subclass of ex:Electronics, not ex:Electronics itself - selecting "Electronics"
 // must still count it alongside Widget (tagged ex:Electronics directly), the same way a real
 // taxonomy facet implies everything more specific filed under the picked category.

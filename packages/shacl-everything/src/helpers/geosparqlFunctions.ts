@@ -19,8 +19,6 @@ type SpatialRelation = (a: Feature | Geometry, b: Feature | Geometry) => boolean
 // The GeoSPARQL "Simple Features" relation family (geof:sfEquals/sfDisjoint/sfIntersects/sfTouches/
 // sfCrosses/sfWithin/sfContains/sfOverlaps) - every one of them backed by @turf/turf's own boolean-*
 // predicate, which implements the real OGC semantics (holes, edge-touching, line/point cases).
-// facets/facetValues.ts's countFacetInstancesWithinArea calls booleanWithin directly (not via
-// this Comunica registration) for the same reason - one real predicate, two call sites.
 const SIMPLE_FEATURES_RELATIONS: Record<string, SpatialRelation> = {
   sfEquals: booleanEqual,
   sfDisjoint: booleanDisjoint,
@@ -39,7 +37,7 @@ export type ExtensionFunction = (args: Term[]) => Promise<Term>;
 
 /**
  * geof: Simple Features spatial relation functions, registered as Comunica extension functions (see
- * outputs/render/hooks/query.ts's runQuery) so any SPARQL FILTER/BIND this package runs - local
+ * helpers/queryEngine.ts) so any SPARQL FILTER/BIND this package runs - local
  * dataGraph or federated SERVICE - can test a real OGC spatial relation between two GeoSPARQL
  * geometry values (any term literalToGeometry recognizes: a wktLiteral, or GeoJSON text) instead of
  * the app hand-rolling geometry math itself. A non-boolean or otherwise malformed argument (missing,

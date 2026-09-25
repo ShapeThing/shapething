@@ -43,9 +43,8 @@ export const stColorFacet: Story = {
     // Clicking the "Red" bucket writes its own name as a single st:colorBucket value, not an
     // enumerated range - a sibling sh:sparql SPARQLConstraint (built from helpers/colorBuckets.ts's
     // sparqlFilterForBucket) is kept in sync alongside it (facets/filterShape.ts's
-    // syncColorBucketSparqlConstraint), and that's what this renderer's own facet narrowing
-    // actually validates against (facets/filterShape.ts's instancesConformingViaEngine) - not a
-    // hand-rolled reclassification of each candidate's own st:hue/st:saturation/st:lightness.
+    // syncColorBucketSparqlConstraint), for external SHACL-SPARQL consumers; this renderer's own
+    // facet queries compile the same sparqlFilterForBucket text (facets/compileFilter.ts).
     await waitFor(() => {
       if (!submitResult) throw new Error("onSubmit has not fired yet");
       expect(submitResult.dataGraph.getQuads(null, st("colorBucket"))[0]?.object.value).toEqual(
