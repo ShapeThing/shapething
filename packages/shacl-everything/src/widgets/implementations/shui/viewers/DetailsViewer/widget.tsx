@@ -1,8 +1,7 @@
 import { useMemo } from "react";
-import type { Quad_Subject } from "@rdfjs/types";
 import NodeUIElementChildren from "@/outputs/render/modes/view/NodeUIElementChildren.tsx";
 import { valueNodeShapes } from "@/resolution/label.ts";
-import { NodeUIElement } from "@/structure/NodeUIElement.ts";
+import { useNestedNode } from "@/outputs/render/hooks/useNestedNode.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
@@ -12,19 +11,7 @@ export default function DetailsViewer({ shape, term }: WidgetProps) {
   // shui:LabelRole path resolution does for the property's value node.
   const nodeShapes = useMemo(() => valueNodeShapes(shape), [shape]);
 
-  const nodeUiElement = useMemo(
-    () =>
-      new NodeUIElement({
-        shapesGraph: shape.shapesGraph,
-        dataGraph: shape.dataGraph,
-        scoresGraph: shape.scoresGraph,
-        widgetRegistry: shape.widgetRegistry,
-        focusNode: term as Quad_Subject,
-        nodeShapes,
-        ancestorPath: shape.nestedAncestorPath(),
-      }),
-    [shape, term, nodeShapes],
-  );
+  const nodeUiElement = useNestedNode(shape, term, { nodeShapes, nested: true })!;
 
   return (
     <div className="st-details-viewer">

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, type ReactNode, type RefObject } from "react";
 import { Engine as ShaclEngine, type ValidateResult } from "shacl-engine";
 import {
   constraints as sparqlConstraints,
@@ -10,8 +10,10 @@ import { shapesGraphWithoutDynamicIn } from "@/structure/shapesGraphWithoutDynam
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { validateDynamicInProperties } from "@/outputs/render/contexts/validateDynamicInProperties.ts";
 import {
+  createValidationStore,
   validationContext,
   type ValidationResult,
+  type ValidationStore,
 } from "@/outputs/render/contexts/validationContext.tsx";
 
 const VALIDATION_DEBOUNCE_MS = 200;
@@ -28,7 +30,7 @@ function flattenResults(results: ValidateResult[]): ValidationResult[] {
 
 type Props = {
   children: ReactNode;
-  // Written on every revalidation, alongside (not instead of) the `results` state below - lets
+  // Written on every revalidation, alongside (not instead of) the store below - lets
   // EditModeWrapper read the current results at submit time to decide whether to block submission,
   // without subscribing to them as state itself: EditModeWrapper renders this provider as its own
   // child, so re-rendering *it* on every validation pass would remount every widget mid-edit (see
@@ -40,14 +42,16 @@ type Props = {
  * Revalidates `dataGraph` against `shapesGraph` (scoped to `focusNode`/`nodeShapes`, the entity
  * this edit session actually renders - see NodeUIComponent) once on mount, then again on every
  * `dataGraph` write, debounced the same way as useInstanceSearch's own search-as-you-type. Exposes
- * the flattened result list via validationContext for usePropertyValidationResults to filter per
- * property. shacl-engine validates nested sh:property/sh:node shapes as part of validating their
+ * the flattened results, indexed per property (see validationIndex.ts), through a subscribable
+ * store in validationContext - so a run only re-renders the properties whose own results changed
+ * (see usePropertyValidationResults), never this provider or the whole tree. shacl-engine validates nested sh:property/sh:node shapes as part of validating their
  * parent node shape, so scoping to just `nodeShapes` here still covers the whole edited subtree.
  */
 export default function ValidationContextProvider({ children, latestResultsRef }: Props) {
   const { shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl } = useEnvironment();
-  const [results, setResults] = useState<ValidationResult[]>([]);
-  const [isValidating, setIsValidating] = useState(true);
+  const storeRef = useRef<ValidationStore | null>(null);
+  storeRef.current ??= createValidationStore();
+  const store = storeRef.current;
 
   // shapesGraph is read-only for the lifetime of an Environment (see preprocess/index.ts), so a
   // single Validator compiled from it up front stays valid for every subsequent revalidation -
@@ -77,7 +81,7 @@ export default function ValidationContextProvider({ children, latestResultsRef }
     const runValidation = async () => {
       const run = ++latestRun;
       const isCurrent = () => !cancelled && run === latestRun;
-      setIsValidating(true);
+      store.setIsValidating(true);
       try {
         const report = await engineRef.current!.validate(
           { dataset: dataGraph.asDataset(), terms: [focusNode] },
@@ -93,7 +97,7 @@ export default function ValidationContextProvider({ children, latestResultsRef }
         );
         if (isCurrent()) {
           const combined = [...flattenResults(report.results), ...dynamicInResults];
-          setResults(combined);
+          store.setResults(combined);
           if (latestResultsRef) latestResultsRef.current = combined;
         }
       } catch (error) {
@@ -104,12 +108,12 @@ export default function ValidationContextProvider({ children, latestResultsRef }
         // shapesGraphWithoutDynamicIn/validateDynamicInProperties above). This stays defensive for
         // real failures instead (e.g. an unreachable SERVICE endpoint) - failing the whole
         // live-validation pass for one bad property would otherwise take down the validation UI for
-        // every other, perfectly valid property on the same node. Leaves `results` as whatever the
+        // every other, perfectly valid property on the same node. Leaves the results as whatever the
         // last successful run produced rather than clearing it, since a crashed run has no actual
         // conformance information to report.
         console.warn("[shacl-everything] SHACL validation failed:", error);
       } finally {
-        if (isCurrent()) setIsValidating(false);
+        if (isCurrent()) store.setIsValidating(false);
       }
     };
 
@@ -128,11 +132,9 @@ export default function ValidationContextProvider({ children, latestResultsRef }
       clearTimeout(timeout);
       unsubscribe?.();
     };
-  }, [shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl]);
+  }, [shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl, store]);
 
   return (
-    <validationContext.Provider value={{ results, isValidating }}>
-      {children}
-    </validationContext.Provider>
+    <validationContext.Provider value={store}>{children}</validationContext.Provider>
   );
 }

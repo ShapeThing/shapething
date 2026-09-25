@@ -12,12 +12,13 @@ import {
   pathSparqlFor,
   removeFilterConstraintsForPaths,
   type FilterShape,
-} from "@/structure/filterShape.ts";
+} from "@/facets/filterShape.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { useCssImports } from "@/outputs/render/hooks/useCssImports.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import FacetPropertyComponent from "@/outputs/render/modes/facet/FacetPropertyComponent.tsx";
 import TypeSelector from "@/outputs/render/modes/facet/TypeSelector.tsx";
+import { resolvedWidgets } from "@/preprocess/widgets.ts";
 
 // The class a root shape represents for the type/category selector - its own sh:targetClass when
 // declared, otherwise the shape node itself (an implicit class-shape, see
@@ -92,7 +93,7 @@ export default function NodeUIComponent({ filterShape }: { filterShape: FilterSh
       activeShapes,
       placeholderFocusNode,
       scoresGraph,
-      widgets,
+      resolvedWidgets(widgets),
     )
       .filter((element): element is PropertyUIElement => element.kind === "property")
       .sort((a, b) => orderOf(a) - orderOf(b));

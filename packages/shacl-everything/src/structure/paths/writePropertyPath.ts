@@ -8,7 +8,7 @@ import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 /**
  * The write-side counterpart to parsePropertyPath/parsePathNode: materializes a parsed
  * PropertyPath as fresh sh:path triples in `store`, returning the term a `sh:path` triple should
- * point at. Used by structure/filterShape.ts to copy a source property shape's path structure
+ * point at. Used by facets/filterShape.ts to copy a source property shape's path structure
  * (predicate, sh:alternativePath, sh:sequencePath, sh:inversePath, sh:zeroOrMorePath,
  * sh:oneOrMorePath, sh:zeroOrOnePath - including nested combinations) onto the generated filter
  * shape, rather than re-deriving it from a SPARQL string. Every compound path always mints a fresh

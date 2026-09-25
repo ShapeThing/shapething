@@ -3,7 +3,7 @@ import { RdfStore } from "rdf-stores";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
 import { hashString } from "@/helpers/hashString.ts";
-import { dash, sh, shui } from "@/helpers/namespaces.ts";
+import { shui } from "@/helpers/namespaces.ts";
 import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
 import {
   parsePropertyPath,
@@ -21,18 +21,20 @@ import {
 import { transact } from "@/helpers/reactiveRdfStore.ts";
 import { score, select, type WidgetScoreResult } from "@/scoring/score.ts";
 import { createDefaultTerm } from "@/widgets/defaultTerm.ts";
-import { defaultWidgets } from "@/widgets/registry.ts";
 import type { Widgets } from "@/widgets/types.ts";
 import { toSparql, type ToSparqlOptions } from "@/structure/paths/toSparql.ts";
 import { resolutions } from "@/structure/constraintResolutions.ts";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { propertyDescription, propertyLabel } from "@/resolution/label.ts";
+import { EMPTY_SCORES_GRAPH } from "@/structure/memo.ts";
+import { orderedValues } from "@/structure/orderedValues.ts";
 
 export type PropertyUIElementOptions = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
   scoresGraph?: RdfStore;
-  widgetRegistry?: Widgets;
+  // Required - see NodeUIElementOptions.widgetRegistry.
+  widgetRegistry: Widgets;
   focusNode: Quad_Subject;
   propertyShapes: NamedNode[];
   // The chain of SPARQL-rendered paths (toSparql) walked from the Environment's own root
@@ -95,12 +97,16 @@ export class PropertyUIElement {
   public focusNode: Quad_Subject;
   public propertyShapes: NamedNode[];
   public ancestorPath: string[];
+  // Both derived from shapesGraph alone (read-only for an Environment's lifetime), so computed on
+  // first use and kept for the instance's lifetime - see propertyPath() and widgetShapeSource().
+  #path: PropertyPath | null | undefined;
+  #widgetShapeSource: { shapeNode: Term; shapesGraph: RdfStore } | undefined;
 
   constructor(options: PropertyUIElementOptions) {
     this.shapesGraph = options.shapesGraph;
     this.dataGraph = options.dataGraph;
-    this.scoresGraph = options.scoresGraph ?? RdfStore.createDefault();
-    this.widgetRegistry = options.widgetRegistry ?? defaultWidgets;
+    this.scoresGraph = options.scoresGraph ?? EMPTY_SCORES_GRAPH;
+    this.widgetRegistry = options.widgetRegistry;
     this.focusNode = options.focusNode;
     this.propertyShapes = options.propertyShapes;
     this.ancestorPath = options.ancestorPath ?? [];
@@ -138,13 +144,26 @@ export class PropertyUIElement {
   }
 
   /**
+   * This element's parsed sh:path - parsed once, on first use, rather than by every method below.
+   * Every grouped shape shares the same path (propertiesForShape groups them by it), so
+   * propertyShapes[0] alone determines it. `undefined` for a shape with no (parseable) sh:path,
+   * e.g. a sh:memberShape placeholder (see MemberShapeList).
+   */
+  propertyPath(): PropertyPath | undefined {
+    if (this.#path === undefined) {
+      this.#path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph) ?? null;
+    }
+    return this.#path ?? undefined;
+  }
+
+  /**
    * The actual value(s) this property currently holds on `this.focusNode`, found by walking this
    * element's path through `dataGraph` - as opposed to `get()`, which reads shape metadata like
    * sh:minCount from `shapesGraph`. Every grouped shape shares the same path (propertiesForShape
    * groups them by it), so propertyShapes[0] alone is enough to determine it.
    */
   getObjects(): Term[] {
-    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    const path = this.propertyPath();
     if (!path) return [];
     return walkPropertyPath(path, this.focusNode, this.dataGraph);
   }
@@ -155,7 +174,7 @@ export class PropertyUIElement {
    * missing intermediate nodes along) this element's path rather than reading through it.
    */
   addObject(value: Term): void {
-    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    const path = this.propertyPath();
     if (!path) return;
     transact(
       this.dataGraph,
@@ -175,7 +194,7 @@ export class PropertyUIElement {
    * so it does nothing if `oldValue` isn't currently reachable through this element's path.
    */
   replaceObject(oldValue: Term, newValue: Term): void {
-    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    const path = this.propertyPath();
     if (!path) return;
     transact(this.dataGraph, () => {
       const existing = walkPropertyPath(path, this.focusNode, this.dataGraph)
@@ -206,7 +225,7 @@ export class PropertyUIElement {
    * does nothing if `value` isn't currently reachable through this element's path.
    */
   removeObject(value: Term): void {
-    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    const path = this.propertyPath();
     if (!path) return;
     transact(
       this.dataGraph,
@@ -229,7 +248,7 @@ export class PropertyUIElement {
    * AlternativePathSwitcher uses this to decide whether there's anything to switch between.
    */
   alternativePathBranches(): NamedNode[] | undefined {
-    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    const path = this.propertyPath();
     return path ? switchableAlternativeBranches(path) : undefined;
   }
 
@@ -300,7 +319,7 @@ export class PropertyUIElement {
    * the instance, keeping this layer decoupled from Environment.
    */
   isReadOnly(value: Term, readOnlyGraph: RdfStore): boolean {
-    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    const path = this.propertyPath();
     if (!path) return false;
     return walkPropertyPath(path, this.focusNode, readOnlyGraph).some((term) =>
       term.equals(value)
@@ -315,7 +334,7 @@ export class PropertyUIElement {
    * equality check): those need the exact, unambiguous `<iri>` form to stay stable/comparable.
    */
   pathAsSparql(options?: ToSparqlOptions): string | undefined {
-    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    const path = this.propertyPath();
     if (!path) return undefined;
     return toSparql(path, options);
   }
@@ -363,7 +382,7 @@ export class PropertyUIElement {
    * element's own sh:name leak into that.
    */
   label(languages?: BCP47[]): string {
-    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    const path = this.propertyPath();
     const predicate = (path && terminalPredicate(path)) ??
       this.propertyShapes[0];
     return propertyLabel({
@@ -381,7 +400,7 @@ export class PropertyUIElement {
    * already only renders it when truthy.
    */
   description(languages?: BCP47[]): string | undefined {
-    const path = parsePropertyPath(this.propertyShapes[0], this.shapesGraph);
+    const path = this.propertyPath();
     const predicate = (path && terminalPredicate(path)) ??
       this.propertyShapes[0];
     return propertyDescription({
@@ -404,7 +423,7 @@ export class PropertyUIElement {
     widgetPredicate: Term;
     valueNode?: Term;
   }): Promise<Term | undefined> {
-    const { shapeNode, shapesGraph } = widgetShapeSource(this);
+    const { shapeNode, shapesGraph } = this.widgetShapeSource();
     const widget = select({
       focusNode: valueNode,
       dataGraph: this.dataGraph,
@@ -424,7 +443,7 @@ export class PropertyUIElement {
     widgetPredicate: Term;
     valueNode?: Term;
   }): Promise<WidgetScoreResult[]> {
-    const { shapeNode, shapesGraph } = widgetShapeSource(this);
+    const { shapeNode, shapesGraph } = this.widgetShapeSource();
     return score({
       focusNode: valueNode,
       dataGraph: this.dataGraph,
@@ -448,6 +467,58 @@ export class PropertyUIElement {
     });
     if (!widget || widget.termType !== "NamedNode") return undefined;
     return createDefaultTerm(widget, this, { contentLanguage });
+  }
+
+  /**
+   * The shape node (and the graph it lives in) widget scoring validates against. The scoring
+   * system validates a single shape node's own direct triples (sh:datatype, sh:class,
+   * shui:editor, ...) - so a grouped element backed by more than one property shape needs those
+   * triples merged onto one synthetic node first, for the same reason get() merges their values:
+   * SHACL treats repeated constraints conjunctively whether declared on one shape or several.
+   * (get()'s own per-predicate merge table and this merged shape are deliberately two separate
+   * mechanisms: scoring needs a real shape node shacl-engine can validate, not resolved values.)
+   *
+   * Built once per element and reused, so the synthetic node/store keep one identity -
+   * scoring/helpers.ts's validation cache is keyed on the target graph's identity, and a fresh
+   * store per call meant it never hit. Besides each shape's own direct triples, the closure of
+   * blank nodes reachable from them is copied too (e.g. the rdf:first/rdf:rest cells of a
+   * list-valued SHACL 1.2 sh:datatype/sh:nodeKind, which widget-scoring.ttl walks via
+   * rdf:rest* / rdf:first) - without it the merged node would point at list heads whose cells
+   * don't exist in the merged graph. Named-node objects (classes, datatypes) stay plain references.
+   */
+  widgetShapeSource(): { shapeNode: Term; shapesGraph: RdfStore } {
+    if (this.#widgetShapeSource) return this.#widgetShapeSource;
+
+    if (this.propertyShapes.length === 1) {
+      this.#widgetShapeSource = {
+        shapeNode: this.propertyShapes[0],
+        shapesGraph: this.shapesGraph,
+      };
+      return this.#widgetShapeSource;
+    }
+
+    const synthetic = factory.blankNode();
+    const merged = RdfStore.createDefault();
+    const copied = new Set<string>();
+    const pending: Term[] = [];
+    for (const shape of this.propertyShapes) {
+      for (const quad of this.shapesGraph.getQuads(shape)) {
+        merged.addQuad(factory.quad(synthetic, quad.predicate, quad.object));
+        if (quad.object.termType === "BlankNode") pending.push(quad.object);
+      }
+    }
+    while (pending.length) {
+      const node = pending.pop()!;
+      if (copied.has(node.value)) continue;
+      copied.add(node.value);
+      for (const quad of this.shapesGraph.getQuads(node)) {
+        merged.addQuad(quad);
+        if (quad.object.termType === "BlankNode") pending.push(quad.object);
+      }
+    }
+
+    this.#widgetShapeSource = { shapeNode: synthetic, shapesGraph: merged };
+    return this.#widgetShapeSource;
   }
 }
 
@@ -474,37 +545,6 @@ function resolveAlternativeWritePath(
   return { type: "predicate", predicate: branch };
 }
 
-// The scoring system validates a single shape node's own direct triples (sh:datatype, sh:class,
-// shui:editor, ...) - so a grouped element backed by more than one property shape needs those
-// triples merged onto one synthetic node first, for the same reason get() merges their values:
-// SHACL treats repeated constraints conjunctively whether declared on one shape or several.
-function widgetShapeSource(
-  element: PropertyUIElement,
-): { shapeNode: Term; shapesGraph: RdfStore } {
-  if (element.propertyShapes.length === 1) {
-    return {
-      shapeNode: element.propertyShapes[0],
-      shapesGraph: element.shapesGraph,
-    };
-  }
-
-  // TODO this probably is a huge mistake.
-  const synthetic = factory.blankNode();
-  const merged = RdfStore.createDefault();
-  for (const shape of element.propertyShapes) {
-    for (const quad of element.shapesGraph.getQuads(shape)) {
-      merged.addQuad(factory.quad(synthetic, quad.predicate, quad.object));
-    }
-  }
-  return { shapeNode: synthetic, shapesGraph: merged };
-}
-
-function shapeOrder(shape: Term, shapesGraph: RdfStore): number {
-  const value = shapesGraph.getQuads(shape, sh("order"))[0]?.object.value;
-  const parsed = value !== undefined ? parseFloat(value) : NaN;
-  return Number.isNaN(parsed) ? 0 : parsed;
-}
-
 // The RDF property a path ultimately reads from - e.g. for a sequence path the last step, since
 // that is the property whose rdfs:label best represents the whole path. sh:alternativePath has no
 // single terminal property (each branch is a distinct, equally valid option), so it resolves to
@@ -525,35 +565,4 @@ function terminalPredicate(path: PropertyPath): NamedNode | undefined {
     case "alternative":
       return undefined;
   }
-}
-
-// A handful of SHACL 1.2 Core predicates were promoted from the legacy DASH vocabulary
-// (http://datashapes.org/dash#) with the same local name and semantics - a shape authored against
-// DASH still uses the dash: form. orderedValues() falls back to a shape's dash: value when its
-// sh: value is absent, so both forms read the same. Keep this list to only pairs actually confirmed
-// equivalent (not just same local name) - guessing wrong here would silently misread a shape.
-const DASH_ALIASES = new Map<string, NamedNode>([
-  [sh("singleLine").value, dash("singleLine")],
-  [sh("rootClass").value, dash("rootClass")],
-]);
-
-// Raw values for `predicate` across every grouped shape, in ascending sh:order - the ordering
-// both a keepFirst-style resolution and language selection rely on to break ties consistently.
-// Exported for propertyLabel (resolution/label.ts), which needs the raw, un-language-resolved list
-// itself (to try a strict language match first, falling back to the ontology before a looser one).
-export function orderedValues(
-  element: PropertyUIElement,
-  predicate: NamedNode,
-): Term[] {
-  const orderedShapes = [...element.propertyShapes].sort(
-    (a, b) =>
-      shapeOrder(a, element.shapesGraph) - shapeOrder(b, element.shapesGraph),
-  );
-  const alias = DASH_ALIASES.get(predicate.value);
-  return orderedShapes.flatMap((shape) => {
-    const values = element.shapesGraph.getQuads(shape, predicate).map((quad) => quad.object);
-    return values.length || !alias
-      ? values
-      : element.shapesGraph.getQuads(shape, alias).map((quad) => quad.object);
-  });
 }

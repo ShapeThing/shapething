@@ -1,5 +1,10 @@
 import { createContext } from "react";
 import type { Literal, Term } from "@rdfjs/types";
+import {
+  emptyValidationIndex,
+  indexValidationResults,
+  type ValidationIndex,
+} from "@/outputs/render/contexts/validationIndex.ts";
 
 // A flattened, plain-Term view of a shacl-engine ValidateResult (see types/shacl-engine.d.ts) -
 // built once when validation runs (see ValidationContextProvider), so nothing downstream needs to
@@ -21,9 +26,43 @@ export type ValidationResult = {
   message: Literal[];
 };
 
-export type ValidationContextValue = {
-  results: ValidationResult[];
+export type ValidationSnapshot = {
+  index: ValidationIndex;
   isValidating: boolean;
 };
 
-export const validationContext = createContext<ValidationContextValue | undefined>(undefined);
+/**
+ * Held in validationContext instead of the results themselves: the context value never changes, so
+ * a validation run re-renders nobody by itself - each consumer subscribes (useSyncExternalStore)
+ * with a selector for just its own slice, and only re-renders when that slice actually changed
+ * (see usePropertyValidationResults).
+ */
+export type ValidationStore = {
+  subscribe: (listener: () => void) => () => void;
+  getSnapshot: () => ValidationSnapshot;
+  setResults: (results: ValidationResult[]) => void;
+  setIsValidating: (isValidating: boolean) => void;
+};
+
+export function createValidationStore(): ValidationStore {
+  let snapshot: ValidationSnapshot = { index: emptyValidationIndex, isValidating: true };
+  const listeners = new Set<() => void>();
+  const publish = (next: ValidationSnapshot) => {
+    snapshot = next;
+    for (const listener of listeners) listener();
+  };
+  return {
+    subscribe: (listener) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    getSnapshot: () => snapshot,
+    setResults: (results) =>
+      publish({ ...snapshot, index: indexValidationResults(results, snapshot.index) }),
+    setIsValidating: (isValidating) => {
+      if (snapshot.isValidating !== isValidating) publish({ ...snapshot, isValidating });
+    },
+  };
+}
+
+export const validationContext = createContext<ValidationStore | undefined>(undefined);

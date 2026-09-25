@@ -167,3 +167,4 @@ iri-editor-suggestion-in-use = Already in use
 iri-editor-suggestion-from-lov = Suggestions
 iri-editor-suggestion-type-class = class
 iri-editor-suggestion-type-property = property
+widget-render-error = This field could not be displayed.

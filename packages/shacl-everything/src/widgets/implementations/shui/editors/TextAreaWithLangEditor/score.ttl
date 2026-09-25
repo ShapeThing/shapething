@@ -3,13 +3,6 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 shui:TextAreaWithLangEditor rdfs:label "Text Area with Language"@en, "Tekstvak met taal"@nl .
 
-shui:textAreaWithLangEditorScoreMinus1
-    a shui:WidgetScore ;
-    shui:editor shui:TextAreaWithLangEditor ;
-    shui:score -1 ;
-    shui:shapesGraphShape shui:isSingleLineTrue ;
-.
-
 shui:textAreaWithLangEditorScore30
     a shui:WidgetScore ;
     shui:editor shui:TextAreaWithLangEditor ;

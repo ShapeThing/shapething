@@ -5,6 +5,7 @@ import { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, sh } from "@/helpers/namespaces.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 test("NodeUIElement", async () => {
   const shapesGraph = await parseRdf(
@@ -33,6 +34,7 @@ test("NodeUIElement", async () => {
   );
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("ChickenSoup"),
@@ -65,6 +67,7 @@ test("propertyUiElements groups two property shapes with an identical sh:path in
   const dataGraph = await parseRdf("", "text/turtle");
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("ChickenSoup"),
@@ -100,6 +103,7 @@ test("propertyUiElements groups sh:path forms that resolve to the same path", as
   const dataGraph = await parseRdf("", "text/turtle");
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("ChickenSoup"),
@@ -124,6 +128,7 @@ test("propertyUiElements keeps distinct paths as separate elements", async () =>
   const dataGraph = await parseRdf("", "text/turtle");
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("ChickenSoup"),
@@ -156,6 +161,7 @@ test("propertyUiElements merges an equal path declared on separate node shapes i
   const dataGraph = await parseRdf("", "text/turtle");
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("ChickenSoup"),
@@ -190,6 +196,7 @@ test("does not duplicate properties when a nodeShape is listed both directly and
   const dataGraph = await parseRdf("", "text/turtle");
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -222,6 +229,7 @@ test("propertyUiElements exposes sh:or as a ChoiceElement alongside plain proper
   const dataGraph = await parseRdf("", "text/turtle");
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("ChickenSoup"),
@@ -267,6 +275,7 @@ test("propertyUiElements groups multiple properties within a single sh:or branch
   const dataGraph = await parseRdf("", "text/turtle");
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -300,6 +309,7 @@ test("propertyUiElements flattens sh:and branches into plain properties", async 
   const dataGraph = await parseRdf("", "text/turtle");
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("ChickenSoup"),
@@ -330,6 +340,7 @@ test("propertyUiElements exposes sh:xone as a ChoiceElement", async () => {
   const dataGraph = await parseRdf("", "text/turtle");
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("ChickenSoup"),
@@ -356,6 +367,7 @@ test("cssImports() returns this node's applicable shapes' own st:cssImport URLs"
   const dataGraph = await parseRdf("", "text/turtle");
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("ChickenSoup"),
@@ -390,6 +402,7 @@ test("focusNode may be a BlankNode, as when walking a nested sh:node value (e.g.
   expect(focusNode.termType).toBe("BlankNode");
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode,
@@ -430,6 +443,7 @@ test("root sh:or with a sh:node branch (mirrors 7.7.3.f) resolves real data thro
   );
 
   const node = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Hendrik"),
@@ -477,6 +491,7 @@ test("PropertyUIElement.dataId() disambiguates the same path reused inside a nes
   );
 
   const root = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("MobyDick"),
@@ -490,6 +505,7 @@ test("PropertyUIElement.dataId() disambiguates the same path reused inside a nes
   // Mirrors DetailsEditor's own nesting: extend the ancestorPath by the property that led here,
   // then build a fresh NodeUIElement for the nested focus node.
   const nested = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Melville"),
@@ -541,6 +557,7 @@ test("PropertyUIElement.dataId() disambiguates a memberShape list item's propert
   );
 
   const recipe = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Recipe"),
@@ -552,6 +569,7 @@ test("PropertyUIElement.dataId() disambiguates a memberShape list item's propert
   // Mirrors MemberShapeList's own memberElement construction.
   const memberShapeNodes = recipeIngredient.get(sh("memberShape")) as NamedNode[];
   const memberElement = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: recipe.focusNode,
@@ -561,6 +579,7 @@ test("PropertyUIElement.dataId() disambiguates a memberShape list item's propert
 
   // Mirrors DetailsEditor's own nested NodeUIElement construction for one ingredient item.
   const ingredientNode = new NodeUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Fillet"),

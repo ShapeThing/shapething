@@ -4,7 +4,7 @@ import { rdf, shui } from "@/helpers/namespaces.ts";
 import type { Widgets } from "@/widgets/types.ts";
 import {
   cachedValidate,
-  getShaclEngine,
+  compareScored,
   orderByScore,
 } from "@/scoring/helpers.ts";
 
@@ -123,13 +123,7 @@ export async function score(
 
       return { widgetScore, widget, score };
     })
-    .sort((a, b) => {
-      if (a.score === b.score) {
-        if (a.widget.value === b.widget.value) return 0;
-        return a.widget.value < b.widget.value ? -1 : 1;
-      }
-      return b.score - a.score;
-    });
+    .sort(compareScored);
 
   const results: Array<WidgetScoreResult> = [];
 
@@ -221,41 +215,6 @@ async function match({
   }
 
   return true;
-}
-
-export type ValidateProps = {
-  focusNode?: Term;
-  targetGraph: RdfStore;
-  shapeNode: Term;
-  shapesGraph: RdfStore;
-};
-
-export async function validate(
-  { focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps,
-) {
-  if (!shapeNode) return true;
-
-  const dataset = targetGraph.size > 0
-    ? targetGraph.asDataset()
-    : shapesGraph.asDataset();
-
-  const shaclEngine = getShaclEngine(shapesGraph);
-  try {
-    const report = await shaclEngine.validate(
-      {
-        dataset,
-        terms: [focusNode],
-      },
-      [{ terms: [shapeNode] }],
-    );
-    return report.conforms;
-  } catch (error) {
-    console.warn(
-      `SHACL validation failed for shape ${shapeNode.value}:`,
-      error,
-    );
-    return false;
-  }
 }
 
 type AcceptProps = {

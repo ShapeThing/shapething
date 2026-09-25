@@ -14,11 +14,14 @@
     "directory": "packages/shacl-everything"
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "type": "module",
   "exports": {
     ".": "./dist/index.mjs",
+    "./tools": "./dist/tools.mjs",
     "./webcomponent": "./dist/webcomponent.mjs",
     "./package.json": "./package.json",
     "./style.css": "./dist/style.css"
@@ -45,7 +48,6 @@
     "@editorjs/editorjs": "^2.31.6",
     "@editorjs/header": "^2.8.9",
     "@editorjs/list": "^2.0.9",
-    "@effect/experimental": "^0.60.0",
     "@faker-js/faker": "^10.5.0",
     "@fluent/bundle": "^0.19.1",
     "@fluent/react": "^0.15.2",
@@ -53,7 +55,6 @@
     "@iconify/react": "^6.0.2",
     "@js-temporal/polyfill": "^0.5.1",
     "@r2wc/react-to-web-component": "^2.1.1",
-    "@rdfjs/environment": "^1.0.0",
     "@rdfjs/namespace": "^2.0.1",
     "@rdfjs/types": "^2.0.1",
     "@tanstack/react-query": "^5.101.2",
@@ -65,18 +66,19 @@
     "clsx": "^2.1.1",
     "maplibre-gl": "^6.7.0",
     "maplibre-gl-geo-editor": "^0.11.0",
-    "open-props": "^1.7.23",
     "rdf-data-factory": "^2.0.2",
     "rdf-parse": "^5.0.0",
     "rdf-stores": "^2.2.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7",
     "react-duration-control": "^2.0.2",
     "react-error-boundary": "^6.1.2",
     "shacl-engine": "github:rdf-ext/shacl-engine#1d111fc772a71ec2118eed2974709c2b04f47510",
     "string-to-color-gradient": "^1.0.13",
     "string-to-stream": "^3.0.1",
     "wkt": "^0.1.1"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.2.1",
@@ -100,8 +102,11 @@
     "@vitest/browser-playwright": "^4.1.10",
     "@vitest/coverage-v8": "^4.1.10",
     "bumpp": "^11.1.0",
+    "open-props": "^1.7.23",
     "playwright": "^1.61.1",
     "prettier": "^3.9.4",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
     "react-syntax-highlighter": "^16.1.1",
     "remark-gfm": "^4.0.1",
     "storybook": "^10.5.4",
@@ -110,5 +115,8 @@
     "vite-bundle-visualizer": "^1.2.1",
     "vite-plus": "^0.2.8",
     "vitest": "^4.1.10"
+  },
+  "inlinedDependencies": {
+    "maplibre-gl": "6.7.0"
   }
 }

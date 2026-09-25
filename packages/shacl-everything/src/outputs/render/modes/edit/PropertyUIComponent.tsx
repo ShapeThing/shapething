@@ -74,11 +74,10 @@ export default function PropertyUIComponent({
   const searchEndpoints = searchQuery ? extractServiceEndpoints(searchQuery) : [];
   const listFormat = new Intl.ListFormat(activeInterfaceLanguage, { type: "conjunction" });
 
-  // Real SHACL validation results for this property (see ValidationContextProvider) - both
-  // property-wide (e.g. sh:minCount, no `value`) and per-value (e.g. sh:pattern tied to one
-  // specific value, shown instead by PropertyUIComponentObject to avoid reporting it twice).
-  const validationResults = usePropertyValidationResults(propertyUIElement);
-  const propertyWideResults = validationResults.filter((result) => !result.value);
+  // Real SHACL validation results for this property (see ValidationContextProvider) - only the
+  // property-wide ones (e.g. sh:minCount, no `value`): per-value ones (e.g. sh:pattern tied to one
+  // specific value) are shown by PropertyUIComponentObject instead, to avoid reporting them twice.
+  const propertyWideResults = usePropertyValidationResults(propertyUIElement, "property-wide");
   // sh:message is chrome (like sh:name/sh:description), so it's resolved the same way - one
   // best-matching language-tagged literal, not every language variant concatenated together.
   const messageLanguages = configuredLanguages(propertyUIElement.shapesGraph, [

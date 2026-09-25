@@ -1,6 +1,6 @@
 import type { Term } from "@rdfjs/types";
 import { getRdfList } from "@/helpers/rdfList.ts";
-import { validate } from "@/scoring/score.ts";
+import { validate } from "@/validation/validate.ts";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 
 /**

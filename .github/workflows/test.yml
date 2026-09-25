@@ -1,0 +1,40 @@
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # Browser-mode Vitest projects (shacl-everything's and shacl-manager's Storybook interaction
+      # tests) run in headless Chromium. Each package pins its own Playwright version, and each
+      # version needs its own matching browser build, so install through each package's own CLI.
+      - name: Install Playwright Chromium
+        run: |
+          pnpm --filter @shapething/shacl-everything exec playwright install --with-deps chromium
+          pnpm --filter @shapething/shacl-manager exec playwright install --with-deps chromium
+
+      # turbo.json's test task depends on ^build, so workspace dependencies (resource-fetcher's
+      # dist for shacl-everything's Storybook fixtures, shacl-everything's dist for shacl-manager)
+      # are built first.
+      - name: Run tests
+        run: pnpm run test
+        env:
+          CI: true

@@ -1,0 +1,10 @@
+@layer components {
+  .st-widget-error {
+    flex: 1;
+    padding: var(--size-2);
+    border: 1px dashed var(--st-severity-error);
+    border-radius: var(--radius-2);
+    color: var(--st-severity-error);
+    font-size: var(--font-size-0);
+  }
+}

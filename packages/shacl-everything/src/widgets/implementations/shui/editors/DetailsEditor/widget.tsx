@@ -3,30 +3,18 @@ import type { Quad_Subject } from "@rdfjs/types";
 import { Localized } from "@fluent/react";
 import { sh } from "@/helpers/namespaces.ts";
 import { Settings } from "@/helpers/icons.tsx";
-import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
+import { useNestedNode } from "@/outputs/render/hooks/useNestedNode.ts";
 
 export default function DetailsEditor({ shape, term, setTerm, autoFocus }: WidgetProps) {
   const nodeShapes = useMemo(() => shape.get(sh("node")) as Quad_Subject[], [shape]);
   const { enableLogicalBranchSwitching, enableWidgetSwitching } = useEnvironment();
 
-  const nodeUiElement = useMemo(
-    () =>
-      new NodeUIElement({
-        shapesGraph: shape.shapesGraph,
-        dataGraph: shape.dataGraph,
-        scoresGraph: shape.scoresGraph,
-        widgetRegistry: shape.widgetRegistry,
-        focusNode: term as Quad_Subject,
-        nodeShapes,
-        ancestorPath: shape.nestedAncestorPath(),
-      }),
-    [shape, term, nodeShapes],
-  );
+  const nodeUiElement = useNestedNode(shape, term, { nodeShapes, nested: true })!;
 
   // Unlike a widget that owns a fixed set of sub-predicates directly (AddressEditor, ColorEditor),
   // DetailsEditor only recurses into the value's own shape-declared properties - each nested field

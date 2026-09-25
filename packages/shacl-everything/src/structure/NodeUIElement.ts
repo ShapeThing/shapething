@@ -1,11 +1,11 @@
 import type { Quad_Subject } from "@rdfjs/types";
-import { RdfStore } from "rdf-stores";
-import { ChoiceElement } from "@/structure/ChoiceElement.ts";
+import type { RdfStore } from "rdf-stores";
+import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
-import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { cssImportsForShapes } from "@/resolution/cssImports.ts";
 import { groupDescription } from "@/resolution/label.ts";
-import { defaultWidgets } from "@/widgets/registry.ts";
+import { EMPTY_SCORES_GRAPH } from "@/structure/memo.ts";
 import type { Widgets } from "@/widgets/types.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 
@@ -13,7 +13,12 @@ export type NodeUIElementOptions = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
   scoresGraph?: RdfStore;
-  widgetRegistry?: Widgets;
+  // The widget set every element built from this node resolves widgets/meta/group entries from -
+  // Environment.widgets (preprocess/widgets.ts) in a render tree. Required: the model layer never
+  // falls back to the bundled registry itself (that would import every widget, and React, into
+  // structure/); a caller that genuinely wants the bundled set passes widgets/registry.ts's
+  // defaultWidgets explicitly.
+  widgetRegistry: Widgets;
   focusNode: Quad_Subject;
   nodeShapes: Quad_Subject[];
   // The chain of SPARQL-rendered property paths (toSparql) walked from the Environment's own root
@@ -37,8 +42,8 @@ export class NodeUIElement {
   constructor(options: NodeUIElementOptions) {
     this.shapesGraph = options.shapesGraph;
     this.dataGraph = options.dataGraph;
-    this.scoresGraph = options.scoresGraph ?? RdfStore.createDefault();
-    this.widgetRegistry = options.widgetRegistry ?? defaultWidgets;
+    this.scoresGraph = options.scoresGraph ?? EMPTY_SCORES_GRAPH;
+    this.widgetRegistry = options.widgetRegistry;
     this.focusNode = options.focusNode;
     this.nodeShapes = options.nodeShapes;
     this.ancestorPath = options.ancestorPath ?? [];
@@ -47,7 +52,9 @@ export class NodeUIElement {
   children(): (PropertyUIElement | ChoiceElement)[] {
     // One call across the whole list (not a flatMap per shape) so property shapes on the same
     // path declared by two different nodeShapes entries - not just the same shape reached twice -
-    // still merge into a single PropertyUIElement; see childrenForShape's own doc comment.
+    // still merge into a single PropertyUIElement; see childrenForShape's own doc comment. Memoized
+    // there, so repeat calls - even across separately-constructed NodeUIElements for the same
+    // graphs/focusNode/nodeShapes - return the same element instances.
     return childrenForShape(
       this.shapesGraph,
       this.dataGraph,

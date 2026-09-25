@@ -24,7 +24,7 @@ const POLL_INTERVAL_MS = 400;
 
 /**
  * A map-based facet for geometry-valued properties (sh:datatype geosparql:wktLiteral): plots every
- * value found across every target instance (structure/facetValues.ts's aggregateFacetValues) as
+ * value found across every target instance (facets/facetValues.ts's aggregateFacetValues) as
  * markers, and lets the user draw one or more rectangles/polygons - via the same
  * @geoman-io/maplibre-geoman-free + maplibre-gl-geo-editor toolbar GeoEditor uses for actually
  * editing geometry - to select an area. Every value falling inside any drawn shape narrows the
@@ -32,11 +32,11 @@ const POLL_INTERVAL_MS = 400;
  *
  * Unlike GeoEditor, the drawn shape(s) here are never a data value themselves: they're combined
  * into a single MultiPolygon st:withinArea literal on the generated filter shape (see
- * structure/filterShape.ts's matchingInstancesWithinArea, which this renderer's own facet
+ * facets/filterShape.ts's matchingInstancesWithinArea, which this renderer's own facet
  * narrowing actually runs it through) - the facet-mode analogue of NumberRangeFacet's
  * sh:minInclusive/sh:maxInclusive. setFilterConstraint also derives a real, standards-conformant
  * SHACL SPARQL-based Constraint (sh:sparql [ a sh:SPARQLConstraint ; sh:select "..." ], built on the
- * geof:sfWithin GeoSPARQL extension function - see structure/filterShape.ts's
+ * geof:sfWithin GeoSPARQL extension function - see facets/filterShape.ts's
  * syncWithinAreaSparqlConstraint) from that same literal, so an external consumer of the submitted
  * filter shape can enforce the identical spatial rule without any ShapeThing-specific vocabulary -
  * this renderer's own matching runs an equivalent query directly via Comunica instead of that exact

@@ -39,7 +39,7 @@ export function aggregateFacetValues(
  * This function itself is a plain, static tally over whatever `instances` it's given - the *live*,
  * re-narrowing behavior (excluding instances that fail some other currently-active facet
  * constraint) lives one layer up, in the caller's choice of which instances to pass in: see
- * structure/filterShape.ts's instancesMatchingOtherConstraints, which FacetPropertyComponent runs
+ * facets/filterShape.ts's instancesMatchingOtherConstraints, which FacetPropertyComponent runs
  * first and hands the result to this function instead of the full, unfiltered instance list.
  */
 export function aggregateFacetValueCounts(
@@ -87,7 +87,7 @@ export type RangeBounds = {
  *
  * Like aggregateFacetValueCounts, this is a plain static tally over whatever `instances` it's
  * given - the live, re-narrowing behavior comes from the caller passing in an already-narrowed
- * instance list (structure/filterShape.ts's instancesMatchingOtherConstraints), not from anything
+ * instance list (facets/filterShape.ts's instancesMatchingOtherConstraints), not from anything
  * this function does itself.
  */
 export function countFacetInstancesInRange(
@@ -136,7 +136,7 @@ export function countFacetInstancesInRange(
  *
  * Like the other two count functions, this is a plain static tally over whatever `instances` it's
  * given - the live, re-narrowing behavior comes from the caller passing in an already-narrowed
- * instance list (structure/filterShape.ts's instancesMatchingOtherConstraints).
+ * instance list (facets/filterShape.ts's instancesMatchingOtherConstraints).
  */
 export function countFacetInstancesMatchingPattern(
   property: PropertyUIElement,
@@ -179,20 +179,20 @@ export function countFacetInstancesWithValueIn(
 /**
  * How many of `instances` have at least one value for `property`'s path falling inside `area` (a
  * GeoSPARQL WKT Polygon/MultiPolygon literal, MapFacet's own st:withinArea constraint value - see
- * structure/filterShape.ts) - the spatial analogue of countFacetInstancesInRange, backing
+ * facets/filterShape.ts) - the spatial analogue of countFacetInstancesInRange, backing
  * Environment.enableFacetOptionCounts for MapFacet. Counts *instances*, not values, the same way the
  * other count functions do. `area` undefined means nothing has been drawn yet - returns 0, the same
  * "nothing entered" sentinel the other count functions use.
  *
  * Uses @turf/turf's booleanWithin directly - the same real OGC "within" predicate
- * structure/filterShape.ts's matchingInstancesWithinArea reaches via geof:sfWithin/Comunica for the
+ * facets/filterShape.ts's matchingInstancesWithinArea reaches via geof:sfWithin/Comunica for the
  * cross-facet narrowing that feeds `instances` here, kept as one shared predicate (not a separate,
  * cheaper approximation) precisely so this facet's own displayed count can never disagree with what
  * a sibling facet's narrowing decided about the same instance.
  *
  * Like the other count functions, this is a plain static tally over whatever `instances` it's given
  * - the live, re-narrowing behavior comes from the caller passing in an already-narrowed instance
- * list (structure/filterShape.ts's instancesMatchingOtherConstraints).
+ * list (facets/filterShape.ts's instancesMatchingOtherConstraints).
  */
 export function countFacetInstancesWithinArea(
   property: PropertyUIElement,

@@ -20,10 +20,10 @@ import "./style.css";
  * (the same federated-query form EnumSelectEditor's own dropdown supports, see
  * structure/selectQuery.ts) resolves its options - and their LabelRole/ClassificationRole/DepictionRole
  * labels, see useSelectOptions - via Comunica instead; otherwise this falls back to every value
- * actually found in the data (`values`, see structure/facetValues.ts).
+ * actually found in the data (`values`, see facets/facetValues.ts).
  *
  * A federated option's `valueCounts` entry needs no special handling: counts are still tallied by
- * walking this property's path over the *local* dataGraph (structure/facetValues.ts), keyed by
+ * walking this property's path over the *local* dataGraph (facets/facetValues.ts), keyed by
  * termKey - a federated option nobody's local data currently holds simply falls back to this
  * component's own `?? 0`, the same as any other zero-count option.
  *

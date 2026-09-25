@@ -1,28 +1,44 @@
-import type { Quad } from "@rdfjs/types";
+import type { Quad, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { Engine as ShaclEngine } from "shacl-engine";
-import { factory } from "@/helpers/factory.ts";
 import { shui } from "@/helpers/namespaces.ts";
 import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
-import { validate, type ValidateProps } from "@/scoring/score.ts";
+import { validate, type ValidateProps } from "@/validation/validate.ts";
 import { termKey } from "@/helpers/termKey.ts";
 
+/**
+ * The one ranking order both select() and score() use: descending shui:score, ties broken by the
+ * widget's own IRI (ascending) - never by quad/glob order, which depends on which widget folders
+ * happen to exist and how the scoring graph was concatenated, so two equally-scored widgets would
+ * otherwise swap winners for reasons unrelated to the shapes being rendered.
+ */
+export function compareScored(
+  a: { score: number; widget: Term },
+  b: { score: number; widget: Term },
+): number {
+  if (a.score !== b.score) return b.score - a.score;
+  if (a.widget.value === b.widget.value) return 0;
+  return a.widget.value < b.widget.value ? -1 : 1;
+}
+
+/**
+ * Orders shui:WidgetScore quads (subject = the rule, object = its widget, as found via the mode's
+ * widgetPredicate) by compareScored. A rule with no shui:score sorts as 0 here - score() is the
+ * one that rejects such a rule outright. Returns a new array; `widgetScores` is left untouched.
+ */
 export const orderByScore = (
   widgetScores: Array<Quad>,
   scoringGraph: RdfStore,
-) =>
+): Quad[] =>
   widgetScores
-    .sort((a, b) => {
-      const aScore = parseFloat(
-        scoringGraph.getQuads(a.subject, shui("score"))[0]?.object.value ??
-          "0",
-      );
-      const bScore = parseFloat(
-        scoringGraph.getQuads(b.subject, shui("score"))[0]?.object.value ??
-          "0",
-      );
-      return bScore - aScore;
-    });
+    .map((quad) => ({
+      quad,
+      widget: quad.object,
+      score: parseFloat(
+        scoringGraph.getQuads(quad.subject, shui("score"))[0]?.object.value ?? "0",
+      ),
+    }))
+    .sort(compareScored)
+    .map(({ quad }) => quad);
 
 /**
  * A string-keyed cache of values derived from one RdfStore, for memoizing an expensive computation
@@ -76,23 +92,7 @@ export function createReactiveCache<T>(): ReactiveCache<T> {
  */
 export const shapeValidationCache = createReactiveCache<Promise<boolean>>();
 
-// Compiling a ShaclEngine parses every shape in shapesGraph up front (see shacl-engine's
-// Engine constructor), which is wasted work when repeated for the same shapesGraph - as
-// happens here, since matcher() always validates against the same scoringGraph, once or twice
-// per candidate widget. Keyed by object identity (scoringGraph is a stable, cached instance per
-// registry.ts), so this never serves a stale engine for a graph that's actually changed.
-const shaclEngineCache = new WeakMap<RdfStore, ShaclEngine>();
-
-export function getShaclEngine(shapesGraph: RdfStore): ShaclEngine {
-  let shaclEngine = shaclEngineCache.get(shapesGraph);
-  if (!shaclEngine) {
-    shaclEngine = new ShaclEngine(shapesGraph.asDataset(), { factory });
-    shaclEngineCache.set(shapesGraph, shaclEngine);
-  }
-  return shaclEngine;
-}
-
-/** validate(), memoized per (targetGraph, focusNode, shapeNode) - see helpers.ts's shapeValidationCache. */
+/** validate() (validation/validate.ts), memoized per (targetGraph, focusNode, shapeNode) - see helpers.ts's shapeValidationCache. */
 export async function cachedValidate(props: ValidateProps): Promise<boolean> {
   const { focusNode, targetGraph, shapeNode } = props;
   if (!focusNode) return validate(props);

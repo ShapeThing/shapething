@@ -4,6 +4,7 @@ import { ex, geosparql, queryPrefixes } from "@/helpers/namespaces.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { syncFromEditor } from "./widget.tsx";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 const createShape = async (dataTurtle = "") => {
   const shapesGraph = await parseRdf(
@@ -12,6 +13,7 @@ const createShape = async (dataTurtle = "") => {
   );
   const dataGraph = await parseRdf(`${queryPrefixes}\n\n${dataTurtle}`, "text/turtle");
   return new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Subject"),

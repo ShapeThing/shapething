@@ -1,17 +1,8 @@
 import type { StoryObj } from "@storybook/react-vite";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
-import { argsByTestFile, fixtureUrl } from "@/helpers/argsByTestFile.ts";
+import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import { testingEnvironment } from "@/environment.ts";
 import { factory } from "@/helpers/factory.ts";
-
-// shape.ttl's <#shape> only holds the properties common to every shape kind (Title/Description) -
-// a Node Shape's own targeting/constraint properties live in <#nodeShape>, composed alongside it
-// here since argsByTestFile's default nodeShapes only ever points at the fixture's own <#shape>.
-// Built via fixtureUrl (not a literal `new URL(...)` here) so it resolves against the same
-// unhashed fixture URL as argsByTestFile's own shapesGraph - see fixtureUrl's own comment.
-const nodeShapeNodeShapes = [
-  factory.namedNode(fixtureUrl("shape.ttl#nodeShape", import.meta.url).href),
-];
 
 type Story = StoryObj<ShaclRendererProps>;
 

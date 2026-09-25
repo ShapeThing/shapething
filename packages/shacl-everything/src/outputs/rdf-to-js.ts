@@ -12,6 +12,7 @@ import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { choiceBranchShapes, detectActiveChoiceBranch } from "@/structure/choiceBranches.ts";
 import { resolveNodeShapes } from "@/structure/logicalBranches.ts";
 import type { LanguageRange } from "@/types/BCP47.ts";
+import { NO_WIDGETS } from "@/widgets/lookup.ts";
 
 export interface RdfToJsOptions {
   shapesGraph: RdfStore;
@@ -34,7 +35,7 @@ export interface RdfToJsOptions {
  * produces is assignable to that generated type without adapting it by hand.
  */
 export async function rdfToJs(options: RdfToJsOptions): Promise<Record<string, unknown>> {
-  const node = new NodeUIElement(options);
+  const node = new NodeUIElement({ ...options, widgetRegistry: NO_WIDGETS });
   return childrenToJs(node.children(), options.languages ?? []);
 }
 
@@ -102,6 +103,7 @@ async function termToJs(
   if (nodeShapes.length === 0) return {};
 
   const nested = new NodeUIElement({
+    widgetRegistry: property.widgetRegistry,
     shapesGraph: property.shapesGraph,
     dataGraph: property.dataGraph,
     scoresGraph: property.scoresGraph,
@@ -129,6 +131,7 @@ async function memberShapeToJs(
   return Promise.all(
     memberTerms.map(async (memberTerm) => {
       const nested = new NodeUIElement({
+        widgetRegistry: property.widgetRegistry,
         shapesGraph: property.shapesGraph,
         dataGraph: property.dataGraph,
         scoresGraph: property.scoresGraph,

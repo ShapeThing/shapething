@@ -42,9 +42,9 @@ export const stColorFacet: Story = {
 
     // Clicking the "Red" bucket writes its own name as a single st:colorBucket value, not an
     // enumerated range - a sibling sh:sparql SPARQLConstraint (built from helpers/colorBuckets.ts's
-    // sparqlFilterForBucket) is kept in sync alongside it (structure/filterShape.ts's
+    // sparqlFilterForBucket) is kept in sync alongside it (facets/filterShape.ts's
     // syncColorBucketSparqlConstraint), and that's what this renderer's own facet narrowing
-    // actually validates against (structure/filterShape.ts's instancesConformingViaEngine) - not a
+    // actually validates against (facets/filterShape.ts's instancesConformingViaEngine) - not a
     // hand-rolled reclassification of each candidate's own st:hue/st:saturation/st:lightness.
     await waitFor(() => {
       if (!submitResult) throw new Error("onSubmit has not fired yet");

@@ -25,7 +25,7 @@ export type ResourceEditor = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
   scoresGraph?: RdfStore;
-  widgetRegistry?: Widgets;
+  widgetRegistry: Widgets;
   // The NodeShape(s) (typically a property shape's sh:node) describing `term`'s own properties -
   // an empty array means no shape is known for it, so there's nothing to render an editor with.
   nodeShapes: Quad_Subject[];

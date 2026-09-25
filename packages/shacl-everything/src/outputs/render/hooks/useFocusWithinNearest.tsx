@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import useActiveElement from "@/outputs/render/hooks/useActiveElement.tsx";
+import { useActiveElementSelector } from "@/outputs/render/hooks/useActiveElement.tsx";
 
 /**
  * Whether the currently focused element shares its nearest `selector` ancestor with `ref` - true
@@ -13,8 +13,9 @@ import useActiveElement from "@/outputs/render/hooks/useActiveElement.tsx";
  * (see useFocusWithin), which belongs to the property as a whole regardless of nesting depth.
  */
 export function useFocusWithinNearest(ref: RefObject<Element | null>, selector: string): boolean {
-  const activeElement = useActiveElement();
-  const container = ref.current?.closest(selector) ?? null;
-  if (!container || !activeElement) return false;
-  return activeElement.closest(selector) === container;
+  return useActiveElementSelector((activeElement) => {
+    const container = ref.current?.closest(selector) ?? null;
+    if (!container || !activeElement) return false;
+    return activeElement.closest(selector) === container;
+  });
 }

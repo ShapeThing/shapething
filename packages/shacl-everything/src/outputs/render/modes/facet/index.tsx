@@ -4,7 +4,7 @@ import { RdfStore } from "rdf-stores";
 import { diffQuads } from "@/helpers/diffQuads.ts";
 import { ex } from "@/helpers/namespaces.ts";
 import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
-import { createFilterShape, type FilterShape } from "@/structure/filterShape.ts";
+import { createFilterShape, type FilterShape } from "@/facets/filterShape.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import NodeUIComponent from "@/outputs/render/modes/facet/NodeUIComponent.tsx";
 

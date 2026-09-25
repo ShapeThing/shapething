@@ -14,9 +14,10 @@ import {
   pathSparqlFor,
   setFilterConstraintForProperty,
   type FilterShape,
-} from "@/structure/filterShape.ts";
+} from "@/facets/filterShape.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { FacetWidgetComponent, Widgets } from "@/widgets/types.ts";
+import { resolvedWidgets } from "@/preprocess/widgets.ts";
 
 type Props = {
   rootShapes: Quad_Subject[];
@@ -73,7 +74,7 @@ export default function TypeSelector({
       shapesGraph: syntheticGraph,
       dataGraph,
       scoresGraph,
-      widgetRegistry: widgets,
+      widgetRegistry: resolvedWidgets(widgets),
       focusNode: placeholderFocusNode,
       propertyShapes: [shapeNode as unknown as NamedNode],
     });

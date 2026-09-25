@@ -5,6 +5,7 @@ import { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex } from "@/helpers/namespaces.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 test("sh:node directly on a shape expands to that node shape's own properties", async () => {
   const shapesGraph = await parseRdf(
@@ -23,7 +24,7 @@ test("sh:node directly on a shape expands to that node shape's own properties", 
 
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"));
+  const elements = childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"), undefined, defaultWidgets);
   expect(elements).toHaveLength(1);
   expect(elements[0]).toBeInstanceOf(PropertyUIElement);
 });
@@ -62,6 +63,8 @@ test("sh:node inside a sh:or branch expands against the same focus node (mirrors
     dataGraph,
     ex("Person"),
     ex("Hendrik"),
+    undefined,
+    defaultWidgets,
   ) as ChoiceElement[];
   expect(choice).toBeInstanceOf(ChoiceElement);
 
@@ -101,7 +104,7 @@ test("a sh:and branch containing a further sh:or recurses into a nested ChoiceEl
 
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"));
+  const elements = childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"), undefined, defaultWidgets);
   expect(elements).toHaveLength(2);
   expect(elements[0]).toBeInstanceOf(PropertyUIElement);
   expect(elements[1]).toBeInstanceOf(ChoiceElement);
@@ -134,6 +137,8 @@ test("a branch shape that itself declares sh:or produces a nested ChoiceElement"
     dataGraph,
     ex("Recipe"),
     ex("ChickenSoup"),
+    undefined,
+    defaultWidgets,
   ) as ChoiceElement[];
   const [branch] = choice.children();
   expect(branch).toHaveLength(2);
@@ -155,12 +160,11 @@ test("a plain sh:property-only shape matches propertiesForShape directly", async
 
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const expected = propertiesForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"));
-  const actual = childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"));
+  const expected = propertiesForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"), undefined, defaultWidgets);
+  const actual = childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"), undefined, defaultWidgets);
 
-  // Not a deep toEqual: both sides construct their own PropertyUIElement, each defaulting its own
-  // scoresGraph (RdfStore.createDefault()) - an internal blank-node counter that differs between
-  // the two independently-created instances despite being otherwise identical.
+  // Not a deep toEqual: both sides construct their own PropertyUIElement instances (only
+  // childrenForShape memoizes), so compare shape-derived content rather than instance internals.
   expect(actual).toHaveLength(expected.length);
   expect(actual.every((element) => element instanceof PropertyUIElement)).toBe(true);
   expect((actual as PropertyUIElement[]).map((element) => element.propertyShapes[0].value)).toEqual(
@@ -185,7 +189,7 @@ test("a sh:deactivated property shape is neither rendered nor merged into its co
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Alice"));
+  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Alice"), undefined, defaultWidgets);
   expect(elements).toHaveLength(1);
   const [name] = elements as PropertyUIElement[];
   expect(name.propertyShapes.map((shape) => shape.value)).toEqual([ex("nameShape").value]);
@@ -204,5 +208,5 @@ test("a sh:deactivated shape reached via sh:node contributes no properties", asy
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  expect(childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"))).toHaveLength(0);
+  expect(childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"), undefined, defaultWidgets)).toHaveLength(0);
 });

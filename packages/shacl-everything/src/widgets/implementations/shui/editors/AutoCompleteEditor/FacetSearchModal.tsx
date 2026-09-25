@@ -11,7 +11,7 @@ import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguag
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import type { SearchResult } from "@/outputs/render/hooks/query.ts";
 import type { SubmitResult } from "@/environment.ts";
-import { instancesMatchingOtherConstraints, type FilterShape } from "@/structure/filterShape.ts";
+import { instancesMatchingOtherConstraints, type FilterShape } from "@/facets/filterShape.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import "./style.css";
 
@@ -39,7 +39,7 @@ type Props = {
  *
  * Facet mode never renders a results list of its own (see FacetModeWrapper's own doc comment - it
  * only ever hands the generated filter shape to onSubmit), so this supplies one: every onSubmit
- * fire re-runs structure/filterShape.ts's own instancesMatchingOtherConstraints against that
+ * fire re-runs facets/filterShape.ts's own instancesMatchingOtherConstraints against that
  * filter shape - the same narrowing logic a facet's own live option count
  * (Environment.enableFacetOptionCounts) already uses internally, via a real shacl-engine
  * validation pass - to turn "the constraints the user set" back into "which candidates still

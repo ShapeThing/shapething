@@ -1,10 +1,17 @@
 import type { BCP47 } from "@/types/BCP47.ts";
+// The shipped locale bundles are inlined into the JS as strings (`?raw` - resolved natively by
+// Vite in dev/tests/Storybook, and by vite.config.ts's rawImportFallback when packing), rather than
+// fetched at runtime relative to import.meta.url: a published consumer then needs no served static
+// .ftl assets at all, whatever bundler (or none) it uses.
+import enGB from "./ftl/en-GB.ftl?raw";
+import nlNL from "./ftl/nl-NL.ftl?raw";
 
 export const DEFAULT_LOCALE: BCP47 = "en-GB";
 
-// Exported so a caller-supplied `interfaceLocales` loader (e.g. a showcase story loading its own
-// translation via `new URL(name, import.meta.url)`) can reuse the same fetch-with-error-checking
-// logic as the built-in loaders below, instead of duplicating it.
+// A convenience for a caller-supplied `interfaceLocales` loader that fetches its own translation
+// from a URL (e.g. `() => fetchText(new URL("./my-locale.ftl", import.meta.url))`), with the same
+// error checking a hand-rolled fetch would need. The built-in loaders below don't use it - their
+// bundles are inlined.
 export const fetchText = async (url: URL): Promise<string> => {
   const response = await fetch(url);
   if (!response.ok) {
@@ -23,8 +30,8 @@ export type LocaleLoaderOverrides = Record<string, LocaleLoader | null>;
 // Locales shipped with the library out of the box. Consumers can add further locales, override
 // these, or remove one - via the `interfaceLocales` prop on ShaclRenderer (see loadBundles.ts).
 export const builtInLocaleLoaders: Record<string, LocaleLoader> = {
-  "en-GB": () => fetchText(new URL("./ftl/en-GB.ftl", import.meta.url)),
-  "nl-NL": () => fetchText(new URL("./ftl/nl-NL.ftl", import.meta.url)),
+  "en-GB": () => Promise.resolve(enGB),
+  "nl-NL": () => Promise.resolve(nlNL),
 };
 
 // Layers `customLocales` over the built-ins, dropping any tag whose final value is `null` (a

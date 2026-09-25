@@ -3,13 +3,6 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 shui:TextFieldEditor rdfs:label "Text Field"@en, "Tekstveld"@nl .
 
-shui:textFieldEditorScoreMinus1
-    a shui:WidgetScore ;
-    shui:editor shui:TextFieldEditor ;
-    shui:score -1 ;
-    shui:shapesGraphShape shui:isSingleLineFalse ;
-.
-
 shui:textFieldEditorScore30
     a shui:WidgetScore ;
     shui:editor shui:TextFieldEditor ;

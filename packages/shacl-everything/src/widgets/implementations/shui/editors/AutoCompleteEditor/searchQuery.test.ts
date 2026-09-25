@@ -3,10 +3,12 @@ import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { searchQueryFor } from "./searchQuery.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 const createShape = async (shapesTurtle: string) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${shapesTurtle}`, "text/turtle");
   return new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph: await parseRdf("", "text/turtle"),
     focusNode: ex("Subject"),

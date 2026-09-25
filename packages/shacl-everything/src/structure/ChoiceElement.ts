@@ -1,14 +1,26 @@
 import type { Quad_Subject, Term } from "@rdfjs/types";
-import { RdfStore } from "rdf-stores";
+import type { RdfStore } from "rdf-stores";
 import { getRdfList } from "@/helpers/rdfList.ts";
-import { childrenForShape } from "@/structure/childrenForShape.ts";
-import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { defaultWidgets } from "@/widgets/registry.ts";
+import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Widgets } from "@/widgets/types.ts";
+import type { ChoiceConnective } from "@/structure/shapeComposition.ts";
 
-export type ChoiceConnective = "or" | "xone";
+export { CHOICE_CONNECTIVES, type ChoiceConnective } from "@/structure/shapeComposition.ts";
 
-export const CHOICE_CONNECTIVES: ChoiceConnective[] = ["or", "xone"];
+export type ChoiceElementOptions = {
+  shapesGraph: RdfStore;
+  dataGraph: RdfStore;
+  scoresGraph: RdfStore;
+  widgetRegistry: Widgets;
+  focusNode: Quad_Subject;
+  shape: Term;
+  connective: ChoiceConnective;
+  list: Term;
+  ancestorPath: string[];
+  // Expands one branch shape at this element's own focus node - childrenForShape passes itself in
+  // here, so this module never imports childrenForShape back (which constructs ChoiceElements).
+  expandBranch: (branchShape: Term) => (PropertyUIElement | ChoiceElement)[];
+};
 
 export class ChoiceElement {
   // See PropertyUIElement.kind: a tag survives HMR module reloads where `instanceof` doesn't.
@@ -22,40 +34,32 @@ export class ChoiceElement {
   public connective: ChoiceConnective;
   public list: Term;
   public ancestorPath: string[];
+  #expandBranch: ChoiceElementOptions["expandBranch"];
+  #children: (PropertyUIElement | ChoiceElement)[][] | undefined;
 
-  constructor(
-    shapesGraph: RdfStore,
-    dataGraph: RdfStore,
-    focusNode: Quad_Subject,
-    shape: Term,
-    connective: ChoiceConnective,
-    list: Term,
-    scoresGraph?: RdfStore,
-    widgetRegistry?: Widgets,
-    ancestorPath?: string[],
-  ) {
-    this.shapesGraph = shapesGraph;
-    this.dataGraph = dataGraph;
-    this.scoresGraph = scoresGraph ?? RdfStore.createDefault();
-    this.widgetRegistry = widgetRegistry ?? defaultWidgets;
-    this.focusNode = focusNode;
-    this.shape = shape;
-    this.connective = connective;
-    this.list = list;
-    this.ancestorPath = ancestorPath ?? [];
+  constructor(options: ChoiceElementOptions) {
+    this.shapesGraph = options.shapesGraph;
+    this.dataGraph = options.dataGraph;
+    this.scoresGraph = options.scoresGraph;
+    this.widgetRegistry = options.widgetRegistry;
+    this.focusNode = options.focusNode;
+    this.shape = options.shape;
+    this.connective = options.connective;
+    this.list = options.list;
+    this.ancestorPath = options.ancestorPath;
+    this.#expandBranch = options.expandBranch;
   }
 
+  /**
+   * Every branch's children, eagerly (not just the active branch's) - see ChoiceElementComponent.
+   * Purely shapes-graph-derived, so computed once per instance and handed back as the same arrays
+   * (of the same, themselves-memoized elements) on every later call; which branch is *active* is
+   * a data question answered separately (choiceBranches.ts's detectActiveChoiceBranch).
+   */
   children(): (PropertyUIElement | ChoiceElement)[][] {
-    return getRdfList(this.list, this.shapesGraph).map((branchShape) =>
-      childrenForShape(
-        this.shapesGraph,
-        this.dataGraph,
-        branchShape,
-        this.focusNode,
-        this.scoresGraph,
-        this.widgetRegistry,
-        this.ancestorPath,
-      ),
+    this.#children ??= getRdfList(this.list, this.shapesGraph).map((branchShape) =>
+      this.#expandBranch(branchShape)
     );
+    return this.#children;
   }
 }

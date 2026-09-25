@@ -17,7 +17,7 @@ export type ResolutionFunction<T> = (
 // which covers every remaining datatype sh:minExclusive/minInclusive/maxExclusive/maxInclusive
 // apply to (e.g. NumberRangeFacet/DateRangeFacet's own plain xsd:decimal/xsd:date bounds).
 // st:ColorFacet does not use this at all - it writes a plain st:colorBucket value, matched via a
-// real sh:sparql SPARQLConstraint (see structure/filterShape.ts's syncColorBucketSparqlConstraint),
+// real sh:sparql SPARQLConstraint (see facets/filterShape.ts's syncColorBucketSparqlConstraint),
 // not a range.
 const DATE_DATATYPES = new Set(
   [
@@ -30,7 +30,7 @@ const DATE_DATATYPES = new Set(
   ].map((datatype) => datatype.value),
 );
 
-// Exported for structure/facetValues.ts's countFacetInstancesInRange, which needs the same
+// Exported for facets/facetValues.ts's countFacetInstancesInRange, which needs the same
 // numeric-vs-date-aware comparison to check whether a raw value falls within a facet's currently
 // entered bounds, rather than reimplementing it.
 export function literalOrder(term: Term): number {

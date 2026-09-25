@@ -2,7 +2,7 @@ import type { NamedNode, Term } from "@rdfjs/types";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { getWidgetComponent, getWidgetMeta } from "@/widgets/registry.ts";
+import { getWidgetComponent, getWidgetMeta, widgetModeForPredicate } from "@/widgets/registry.ts";
 import type { WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { noRefetch } from "@/helpers/noRefetch.ts";
@@ -14,6 +14,10 @@ import { noRefetch } from "@/helpers/noRefetch.ts";
  * `valueNode` additionally scores the property's actual value against each rule's
  * shui:dataGraphShape (e.g. picking a different widget for a URL than for plain text sharing the
  * same property) - omit it to score on the property shape(s) alone.
+ *
+ * Mode is derived from `widgetPredicate` exactly like useWidget does (see its doc comment), and the
+ * predicate itself is part of the query key - so the candidate list always comes from the same
+ * pool, and the same cache namespace, as the widget useWidget picked for this very call.
  */
 export function useWidgets(
   widgetPredicate: Term,
@@ -25,12 +29,14 @@ export function useWidgets(
   meta: WidgetMeta | undefined;
   score: number;
 }[] {
-  const { mode } = useEnvironment();
+  const { mode: environmentMode } = useEnvironment();
+  const mode = widgetModeForPredicate(widgetPredicate) ?? environmentMode;
 
   const { data: widgets } = useQuery({
     queryKey: [
       "widgets",
       mode,
+      termKey(widgetPredicate),
       property.propertyShapes.map((shape) => shape.value),
       valueNode ? termKey(valueNode) : "no-object",
     ],

@@ -1,7 +1,8 @@
 /// <reference types="vitest/config" />
-import { defineConfig } from "vite-plus";
+import { build, defineConfig } from "vite-plus";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
@@ -39,29 +40,58 @@ function rawImportFallback() {
   };
 }
 
-// l10n/locales.ts fetches locale bundles at runtime via `new URL("./ftl/xx-XX.ftl",
-// import.meta.url)`, relative to wherever that code ends up compiled to - but `vp pack`'s
-// tsdown/rolldown bundler, unlike Vite's own dev/app-build asset handling, never detects or
-// copies a file that's only referenced through a runtime `new URL(...)` call (there's no
-// static `import` for it to follow). Left alone, every *published* consumer of this package
-// (as opposed to this package's own Storybook, which imports source directly and never hits
-// this) 404s trying to load its interface-language bundles. This mirrors src/l10n/ftl next to
-// the built output so the existing relative fetch keeps resolving, without requiring a
-// consumer to vendor/copy these files into their own public dir themselves.
-function copyFtlAssets() {
-  const ftlSourceDir = path.join(dirname, "src/l10n/ftl");
+// `?worker&url` (see src/helpers/configureMaplibreWorker.ts) is, like `?raw`, a Vite-only import
+// query: Vite bundles the referenced module into its own self-contained worker script and hands
+// back that script's URL. `vp pack` doesn't understand it, and left alone it survives verbatim into
+// dist - where it breaks every non-Vite consumer (webpack, esbuild, native ESM/import maps), and
+// even a Vite consumer only by coincidence. Instead, at pack time the worker entry is bundled into
+// one self-contained ES module (maplibre-gl's own worker imports its shared chunk, so the raw file
+// alone isn't enough) and inlined as a string, exposed as a same-origin `blob:` URL - no served
+// asset, no bundler cooperation needed, and it's only evaluated when the lazily-loaded map widget
+// chunk that imports it is. Trade-off: that chunk carries the worker source (~490 kB minified), and
+// a page with a strict CSP must allow `worker-src blob:` - or call maplibre-gl's own setWorkerUrl()
+// itself first, which configureMaplibreWorker.ts then leaves alone.
+function workerUrlFallback() {
+  const suffix = "?worker&url";
+  const prefix = "\0worker-url:";
   return {
-    name: "copy-ftl-assets",
-    async writeBundle(options: { dir?: string }) {
-      const outDir = options.dir ?? path.join(dirname, "dist");
-      const destDir = path.join(outDir, "ftl");
-      await fs.mkdir(destDir, { recursive: true });
-      for (const file of await fs.readdir(ftlSourceDir)) {
-        await fs.copyFile(
-          path.join(ftlSourceDir, file),
-          path.join(destDir, file),
-        );
+    name: "worker-url-fallback",
+    resolveId(source: string, importer: string | undefined) {
+      if (!source.endsWith(suffix)) return null;
+      // Resolved with Node's own resolution rather than this.resolve(): the bare dependency path
+      // minus its query is itself an externalized dependency import, which this.resolve() would
+      // hand back unresolved.
+      const require = createRequire(importer ?? path.join(dirname, "package.json"));
+      return `${prefix}${require.resolve(source.slice(0, -suffix.length))}`;
+    },
+    async load(id: string) {
+      if (!id.startsWith(prefix)) return null;
+      const entry = id.slice(prefix.length);
+      const result = await build({
+        configFile: false,
+        logLevel: "silent",
+        root: dirname,
+        build: {
+          write: false,
+          minify: true,
+          copyPublicDir: false,
+          modulePreload: false,
+          // Library mode: no app-only preload/`document` helpers injected into worker code.
+          lib: { entry, formats: ["es"], fileName: "worker" },
+          rolldownOptions: { output: { codeSplitting: false, minify: true } },
+        },
+      });
+      const outputs = (Array.isArray(result) ? result : [result]) as Array<{
+        output: Array<{ type: string; code?: string }>;
+      }>;
+      const chunks = outputs.flatMap((o) => o.output).filter((c) => c.type === "chunk");
+      if (chunks.length !== 1) {
+        throw new Error(`Expected one self-contained worker chunk for ${entry}, got ${chunks.length}`);
       }
+      return [
+        `const source = ${JSON.stringify(chunks[0]!.code)};`,
+        `export default URL.createObjectURL(new Blob([source], { type: "text/javascript" }));`,
+      ].join("\n");
     },
   };
 }
@@ -82,7 +112,7 @@ export default defineConfig({
     exclude: ["maplibre-gl"],
   },
   pack: {
-    entry: ["src/index.ts", "src/webcomponent.tsx"],
+    entry: ["src/index.ts", "src/tools.ts", "src/webcomponent.tsx"],
     dts: {
       tsgo: true,
     },
@@ -90,8 +120,19 @@ export default defineConfig({
     plugins: [
       Icons({ compiler: "jsx", jsx: "react" }),
       rawImportFallback(),
-      copyFtlAssets(),
+      workerUrlFallback(),
     ],
+    // Third-party CSS a widget imports for its side effect (e.g. maplibre-gl/dist/maplibre-gl.css)
+    // is bundled into dist/style.css alongside this package's own styles, instead of surviving
+    // as a bare `import "pkg/x.css"` in a lazy chunk - which only a CSS-aware bundler can load,
+    // and breaks outright under native ESM / Node. `?worker&url` imports likewise must not be
+    // externalized (dependency imports are by default), so workerUrlFallback gets to resolve them.
+    // onlyBundle lists exactly these, so any *other* dependency accidentally getting bundled fails
+    // the build instead of silently bloating dist.
+    deps: {
+      alwaysBundle: [/\.css$/, /\?worker&url$/],
+      onlyBundle: [/\.css$/, /\?worker&url$/, "maplibre-gl"],
+    },
   },
   fmt: {},
   test: {

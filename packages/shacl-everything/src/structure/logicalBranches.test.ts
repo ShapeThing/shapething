@@ -4,6 +4,7 @@ import { ex, rdf, sh, xsd } from "@/helpers/namespaces.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { detectActiveBranch, logicalBranches, withBranch } from "@/structure/logicalBranches.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 async function contactShapesGraph() {
   return parseRdf(
@@ -33,6 +34,7 @@ test("logicalBranches extracts each sh:or branch from a property shape", async (
   const dataGraph = await parseRdf("", "text/turtle");
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Hendrik"),
@@ -50,6 +52,7 @@ test("withBranch merges a branch's own constraints (e.g. sh:datatype) into the p
   const dataGraph = await parseRdf("", "text/turtle");
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Hendrik"),
@@ -77,6 +80,7 @@ test("detectActiveBranch picks the branch a literal's datatype already conforms 
   const dataGraph = await parseRdf("", "text/turtle");
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Hendrik"),
@@ -117,6 +121,7 @@ test("detectActiveBranch picks the branch matching an IRI value's own nodeKind, 
   const dataGraph = await parseRdf("", "text/turtle");
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Hendrik"),
@@ -137,6 +142,7 @@ test("detectActiveBranch returns undefined when no branch conforms", async () =>
   const dataGraph = await parseRdf("", "text/turtle");
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Hendrik"),
@@ -166,6 +172,7 @@ test("logicalBranches returns an empty array for a property with no sh:or/sh:xon
   const dataGraph = await parseRdf("", "text/turtle");
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("ChickenSoup"),

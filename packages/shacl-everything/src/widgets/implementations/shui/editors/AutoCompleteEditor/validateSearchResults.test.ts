@@ -4,11 +4,13 @@ import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { ResolvedTerm } from "@/outputs/render/hooks/query.ts";
 import { filterConformingResults } from "./validateSearchResults.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 const createShape = async (shapesTurtle: string, dataTurtle: string) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${shapesTurtle}`, "text/turtle");
   const dataGraph = await parseRdf(`${queryPrefixes}\n\n${dataTurtle}`, "text/turtle");
   return new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Subject"),

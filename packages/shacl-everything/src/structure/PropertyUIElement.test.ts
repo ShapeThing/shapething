@@ -3,12 +3,14 @@ import type { BlankNode, NamedNode } from "@rdfjs/types";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
-import { dash, ex, queryPrefixes, sh, shui } from "@/helpers/namespaces.ts";
+import { ex, queryPrefixes, sh, shui } from "@/helpers/namespaces.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 const createElement = async (turtle: string, propertyShapes: NamedNode[]) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${turtle}`, "text/turtle");
   const dataGraph = await parseRdf("", "text/turtle");
   return new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -661,6 +663,7 @@ test("widget() returns the highest-scoring widget for the property shape alone",
   );
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     scoresGraph,
@@ -706,6 +709,7 @@ test("widget() also scores the given value against shui:dataGraphShape", async (
   const [isActiveQuad] = dataGraph.getQuads(ex("Alice"), ex("isActive"));
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     scoresGraph,
@@ -757,6 +761,7 @@ test("widget() merges grouped property shapes, so a widget hint on either shape 
   );
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     scoresGraph,
@@ -784,6 +789,7 @@ test("getObjects() walks this element's path through the data graph from this.fo
   );
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -809,6 +815,7 @@ test("addObject() writes a new value onto this.focusNode via this element's path
   );
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -837,6 +844,7 @@ test("addObject() writes onto a BlankNode this.focusNode too, not just a NamedNo
   const focusNode = dataGraph.getQuads(null, ex("street"))[0].subject as BlankNode;
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode,
@@ -870,6 +878,7 @@ test("replaceObject() swaps an existing value on this.focusNode via this element
   );
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -898,6 +907,7 @@ test("removeObject() removes an existing value from this.focusNode via this elem
   );
 
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -925,6 +935,7 @@ test("addObject() on a switchable alternativePath writes to whichever branch alr
     "text/turtle",
   );
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -943,6 +954,7 @@ test("addObject() on a switchable alternativePath falls back to the first declar
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
   const dataGraph = await parseRdf("", "text/turtle");
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -963,6 +975,7 @@ test("replaceObject() on a switchable alternativePath swaps the value on whichev
     "text/turtle",
   );
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -984,6 +997,7 @@ test("replaceObject()'s not-yet-existing fallback on a switchable alternativePat
     "text/turtle",
   );
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -1006,6 +1020,7 @@ test("removeObject() on a switchable alternativePath removes from whichever bran
     "text/turtle",
   );
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -1029,6 +1044,7 @@ test("addObject()/replaceObject()/removeObject() still throw for a complex alter
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${complexAlternativeShape}`, "text/turtle");
   const dataGraph = await parseRdf("", "text/turtle");
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -1074,6 +1090,7 @@ test("activeAlternativePathBranch() returns which branch currently holds the val
     "text/turtle",
   );
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -1088,6 +1105,7 @@ test("defaultAlternativePathBranch() prefers a branch that already has data, els
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
 
   const withData = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph: await parseRdf(`${queryPrefixes}\n\n ex:Alice ex:label "L" .`, "text/turtle"),
     focusNode: ex("Alice"),
@@ -1096,6 +1114,7 @@ test("defaultAlternativePathBranch() prefers a branch that already has data, els
   expect(withData.defaultAlternativePathBranch()?.value).toBe(ex("label").value);
 
   const withoutData = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph: await parseRdf("", "text/turtle"),
     focusNode: ex("Alice"),
@@ -1111,6 +1130,7 @@ test("setAlternativePathBranch() moves a value from its current branch to a new 
     "text/turtle",
   );
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -1132,6 +1152,7 @@ test("setAlternativePathBranch() is a no-op when the value is already on the tar
     "text/turtle",
   );
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -1149,6 +1170,7 @@ test("setAlternativePathBranch() is a no-op when the value isn't reachable throu
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
   const dataGraph = await parseRdf("", "text/turtle");
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -1170,6 +1192,7 @@ test("setAlternativePathBranch() is a no-op when the path isn't a switchable alt
     "text/turtle",
   );
   const element = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -1205,6 +1228,7 @@ test("dataId() stays identical across two separate parses of the same blank-node
   const firstPropertyShape = firstShapesGraph.getQuads(ex("Person"), sh("property"))[0]
     .object as NamedNode;
   const first = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph: firstShapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -1215,6 +1239,7 @@ test("dataId() stays identical across two separate parses of the same blank-node
   const secondPropertyShape = secondShapesGraph.getQuads(ex("Person"), sh("property"))[0]
     .object as NamedNode;
   const second = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph: secondShapesGraph,
     dataGraph,
     focusNode: ex("Alice"),
@@ -1233,6 +1258,7 @@ test("dataId() differs for the same path at different ancestorPath depths, but s
   const root = element.dataId();
 
   const nestedViaAuthor = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph: element.shapesGraph,
     dataGraph: element.dataGraph,
     focusNode: element.focusNode,
@@ -1241,6 +1267,7 @@ test("dataId() differs for the same path at different ancestorPath depths, but s
   }).dataId();
 
   const nestedViaPublisher = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph: element.shapesGraph,
     dataGraph: element.dataGraph,
     focusNode: element.focusNode,
@@ -1249,6 +1276,7 @@ test("dataId() differs for the same path at different ancestorPath depths, but s
   }).dataId();
 
   const nestedViaAuthorAgain = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph: element.shapesGraph,
     dataGraph: element.dataGraph,
     focusNode: element.focusNode,

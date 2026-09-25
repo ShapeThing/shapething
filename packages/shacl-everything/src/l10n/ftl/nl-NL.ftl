@@ -165,3 +165,4 @@ iri-editor-suggestion-in-use = Al in gebruik
 iri-editor-suggestion-from-lov = Suggesties
 iri-editor-suggestion-type-class = klasse
 iri-editor-suggestion-type-property = property
+widget-render-error = Dit veld kon niet worden weergegeven.

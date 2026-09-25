@@ -3,7 +3,7 @@ import { lazy } from "react";
 import { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
-import { prefixes, rdf, sh, shui, st } from "@/helpers/namespaces.ts";
+import { prefixes } from "@/helpers/namespaces.ts";
 import type {
   FacetWidgetComponent,
   FacetWidgetRegistryEntry,
@@ -15,6 +15,13 @@ import type {
   Widgets,
 } from "@/widgets/types.ts";
 import widgetScoringTtl from "@/scoring/widget-scoring.ttl?raw";
+import {
+  categoryFor,
+  getGroupWidget as lookupGroupWidget,
+  getWidgetComponent as lookupWidgetComponent,
+  getWidgetMeta as lookupWidgetMeta,
+  type WidgetMode,
+} from "@/widgets/lookup.ts";
 
 // Every widget implementation lives at implementations/<namespace>/<category>/<Name>/ - e.g.
 // shui/editors/TextFieldEditor or st/groups/CollapsiblePropertyGroup. `category` is which of
@@ -183,34 +190,13 @@ export const defaultWidgets: Widgets = {
   facets: buildFacetEntries(),
 };
 
-export type WidgetMode = "edit" | "view" | "facet";
-
-export function categoryFor(mode: WidgetMode, widgets: Widgets) {
-  if (mode === "edit") return widgets.editors;
-  if (mode === "view") return widgets.viewers;
-  if (mode === "facet") return widgets.facets;
-  throw new Error(`Unknown widget mode: ${mode}`);
-}
-
-// The inverse of categoryFor: which WidgetMode's pool a given shui:editor/shui:viewer/st:facet
-// widgetPredicate resolves widgets from. Lets a caller (useWidget, score()'s category filter)
-// derive the right mode straight from the predicate it's already scoring/resolving against,
-// instead of trusting the ambient Environment.mode - the two usually coincide (edit mode always
-// scores shui:editor, view always shui:viewer), but edit mode's read-only rendering deliberately
-// resolves a shui:viewer widget while Environment.mode stays "edit", so they can't be conflated.
-export function widgetModeForPredicate(
-  widgetPredicate: Term,
-): WidgetMode | undefined {
-  if (widgetPredicate.equals(shui("editor"))) return "edit";
-  if (widgetPredicate.equals(shui("viewer"))) return "view";
-  if (widgetPredicate.equals(st("facet"))) return "facet";
-  return undefined;
-}
+export type { WidgetMode } from "@/widgets/lookup.ts";
+export { categoryFor, widgetModeForPredicate } from "@/widgets/lookup.ts";
 
 // widget-scoring.ttl and every score.ttl are static bundle contents - parsing them into an
 // RdfStore is pure and (mode, widgets)-scoped, so repeat calls (one per property, on every render)
 // reuse the same parsed graph instead of re-parsing the same turtle every time. Keyed by the
-// `widgets` object's own identity (a WeakMap, same idiom as scoring/score.ts's shaclEngineCache):
+// `widgets` object's own identity (a WeakMap, same idiom as validation/validate.ts's shaclEngineCache):
 // `defaultWidgets` is a stable module singleton so the common case caches exactly as before: a
 // caller-supplied `widgets` object should likewise be constructed once and reused, not rebuilt on
 // every render, or it never benefits from this cache.
@@ -246,71 +232,31 @@ export function getScoringGraph(
   return graph;
 }
 
-function findWidget<T extends { widget: NamedNode }>(
-  entries: Record<string, T>,
-  widget: NamedNode,
-): T | undefined {
-  return Object.values(entries).find((entry) => entry.widget.equals(widget));
-}
+// The registry-lookup functions themselves live in widgets/lookup.ts, which takes `widgets` as a
+// required argument and imports no widget implementation (or React) at all - so the structure/
+// model layer can resolve a widget's meta/group entry from whatever registry it was handed without
+// pulling every bundled widget in. These wrappers only add the `defaultWidgets` fallback, for
+// callers (tests, one-off tooling) that genuinely mean "the bundled set".
 
-/**
- * Resolves a widget's own type IRI (e.g. shui:TextFieldEditor or st:CategoryFacet, as picked by
- * PropertyUIElement.widget()) to the React component implementing it, matched against the active
- * `widgets`' own editors/viewers/facets entries (by `mode`) by IRI equality (not by folder path -
- * `widgets` need not be the bundled
- * `defaultWidgets` at all). The return type follows `mode`: callers that know their mode statically
- * (e.g. useWidget's own generic parameter) can narrow past the union themselves.
- */
 export function getWidgetComponent(
   mode: WidgetMode,
   widget: NamedNode,
   widgets: Widgets = defaultWidgets,
 ): WidgetComponent | FacetWidgetComponent | undefined {
-  // categoryFor's return type is a plain union across editors/viewers/facets - the caller-supplied
-  // `mode` is what actually picks the right category (and, with it, the right Component shape) at
-  // runtime, same "narrow past the union yourself" story as this function's own return type (see
-  // its doc comment above).
-  return findWidget(
-    categoryFor(mode, widgets) as Record<string, WidgetRegistryEntry>,
-    widget,
-  )
-    ?.Component;
+  return lookupWidgetComponent(mode, widget, widgets);
 }
 
-/**
- * Resolves a widget IRI to its meta.ts (see WidgetMeta) - `undefined` both when the widget has no
- * meta.ts and when it has one that declares no overrides. `createTerm` is only ever populated for
- * an editor (see WidgetMeta's own doc), but `singleUnifiedWidget` applies just as well to a viewer
- * (e.g. ValueTableViewer, which renders every value itself rather than once per value) - so both
- * categories are searched, by IRI equality, without needing to know which one a caller's widget
- * came from.
- */
 export function getWidgetMeta(
   widget: NamedNode,
   widgets: Widgets = defaultWidgets,
 ): WidgetMeta | undefined {
-  return findWidget(widgets.editors, widget)?.meta ??
-    findWidget(widgets.viewers, widget)?.meta;
+  return lookupWidgetMeta(widget, widgets);
 }
 
-/**
- * Resolves the registered group widget for `node`'s own rdf:type - simple, direct type matching,
- * no scoring system. sh:PropertyGroup is the mandatory base type every group carries (see
- * structure/groupChildren.ts's validation step) and is never itself a deliberate widget choice, so
- * a more specific registered type present on the same node (e.g. st:CollapsiblePropertyGroup, on
- * `a sh:PropertyGroup, st:CollapsiblePropertyGroup`) always wins over it.
- */
 export function getGroupWidget(
   node: Term,
   shapesGraph: RdfStore,
   widgets: Widgets = defaultWidgets,
 ): GroupWidgetRegistryEntry | undefined {
-  const types = shapesGraph.getQuads(node, rdf("type")).map((quad) =>
-    quad.object
-  );
-  const matches = Object.values(widgets.groups).filter((entry) =>
-    types.some((type) => type.equals(entry.widget))
-  );
-  return matches.find((entry) => !entry.widget.equals(sh("PropertyGroup"))) ??
-    matches[0];
+  return lookupGroupWidget(node, shapesGraph, widgets);
 }

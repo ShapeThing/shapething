@@ -1,5 +1,5 @@
 import { expect, test } from "vite-plus/test";
-import { validate } from "@/scoring/score.ts";
+import { validate } from "@/validation/validate.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, shui } from "@/helpers/namespaces.ts";
 import widgetScoringTtl from "@/scoring/widget-scoring.ttl?raw";

@@ -1,5 +1,4 @@
-import { useMemo, useState } from "react";
-import type { Quad_Subject } from "@rdfjs/types";
+import { useState } from "react";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
@@ -8,7 +7,7 @@ import ClassificationChip from "@/outputs/render/components/ClassificationChip/i
 import Modal from "@/outputs/render/components/Modal/index.tsx";
 import NodeUIElementChildren from "@/outputs/render/modes/view/NodeUIElementChildren.tsx";
 import { shapesTargetingNode } from "@/resolution/targets.ts";
-import { NodeUIElement } from "@/structure/NodeUIElement.ts";
+import { useNestedNode } from "@/outputs/render/hooks/useNestedNode.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
@@ -60,17 +59,11 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
   );
   const canViewInPlace = term.termType === "NamedNode" && nodeShapes.length > 0;
 
-  const nodeUiElement = useMemo(() => {
-    if (!open || !canViewInPlace || term.termType !== "NamedNode") return undefined;
-    return new NodeUIElement({
-      shapesGraph: shape.shapesGraph,
-      dataGraph: shape.dataGraph,
-      scoresGraph: shape.scoresGraph,
-      widgetRegistry: shape.widgetRegistry,
-      focusNode: term as Quad_Subject,
-      nodeShapes,
-    });
-  }, [open, canViewInPlace, shape, term, nodeShapes]);
+  const nodeUiElement = useNestedNode(
+    shape,
+    open && canViewInPlace && term.termType === "NamedNode" ? term : undefined,
+    { nodeShapes },
+  );
 
   const classificationChip = classification && (
     <ClassificationChip classification={classification} />

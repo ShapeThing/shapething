@@ -2,8 +2,7 @@ import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { sh } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
-import { toSparql } from "@/structure/paths/toSparql.ts";
+import { groupShapesByPath } from "@/structure/shapeComposition.ts";
 import type { Widgets } from "@/widgets/types.ts";
 
 /**
@@ -13,31 +12,20 @@ import type { Widgets } from "@/widgets/types.ts";
  * constraints on one logical property regardless of which shape declared them, and
  * PropertyUIElement's own constraint resolution (constraintResolutions.ts) already merges across
  * whatever shapes end up in its `propertyShapes` array, so this is the one place that decides
- * which property shapes belong together.
+ * which property shapes belong together (the grouping rule itself is shapeComposition.ts's
+ * groupShapesByPath).
  */
 export function groupPropertyShapesByPath(
   shapesGraph: RdfStore,
   dataGraph: RdfStore,
   propertyShapes: NamedNode[],
   focusNode: Quad_Subject,
-  scoresGraph?: RdfStore,
-  widgets?: Widgets,
+  scoresGraph: RdfStore | undefined,
+  widgets: Widgets,
   ancestorPath?: string[],
 ): PropertyUIElement[] {
-  const groupedPropertyShapes = new Map<string, NamedNode[]>();
-
-  for (const propertyShape of propertyShapes) {
-    const path = parsePropertyPath(propertyShape, shapesGraph);
-
-    if (!path) continue;
-    const sparqlPath = toSparql(path);
-    const shapes = groupedPropertyShapes.get(sparqlPath) ?? [];
-    shapes.push(propertyShape);
-    groupedPropertyShapes.set(sparqlPath, shapes);
-  }
-
-  return [...groupedPropertyShapes.values()].map(
-    (shapes) =>
+  return [...groupShapesByPath(shapesGraph, propertyShapes).values()].map(
+    ({ shapes }) =>
       new PropertyUIElement({
         shapesGraph,
         dataGraph,
@@ -56,8 +44,8 @@ export function propertiesForShape(
   dataGraph: RdfStore,
   shape: Term,
   focusNode: Quad_Subject,
-  scoresGraph?: RdfStore,
-  widgets?: Widgets,
+  scoresGraph: RdfStore | undefined,
+  widgets: Widgets,
 ): PropertyUIElement[] {
   const propertyShapeQuads = shapesGraph.getQuads(shape, sh("property"));
   return groupPropertyShapesByPath(

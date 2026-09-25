@@ -1,4 +1,4 @@
-import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
+import { useSlotResolution } from "@/outputs/render/hooks/useSlotResolution.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { usePropertyValidationResults } from "@/outputs/render/hooks/usePropertyValidationResults.tsx";
@@ -55,18 +55,18 @@ export default function PropertyUIComponentObject({
     activeInterfaceLanguage,
   ]);
 
-  // Same (propertyUIElement, object) query WidgetSlot itself resolves below, cached by
-  // react-query under the same key - this doesn't cost a second real resolution, just the meta
-  // this component needs for PropertyUIComponentRemove's clearAll (see PropertyUIComponent's own
-  // similar early useWidget() call for the same "warm/reuse the cache" reasoning).
-  const { meta } = useWidget(shui("editor"), propertyUIElement, object) ?? {};
+  // Same (propertyUIElement, object) resolution WidgetSlot itself runs below (same arguments, so
+  // the same react-query key - one real resolution, not two), just for the meta this component
+  // needs for PropertyUIComponentRemove's clearAll. WidgetSlot only diverges from this key while a
+  // LogicalConstraintSwitcher pick is pinned, and its sub-queries are shared even then.
+  const { meta } = useSlotResolution(propertyUIElement, object, {
+    widgetPredicate: isReadOnly ? shui("viewer") : shui("editor"),
+  });
 
   // Only the results attributed to this specific value (e.g. sh:pattern/sh:datatype) -
   // property-wide results (e.g. sh:minCount) are shown once, at the property level, by
   // PropertyUIComponent instead.
-  const valueResults = usePropertyValidationResults(propertyUIElement).filter((result) =>
-    result.value?.equals(object),
-  );
+  const valueResults = usePropertyValidationResults(propertyUIElement, { value: object });
   // Scoped to just this value's own input (see FormElement/style.css) - a property-wide result
   // (e.g. sh:maxCount, with no `value`) never lands in valueResults, so it can't bleed its
   // severity onto a sibling value's input that isn't itself invalid.

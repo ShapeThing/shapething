@@ -2,10 +2,40 @@ import type { Term } from "@rdfjs/types";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { getWidgetComponent, getWidgetMeta, widgetModeForPredicate } from "@/widgets/registry.ts";
+import {
+  getWidgetComponent,
+  getWidgetMeta,
+  widgetModeForPredicate,
+  type WidgetMode,
+} from "@/widgets/registry.ts";
 import type { FacetWidgetComponent, WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { noRefetch } from "@/helpers/noRefetch.ts";
+
+/**
+ * The query behind useWidget - also run (via queryClient.fetchQuery: same key, same cache entry)
+ * by useSlotResolution, which composes it with branch detection into a single query.
+ */
+export function widgetQueryOptions(
+  mode: WidgetMode,
+  widgetPredicate: Term,
+  property: PropertyUIElement,
+  valueNode?: Term,
+) {
+  return {
+    queryKey: [
+      "widget",
+      mode,
+      property.propertyShapes.map((shape) => shape.value),
+      valueNode ? termKey(valueNode) : "no-object",
+    ],
+    // react-query treats a resolved `undefined` as an error ("Query data cannot be undefined"),
+    // so the no-match case is represented as `null` instead.
+    queryFn: async (): Promise<Term | null> =>
+      (await property.widget({ widgetPredicate, valueNode })) ?? null,
+    ...noRefetch,
+  };
+}
 
 /**
  * Resolves the highest-scoring widget component for a property, per the environment's
@@ -49,17 +79,8 @@ export function useWidget<T extends WidgetComponent | FacetWidgetComponent = Wid
   const mode = widgetModeForPredicate(widgetPredicate) ?? environmentMode;
 
   const { data: widget, isPlaceholderData } = useQuery({
-    queryKey: [
-      "widget",
-      mode,
-      property.propertyShapes.map((shape) => shape.value),
-      valueNode ? termKey(valueNode) : "no-object",
-    ],
-    // react-query treats a resolved `undefined` as an error ("Query data cannot be undefined"),
-    // so the no-match case is represented as `null` instead.
-    queryFn: async () => (await property.widget({ widgetPredicate, valueNode })) ?? null,
+    ...widgetQueryOptions(mode, widgetPredicate, property, valueNode),
     placeholderData: keepPreviousData,
-    ...noRefetch,
   });
 
   if (!widget || widget.termType !== "NamedNode") return undefined;

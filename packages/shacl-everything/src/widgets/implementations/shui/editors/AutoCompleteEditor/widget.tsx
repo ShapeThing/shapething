@@ -1,22 +1,17 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
-import type { NamedNode, Quad } from "@rdfjs/types";
-import { RdfStore } from "rdf-stores";
-import { factory } from "@/helpers/factory.ts";
+import type { NamedNode } from "@rdfjs/types";
 import { Loading, Plus, Search } from "@/helpers/icons.tsx";
-import { rdf, sh, st } from "@/helpers/namespaces.ts";
-import { diffQuads } from "@/helpers/diffQuads.ts";
-import { makeReactive, transact } from "@/helpers/reactiveRdfStore.ts";
+import { sh, st } from "@/helpers/namespaces.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
+import { useCreateInPlace } from "@/outputs/render/hooks/useCreateInPlace.ts";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInstanceSearch } from "@/outputs/render/hooks/useInstanceSearch.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import type { SearchResult } from "@/outputs/render/hooks/query.ts";
-import { canCreateInPlace, valueNodeShapes } from "@/resolution/label.ts";
 import { shaclInstancesOfClass } from "@/resolution/targets.ts";
-import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 import FacetSearchModal from "@/widgets/implementations/shui/editors/AutoCompleteEditor/FacetSearchModal.tsx";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
@@ -24,11 +19,6 @@ import type { WidgetProps } from "@/widgets/types.ts";
 import { useDropdownEscapeModal } from "@/outputs/render/hooks/useDropdownEscapeModal.ts";
 import "@/theme/comboBox.css";
 import "./style.css";
-
-// Mirrors AutoCompleteOption's own edit-in-place staging (see InstancesSelectEditor, whose
-// createNew this mirrors too): the new instance is built up against its own scratch copy of the
-// whole graph, not `shape.dataGraph` directly, so nothing real is written until Done is clicked.
-type Staging = { dataGraph: RdfStore; originalQuads: Quad[] };
 
 export default function AutoCompleteEditor({
   shape,
@@ -38,21 +28,20 @@ export default function AutoCompleteEditor({
   autoFocus,
 }: WidgetProps) {
   const existingObjects = useDataGraphObjects(shape);
-  const { enableCreateInPlace, enableEditInPlace, enableFacetSearchForAutocomplete } =
-    useEnvironment();
+  const { enableEditInPlace, enableFacetSearchForAutocomplete } = useEnvironment();
   const shClasses = useMemo(() => shape.get(sh("class")), [shape]);
-  // The shape describing a newly created instance's own fields - see InstancesSelectEditor, whose
-  // createNew this mirrors. Doubles as the facet-search modal's own scope (see below): both need
-  // "the node shape(s) that actually describe this property's values."
-  const nodeShapes = useMemo(() => valueNodeShapes(shape), [shape]);
-  // Whether the "Create new…" row (rendered as the last item of the results dropdown, see below)
-  // is offered at all - see canCreateInPlace.
-  const canCreate = useMemo(
-    () => enableCreateInPlace && canCreateInPlace(shape),
-    [enableCreateInPlace, shape],
-  );
-  const [creating, setCreating] = useState<NamedNode | undefined>(undefined);
-  const [staging, setStaging] = useState<Staging | undefined>(undefined);
+  // "Create new…" (rendered as the last row of the results dropdown, see below) - staged in a
+  // scratch copy and only written for real on Done, shared with InstancesSelectEditor (see
+  // useCreateInPlace). Its nodeShapes - "the node shape(s) that actually describe this property's
+  // values" - double as the facet-search modal's own scope and the edit-in-place resource shapes.
+  const {
+    canCreate,
+    nodeShapes,
+    draft,
+    start: createNew,
+    commit,
+    cancel: cancelCreate,
+  } = useCreateInPlace(shape, setTerm);
 
   // Whether the search icon opens the facet-search modal instead of the ordinary inline typeahead
   // (see openSearch below) - gated the same way canCreate/canEditResource are, on there being a
@@ -183,51 +172,13 @@ export default function AutoCompleteEditor({
     setMode("edit");
   };
 
-  // Mints a fresh, randomly-identified instance of this property's sh:class(es) - mirrors
-  // InstancesSelectEditor's own createNew (see there for why identity is a random IRI for now
-  // rather than something the user assigns).
-  const createNew = () => {
-    if (!canCreate) return;
-    const subject = factory.namedNode(`urn:uuid:${crypto.randomUUID()}`);
-    const originalQuads = shape.dataGraph.getQuads();
-    // Populated *before* wrapping in makeReactive() - see AutoCompleteOption.openEditor()'s own
-    // comment: none of this modal's own starting state (the copied graph, the new subject's
-    // initial rdf:type) should be undo-able, only whatever the user actually edits inside it.
-    const plainStore = RdfStore.createDefault();
-    for (const quad of originalQuads) plainStore.addQuad(quad);
-    for (const shClass of shClasses) {
-      plainStore.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
-    }
-    const stagingDataGraph = makeReactive(plainStore);
-    setStaging({ dataGraph: stagingDataGraph, originalQuads });
-    setCreating(subject);
-  };
-
-  // Applies the staged edits - including the new subject's own rdf:type - as real additions to
-  // `shape.dataGraph` only now, then adopts it as this property's value.
+  // Done: commits the staged instance (and adopts it as this property's value), then closes the
+  // search UI the same way picking an existing result does.
   const submitCreate = () => {
-    if (creating && staging) {
-      const { additions, deletions } = diffQuads(
-        staging.originalQuads,
-        staging.dataGraph.getQuads(),
-      );
-      transact(shape.dataGraph, () => {
-        for (const quad of deletions) shape.dataGraph.removeQuad(quad);
-        for (const quad of additions) shape.dataGraph.addQuad(quad);
-        setTerm(creating);
-      });
+    if (commit()) {
       reset();
       setMode("view");
     }
-    setCreating(undefined);
-    setStaging(undefined);
-  };
-
-  // Every other way of dismissing the modal (header close, backdrop, Escape) throws the staged
-  // graph away untouched - `shape.dataGraph` was never written to, so there's nothing to undo.
-  const cancelCreate = () => {
-    setCreating(undefined);
-    setStaging(undefined);
   };
 
   // Values already used elsewhere for this (possibly multi-valued) property shouldn't be offered
@@ -244,25 +195,14 @@ export default function AutoCompleteEditor({
   // Rendered from both modes below - creating stays in "edit" mode until the modal is submitted
   // (see submitCreate), so the modal has to stay reachable from the "edit" mode search UI that
   // triggers it, not just from "view".
-  const createModal = creating && staging && (
+  const createModal = draft && (
     <Modal
       open
       onClose={cancelCreate}
       title={<Localized id="create-new-reference-title">New item</Localized>}
-      dataGraph={staging.dataGraph}
+      dataGraph={draft.dataGraph}
     >
-      <NodeUIElementChildren
-        nodeUiElement={
-          new NodeUIElement({
-            shapesGraph: shape.shapesGraph,
-            dataGraph: staging.dataGraph,
-            scoresGraph: shape.scoresGraph,
-            widgetRegistry: shape.widgetRegistry,
-            focusNode: creating,
-            nodeShapes,
-          })
-        }
-      />
+      <NodeUIElementChildren nodeUiElement={draft.node} />
       <div className="st-autocomplete__create-actions">
         <button type="button" className="st-button st-button--primary" onClick={submitCreate}>
           <Localized id="create-new-reference-done">Done</Localized>

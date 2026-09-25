@@ -14,6 +14,7 @@ import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { choiceBranchShapes } from "@/structure/choiceBranches.ts";
 import { resolveNodeShapes } from "@/structure/logicalBranches.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
+import { NO_WIDGETS } from "@/widgets/lookup.ts";
 
 export interface JsToRdfOptions {
   shapesGraph: RdfStore;
@@ -40,6 +41,7 @@ export interface JsToRdfOptions {
 export function jsToRdf(options: JsToRdfOptions): RdfStore {
   const dataGraph = options.dataGraph ?? RdfStore.createDefault();
   const node = new NodeUIElement({
+    widgetRegistry: NO_WIDGETS,
     shapesGraph: options.shapesGraph,
     dataGraph,
     scoresGraph: options.scoresGraph,
@@ -108,6 +110,7 @@ function jsValueToPropertyTerm(
     const blankNode = factory.blankNode();
     if (nodeShapes.length > 0) {
       const nested = new NodeUIElement({
+        widgetRegistry: property.widgetRegistry,
         shapesGraph: property.shapesGraph,
         dataGraph: property.dataGraph,
         scoresGraph: property.scoresGraph,
@@ -172,6 +175,7 @@ function writeMemberShapeProperty(
   const values = Array.isArray(rawValue) ? rawValue : [rawValue];
 
   const memberElement = new PropertyUIElement({
+    widgetRegistry: property.widgetRegistry,
     shapesGraph: property.shapesGraph,
     dataGraph: property.dataGraph,
     scoresGraph: property.scoresGraph,
@@ -183,6 +187,7 @@ function writeMemberShapeProperty(
     if (isPlainObject(value)) {
       const blankNode = factory.blankNode();
       const nested = new NodeUIElement({
+        widgetRegistry: property.widgetRegistry,
         shapesGraph: property.shapesGraph,
         dataGraph: property.dataGraph,
         scoresGraph: property.scoresGraph,

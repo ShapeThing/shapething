@@ -47,9 +47,9 @@ const BUCKET_LABEL_FALLBACKS: Record<ColorBucket, string> = {
  *
  * Clicking a bucket writes a single st:colorBucket value (the bucket's own name, e.g. "blue") - a
  * sibling sh:sparql SPARQLConstraint, built from helpers/colorBuckets.ts's sparqlFilterForBucket,
- * is kept in sync alongside it (see structure/filterShape.ts's syncColorBucketSparqlConstraint).
+ * is kept in sync alongside it (see facets/filterShape.ts's syncColorBucketSparqlConstraint).
  * That sh:sparql is what this renderer's own facet narrowing actually runs, via a real shacl-engine
- * validation pass (structure/filterShape.ts's instancesConformingViaEngine) - not a hand-rolled
+ * validation pass (facets/filterShape.ts's instancesConformingViaEngine) - not a hand-rolled
  * reclassification of each candidate's own HSL values, though the *effect* is the same as if it
  * were. The same sh:sparql also lets any external SHACL-SPARQL-conformant engine enforce the exact
  * same rule without knowing st:colorBucket at all - the same "bespoke value plus a portable SPARQL

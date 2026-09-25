@@ -28,24 +28,24 @@ export type WidgetComponent = ComponentType<WidgetProps>;
  * Facet mode has no single focus node, so a facet widget's props look nothing like an editor's/
  * viewer's term+setTerm: `shape` is still the (possibly synthetic, see the root type/category
  * selector) PropertyUIElement metadata comes from, `values` is every value found for this
- * property across every target instance (see structure/facetValues.ts's aggregateFacetValues -
+ * property across every target instance (see facets/facetValues.ts's aggregateFacetValues -
  * used to derive range bounds/option lists, not a single current value), and
  * getConstraint/setConstraint read/write this property's own constraint node on the live,
- * generated filterShape (see structure/filterShape.ts) - the facet-mode analogue of term/setTerm.
+ * generated filterShape (see facets/filterShape.ts) - the facet-mode analogue of term/setTerm.
  * setConstraint(predicate, undefined) removes that predicate's current value(s) entirely.
  *
  * setConstraints writes several predicates as one atomic gesture (e.g. ColorFacet's own
  * sh:minInclusive+sh:maxExclusive pair for one bucket click) - see
- * structure/filterShape.ts's setFilterConstraintsForProperty for why a widget that needs to write
+ * facets/filterShape.ts's setFilterConstraintsForProperty for why a widget that needs to write
  * more than one predicate for the same user action must use this instead of two separate
  * setConstraint calls: on a property no facet has touched yet, two separate calls race against
  * useReactiveRead's own snapshot caching and can silently lose the second write from the live view
  * (though not from the data actually submitted).
  *
  * `valueCounts` is only given when Environment.enableFacetOptionCounts is on (see
- * structure/facetValues.ts's aggregateFacetValueCounts) - keyed by termKey, "how many target
+ * facets/facetValues.ts's aggregateFacetValueCounts) - keyed by termKey, "how many target
  * instances have this value, given every other currently-active facet constraint" (a live,
- * re-narrowing count - see structure/filterShape.ts's instancesMatchingOtherConstraints, which
+ * re-narrowing count - see facets/filterShape.ts's instancesMatchingOtherConstraints, which
  * FacetPropertyComponent applies before counting). Option-based widgets (CategoryFacet) use it to
  * show a count next to each option; a widget with no notion of discrete options
  * (TextSearchFacet, the range facets) simply ignores it.
@@ -104,15 +104,16 @@ export type WidgetRegistryEntry = {
   Component: WidgetComponent;
   meta?: WidgetMeta;
   // Raw turtle shui:WidgetScore rules for this widget (see scoring/score.ts) - omit for a widget
-  // declared only via an explicit shui:editor/shui:viewer value on the shape, with no scoring
-  // rules of its own (see prepareScoringGraph's synthesized default-score fallback).
+  // only ever chosen via an explicit shui:editor/shui:viewer value on the shape: select() returns
+  // a shape's own declared widget directly (subject only to its WidgetAcceptMatcher, if any), no
+  // scoring rule needed. Such a widget just won't appear among score()'s ranked alternatives.
   scoringGraph?: string;
 };
 
 /**
  * A facets-category registry entry (see Widgets.facets) - same scoring-graph/explicit-declaration
- * story as an editor/viewer (see registry.ts's buildEntries, prepareScoringGraph's st:facet
- * handling), just a different Component prop shape (FacetWidgetProps, not WidgetProps).
+ * story as an editor/viewer (see registry.ts's buildFacetEntries/getScoringGraph), just a
+ * different Component prop shape (FacetWidgetProps, not WidgetProps).
  */
 export type FacetWidgetRegistryEntry = {
   widget: NamedNode;

@@ -9,7 +9,7 @@ import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import { testingEnvironment, type SubmitResult } from "@/environment.ts";
 import { factory } from "@/helpers/factory.ts";
 import { rdf, schema, sh } from "@/helpers/namespaces.ts";
-import { instancesMatchingOtherConstraints, type FilterShape } from "@/structure/filterShape.ts";
+import { instancesMatchingOtherConstraints, type FilterShape } from "@/facets/filterShape.ts";
 import "./webshop.css";
 
 const WEBSHOP_URL = new URL("webshop.ttl", import.meta.url);
@@ -42,13 +42,13 @@ async function fetchTurtleStore(url: URL): Promise<RdfStore> {
 }
 
 /**
- * Facet mode's own generated filter shape (structure/filterShape.ts's FilterShape) is a plain,
+ * Facet mode's own generated filter shape (facets/filterShape.ts's FilterShape) is a plain,
  * standard SHACL NodeShape - "which products match it" is answered here via
  * instancesMatchingOtherConstraints, the same matcher FacetPropertyComponent already uses for live
  * per-facet option counts. That matcher runs a real shacl-engine validation pass for sh:in
  * (Category), sh:pattern (Search) and the plain decimal range (Price), and st:ColorFacet's own
  * st:colorBucket constraint (see its own widget.tsx) via its synced sh:sparql SPARQLConstraint
- * (structure/filterShape.ts's syncColorBucketSparqlConstraint) - a real SHACL-SPARQL-conformant
+ * (facets/filterShape.ts's syncColorBucketSparqlConstraint) - a real SHACL-SPARQL-conformant
  * engine, not a hand-rolled reimplementation of what those constraints already mean.
  */
 async function findMatchingProducts(

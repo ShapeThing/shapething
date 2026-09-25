@@ -22,7 +22,7 @@ const onSubmit = (result: SubmitResult) => {
 
 // Regression coverage for a real useSyncExternalStore race: creating a brand-new facet constraint
 // used to link its (still-empty) node into filterShape before writing its value, and a sibling
-// facet's forced-synchronous re-render (see structure/filterShape.ts's setFilterConstraintForProperty)
+// facet's forced-synchronous re-render (see facets/filterShape.ts's setFilterConstraintForProperty)
 // could observe - and permanently cache - that half-written state, leaving a checkbox that never
 // shows as checked even though the submitted graph is correct. Exercises the very first click (the
 // only moment a node gets created), not just steady-state toggling.

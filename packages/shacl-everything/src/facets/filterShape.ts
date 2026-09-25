@@ -569,7 +569,7 @@ function buildEngineValidationShape(
 // mergeFacetTextSearchProperties) matches schema:name but not schema:nationality, or a product with
 // one price inside the range and one outside it. buildEngineValidationShape moves these into an
 // sh:qualifiedValueShape with sh:qualifiedMinCount 1, the same "some value" semantics
-// structure/facetValues.ts's countFacetInstancesMatchingPattern/countFacetInstancesInRange already
+// facets/facetValues.ts's countFacetInstancesMatchingPattern/countFacetInstancesInRange already
 // use for the count badge - so the badge and the actual result list agree.
 const SOME_VALUE_PREDICATES = [
   sh("pattern"),
@@ -700,7 +700,7 @@ select distinct ?this where {
  * constraint on `filterShape` - "other" meaning every sh:property entry except the one whose own
  * path equals `excludePath` (typically the facet asking the question, via pathSparqlFor - compare
  * `undefined` to exclude nothing). This is what makes a facet's own option/range counts (see
- * structure/facetValues.ts, Environment.enableFacetOptionCounts) *dynamic*: "how many results
+ * facets/facetValues.ts, Environment.enableFacetOptionCounts) *dynamic*: "how many results
  * would this option leave, given every filter already applied elsewhere" rather than a count over
  * every target instance regardless of what's already been selected. A facet's own constraint is
  * excluded so multi-selecting within the very same sh:in (an OR) doesn't shrink its own sibling

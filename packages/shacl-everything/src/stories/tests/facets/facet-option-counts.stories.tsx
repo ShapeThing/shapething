@@ -94,7 +94,7 @@ export const rangeFacetsShowALiveMatchCountOnceFilled: Story = {
 };
 
 // The counts above are *live*: selecting a value in one facet narrows the counts shown on every
-// other facet (structure/filterShape.ts's instancesMatchingOtherConstraints), not a static tally
+// other facet (facets/filterShape.ts's instancesMatchingOtherConstraints), not a static tally
 // against every target instance regardless of what's already selected. Verified in both
 // directions - a facet's own constraint never narrows its own counts (multi-selecting within the
 // same sh:in shouldn't shrink its own sibling options against each other).

@@ -1,9 +1,6 @@
 import LoadingTwotoneLoopIcon from "~icons/line-md/loading-twotone-loop";
-import EditNoteIcon from "~icons/ic/round-note-alt";
 import PlusIcon from "~icons/ic/round-add";
 import MinusIcon from "~icons/ic/round-remove";
-import ArrowDropDown from "~icons/ic/round-arrow-drop-down";
-import SwitchLeft from "~icons/ic/round-settings";
 import EditIcon from "~icons/ic/round-edit";
 import LinkIcon from "~icons/ic/round-link";
 import CloseIcon from "~icons/ic/round-close";
@@ -22,11 +19,8 @@ import CloudUploadIcon from "~icons/ic/round-cloud-upload";
 import SettingsIcon from "~icons/ic/round-settings";
 
 export const Loading = LoadingTwotoneLoopIcon;
-export const EditNested = EditNoteIcon;
 export const Plus = PlusIcon;
 export const Minus = MinusIcon;
-export const SelectArrow = ArrowDropDown;
-export const Cog = SwitchLeft;
 export const Edit = EditIcon;
 export const Link = LinkIcon;
 export const Close = CloseIcon;

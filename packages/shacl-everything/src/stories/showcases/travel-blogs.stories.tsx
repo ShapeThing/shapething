@@ -38,7 +38,7 @@ export const travelBlogsView: Story = {
 // to narrow the list down to posts whose location falls inside it - draw a box over Europe to see
 // the Lisbon/Tuscany/Iceland posts stay while Kyoto/Cape Town/Patagonia drop out.
 // enableFacetOptionCounts keeps every facet's own live match count up to date as you narrow
-// (structure/filterShape.ts's instancesMatchingOtherConstraints).
+// (facets/filterShape.ts's instancesMatchingOtherConstraints).
 export const travelBlogsFacets: Story = {
   name: "Facets (incl. map area select)",
   args: {

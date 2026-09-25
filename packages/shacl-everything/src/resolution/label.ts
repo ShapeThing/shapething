@@ -15,10 +15,8 @@ import {
   type PropertyPath,
 } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
-import {
-  orderedValues,
-  type PropertyUIElement,
-} from "@/structure/PropertyUIElement.ts";
+import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { orderedValues } from "@/structure/orderedValues.ts";
 import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
 import { shapesTargetingClass } from "@/resolution/targets.ts";
 import type { Literal, NamedNode, Quad_Subject, Term } from "@rdfjs/types";

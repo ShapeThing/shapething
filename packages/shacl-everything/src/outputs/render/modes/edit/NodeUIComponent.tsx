@@ -7,6 +7,7 @@ import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { Fragment, useMemo } from "react";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
+import { resolvedWidgets } from "@/preprocess/widgets.ts";
 
 export default function NodeUIComponent({ noWrapper }: { noWrapper?: boolean }) {
   const { focusNode, shapesGraph, dataGraph, scoresGraph, widgets, nodeShapes } = useEnvironment();
@@ -25,7 +26,7 @@ export default function NodeUIComponent({ noWrapper }: { noWrapper?: boolean }) 
         shapesGraph,
         dataGraph,
         scoresGraph,
-        widgetRegistry: widgets,
+        widgetRegistry: resolvedWidgets(widgets),
         focusNode,
         nodeShapes: effectiveNodeShapes,
       }),

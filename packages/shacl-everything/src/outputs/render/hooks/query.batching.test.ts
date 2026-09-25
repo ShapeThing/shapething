@@ -3,6 +3,7 @@ import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { fetchOptions } from "./query.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 // fetchOptions coalesces concurrent calls that would otherwise run an identical query (see
 // query.ts's batchRoleLookup/roleLookupBatchKey) - this file exists solely to verify a call with a
@@ -31,6 +32,7 @@ const createShape = async (shapesTurtle: string, dataTurtle: string) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${shapesTurtle}`, "text/turtle");
   const dataGraph = await parseRdf(`${queryPrefixes}\n\n${dataTurtle}`, "text/turtle");
   return new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Subject"),

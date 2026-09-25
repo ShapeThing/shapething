@@ -4,11 +4,18 @@ import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes, shui, xsd } from "@/helpers/namespaces.ts";
 import { createDefaultTerm, defaultTermFromShape } from "@/widgets/defaultTerm.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 const createElement = async (turtle: string, propertyShapes: NamedNode[] = [ex("property1")]) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${turtle}`, "text/turtle");
   const dataGraph = await parseRdf("", "text/turtle");
-  return new PropertyUIElement({ shapesGraph, dataGraph, focusNode: ex("Alice"), propertyShapes });
+  return new PropertyUIElement({
+    shapesGraph,
+    dataGraph,
+    widgetRegistry: defaultWidgets,
+    focusNode: ex("Alice"),
+    propertyShapes,
+  });
 };
 
 test("defaultTermFromShape returns a literal typed with the declared sh:datatype", async () => {

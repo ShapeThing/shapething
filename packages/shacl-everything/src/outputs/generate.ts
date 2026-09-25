@@ -17,6 +17,7 @@ import { logicalBranches, withBranch } from "@/structure/logicalBranches.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
+import { NO_WIDGETS } from "@/widgets/lookup.ts";
 
 export interface GenerateOptions {
   shapesGraph: RdfStore;
@@ -70,6 +71,7 @@ export async function generate(options: GenerateOptions): Promise<RdfStore> {
   const existingDataGraph = options.dataGraph ?? RdfStore.createDefault();
 
   const node = new NodeUIElement({
+    widgetRegistry: NO_WIDGETS,
     shapesGraph: options.shapesGraph,
     dataGraph: RdfStore.createDefault(),
     focusNode: options.focusNode,
@@ -182,6 +184,7 @@ async function generateMemberShapeValues(
   });
 
   const memberElement = new PropertyUIElement({
+    widgetRegistry: property.widgetRegistry,
     shapesGraph: property.shapesGraph,
     dataGraph: property.dataGraph,
     focusNode: property.focusNode,
@@ -249,6 +252,8 @@ async function generateEmbeddedObject(
     RdfStore.createDefault(),
     nodeShapes,
     factory.blankNode(),
+    undefined,
+    NO_WIDGETS,
   );
   return generateChildren(children, { ...context, depth: context.depth + 1 });
 }
@@ -350,6 +355,7 @@ async function generateMatchingResource(
     // find nothing to match against. A federated one (wrapped in its own SERVICE clause) ignores
     // this source anyway, so swapping it in is safe either way.
     const queryable = new PropertyUIElement({
+      widgetRegistry: property.widgetRegistry,
       shapesGraph: property.shapesGraph,
       dataGraph: context.existingDataGraph,
       focusNode: property.focusNode,

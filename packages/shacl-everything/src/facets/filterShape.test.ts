@@ -15,12 +15,14 @@ import {
   setFilterConstraint,
   setFilterConstraintForProperty,
   setFilterConstraintsForProperty,
-} from "@/structure/filterShape.ts";
+} from "@/facets/filterShape.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 async function propertyFor(pathTurtle: string) {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${pathTurtle}`, "text/turtle");
   const dataGraph = await parseRdf("", "text/turtle");
   return new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("unused"),
@@ -280,6 +282,7 @@ test("instancesMatchingOtherConstraints: a class-taxonomy pick (sh:rootClass) al
     "text/turtle",
   );
   const property = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("unused"),
@@ -316,6 +319,7 @@ test("instancesMatchingOtherConstraints: without sh:rootClass, sh:in still requi
     "text/turtle",
   );
   const property = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("unused"),
@@ -347,6 +351,7 @@ test("instancesMatchingOtherConstraints: st:withinArea (MapFacet) matches an ins
     "text/turtle",
   );
   const property = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("unused"),
@@ -384,6 +389,7 @@ test("instancesMatchingOtherConstraints: st:withinArea matches any instance valu
     "text/turtle",
   );
   const property = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("unused"),
@@ -505,6 +511,7 @@ test("instancesMatchingOtherConstraints: st:colorBucket (ColorFacet) matches an 
   dataGraph.addQuad(factory.quad(blueColor, st("lightness"), factory.literal("50", xsd("decimal"))));
 
   const property = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("unused"),
@@ -697,6 +704,7 @@ test("instancesMatchingOtherConstraints: sh:pattern (TextSearchFacet) matches wh
     "text/turtle",
   );
   const property = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("unused"),
@@ -733,6 +741,7 @@ test("instancesMatchingOtherConstraints: a range bound matches when any one valu
     "text/turtle",
   );
   const property = new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("unused"),

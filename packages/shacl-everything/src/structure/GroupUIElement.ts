@@ -1,18 +1,18 @@
 import type { Quad_Subject, Term } from "@rdfjs/types";
-import { RdfStore } from "rdf-stores";
+import type { RdfStore } from "rdf-stores";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { hslToHex } from "@/helpers/colorBuckets.ts";
 import { st } from "@/helpers/namespaces.ts";
 import { groupDescription, groupLabel } from "@/resolution/label.ts";
-import { defaultWidgets, getGroupWidget } from "@/widgets/registry.ts";
+import { getGroupWidget } from "@/widgets/lookup.ts";
 import type { GroupWidgetRegistryEntry, Widgets } from "@/widgets/types.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
 
 export type GroupUIElementOptions = {
   shapesGraph: RdfStore;
   dataGraph: RdfStore;
-  widgetRegistry?: Widgets;
+  widgetRegistry: Widgets;
   focusNode: Quad_Subject;
   node: Term;
   children: (PropertyUIElement | ChoiceElement | GroupUIElement)[];
@@ -31,7 +31,7 @@ export class GroupUIElement {
   constructor(options: GroupUIElementOptions) {
     this.shapesGraph = options.shapesGraph;
     this.dataGraph = options.dataGraph;
-    this.widgetRegistry = options.widgetRegistry ?? defaultWidgets;
+    this.widgetRegistry = options.widgetRegistry;
     this.focusNode = options.focusNode;
     this.node = options.node;
     this.children = options.children;
@@ -61,7 +61,7 @@ export class GroupUIElement {
 
   /**
    * The registered widget for this group's own rdf:type - synchronous, direct type matching, no
-   * scoring involved (see widgets/registry.ts's getGroupWidget).
+   * scoring involved (see widgets/lookup.ts's getGroupWidget).
    */
   widget(): GroupWidgetRegistryEntry | undefined {
     return getGroupWidget(this.node, this.shapesGraph, this.widgetRegistry);

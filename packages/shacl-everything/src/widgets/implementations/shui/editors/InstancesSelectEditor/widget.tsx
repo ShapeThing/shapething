@@ -1,28 +1,19 @@
-import { useMemo, useState } from "react";
-import type { NamedNode, Quad, Quad_Subject } from "@rdfjs/types";
-import { RdfStore } from "rdf-stores";
+import { useMemo } from "react";
+import type { Quad_Subject } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
 import { Plus } from "@/helpers/icons.tsx";
-import { rdf, sh } from "@/helpers/namespaces.ts";
-import { diffQuads } from "@/helpers/diffQuads.ts";
-import { makeReactive, transact } from "@/helpers/reactiveRdfStore.ts";
+import { sh } from "@/helpers/namespaces.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
-import { canCreateInPlace, valueNodeLabel, valueNodeShapes } from "@/resolution/label.ts";
+import { valueNodeLabel } from "@/resolution/label.ts";
 import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import { Localized } from "@fluent/react/esm/localized.js";
+import { useCreateInPlace } from "@/outputs/render/hooks/useCreateInPlace.ts";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
-import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
-import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 import "./style.css";
-
-// Mirrors AutoCompleteOption's own edit-in-place staging: the new instance is built up against its
-// own scratch copy of the whole graph, not `shape.dataGraph` directly, so nothing real is written
-// (not even the new subject's own rdf:type) unless the user confirms via Done.
-type Staging = { dataGraph: RdfStore; originalQuads: Quad[] };
 
 export default function InstancesSelectEditor({
   shape,
@@ -32,7 +23,6 @@ export default function InstancesSelectEditor({
   autoFocus,
 }: WidgetProps) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
-  const { enableCreateInPlace } = useEnvironment();
   const shClasses = shape.get(sh("class"));
   const existingObjects = useDataGraphObjects(shape);
 
@@ -53,62 +43,13 @@ export default function InstancesSelectEditor({
     );
   }, [shClasses, shape, existingObjects, term]);
 
-  // The shape describing a newly created instance's own fields (its sh:node, or - failing that -
-  // any node shape targeting its sh:class via sh:targetClass, see valueNodeShapes) - absent, the
-  // "Create new…" option isn't offered at all (see canCreateInPlace).
-  const nodeShapes = useMemo(() => valueNodeShapes(shape), [shape]);
-  const canCreate = useMemo(
-    () => enableCreateInPlace && canCreateInPlace(shape),
-    [enableCreateInPlace, shape],
+  // "Create new…": staged in a scratch copy, only written for real on Done - see useCreateInPlace.
+  // Not offered at all without a shape describing the new instance's own fields (its sh:node, or a
+  // node shape targeting its sh:class - see canCreateInPlace/valueNodeShapes).
+  const { canCreate, draft, start: createNew, commit, cancel: cancelCreate } = useCreateInPlace(
+    shape,
+    setTerm,
   );
-  const [creating, setCreating] = useState<NamedNode | undefined>(undefined);
-  const [staging, setStaging] = useState<Staging | undefined>(undefined);
-
-  // Mints a fresh, randomly-identified instance of this property's sh:class(es) - a real
-  // identifier is deferred to a future widget on the node shape itself that can edit both blank
-  // nodes and IRIs; for now this always creates a NamedNode so InstancesSelectEditor's own
-  // isIRI-scored widget selection stays valid for the new value straight away.
-  const createNew = () => {
-    if (!canCreate) return;
-    const subject = factory.namedNode(`urn:uuid:${crypto.randomUUID()}`);
-    const originalQuads = shape.dataGraph.getQuads();
-    // Populated *before* wrapping in makeReactive() - see AutoCompleteOption.openEditor()'s own
-    // comment: none of this modal's own starting state (the copied graph, the new subject's
-    // initial rdf:type) should be undo-able, only whatever the user actually edits inside it.
-    const plainStore = RdfStore.createDefault();
-    for (const quad of originalQuads) plainStore.addQuad(quad);
-    for (const shClass of shClasses) {
-      plainStore.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
-    }
-    const stagingDataGraph = makeReactive(plainStore);
-    setStaging({ dataGraph: stagingDataGraph, originalQuads });
-    setCreating(subject);
-  };
-
-  // Applies the staged edits - including the new subject's own rdf:type - as real additions to
-  // `shape.dataGraph` only now, then adopts it as this property's value.
-  const submitCreate = () => {
-    if (creating && staging) {
-      const { additions, deletions } = diffQuads(
-        staging.originalQuads,
-        staging.dataGraph.getQuads(),
-      );
-      transact(shape.dataGraph, () => {
-        for (const quad of deletions) shape.dataGraph.removeQuad(quad);
-        for (const quad of additions) shape.dataGraph.addQuad(quad);
-        setTerm(creating);
-      });
-    }
-    setCreating(undefined);
-    setStaging(undefined);
-  };
-
-  // Every other way of dismissing the modal (header close, backdrop, Escape) throws the staged
-  // graph away untouched - `shape.dataGraph` was never written to, so there's nothing to undo.
-  const cancelCreate = () => {
-    setCreating(undefined);
-    setStaging(undefined);
-  };
 
   return (
     <>
@@ -154,27 +95,16 @@ export default function InstancesSelectEditor({
             : undefined
         }
       />
-      {creating && staging && (
+      {draft && (
         <Modal
           open
           onClose={cancelCreate}
           title={<Localized id="create-new-reference-title">New item</Localized>}
-          dataGraph={staging.dataGraph}
+          dataGraph={draft.dataGraph}
         >
-          <NodeUIElementChildren
-            nodeUiElement={
-              new NodeUIElement({
-                shapesGraph: shape.shapesGraph,
-                dataGraph: staging.dataGraph,
-                scoresGraph: shape.scoresGraph,
-                widgetRegistry: shape.widgetRegistry,
-                focusNode: creating,
-                nodeShapes,
-              })
-            }
-          />
+          <NodeUIElementChildren nodeUiElement={draft.node} />
           <div className="st-instances-select-editor__create-actions">
-            <button type="button" className="st-button st-button--primary" onClick={submitCreate}>
+            <button type="button" className="st-button st-button--primary" onClick={commit}>
               <Localized id="create-new-reference-done">Done</Localized>
             </button>
           </div>

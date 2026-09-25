@@ -229,12 +229,12 @@ function inferredConstraints(
  *
  * Copies shapesGraph into a fresh RdfStore rather than mutating the caller-supplied one in place -
  * shapesGraph is frequently a shared, module-level fixture reused across multiple
- * stories/renders/tests, so mutating it directly would leak generated shapes into unrelated runs
- * (same non-mutating approach as scoringGraphPreparation.ts's prepareScoringGraph).
+ * stories/renders/tests, so mutating it directly would leak generated shapes into unrelated runs.
  *
  * Runs after resolveRdfSources (so both graphs are resolved RdfStores, even though RawEnvironment's
- * type still allows an unresolved RdfSource) and before prepareEnvironmentScoringGraph, so any
- * shapes minted here are covered by scoring too.
+ * type still allows an unresolved RdfSource). Widget scoring evaluates property shapes per property
+ * at render time (scoring/score.ts), not in a preprocessing pass, so shapes minted here are scored
+ * exactly like author-written ones.
  */
 export const addMissingShapes: Preprocessor = (environment) => {
   if (!environment.enableMissingShapesGeneration) return environment;

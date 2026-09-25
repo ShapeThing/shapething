@@ -6,6 +6,7 @@ import { GroupUIElement } from "@/structure/GroupUIElement.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, sh } from "@/helpers/namespaces.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 function path(property: PropertyUIElement): string | undefined {
   return property.get(sh("path"))[0]?.value;
@@ -27,8 +28,8 @@ test("properties sharing a sh:group nest under one GroupUIElement, sorted by sh:
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"));
-  const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"));
+  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets);
 
   expect(grouped).toHaveLength(1);
   const [group] = grouped as GroupUIElement[];
@@ -59,8 +60,8 @@ test("a group whose own sh:group points at another group nests underneath it", a
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"));
-  const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"));
+  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets);
 
   expect(grouped).toHaveLength(1);
   const [root] = grouped as GroupUIElement[];
@@ -90,8 +91,8 @@ test("ungrouped properties and top-level groups interleave by sh:order", async (
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"));
-  const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"));
+  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets);
 
   expect(grouped).toHaveLength(2);
   expect(grouped[0]).toBeInstanceOf(PropertyUIElement);
@@ -114,8 +115,8 @@ test("a shapes graph with no sh:group/sh:order at all sorts identically to the f
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"));
-  const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"));
+  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets);
 
   expect(grouped).toHaveLength(2);
   expect((grouped as PropertyUIElement[]).map((p) => p.propertyShapes[0].value)).toEqual(
@@ -136,8 +137,8 @@ test("throws when a property's sh:group references a node not typed sh:PropertyG
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"));
-  expect(() => groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"))).toThrow(
+  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  expect(() => groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets)).toThrow(
     /Missing sh:PropertyGroup definition/,
   );
 });
@@ -161,8 +162,8 @@ test("a ChoiceElement (sh:or) is never grouped, but still participates in top-le
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"));
-  const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"));
+  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets);
 
   expect(grouped).toHaveLength(2);
   expect(grouped.some((element) => element instanceof ChoiceElement)).toBe(true);

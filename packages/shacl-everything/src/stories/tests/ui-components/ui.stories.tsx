@@ -7,6 +7,7 @@ import { runPreprocessors } from "@/preprocess/index.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import AutoCompleteEditor from "@/widgets/implementations/shui/editors/AutoCompleteEditor/widget.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 export default {
   title: "Tests/UI Components",
@@ -30,6 +31,7 @@ console.log(shapesGraph.getQuads());
 const propertyShapes = [factory.namedNode("")];
 
 const shape = new PropertyUIElement({
+  widgetRegistry: defaultWidgets,
   shapesGraph: shapesGraph,
   dataGraph: dataGraph,
   focusNode: focusNode,

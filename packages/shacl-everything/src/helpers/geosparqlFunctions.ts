@@ -19,7 +19,7 @@ type SpatialRelation = (a: Feature | Geometry, b: Feature | Geometry) => boolean
 // The GeoSPARQL "Simple Features" relation family (geof:sfEquals/sfDisjoint/sfIntersects/sfTouches/
 // sfCrosses/sfWithin/sfContains/sfOverlaps) - every one of them backed by @turf/turf's own boolean-*
 // predicate, which implements the real OGC semantics (holes, edge-touching, line/point cases).
-// structure/facetValues.ts's countFacetInstancesWithinArea calls booleanWithin directly (not via
+// facets/facetValues.ts's countFacetInstancesWithinArea calls booleanWithin directly (not via
 // this Comunica registration) for the same reason - one real predicate, two call sites.
 const SIMPLE_FEATURES_RELATIONS: Record<string, SpatialRelation> = {
   sfEquals: booleanEqual,

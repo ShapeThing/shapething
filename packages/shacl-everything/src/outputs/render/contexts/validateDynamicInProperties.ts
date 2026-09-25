@@ -11,6 +11,7 @@ import {
   runQuery,
 } from "@/outputs/render/hooks/query.ts";
 import type { ValidationResult } from "@/outputs/render/contexts/validationContext.tsx";
+import { NO_WIDGETS } from "@/widgets/lookup.ts";
 
 /**
  * Validates every property reachable from `nodeShapes`/`focusNode` that declares a dynamic
@@ -47,7 +48,7 @@ export async function validateDynamicInProperties(
   corsProxyUrl?: string,
   cache?: Map<string, Promise<Set<string>>>,
 ): Promise<ValidationResult[]> {
-  const properties = childrenForShape(shapesGraph, dataGraph, nodeShapes, focusNode).filter(
+  const properties = childrenForShape(shapesGraph, dataGraph, nodeShapes, focusNode, undefined, NO_WIDGETS).filter(
     (element) => element.kind === "property",
   );
 

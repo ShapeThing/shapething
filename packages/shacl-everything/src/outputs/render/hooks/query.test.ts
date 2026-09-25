@@ -9,11 +9,13 @@ import {
   searchInstances,
   substituteSearchParameters,
 } from "./query.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 const createShape = async (shapesTurtle: string, dataTurtle: string) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${shapesTurtle}`, "text/turtle");
   const dataGraph = await parseRdf(`${queryPrefixes}\n\n${dataTurtle}`, "text/turtle");
   return new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("Subject"),

@@ -2,12 +2,15 @@ import type { Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { rdf, sh } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
-import { ChoiceElement } from "@/structure/ChoiceElement.ts";
+import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { GroupUIElement } from "@/structure/GroupUIElement.ts";
-import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { createIdentityMemo } from "@/structure/memo.ts";
+import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Widgets } from "@/widgets/types.ts";
 
 type Child = PropertyUIElement | ChoiceElement | GroupUIElement;
+
+const memo = createIdentityMemo<Child[]>();
 
 /**
  * Buckets a flat list of a shape's children (as returned by NodeUIElement.children()/
@@ -22,13 +25,29 @@ type Child = PropertyUIElement | ChoiceElement | GroupUIElement;
  *
  * Shape graphs are assumed acyclic, same as the rest of this codebase (no cycle guard) - see
  * childrenForShape.ts.
+ *
+ * Memoized per `elements` array (by identity) - the bucketing reads only shape metadata, and
+ * childrenForShape() already hands back the same array for the same inputs, so a render calling
+ * groupChildren(node.children(), ...) every time gets the same GroupUIElement instances back too.
  */
 export function groupChildren(
   elements: (PropertyUIElement | ChoiceElement)[],
   shapesGraph: RdfStore,
   dataGraph: RdfStore,
   focusNode: Quad_Subject,
-  widgets?: Widgets,
+  widgets: Widgets,
+): Child[] {
+  return memo([elements, shapesGraph, dataGraph, widgets], termKey(focusNode), () =>
+    buildGroupTree(elements, shapesGraph, dataGraph, focusNode, widgets)
+  );
+}
+
+function buildGroupTree(
+  elements: (PropertyUIElement | ChoiceElement)[],
+  shapesGraph: RdfStore,
+  dataGraph: RdfStore,
+  focusNode: Quad_Subject,
+  widgets: Widgets,
 ): Child[] {
   // Discover every group node reachable from a grouped property's sh:group, walking each group's
   // own sh:group up its ancestor chain - so a nested group is found even when nothing is assigned

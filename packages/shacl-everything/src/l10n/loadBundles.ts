@@ -9,7 +9,12 @@ import {
   type LocaleLoaderOverrides,
 } from "@/l10n/locales.ts";
 
-const bundleCache = new Map<string, Promise<FluentBundle>>();
+// Keyed by loader identity first, then locale tag: the same tag can be served by different loaders
+// over a page's lifetime (a built-in, or an embedder's `interfaceLocales` override of it - possibly
+// differing between two ShaclRenderer mounts), and each must get its own bundle rather than
+// whichever one happened to be cached first. A WeakMap so a discarded custom loader's bundles can
+// be garbage-collected along with it.
+const bundleCache = new WeakMap<LocaleLoader, Map<string, Promise<FluentBundle>>>();
 
 const buildBundle = async (locale: string, loader: LocaleLoader): Promise<FluentBundle> => {
   const source = await loader();
@@ -19,11 +24,24 @@ const buildBundle = async (locale: string, loader: LocaleLoader): Promise<Fluent
 };
 
 const getBundle = (locale: string, loader: LocaleLoader): Promise<FluentBundle> => {
-  let bundle = bundleCache.get(locale);
-  if (!bundle) {
-    bundle = buildBundle(locale, loader);
-    bundleCache.set(locale, bundle);
+  let byLocale = bundleCache.get(loader);
+  if (!byLocale) {
+    byLocale = new Map();
+    bundleCache.set(loader, byLocale);
   }
+  const cached = byLocale.get(locale);
+  if (cached) return cached;
+
+  const bundle = buildBundle(locale, loader);
+  byLocale.set(locale, bundle);
+  // Evict a failed load (e.g. a transient network error in a custom fetching loader) so the next
+  // request retries instead of replaying the same rejection forever. Guarded so a newer entry that
+  // replaced this one in the meantime isn't evicted by mistake. The rejection itself still reaches
+  // the caller through the returned promise.
+  const entries = byLocale;
+  bundle.catch(() => {
+    if (entries.get(locale) === bundle) entries.delete(locale);
+  });
   return bundle;
 };
 

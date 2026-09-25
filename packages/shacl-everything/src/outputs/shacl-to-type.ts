@@ -7,6 +7,7 @@ import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { castDataTypeTermToJs } from "@/helpers/castDataTypeTermToJs.ts";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
+import { NO_WIDGETS } from "@/widgets/lookup.ts";
 
 export interface TypeOptions {
   shapesGraph: RdfStore;
@@ -27,6 +28,7 @@ export function shaclToType(options: TypeOptions): Map<string, string> {
     const codeIdentifier = getCodeIdentifier(shapesGraph, nodeShape);
 
     const node = new NodeUIElement({
+      widgetRegistry: NO_WIDGETS,
       shapesGraph: options.shapesGraph,
       dataGraph: RdfStore.createDefault(),
       focusNode: nodeShape,
@@ -125,6 +127,7 @@ function resolveType(property: PropertyUIElement): string {
   if (nodeShapes.length === 0) return resolveDatatype(property);
 
   const node = new NodeUIElement({
+    widgetRegistry: property.widgetRegistry,
     shapesGraph: property.shapesGraph,
     dataGraph: RdfStore.createDefault(),
     focusNode: property.focusNode,
@@ -180,6 +183,7 @@ function resolveMemberType(property: PropertyUIElement, memberShapeNodes: Term[]
   const dataGraph = RdfStore.createDefault();
 
   const node = new NodeUIElement({
+    widgetRegistry: NO_WIDGETS,
     shapesGraph,
     dataGraph,
     focusNode,
@@ -189,6 +193,7 @@ function resolveMemberType(property: PropertyUIElement, memberShapeNodes: Term[]
   if (children.length > 0) return childrenType(children);
 
   const memberElement = new PropertyUIElement({
+    widgetRegistry: NO_WIDGETS,
     shapesGraph,
     dataGraph,
     focusNode,

@@ -5,6 +5,7 @@ import { factory } from "@/helpers/factory.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { propertyLabel, valueNodeColor, valueNodeLabel } from "@/resolution/label.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 const createShape = async ({
   shapes,
@@ -23,6 +24,7 @@ const createShape = async ({
     ? await parseRdf(`${queryPrefixes}\n\n${scores}`, "text/turtle")
     : undefined;
   return new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     scoresGraph,

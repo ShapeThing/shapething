@@ -2,7 +2,7 @@ import type { NamedNode, Term } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
 import { rdf, sh, xsd } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { getWidgetMeta } from "@/widgets/registry.ts";
+import { getWidgetMeta } from "@/widgets/lookup.ts";
 import type { CreateTermContext } from "@/widgets/types.ts";
 
 /**

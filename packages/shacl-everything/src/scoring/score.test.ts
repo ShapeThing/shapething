@@ -1,7 +1,9 @@
 import { expect, test } from "vite-plus/test";
-import { accept, score, select, validate } from "@/scoring/score.ts";
+import { accept, score, select } from "@/scoring/score.ts";
+import { validate } from "@/validation/validate.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
-import { ex, shui } from "@/helpers/namespaces.ts";
+import { ex, queryPrefixes, shui } from "@/helpers/namespaces.ts";
+import { defaultWidgets, getScoringGraph } from "@/widgets/registry.ts";
 import { factory } from "@/helpers/factory.ts";
 
 test("returns the single highest-scoring widget when best is true", async () => {
@@ -416,7 +418,7 @@ test("accept returns true for a WidgetAcceptMatcher whose data graph shape confo
     dataGraph,
     shapeNode: ex("SomeShape"),
     shapesGraph: await parseRdf("", "text/turtle"),
-    widgetNode: ex("SomeWidget"),
+    widgetIRI: ex("SomeWidget"),
     scoringGraph,
     widgetPredicate: shui("editor"),
   });
@@ -768,7 +770,7 @@ test("accept returns false for a WidgetAcceptMatcher whose shape can never confo
     dataGraph,
     shapeNode: ex("SomeShape"),
     shapesGraph: await parseRdf("", "text/turtle"),
-    widgetNode: ex("SomeWidget"),
+    widgetIRI: ex("SomeWidget"),
     scoringGraph,
     widgetPredicate: shui("editor"),
   });
@@ -835,4 +837,79 @@ test("excludes a widget when the property shape has sh:class, even when sh:not i
   });
 
   expect(results).toHaveLength(0);
+});
+
+test("select() breaks an equal-score tie by widget IRI, not by the order rules appear in the scoring graph", async () => {
+  // Declared B-before-A on purpose: store/quad order must not decide the winner.
+  const scoringGraph = await parseRdf(
+    `
+        @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+        @prefix ex: <http://example.org/> .
+
+        ex:widgetBScore a shui:WidgetScore ; shui:editor ex:WidgetB ; shui:score 5 .
+        ex:widgetAScore a shui:WidgetScore ; shui:editor ex:WidgetA ; shui:score 5 .
+        ex:widgetCScore a shui:WidgetScore ; shui:editor ex:WidgetC ; shui:score 1 .
+    `,
+    "text/turtle",
+  );
+
+  const result = await select({
+    focusNode: ex("Alice"),
+    dataGraph: await parseRdf("", "text/turtle"),
+    shapeNode: ex("SomeShape"),
+    shapesGraph: await parseRdf("", "text/turtle"),
+    scoringGraph,
+    widgetPredicate: shui("editor"),
+  });
+
+  expect(result?.value).toBe(ex("WidgetA").value);
+});
+
+// The bundled editors' own score.ttl rules, end to end: each case below is a genuine tie at the top
+// score between two built-in editors, decided only by IRI order.
+async function selectBundledEditor(propertyShapeTurtle: string, valueTurtle: string) {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}
+    ex:property ${propertyShapeTurtle} .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(`${queryPrefixes}\nex:Alice ex:value ${valueTurtle} .`, "text/turtle");
+  const [valueQuad] = dataGraph.getQuads(ex("Alice"), ex("value"));
+  return select({
+    focusNode: valueQuad.object,
+    dataGraph,
+    shapeNode: ex("property"),
+    shapesGraph,
+    scoringGraph: await getScoringGraph("edit", defaultWidgets),
+    widgetPredicate: shui("editor"),
+  });
+}
+
+test("select() picks TextAreaEditor over TextFieldEditor (both 30) for a sh:singleLine false string", async () => {
+  const result = await selectBundledEditor(
+    `sh:path ex:value ; sh:datatype xsd:string ; sh:singleLine false`,
+    `"Some text"`,
+  );
+  expect(result?.value).toBe(shui("TextAreaEditor").value);
+});
+
+test("select() still picks TextFieldEditor for a plain string with no sh:singleLine false", async () => {
+  const result = await selectBundledEditor(`sh:path ex:value ; sh:datatype xsd:string`, `"Some text"`);
+  expect(result?.value).toBe(shui("TextFieldEditor").value);
+});
+
+test("select() picks TextAreaWithLangEditor over TextFieldWithLangEditor (both 30) for a sh:singleLine false langString", async () => {
+  const result = await selectBundledEditor(
+    `sh:path ex:value ; sh:datatype rdf:langString ; sh:singleLine false`,
+    `"Some text"@en`,
+  );
+  expect(result?.value).toBe(shui("TextAreaWithLangEditor").value);
+});
+
+test("select() picks AutoCompleteEditor over EnumSelectEditor/InstancesSelectEditor (all 40) for a sh:class IRI value", async () => {
+  const result = await selectBundledEditor(
+    `sh:path ex:value ; sh:class ex:Person ; sh:nodeKind sh:IRI`,
+    `ex:Bob`,
+  );
+  expect(result?.value).toBe(shui("AutoCompleteEditor").value);
 });

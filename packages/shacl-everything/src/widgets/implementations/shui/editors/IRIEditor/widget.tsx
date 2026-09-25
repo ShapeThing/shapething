@@ -18,7 +18,7 @@ import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import ViewNodeUIElementChildren from "@/outputs/render/modes/view/NodeUIElementChildren.tsx";
 import { valueNodeLabel, valueNodeShapes } from "@/resolution/label.ts";
 import { shapesTargetingNode } from "@/resolution/targets.ts";
-import { NodeUIElement } from "@/structure/NodeUIElement.ts";
+import { useNestedNode } from "@/outputs/render/hooks/useNestedNode.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import { iriTypesFor } from "./iriType.ts";
 import { useDropdownEscapeModal } from "@/outputs/render/hooks/useDropdownEscapeModal.ts";
@@ -176,17 +176,11 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
 
   const canViewInPlace = Boolean(enableViewInPlace) && resourceShapes.length > 0;
   const [viewing, setViewing] = useState(false);
-  const viewNodeUiElement = useMemo(() => {
-    if (!viewing || !canViewInPlace || term.termType !== "NamedNode") return undefined;
-    return new NodeUIElement({
-      shapesGraph: shape.shapesGraph,
-      dataGraph: shape.dataGraph,
-      scoresGraph: shape.scoresGraph,
-      widgetRegistry: shape.widgetRegistry,
-      focusNode: term,
-      nodeShapes: resourceShapes,
-    });
-  }, [viewing, canViewInPlace, shape, term, resourceShapes]);
+  const viewNodeUiElement = useNestedNode(
+    shape,
+    viewing && canViewInPlace && term.termType === "NamedNode" ? term : undefined,
+    { nodeShapes: resourceShapes },
+  );
 
   return (
     <div className="st-iri-editor">

@@ -16,7 +16,7 @@ import {
   countFacetInstancesMatchingPattern,
   countFacetInstancesWithValueIn,
   countFacetInstancesWithinArea,
-} from "@/structure/facetValues.ts";
+} from "@/facets/facetValues.ts";
 import {
   findFilterConstraintNode,
   instancesMatchingOtherConstraints,
@@ -24,10 +24,11 @@ import {
   setFilterConstraintForProperty,
   setFilterConstraintsForProperty,
   type FilterShape,
-} from "@/structure/filterShape.ts";
+} from "@/facets/filterShape.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
 import type { FacetWidgetComponent } from "@/widgets/types.ts";
+import WidgetErrorBoundary from "@/outputs/render/components/WidgetErrorBoundary/index.tsx";
 
 type Props = {
   property: PropertyUIElement;
@@ -251,15 +252,19 @@ export default function FacetPropertyComponent({ property, filterShape, instance
       labelId={labelId}
       tooltip={description}
     >
-      <Widget
-        shape={property}
-        values={values}
-        getConstraint={getConstraint}
-        setConstraint={setConstraint}
-        setConstraints={setConstraints}
-        valueCounts={valueCounts}
-        labelledBy={labelId}
-      />
+      {/* Same per-widget isolation as edit/view mode's WidgetSlot - a crashing facet widget
+          replaces only itself, not the whole facet form. */}
+      <WidgetErrorBoundary resetKeys={[widget.iri.value]} widget={widget.iri.value}>
+        <Widget
+          shape={property}
+          values={values}
+          getConstraint={getConstraint}
+          setConstraint={setConstraint}
+          setConstraints={setConstraints}
+          valueCounts={valueCounts}
+          labelledBy={labelId}
+        />
+      </WidgetErrorBoundary>
     </FormElement>
   );
 }

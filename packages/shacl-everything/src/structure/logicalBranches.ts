@@ -1,8 +1,12 @@
 import type { NamedNode, Term } from "@rdfjs/types";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import { sh } from "@/helpers/namespaces.ts";
-import { validate } from "@/scoring/score.ts";
+import { termKey } from "@/helpers/termKey.ts";
+import { validate } from "@/validation/validate.ts";
+import { createIdentityMemo } from "@/structure/memo.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+
+const withBranchMemo = createIdentityMemo<PropertyUIElement>();
 
 export type LogicalConnective = "or" | "xone";
 
@@ -35,17 +39,21 @@ export function logicalBranches(element: PropertyUIElement): LogicalBranch[] {
  * alongside the property shape(s) it's grouped from - reusing PropertyUIElement.get()/widget()/
  * getDefaultObject()'s existing support for merging constraints across multiple grouped shapes.
  * Safe because path resolution only ever reads propertyShapes[0], which stays untouched here.
+ * Memoized per (element instance, branch) - WidgetSlot calls this on every render, and a stable
+ * view keeps its merged scoring shape (and every widget query keyed on it) stable too.
  */
 export function withBranch(element: PropertyUIElement, branch: Term): PropertyUIElement {
-  return new PropertyUIElement({
-    shapesGraph: element.shapesGraph,
-    dataGraph: element.dataGraph,
-    scoresGraph: element.scoresGraph,
-    widgetRegistry: element.widgetRegistry,
-    focusNode: element.focusNode,
-    propertyShapes: [...element.propertyShapes, branch as NamedNode],
-    ancestorPath: element.ancestorPath,
-  });
+  return withBranchMemo([element], termKey(branch), () =>
+    new PropertyUIElement({
+      shapesGraph: element.shapesGraph,
+      dataGraph: element.dataGraph,
+      scoresGraph: element.scoresGraph,
+      widgetRegistry: element.widgetRegistry,
+      focusNode: element.focusNode,
+      propertyShapes: [...element.propertyShapes, branch as NamedNode],
+      ancestorPath: element.ancestorPath,
+    })
+  );
 }
 
 /**

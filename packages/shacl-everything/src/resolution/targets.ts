@@ -4,9 +4,10 @@ import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { rdf, rdfs, sh } from "@/helpers/namespaces.ts";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import { termKey } from "@/helpers/termKey.ts";
-import { validate } from "@/scoring/score.ts";
-import { childrenForShape } from "@/structure/childrenForShape.ts";
-import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import { validate } from "@/validation/validate.ts";
+import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
+import { groupShapesByPath, walkShapeComposition } from "@/structure/shapeComposition.ts";
 
 /**
  * Every class reachable from `classIri` by walking rdfs:subClassOf downward (i.e. every subclass,
@@ -241,7 +242,7 @@ export function shapesTargetingNode(
  * shapesTargetingNode above deliberately excludes: every shape `s` in `shapesGraph` that declares
  * `sh:targetWhere w` where `focusNode` conforms to `w` (the where-target's value is itself a
  * shape - spec: "the set of nodes ... that conform to w" - not a SPARQL pattern despite the
- * predicate's name). Conformance is checked via validate() (scoring/score.ts), the same
+ * predicate's name). Conformance is checked via validate() (validation/validate.ts), the same
  * shacl-engine-backed helper structure/choiceBranches.ts's detectActiveChoiceBranch uses to test a
  * focus node against a candidate branch shape - this is that same one-node check, just against
  * every sh:targetWhere value in the shapes graph instead of one sh:or/sh:xone's branch list.
@@ -369,27 +370,28 @@ export async function orphanedTargetWhereObjects(
   );
   if (inactiveFragmentShapes.length === 0) return [];
 
+  // Works on shapeComposition.ts's shapes-only walk/grouping (the same rules childrenForShape
+  // applies) rather than on PropertyUIElements, so this module doesn't import the structure
+  // element classes - which import resolution/label.ts, which imports this module.
   const activePaths = new Set(
-    childrenForShape(shapesGraph, dataGraph, effectiveNodeShapes, focusNode)
-      .filter((element) => element.kind === "property")
-      .map((element) => element.pathAsSparql())
-      .filter((path) => path !== undefined),
+    groupShapesByPath(shapesGraph, walkShapeComposition(shapesGraph, effectiveNodeShapes).propertyShapes)
+      .keys(),
   );
 
   const orphaned: OrphanedTargetWhereEntry[] = [];
   for (const fragmentShape of inactiveFragmentShapes) {
-    const elements = childrenForShape(shapesGraph, dataGraph, fragmentShape, focusNode);
-    for (const element of elements) {
-      if (element.kind !== "property") continue;
-      const sparqlPath = element.pathAsSparql();
-      if (sparqlPath === undefined || activePaths.has(sparqlPath)) continue;
+    const { propertyShapes } = walkShapeComposition(shapesGraph, [fragmentShape]);
+    for (const [sparqlPath, { path, shapes }] of groupShapesByPath(shapesGraph, propertyShapes)) {
+      if (activePaths.has(sparqlPath) || !isRemovablePath(path)) continue;
 
-      const path = parsePropertyPath(element.propertyShapes[0], shapesGraph);
-      if (!path || !isRemovablePath(path)) continue;
-
-      const isMemberShapeList = element.get(sh("memberShape")).length > 0;
-      for (const value of element.getObjects()) {
-        if (readOnlyGraph && element.isReadOnly(value, readOnlyGraph)) continue;
+      const isMemberShapeList = shapes.some(
+        (shape) => shapesGraph.getQuads(shape, sh("memberShape")).length > 0,
+      );
+      for (const value of walkPropertyPath(path, focusNode, dataGraph)) {
+        if (
+          readOnlyGraph &&
+          walkPropertyPath(path, focusNode, readOnlyGraph).some((term) => term.equals(value))
+        ) continue;
         orphaned.push(
           isMemberShapeList ? { kind: "memberShapeList", path, head: value } : { kind: "value", path, value },
         );

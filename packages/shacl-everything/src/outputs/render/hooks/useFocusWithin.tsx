@@ -1,5 +1,5 @@
 import type { RefObject } from "react";
-import useActiveElement from "@/outputs/render/hooks/useActiveElement.tsx";
+import { useActiveElementSelector } from "@/outputs/render/hooks/useActiveElement.tsx";
 
 /**
  * Whether the currently focused element is `ref` itself or any descendant of it - including one
@@ -10,7 +10,8 @@ import useActiveElement from "@/outputs/render/hooks/useActiveElement.tsx";
  * mounted - and Tab-reachable - for as long as focus is anywhere within its own subtree.
  */
 export function useFocusWithin(ref: RefObject<Element | null>): boolean {
-  const activeElement = useActiveElement();
-  if (!ref.current || !activeElement) return false;
-  return ref.current === activeElement || ref.current.contains(activeElement);
+  return useActiveElementSelector((activeElement) => {
+    if (!ref.current || !activeElement) return false;
+    return ref.current === activeElement || ref.current.contains(activeElement);
+  });
 }

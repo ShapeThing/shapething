@@ -2,7 +2,7 @@ import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.
 import { useDefaultObject } from "@/outputs/render/hooks/useDefaultObject.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
-import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
+import { useSlotResolution } from "@/outputs/render/hooks/useSlotResolution.tsx";
 import PropertyUIComponentAdd from "@/outputs/render/modes/edit/PropertyUIComponentAdd.tsx";
 import PropertyUIComponentObject from "@/outputs/render/modes/edit/PropertyUIComponentObject.tsx";
 import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
@@ -130,13 +130,14 @@ export default function PropertyUIComponentValues({
   // getDefaultObject() resolves the widget via score() (async, runs SHACL validation), so it's
   // fetched through a hook rather than called inline here.
   const defaultObject = useDefaultObject(propertyUIElement, true, existingObjects);
-  // Warms useWidget()'s cache for this exact (property, defaultObject) pair ahead of time, so that
-  // when "Add" is clicked and PropertyUIComponentObject mounts with this same object, its own
-  // useWidget() call - same query key - hits cache instead of suspending behind the per-item
-  // Suspense below (which would otherwise flash a loading indicator on every single Add click).
-  // Also the only place this level has to check singleUnifiedWidget - PropertyUIComponentObject's
-  // own useWidget() call resolves the same meta again per object, once one actually renders.
-  const { meta } = useWidget(shui("editor"), propertyUIElement, defaultObject) ?? {};
+  // Warms useSlotResolution()'s cache for this exact (property, defaultObject) pair ahead of time,
+  // so that when "Add" is clicked and PropertyUIComponentObject/WidgetSlot mount with this same
+  // object, their own useSlotResolution() calls - same query key - hit cache instead of rendering
+  // nothing until it resolves. Also the only place this level has to check singleUnifiedWidget -
+  // PropertyUIComponentObject's own call resolves the same meta again per object, once one renders.
+  const { meta } = useSlotResolution(propertyUIElement, defaultObject, {
+    widgetPredicate: shui("editor"),
+  });
   const isSingleUnifiedWidget = meta?.singleUnifiedWidget?.(propertyUIElement) === true;
   // existingObjects is a live-cached array (see useDataGraphObjects/useReactiveRead) - mutating it
   // in place here would silently grow that same cached array by one on every re-render this branch

@@ -7,13 +7,15 @@ import {
   countFacetInstancesInRange,
   countFacetInstancesMatchingPattern,
   countFacetInstancesWithinArea,
-} from "@/structure/facetValues.ts";
+} from "@/facets/facetValues.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
 
 async function propertyFor(pathTurtle: string, dataTurtle: string) {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${pathTurtle}`, "text/turtle");
   const dataGraph = await parseRdf(`${queryPrefixes}\n\n${dataTurtle}`, "text/turtle");
   return new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
     shapesGraph,
     dataGraph,
     focusNode: ex("unused"),
