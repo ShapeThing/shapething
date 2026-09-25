@@ -1,0 +1,81 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix schema: <https://schema.org/>.
+@prefix ex: <http://example.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Pizza ;
+    sh:closed true ;
+    sh:ignoredProperties (rdf:type) ;
+    sh:property [
+        sh:path schema:name ;
+        sh:name "Name"@en, "Naam"@nl ;
+    ] ;
+    sh:property ex:Pizza-topping ;
+    sh:property ex:Pizza-crust ;
+    .
+
+# Every ex:Topping instance has a schema:image (shui:DepictionRole, see ex:ToppingShape below) -
+# RadiosCheckboxesEditor swaps its plain checkboxes for clickable images of each topping (see
+# widget.tsx's hasDepictionRole). No sh:maxCount, so more than one topping can be picked -
+# multi-valued renders as image checkboxes rather than image radios.
+#
+# st:RadiosCheckboxesEditor is declared explicitly (see score.ttl): unlike EnumSelectEditor/
+# InstancesSelectEditor, a plain sh:class constraint alone never auto-selects this widget.
+ex:Pizza-topping
+    a sh:PropertyShape ;
+    sh:path ex:topping ;
+    sh:name "Toppings"@en, "Beleg"@nl ;
+    sh:class ex:Topping ;
+    sh:nodeKind sh:IRI ;
+    shui:editor st:RadiosCheckboxesEditor ;
+    .
+
+# ex:Crust has no DepictionRole of its own - RadiosCheckboxesEditor falls back to plain radios
+# here. sh:maxCount 1 (single choice) renders as radios rather than checkboxes.
+ex:Pizza-crust
+    a sh:PropertyShape ;
+    sh:path ex:crust ;
+    sh:name "Crust"@en, "Bodem"@nl ;
+    sh:class ex:Crust ;
+    sh:nodeKind sh:IRI ;
+    sh:maxCount 1 ;
+    shui:editor st:RadiosCheckboxesEditor ;
+    .
+
+ex:ToppingShape a sh:NodeShape ;
+    sh:targetClass ex:Topping ;
+    sh:property [
+        sh:path schema:name ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:image ;
+        shui:propertyRole shui:DepictionRole ;
+    ] ;
+    .
+
+ex:CrustShape a sh:NodeShape ;
+    sh:targetClass ex:Crust ;
+    sh:property [
+        sh:path schema:name ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    .
+
+ex:pepperoni a ex:Topping ; schema:name "Pepperoni"@en, "Pepperoni"@nl ; schema:image <./pepperoni.svg> .
+ex:mushroom a ex:Topping ; schema:name "Mushroom"@en, "Champignons"@nl ; schema:image <./mushroom.svg> .
+ex:olives a ex:Topping ; schema:name "Olives"@en, "Olijven"@nl ; schema:image <./olives.svg> .
+ex:basil a ex:Topping ; schema:name "Basil"@en, "Basilicum"@nl ; schema:image <./basil.svg> .
+
+ex:thinCrust a ex:Crust ; schema:name "Thin"@en, "Dun"@nl .
+ex:thickCrust a ex:Crust ; schema:name "Thick"@en, "Dik"@nl .
+
+<#data> a ex:Pizza ;
+    schema:name "Margherita"@en, "Margherita"@nl ;
+    ex:topping ex:mushroom, ex:basil ;
+    ex:crust ex:thinCrust ;
+    .
