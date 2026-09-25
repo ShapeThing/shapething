@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { NamedNode } from "@rdfjs/types";
 import { localName } from "@/helpers/localName.ts";
 import { noRefetch } from "@/helpers/noRefetch.ts";
-import { prefixedIri } from "@/helpers/prefixedIri.ts";
+import { prefixedIri } from "@/helpers/prefixedIri.tsx";
 import {
   isLovSearchable,
   type LovTerm,
@@ -67,7 +67,9 @@ export function useLovSuggestions(
   // Only a query naming a vocabulary prefix can be answered at all (see lovTermSearch.ts) - an
   // unprefixed one is left disabled here rather than fired and answered empty, so the dropdown
   // never flashes the LOV half's loading row for it.
-  const lovQuery = debounced !== undefined && isLovSearchable(debounced) ? debounced : undefined;
+  const lovQuery = debounced !== undefined && isLovSearchable(debounced)
+    ? debounced
+    : undefined;
 
   // A LOV network failure degrades to "no LOV results" rather than being surfaced anywhere, so
   // React Query's own error state is deliberately left unread - `retry: false` avoids silently

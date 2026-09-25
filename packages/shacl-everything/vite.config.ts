@@ -13,6 +13,7 @@ const dirname = typeof __dirname !== "undefined"
 import Icons from "unplugin-icons/vite";
 import react from "@vitejs/plugin-react";
 import { corsProxy } from "./.storybook/corsProxy.ts";
+import { sparqlCopyPage } from "./.storybook/sparqlCopyPage.ts";
 
 // Vite's dev server understands the `?raw` suffix (import a file's contents as a string)
 // natively, but `vp pack`'s tsdown/rolldown bundler doesn't - it has no equivalent to Vite's
@@ -98,7 +99,7 @@ function workerUrlFallback() {
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
-  plugins: [react(), Icons({ compiler: "jsx", jsx: "react" }), corsProxy()],
+  plugins: [react(), Icons({ compiler: "jsx", jsx: "react" }), corsProxy(), sparqlCopyPage()],
   resolve: {
     alias: {
       "@": path.join(dirname, "src"),

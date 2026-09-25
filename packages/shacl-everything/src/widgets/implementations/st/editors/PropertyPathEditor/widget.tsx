@@ -1,340 +1,174 @@
-import type { NamedNode } from "@rdfjs/types";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
-import {
-  isUnsetPathNode,
-  parsePathNode,
-  type PropertyPath,
-} from "@/structure/paths/parsePropertyPath.ts";
-import { clearPropertyPath, writePropertyPath } from "@/structure/paths/writePropertyPath.ts";
-import { transact } from "@/helpers/reactiveRdfStore.ts";
-import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { useState } from "react";
+import { useMemo } from "react";
+import { parsePathNode, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import { prefixedIri } from "@/helpers/prefixedIri.tsx";
 import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
 import { Localized } from "@fluent/react";
-import { prefixedIri } from "@/helpers/prefixedIri.ts";
-import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
-import { convertPathType, updateItem, withItemRemoved } from "./mutation-logic.tsx";
-import AddPathButton from "./AddPathButton.tsx";
-import PathItemModal from "./PathItemModal.tsx";
-import { Plus } from "@/helpers/icons.tsx";
-import { PATH_TYPE_BADGE } from "./pathTypeVisuals.ts";
-
-type UnaryWrapperType = "inverse" | "zeroOrMore" | "oneOrMore" | "zeroOrOne";
-
-// InversePath/ZeroOrMorePath/OneOrMorePath/ZeroOrOnePath (see UnaryWrapperPath below) are
-// otherwise identical - each just wraps a single nested PathNode behind its own icon/tooltip. The
-// badge itself (glyph + color) is plain CSS, keyed by PATH_TYPE_BADGE's class name (shared with
-// PathItemModal's "Path type" select) - this config only holds the wrapper/tooltip classes.
-const UNARY_WRAPPER_CONFIG: Record<
-  UnaryWrapperType,
-  { wrapperClass: string; tooltipClass: string; tooltipId: string }
-> = {
-  inverse: {
-    wrapperClass: "st-inverse-path",
-    tooltipClass: "st-inverse-tooltip",
-    tooltipId: "property-path-editor-inverse-tooltip",
-  },
-  zeroOrMore: {
-    wrapperClass: "st-zero-or-more-path",
-    tooltipClass: "st-zero-or-more-tooltip",
-    tooltipId: "property-path-editor-zero-or-more-tooltip",
-  },
-  oneOrMore: {
-    wrapperClass: "st-one-or-more-path",
-    tooltipClass: "st-one-or-more-tooltip",
-    tooltipId: "property-path-editor-one-or-more-tooltip",
-  },
-  zeroOrOne: {
-    wrapperClass: "st-zero-or-one-path",
-    tooltipClass: "st-zero-or-one-tooltip",
-    tooltipId: "property-path-editor-zero-or-one-tooltip",
-  },
-};
-
-type OnPathChange = (newPath: PropertyPath) => void;
-type PathNodeProps<T extends PropertyPath = PropertyPath> = {
-  path: T;
-  shape: PropertyUIElement;
-  onChange: OnPathChange;
-  // Removes *this exact node* from its nearest containing sequence/alternative - undefined when
-  // there is no such container to remove it from (the root path itself, or a wrapper's own sole
-  // inner path, e.g. zeroOrMore's wrapped content - see SequencePath/AlternativePath, the only two
-  // places that ever produce one). The unary wrappers (Inverse/ZeroOrMore/OneOrMore/ZeroOrOne) just
-  // forward whatever they received unchanged, since they don't add their own removal semantics.
-  onRemove?: () => void;
-};
 
 export default function PropertyPathEditor({ shape, term, setTerm }: WidgetProps) {
-  // Derived fresh from `term`/`dataGraph` on every render, not cached in local state: this
-  // property can hold several sh:path values at once (see the showcase fixture, one row per
-  // path-type), each rendered as its own PropertyPathEditor instance keyed by list index -
-  // removing one row shifts every later index's `term` prop down by one, reusing the same React
-  // instance for a *different* underlying value. A useState seeded only once at mount would keep
-  // showing that instance's old value forever, since its initializer never re-runs on a later
-  // prop change - the removal would then look like it dropped some other row entirely.
-  // `null` for a freshly-minted value with nothing chosen yet (see meta.ts's own createTerm) -
-  // parsePathNode would throw on that BlankNode, since the spec has no "empty path" concept.
-  const path = isUnsetPathNode(term, shape.dataGraph) ? null : parsePathNode(term, shape.dataGraph);
-
-  function handleChange(newPath: PropertyPath) {
-    transact(shape.dataGraph, () => {
-      clearPropertyPath(term, shape.dataGraph);
-      setTerm(writePropertyPath(newPath, shape.dataGraph));
-    });
-  }
-
-  function handleAdd(newItem: PropertyPath) {
-    // Nothing chosen yet: the new item becomes the whole path, not a one-item sequence around it
-    // (mirrors withItemRemoved's own collapse-to-single-item rule elsewhere in this file).
-    if (path === null) {
-      handleChange(newItem);
-      return;
-    }
-
-    const sequence = convertPathType(path, "sequence") as Extract<
-      PropertyPath,
-      { type: "sequence" }
-    >;
-    handleChange({ ...sequence, items: [...sequence.items, newItem] });
-  }
-
+  const path = useMemo(() => parsePathNode(term, shape.shapesGraph), [term]);
   return (
     <div className="st-property-path-editor">
-      {path && <PathNode path={path} shape={shape} onChange={handleChange} />}
-
-      <AddPathButton className="st-add-path" shape={shape} onAdd={handleAdd} />
+      <Path {...path} />
     </div>
   );
 }
 
-function PathNode({ path, shape, onChange, onRemove }: PathNodeProps) {
+function Path(path: PropertyPath) {
   switch (path.type) {
     case "predicate":
-      return <PredicatePath path={path} shape={shape} onChange={onChange} onRemove={onRemove} />;
+      return <PredicatePath {...path} />;
     case "sequence":
-      return <SequencePath path={path} shape={shape} onChange={onChange} />;
+      return <SequencePath {...path} />;
     case "alternative":
-      return <AlternativePath path={path} shape={shape} onChange={onChange} />;
+      return <AlternativePath {...path} />;
     case "inverse":
+      return <InversePath {...path} />;
     case "zeroOrMore":
+      return <ZeroOrMorePath {...path} />;
     case "oneOrMore":
+      return <OneOrMorePath {...path} />;
     case "zeroOrOne":
-      return <UnaryWrapperPath path={path} shape={shape} onChange={onChange} onRemove={onRemove} />;
+      return <ZeroOrOnePath {...path} />;
+    default:
+      return null;
   }
 }
 
-function PredicatePath({
-  path,
-  shape,
-  onChange,
-  onRemove,
-}: PathNodeProps<Extract<PropertyPath, { type: "predicate" }>>) {
-  return (
-    <EditablePathLeaf
-      shape={shape}
-      displayPredicate={path.predicate}
-      initialType="predicate"
-      onChange={onChange}
-      onRemove={onRemove}
-    />
-  );
-}
-
-type EditablePathLeafProps = {
-  shape: PropertyUIElement;
-  // What the modal opens pre-filled with - the predicate/type pair this exact click target
-  // represents. For a bare PredicatePath this is just itself; for a unary wrapper directly
-  // wrapping a bare predicate (see UnaryWrapperPath below), it's the *wrapper's* type - editing
-  // must show the item's real current type, not the inner predicate's own always-"predicate" type.
-  displayPredicate: NamedNode;
-  initialType: PropertyPath["type"];
-  onChange: OnPathChange;
-  onRemove?: () => void;
+const PATH_TYPE_TOOLTIP: Partial<Record<PropertyPath["type"], string>> = {
+  alternative: "property-path-editor-alternative-tooltip",
+  sequence: "property-path-editor-sequence-tooltip",
+  inverse: "property-path-editor-inverse-tooltip",
+  zeroOrMore: "property-path-editor-zero-or-more-tooltip",
+  oneOrMore: "property-path-editor-one-or-more-tooltip",
+  zeroOrOne: "property-path-editor-zero-or-one-tooltip",
 };
 
-// The clickable predicate box + its shared edit modal - used both by a bare predicate path node
-// and by a unary wrapper that directly wraps one (see UnaryWrapperPath). `onChange` always
-// replaces *this entire node* (the wrapper included, when there is one) with whatever Save
-// builds, rather than re-wrapping the result - so picking a different path type in the modal
-// swaps the wrapper instead of nesting a new one inside the existing one.
-function EditablePathLeaf({
-  shape,
-  displayPredicate,
-  initialType,
-  onChange,
-  onRemove,
-}: EditablePathLeafProps) {
-  const { sourcePrefixes } = useEnvironment();
-  const [open, setOpen] = useState(false);
+function PathTypeIcon({ type }: { type: PropertyPath["type"] }) {
+  let icon;
 
+  switch (type) {
+    case "predicate":
+      icon = ".";
+      break;
+    case "sequence":
+      icon = "/";
+      break;
+    case "alternative":
+      icon = "|";
+      break;
+    case "inverse":
+      icon = "^";
+      break;
+    case "zeroOrMore":
+      icon = "*";
+      break;
+    case "oneOrMore":
+      icon = "+";
+      break;
+    case "zeroOrOne":
+      icon = "?";
+      break;
+    default:
+      icon = null;
+  }
+  const tooltipId = PATH_TYPE_TOOLTIP[type];
+  const badge = (
+    <div className={`st-path-type-icon st-path-type-icon-${type}`}>
+      <div className="st-path-type-icon-content">{icon}</div>
+    </div>
+  );
+  if (!tooltipId) return badge;
   return (
-    <>
-      <div
-        className="st-predicate-path"
-        role="button"
-        tabIndex={0}
-        onClick={() => setOpen(true)}
-        onKeyDown={(event) => {
-          if (event.key !== "Enter" && event.key !== " ") return;
-          event.preventDefault();
-          setOpen(true);
-        }}
-      >
-        {prefixedIri(displayPredicate, sourcePrefixes) ?? displayPredicate.value}
-      </div>
-      <PathItemModal
-        open={open}
-        shape={shape}
-        title={<Localized id="property-path-editor-edit-title">Edit path item</Localized>}
-        initialPredicate={displayPredicate}
-        initialType={initialType}
-        onClose={() => setOpen(false)}
-        onSave={(newItem) => {
-          onChange(newItem);
-          setOpen(false);
-        }}
-        onRemove={
-          onRemove &&
-          (() => {
-            onRemove();
-            setOpen(false);
-          })
-        }
-      />
-    </>
+    <Tooltip bare enabled tip={<Localized id={tooltipId} />}>
+      {badge}
+    </Tooltip>
   );
 }
 
-function SequencePath({
-  path,
-  shape,
-  onChange,
-}: PathNodeProps<Extract<PropertyPath, { type: "sequence" }>>) {
-  return (
-    <div className="st-sequence-path">
-      <Tooltip
-        className="st-sequence-tooltip"
-        bare
-        enabled
-        tip={<Localized id="property-path-editor-sequence-tooltip" />}
-      >
-        <span className={`${PATH_TYPE_BADGE.sequence} st-path-type`} />
-      </Tooltip>
+function PredicatePath(path: Extract<PropertyPath, { type: "predicate" }>) {
+  return <div className="st-predicate-path st-path-segment">{prefixedIri(path.predicate)}</div>;
+}
 
-      <div className="st-sequence-path-items">
-        {path.items.map((item, index) => (
-          <PathNode
-            key={index}
-            path={item}
-            shape={shape}
-            onChange={(newItem) =>
-              onChange({ ...path, items: updateItem(path.items, index, newItem) })
-            }
-            onRemove={() => onChange(withItemRemoved(path, index))}
-          />
-        ))}
+function SequencePath(path: Extract<PropertyPath, { type: "sequence" }>) {
+  return (
+    <div className="st-sequence-path st-path-segment">
+      <div className="st-sequence-path-prefix">
+        <PathTypeIcon type="sequence" />
       </div>
+      {path.items.map((item, index) => (
+        <Path key={index} {...item} />
+      ))}
+      <div className="st-sequence-path-suffix"></div>
     </div>
   );
 }
 
-function AlternativePath({
-  path,
-  shape,
-  onChange,
-}: PathNodeProps<Extract<PropertyPath, { type: "alternative" }>>) {
+function AlternativePath(path: Extract<PropertyPath, { type: "alternative" }>) {
   return (
-    <>
-      <div className="st-alternative-path" data-branches={path.items.length}>
-        <div className="st-alternative-path-branches">
-          {path.items.map((item, index) => (
-            <div key={index} className="st-alternative-path-branch">
-              <Tooltip
-                className="st-alternative-tooltip"
-                bare
-                enabled
-                tip={<Localized id="property-path-editor-alternative-tooltip" />}
-              >
-                <span className={`${PATH_TYPE_BADGE.alternative} st-path-type`} />
-              </Tooltip>
-
-              <PathNode
-                path={item}
-                shape={shape}
-                onChange={(newItem) =>
-                  onChange({ ...path, items: updateItem(path.items, index, newItem) })
-                }
-                onRemove={() => onChange(withItemRemoved(path, index))}
-              />
-              <AddPathButton
-                className="st-add-path"
-                shape={shape}
-                onAdd={(newItem) => {
-                  const sequence = convertPathType(item, "sequence") as Extract<
-                    PropertyPath,
-                    { type: "sequence" }
-                  >;
-                  const wrapped = { ...sequence, items: [...sequence.items, newItem] };
-                  onChange({ ...path, items: updateItem(path.items, index, wrapped) });
-                }}
-              />
-            </div>
-          ))}
-        </div>
+    <div className="st-alternative-path st-path-segment">
+      <div className="st-alternative-path-prefix">
+        <PathTypeIcon type="alternative" />
       </div>
-      <AddPathButton
-        shape={shape}
-        className="st-alternative-path-add"
-        onAdd={(newItem) => onChange({ ...path, items: [...path.items, newItem] })}
-      >
-        <Plus /> <Localized id="property-path-editor-alternative-add">alternative</Localized>
-      </AddPathButton>
-    </>
+
+      <div className="st-alternative-path-items">
+        {path.items.map((item, index) => (
+          <div className="st-alternative-path-item" key={index}>
+            <Path {...item} />
+          </div>
+        ))}
+      </div>
+      <div className="st-alternative-path-suffix"></div>
+    </div>
   );
 }
 
-function UnaryWrapperPath({
-  path,
-  shape,
-  onChange,
-  onRemove,
-}: PathNodeProps<Extract<PropertyPath, { type: UnaryWrapperType }>>) {
-  const config = UNARY_WRAPPER_CONFIG[path.type];
-  const badgeClass = PATH_TYPE_BADGE[path.type];
-
+function InversePath(path: Extract<PropertyPath, { type: "inverse" }>) {
   return (
-    <div className={config.wrapperClass}>
-      <Tooltip
-        className={config.tooltipClass}
-        bare
-        enabled
-        tip={<Localized id={config.tooltipId} />}
-      >
-        <span className={`${badgeClass} st-path-type`} />
-      </Tooltip>
-      {path.path.type === "predicate" ? (
-        // Directly wraps a bare predicate - the common case, and the only shape the edit modal's
-        // single type dropdown can actually represent. Editing must show/replace *this* type
-        // (e.g. "Zero or more"), not fall through to the inner predicate's own always-"predicate"
-        // type - otherwise re-opening the form looks like the wrapper was never there, and
-        // picking a new type from it would nest a second wrapper inside this one instead of
-        // replacing it.
-        <EditablePathLeaf
-          shape={shape}
-          displayPredicate={path.path.predicate}
-          initialType={path.type}
-          onChange={onChange}
-          onRemove={onRemove}
-        />
-      ) : (
-        <PathNode
-          path={path.path}
-          shape={shape}
-          onChange={(newInner) => onChange({ ...path, path: newInner })}
-          onRemove={onRemove}
-        />
-      )}
+    <div className="st-inverse-path st-path-segment">
+      <div className="st-inverse-path-prefix">
+        <PathTypeIcon type="inverse" />
+      </div>
+      <Path {...path.path} />
+      <div className="st-inverse-path-suffix"></div>
+    </div>
+  );
+}
+
+function ZeroOrMorePath(path: Extract<PropertyPath, { type: "zeroOrMore" }>) {
+  return (
+    <div className="st-zero-or-more-path st-path-segment">
+      <div className="st-zero-or-more-path-prefix">
+        <PathTypeIcon type="zeroOrMore" />
+      </div>
+
+      <Path {...path.path} />
+      <div className="st-zero-or-more-path-suffix"></div>
+    </div>
+  );
+}
+
+function OneOrMorePath(path: Extract<PropertyPath, { type: "oneOrMore" }>) {
+  return (
+    <div className="st-one-or-more-path st-path-segment">
+      <div className="st-one-or-more-path-prefix">
+        <PathTypeIcon type="oneOrMore" />
+      </div>
+      <Path {...path.path} />
+      <div className="st-one-or-more-path-suffix"></div>
+    </div>
+  );
+}
+
+function ZeroOrOnePath(path: Extract<PropertyPath, { type: "zeroOrOne" }>) {
+  return (
+    <div className="st-zero-or-one-path st-path-segment">
+      <div className="st-zero-or-one-path-prefix">
+        <PathTypeIcon type="zeroOrOne" />
+      </div>
+      <Path {...path.path} />
+      <div className="st-zero-or-one-path-suffix"></div>
     </div>
   );
 }

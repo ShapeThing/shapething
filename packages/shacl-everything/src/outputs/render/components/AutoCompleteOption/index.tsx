@@ -52,7 +52,7 @@ export default function AutoCompleteOption({
           src={
             isDirectRenderable
               ? depiction.value
-              : `//wsrv.nl/?url=${encodeURIComponent(depiction.value)}&w=64&h=64&fit=cover`
+              : `//wsrv.nl/?url=${encodeURIComponent(depiction.value)}&w=64&h=64&fit=cover&default=${encodeURIComponent(depiction.value)}`
           }
           alt=""
         />
@@ -69,11 +69,7 @@ export default function AutoCompleteOption({
       <span className="st-autocomplete-option__content">
         {term.termType === "NamedNode" && (
           <span className="st-autocomplete-option__actions">
-            <ResourceEditButton
-              term={term}
-              label={displayLabel}
-              resourceEditor={resourceEditor}
-            />
+            <ResourceEditButton term={term} label={displayLabel} resourceEditor={resourceEditor} />
             {term.termType === "NamedNode" && enableLinksToResources && (
               <a
                 className="st-autocomplete-option__iri"

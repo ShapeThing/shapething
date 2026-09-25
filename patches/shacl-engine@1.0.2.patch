@@ -8,3 +8,38 @@ index 6c56cb5927e54af4fe662419e565e1c8f4e0fcdd..4fb3f083c12d986e6f2849587d58c6a4
  import { Generator } from '@traqula/generator-sparql-1-2'
  import { Parser } from '@traqula/parser-sparql-1-2'
  import { AstTransformer, AstFactory } from '@traqula/rules-sparql-1-2'
+diff --git a/lib/constraints/core/list.js b/lib/constraints/core/list.js
+index 7e2fed5..ac5330d 100644
+--- a/lib/constraints/core/list.js
++++ b/lib/constraints/core/list.js
+@@ -56,15 +56,17 @@ function validateMaxListLength (maxListLengthFunc) {
+ }
+ 
+ function compileMemberShape (shape, context) {
+-  const memberShapeFunc = context.functionRegistry.compile(shape.ptr.out([ns.sh.memberShape]), context)
++  // sh:memberShape's value is a shape, not a node expression (same as sh:node) - compiling it as
++  // one throws on any blank-node shape, since its sh:* predicates aren't node expression functions
++  const shapes = [...shape.ptr.out([ns.sh.memberShape])].map(ptr => context.getShape(ptr))
+ 
+   return {
+-    node: validateMemberShape(memberShapeFunc),
+-    value: validateMemberShape(memberShapeFunc)
++    node: validateMemberShape(shapes),
++    value: validateMemberShape(shapes)
+   }
+ }
+ 
+-function validateMemberShape (memberShapeFunc) {
++function validateMemberShape (shapes) {
+   return async context => {
+     const items = listItems(context, ns.sh.MemberShapeConstraintComponent)
+ 
+@@ -72,8 +74,6 @@ function validateMemberShape (memberShapeFunc) {
+       return
+     }
+ 
+-    const shapesPtr = await memberShapeFunc(context)
+-    const shapes = shapesPtr.map(shapePtr => context.getShape(shapePtr))
+     const reports = []
+ 
+     for (const shape of shapes) {

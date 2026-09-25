@@ -106,6 +106,7 @@ color-bucket-white = White
 color-bucket-gray = Gray
 color-bucket-black = Black
 blank-node-editor-switch-to-iri = Switch to IRI
+property-path-editor-sequence-tooltip = Sequence path — follows each step in order
 property-path-editor-alternative-tooltip = Alternative path — matches either branch
 property-path-editor-alternative-add = Alternative
 property-path-editor-inverse-tooltip = Inverse path — traverses the predicate in reverse

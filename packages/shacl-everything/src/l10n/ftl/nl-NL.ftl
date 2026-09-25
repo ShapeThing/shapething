@@ -104,6 +104,7 @@ color-bucket-white = Wit
 color-bucket-gray = Grijs
 color-bucket-black = Zwart
 duration-viewer-milliseconds = Milliseconden
+property-path-editor-sequence-tooltip = Reekspad — volgt elke stap op volgorde
 property-path-editor-alternative-tooltip = Alternatief pad — komt overeen met een van beide takken
 property-path-editor-alternative-add = Alternatief
 property-path-editor-inverse-tooltip = Omgekeerd pad — doorloopt het predicaat in omgekeerde richting

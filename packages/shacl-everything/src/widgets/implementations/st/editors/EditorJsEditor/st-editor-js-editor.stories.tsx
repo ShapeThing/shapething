@@ -46,7 +46,7 @@ export const stEditorJsEditor: Story = {
     const submitButton = await canvas.findByRole("button", { name: "Update" });
     await waitFor(
       async () => {
-        submitResult = undefined;
+        submitResult = undefined as SubmitResult | undefined;
         await userEvent.click(submitButton);
         if (!submitResult) throw new Error("onSubmit has not fired yet");
         const texts = submitResult.dataGraph
@@ -106,7 +106,7 @@ export const stEditorJsEditorEmpty: Story = {
     const submitButton = await canvas.findByRole("button", { name: "Update" });
     await waitFor(
       async () => {
-        submitResult = undefined;
+        submitResult = undefined as SubmitResult | undefined;
         await userEvent.click(submitButton);
         if (!submitResult) throw new Error("onSubmit has not fired yet");
         const [link] = submitResult.dataGraph.getQuads(focusNode, schema("articleBody"));

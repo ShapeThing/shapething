@@ -1,8 +1,8 @@
 import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
-import { prefixedIri } from "@/helpers/prefixedIri.ts";
+import { prefixedIri } from "@/helpers/prefixedIri.tsx";
 
 export type ToSparqlOptions = {
-  // Renders each predicate as `prefix:localName` (helpers/prefixedIri.ts) where a known prefix
+  // Renders each predicate as `prefix:localName` (helpers/prefixedIri.tsx) where a known prefix
   // matches, falling back to the full `<iri>` form otherwise - for human-facing display (e.g. a
   // title tooltip) where a shorter, readable path reads better than one that's copy-pasteable as
   // a canonical query fragment. Off by default: callers that use the result as a stable identity

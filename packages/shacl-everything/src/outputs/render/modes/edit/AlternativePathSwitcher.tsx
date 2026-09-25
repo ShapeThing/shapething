@@ -6,7 +6,7 @@ import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { propertyLabel } from "@/resolution/label.ts";
-import { prefixedIri } from "@/helpers/prefixedIri.ts";
+import { prefixedIri } from "@/helpers/prefixedIri.tsx";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 
 type Props = {
@@ -41,7 +41,11 @@ export default function AlternativePathSwitcher({
 
   const label = (branchIri: string) => {
     const branch = branches.find((b) => b.value === branchIri) ?? branches[0];
-    const text = propertyLabel({ term: branch, propertyShape: shape, languages: [activeInterfaceLanguage] });
+    const text = propertyLabel({
+      term: branch,
+      propertyShape: shape,
+      languages: [activeInterfaceLanguage],
+    });
     const prefixed = prefixedIri(branch, sourcePrefixes);
     return prefixed ? `${text} (${prefixed})` : text;
   };

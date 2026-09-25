@@ -5,7 +5,7 @@ import { factory } from "@/helpers/factory.ts";
 import { Link, Loading } from "@/helpers/icons.tsx";
 import { sh } from "@/helpers/namespaces.ts";
 import { knownIris } from "@/helpers/knownIris.ts";
-import { prefixedIri } from "@/helpers/prefixedIri.ts";
+import { prefixedIri } from "@/helpers/prefixedIri.tsx";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
 import ResourceEditButton, {
   type ResourceEditor,
@@ -265,9 +265,7 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
                                 Already in use
                               </Localized>
                             ) : (
-                              <Localized id="iri-editor-suggestion-from-lov">
-                                Suggestions
-                              </Localized>
+                              <Localized id="iri-editor-suggestion-from-lov">Suggestions</Localized>
                             )}
                           </div>
                         )}
@@ -289,9 +287,7 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
                             {suggestion.kind === "lov" && (
                               <span className="st-iri-editor-option__type">
                                 {suggestion.term.type === "class" ? (
-                                  <Localized id="iri-editor-suggestion-type-class">
-                                    class
-                                  </Localized>
+                                  <Localized id="iri-editor-suggestion-type-class">class</Localized>
                                 ) : (
                                   <Localized id="iri-editor-suggestion-type-property">
                                     property

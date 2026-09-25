@@ -60,7 +60,7 @@ export type Environment = {
   // preprocess/resolveRdfSources.ts) - keyed by alias, most-recently-parsed source wins on a
   // clashing alias. This is the one thing resolveRdfSources must capture *during* parsing rather
   // than derive afterwards the way contentLanguages/interfaceLanguages do: a parsed RdfStore holds
-  // only quads, not the prefix declarations that produced them. helpers/prefixedIri.ts merges this
+  // only quads, not the prefix declarations that produced them. helpers/prefixedIri.tsx merges this
   // in over its own hardcoded vocabulary list (preferring a document's own alias for a namespace it
   // already knows) so IRIEditor and friends echo back the same prefix the source document itself
   // used, not an unrelated guess. Empty when every source was an already-materialized RdfStore/Quad

@@ -133,7 +133,18 @@ export function parseKeyedCounts(bindings: Bindings[]): Map<string, number> {
 export type FacetQueryRunner = (query: string) => Promise<Bindings[]>;
 
 export function facetQueryRunner(source: QuerySource, options: QueryOptions = {}): FacetQueryRunner {
-  return (query) => selectBindings(query, source, options);
+  return (query) => {
+    logFacetQuery(query);
+    return selectBindings(query, source, options);
+  };
+}
+
+// Dev server only (.storybook/sparqlCopyPage.ts): logs a console link that copies `query` to the
+// clipboard. import.meta.env is optional-chained since a non-Vite consumer of dist has none.
+function logFacetQuery(query: string): void {
+  const page = import.meta.env?.SPARQL_COPY_PAGE;
+  if (!page) return;
+  console.info(`Facet query, click to copy: ${new URL(page, location.origin)}#${encodeURIComponent(query)}`);
 }
 
 function countOf(term: Term | undefined): number {
@@ -199,10 +210,8 @@ export async function instancesMatchingFilterShape(
     classGraphs: source.kind === "local" ? [shapesGraph, source.store] : [shapesGraph],
   });
   if (filter === "") return candidates;
-  const matching = new Set(
-    parseInstances(
-      await selectBindings(matchingInstancesQuery({ targets: "", filter }, candidates), source, queryOptions),
-    ).map(termKey),
-  );
+  const query = matchingInstancesQuery({ targets: "", filter }, candidates);
+  logFacetQuery(query);
+  const matching = new Set(parseInstances(await selectBindings(query, source, queryOptions)).map(termKey));
   return candidates.filter((candidate) => matching.has(termKey(candidate)));
 }

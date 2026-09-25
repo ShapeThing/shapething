@@ -1,5 +1,6 @@
 import type { NamedNode } from "@rdfjs/types";
 import { prefixes } from "@/helpers/namespaces.ts";
+import type { ReactNode } from "react";
 
 /**
  * The `prefix:localName` form of `term`, preferring a document's own alias for a namespace (
@@ -18,10 +19,14 @@ import { prefixes } from "@/helpers/namespaces.ts";
 export function prefixedIri(
   term: NamedNode,
   sourcePrefixes?: Record<string, string>,
-): string | undefined {
+): ReactNode | undefined {
   const aliasByBase = new Map<string, string>();
-  for (const [alias, base] of Object.entries(prefixes)) aliasByBase.set(base, alias);
-  for (const [alias, base] of Object.entries(sourcePrefixes ?? {})) aliasByBase.set(base, alias);
+  for (const [alias, base] of Object.entries(prefixes)) {
+    aliasByBase.set(base, alias);
+  }
+  for (const [alias, base] of Object.entries(sourcePrefixes ?? {})) {
+    aliasByBase.set(base, alias);
+  }
 
   // Longest namespace base first, so a term matching more than one known prefix's base resolves
   // to its most specific prefix rather than whichever shorter one happens to iterate first.
@@ -31,5 +36,10 @@ export function prefixedIri(
 
   const [base, alias] = match;
   const localName = term.value.slice(base.length);
-  return localName ? `${alias}:${localName}` : undefined;
+  return localName ? (
+    <span className="st-prefixed-iri">
+      <span className="st-prefixed-iri__prefix">{alias}</span>
+      <span className="st-prefixed-iri__local">{localName}</span>
+    </span>
+  ) : undefined;
 }

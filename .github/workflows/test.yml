@@ -33,11 +33,23 @@ jobs:
 
       # turbo.json's test task depends on ^build, so workspace dependencies (resource-fetcher's
       # dist for shacl-everything's Storybook fixtures, shacl-everything's dist for shacl-manager)
-      # are built first. --concurrency=1 keeps the two browser-mode suites from running headless
-      # Chromium side by side: together they exhausted the runner's memory and the page crashed
-      # mid-run ("Browser connection was closed while running tests").
+      # are built first. --concurrency=1 keeps packages' test runs from competing for the runner.
       - name: Run tests
-        run: pnpm exec turbo run test --concurrency=1
+        run: pnpm exec turbo run test --concurrency=1 --filter='!@shapething/shacl-everything'
+        env:
+          CI: true
+
+      # shacl-everything's Storybook suite runs in shards, each in a fresh browser. Past ~50 heavy
+      # story files in one page, that page stops processing network responses (requests complete
+      # in the network service but never resolve in the page) and the run hangs until Vitest
+      # reports "Browser connection was closed while running tests". Sharding keeps each page
+      # well under that.
+      - name: Run shacl-everything tests
+        run: |
+          pnpm exec turbo run build --filter='@shapething/shacl-everything^...'
+          for shard in 1 2 3 4; do
+            pnpm --filter @shapething/shacl-everything exec vp test --shard=$shard/4
+          done
         env:
           CI: true
           # Playwright's browser-process log: when headless Chromium dies mid-run ("Browser

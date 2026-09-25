@@ -65,7 +65,7 @@ export const disabled: Story = {
     const input = await findWidgetInput(canvasElement);
     input.focus();
     await waitFor(() =>
-      expect(canvasElement.querySelector(".st-property-object__fly-out")).not.toBeNull()
+      expect(canvasElement.querySelector(".st-property-object__fly-out")).not.toBeNull(),
     );
     expect(canvasElement.querySelector(".st-alternative-path-switcher")).toBeNull();
   },
@@ -78,7 +78,7 @@ export const enabled: Story = {
     const input = await findWidgetInput(canvasElement);
     input.focus();
     await waitFor(() =>
-      expect(canvasElement.querySelector(".st-alternative-path-switcher")).not.toBeNull()
+      expect(canvasElement.querySelector(".st-alternative-path-switcher")).not.toBeNull(),
     );
   },
 };
@@ -106,7 +106,7 @@ export const pickingTheOtherBranchMovesTheValue: Story = {
       return el;
     });
     expect(trigger.dataset.value).toBe(dc("title").value);
-    // The prefixed IRI shows after the label, e.g. "title (dc:title)" - see helpers/prefixedIri.ts.
+    // The prefixed IRI shows after the label, e.g. "title (dc:title)" - see helpers/prefixedIri.tsx.
     expect(trigger.textContent).toContain("(dc:title)");
 
     await userEvent.click(trigger);

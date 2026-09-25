@@ -55,3 +55,16 @@
 * {
   box-sizing: border-box;
 }
+
+.st-prefixed-iri__prefix {
+  color: var(--gray-7);
+  font-style: italic;
+}
+
+.st-prefixed-iri {
+  font-family: var(--st-font-family);
+  font-size: var(--st-font-size-small);
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--size-1);
+}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import type { StoryObj } from "@storybook/react-vite";
 import type { NamedNode, Quad_Subject } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
@@ -19,6 +19,9 @@ const facetArgs = argsByTestFile("webshop.ttl", import.meta.url);
 // facet-only "Search" sh:alternativePath property - a cleaner per-item view for the result cards
 // below than reusing the facet shape would give.
 const viewShapeNode = factory.namedNode(new URL("webshop.ttl#viewShape", import.meta.url).href);
+// Hoisted so ProductCard's memo below sees referentially stable props across filter changes.
+const viewNodeShapes = [viewShapeNode];
+const interfaceLocales = { "nl-NL": null };
 
 // helpers/rdf.ts's own parseRdf has no baseIRI parameter (every existing caller is a unit test
 // using only absolute IRIs), so it can't be reused here: <#shape>/<#viewShape>/<#data>/... are
@@ -53,9 +56,7 @@ async function findMatchingProducts(
   productsStore: RdfStore,
   filterShapeStore: RdfStore | undefined,
 ): Promise<NamedNode[]> {
-  const productNodes = productsStore
-    .getQuads(null, rdf("type"), schema("Product"))
-    .map((quad) => quad.subject as NamedNode);
+  const productNodes = catalogProducts(productsStore);
 
   const rootNode = filterShapeStore?.getQuads(null, rdf("type"), sh("NodeShape"))[0]?.subject as
     | Quad_Subject
@@ -69,10 +70,56 @@ async function findMatchingProducts(
   })) as NamedNode[];
 }
 
+function catalogProducts(productsStore: RdfStore): NamedNode[] {
+  return productsStore
+    .getQuads(null, rdf("type"), schema("Product"))
+    .map((quad) => quad.subject as NamedNode);
+}
+
+/**
+ * Every product card stays mounted for the story's lifetime and is only toggled via `hidden` when
+ * it drops out of / comes back into the filter result, so a product being shown again reuses its
+ * already-rendered ShaclRenderer instead of remounting it (and redoing its shape resolution). memo
+ * keeps the unchanged cards from re-rendering at all when the result set changes.
+ */
+const ProductCard = memo(function ProductCard({
+  productsStore,
+  focusNode,
+  hidden,
+}: {
+  productsStore: RdfStore;
+  focusNode: NamedNode;
+  hidden: boolean;
+}) {
+  return (
+    <div className="webshop-showcase__card" hidden={hidden}>
+      <ShaclRenderer
+        {...testingEnvironment}
+        shapesGraph={productsStore}
+        dataGraph={productsStore}
+        nodeShapes={viewNodeShapes}
+        focusNode={focusNode}
+        mode="view"
+        viewModeLabelLayout="inline"
+        interfaceLanguage="en-GB"
+        interfaceLocales={interfaceLocales}
+      />
+    </div>
+  );
+});
+
 function WebshopShowcase() {
   const [productsStore, setProductsStore] = useState<RdfStore>();
   const [filterShapeStore, setFilterShapeStore] = useState<RdfStore>();
   const [matchingProducts, setMatchingProducts] = useState<NamedNode[]>();
+  const allProducts = useMemo(
+    () => (productsStore ? catalogProducts(productsStore) : []),
+    [productsStore],
+  );
+  const matchingValues = useMemo(
+    () => new Set(matchingProducts?.map((product) => product.value)),
+    [matchingProducts],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -103,7 +150,7 @@ function WebshopShowcase() {
           {...facetArgs}
           mode="facet"
           interfaceLanguage="en-GB"
-          interfaceLocales={{ "nl-NL": null }}
+          interfaceLocales={interfaceLocales}
           onSubmit={(result: SubmitResult) => setFilterShapeStore(result.dataGraph)}
         />
       </div>
@@ -113,20 +160,14 @@ function WebshopShowcase() {
         </h2>
         <div className="webshop-showcase__grid">
           {productsStore &&
-            matchingProducts?.map((focusNode) => (
-              <div className="webshop-showcase__card" key={focusNode.value}>
-                <ShaclRenderer
-                  {...testingEnvironment}
-                  shapesGraph={productsStore}
-                  dataGraph={productsStore}
-                  nodeShapes={[viewShapeNode]}
-                  focusNode={focusNode}
-                  mode="view"
-                  viewModeLabelLayout="inline"
-                  interfaceLanguage="en-GB"
-                  interfaceLocales={{ "nl-NL": null }}
-                />
-              </div>
+            matchingProducts &&
+            allProducts.map((focusNode) => (
+              <ProductCard
+                key={focusNode.value}
+                productsStore={productsStore}
+                focusNode={focusNode}
+                hidden={!matchingValues.has(focusNode.value)}
+              />
             ))}
         </div>
       </div>

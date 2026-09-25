@@ -1,294 +1,118 @@
 .st-property-path-editor {
-  display: flex;
-  gap: var(--size-2);
-  align-items: center;
-  border-radius: var(--radius-2);
-  border: 1px dotted var(--gray-7);
-  padding: var(--size-2);
-  margin-block-end: var(--size-3);
-  width: 100%;
-  overflow-x: auto;
+  --predicate-path-background-color: var(--gray-1);
+  --sequence-path-background-color: var(--purple-2);
+  --alternative-path-background-color: var(--yellow-2);
+  --inverse-path-background-color: var(--green-2);
+  --zero-or-more-path-background-color: var(--pink-2);
+  --one-or-more-path-background-color: var(--orange-2);
+  --zero-or-one-path-background-color: var(--brown-2);
+
+  --st-spacer: var(--size-1);
+  --st-radius: var(--radius-2);
+
+  margin-bottom: var(--size-2);
 }
 
 .st-predicate-path {
-  border-radius: var(--radius-2);
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-2);
-  align-items: start;
-  justify-content: center;
-  position: relative;
-  background: var(--gray-2);
-  cursor: pointer;
-  min-height: 33px;
-  padding: var(--size-1) var(--size-3);
-  background: var(--gray-2);
+  border-radius: var(--st-radius);
+  background-color: var(--predicate-path-background-color);
+  padding: var(--size-2);
 }
 
-.st-add-path {
-  background: var(--gray-2);
-  border-radius: 50%;
-  aspect-ratio: 1;
+div[class^="st-"][class*="-prefix"],
+div[class^="st-"][class*="-suffix"] {
+  padding: var(--size-2);
   display: flex;
-  width: var(--size-6);
-  height: var(--size-6);
-  justify-content: center;
   align-items: center;
-  cursor: pointer;
-  border: none;
-
-  &:hover,
-  &:focus {
-    background: var(--gray-4);
-  }
+  background-color: color-mix(in srgb, var(--type-color), white 30%);
 }
 
+div[class^="st-"][class*="-prefix"] {
+  border-top-left-radius: var(--st-radius);
+  border-bottom-left-radius: var(--st-radius);
+}
+div[class^="st-"][class*="-suffix"] {
+  border-top-right-radius: var(--st-radius);
+  border-bottom-right-radius: var(--st-radius);
+  padding-left: var(--size-1);
+}
+
+.st-path-segment {
+  border-radius: var(--st-radius);
+  /* background-color: var(--type-color); */
+  display: flex;
+  margin-inline: var(--st-spacer);
+}
+
+.st-path-segment + .st-path-segment {
+  margin-inline-start: 0;
+}
+
+.st-property-path-editor > .st-path-segment {
+  margin-inline: 0;
+}
+
+.st-predicate-path {
+  --type-color: var(--predicate-path-background-color);
+}
+.st-sequence-path {
+  --type-color: var(--sequence-path-background-color);
+}
 .st-alternative-path {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-2);
-  position: relative;
-  padding-right: var(--size-3);
-  margin-inline-end: var(--size-2);
-  border-right: 1px dashed var(--gray-6);
+  --type-color: var(--alternative-path-background-color);
+}
+.st-inverse-path {
+  --type-color: var(--inverse-path-background-color);
+}
+.st-zero-or-more-path {
+  --type-color: var(--zero-or-more-path-background-color);
+}
+.st-one-or-more-path {
+  --type-color: var(--one-or-more-path-background-color);
+}
+.st-zero-or-one-path {
+  --type-color: var(--zero-or-one-path-background-color);
 }
 
-*:has(
-  > .st-sequence-path > .st-sequence-path-items > .st-sequence-path-item > .st-alternative-path
-),
-.st-property-path-editor:has(> .st-alternative-path) {
-  padding-bottom: 2.8rem;
-}
-
-.st-alternative-path-add {
-  position: absolute;
-  top: calc(100% - 3.2rem);
-  left: var(--size-2);
-  background: var(--green-1);
-  display: flex;
-  justify-content: center;
+.st-path-type-icon {
+  display: inline-flex;
   align-items: center;
-  cursor: pointer;
-  border-radius: var(--radius-2);
-  border: none;
-  padding: var(--size-1) var(--size-2);
-
-  &:hover,
-  &:focus {
-    background: var(--green-3);
-  }
-}
-
-.st-path-type {
-  border-radius: 50%;
-  aspect-ratio: 1;
-  display: flex;
+  justify-content: center;
   width: var(--size-4);
   height: var(--size-4);
-  justify-content: center;
-  align-items: center;
-  border: none;
-  font-size: var(--size-2);
+  border-radius: 50%;
+  background-color: var(--gray-2);
   cursor: help;
   font-weight: bold;
-  z-index: 1;
+  background-color: color-mix(in srgb, var(--type-color), black 9%);
 }
 
-.st-alternative-path-branches {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-2);
-  align-items: start;
-  align-content: stretch;
-}
-
-.st-alternative-path-branch {
-  display: flex;
-  align-items: center;
-  gap: var(--size-1);
-  position: relative;
-}
-
-.st-one-or-more-path,
-.st-zero-or-more-path,
-.st-zero-or-one-path {
-  position: relative;
-}
-
-.st-zero-or-more-path > .st-predicate-path {
-  background-color: var(--yellow-1);
-  outline: 1px dashed var(--gray-6);
-}
-
-.st-sequence-icon {
-  background: var(--orange-5);
-
-  &::before {
-    content: "..";
-    font-size: var(--size-6);
-    transform: translateY(-25%);
-  }
-}
-
-.st-zero-or-more-icon {
-  background: var(--yellow-5);
-
-  &::before {
-    content: "*";
-    font-size: var(--size-6);
-    transform: translateY(10%);
-  }
-}
-
-.st-zero-or-one-path > .st-predicate-path {
-  background-color: var(--blue-1);
-  outline: 1px dashed var(--gray-6);
-}
-
-.st-zero-or-one-icon {
-  background: var(--blue-3);
-
-  &::before {
-    content: "?";
-    font-size: var(--size-3);
-  }
-}
-
-.st-one-or-more-path > .st-predicate-path {
-  background-color: var(--purple-1);
-}
-
-.st-one-or-more-icon {
-  background: var(--purple-3);
-
-  &::before {
-    content: "+";
-    font-size: var(--size-3);
-  }
-}
-
-.st-inverse-path > .st-predicate-path {
-  background-color: var(--red-1);
-}
-
-.st-inverse-icon {
-  background: var(--red-3);
-
-  &::before {
-    content: "^";
-    font-size: var(--size-3);
-    transform: translateY(15%);
-  }
-}
-
-.st-sequence-path-items {
-  display: flex;
-  flex-direction: row;
-  gap: var(--size-2);
-  align-items: center;
-  align-content: center;
-}
-
-.st-inverse-path {
-  position: relative;
-}
-
-.st-alternative-icon {
-  font-size: 0.8rem;
-  background: var(--green-3);
-
-  &::before {
-    content: "|";
-    transform: translate(0, -1px);
-  }
-}
-
-.tooltip-wrapper + .st-predicate-path,
-.tooltip-wrapper
-  + .st-sequence-path
-  > .st-sequence-path-items
-  > .st-sequence-path-item:first-child
-  > .st-predicate-path {
-  padding-left: 2.3rem;
-}
-
-/* ======================================================= */
-
-.st-path-type-option {
-  display: flex;
-  align-items: center;
-  gap: var(--size-2);
-}
-
-/* The badge itself (.st-path-type + a per-type class like .st-zero-or-more-icon) is styled
-   identically here and in the tree - no separate select-only size/color variant. This only clips
-   a badge's own oversized glyph overflow so it can't inflate the select row's fixed height (the
-   flexbox "automatic minimum size" quirk: an overflow:visible flex item's min-height follows its
-   content, ignoring its own explicit height) - the tree has no such fixed-height row to protect. */
-.st-path-type-select .st-path-type {
-  cursor: inherit;
-  overflow: hidden;
-  line-height: 1;
-}
-
-.st-path-type-select .st-listbox__trigger {
-  padding-block: var(--size-1) !important;
-  padding-inline-start: var(--size-1);
-  font-size: var(--font-size-2);
-}
-
-.st-path-type-select .st-listbox__option {
-  padding-inline: var(--size-1);
-  font-size: var(--font-size-2);
-}
-
-.st-add-path-form {
+.st-alternative-path-items {
   display: flex;
   flex-direction: column;
   gap: var(--size-3);
-  min-width: 20rem;
-
-  .st-input {
-    width: 100%;
-  }
 }
 
-.st-add-path-form-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--size-2);
+.st-path-type-icon-sequence .st-path-type-icon-content {
+  translate: 2% -2%;
+  font-size: 0.8rem;
 }
-
-.st-add-path-form-actions-primary {
-  display: flex;
-  gap: var(--size-2);
-  margin-inline-start: auto;
+.st-path-type-icon-inverse .st-path-type-icon-content {
+  translate: 0 15%;
 }
-
-.st-add-path-predicate-combo {
-  position: relative;
-  width: 100%;
+.st-path-type-icon-alternative .st-path-type-icon-content {
+  translate: 13% -5%;
+  font-weight: bolder;
+  font-size: 0.8rem;
 }
-
-.st-add-path-predicate-option {
-  display: flex;
-  flex-direction: column;
-  gap: 0.1rem;
-  padding-block: var(--size-1);
-  padding-inline-start: var(--size-2);
+.st-path-type-icon-zeroOrMore .st-path-type-icon-content {
+  font-size: 1.4rem;
+  translate: 4% 14%;
 }
-
-.st-add-path-predicate-option__iri {
-  color: var(--st-color-text-muted);
-  font-size: var(--st-font-size-small);
+.st-path-type-icon-oneOrMore .st-path-type-icon-content {
+  translate: 0 5%;
 }
-
-.st-add-path-predicate-group-label {
-  padding-block: var(--size-1);
-  padding-inline-start: var(--size-2);
-  color: var(--st-color-text-muted);
-  font-size: var(--st-font-size-small);
-  font-weight: bold;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
+.st-path-type-icon-zeroOrOne .st-path-type-icon-content {
+  translate: 10% 5%;
+  font-size: 0.9rem;
 }
