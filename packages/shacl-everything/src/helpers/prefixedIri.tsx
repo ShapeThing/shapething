@@ -1,6 +1,5 @@
 import type { NamedNode } from "@rdfjs/types";
 import { prefixes } from "@/helpers/namespaces.ts";
-import type { ReactNode } from "react";
 
 /**
  * The `prefix:localName` form of `term`, preferring a document's own alias for a namespace (
@@ -19,7 +18,37 @@ import type { ReactNode } from "react";
 export function prefixedIri(
   term: NamedNode,
   sourcePrefixes?: Record<string, string>,
-): ReactNode | undefined {
+): string | undefined {
+  const parts = prefixedIriParts(term, sourcePrefixes);
+  return parts ? `${parts.alias}:${parts.localName}` : undefined;
+}
+
+/**
+ * prefixedIri() rendered as markup, with the prefix and local name in separately styleable spans
+ * (see theme/index.css) - for display only; string contexts (SPARQL, text labels) must use
+ * prefixedIri() itself.
+ */
+export function PrefixedIri({
+  term,
+  sourcePrefixes,
+}: {
+  term: NamedNode;
+  sourcePrefixes?: Record<string, string>;
+}) {
+  const parts = prefixedIriParts(term, sourcePrefixes);
+  if (!parts) return null;
+  return (
+    <span className="st-prefixed-iri">
+      <span className="st-prefixed-iri__prefix">{parts.alias}</span>
+      <span className="st-prefixed-iri__local">{parts.localName}</span>
+    </span>
+  );
+}
+
+function prefixedIriParts(
+  term: NamedNode,
+  sourcePrefixes?: Record<string, string>,
+): { alias: string; localName: string } | undefined {
   const aliasByBase = new Map<string, string>();
   for (const [alias, base] of Object.entries(prefixes)) {
     aliasByBase.set(base, alias);
@@ -36,10 +65,5 @@ export function prefixedIri(
 
   const [base, alias] = match;
   const localName = term.value.slice(base.length);
-  return localName ? (
-    <span className="st-prefixed-iri">
-      <span className="st-prefixed-iri__prefix">{alias}</span>
-      <span className="st-prefixed-iri__local">{localName}</span>
-    </span>
-  ) : undefined;
+  return localName ? { alias, localName } : undefined;
 }

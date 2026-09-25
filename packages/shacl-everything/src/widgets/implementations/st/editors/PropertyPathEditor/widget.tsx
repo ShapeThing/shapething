@@ -1,8 +1,8 @@
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
-import { useMemo } from "react";
+import { Fragment, useMemo } from "react";
 import { parsePathNode, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
-import { prefixedIri } from "@/helpers/prefixedIri.tsx";
+import { PrefixedIri } from "@/helpers/prefixedIri.tsx";
 import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
 import { Localized } from "@fluent/react";
 
@@ -10,7 +10,9 @@ export default function PropertyPathEditor({ shape, term, setTerm }: WidgetProps
   const path = useMemo(() => parsePathNode(term, shape.shapesGraph), [term]);
   return (
     <div className="st-property-path-editor">
+      <AddButton {...path} prepend />
       <Path {...path} />
+      <AddButton {...path} />
     </div>
   );
 }
@@ -34,6 +36,10 @@ function Path(path: PropertyPath) {
     default:
       return null;
   }
+}
+
+function AddButton(path: PropertyPath & { prepend?: boolean }) {
+  return <button className="st-add-button">+</button>;
 }
 
 const PATH_TYPE_TOOLTIP: Partial<Record<PropertyPath["type"], string>> = {
@@ -88,7 +94,11 @@ function PathTypeIcon({ type }: { type: PropertyPath["type"] }) {
 }
 
 function PredicatePath(path: Extract<PropertyPath, { type: "predicate" }>) {
-  return <div className="st-predicate-path st-path-segment">{prefixedIri(path.predicate)}</div>;
+  return (
+    <div className="st-predicate-path st-path-segment">
+      <PrefixedIri term={path.predicate} />
+    </div>
+  );
 }
 
 function SequencePath(path: Extract<PropertyPath, { type: "sequence" }>) {
@@ -97,8 +107,12 @@ function SequencePath(path: Extract<PropertyPath, { type: "sequence" }>) {
       <div className="st-sequence-path-prefix">
         <PathTypeIcon type="sequence" />
       </div>
+      <AddButton {...path} />
       {path.items.map((item, index) => (
-        <Path key={index} {...item} />
+        <Fragment key={index}>
+          <Path {...item} />
+          <AddButton {...path} />
+        </Fragment>
       ))}
       <div className="st-sequence-path-suffix"></div>
     </div>
@@ -108,6 +122,7 @@ function SequencePath(path: Extract<PropertyPath, { type: "sequence" }>) {
 function AlternativePath(path: Extract<PropertyPath, { type: "alternative" }>) {
   return (
     <div className="st-alternative-path st-path-segment">
+      <AddButton {...path} />
       <div className="st-alternative-path-prefix">
         <PathTypeIcon type="alternative" />
       </div>
@@ -115,7 +130,9 @@ function AlternativePath(path: Extract<PropertyPath, { type: "alternative" }>) {
       <div className="st-alternative-path-items">
         {path.items.map((item, index) => (
           <div className="st-alternative-path-item" key={index}>
+            <AddButton {...path} />
             <Path {...item} />
+            <AddButton {...path} />
           </div>
         ))}
       </div>
@@ -130,7 +147,9 @@ function InversePath(path: Extract<PropertyPath, { type: "inverse" }>) {
       <div className="st-inverse-path-prefix">
         <PathTypeIcon type="inverse" />
       </div>
+      <AddButton {...path} />
       <Path {...path.path} />
+      <AddButton {...path} />
       <div className="st-inverse-path-suffix"></div>
     </div>
   );
@@ -143,7 +162,9 @@ function ZeroOrMorePath(path: Extract<PropertyPath, { type: "zeroOrMore" }>) {
         <PathTypeIcon type="zeroOrMore" />
       </div>
 
+      <AddButton {...path} />
       <Path {...path.path} />
+      <AddButton {...path} />
       <div className="st-zero-or-more-path-suffix"></div>
     </div>
   );
@@ -155,7 +176,9 @@ function OneOrMorePath(path: Extract<PropertyPath, { type: "oneOrMore" }>) {
       <div className="st-one-or-more-path-prefix">
         <PathTypeIcon type="oneOrMore" />
       </div>
+      <AddButton {...path} />
       <Path {...path.path} />
+      <AddButton {...path} />
       <div className="st-one-or-more-path-suffix"></div>
     </div>
   );
@@ -167,7 +190,9 @@ function ZeroOrOnePath(path: Extract<PropertyPath, { type: "zeroOrOne" }>) {
       <div className="st-zero-or-one-path-prefix">
         <PathTypeIcon type="zeroOrOne" />
       </div>
+      <AddButton {...path} />
       <Path {...path.path} />
+      <AddButton {...path} />
       <div className="st-zero-or-one-path-suffix"></div>
     </div>
   );

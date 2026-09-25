@@ -41,10 +41,11 @@
         (ex:parent ex:firstName),
         [sh:alternativePath ( ex:father ex:mother )],
         [sh:inversePath ex:parent ],
-        [sh:zeroOrMorePath rdfs:subClassOf],
+        ([sh:zeroOrMorePath rdfs:subClassOf] rdf:type),
         [sh:oneOrMorePath rdfs:subClassOf],
         [sh:zeroOrOnePath rdfs:subClassOf],
         (rdf:type[ sh:zeroOrMorePath rdfs:subClassOf ]),
+        (ex:member [sh:alternativePath ( ex:father ex:mother )] ex:firstName),
         (skosxl:prefLabel skosxl:literalForm) ;
     .
 
