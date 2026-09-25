@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from "react";
 import type { Quad_Subject } from "@rdfjs/types";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { RdfStore } from "rdf-stores";
+import { sh } from "@/helpers/namespaces.ts";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
@@ -25,6 +26,12 @@ import {
  * unusual sh:targetWhere shape (no sh:path at all - a bare sh:class check, say) still stays live,
  * just without the narrowing.
  *
+ * A shapes graph with no sh:targetWhere at all (the common case) skips all of this: nothing can
+ * ever attach, and shapesGraph is read-only for an Environment's lifetime, so the read below tracks
+ * no pattern (no write ever notifies it) and the query never runs. Without this, an empty
+ * watchedPredicates would take the broad-tracking fallback above, re-rendering the whole node from
+ * NodeUIComponent down on every write to one of the focus node's own triples.
+ *
  * Uses a plain incrementing counter, not a content-derived count, as its revision signal:
  * useActiveChoiceBranch's own count-of-matching-quads works there because a branch switch always
  * changes which properties exist, but a targetWhere discriminator is commonly a single
@@ -37,6 +44,10 @@ export function useTargetWhereFragments(
   dataGraph: RdfStore,
   focusNode: Quad_Subject,
 ): Quad_Subject[] {
+  const hasTargetWhere = useMemo(
+    () => shapesGraph.getQuads(null, sh("targetWhere")).length > 0,
+    [shapesGraph],
+  );
   const watchedPredicates = useMemo(
     () => predicatesReferencedByTargetWhereShapes(shapesGraph),
     [shapesGraph],
@@ -44,6 +55,7 @@ export function useTargetWhereFragments(
 
   const counterRef = useRef(0);
   const revision = useReactiveRead(dataGraph, `target-where-fragments@${focusNode.value}`, () => {
+    if (!hasTargetWhere) return 0;
     if (watchedPredicates.length === 0) {
       dataGraph.getQuads(focusNode);
       dataGraph.getQuads(null, null, focusNode);
@@ -56,6 +68,7 @@ export function useTargetWhereFragments(
   const { data } = useQuery({
     queryKey: ["target-where-fragments", focusNode.value, revision],
     queryFn: () => shapesWhereTargetingFocusNode(focusNode, shapesGraph, dataGraph),
+    enabled: hasTargetWhere,
     // Every watched write bumps `revision`, which is part of the query key - without this, each
     // bump starts a brand-new cache entry with `data: undefined` until the next revision's (async)
     // check resolves, flashing every already-attached fragment's fields away and back on every

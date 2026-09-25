@@ -107,8 +107,14 @@ export const editingTheSelectedAutoCompleteReferenceInPlace: Story = {
     // Sponsor already holds ex:Acme (see the fixture) - AutoCompleteEditor's own "view" mode
     // renders it through AutoCompleteOption just like EnumSelectEditor's closed trigger does, and
     // should offer the same edit-in-place icon.
+    // Scoped to the Sponsor field: the (still empty) Publisher field above also renders an
+    // .st-autocomplete__label ("- Select an option -"), and comes first in document order.
     const trigger = await waitFor(() => {
-      const element = canvasElement.querySelector<HTMLSpanElement>(".st-autocomplete__label");
+      const sponsorField = [...canvasElement.querySelectorAll(".st-form-element")].find(
+        (field) =>
+          field.querySelector(".st-form-element__label-text")?.textContent?.trim() === "Sponsor",
+      );
+      const element = sponsorField?.querySelector<HTMLSpanElement>(".st-autocomplete__label");
       if (!element) throw new Error("Could not find the AutoCompleteEditor view-mode trigger");
       return element;
     });

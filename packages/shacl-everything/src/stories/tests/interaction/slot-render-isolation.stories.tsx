@@ -139,9 +139,8 @@ export const revalidationOnlyRerendersTheSlotsWhoseResultsChanged: Story = {
     expect(canvasElement.querySelector(".st-validation-message")).toBeNull();
 
     // Editing "a" past its sh:maxLength writes to dataGraph, which schedules a (debounced, 200ms)
-    // revalidation run. The write itself re-renders the tree from NodeUIComponent down (see
-    // useTargetWhereFragments) - the baseline is taken after that but before the run lands, so
-    // only the run's own renders are counted.
+    // revalidation run. The baseline is taken after the write's own re-render of "a" but before
+    // the run lands, so only the run's own renders are counted.
     inputs[0].focus();
     await userEvent.type(inputs[0], "2");
     inputs[0].blur();
@@ -167,5 +166,31 @@ export const revalidationOnlyRerendersTheSlotsWhoseResultsChanged: Story = {
     await userEvent.type(fixed, "a");
     fixed.blur();
     await waitFor(() => expect(canvasElement.querySelector(".st-validation-message")).toBeNull());
+  },
+};
+
+export const writingOneValueOnlyRerendersThatSlot: Story = {
+  name: "Writing one value doesn't re-render the other values' slots (no sh:targetWhere)",
+  render: (storyArgs) => <ShaclRenderer {...storyArgs} widgets={widgets} />,
+  args,
+  play: async ({ canvasElement }) => {
+    const inputs = await findInputs(canvasElement);
+    await settle(500);
+    const before = new Map(renderCounts);
+
+    // "b" has no constraints, so the write's revalidation run changes no results either - the
+    // settle covers its 200ms debounce so any render it caused would be counted.
+    inputs[1].focus();
+    await userEvent.type(inputs[1], "2");
+    inputs[1].blur();
+    await settle(500);
+
+    const delta = rendersSince(before);
+    console.info("[slot-render-isolation] renders per slot for one write:", delta);
+
+    // This shapes graph has no sh:targetWhere, so useTargetWhereFragments must not re-render the
+    // whole node (and every slot with it) from NodeUIComponent down on a write to ex:data.
+    expect(delta.b).toBeGreaterThan(0);
+    for (const letter of letters.filter((letter) => letter !== "b")) expect(delta[letter]).toBe(0);
   },
 };
