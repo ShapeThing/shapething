@@ -34,7 +34,7 @@ export async function select(
     ?.object;
 
   if (hardWiredWidget) {
-    const isAccepted = await accept({ ...props, widgetNode: hardWiredWidget });
+    const isAccepted = await accept({ ...props, widgetIRI: hardWiredWidget });
     if (isAccepted) {
       return hardWiredWidget as NamedNode;
     }
@@ -53,7 +53,7 @@ export async function select(
   );
 
   for (const widgetScore of widgetScoresOrdered) {
-    const widgetNode = widgetScore.object;
+    const widgetIRI = widgetScore.object;
 
     const scoreIsAllowed = await match({
       ...props,
@@ -61,9 +61,9 @@ export async function select(
     });
 
     if (scoreIsAllowed) {
-      const isAccepted = await accept({ ...props, widgetNode });
+      const isAccepted = await accept({ ...props, widgetIRI });
       if (isAccepted) {
-        return widgetNode as NamedNode;
+        return widgetIRI as NamedNode;
       }
     }
   }
@@ -143,7 +143,7 @@ export async function score(
 
     const isAccepted = await accept({
       ...props,
-      widgetNode: widgetScore.widgetScore,
+      widgetIRI: widgetScore.widget,
     });
     if (!isAccepted) continue;
 
@@ -268,7 +268,7 @@ type AcceptProps = {
   // The RDF graph containing the list of SHACL shapes.
   shapesGraph: RdfStore;
   // The node that identifies the widget.
-  widgetNode: Term;
+  widgetIRI: Term;
   // The RDF graph containing the Widget Score definitions.
   scoringGraph: RdfStore;
   // The mode predicate (shui:editor/shui:viewer/st:facet) a WidgetAcceptMatcher names its widget
@@ -282,12 +282,12 @@ export async function accept({
   dataGraph,
   shapeNode,
   shapesGraph,
-  widgetNode,
+  widgetIRI,
   scoringGraph,
   widgetPredicate,
 }: AcceptProps): Promise<boolean> {
   const matcherQuad = scoringGraph
-    .getQuads(null, widgetPredicate, widgetNode)
+    .getQuads(null, widgetPredicate, widgetIRI)
     .find((quad) =>
       scoringGraph.getQuads(
         quad.subject,

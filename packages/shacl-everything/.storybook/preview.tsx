@@ -121,7 +121,16 @@ const preview: Preview = {
     options: {
       storySort: {
         method: "alphabetical",
-        order: ["Showcases", "Specifications", "Tools", "Tests", "Environment", "Experiments"],
+        order: [
+          "Showcases",
+          "Shapes and Ontologies",
+          "Application profiles",
+          "Specifications",
+          "Tools",
+          "Tests",
+          "Environment",
+          "Experiments",
+        ],
       },
     },
 

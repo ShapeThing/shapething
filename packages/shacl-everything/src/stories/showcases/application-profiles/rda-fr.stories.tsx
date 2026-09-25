@@ -34,7 +34,7 @@ const shapeFiles = ["rdafr-shacl.ttl", "rdafr-shacl-drawer-groups.ttl"] as const
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Showcases/Application profiles/RDA",
+  title: "Application profiles/RDA",
   component: ShaclRenderer,
   args: {
     ...minimalEnvironment,

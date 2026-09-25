@@ -16,7 +16,7 @@ const nodeShapeNodeShapes = [
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Meta",
+  title: "Shapes and Ontologies/Shapes",
   component: ShaclRenderer,
   args: {
     ...testingEnvironment,
@@ -26,35 +26,6 @@ export default {
   },
   parameters: {
     maxWidth: "1000px",
-  },
-};
-
-export const ontologyNoData: Story = {
-  name: "Ontology (no data)",
-  args: {
-    ...argsByTestFile("ontology.ttl", import.meta.url),
-  },
-};
-
-export const ontologyWithData1: Story = {
-  name: "Ontology (with data 1)",
-  args: {
-    ...argsByTestFile(
-      ["ontology.ttl", "./examples/nl-sbb-begrippenkader/model.ttl"],
-      import.meta.url,
-    ),
-    focusNode: factory.namedNode("https://data.norg.nl/def/begrippenkader#"),
-  },
-};
-
-export const ontologyWithData2: Story = {
-  name: "Ontology (with data 2)",
-  args: {
-    ...argsByTestFile(
-      ["ontology.ttl", "./examples/dcat-ap-nl-catalogus/model.ttl"],
-      import.meta.url,
-    ),
-    focusNode: factory.namedNode("https://data.norg.nl/def/opendata#"),
   },
 };
 

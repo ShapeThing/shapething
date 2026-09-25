@@ -7,7 +7,7 @@ import { minimalEnvironment, defaultEnvironment } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Showcases/Application profiles/NL SBB",
+  title: "Application profiles/NL SBB",
   component: ShaclRenderer,
   args: {
     ...minimalEnvironment,
