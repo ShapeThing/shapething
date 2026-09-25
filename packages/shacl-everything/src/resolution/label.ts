@@ -325,6 +325,16 @@ export function valueNodeShapes(
 }
 
 /**
+ * Whether a reference-picking widget (InstancesSelectEditor/AutoCompleteEditor) can offer its
+ * "Create new…" option for this property: it needs a sh:class to type the new instance with, and a
+ * valueNodeShapes shape to open the new instance's own fields against - without one, all that could
+ * be created is a bare, label-less urn:uuid the user can't do anything further with.
+ */
+export function canCreateInPlace(propertyShape: PropertyUIElement): boolean {
+  return propertyShape.get(sh("class")).length > 0 && valueNodeShapes(propertyShape).length > 0;
+}
+
+/**
  * The property paths (sh:path) of every property shape on one of propertyShape's valueNodeShapes
  * that's annotated shui:propertyRole `role`. Exported (not just used internally by the three spec
  * roles below) since it's also the mechanism a non-spec, ShapeThing-original role reuses - e.g.

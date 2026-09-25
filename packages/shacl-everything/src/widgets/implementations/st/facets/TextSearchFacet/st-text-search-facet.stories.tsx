@@ -3,7 +3,8 @@ import { expect, userEvent, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import { minimalEnvironment } from "@/environment.ts";
-import { sh } from "@/helpers/namespaces.ts";
+import { rdf, sh } from "@/helpers/namespaces.ts";
+import { getRdfList } from "@/helpers/rdfList.ts";
 import type { SubmitResult } from "@/environment.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
@@ -65,5 +66,67 @@ export const stTextSearchFacetMatchCount: Story = {
     await userEvent.clear(search);
     await userEvent.type(search, "gadget");
     await canvas.findByText("1");
+  },
+};
+
+// shui:searchQuery (spec §10.1) on the facet's property: the typed text goes to that query instead
+// of becoming an sh:pattern, and its ?value results are written as an sh:in on the property.
+export const stTextSearchFacetSearchQuery: Story = {
+  name: "shui:searchQuery - matches become an sh:in",
+  args: { ...argsByTestFile("st-text-search-facet-search-query.ttl", import.meta.url), onSubmit },
+  play: async ({ canvasElement }) => {
+    submitResult = undefined;
+    const search = await within(canvasElement).findByRole("searchbox");
+
+    await userEvent.type(search, "acme");
+
+    await waitFor(() => {
+      if (!submitResult) throw new Error("onSubmit has not fired yet");
+      const listHead = submitResult.dataGraph.getQuads(null, sh("in"))[0]?.object;
+      if (!listHead) throw new Error("sh:in has not been written yet");
+      expect(
+        getRdfList(listHead, submitResult.dataGraph).map((term) => term.value.split("#").pop()),
+      ).toEqual(["acme"]);
+      expect(submitResult.dataGraph.getQuads(null, sh("pattern"))).toHaveLength(0);
+    });
+
+    // No matches at all filters everything out (an explicit empty sh:in), rather than dropping
+    // the constraint and showing every instance.
+    await userEvent.clear(search);
+    await userEvent.type(search, "nothing matches this");
+    await waitFor(() => {
+      const inQuads = submitResult!.dataGraph.getQuads(null, sh("in"));
+      expect(inQuads).toHaveLength(1);
+      expect(inQuads[0]!.object.equals(rdf("nil"))).toBe(true);
+    });
+
+    // Clearing the box removes the constraint entirely.
+    await userEvent.clear(search);
+    await waitFor(() => expect(submitResult!.dataGraph.getQuads(null, sh("in"))).toHaveLength(0));
+  },
+};
+
+// Environment.enableFacetOptionCounts: the badge counts instances whose value is among the
+// searchQuery's matches - Acme makes two of the three products.
+export const stTextSearchFacetSearchQueryMatchCount: Story = {
+  name: "shui:searchQuery - shows a live match count",
+  args: {
+    ...argsByTestFile("st-text-search-facet-search-query.ttl", import.meta.url),
+    enableFacetOptionCounts: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const search = await canvas.findByRole("searchbox");
+
+    await userEvent.type(search, "acme");
+    await canvas.findByText("2");
+
+    await userEvent.clear(search);
+    await userEvent.type(search, "globex");
+    await canvas.findByText("1");
+
+    await userEvent.clear(search);
+    await userEvent.type(search, "nothing matches this");
+    await canvas.findByText("0");
   },
 };

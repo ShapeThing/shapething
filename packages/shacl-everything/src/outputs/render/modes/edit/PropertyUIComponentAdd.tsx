@@ -6,6 +6,7 @@ import { Localized } from "@fluent/react";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import { severityFromTerm } from "@/helpers/severityFromTerm.ts";
+import { canCreateInPlace } from "@/resolution/label.ts";
 import "./style.css";
 import { clsx } from "clsx";
 
@@ -53,12 +54,12 @@ export default function PropertyUIComponentAdd({
   // A widget's own "no more values possible" signal (e.g. InstancesSelectEditor once every
   // instance is already in use) is a hard, structural block like sh:maxCount above, not a
   // transient one like showEmptyWidget - so it hides the button too, rather than showing a
-  // permanently-disabled control the user can't do anything about. But when enableCreateInPlace is
-  // on, that widget offers its own always-visible "Create new" option once opened (see
-  // InstancesSelectEditor/AutoCompleteEditor), so "no existing instances left to pick" is no longer
-  // a dead end and shouldn't block adding another value at all.
+  // permanently-disabled control the user can't do anything about. But when that widget offers its
+  // own always-visible "Create new" option once opened (see canCreateInPlace), "no existing
+  // instances left to pick" is no longer a dead end and shouldn't block adding another value at all.
   const noOptionsAvailable =
-    !enableCreateInPlace && meta?.canAddMore?.(propertyUIElement) === false;
+    !(enableCreateInPlace && canCreateInPlace(propertyUIElement)) &&
+    meta?.canAddMore?.(propertyUIElement) === false;
 
   return (
     !fieldIsSingleValued &&

@@ -11,6 +11,7 @@
   margin-inline-start: var(--size-2);
   translate: 0 2px;
   cursor: help;
+  color: var(--st-color-text-muted);
 }
 
 .st-property-search-chip:has(.st-property-search-icon:focus),

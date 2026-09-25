@@ -13,6 +13,7 @@ const TURTLE_PREFIXES = `
   @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
   @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
   @prefix ex: <http://example.org/> .
+  @prefix dash: <http://datashapes.org/dash#> .
 `;
 
 // Builds a lone ex:someShape sh:PropertyShape carrying whatever constraint turtle is passed, then
@@ -178,4 +179,31 @@ test("hasCustomDatatype does not conform when every member of a SHACL list sh:da
   expect(await conforms("hasCustomDatatype", "sh:datatype ( xsd:string rdf:langString )")).toBe(
     false,
   );
+});
+
+test("isSingleLineFalse conforms for sh:singleLine false", async () => {
+  expect(await conforms("isSingleLineFalse", "sh:singleLine false")).toBe(true);
+});
+
+test("isSingleLineFalse conforms for the legacy dash:singleLine false alias", async () => {
+  expect(await conforms("isSingleLineFalse", "dash:singleLine false")).toBe(true);
+});
+
+test("isSingleLineFalse lets a shape's own sh:singleLine win over its dash:singleLine alias", async () => {
+  expect(await conforms("isSingleLineFalse", "sh:singleLine true ; dash:singleLine false")).toBe(
+    false,
+  );
+  expect(await conforms("isSingleLineTrue", "sh:singleLine true ; dash:singleLine false")).toBe(
+    true,
+  );
+});
+
+test("isSingleLineTrue conforms for the legacy dash:singleLine true alias", async () => {
+  expect(await conforms("isSingleLineTrue", "dash:singleLine true")).toBe(true);
+});
+
+test("hasRootClassConstraint conforms for sh:rootClass and its legacy dash:rootClass alias", async () => {
+  expect(await conforms("hasRootClassConstraint", "sh:rootClass ex:Thing")).toBe(true);
+  expect(await conforms("hasRootClassConstraint", "dash:rootClass ex:Thing")).toBe(true);
+  expect(await conforms("hasRootClassConstraint", "sh:datatype xsd:string")).toBe(false);
 });

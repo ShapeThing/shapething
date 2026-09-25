@@ -3,6 +3,7 @@ PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX dash: <http://datashapes.org/dash#>
 
 #####################
 # Data Graph Shapes #
@@ -131,22 +132,28 @@ shui:isLiteral
 # Shapes Graph Shapes #
 #######################
 
+# sh:singleLine, or its legacy dash:singleLine form when the shape has no sh: value of its own - the
+# same sh:-wins fallback PropertyUIElement.ts's DASH_ALIASES applies to get().
 shui:isSingleLineTrue
     a sh:NodeShape ;
-    sh:property [
-        sh:path sh:singleLine ;
-        sh:minCount 1 ;
-        sh:hasValue true ;
-    ] ;
+    sh:or (
+        [ sh:property [ sh:path sh:singleLine ; sh:minCount 1 ; sh:hasValue true ] ]
+        [
+            sh:property [ sh:path sh:singleLine ; sh:maxCount 0 ] ;
+            sh:property [ sh:path dash:singleLine ; sh:minCount 1 ; sh:hasValue true ] ;
+        ]
+    ) ;
 .
 
 shui:isSingleLineFalse
     a sh:NodeShape ;
-    sh:property [
-        sh:path sh:singleLine ;
-        sh:minCount 1 ;
-        sh:hasValue false ;
-    ] ;
+    sh:or (
+        [ sh:property [ sh:path sh:singleLine ; sh:minCount 1 ; sh:hasValue false ] ]
+        [
+            sh:property [ sh:path sh:singleLine ; sh:maxCount 0 ] ;
+            sh:property [ sh:path dash:singleLine ; sh:minCount 1 ; sh:hasValue false ] ;
+        ]
+    ) ;
 .
 
 shui:hasInConstraint
@@ -207,10 +214,11 @@ shui:hasNoTypeConstraint
     sh:not shui:hasClassConstraint ;
 .
 
+# sh:rootClass or its legacy dash:rootClass form (see PropertyUIElement.ts's DASH_ALIASES).
 shui:hasRootClassConstraint
     a sh:NodeShape ;
     sh:property [
-        sh:path sh:rootClass ;
+        sh:path [ sh:alternativePath ( sh:rootClass dash:rootClass ) ] ;
         sh:minCount 1 ;
     ] ;
 .

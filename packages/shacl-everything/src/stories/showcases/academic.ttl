@@ -208,6 +208,7 @@ ex:ResearcherShape a sh:NodeShape ;
         sh:path schema:sameAs ;
         sh:group <#academic> ;
         sh:order 7;
+        sh:nodeKind sh:IRI ;
         sh:name "External Profile URLs"@en, "Externe profiel-URL's"@nl ;
         sh:description "Links to ORCID, Google Scholar, etc."@en, "Links naar ORCID, Google Scholar, enz."@nl ;
     ] ;

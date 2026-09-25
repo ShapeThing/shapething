@@ -88,3 +88,34 @@ export const enabled: Story = {
     await expect(within(dialog).findByText("New item")).resolves.toBeVisible();
   },
 };
+
+// Same sh:class, but nothing (no sh:node, no sh:targetClass shape) describes an ex:Organization's
+// own fields - "Create new…" could only mint a bare, label-less urn:uuid, so it isn't offered.
+export const enabledWithoutNodeShape: Story = {
+  name: 'On, but no node shape describes the class: no "Create new…" row',
+  args: {
+    ...baseArgs,
+    shapesGraph: `
+      @prefix schema: <http://schema.org/> .
+      @prefix ex: <http://example.org/> .
+      @prefix sh: <http://www.w3.org/ns/shacl#> .
+      @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+      ex:shape a sh:NodeShape ;
+        sh:targetClass schema:Person ;
+        sh:property [
+          sh:name "Publisher"@en ;
+          sh:path ex:publisher ;
+          sh:class ex:Organization ;
+          sh:nodeKind sh:IRI ;
+          shui:editor shui:AutoCompleteEditor ;
+        ] .
+    `,
+    enableCreateInPlace: true,
+  } as ShaclRendererProps,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText("- Select an option -", {}, { timeout: 5000 });
+    await openTheEmptyDropdown(canvasElement);
+    expect(canvas.queryByText("Create new…")).toBeNull();
+  },
+};

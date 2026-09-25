@@ -14,7 +14,7 @@ import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInstanceSearch } from "@/outputs/render/hooks/useInstanceSearch.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import type { SearchResult } from "@/outputs/render/hooks/query.ts";
-import { valueNodeShapes } from "@/resolution/label.ts";
+import { canCreateInPlace, valueNodeShapes } from "@/resolution/label.ts";
 import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
@@ -41,13 +41,16 @@ export default function AutoCompleteEditor({
   const { enableCreateInPlace, enableEditInPlace, enableFacetSearchForAutocomplete } =
     useEnvironment();
   const shClasses = useMemo(() => shape.get(sh("class")), [shape]);
-  // Whether the "Create new…" row (rendered as the last item of the results dropdown, see below)
-  // is offered at all.
-  const canCreate = enableCreateInPlace && shClasses.length > 0;
   // The shape describing a newly created instance's own fields - see InstancesSelectEditor, whose
   // createNew this mirrors. Doubles as the facet-search modal's own scope (see below): both need
   // "the node shape(s) that actually describe this property's values."
   const nodeShapes = useMemo(() => valueNodeShapes(shape), [shape]);
+  // Whether the "Create new…" row (rendered as the last item of the results dropdown, see below)
+  // is offered at all - see canCreateInPlace.
+  const canCreate = useMemo(
+    () => enableCreateInPlace && canCreateInPlace(shape),
+    [enableCreateInPlace, shape],
+  );
   const [creating, setCreating] = useState<NamedNode | undefined>(undefined);
   const [staging, setStaging] = useState<Staging | undefined>(undefined);
 
@@ -184,20 +187,8 @@ export default function AutoCompleteEditor({
   // InstancesSelectEditor's own createNew (see there for why identity is a random IRI for now
   // rather than something the user assigns).
   const createNew = () => {
-    if (shClasses.length === 0) return;
+    if (!canCreate) return;
     const subject = factory.namedNode(`urn:uuid:${crypto.randomUUID()}`);
-    // No field-editing modal to stage against - nothing to defer, so create and select it directly.
-    if (nodeShapes.length === 0) {
-      transact(shape.dataGraph, () => {
-        for (const shClass of shClasses) {
-          shape.dataGraph.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
-        }
-        setTerm(subject);
-      });
-      reset();
-      setMode("view");
-      return;
-    }
     const originalQuads = shape.dataGraph.getQuads();
     // Populated *before* wrapping in makeReactive() - see AutoCompleteOption.openEditor()'s own
     // comment: none of this modal's own starting state (the copied graph, the new subject's

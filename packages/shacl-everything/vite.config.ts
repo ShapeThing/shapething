@@ -82,6 +82,7 @@ export default defineConfig({
     exclude: ["maplibre-gl"],
   },
   pack: {
+    entry: ["src/index.ts", "src/webcomponent.tsx"],
     dts: {
       tsgo: true,
     },

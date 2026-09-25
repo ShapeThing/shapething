@@ -94,12 +94,12 @@ export default function FormElement({
                 </Localized>
               </Tooltip>
             )}
+            {showColon && label && (
+              <span className="st-form-element__label-colon" aria-hidden>
+                :
+              </span>
+            )}
           </label>
-        )}
-        {showColon && label && (
-          <span className="st-form-element__label-colon" aria-hidden>
-            :
-          </span>
         )}
         {(actions || tooltip) && (
           <div className="st-form-element__actions">

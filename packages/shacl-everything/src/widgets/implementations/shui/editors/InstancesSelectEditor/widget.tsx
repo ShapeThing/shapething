@@ -7,7 +7,7 @@ import { rdf, sh } from "@/helpers/namespaces.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
 import { makeReactive, transact } from "@/helpers/reactiveRdfStore.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
-import { valueNodeLabel, valueNodeShapes } from "@/resolution/label.ts";
+import { canCreateInPlace, valueNodeLabel, valueNodeShapes } from "@/resolution/label.ts";
 import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import { Localized } from "@fluent/react/esm/localized.js";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
@@ -55,9 +55,12 @@ export default function InstancesSelectEditor({
 
   // The shape describing a newly created instance's own fields (its sh:node, or - failing that -
   // any node shape targeting its sh:class via sh:targetClass, see valueNodeShapes) - absent, the
-  // instance can still be created (typed and set as the value), just with no field-editing modal
-  // to immediately open, since there'd be nothing to render one against.
+  // "Create new…" option isn't offered at all (see canCreateInPlace).
   const nodeShapes = useMemo(() => valueNodeShapes(shape), [shape]);
+  const canCreate = useMemo(
+    () => enableCreateInPlace && canCreateInPlace(shape),
+    [enableCreateInPlace, shape],
+  );
   const [creating, setCreating] = useState<NamedNode | undefined>(undefined);
   const [staging, setStaging] = useState<Staging | undefined>(undefined);
 
@@ -66,18 +69,8 @@ export default function InstancesSelectEditor({
   // nodes and IRIs; for now this always creates a NamedNode so InstancesSelectEditor's own
   // isIRI-scored widget selection stays valid for the new value straight away.
   const createNew = () => {
-    if (shClasses.length === 0) return;
+    if (!canCreate) return;
     const subject = factory.namedNode(`urn:uuid:${crypto.randomUUID()}`);
-    // No field-editing modal to stage against - nothing to defer, so create and select it directly.
-    if (nodeShapes.length === 0) {
-      transact(shape.dataGraph, () => {
-        for (const shClass of shClasses) {
-          shape.dataGraph.addQuad(factory.quad(subject, rdf("type"), shClass as NamedNode));
-        }
-        setTerm(subject);
-      });
-      return;
-    }
     const originalQuads = shape.dataGraph.getQuads();
     // Populated *before* wrapping in makeReactive() - see AutoCompleteOption.openEditor()'s own
     // comment: none of this modal's own starting state (the copied graph, the new subject's
@@ -148,7 +141,7 @@ export default function InstancesSelectEditor({
         // above it, since picking it does something categorically different (creates new data)
         // rather than just selecting among what already exists.
         extraRow={
-          enableCreateInPlace && shClasses.length > 0
+          canCreate
             ? {
                 content: (
                   <span className="st-create-option">

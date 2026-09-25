@@ -38,7 +38,7 @@ export const creatingANewReferenceInPlace: Story = {
     expect(input).toHaveFocus();
 
     // The "Create new…" row is offered as soon as the field is focused - it doesn't need a search
-    // term typed first, since canCreate only depends on enableCreateInPlace/sh:class, not `search`.
+    // term typed first, since canCreate only depends on enableCreateInPlace/canCreateInPlace, not `search`.
     await userEvent.click(await canvas.findByText("Create new…"));
 
     const dialog = await canvas.findByRole("dialog");

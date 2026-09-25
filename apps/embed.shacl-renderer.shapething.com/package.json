@@ -1,0 +1,18 @@
+{
+  "name": "@shapething/shacl-renderer-embed",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 8004",
+    "build": "vite build",
+    "lint": "vp lint",
+    "preview": "vite preview --port 8004"
+  },
+  "dependencies": {
+    "@shapething/shacl-everything": "workspace:*"
+  },
+  "devDependencies": {
+    "vite": "^8.1.0"
+  }
+}

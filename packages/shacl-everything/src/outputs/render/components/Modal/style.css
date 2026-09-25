@@ -47,6 +47,8 @@ html:has(dialog.st-modal[open]) {
   flex-direction: column;
   max-height: inherit;
   overflow-y: scroll;
+  border-radius: var(--radius-2);
+
   /* Don't chain scrolling past the content's own top/bottom edge through to whatever's behind. */
   overscroll-behavior: contain;
 }

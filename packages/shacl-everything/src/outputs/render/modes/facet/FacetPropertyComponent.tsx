@@ -14,6 +14,7 @@ import {
   aggregateFacetValues,
   countFacetInstancesInRange,
   countFacetInstancesMatchingPattern,
+  countFacetInstancesWithValueIn,
   countFacetInstancesWithinArea,
 } from "@/structure/facetValues.ts";
 import {
@@ -25,6 +26,7 @@ import {
   type FilterShape,
 } from "@/structure/filterShape.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
 import type { FacetWidgetComponent } from "@/widgets/types.ts";
 
 type Props = {
@@ -178,6 +180,25 @@ export default function FacetPropertyComponent({ property, filterShape, instance
     [enableFacetOptionCounts, property, narrowedInstances, patternBound, flagsBound],
   );
 
+  // TextSearchFacet over a property declaring shui:searchQuery writes the query's matches as an
+  // sh:in instead of an sh:pattern (see its widget.tsx) - counted the same way, but only for such a
+  // property, since CategoryFacet/SubClassFacet also write sh:in and show per-option counts instead.
+  // The sh:in quad's own presence (not getConstraint's expanded list) is what says a search is
+  // active: a search with no matches is written as an explicit empty list (rdf:nil).
+  const hasSearchQuery = useMemo(() => searchQueryFor(property) !== undefined, [property]);
+  const searchInActive = constraintQuads.some((quad) => quad.predicate.equals(sh("in")));
+  const searchInValues = getConstraint(sh("in"));
+  const searchInKey = searchInValues.map((term) => term.value).join("\n");
+  const searchInMatchCount = useMemo(
+    () =>
+      enableFacetOptionCounts && hasSearchQuery && searchInActive
+        ? countFacetInstancesWithValueIn(property, narrowedInstances, searchInValues)
+        : undefined,
+    // searchInKey stands in for searchInValues, a fresh array every render.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [enableFacetOptionCounts, hasSearchQuery, searchInActive, property, narrowedInstances, searchInKey],
+  );
+
   // Same idea again, for MapFacet's own st:withinArea instead of a numeric/date range or text
   // pattern - only computed once the user has actually drawn a selection area (an untouched map
   // facet has no st:withinArea yet).
@@ -197,7 +218,7 @@ export default function FacetPropertyComponent({ property, filterShape, instance
   // property's one overall match count, shown on the FormElement label rather than inline in the
   // widget itself (valueCounts has no single-value equivalent, so CategoryFacet/SubClassFacet's
   // per-option counts stay put next to each option).
-  const matchCount = rangeMatchCount ?? searchMatchCount ?? areaMatchCount;
+  const matchCount = rangeMatchCount ?? searchMatchCount ?? searchInMatchCount ?? areaMatchCount;
 
   if (!widget) return null;
   const { Widget } = widget;

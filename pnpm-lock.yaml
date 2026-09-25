@@ -29,6 +29,16 @@ importers:
         specifier: ^0.2.8
         version: 0.2.8(@types/node@26.6.0)(@vitest/browser-playwright@4.1.10(playwright@1.63.0)(vite@8.1.3(@types/node@26.6.0)(esbuild@0.28.1)(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.101.0)(yaml@2.9.0))(vitest@4.1.10))(@vitest/coverage-v8@4.1.10(@vitest/browser@4.1.10(vite@8.1.3(@types/node@26.6.0)(esbuild@0.28.1)(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.101.0)(yaml@2.9.0))(vitest@4.1.10))(vitest@4.1.10))(esbuild@0.28.1)(jiti@2.7.0)(jsdom@29.1.1)(sass-embedded@1.100.0)(sass@1.101.0)(typescript@7.0.2)(vite@8.1.3(@types/node@26.6.0)(esbuild@0.28.1)(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.101.0)(yaml@2.9.0))(yaml@2.9.0)
 
+  apps/embed.shacl-renderer.shapething.com:
+    dependencies:
+      '@shapething/shacl-everything':
+        specifier: workspace:*
+        version: link:../../packages/shacl-everything
+    devDependencies:
+      vite:
+        specifier: ^8.1.0
+        version: 8.1.3(@types/node@26.6.0)(esbuild@0.28.1)(jiti@2.7.0)(sass-embedded@1.100.0)(sass@1.101.0)(yaml@2.9.0)
+
   apps/play.shacl-renderer.shapething.com:
     dependencies:
       '@codemirror/autocomplete':
@@ -399,6 +409,9 @@ importers:
       '@js-temporal/polyfill':
         specifier: ^0.5.1
         version: 0.5.1
+      '@r2wc/react-to-web-component':
+        specifier: ^2.1.1
+        version: 2.1.1(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
       '@rdfjs/environment':
         specifier: ^1.0.0
         version: 1.0.0

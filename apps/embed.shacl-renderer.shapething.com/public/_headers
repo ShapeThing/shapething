@@ -1,0 +1,4 @@
+# Module scripts, their lazy chunks and locale bundles are fetched cross-origin by embedding pages,
+# which requires CORS (Netlify / Cloudflare Pages format).
+/*
+  Access-Control-Allow-Origin: *

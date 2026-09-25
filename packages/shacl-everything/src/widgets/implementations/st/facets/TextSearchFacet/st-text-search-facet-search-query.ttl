@@ -1,0 +1,35 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Manufacturer"@en ;
+        sh:path schema:manufacturer ;
+        sh:class schema:Organization ;
+        # shui:searchQuery (spec §10.1) makes st:TextSearchFacet hand the typed text to this query
+        # instead of writing an sh:pattern - its ?value results become an sh:in on this property.
+        # Kept local (no SERVICE) so the story runs offline; a real shape would typically point
+        # this at a remote fulltext index instead.
+        shui:searchQuery """
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            PREFIX schema: <http://schema.org/>
+            SELECT DISTINCT ?value WHERE {
+                ?value a schema:Organization ;
+                    rdfs:label ?searchLabel .
+                FILTER(CONTAINS(LCASE(?searchLabel), LCASE($searchTerm)))
+            }
+        """ ;
+    ] ;
+    .
+
+<#acme> a schema:Organization ; rdfs:label "Acme Corporation" .
+<#globex> a schema:Organization ; rdfs:label "Globex" .
+
+<#data> a schema:Product ; schema:name "Widget" ; schema:manufacturer <#acme> .
+<#product2> a schema:Product ; schema:name "Gadget" ; schema:manufacturer <#globex> .
+<#product3> a schema:Product ; schema:name "Gizmo" ; schema:manufacturer <#acme> .

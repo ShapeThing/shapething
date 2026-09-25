@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Embed SHACL Renderer</title>
+    <script type="module" src="/src/shacl-renderer.ts"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; max-width: 60rem; margin: 2rem auto; padding: 0 1rem; line-height: 1.5; }
+      pre { background: #f4f4f5; padding: 1rem; overflow-x: auto; border-radius: 0.5rem; }
+      .demo { border: 1px solid #e4e4e7; border-radius: 0.5rem; padding: 1rem; margin: 1rem 0 2rem; }
+    </style>
+  </head>
+  <body>
+    <h1>Embed SHACL Renderer</h1>
+    <p>Add one script tag to any page, then place a <code>&lt;shacl-renderer&gt;</code> element wherever the form should appear.</p>
+
+    <pre><code>&lt;script type="module" src="https://embed.shacl-renderer.shapething.com/shacl-renderer.js"&gt;&lt;/script&gt;
+
+&lt;shacl-renderer
+  shapes="https://example.org/shapes.ttl"
+  data="https://example.org/data.ttl"
+  focus-node="http://example.org/ada"
+  mode="edit"
+&gt;&lt;/shacl-renderer&gt;</code></pre>
+
+    <h2>Edit</h2>
+    <div class="demo">
+      <shacl-renderer
+        id="edit-demo"
+        shapes="examples/person-shapes.ttl"
+        data="examples/person-data.ttl"
+        focus-node="http://example.org/ada"
+        mode="edit"
+      ></shacl-renderer>
+    </div>
+
+    <h2>View</h2>
+    <div class="demo">
+      <shacl-renderer
+        shapes="examples/person-shapes.ttl"
+        data="examples/person-data.ttl"
+        focus-node="http://example.org/ada"
+        mode="view"
+      ></shacl-renderer>
+    </div>
+
+    <h2>Attributes</h2>
+    <ul>
+      <li><code>shapes</code>, <code>data</code>, <code>read-only-data</code>: a URL (relative URLs resolve against the page) or inline RDF text.</li>
+      <li><code>focus-node</code>: the IRI to render. <code>node-shapes</code>: space-separated shape IRIs, if the shapes don't target it on their own.</li>
+      <li><code>mode</code>: <code>edit</code>, <code>view</code> or <code>facet</code>.</li>
+      <li><code>interface-language</code>, <code>content-language</code>, <code>content-languages</code> (space-separated), <code>language-mode</code>, <code>view-mode-label-layout</code>, <code>facet-change-mode</code>, <code>cors-proxy-url</code>, <code>map-style-url</code>.</li>
+      <li>Feature flags such as <code>enable-edit-in-place="false"</code>. They need an explicit <code>"true"</code> or <code>"false"</code>; a bare attribute is ignored.</li>
+    </ul>
+
+    <h2>Getting the result</h2>
+    <pre><code>document.querySelector("shacl-renderer").addEventListener("shacl-submit", (event) =&gt; {
+  const { dataGraph, additions, deletions } = event.detail;
+});</code></pre>
+    <h2>Settings from JavaScript: <code>environment</code></h2>
+    <p>Attributes can only hold text. For settings that can't be written as text, such as functions, RDF stores or custom widgets, set the element's <code>environment</code> property from JavaScript. It takes the same fields as the props of the React <code>&lt;ShaclRenderer&gt;</code> component. If a field is set both ways, <code>environment</code> wins.</p>
+    <pre><code>&lt;shacl-renderer id="form" shapes="shapes.ttl" data="data.ttl"&gt;&lt;/shacl-renderer&gt;
+
+&lt;script type="module"&gt;
+  // 1. Wait until the element is ready
+  await customElements.whenDefined("shacl-renderer");
+
+  // 2. Find the element
+  const form = document.getElementById("form");
+
+  // 3. Give it the extra settings
+  form.environment = {
+    enableUndoRedo: false,
+    interfaceLocales: { "nl-NL": null },
+  };
+&lt;/script&gt;</code></pre>
+    <p>Two rules:</p>
+    <ol>
+      <li><strong>Always wait first</strong> (step 1). If you set <code>environment</code> before the element is ready, it is silently ignored.</li>
+      <li><strong>To change a setting later, assign a new object.</strong> Changing a field on the old one does nothing:
+        <pre><code>form.environment = { ...form.environment, mode: "view" }; // works
+form.environment.mode = "view";                          // does nothing</code></pre>
+      </li>
+    </ol>
+    <p>Assigning a new object rebuilds the form, so any edits that haven't been submitted are lost.</p>
+
+    <h3>Example</h3>
+    <p>This form has no <code>data</code> attribute. Its data is set through <code>environment</code>, and the button below switches it between edit and view mode.</p>
+    <div class="demo">
+      <shacl-renderer
+        id="environment-demo"
+        shapes="examples/person-shapes.ttl"
+        focus-node="http://example.org/grace"
+        mode="edit"
+      ></shacl-renderer>
+      <button type="button" id="environment-demo-toggle">Switch to view mode</button>
+    </div>
+    <pre><code>await customElements.whenDefined("shacl-renderer");
+const form = document.getElementById("environment-demo");
+
+form.environment = {
+  dataGraph: `
+    @prefix schema: &lt;https://schema.org/&gt; .
+    &lt;http://example.org/grace&gt; a schema:Person ;
+      schema:givenName "Grace" ;
+      schema:familyName "Hopper" .
+  `,
+};
+
+document.getElementById("environment-demo-toggle").addEventListener("click", (event) =&gt; {
+  const mode = form.environment.mode === "view" ? "edit" : "view";
+  form.environment = { ...form.environment, mode };
+  event.target.textContent = mode === "view" ? "Switch to edit mode" : "Switch to view mode";
+});</code></pre>
+
+    <script type="module">
+      document.getElementById("edit-demo").addEventListener("shacl-submit", (event) => {
+        console.log("submit", event.detail);
+      });
+
+      await customElements.whenDefined("shacl-renderer");
+      const form = document.getElementById("environment-demo");
+
+      form.environment = {
+        dataGraph: `
+          @prefix schema: <https://schema.org/> .
+          <http://example.org/grace> a schema:Person ;
+            schema:givenName "Grace" ;
+            schema:familyName "Hopper" .
+        `,
+      };
+
+      document.getElementById("environment-demo-toggle").addEventListener("click", (event) => {
+        const mode = form.environment.mode === "view" ? "edit" : "view";
+        form.environment = { ...form.environment, mode };
+        event.target.textContent = mode === "view" ? "Switch to edit mode" : "Switch to view mode";
+      });
+    </script>
+  </body>
+</html>

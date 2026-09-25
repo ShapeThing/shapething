@@ -155,6 +155,28 @@ export function countFacetInstancesMatchingPattern(
 }
 
 /**
+ * How many of `instances` have at least one value for `property`'s path among `allowed` - the
+ * sh:in analogue of countFacetInstancesMatchingPattern, backing Environment.enableFacetOptionCounts
+ * for TextSearchFacet when its property declares shui:searchQuery (the query's results become an
+ * sh:in rather than an sh:pattern). An empty `allowed` (the query matched nothing) counts 0.
+ */
+export function countFacetInstancesWithValueIn(
+  property: PropertyUIElement,
+  instances: Quad_Subject[],
+  allowed: Term[],
+): number {
+  const path = parsePropertyPath(property.propertyShapes[0], property.shapesGraph);
+  if (!path || allowed.length === 0) return 0;
+
+  const allowedKeys = new Set(allowed.map(termKey));
+  return instances.filter((instance) =>
+    walkPropertyPath(path, instance, property.dataGraph).some((value) =>
+      allowedKeys.has(termKey(value)),
+    ),
+  ).length;
+}
+
+/**
  * How many of `instances` have at least one value for `property`'s path falling inside `area` (a
  * GeoSPARQL WKT Polygon/MultiPolygon literal, MapFacet's own st:withinArea constraint value - see
  * structure/filterShape.ts) - the spatial analogue of countFacetInstancesInRange, backing

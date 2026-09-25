@@ -1,0 +1,9 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix schema: <https://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+ex:ada a schema:Person ;
+  schema:givenName "Ada" ;
+  schema:familyName "Lovelace" ;
+  schema:birthDate "1815-12-10"^^xsd:date ;
+  schema:email "ada@example.org" .
