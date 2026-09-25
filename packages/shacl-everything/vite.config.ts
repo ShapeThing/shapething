@@ -163,6 +163,8 @@ export default defineConfig({
         test: {
           name: "storybook",
           maxWorkers: 4,
+          // Vitest requires projects with a different maxWorkers to run in their own group.
+          sequence: { groupOrder: 1 },
           browser: {
             enabled: true,
             headless: true,
