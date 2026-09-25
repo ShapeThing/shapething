@@ -39,7 +39,13 @@ function Path(path: PropertyPath) {
 }
 
 function AddButton(path: PropertyPath & { prepend?: boolean }) {
-  return <button className="st-add-button">+</button>;
+  // preventDefault keeps focus on the focused segment/prefix/suffix, otherwise the mousedown
+  // blurs it, which hides this very button before the click lands.
+  return (
+    <button type="button" className="st-add-button" onMouseDown={(event) => event.preventDefault()}>
+      +
+    </button>
+  );
 }
 
 const PATH_TYPE_TOOLTIP: Partial<Record<PropertyPath["type"], string>> = {
@@ -95,7 +101,7 @@ function PathTypeIcon({ type }: { type: PropertyPath["type"] }) {
 
 function PredicatePath(path: Extract<PropertyPath, { type: "predicate" }>) {
   return (
-    <div className="st-predicate-path st-path-segment">
+    <div className="st-predicate-path st-path-segment" tabIndex={0}>
       <PrefixedIri term={path.predicate} />
     </div>
   );
@@ -104,7 +110,7 @@ function PredicatePath(path: Extract<PropertyPath, { type: "predicate" }>) {
 function SequencePath(path: Extract<PropertyPath, { type: "sequence" }>) {
   return (
     <div className="st-sequence-path st-path-segment">
-      <div className="st-sequence-path-prefix">
+      <div className="st-sequence-path-prefix" tabIndex={0}>
         <PathTypeIcon type="sequence" />
       </div>
       <AddButton {...path} />
@@ -114,7 +120,7 @@ function SequencePath(path: Extract<PropertyPath, { type: "sequence" }>) {
           <AddButton {...path} />
         </Fragment>
       ))}
-      <div className="st-sequence-path-suffix"></div>
+      <div className="st-sequence-path-suffix" tabIndex={0}></div>
     </div>
   );
 }
@@ -123,7 +129,7 @@ function AlternativePath(path: Extract<PropertyPath, { type: "alternative" }>) {
   return (
     <div className="st-alternative-path st-path-segment">
       <AddButton {...path} />
-      <div className="st-alternative-path-prefix">
+      <div className="st-alternative-path-prefix" tabIndex={0}>
         <PathTypeIcon type="alternative" />
       </div>
 
@@ -136,7 +142,7 @@ function AlternativePath(path: Extract<PropertyPath, { type: "alternative" }>) {
           </div>
         ))}
       </div>
-      <div className="st-alternative-path-suffix"></div>
+      <div className="st-alternative-path-suffix" tabIndex={0}></div>
     </div>
   );
 }
@@ -144,13 +150,13 @@ function AlternativePath(path: Extract<PropertyPath, { type: "alternative" }>) {
 function InversePath(path: Extract<PropertyPath, { type: "inverse" }>) {
   return (
     <div className="st-inverse-path st-path-segment">
-      <div className="st-inverse-path-prefix">
+      <div className="st-inverse-path-prefix" tabIndex={0}>
         <PathTypeIcon type="inverse" />
       </div>
       <AddButton {...path} />
       <Path {...path.path} />
       <AddButton {...path} />
-      <div className="st-inverse-path-suffix"></div>
+      <div className="st-inverse-path-suffix" tabIndex={0}></div>
     </div>
   );
 }
@@ -158,14 +164,14 @@ function InversePath(path: Extract<PropertyPath, { type: "inverse" }>) {
 function ZeroOrMorePath(path: Extract<PropertyPath, { type: "zeroOrMore" }>) {
   return (
     <div className="st-zero-or-more-path st-path-segment">
-      <div className="st-zero-or-more-path-prefix">
+      <div className="st-zero-or-more-path-prefix" tabIndex={0}>
         <PathTypeIcon type="zeroOrMore" />
       </div>
 
       <AddButton {...path} />
       <Path {...path.path} />
       <AddButton {...path} />
-      <div className="st-zero-or-more-path-suffix"></div>
+      <div className="st-zero-or-more-path-suffix" tabIndex={0}></div>
     </div>
   );
 }
@@ -173,13 +179,13 @@ function ZeroOrMorePath(path: Extract<PropertyPath, { type: "zeroOrMore" }>) {
 function OneOrMorePath(path: Extract<PropertyPath, { type: "oneOrMore" }>) {
   return (
     <div className="st-one-or-more-path st-path-segment">
-      <div className="st-one-or-more-path-prefix">
+      <div className="st-one-or-more-path-prefix" tabIndex={0}>
         <PathTypeIcon type="oneOrMore" />
       </div>
       <AddButton {...path} />
       <Path {...path.path} />
       <AddButton {...path} />
-      <div className="st-one-or-more-path-suffix"></div>
+      <div className="st-one-or-more-path-suffix" tabIndex={0}></div>
     </div>
   );
 }
@@ -187,13 +193,13 @@ function OneOrMorePath(path: Extract<PropertyPath, { type: "oneOrMore" }>) {
 function ZeroOrOnePath(path: Extract<PropertyPath, { type: "zeroOrOne" }>) {
   return (
     <div className="st-zero-or-one-path st-path-segment">
-      <div className="st-zero-or-one-path-prefix">
+      <div className="st-zero-or-one-path-prefix" tabIndex={0}>
         <PathTypeIcon type="zeroOrOne" />
       </div>
       <AddButton {...path} />
       <Path {...path.path} />
       <AddButton {...path} />
-      <div className="st-zero-or-one-path-suffix"></div>
+      <div className="st-zero-or-one-path-suffix" tabIndex={0}></div>
     </div>
   );
 }
