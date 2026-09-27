@@ -11,9 +11,9 @@
   --st-radius: var(--radius-2);
 
   padding-top: var(--size-1);
-  padding-bottom: var(--size-5);
+  padding-inline: var(--size-2);
+  padding-bottom: var(--size-3);
   margin-bottom: var(--size-2);
-  padding-inline: var(--size-5);
 
   max-width: 100%;
   min-width: 100%;
@@ -47,6 +47,9 @@
   > .st-alternative-path-items
   > .st-alternative-path-item
   > .st-add-button:last-child,
+/* The append-branch button sits right before the suffix in the DOM (for tab order), so the
+   suffix rules above already cover it; this keeps it showing for the prefix too. */
+.st-alternative-path:has(> .st-alternative-path-prefix:focus) > .st-add-button,
 .st-add-button:has(+ .st-predicate-path:focus),
 .st-predicate-path:focus + .st-add-button,
 .st-add-button:focus-visible {
@@ -59,7 +62,8 @@ div[class^="st-"][class*="-prefix"],
 div[class^="st-"][class*="-suffix"] {
   cursor: pointer;
 
-  &:focus {
+  &:focus,
+  &[data-type-menu-open] {
     outline: 2px solid var(--st-primary-color);
     /* outline-offset: 1px; */
     /* Lifts the outline above the following siblings, which would otherwise paint over it. */
@@ -115,6 +119,10 @@ div[class^="st-"][class*="-suffix"] {
 .st-alternative-path-suffix,
 .st-alternative-path-prefix {
   align-self: stretch;
+}
+
+.st-alternative-path-append-branch {
+  background-color: var(--alternative-path-background-color);
 }
 
 .st-alternative-path-header {
@@ -221,4 +229,69 @@ div[class^="st-"][class*="-suffix"] {
 .st-path-type-icon-zeroOrOne .st-path-type-icon-content {
   translate: 10% 5%;
   font-size: 0.9rem;
+}
+
+.st-predicate-modal {
+  display: flex;
+  flex-direction: column;
+  min-width: min(30rem, 80vw);
+}
+
+.st-predicate-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--size-2);
+  margin-top: var(--size-4);
+}
+
+/* Positioned at the pointer through inline left/top; the popover UA styles would centre it. */
+.st-path-type-menu {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  padding: var(--size-1);
+  display: flex;
+  flex-direction: column;
+  min-width: 10rem;
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+  background-color: white;
+  box-shadow: var(--shadow-3);
+}
+
+.st-path-type-menu-item {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  padding: var(--size-1) var(--size-2);
+  border: none;
+  border-radius: var(--radius-1);
+  background: none;
+  text-align: start;
+  cursor: pointer;
+
+  &:hover:not(:disabled),
+  &:focus-visible {
+    background-color: var(--gray-2);
+    outline: none;
+  }
+
+  &[aria-checked="true"] {
+    font-weight: bold;
+  }
+
+  &:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
+}
+
+.st-path-type-menu-separator {
+  height: 1px;
+  margin-block: var(--size-1);
+  background-color: var(--gray-4);
+}
+
+.st-path-type-menu-remove {
+  color: var(--red-8);
 }

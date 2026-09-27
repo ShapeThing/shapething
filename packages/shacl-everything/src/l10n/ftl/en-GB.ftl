@@ -119,6 +119,7 @@ property-path-editor-add-predicate-label = Predicate
 property-path-editor-add-type-label = Path type
 property-path-editor-add-cancel = Cancel
 property-path-editor-add-save = Save
+property-path-editor-edit = Edit
 property-path-editor-remove = Remove
 property-path-editor-add-type-predicate = Predicate
 property-path-editor-add-type-sequence = Sequence

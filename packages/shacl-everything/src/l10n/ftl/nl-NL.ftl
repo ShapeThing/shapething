@@ -117,6 +117,7 @@ property-path-editor-add-predicate-label = Predicaat
 property-path-editor-add-type-label = Padtype
 property-path-editor-add-cancel = Annuleren
 property-path-editor-add-save = Opslaan
+property-path-editor-edit = Bewerken
 property-path-editor-remove = Verwijderen
 property-path-editor-add-type-predicate = Predicaat
 property-path-editor-add-type-sequence = Reeks
