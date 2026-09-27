@@ -284,3 +284,122 @@ export const stPropertyPathEditorEditPredicate: Story = {
     });
   },
 };
+
+// Native drag and drop, which userEvent can't drive: one DataTransfer carried through the events.
+// `over` hovers a point of the target, given as a fraction of its width and height.
+function drag(source: HTMLElement) {
+  const dataTransfer = new DataTransfer();
+  const fire = (target: HTMLElement, type: string, x = 0, y = 0) =>
+    target.dispatchEvent(
+      new DragEvent(type, {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer,
+        clientX: x,
+        clientY: y,
+      }),
+    );
+  fire(source, "dragstart");
+  return {
+    over(target: HTMLElement, fx: number, fy: number) {
+      const rect = target.getBoundingClientRect();
+      fire(target, "dragover", rect.left + rect.width * fx, rect.top + rect.height * fy);
+    },
+    drop(target: HTMLElement) {
+      fire(target, "drop");
+      fire(source, "dragend");
+    },
+    cancel: () => fire(source, "dragend"),
+  };
+}
+
+const editorWith = (canvasElement: HTMLElement, selector: string) =>
+  waitFor(() => {
+    const element = canvasElement.querySelector<HTMLElement>(
+      `.st-property-path-editor > ${selector}`,
+    );
+    if (!element) throw new Error(`Could not find ${selector}`);
+    return element;
+  });
+
+export const stPropertyPathEditorDragToReorderBranches: Story = {
+  name: "Reordering alternative branches by dragging one below the other",
+  args: argsByTestFile("st-property-path-editor.ttl", import.meta.url),
+  play: async ({ canvasElement }) => {
+    const alternative = await editorWith(canvasElement, ".st-alternative-path");
+    const editor = alternative.parentElement as HTMLElement;
+    const [father, mother] = alternative.querySelectorAll<HTMLElement>(".st-predicate-path");
+
+    const move = drag(father);
+    await waitFor(() => expect(editor).toHaveAttribute("data-dragging"));
+    // Over itself there's nowhere to land.
+    move.over(father, 0.5, 0.9);
+    expect(canvasElement.querySelector("[data-drop-side]")).toBeNull();
+    // Branches are stacked: the bottom half of mother means below it.
+    move.over(mother, 0.5, 0.9);
+    await waitFor(() => expect(mother).toHaveAttribute("data-drop-side", "after"));
+    move.drop(mother);
+
+    await waitFor(() => {
+      const branches = editor.querySelectorAll(".st-alternative-path-item");
+      expect([...branches].map((branch) => branch.textContent)).toEqual([
+        expect.stringContaining("mother"),
+        expect.stringContaining("father"),
+      ]);
+    });
+    expect(editor).not.toHaveAttribute("data-dragging");
+    expect(canvasElement.querySelector("[data-drop-side]")).toBeNull();
+  },
+};
+
+export const stPropertyPathEditorDragToReorderSteps: Story = {
+  name: "Reordering sequence steps and moving a container by dragging",
+  args: argsByTestFile("st-property-path-editor.ttl", import.meta.url),
+  play: async ({ canvasElement }) => {
+    // member / (father | mother) / firstName
+    const sequence = await editorWith(
+      canvasElement,
+      ".st-sequence-path:has(> .st-alternative-path)",
+    );
+    const steps = () => [...sequence.children].filter((c) => c.matches(".st-path-segment"));
+    const [member, , firstName] = steps() as HTMLElement[];
+
+    // Steps sit side by side: the left half of member means before it.
+    const move = drag(firstName);
+    await waitFor(() => expect(sequence.parentElement).toHaveAttribute("data-dragging"));
+    move.over(member, 0.2, 0.5);
+    await waitFor(() => expect(member).toHaveAttribute("data-drop-side", "before"));
+    move.drop(member);
+    await waitFor(() =>
+      expect(steps().map((step) => step.textContent)).toEqual([
+        expect.stringContaining("firstName"),
+        expect.stringContaining("member"),
+        expect.stringContaining("father"),
+      ]),
+    );
+
+    // A container moves as a whole by its prefix; its own contents aren't targets. (Re-queried:
+    // steps are keyed by position, so the reorder remounted it.)
+    const movedAlternative = sequence.querySelector<HTMLElement>(":scope > .st-alternative-path")!;
+    const prefix = movedAlternative.querySelector<HTMLElement>(".st-alternative-path-prefix")!;
+    const containerMove = drag(prefix);
+    await waitFor(() => expect(sequence.parentElement).toHaveAttribute("data-dragging"));
+    containerMove.over(
+      movedAlternative.querySelector<HTMLElement>(".st-predicate-path")!,
+      0.5,
+      0.5,
+    );
+    expect(canvasElement.querySelector("[data-drop-side]")).toBeNull();
+    const firstStep = steps()[0] as HTMLElement;
+    containerMove.over(firstStep, 0.2, 0.5);
+    await waitFor(() => expect(firstStep).toHaveAttribute("data-drop-side", "before"));
+    containerMove.drop(firstStep);
+    await waitFor(() =>
+      expect(steps().map((step) => step.textContent)).toEqual([
+        expect.stringMatching(/father.*mother/),
+        expect.stringContaining("firstName"),
+        expect.stringContaining("member"),
+      ]),
+    );
+  },
+};

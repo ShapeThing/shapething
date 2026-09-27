@@ -295,3 +295,53 @@ div[class^="st-"][class*="-suffix"] {
 .st-path-type-menu-remove {
   color: var(--red-8);
 }
+
+/*
+ * While dragging, the add buttons stay out of the way. The !important beats the focus rules above:
+ * the mousedown that starts a drag focuses the dragged element, which would otherwise reveal them.
+ */
+.st-property-path-editor[data-dragging] .st-add-button {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.st-path-segment[data-drag-source] {
+  opacity: 0.4;
+}
+
+/* Where a dropped node would land: a line on the side of the segment it's dropped beside. */
+.st-path-segment[data-drop-side]::after {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  background-color: var(--st-primary-color);
+  border-radius: 2px;
+  pointer-events: none;
+}
+.st-path-segment[data-drop-side="before"]::after,
+.st-path-segment[data-drop-side="after"]::after {
+  top: 0;
+  bottom: 0;
+  width: 3px;
+}
+.st-path-segment[data-drop-side="before"]::after {
+  left: -3px;
+}
+.st-path-segment[data-drop-side="after"]::after {
+  right: -3px;
+}
+/* Alternative branches are stacked, so the line goes above or below. */
+.st-alternative-path-item > .st-path-segment[data-drop-side]::after {
+  left: 0;
+  right: 0;
+  width: auto;
+  height: 3px;
+  bottom: auto;
+  top: auto;
+}
+.st-alternative-path-item > .st-path-segment[data-drop-side="before"]::after {
+  top: calc(var(--size-1) * -1 - 1px);
+}
+.st-alternative-path-item > .st-path-segment[data-drop-side="after"]::after {
+  bottom: calc(var(--size-1) * -1 - 1px);
+}
