@@ -378,3 +378,45 @@ export const addSuperClassShapes: Preprocessor = (environment) => {
     ),
   };
 };
+
+/**
+ * Drops every shape with more than one sh:path value, along with every quad pointing at it (e.g.
+ * the sh:property link from its node shape). SHACL requires a property shape to have exactly one
+ * value for sh:path (2.3.1), and shacl-engine can't parse one with several - its whole validation
+ * run throws rather than just skipping that shape, so one such shape anywhere in the graph takes
+ * down live validation for the entire form. Generated vocabularies occasionally mint the same
+ * shape IRI for two different properties (e.g. the RDA-FR showcase's rdafrru:R2021), and there's
+ * no way to tell which of the paths was meant, so the whole shape goes rather than keeping one
+ * path arbitrarily. Blank nodes reachable only from a dropped shape (its own sh:node subtree,
+ * ...) are left in place - unreferenced, so nothing ever renders or validates against them.
+ *
+ * Copies shapesGraph only when there's actually something to drop - see addMissingShapes on not
+ * mutating the caller-supplied store in place.
+ */
+export const dropShapesWithMultiplePaths: Preprocessor = (environment) => {
+  const source = environment.shapesGraph as RdfStore;
+
+  const pathCounts = new Map<string, { shape: Quad_Subject; count: number }>();
+  for (const quad of source.getQuads(null, sh("path"))) {
+    const key = termKey(quad.subject);
+    const entry = pathCounts.get(key) ?? { shape: quad.subject, count: 0 };
+    entry.count++;
+    pathCounts.set(key, entry);
+  }
+  const invalid = [...pathCounts.values()].filter((entry) => entry.count > 1);
+  if (invalid.length === 0) return environment;
+
+  const invalidKeys = new Set(invalid.map((entry) => termKey(entry.shape)));
+  const shapesGraph = RdfStore.createDefault();
+  for (const quad of source.getQuads()) {
+    if (invalidKeys.has(termKey(quad.subject)) || invalidKeys.has(termKey(quad.object))) continue;
+    shapesGraph.addQuad(quad);
+  }
+
+  console.info(
+    `[shacl-everything] Preprocessing dropped ${invalid.length} shape(s) with more than one sh:path - invalid SHACL (a property shape must have exactly one sh:path), which would otherwise break validation for the whole form:`,
+    invalid.map((entry) => entry.shape.value),
+  );
+
+  return { ...environment, shapesGraph };
+};

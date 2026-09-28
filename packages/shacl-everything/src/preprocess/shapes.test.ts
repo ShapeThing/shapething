@@ -1,7 +1,11 @@
 import type { NamedNode, Quad_Object, Quad_Subject } from "@rdfjs/types";
-import { expect, test } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
 import { RdfStore } from "rdf-stores";
-import { addMissingShapes, mergeFacetTextSearchProperties } from "@/preprocess/shapes.ts";
+import {
+  addMissingShapes,
+  dropShapesWithMultiplePaths,
+  mergeFacetTextSearchProperties,
+} from "@/preprocess/shapes.ts";
 import { defaultEnvironment, type RawEnvironment } from "@/environment.ts";
 import { factory } from "@/helpers/factory.ts";
 import { ex, rdf, rdfs, sh, st, xsd } from "@/helpers/namespaces.ts";
@@ -548,4 +552,38 @@ test("mergeFacetTextSearchProperties - does not mutate the caller-supplied shape
   mergeFacetTextSearchProperties(facetEnvironment({ shapesGraph }));
 
   expect(shapesGraph.getQuads()).toHaveLength(originalQuadCount);
+});
+
+test("dropShapesWithMultiplePaths - leaves the shapes graph untouched when every shape has at most one sh:path", async () => {
+  const shapesGraph = RdfStore.createDefault();
+  shapesGraph.addQuad(factory.quad(ex("Shape"), sh("property"), ex("name")));
+  shapesGraph.addQuad(factory.quad(ex("name"), sh("path"), ex("name")));
+
+  const result = await dropShapesWithMultiplePaths(rawEnvironment({ shapesGraph }));
+
+  expect(result.shapesGraph).toBe(shapesGraph);
+});
+
+test("dropShapesWithMultiplePaths - drops a shape with two sh:path values and every link to it, keeping the rest", async () => {
+  const shapesGraph = RdfStore.createDefault();
+  shapesGraph.addQuad(factory.quad(ex("Shape"), sh("property"), ex("name")));
+  shapesGraph.addQuad(factory.quad(ex("name"), sh("path"), ex("name")));
+  shapesGraph.addQuad(factory.quad(ex("Shape"), sh("property"), ex("broken")));
+  shapesGraph.addQuad(factory.quad(ex("broken"), sh("path"), ex("a")));
+  shapesGraph.addQuad(factory.quad(ex("broken"), sh("path"), ex("b")));
+  shapesGraph.addQuad(factory.quad(ex("broken"), sh("name"), factory.literal("Broken")));
+
+  const info = vi.spyOn(console, "info").mockImplementation(() => {});
+  const result = await dropShapesWithMultiplePaths(rawEnvironment({ shapesGraph }));
+
+  const resultGraph = result.shapesGraph as RdfStore;
+  expect(resultGraph.getQuads(ex("broken"))).toHaveLength(0);
+  expect(resultGraph.getQuads(null, null, ex("broken"))).toHaveLength(0);
+  expect(resultGraph.getQuads(ex("Shape"), sh("property"), ex("name"))).toHaveLength(1);
+  expect(resultGraph.getQuads(ex("name"), sh("path"), ex("name"))).toHaveLength(1);
+  expect(info).toHaveBeenCalledOnce();
+  expect(info.mock.calls[0][1]).toEqual([ex("broken").value]);
+  // The caller's own store is never mutated.
+  expect(shapesGraph.getQuads(ex("broken"))).toHaveLength(3);
+  info.mockRestore();
 });

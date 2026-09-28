@@ -9,6 +9,7 @@ import { resolveWidgets } from "@/preprocess/widgets.ts";
 import {
   addMissingShapes,
   addSuperClassShapes,
+  dropShapesWithMultiplePaths,
   mergeFacetTextSearchProperties,
 } from "@/preprocess/shapes.ts";
 import { dereferenceMissingPropertyNames } from "@/preprocess/ontologyLabels.ts";
@@ -21,6 +22,7 @@ export type Preprocessor = (
 
 export const defaultPreprocessors: readonly Preprocessor[] = [
   resolveRdfSources,
+  dropShapesWithMultiplePaths,
   distillLanguages,
   distillInterfaceLanguages,
   resolveWidgets,

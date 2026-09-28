@@ -2,7 +2,11 @@ import type { Decorator } from "@storybook/react-vite";
 import { addons, useEffect } from "storybook/preview-api";
 import { write } from "@jeswr/pretty-turtle";
 import { resolveGraphText } from "./resolveGraphText.ts";
-import { GRAPH_INSPECTOR_EVENT } from "./constants.ts";
+import {
+  GRAPH_INSPECTOR_EVENT,
+  GRAPH_INSPECTOR_MATERIALIZED_EVENT,
+  GRAPH_INSPECTOR_REQUEST_MATERIALIZED_EVENT,
+} from "./constants.ts";
 import { analyzeSpecUsage } from "../../../src/analysis/specUsage.ts";
 import { detectPatterns } from "../../../src/analysis/patterns.ts";
 import { prefixes } from "../../../src/helpers/namespaces.ts";
@@ -42,6 +46,10 @@ export const withGraphInspector: Decorator = (Story, context) => {
     const initialEnvironment = { ...defaultEnvironment, ...rawProps } as RawEnvironment;
     const steps = preprocessors ?? defaultPreprocessors;
 
+    // Serialized only when the panel asks for it - see GraphInspectorMaterializedPayload.
+    let resolvedEnvironment: Awaited<ReturnType<typeof runPreprocessorsDeduped>> | undefined;
+    let materialized: Promise<string | undefined> | undefined;
+
     Promise.all([
       resolveGraphText(shapesGraph as any),
       resolveGraphText(dataGraph as any),
@@ -49,27 +57,36 @@ export const withGraphInspector: Decorator = (Story, context) => {
       // URL) still gets its raw text shown above, just without the materialized-graph view or the
       // spec-usage/pattern analysis.
       runPreprocessorsDeduped(initialEnvironment, steps).catch(() => undefined),
-    ]).then(async ([shapesGraphText, dataGraphText, environment]) => {
+    ]).then(([shapesGraphText, dataGraphText, environment]) => {
       if (cancelled) return;
-      // Best-effort, same as environment above - falls back to source-only display.
-      const shapesGraphMaterialized = environment
-        ? await write(environment.shapesGraph.getQuads(), { ordered: true, prefixes, baseIri }).catch(
-            () => undefined,
-          )
-        : undefined;
-      if (cancelled) return;
+      resolvedEnvironment = environment;
       channel.emit(GRAPH_INSPECTOR_EVENT, {
         storyId: context.id,
         shapesGraph: shapesGraphText,
         dataGraph: dataGraphText,
-        shapesGraphMaterialized,
+        canMaterialize: environment !== undefined,
         specUsage: environment && analyzeSpecUsage(environment.shapesGraph),
         patterns: environment && detectPatterns(environment.shapesGraph),
       });
     });
 
+    const onRequestMaterialized = ({ storyId }: { storyId: string }) => {
+      if (storyId !== context.id || !resolvedEnvironment) return;
+      // Best-effort, same as environment above - falls back to source-only display.
+      materialized ??= write(resolvedEnvironment.shapesGraph.getQuads(), {
+        ordered: true,
+        prefixes,
+        baseIri,
+      }).catch(() => undefined);
+      void materialized.then((text) => {
+        if (!cancelled) channel.emit(GRAPH_INSPECTOR_MATERIALIZED_EVENT, { storyId, text });
+      });
+    };
+    channel.on(GRAPH_INSPECTOR_REQUEST_MATERIALIZED_EVENT, onRequestMaterialized);
+
     return () => {
       cancelled = true;
+      channel.off(GRAPH_INSPECTOR_REQUEST_MATERIALIZED_EVENT, onRequestMaterialized);
     };
   }, [shapesGraph, dataGraph, context.id, context.args]);
 

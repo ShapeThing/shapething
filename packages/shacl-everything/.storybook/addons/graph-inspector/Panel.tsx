@@ -1,8 +1,17 @@
 import React from "react";
 import { useState } from "react";
 import { useChannel, useStorybookState } from "storybook/manager-api";
-import { GRAPH_INSPECTOR_EVENT } from "./constants.ts";
-import type { GraphFileText, GraphInspectorPayload, GraphText } from "./constants.ts";
+import {
+  GRAPH_INSPECTOR_EVENT,
+  GRAPH_INSPECTOR_MATERIALIZED_EVENT,
+  GRAPH_INSPECTOR_REQUEST_MATERIALIZED_EVENT,
+} from "./constants.ts";
+import type {
+  GraphFileText,
+  GraphInspectorMaterializedPayload,
+  GraphInspectorPayload,
+  GraphText,
+} from "./constants.ts";
 import { TurtleCode } from "./TurtleCode.tsx";
 import { splitPrefixes, parsePrefixMap, formatPrefixDeclarations } from "./splitPrefixes.ts";
 import { prefixes as wellKnownPrefixes } from "../../../src/helpers/namespaces.ts";
@@ -16,10 +25,18 @@ type Props = {
 export const GraphInspectorPanel = ({ active }: Props) => {
   const { storyId, layout } = useStorybookState();
   const [payloadsByStory, setPayloadsByStory] = useState<Record<string, GraphInspectorPayload>>({});
+  // A key present with an undefined value means serialization failed - see
+  // GraphInspectorMaterializedPayload.
+  const [materializedByStory, setMaterializedByStory] = useState<
+    Record<string, string | undefined>
+  >({});
 
-  useChannel({
+  const emit = useChannel({
     [GRAPH_INSPECTOR_EVENT]: (payload: GraphInspectorPayload) => {
       setPayloadsByStory((prev) => ({ ...prev, [payload.storyId]: payload }));
+    },
+    [GRAPH_INSPECTOR_MATERIALIZED_EVENT]: ({ storyId, text }: GraphInspectorMaterializedPayload) => {
+      setMaterializedByStory((prev) => ({ ...prev, [storyId]: text }));
     },
   });
 
@@ -32,6 +49,13 @@ export const GraphInspectorPanel = ({ active }: Props) => {
   const shapesGraphKey = graphFilesKey(payload?.shapesGraph);
   const sameSource =
     shapesGraphKey !== undefined && shapesGraphKey === graphFilesKey(payload?.dataGraph);
+  const materialized = payload?.canMaterialize
+    ? {
+        requested: storyId in materializedByStory,
+        text: materializedByStory[storyId],
+        request: () => emit(GRAPH_INSPECTOR_REQUEST_MATERIALIZED_EVENT, { storyId }),
+      }
+    : undefined;
 
   return (
     <div
@@ -53,14 +77,14 @@ export const GraphInspectorPanel = ({ active }: Props) => {
           <GraphSection
             title="Shapes & data graph"
             graph={payload.shapesGraph}
-            materializedText={payload.shapesGraphMaterialized}
+            materialized={materialized}
           />
         ) : (
           <>
             <GraphSection
               title="Shapes graph"
               graph={payload.shapesGraph}
-              materializedText={payload.shapesGraphMaterialized}
+              materialized={materialized}
             />
             <GraphSection title="Data graph" graph={payload.dataGraph} />
           </>
@@ -188,24 +212,32 @@ const graphFilesKey = (graph?: GraphText): string | undefined => {
 
 // "Source files" shows each fixture file as authored; "Shapes graph" shows the single, already-
 // merged/resolved shapesGraph RdfStore re-serialized as one turtle document (see
-// withGraphInspector.tsx's shapesGraphMaterialized) - most useful once a story's shapesGraph is
+// constants.ts's GraphInspectorMaterializedPayload) - most useful once a story's shapesGraph is
 // several files merged together, or shapes+data share one file and you want just the shapes.
 type GraphSectionView = "source" | "materialized";
+
+type Materialized = {
+  // Whether the preview has answered a request yet - `text` stays undefined until then, and also
+  // after a failed serialization.
+  requested: boolean;
+  text?: string;
+  request: () => void;
+};
 
 const GraphSection = ({
   title,
   graph,
-  materializedText,
+  materialized,
 }: {
   title: string;
   graph?: GraphText;
-  materializedText?: string;
+  materialized?: Materialized;
 }) => {
   const [view, setView] = useState<GraphSectionView>("source");
   if (!graph || graph.files.length === 0) return null;
 
   const sectionSlug = title.replace(/[^A-Za-z0-9]+/g, "-").toLowerCase();
-  const showMaterialized = materializedText !== undefined && view === "materialized";
+  const showMaterialized = materialized !== undefined && view === "materialized";
   // Most stories have exactly one file - keep that case's header identical to before (filename
   // inline, next to the section title) rather than introducing a redundant nested heading. Not
   // meaningful once showing the merged materialized graph instead of one particular file.
@@ -248,7 +280,15 @@ const GraphSection = ({
             </span>
           )}
         </span>
-        {materializedText !== undefined && <GraphSectionViewToggle view={view} onChange={setView} />}
+        {materialized !== undefined && (
+          <GraphSectionViewToggle
+            view={view}
+            onChange={(next) => {
+              setView(next);
+              if (next === "materialized" && !materialized.requested) materialized.request();
+            }}
+          />
+        )}
       </h3>
       <div
         style={{
@@ -260,9 +300,13 @@ const GraphSection = ({
           overflow: "auto",
         }}
       >
-        {showMaterialized ? (
+        {showMaterialized && materialized.text === undefined ? (
+          <p style={{ opacity: 0.6, fontSize: 12 }}>
+            {materialized.requested ? "Could not serialize the shapes graph." : "Serializing…"}
+          </p>
+        ) : showMaterialized ? (
           <GraphFileSection
-            file={{ label: "Shapes graph", text: materializedText }}
+            file={{ label: "Shapes graph", text: materialized.text }}
             idPrefix={`${sectionSlug}-materialized`}
             showHeading={false}
           />
