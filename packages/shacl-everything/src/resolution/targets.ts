@@ -1,11 +1,11 @@
-import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
+import type { Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { rdf, rdfs, sh } from "@/helpers/namespaces.ts";
 import { getRdfList } from "@/helpers/rdfList.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { validate } from "@/validation/validate.ts";
-import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
+import { type PropertyPath, parsePropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import { groupShapesByPath, walkShapeComposition } from "@/structure/shapeComposition.ts";
 
@@ -269,45 +269,105 @@ export async function shapesWhereTargetingFocusNode(
 }
 
 /**
- * Every predicate a sh:targetWhere value shape directly inspects via sh:property/sh:path (walking
+ * One property path a sh:targetWhere value shape inspects, walked from whatever node the parent
+ * level reaches (the focus node itself at the top level), plus the paths that property shape's own
+ * value-level sh:node/sh:and in turn inspect from each value at the end of `path` - so
+ * `sh:property [ sh:path ex:address ; sh:node [ sh:property [ sh:path ex:country ] ] ]` depends
+ * on the data exactly like the flat sequence path `(ex:address ex:country)` does.
+ */
+export type TargetWhereDependency = { path: PropertyPath; nested: TargetWhereDependency[] };
+
+/**
+ * Every property path a sh:targetWhere value shape inspects via sh:property/sh:path (walking
  * sh:and/sh:node the same way structure/childrenForShape.ts does, so a value shape built out of
- * other composed shapes is covered too). Lets a caller re-run shapesWhereTargetingFocusNode only
- * when a write could plausibly change its answer, instead of on every write touching the focus
- * node at all - see outputs/render/hooks/useTargetWhereFragments.tsx, the one caller.
+ * other composed shapes is covered too), as whole parsed paths rather than just their first
+ * predicate. Lets a caller re-run shapesWhereTargetingFocusNode only when a write could plausibly
+ * change its answer, instead of on every write touching the focus node at all - the caller walks
+ * each path through the data inside a tracked read, so every hop (not only the focus node's own
+ * triples) is watched. See outputs/render/hooks/useTargetWhereFragments.tsx, the one caller.
  *
  * Deliberately conservative, not a full dependency solver: a sh:targetWhere value using a
- * construct with no sh:path at all (e.g. a bare sh:class check, or a SPARQL-based constraint) is
- * invisible to this walk and contributes no predicates for it. Callers must treat an empty result
- * as "couldn't narrow it down", not "this shape never changes", and fall back to broad tracking.
+ * construct with no sh:path at all (e.g. a bare sh:class check, sh:or/sh:xone/sh:not branches, or
+ * a SPARQL-based constraint) is invisible to this walk and contributes nothing for it. An
+ * unparseable sh:path (a half-edited shape, say) is skipped rather than thrown. A shape already on
+ * the current walk is not re-entered, so a recursive shape terminates, at the cost of not watching
+ * past its first recursion. Callers must treat an empty result as "couldn't narrow it down", not
+ * "this shape never changes", and fall back to broad tracking.
  */
-export function predicatesReferencedByTargetWhereShapes(shapesGraph: RdfStore): NamedNode[] {
+export function pathsReferencedByTargetWhereShapes(shapesGraph: RdfStore): TargetWhereDependency[] {
   const declarations = shapesGraph.getQuads(null, sh("targetWhere"));
   if (declarations.length === 0) return [];
 
-  const visited = new Set<string>();
-  const predicates: NamedNode[] = [];
-
-  function walk(shapeNode: Term): void {
+  // Node-level: the paths `shapeNode` inspects from the node it's being validated against.
+  function dependenciesOf(shapeNode: Term, ancestors: Set<string>): TargetWhereDependency[] {
     const key = termKey(shapeNode);
-    if (visited.has(key)) return;
-    visited.add(key);
+    if (ancestors.has(key)) return [];
+    const inner = new Set(ancestors).add(key);
+    const dependencies: TargetWhereDependency[] = [];
 
     for (const quad of shapesGraph.getQuads(shapeNode, sh("property"))) {
-      for (const pathQuad of shapesGraph.getQuads(quad.object, sh("path"))) {
-        if (pathQuad.object.termType === "NamedNode") predicates.push(pathQuad.object);
+      let path: PropertyPath | null;
+      try {
+        path = parsePropertyPath(quad.object, shapesGraph);
+      } catch {
+        continue;
       }
+      if (!path) continue;
+      dependencies.push({ path, nested: valueDependenciesOf(quad.object, inner) });
     }
 
-    for (const listQuad of shapesGraph.getQuads(shapeNode, sh("and"))) {
-      for (const branchShape of getRdfList(listQuad.object, shapesGraph)) walk(branchShape);
+    for (const composed of composedShapes(shapeNode)) {
+      dependencies.push(...dependenciesOf(composed, inner));
     }
 
-    for (const nodeQuad of shapesGraph.getQuads(shapeNode, sh("node"))) walk(nodeQuad.object);
+    return dependencies;
   }
 
-  for (const quad of declarations) walk(quad.object);
+  // Value-level: a property shape's own sh:node/sh:and apply to each value at the end of its path.
+  function valueDependenciesOf(propertyShape: Term, ancestors: Set<string>): TargetWhereDependency[] {
+    return composedShapes(propertyShape).flatMap((composed) => dependenciesOf(composed, ancestors));
+  }
 
-  return dedupeTerms(predicates) as NamedNode[];
+  function composedShapes(shapeNode: Term): Term[] {
+    return [
+      ...shapesGraph
+        .getQuads(shapeNode, sh("and"))
+        .flatMap((listQuad) => getRdfList(listQuad.object, shapesGraph)),
+      ...shapesGraph.getQuads(shapeNode, sh("node")).map((quad) => quad.object),
+    ];
+  }
+
+  return dedupeDependencies(
+    declarations.flatMap((quad) => dependenciesOf(quad.object, new Set())),
+  );
+}
+
+function dedupeDependencies(dependencies: TargetWhereDependency[]): TargetWhereDependency[] {
+  const seen = new Map<string, TargetWhereDependency>();
+  for (const dependency of dependencies) {
+    const key = dependencyKey(dependency);
+    if (!seen.has(key)) seen.set(key, dependency);
+  }
+  return [...seen.values()];
+}
+
+function dependencyKey(dependency: TargetWhereDependency): string {
+  return `${pathKey(dependency.path)}{${dependency.nested.map(dependencyKey).join(",")}}`;
+}
+
+function pathKey(path: PropertyPath): string {
+  switch (path.type) {
+    case "predicate":
+      return termKey(path.predicate);
+    case "sequence":
+    case "alternative":
+      return `${path.type}(${path.items.map(pathKey).join(" ")})`;
+    case "inverse":
+    case "zeroOrMore":
+    case "oneOrMore":
+    case "zeroOrOne":
+      return `${path.type}(${pathKey(path.path)})`;
+  }
 }
 
 // The path types removePropertyPath actually supports detaching a value through - see its own
@@ -340,7 +400,7 @@ function isRemovablePath(
  * nothing currently effective still declares it (including a *different* sh:targetWhere fragment
  * that's still matching, or the real base shape itself).
  *
- * Conservative by design, same as predicatesReferencedByTargetWhereShapes: a value also reachable
+ * Conservative by design, same as pathsReferencedByTargetWhereShapes: a value also reachable
  * via `readOnlyGraph` (an embedder-marked non-editable/inferred triple) is never included, a path
  * type removePropertyPath itself can't detach through (sh:alternativePath and friends) is skipped,
  * and a property nested inside a fragment's own sh:or/sh:xone ChoiceElement is left alone entirely -

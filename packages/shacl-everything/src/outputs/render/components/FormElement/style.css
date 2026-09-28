@@ -11,7 +11,10 @@
   min-height: var(--size-6);
   display: flex;
   align-items: center;
-  width: 100%;
+  /* Not width: 100% - the help icon sits right after the label (see index.tsx), and a full-width
+     label would push it to the header's far end. min-width: 0 still lets it shrink for the
+     label text's ellipsis. */
+  min-width: 0;
   line-height: var(--size-6);
   max-width: 100%;
   color: var(--st-color-text);
@@ -92,6 +95,7 @@
   display: flex;
   width: 100%;
   align-items: center;
+  gap: var(--size-2);
 }
 
 .st-form-element__actions {

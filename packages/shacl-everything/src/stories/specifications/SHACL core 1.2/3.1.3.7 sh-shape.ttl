@@ -1,0 +1,11 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix schema: <http://schema.org/>.
+
+# Data only - no shapes live in this file. The focus node names its own shape, which lives in a
+# separate document and is dereferenced during preprocessing.
+<#data>
+    a schema:Person ;
+    sh:shape <3.1.3.7%20sh-shape.shape.ttl#shape> ;
+    schema:givenName "Hendrik" ;
+    schema:familyName "Jansen" ;
+    .

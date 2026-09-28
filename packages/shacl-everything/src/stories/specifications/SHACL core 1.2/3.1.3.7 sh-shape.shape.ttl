@@ -1,0 +1,16 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:property [
+        sh:name "First name"@en, "Voornaam"@nl ;
+        sh:path schema:givenName ;
+        sh:datatype xsd:string ;
+    ], [
+        sh:name "Last name"@en, "Achternaam"@nl ;
+        sh:path schema:familyName ;
+        sh:datatype xsd:string ;
+    ] ;
+    .

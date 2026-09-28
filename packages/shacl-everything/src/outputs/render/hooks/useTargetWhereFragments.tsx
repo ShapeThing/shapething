@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from "react";
-import type { Quad_Subject } from "@rdfjs/types";
+import type { Quad_Subject, Term } from "@rdfjs/types";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { RdfStore } from "rdf-stores";
 import { sh } from "@/helpers/namespaces.ts";
@@ -7,9 +7,11 @@ import { noRefetch } from "@/helpers/noRefetch.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import {
-  predicatesReferencedByTargetWhereShapes,
+  pathsReferencedByTargetWhereShapes,
   shapesWhereTargetingFocusNode,
+  type TargetWhereDependency,
 } from "@/resolution/targets.ts";
+import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 
 /**
  * Live sh:targetWhere (3.1.3.6) fragment attachment: which shapes in `shapesGraph` currently apply
@@ -18,18 +20,21 @@ import {
  * plausibly change the answer, the way useActiveChoiceBranch re-detects an sh:or/sh:xone branch on
  * every write touching the focus node.
  *
- * This narrows further than that: predicatesReferencedByTargetWhereShapes finds which predicates
- * the sh:targetWhere shapes actually inspect, so an edit to an unrelated property (e.g. this
- * fixture's "Description") never even re-runs shapesWhereTargetingFocusNode's shacl-engine calls -
- * only a write to a watched predicate (e.g. "Claim type") does. Falls back to broad tracking
- * (any write with focusNode as subject/object) when no predicate could be derived, so an
- * unusual sh:targetWhere shape (no sh:path at all - a bare sh:class check, say) still stays live,
- * just without the narrowing.
+ * This narrows further than that: pathsReferencedByTargetWhereShapes finds which property paths
+ * the sh:targetWhere shapes actually inspect, and the tracked read below walks each one through
+ * dataGraph from focusNode - so every hop's getQuads() is a watched pattern (a sequence path's
+ * second step, an inverse path's incoming triples, each node a closure visits, a value-level
+ * sh:node's own paths), re-derived on every re-run as intermediate nodes come and go. An edit to
+ * an unrelated property (e.g. this fixture's "Description") never even re-runs
+ * shapesWhereTargetingFocusNode's shacl-engine calls - only a write somewhere along a watched path
+ * (e.g. "Claim type") does. Falls back to broad tracking (any write with focusNode as
+ * subject/object) when no path could be derived, so an unusual sh:targetWhere shape (no sh:path at
+ * all - a bare sh:class check, say) still stays live, just without the narrowing.
  *
  * A shapes graph with no sh:targetWhere at all (the common case) skips all of this: nothing can
  * ever attach, and shapesGraph is read-only for an Environment's lifetime, so the read below tracks
  * no pattern (no write ever notifies it) and the query never runs. Without this, an empty
- * watchedPredicates would take the broad-tracking fallback above, re-rendering the whole node from
+ * watchedPaths would take the broad-tracking fallback above, re-rendering the whole node from
  * NodeUIComponent down on every write to one of the focus node's own triples.
  *
  * Uses a plain incrementing counter, not a content-derived count, as its revision signal:
@@ -48,19 +53,19 @@ export function useTargetWhereFragments(
     () => shapesGraph.getQuads(null, sh("targetWhere")).length > 0,
     [shapesGraph],
   );
-  const watchedPredicates = useMemo(
-    () => predicatesReferencedByTargetWhereShapes(shapesGraph),
+  const watchedPaths = useMemo(
+    () => pathsReferencedByTargetWhereShapes(shapesGraph),
     [shapesGraph],
   );
 
   const counterRef = useRef(0);
   const revision = useReactiveRead(dataGraph, `target-where-fragments@${focusNode.value}`, () => {
     if (!hasTargetWhere) return 0;
-    if (watchedPredicates.length === 0) {
+    if (watchedPaths.length === 0) {
       dataGraph.getQuads(focusNode);
       dataGraph.getQuads(null, null, focusNode);
     } else {
-      for (const predicate of watchedPredicates) dataGraph.getQuads(focusNode, predicate);
+      walkDependencies(watchedPaths, [focusNode], dataGraph);
     }
     return ++counterRef.current;
   });
@@ -121,4 +126,20 @@ export function useTargetWhereFragments(
   }, [data, fragments, focusNode]);
 
   return fragments;
+}
+
+// Walks each dependency's path from every node in `nodes`, then its nested (value-level)
+// dependencies from whatever that path reached - purely for the getQuads() calls this makes inside
+// a tracked read; the reached values themselves are discarded.
+function walkDependencies(
+  dependencies: TargetWhereDependency[],
+  nodes: Term[],
+  dataGraph: RdfStore,
+): void {
+  for (const dependency of dependencies) {
+    for (const node of nodes) {
+      const values = walkPropertyPath(dependency.path, node, dataGraph);
+      if (dependency.nested.length > 0) walkDependencies(dependency.nested, values, dataGraph);
+    }
+  }
 }

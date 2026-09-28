@@ -97,28 +97,26 @@ export default function FormElement({
             )}
           </label>
         )}
-        {(actions || tooltip) && (
-          <div className="st-form-element__actions">
-            {tooltip && (
-              <Tooltip bare enabled tip={tooltip} placement={tooltipPlacement}>
-                <Localized id="form-element-help" attrs={{ "aria-label": true }}>
-                  {/* Sits before the field itself in the DOM, so a normal tab stop here would
-                      interrupt Tab from the label reaching the field - it's still reachable by
-                      mouse/touch, and by keyboard once the field itself is focused. */}
-                  <button
-                    type="button"
-                    className="st-icon-button st-icon-button--help"
-                    aria-label="Help"
-                    tabIndex={-1}
-                  >
-                    <Help />
-                  </button>
-                </Localized>
-              </Tooltip>
-            )}
-            {actions}
-          </div>
+        {/* Right after the <label> rather than inside it - inside, the label's own colon
+            (generated after the whole <label>, see style.css) would land after the icon. */}
+        {tooltip && (
+          <Tooltip bare enabled tip={tooltip} placement={tooltipPlacement}>
+            <Localized id="form-element-help" attrs={{ "aria-label": true }}>
+              {/* Sits before the field itself in the DOM, so a normal tab stop here would
+                  interrupt Tab from the label reaching the field - it's still reachable by
+                  mouse/touch, and by keyboard once the field itself is focused. */}
+              <button
+                type="button"
+                className="st-icon-button st-icon-button--help"
+                aria-label="Help"
+                tabIndex={-1}
+              >
+                <Help />
+              </button>
+            </Localized>
+          </Tooltip>
         )}
+        {actions && <div className="st-form-element__actions">{actions}</div>}
       </header>
       {description && <p className="st-form-element__description">{description}</p>}
       {children}

@@ -4,13 +4,15 @@ import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import {
   facetableRootShapes,
   orphanedTargetWhereObjects,
-  predicatesReferencedByTargetWhereShapes,
+  pathsReferencedByTargetWhereShapes,
   shaclInstancesOfClass,
   shapesTargetingClass,
   shapesWhereTargetingFocusNode,
   targetsOfShape,
   withSuperClassShapes,
+  type TargetWhereDependency,
 } from "@/resolution/targets.ts";
+import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 
 async function graphs({ shapes, data }: { shapes?: string; data?: string }) {
   return {
@@ -201,7 +203,39 @@ test("shapesWhereTargetingFocusNode 3.1.3.6: no sh:targetWhere shape conforms yi
   expect(shapes).toEqual([]);
 });
 
-test("predicatesReferencedByTargetWhereShapes: collects sh:path from every sh:targetWhere value, across shapes", async () => {
+// Compact, order-independent rendering of pathsReferencedByTargetWhereShapes' result - local names
+// only, `^p` for inverse, `(a / b)` for sequence, `(a | b)` for alternative, `p*`/`p+`/`p?` for the
+// closures, and `p { nested }` for value-level dependencies.
+function describeDependencies(dependencies: TargetWhereDependency[]): string[] {
+  return dependencies
+    .map(({ path, nested }) =>
+      nested.length > 0
+        ? `${describePath(path)} { ${describeDependencies(nested).join(", ")} }`
+        : describePath(path),
+    )
+    .sort();
+}
+
+function describePath(path: PropertyPath): string {
+  switch (path.type) {
+    case "predicate":
+      return path.predicate.value.replace(ex("").value, "");
+    case "sequence":
+      return `(${path.items.map(describePath).join(" / ")})`;
+    case "alternative":
+      return `(${path.items.map(describePath).join(" | ")})`;
+    case "inverse":
+      return `^${describePath(path.path)}`;
+    case "zeroOrMore":
+      return `${describePath(path.path)}*`;
+    case "oneOrMore":
+      return `${describePath(path.path)}+`;
+    case "zeroOrOne":
+      return `${describePath(path.path)}?`;
+  }
+}
+
+test("pathsReferencedByTargetWhereShapes: collects sh:path from every sh:targetWhere value, across shapes", async () => {
   const { shapesGraph } = await graphs({
     shapes: `
       ex:AutoClaimShape a sh:NodeShape ;
@@ -211,40 +245,123 @@ test("predicatesReferencedByTargetWhereShapes: collects sh:path from every sh:ta
     `,
   });
 
-  const predicates = predicatesReferencedByTargetWhereShapes(shapesGraph);
-  expect(new Set(predicates.map((t) => t.value))).toEqual(
-    new Set([ex("claimType").value, ex("kind").value]),
-  );
+  expect(describeDependencies(pathsReferencedByTargetWhereShapes(shapesGraph))).toEqual([
+    "claimType",
+    "kind",
+  ]);
 });
 
-test("predicatesReferencedByTargetWhereShapes: walks sh:and/sh:node inside the targetWhere value", async () => {
+test("pathsReferencedByTargetWhereShapes: walks sh:and/sh:node inside the targetWhere value", async () => {
   const { shapesGraph } = await graphs({
     shapes: `
       ex:AutoClaimShape a sh:NodeShape ;
         sh:targetWhere [
           sh:node [ sh:property [ sh:path ex:claimType ; sh:hasValue "Auto" ] ] ;
+          sh:and ( [ sh:property [ sh:path ex:kind ; sh:minCount 1 ] ] ) ;
         ] .
     `,
   });
 
-  const predicates = predicatesReferencedByTargetWhereShapes(shapesGraph);
-  expect(predicates.map((t) => t.value)).toEqual([ex("claimType").value]);
+  expect(describeDependencies(pathsReferencedByTargetWhereShapes(shapesGraph))).toEqual([
+    "claimType",
+    "kind",
+  ]);
 });
 
-test("predicatesReferencedByTargetWhereShapes: a targetWhere value with no sh:path yields an empty list", async () => {
+test("pathsReferencedByTargetWhereShapes: keeps whole complex paths, not just a leading predicate", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `
+      ex:FragmentShape a sh:NodeShape ;
+        sh:targetWhere [
+          sh:property [ sh:path ( ex:details ex:kind ) ; sh:hasValue "A" ] ;
+          sh:property [ sh:path [ sh:inversePath ex:parent ] ; sh:minCount 1 ] ;
+          sh:property [ sh:path [ sh:alternativePath ( ex:a ex:b ) ] ; sh:minCount 1 ] ;
+          sh:property [ sh:path [ sh:zeroOrMorePath ex:broader ] ; sh:hasValue ex:Root ] ;
+        ] .
+    `,
+  });
+
+  expect(describeDependencies(pathsReferencedByTargetWhereShapes(shapesGraph))).toEqual([
+    "(a | b)",
+    "(details / kind)",
+    "^parent",
+    "broader*",
+  ]);
+});
+
+test("pathsReferencedByTargetWhereShapes: a property shape's own sh:node becomes a nested, value-level dependency", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `
+      ex:DutchShape a sh:NodeShape ;
+        sh:targetWhere [
+          sh:property [
+            sh:path ex:address ;
+            sh:node [ sh:property [ sh:path ex:country ; sh:hasValue ex:NL ] ] ;
+          ] ;
+        ] .
+    `,
+  });
+
+  expect(describeDependencies(pathsReferencedByTargetWhereShapes(shapesGraph))).toEqual([
+    "address { country }",
+  ]);
+});
+
+test("pathsReferencedByTargetWhereShapes: a recursive value shape terminates", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `
+      ex:ChainShape a sh:NodeShape ;
+        sh:property [ sh:path ex:next ; sh:node ex:ChainShape ] .
+      ex:FragmentShape a sh:NodeShape ; sh:targetWhere ex:ChainShape .
+    `,
+  });
+
+  expect(describeDependencies(pathsReferencedByTargetWhereShapes(shapesGraph))).toEqual(["next"]);
+});
+
+test("pathsReferencedByTargetWhereShapes: an unparseable sh:path is skipped, not thrown", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `
+      ex:FragmentShape a sh:NodeShape ;
+        sh:targetWhere [
+          sh:property [ sh:path "not a path" ] ;
+          sh:property [ sh:path ex:kind ; sh:hasValue "A" ] ;
+        ] .
+    `,
+  });
+
+  expect(describeDependencies(pathsReferencedByTargetWhereShapes(shapesGraph))).toEqual(["kind"]);
+});
+
+test("pathsReferencedByTargetWhereShapes: the same path declared twice is deduplicated", async () => {
+  const { shapesGraph } = await graphs({
+    shapes: `
+      ex:AShape a sh:NodeShape ;
+        sh:targetWhere [ sh:property [ sh:path ( ex:details ex:kind ) ; sh:hasValue "A" ] ] .
+      ex:BShape a sh:NodeShape ;
+        sh:targetWhere [ sh:property [ sh:path ( ex:details ex:kind ) ; sh:hasValue "B" ] ] .
+    `,
+  });
+
+  expect(describeDependencies(pathsReferencedByTargetWhereShapes(shapesGraph))).toEqual([
+    "(details / kind)",
+  ]);
+});
+
+test("pathsReferencedByTargetWhereShapes: a targetWhere value with no sh:path yields an empty list", async () => {
   const { shapesGraph } = await graphs({
     shapes: `ex:AdultShape a sh:NodeShape ; sh:targetWhere [ sh:class ex:Person ] .`,
   });
 
-  expect(predicatesReferencedByTargetWhereShapes(shapesGraph)).toEqual([]);
+  expect(pathsReferencedByTargetWhereShapes(shapesGraph)).toEqual([]);
 });
 
-test("predicatesReferencedByTargetWhereShapes: no sh:targetWhere declared at all yields an empty list", async () => {
+test("pathsReferencedByTargetWhereShapes: no sh:targetWhere declared at all yields an empty list", async () => {
   const { shapesGraph } = await graphs({
     shapes: `ex:PlainShape a sh:NodeShape ; sh:targetClass ex:Person .`,
   });
 
-  expect(predicatesReferencedByTargetWhereShapes(shapesGraph)).toEqual([]);
+  expect(pathsReferencedByTargetWhereShapes(shapesGraph)).toEqual([]);
 });
 
 test("orphanedTargetWhereObjects: a value belonging only to a fragment that's no longer active is reported", async () => {
