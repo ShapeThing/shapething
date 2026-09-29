@@ -1,7 +1,10 @@
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-shui:TextAreaEditor rdfs:label "Text Area"@en, "Tekstvak"@nl .
+shui:TextAreaEditor
+    a shui:Editor ;
+    rdfs:isDefinedBy shui: ;
+    rdfs:label "Text Area"@en, "Tekstvak"@nl .
 
 shui:textAreaEditorScore30
     a shui:WidgetScore ;

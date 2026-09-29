@@ -90,7 +90,7 @@ export function shapesForClass(classIri: Term, shapesGraph: RdfStore): Quad_Subj
  * rdfs:subClassOf, nearest first, excluding `classIri` itself. Same both-graphs lookup (6.3
  * subClassOfInShapesGraph) and cycle guard.
  */
-function ancestorClasses(classIri: Term, graphs: RdfStore[]): Term[] {
+export function ancestorClasses(classIri: Term, graphs: RdfStore[]): Term[] {
   const seen = new Set<string>([termKey(classIri)]);
   const result: Term[] = [];
   let frontier = [classIri];

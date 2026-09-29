@@ -1,7 +1,10 @@
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-shui:IRIEditor rdfs:label "IRI Field"@en, "IRI-veld"@nl .
+shui:IRIEditor
+    a shui:Editor ;
+    rdfs:isDefinedBy shui: ;
+    rdfs:label "IRI Field"@en, "IRI-veld"@nl .
 
 shui:iriEditorScore20
     a shui:WidgetScore ;

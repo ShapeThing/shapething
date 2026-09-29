@@ -6,10 +6,11 @@ import { sh, st } from "@/helpers/namespaces.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
 import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import { useSelectOptions, type ResolvedOption } from "@/outputs/render/hooks/useSelectOptions.tsx";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
-import { valueNodeShapes } from "@/resolution/label.ts";
+import { ontologyLabel, valueNodeShapes } from "@/resolution/label.ts";
 import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import { selectQueryFor } from "@/structure/selectQuery.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
@@ -25,6 +26,7 @@ export default function EnumSelectEditor({
   autoFocus,
 }: WidgetProps) {
   const { enableEditInPlace } = useEnvironment();
+  const { activeInterfaceLanguage } = useInterfaceLanguage();
   const inOptions = useMemo(() => shape.get(sh("in")), [shape]);
   const selectQuery = useMemo(() => selectQueryFor(shape), [shape]);
   const shClasses = useMemo(() => shape.get(sh("class")), [shape]);
@@ -104,9 +106,18 @@ export default function EnumSelectEditor({
           const match =
             lookups.find((lookup) => lookup.iri.value === option.value) ??
             currentValueLookups.find((lookup) => lookup.iri.value === option.value);
+          // The batched lookup only queries the dataGraph - an option labelled solely in the
+          // shapes graph or scoresGraph (e.g. a widget IRI's own rdfs:label from its score.ttl)
+          // falls back to ontologyLabel, which checks all three.
           return {
             term: option,
-            label: match?.label,
+            label:
+              match?.label ??
+              ontologyLabel({
+                term: option,
+                propertyShape: shape,
+                languages: [activeInterfaceLanguage],
+              }),
             classification: match?.classification,
             depiction: match?.depiction,
           };

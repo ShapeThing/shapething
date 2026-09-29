@@ -2,6 +2,7 @@ import type { NamedNode, Quad_Object, Quad_Subject } from "@rdfjs/types";
 import { expect, test, vi } from "vite-plus/test";
 import { RdfStore } from "rdf-stores";
 import {
+  addGroupTypeHierarchy,
   addMissingShapes,
   dropShapesWithMultiplePaths,
   mergeFacetTextSearchProperties,
@@ -10,6 +11,8 @@ import { defaultEnvironment, type RawEnvironment } from "@/environment.ts";
 import { factory } from "@/helpers/factory.ts";
 import { ex, rdf, rdfs, sh, st, xsd } from "@/helpers/namespaces.ts";
 import { getRdfList, rebuildRdfList } from "@/helpers/rdfList.ts";
+import { defaultWidgets } from "@/widgets/registry.ts";
+import { isPropertyGroup } from "@/structure/groupTypes.ts";
 
 const rawEnvironment = (overrides: Partial<RawEnvironment>): RawEnvironment => ({
   ...defaultEnvironment,
@@ -586,4 +589,22 @@ test("dropShapesWithMultiplePaths - drops a shape with two sh:path values and ev
   // The caller's own store is never mutated.
   expect(shapesGraph.getQuads(ex("broken"))).toHaveLength(3);
   info.mockRestore();
+});
+
+test("addGroupTypeHierarchy - a group typed only with a bundled group type becomes a sh:PropertyGroup", async () => {
+  const source = RdfStore.createDefault();
+  source.addQuad(factory.quad(ex("nameGroup"), rdf("type"), st("DrawerPropertyGroup")));
+  expect(isPropertyGroup(ex("nameGroup"), [source])).toBe(false);
+
+  const result = await addGroupTypeHierarchy(
+    rawEnvironment({ shapesGraph: source, widgets: defaultWidgets }),
+  );
+  const shapesGraph = result.shapesGraph as RdfStore;
+
+  expect(isPropertyGroup(ex("nameGroup"), [shapesGraph])).toBe(true);
+  expect(
+    shapesGraph.getQuads(st("DrawerPropertyGroup"), rdfs("subClassOf"), sh("PropertyGroup")),
+  ).toHaveLength(1);
+  // The caller's store is left untouched.
+  expect(source.size).toBe(1);
 });

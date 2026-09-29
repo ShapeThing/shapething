@@ -1,6 +1,7 @@
 import type { NamedNode, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { rdf, sh, shui, st } from "@/helpers/namespaces.ts";
+import { sh, shui, st } from "@/helpers/namespaces.ts";
+import { groupTypes } from "@/structure/groupTypes.ts";
 import type {
   FacetWidgetComponent,
   GroupWidgetRegistryEntry,
@@ -88,25 +89,30 @@ export function getWidgetMeta(
 }
 
 /**
- * Resolves the registered group widget for `node`'s own rdf:type - simple, direct type matching,
- * no scoring system. sh:PropertyGroup is the mandatory base type every group carries (see
- * structure/groupChildren.ts's validation step) and is never itself a deliberate widget choice, so
- * a more specific registered type present on the same node (e.g. st:CollapsiblePropertyGroup, on
- * `a sh:PropertyGroup, st:CollapsiblePropertyGroup`) always wins over it.
+ * Resolves the registered group widget for `node`'s rdf:type - type matching, no scoring system.
+ * Its types are tried nearest first, subclasses included (see structure/groupTypes.ts), so a node
+ * typed with a shape author's own `ex:MyGroup rdfs:subClassOf st:DrawerPropertyGroup` gets the
+ * drawer. sh:PropertyGroup is the root every group type specializes and is never itself a
+ * deliberate widget choice, so any more specific registered type (e.g. st:CollapsiblePropertyGroup,
+ * on `a st:CollapsiblePropertyGroup` or `a sh:PropertyGroup, st:CollapsiblePropertyGroup`) always
+ * wins over it.
  */
 export function getGroupWidget(
   node: Term,
   shapesGraph: RdfStore,
   widgets: Widgets,
 ): GroupWidgetRegistryEntry | undefined {
-  const types = shapesGraph.getQuads(node, rdf("type")).map((quad) =>
-    quad.object
-  );
-  const matches = Object.values(widgets.groups).filter((entry) =>
-    types.some((type) => type.equals(entry.widget))
-  );
-  return matches.find((entry) => !entry.widget.equals(sh("PropertyGroup"))) ??
-    matches[0];
+  const entries = Object.values(widgets.groups);
+  const entryFor = (type: Term) => entries.find((entry) => entry.widget.equals(type));
+  const types = groupTypes(node, [shapesGraph]);
+  for (const type of types) {
+    if (type.equals(sh("PropertyGroup"))) continue;
+    const entry = entryFor(type);
+    if (entry) return entry;
+  }
+  return types.some((type) => type.equals(sh("PropertyGroup")))
+    ? entryFor(sh("PropertyGroup"))
+    : undefined;
 }
 
 /**

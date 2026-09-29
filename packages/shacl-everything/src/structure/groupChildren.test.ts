@@ -124,6 +124,31 @@ test("a shapes graph with no sh:group/sh:order at all sorts identically to the f
   );
 });
 
+test("a group typed only with a subclass of sh:PropertyGroup is a group too", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix st: <http://shapething.com/> .
+        @prefix ex: <http://example.org/> .
+
+        ex:Person a sh:NodeShape ;
+            sh:property [ sh:path ex:givenName ; sh:group ex:nameGroup ] .
+
+        st:DrawerPropertyGroup rdfs:subClassOf sh:PropertyGroup .
+        ex:nameGroup a st:DrawerPropertyGroup .
+    `,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf("", "text/turtle");
+
+  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  const [group] = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets) as GroupUIElement[];
+
+  expect(group).toBeInstanceOf(GroupUIElement);
+  expect(group.node.value).toEqual(ex("nameGroup").value);
+});
+
 test("throws when a property's sh:group references a node not typed sh:PropertyGroup", async () => {
   const shapesGraph = await parseRdf(
     `

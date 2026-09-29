@@ -1,17 +1,18 @@
 import type { Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { rdf, st } from "@/helpers/namespaces.ts";
+import { st } from "@/helpers/namespaces.ts";
+import { hasGroupType } from "@/structure/groupTypes.ts";
 
 /**
  * True when `node` (a sh:PropertyGroup node) is itself declared st:VerticalTabbedPropertyGroup -
  * the ShapeThing-original Drupal-style "vertical tabs" group type (see widgets/implementations/
- * st/groups/VerticalTabbedPropertyGroup). Checked directly against rdf:type rather than through
+ * st/groups/VerticalTabbedPropertyGroup). Checked against rdf:type (subclasses included, see groupTypes.ts) rather than through
  * widget resolution (registry.ts's getGroupWidget), for the same reason as isTabbedPropertyGroup
  * (see tabbedGroups.ts): sibling-family detection stays correct even for a caller-supplied
  * Widgets registry that maps a different Component to this IRI.
  */
 export function isVerticalTabbedPropertyGroup(node: Term, shapesGraph: RdfStore): boolean {
-  return shapesGraph.getQuads(node, rdf("type"), st("VerticalTabbedPropertyGroup")).length > 0;
+  return hasGroupType(node, st("VerticalTabbedPropertyGroup"), [shapesGraph]);
 }
 
 // Stable DOM ids for the tab button and its panel - see tabbedGroups.ts's own sanitizeForId for

@@ -37,6 +37,7 @@ const webComponentProps = {
   enableContentLanguageCreation: "boolean",
   enableShPathInLabelTitle: "boolean",
   enableFullLanguageRemoval: "boolean",
+  enableTitle: "boolean",
   enableInterfaceLanguageWithShapesLabelsOnly: "boolean",
   enableEditInPlace: "boolean",
   enableViewInPlace: "boolean",

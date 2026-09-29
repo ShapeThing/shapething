@@ -1,7 +1,10 @@
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-shui:TextFieldWithLangEditor rdfs:label "Text Field with Language"@en, "Tekstveld met taal"@nl .
+shui:TextFieldWithLangEditor
+    a shui:Editor ;
+    rdfs:isDefinedBy shui: ;
+    rdfs:label "Text Field with Language"@en, "Tekstveld met taal"@nl .
 
 shui:textFieldWithLangEditorScore30
     a shui:WidgetScore ;

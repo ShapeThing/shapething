@@ -6,7 +6,7 @@ import {
   getWidgetComponent,
   getWidgetMeta,
 } from "@/widgets/registry.ts";
-import { ex, rdf, sh, shui, st } from "@/helpers/namespaces.ts";
+import { ex, rdf, rdfs, sh, shui, st } from "@/helpers/namespaces.ts";
 import { score, select } from "@/scoring/score.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
@@ -219,6 +219,62 @@ test("getGroupWidget prefers a more specific registered type (st:CollapsibleProp
   expect(getGroupWidget(ex("nameGroup"), shapesGraph)?.widget).toEqual(
     st("CollapsiblePropertyGroup"),
   );
+});
+
+test("every bundled group widget declares itself a subclass of sh:PropertyGroup in its meta.ttl", async () => {
+  for (const entry of Object.values(defaultWidgets.groups)) {
+    if (entry.widget.equals(sh("PropertyGroup"))) continue;
+    const metaGraph = await parseRdf(entry.metaGraph ?? "", "text/turtle");
+    expect(
+      metaGraph.getQuads(entry.widget, rdfs("subClassOf"), sh("PropertyGroup")),
+      entry.widget.value,
+    ).toHaveLength(1);
+  }
+});
+
+test("getGroupWidget matches a group typed only with a group widget's own type", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix st: <http://shapething.com/> .
+        @prefix ex: <http://example.org/> .
+        ex:nameGroup a st:DrawerPropertyGroup .
+    `,
+    "text/turtle",
+  );
+
+  expect(getGroupWidget(ex("nameGroup"), shapesGraph)?.widget).toEqual(st("DrawerPropertyGroup"));
+});
+
+test("getGroupWidget follows a shape author's own rdfs:subClassOf of a group widget's type", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+        @prefix st: <http://shapething.com/> .
+        @prefix ex: <http://example.org/> .
+        ex:SectionGroup rdfs:subClassOf st:CollapsiblePropertyGroup .
+        ex:nameGroup a ex:SectionGroup .
+    `,
+    "text/turtle",
+  );
+
+  expect(getGroupWidget(ex("nameGroup"), shapesGraph)?.widget).toEqual(
+    st("CollapsiblePropertyGroup"),
+  );
+});
+
+test("getGroupWidget falls back to sh:PropertyGroup for a subclass with no widget of its own", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        ex:SectionGroup rdfs:subClassOf sh:PropertyGroup .
+        ex:nameGroup a ex:SectionGroup .
+    `,
+    "text/turtle",
+  );
+
+  expect(getGroupWidget(ex("nameGroup"), shapesGraph)?.widget).toEqual(sh("PropertyGroup"));
 });
 
 test("getGroupWidget returns undefined for a type with no registered group widget", async () => {

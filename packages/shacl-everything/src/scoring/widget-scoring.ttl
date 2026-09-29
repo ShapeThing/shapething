@@ -4,6 +4,17 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 PREFIX dash: <http://datashapes.org/dash#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX st: <http://shapething.com/>
+
+# The ontologies every widget is rdfs:isDefinedBy (see each widget's score.ttl) - labelled here,
+# since w3.org serves nothing at the SHACL UI namespace to take a label from.
+shui: a owl:Ontology ;
+    rdfs:label "SHACL UI"@en, "SHACL UI"@nl .
+
+st: a owl:Ontology ;
+    rdfs:label "ShapeThing"@en, "ShapeThing"@nl .
 
 #####################
 # Data Graph Shapes #

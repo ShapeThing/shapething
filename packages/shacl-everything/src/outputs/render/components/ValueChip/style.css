@@ -77,7 +77,6 @@
   font-size: calc(var(--size-3) * 0.8);
 }
 .st-value-chip--small .st-value-chip__label {
-  text-transform: lowercase;
   letter-spacing: 0.05em;
   color: var(--gray-8);
 }

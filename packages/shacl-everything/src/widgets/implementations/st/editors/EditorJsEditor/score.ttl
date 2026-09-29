@@ -4,7 +4,10 @@ PREFIX st: <http://shapething.com/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX ed: <https://editorjs.io/>
 
-st:EditorJsEditor rdfs:label "Block Editor"@en, "Blokeditor"@nl .
+st:EditorJsEditor
+    a shui:Editor ;
+    rdfs:isDefinedBy st: ;
+    rdfs:label "Block Editor"@en, "Blokeditor"@nl .
 
 # Unlike AddressEditor/ColorEditor, an Editor.js document does carry a signal of its own:
 # outputData.ts always types the node ed:OutputData. Same two rules as shacl-renderer's own

@@ -2,7 +2,8 @@ PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 shui:AutoCompleteEditor
-    a shui:Widget ;
+    a shui:Editor ;
+    rdfs:isDefinedBy shui: ;
     rdfs:label "Autocomplete"@en, "Automatisch aanvullen"@nl .
 
 shui:autoCompleteEditorScore40

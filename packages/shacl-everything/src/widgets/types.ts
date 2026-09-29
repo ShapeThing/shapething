@@ -116,12 +116,16 @@ export type FacetWidgetRegistryEntry = {
 };
 
 /**
- * A group widget is selected by simple, direct rdf:type matching (see registry.ts's
+ * A group widget is selected by rdf:type matching, subclasses included (see registry.ts's
  * getGroupWidget) - no scoring system, so there's no scoringGraph here.
  */
 export type GroupWidgetRegistryEntry = {
   widget: NamedNode;
   Component: GroupWidgetComponent;
+  // Raw turtle describing this group type itself - at least `rdfs:subClassOf sh:PropertyGroup`, so
+  // a group typed only with this widget's IRI still counts as a sh:PropertyGroup. Merged into the
+  // shapes graph by preprocess/shapes.ts's addGroupTypeHierarchy.
+  metaGraph?: string;
 };
 
 /**

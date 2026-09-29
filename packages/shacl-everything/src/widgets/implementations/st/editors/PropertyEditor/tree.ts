@@ -2,10 +2,11 @@ import type { Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { arrayMove } from "@dnd-kit/sortable";
 import { factory } from "@/helpers/factory.ts";
-import { rdf, sh } from "@/helpers/namespaces.ts";
+import { sh } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { transact } from "@/helpers/reactiveRdfStore.ts";
 import { writeOrder } from "@/structure/orderByValues.ts";
+import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 
 /**
@@ -66,11 +67,15 @@ function byOrder(nodes: Quad_Subject[], dataGraph: RdfStore): Quad_Subject[] {
     .map(({ node }) => node);
 }
 
-/** Every node the data graph uses or declares as a sh:PropertyGroup. */
-export function allGroups(dataGraph: RdfStore): Quad_Subject[] {
+/**
+ * Every node the data graph uses or declares as a sh:PropertyGroup - including one typed only with
+ * a subclass of it (e.g. st:DrawerPropertyGroup), per the rdfs:subClassOf triples in either graph
+ * (the renderer's own `shapesGraph` carries the bundled group types', see addGroupTypeHierarchy).
+ */
+export function allGroups(dataGraph: RdfStore, shapesGraph?: RdfStore): Quad_Subject[] {
   const groups = new Map<string, Quad_Subject>();
-  for (const quad of dataGraph.getQuads(null, rdf("type"), sh("PropertyGroup"))) {
-    groups.set(termKey(quad.subject), quad.subject);
+  for (const group of shaclInstancesOfClass(sh("PropertyGroup"), dataGraph, shapesGraph ?? dataGraph)) {
+    groups.set(termKey(group), group);
   }
   for (const quad of dataGraph.getQuads(null, sh("group"))) {
     if (isNode(quad.object)) groups.set(termKey(quad.object), quad.object);
@@ -83,7 +88,7 @@ export function allGroups(dataGraph: RdfStore): Quad_Subject[] {
  * group under its own sh:group in turn, every level sorted by sh:order - the same structure the
  * renderer shows the node shape's form in.
  */
-export function readTree(properties: Term[], dataGraph: RdfStore): Tree {
+export function readTree(properties: Term[], dataGraph: RdfStore, shapesGraph?: RdfStore): Tree {
   const children = new Map<string | null, Quad_Subject[]>();
   const kinds = new Map<string, TreeItem["kind"]>();
   const addChild = (parent: Quad_Subject | undefined, child: Quad_Subject) => {
@@ -118,7 +123,7 @@ export function readTree(properties: Term[], dataGraph: RdfStore): Tree {
   flatten(null, 0);
 
   const unusedGroups = byOrder(
-    allGroups(dataGraph).filter((group) => !kinds.has(termKey(group))),
+    allGroups(dataGraph, shapesGraph).filter((group) => !kinds.has(termKey(group))),
     dataGraph,
   );
 

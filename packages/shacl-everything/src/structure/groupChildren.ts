@@ -1,9 +1,10 @@
 import type { Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { rdf, sh } from "@/helpers/namespaces.ts";
+import { sh } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import { GroupUIElement } from "@/structure/GroupUIElement.ts";
+import { isPropertyGroup } from "@/structure/groupTypes.ts";
 import { createIdentityMemo } from "@/structure/memo.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Widgets } from "@/widgets/types.ts";
@@ -69,7 +70,7 @@ function buildGroupTree(
   }
 
   for (const node of groupNodes.values()) {
-    if (shapesGraph.getQuads(node, rdf("type"), sh("PropertyGroup")).length === 0) {
+    if (!isPropertyGroup(node, [shapesGraph])) {
       throw new Error(`Missing sh:PropertyGroup definition for ${node.value}`);
     }
   }

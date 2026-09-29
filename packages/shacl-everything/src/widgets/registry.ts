@@ -164,6 +164,17 @@ function buildFacetEntries(): Record<string, FacetWidgetRegistryEntry> {
   return entries;
 }
 
+// A group's meta.ttl describes the group type itself (its rdfs:subClassOf sh:PropertyGroup, see
+// GroupWidgetRegistryEntry.metaGraph) - it carries no score, groups don't score.
+const groupMetaGraphs = import.meta.glob(
+  "/src/widgets/implementations/*/groups/*/meta.ttl",
+  {
+    eager: true,
+    query: "?raw",
+    import: "default",
+  },
+) as Record<string, string>;
+
 function buildGroupEntries(): Record<string, GroupWidgetRegistryEntry> {
   const entries: Record<string, GroupWidgetRegistryEntry> = {};
   for (const [path, Component] of Object.entries(eagerComponents)) {
@@ -171,6 +182,7 @@ function buildGroupEntries(): Record<string, GroupWidgetRegistryEntry> {
     entries[folderName(path)] = {
       widget: widgetIri(path),
       Component: Component as GroupWidgetComponent,
+      metaGraph: groupMetaGraphs[path.replace(/widget\.tsx$/, "meta.ttl")],
     };
   }
   return entries;
@@ -179,7 +191,7 @@ function buildGroupEntries(): Record<string, GroupWidgetRegistryEntry> {
 /**
  * Every widget bundled with this library, organized exactly like `Environment.widgets`/`Widgets`
  * itself - editors and viewers (shui:-namespaced, SHACL-UI Widget Score-selected) plus groups
- * (sh:/st:-namespaced, selected by direct rdf:type match, see getGroupWidget). Exported so an
+ * (sh:/st:-namespaced, selected by rdf:type match, see getGroupWidget). Exported so an
  * embedder can build a custom widget set by spreading this and overriding/removing/adding entries,
  * e.g. `{ ...defaultWidgets, editors: { ...defaultWidgets.editors, TextFieldEditor: MyWidget } }`.
  */

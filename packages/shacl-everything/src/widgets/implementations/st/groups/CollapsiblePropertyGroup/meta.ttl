@@ -1,0 +1,7 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix st: <http://shapething.com/> .
+
+# A group typed only st:CollapsiblePropertyGroup is a sh:PropertyGroup too - see structure/groupTypes.ts.
+st:CollapsiblePropertyGroup a rdfs:Class ;
+    rdfs:subClassOf sh:PropertyGroup .

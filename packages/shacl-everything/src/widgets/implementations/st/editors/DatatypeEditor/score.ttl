@@ -3,7 +3,10 @@ PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX st: <http://shapething.com/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-st:DatatypeEditor rdfs:label "Datatype Picker"@en, "Datatype kiezer"@nl .
+st:DatatypeEditor
+    a shui:Editor ;
+    rdfs:isDefinedBy st: ;
+    rdfs:label "Datatype Picker"@en, "Datatype kiezer"@nl .
 
 # Only true when the property shape being edited is itself describing a datatype constraint - i.e.
 # its own sh:path is literally sh:datatype. That only happens for a "meta shape" that edits SHACL

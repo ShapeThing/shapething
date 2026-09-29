@@ -794,3 +794,85 @@ function hslNodeToHex(node: Term, dataGraph: RdfStore): string | undefined {
   if (h === undefined || s === undefined || l === undefined) return undefined;
   return hslToHex({ h: parseFloat(h), s: parseFloat(s), l: parseFloat(l) });
 }
+
+type NodeShapeLabelOptions = {
+  nodeShapes: Quad_Subject[];
+  shapesGraph: RdfStore;
+  languages?: BCP47[];
+};
+
+/**
+ * What the node shape(s) describe, as a title-ready label (e.g. "Person" in "Create Person"): the
+ * first shape - in nodeShapes' own order - with a label of its own (see groupLabel: rdfs:label,
+ * then sh:name), else its sh:targetClass's rdfs:label in the shapes graph, else the humanized
+ * local name of the first shape's target class (or the shape itself, an implicit class shape).
+ * Shape metadata, so `languages` is the interface language, not the content language.
+ */
+export function nodeShapeLabel({
+  nodeShapes,
+  shapesGraph,
+  languages,
+}: NodeShapeLabelOptions): string | undefined {
+  const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
+  const targetClassOf = (node: Quad_Subject) =>
+    shapesGraph.getQuads(node, sh("targetClass"))[0]?.object;
+
+  for (const node of nodeShapes) {
+    const label = groupLabel({ node, shapesGraph, languages });
+    if (label) return label;
+
+    const targetClass = targetClassOf(node);
+    if (!targetClass) continue;
+    const classLabel = language(
+      shapesGraph
+        .getQuads(targetClass, rdfs("label"))
+        .map((quad) => quad.object)
+        .filter((value): value is Literal => value.termType === "Literal"),
+      effLanguages,
+    );
+    if (classLabel) return classLabel.value;
+  }
+
+  const first = nodeShapes[0];
+  if (!first) return undefined;
+  const fallback = targetClassOf(first) ?? first;
+  return fallback.termType === "NamedNode" ? (localNameLabel(fallback) ?? undefined) : undefined;
+}
+
+type FocusNodeLabelOptions = {
+  term: Term;
+  nodeShapes: Quad_Subject[];
+  shapesGraph: RdfStore;
+  dataGraph: RdfStore;
+  languages?: BCP47[];
+};
+
+/**
+ * The root focus node's own label (e.g. "Alice" in "Edit Alice") - valueNodeLabel's steps 2-3 for
+ * a node that isn't the value of any property shape: a shui:LabelRole path on one of nodeShapes,
+ * then the configured label predicate(s) (default rdfs:label), both walked in the data graph.
+ * Undefined, rather than a local-name fallback, when neither finds a literal - a minted IRI like
+ * urn:uuid:... makes a poor title, so the caller falls back to the shape's label instead.
+ */
+export function focusNodeLabel({
+  term,
+  nodeShapes,
+  shapesGraph,
+  dataGraph,
+  languages,
+}: FocusNodeLabelOptions): string | undefined {
+  const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
+  const paths = [
+    ...propertyPathsByRoleForNodeShapes(nodeShapes, shapesGraph, shui("LabelRole")),
+    ...effectiveLabelPredicates(shapesGraph, "term"),
+  ];
+
+  for (const path of paths) {
+    const literal = language(
+      walkPropertyPath(path, term, dataGraph).filter((v): v is Literal => v.termType === "Literal"),
+      effLanguages,
+    );
+    if (literal) return literal.value;
+  }
+  return undefined;
+}

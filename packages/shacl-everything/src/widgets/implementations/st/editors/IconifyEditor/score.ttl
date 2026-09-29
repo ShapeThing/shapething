@@ -3,7 +3,10 @@ PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX st: <http://shapething.com/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-st:IconifyEditor rdfs:label "Icon Picker"@en, "Icoonkiezer"@nl .
+st:IconifyEditor
+    a shui:Editor ;
+    rdfs:isDefinedBy st: ;
+    rdfs:label "Icon Picker"@en, "Icoonkiezer"@nl .
 
 # A property shape declaring sh:datatype <https://iconify.design> (see namespaces.ts's
 # iconifyDatatype) always means "this value is an Iconify icon name" - beats TextFieldEditor's own

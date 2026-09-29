@@ -6,6 +6,8 @@ import { factory } from "@/helpers/factory.ts";
 import { rdf, rdfs, sh, st, xsd } from "@/helpers/namespaces.ts";
 import { getRdfList, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { termKey } from "@/helpers/termKey.ts";
+import { parseRdf } from "@/helpers/rdf.ts";
+import type { Widgets } from "@/widgets/types.ts";
 import {
   facetableRootShapes,
   shapesForClass,
@@ -418,5 +420,42 @@ export const dropShapesWithMultiplePaths: Preprocessor = (environment) => {
     invalid.map((entry) => entry.shape.value),
   );
 
+  return { ...environment, shapesGraph };
+};
+
+// Parsing every group's meta.ttl is pure and scoped to the `widgets` object - keyed by its
+// identity, same as registry.ts's scoringGraphCache.
+const groupTypeGraphCache = new WeakMap<Widgets, Promise<RdfStore>>();
+
+function groupTypeGraph(widgets: Widgets): Promise<RdfStore> {
+  let graph = groupTypeGraphCache.get(widgets);
+  if (!graph) {
+    const turtle = Object.values(widgets.groups)
+      .map((entry) => entry.metaGraph ?? "")
+      .join("\n");
+    graph = parseRdf(turtle, "text/turtle");
+    groupTypeGraphCache.set(widgets, graph);
+  }
+  return graph;
+}
+
+/**
+ * Merges every registered group widget's meta.ttl (see GroupWidgetRegistryEntry.metaGraph) into
+ * the shapes graph - e.g. `st:DrawerPropertyGroup rdfs:subClassOf sh:PropertyGroup` - so a group
+ * typed only `a st:DrawerPropertyGroup` is a sh:PropertyGroup everywhere that reasons over
+ * rdfs:subClassOf in the shapes graph: structure/groupTypes.ts (group detection, group widget
+ * selection) and resolution/targets.ts (a `sh:targetClass sh:PropertyGroup` shape targets it).
+ *
+ * Must run after resolveWidgets. Copies shapesGraph only when there's something to add - see
+ * addMissingShapes on not mutating the caller-supplied store in place.
+ */
+export const addGroupTypeHierarchy: Preprocessor = async (environment) => {
+  if (!environment.widgets) return environment;
+  const additions = (await groupTypeGraph(environment.widgets)).getQuads();
+  if (additions.length === 0) return environment;
+
+  const shapesGraph = RdfStore.createDefault();
+  for (const quad of (environment.shapesGraph as RdfStore).getQuads()) shapesGraph.addQuad(quad);
+  for (const quad of additions) shapesGraph.addQuad(quad);
   return { ...environment, shapesGraph };
 };

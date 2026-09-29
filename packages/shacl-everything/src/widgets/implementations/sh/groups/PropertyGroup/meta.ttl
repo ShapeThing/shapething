@@ -1,0 +1,5 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+# The root every group type is (transitively) an rdfs:subClassOf - see structure/groupTypes.ts.
+sh:PropertyGroup a rdfs:Class .

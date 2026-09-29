@@ -123,6 +123,10 @@ export type Environment = {
   enableShPathInLabelTitle?: boolean;
   // When true, shows a trash icon inside the content language switcher.
   enableFullLanguageRemoval?: boolean;
+  // When true, renders a heading above the form: "Edit {resource label}" / "Create {shape label}"
+  // in edit mode (depending on whether the focus node had any triples at mount), the resource's
+  // label in view mode, and "Search {shape label}" in facet mode (see components/Title).
+  enableTitle?: boolean;
   // When true, languages detected on sh:name/sh:description in the shapes graph but not covered
   // by an interface locale are also offered in the interface language switcher - useful when the
   // shapes graph contains labels in a language the library doesn't ship a translation for. When
@@ -289,6 +293,7 @@ export const defaultEnvironment: Environment = {
   enableContentLanguageCreation: true,
   enableShPathInLabelTitle: true,
   enableFullLanguageRemoval: true,
+  enableTitle: false,
   enableInterfaceLanguageWithShapesLabelsOnly: true,
   enableEditInPlace: true,
   enableViewInPlace: true,
@@ -328,6 +333,7 @@ export const minimalEnvironment: Omit<
   enableContentLanguageCreation: false,
   enableShPathInLabelTitle: false,
   enableFullLanguageRemoval: false,
+  enableTitle: false,
   enableInterfaceLanguageWithShapesLabelsOnly: false,
   enableEditInPlace: false,
   enableViewInPlace: false,
@@ -374,6 +380,7 @@ export const testingEnvironment: Omit<
   enableContentLanguageCreation: true,
   enableShPathInLabelTitle: true,
   enableFullLanguageRemoval: true,
+  enableTitle: false,
   enableInterfaceLanguageWithShapesLabelsOnly: true,
   enableEditInPlace: true,
   enableViewInPlace: true,

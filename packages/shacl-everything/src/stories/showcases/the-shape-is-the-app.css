@@ -2,25 +2,29 @@
   font-family: var(--st-font-family);
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 520px), 1fr));
-  gap: 6rem;
   align-items: start;
 }
 
 .shape-is-the-app__pane {
   min-width: 0;
+  position: sticky;
+  top: 0;
 }
 
 .shape-is-the-app__header {
   background-color: var(--green-0);
-  padding: var(--size-3);
   border-radius: var(--radius-2);
   margin-block-end: 1rem;
-  padding-block-end: 0.75rem;
+  padding: var(--size-6);
   border-block-end: 1px solid var(--st-border-color, #ddd);
 
   .st-button:not(:focus) {
     background-color: white;
   }
+}
+
+.shape-is-the-app__content {
+  padding: var(--size-9);
 }
 
 .shape-is-the-app__header h2 {
@@ -34,4 +38,16 @@
 .shape-is-the-app__modes {
   display: flex;
   gap: 0.5rem;
+}
+
+.right {
+  border-left: 1px solid var(--st-border-color, #ddd);
+}
+
+.sb-main-padded.sb-show-main {
+  padding: 0;
+}
+
+.st-modal {
+  max-width: 900px;
 }

@@ -13,6 +13,9 @@ import { termKey } from "@/helpers/termKey.ts";
  * - Every other prop is an **identity** prop: it feeds preprocessing (graphs, focusNode,
  *   nodeShapes, mode, widgets, languages, ...), so a change rebuilds the Environment from scratch -
  *   a new edit session, discarding unsubmitted edits, the same as remounting with a new `key`.
+ *   A reactive shapesGraph (reactiveRdfStore.ts's makeReactive) written to in place is still the
+ *   same prop, so it doesn't count as a change here - instead each write re-preprocesses the
+ *   Environment in place, keeping the form and its edits (see EnvironmentContextProvider.tsx).
  */
 export const LIVE_PROPS = [
   "onSubmit",
@@ -24,6 +27,7 @@ export const LIVE_PROPS = [
   "enableContentLanguageCreation",
   "enableShPathInLabelTitle",
   "enableFullLanguageRemoval",
+  "enableTitle",
   "enableEditInPlace",
   "enableCreateInPlace",
   "enableLinksToResources",

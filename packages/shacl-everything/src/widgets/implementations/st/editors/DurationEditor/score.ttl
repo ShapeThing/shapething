@@ -5,7 +5,10 @@ PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
-st:DurationEditor rdfs:label "Duration"@en, "Tijdsduur"@nl .
+st:DurationEditor
+    a shui:Editor ;
+    rdfs:isDefinedBy st: ;
+    rdfs:label "Duration"@en, "Tijdsduur"@nl .
 
 # Same signal MapViewer/GeoEditor auto-score their own widget on: a value literal already typed as
 # the datatype this editor itself ever writes (see duration.ts's termFromMilliseconds).

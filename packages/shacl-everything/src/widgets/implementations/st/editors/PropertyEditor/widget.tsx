@@ -222,7 +222,7 @@ export default function PropertyEditor({ shape }: WidgetProps) {
   const [deleting, setDeleting] = useState<{ group: Quad_Subject; name: string }>();
 
   const tree = useReactiveRead(dataGraph, `property-editor@${termKey(shape.focusNode)}`, () =>
-    readTree(shape.getObjects(), dataGraph),
+    readTree(shape.getObjects(), dataGraph, shapesGraph),
   );
 
   // The node shapes a property shape / group is edited against: whatever this property's own

@@ -7,6 +7,7 @@ import {
 import { resolveScoresGraph } from "@/preprocess/scoresGraph.ts";
 import { resolveWidgets } from "@/preprocess/widgets.ts";
 import {
+  addGroupTypeHierarchy,
   addMissingShapes,
   addSuperClassShapes,
   dropShapesWithMultiplePaths,
@@ -14,7 +15,8 @@ import {
 } from "@/preprocess/shapes.ts";
 import { dereferenceMissingPropertyNames } from "@/preprocess/ontologyLabels.ts";
 import { assertValidEnvironment } from "@/preprocess/configuration.ts";
-import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
+import { getReactivity, makeReactive } from "@/helpers/reactiveRdfStore.ts";
+import type { RdfStore } from "rdf-stores";
 
 export type Preprocessor = (
   environment: RawEnvironment,
@@ -26,6 +28,7 @@ export const defaultPreprocessors: readonly Preprocessor[] = [
   distillLanguages,
   distillInterfaceLanguages,
   resolveWidgets,
+  addGroupTypeHierarchy,
   resolveScoresGraph,
   addMissingShapes,
   addSuperClassShapes,
@@ -33,20 +36,37 @@ export const defaultPreprocessors: readonly Preprocessor[] = [
   mergeFacetTextSearchProperties,
 ];
 
+export type RunPreprocessorsOptions = {
+  /**
+   * A live dataGraph to carry over into the result as-is, in place of the one preprocessing
+   * resolved - for re-preprocessing an Environment whose shapesGraph changed (see
+   * EnvironmentContextProvider.tsx) without losing the edits, subscriptions and undo history
+   * living on its dataGraph. Preprocessing still reads it (e.g. addMissingShapes scans its data).
+   */
+  keepDataGraph?: RdfStore;
+};
+
 export const runPreprocessors = async (
   raw: RawEnvironment,
   steps: readonly Preprocessor[] = defaultPreprocessors,
+  { keepDataGraph }: RunPreprocessorsOptions = {},
 ): Promise<Environment> => {
-  let result = raw;
+  let result = keepDataGraph ? { ...raw, dataGraph: keepDataGraph } : raw;
 
   for (const step of steps) {
     result = await step(result);
   }
 
   const environment = assertValidEnvironment(result);
+  if (keepDataGraph) return { ...environment, dataGraph: keepDataGraph };
   // Only dataGraph is written to at runtime (e.g. PropertyUIElement.addObject) - shapesGraph and
   // scoresGraph are read-only for the lifetime of an Environment, so they don't need reactivity.
-  return { ...environment, dataGraph: makeReactive(environment.dataGraph) };
+  // A dataGraph a custom step already made reactive (to observe it from outside, e.g. to feed it
+  // to another renderer as its live shapesGraph) is kept as-is rather than wrapped twice.
+  const dataGraph = getReactivity(environment.dataGraph)
+    ? environment.dataGraph
+    : makeReactive(environment.dataGraph);
+  return { ...environment, dataGraph };
 };
 
 // Distinguishes RawEnvironment field values for runPreprocessorsDeduped's cache key: primitives

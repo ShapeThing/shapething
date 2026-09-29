@@ -1,0 +1,33 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix ex: <http://example.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:VisualArtwork ;
+    sh:property <#inventoryNumber>, <#lastRestored> ;
+    .
+
+<#inventoryNumber>
+    a sh:PropertyShape ;
+    sh:name "Inventory number"@en ;
+    sh:path schema:identifier ;
+    sh:order 1 ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    .
+
+<#lastRestored>
+    a sh:PropertyShape ;
+    sh:name "Last restored"@en ;
+    sh:path ex:lastRestored ;
+    sh:order 2 ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    .
+
+<#data>
+    a schema:VisualArtwork ;
+    schema:identifier "SK-A-2344" ;
+    .

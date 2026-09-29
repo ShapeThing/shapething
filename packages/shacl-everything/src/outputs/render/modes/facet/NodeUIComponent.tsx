@@ -16,6 +16,7 @@ import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { useCssImports } from "@/outputs/render/hooks/useCssImports.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import FacetPropertyComponent from "@/outputs/render/modes/facet/FacetPropertyComponent.tsx";
+import Title from "@/outputs/render/components/Title/index.tsx";
 import TypeSelector from "@/outputs/render/modes/facet/TypeSelector.tsx";
 import { FacetSourceProvider, useFacetSourceValue } from "@/outputs/render/modes/facet/facetData.tsx";
 import { resolvedWidgets } from "@/preprocess/widgets.ts";
@@ -51,6 +52,7 @@ export default function NodeUIComponent({ filterShape }: { filterShape: FilterSh
     nodeShapes,
     enableFacetTypeUnion,
     enableFacetOptionCounts,
+    enableTitle,
     facetsEndpoint,
     corsProxyUrl,
   } = useEnvironment();
@@ -158,6 +160,8 @@ export default function NodeUIComponent({ filterShape }: { filterShape: FilterSh
   return (
     <FacetSourceProvider value={facetSource}>
     <div className="st-facet-node-ui-component">
+      {/* Several shapes at once (union mode) have no single label - Title falls back to "Search". */}
+      {enableTitle && <Title action="search" nodeShapes={activeShapes.length === 1 ? activeShapes : []} />}
       {!enableFacetTypeUnion && rootShapes.length > 1 && activeRootShape && (
         <TypeSelector
           rootShapes={rootShapes}

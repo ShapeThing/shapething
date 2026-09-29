@@ -167,6 +167,17 @@
         sh:maxCount 1 ;
     ] ;
 
+    sh:property [
+        sh:order -95 ;
+        sh:name "Editor"@en, "Editor"@nl ;
+        sh:path shui:editor ;
+        shui:editor shui:EnumSelectEditor ;
+        sh:group <#propertyConstraintsInner> ;
+        sh:class shui:Editor ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
     # sh:minCount and sh:maxCount share <#cardinality>, whose st:CardinalityPropertyGroup shows them
     # as "Required" / "Multiple" checkboxes, with these two fields in its "Advanced" section.
     sh:property [
@@ -188,10 +199,10 @@
     ] ;
 
     sh:property [
-        sh:order 6 ;
+        sh:order -80 ;
         sh:name "Datatype"@en, "Datatype"@nl ;
         sh:path sh:datatype ;
-        sh:group <#propertyConstraintsInner> ;
+        # sh:group <#propertyConstraintsInner> ;
         sh:maxCount 1 ;
         sh:nodeKind sh:IRI ;
     ] ;
@@ -333,6 +344,26 @@
 
     .
 
+# An editor's classification is the ontology it is defined by (shui: or st:, see each editor's
+# score.ttl), shown by that ontology's own rdfs:label.
+<#editor>
+    a sh:NodeShape ;
+    sh:targetClass shui:Editor ;
+
+    sh:property [
+        sh:name "Defined by"@en, "Gedefinieerd door"@nl ;
+        sh:path rdfs:isDefinedBy ;
+        shui:propertyRole shui:ClassificationRole ;
+    ] ;
+
+    .
+
+shui:
+    rdfs:label "SHACL UI"@en, "SHACL UI"@nl .
+
+st:
+    rdfs:label "ShapeThing"@en, "ShapeThing"@nl .
+
 <#propertyGroup>
     a sh:NodeShape ;
     sh:targetClass sh:PropertyGroup ;
@@ -341,12 +372,29 @@
     sh:description "A group shows properties together, in the order of its own sh:order among its siblings."@en, "Een groep toont eigenschappen samen, op de plek van zijn eigen sh:order tussen zijn buren."@nl ;
 
     sh:property [
-        sh:order 1 ;
+        sh:order 0 ;
         sh:name "Name"@en, "Naam"@nl ;
         sh:path [ sh:alternativePath ( rdfs:label sh:name ) ] ;
         sh:uniqueLang true ;
         sh:datatype ( xsd:string rdf:langString ) ;
     ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Type"@en, "Type"@nl ;
+        sh:path rdf:type ;
+        shui:editor shui:EnumSelectEditor ;
+        sh:in (
+            sh:PropertyGroup
+            st:TabbedPropertyGroup
+            st:VerticalTabbedPropertyGroup
+            st:HorizontalPropertyGroup
+            st:CollapsiblePropertyGroup
+            st:DrawerPropertyGroup
+            st:CardinalityPropertyGroup
+        ) ;
+    ] ;
+
 
     sh:property [
         sh:order 2 ;
@@ -381,6 +429,14 @@ sh:Literal rdfs:label "Literal"@en, "Literal"@nl .
 sh:BlankNodeOrIRI rdfs:label "Blank node or IRI"@en, "Blanco node of IRI"@nl .
 sh:BlankNodeOrLiteral rdfs:label "Blank node or literal"@en, "Blanco node of literal"@nl .
 sh:IRIOrLiteral rdfs:label "IRI or literal"@en, "IRI of literal"@nl .
+
+sh:PropertyGroup rdfs:label "Group"@en, "Groep"@nl .
+st:TabbedPropertyGroup rdfs:label "Tabs"@en, "Tabbladen"@nl .
+st:VerticalTabbedPropertyGroup rdfs:label "Vertical tabs"@en, "Verticale tabbladen"@nl .
+st:HorizontalPropertyGroup rdfs:label "Horizontal"@en, "Horizontaal"@nl .
+st:CollapsiblePropertyGroup rdfs:label "Collapsible"@en, "Inklapbaar"@nl .
+st:DrawerPropertyGroup rdfs:label "Drawer"@en, "Lade"@nl .
+st:CardinalityPropertyGroup rdfs:label "Cardinality"@en, "Kardinaliteit"@nl .
 
 <#metadata>
     a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;

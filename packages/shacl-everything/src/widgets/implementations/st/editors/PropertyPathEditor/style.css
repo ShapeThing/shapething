@@ -95,6 +95,7 @@ div[class^="st-"][class*="-suffix"] {
   border-radius: var(--st-radius);
   background-color: var(--predicate-path-background-color);
   padding: var(--size-2) var(--size-3);
+  border: 1px solid color-mix(in srgb, var(--type-color), black 30%);
 }
 
 div[class^="st-"][class*="-prefix"],

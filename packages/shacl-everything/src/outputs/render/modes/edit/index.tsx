@@ -13,6 +13,7 @@ import { orphanedTargetWhereObjects, shapesWhereTargetingFocusNode } from "@/res
 import { removePropertyPath } from "@/structure/paths/removePropertyPath.ts";
 import ContentLanguageSwitcher from "@/outputs/render/components/ContentLanguageSwitcher/index.tsx";
 import InterfaceLanguageSwitcher from "@/outputs/render/components/InterfaceLanguageSwitcher/index.tsx";
+import Title from "@/outputs/render/components/Title/index.tsx";
 import ValidationContextProvider from "@/outputs/render/contexts/ValidationContextProvider.tsx";
 import type { ValidationResult } from "@/outputs/render/contexts/validationContext.tsx";
 import { submitAttemptContext } from "@/outputs/render/contexts/submitAttemptContext.tsx";
@@ -52,6 +53,7 @@ export default function EditModeWrapper({ children }: Props) {
     readOnlyGraph,
     onSubmit,
     enableUndoRedo,
+    enableTitle,
   } = useEnvironment();
   const hasTriples = useReactiveRead(
     dataGraph,
@@ -64,6 +66,9 @@ export default function EditModeWrapper({ children }: Props) {
   // this component's very first render - before any widget has had a chance to mutate dataGraph.
   const originalQuadsRef = useRef<Quad[] | null>(null);
   originalQuadsRef.current ??= dataGraph.getQuads();
+  // The title's Create/Edit pick, fixed at mount (unlike the submit button's live hasTriples) so
+  // "Create Person" doesn't turn into "Edit A" as soon as the user starts typing a name.
+  const [isNew] = useState(() => dataGraph.getQuads(focusNode, null, null).length === 0);
 
   // Whether the <form> below has been submitted at least once - usePropertyValidationResults
   // withholds validation results until this is true, so e.g. an untouched sh:minCount-violating
@@ -212,6 +217,13 @@ export default function EditModeWrapper({ children }: Props) {
               <InterfaceLanguageSwitcher />
               <ContentLanguageSwitcher />
             </header>
+            {enableTitle && (
+              <Title
+                action={isNew ? "create" : "edit"}
+                nodeShapes={nodeShapes}
+                focusNode={focusNode}
+              />
+            )}
 
             <NodeUIComponent noWrapper />
             {children}

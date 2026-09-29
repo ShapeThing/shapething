@@ -1,7 +1,10 @@
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-shui:NumberFieldEditor rdfs:label "Number Field"@en, "Getalveld"@nl .
+shui:NumberFieldEditor
+    a shui:Editor ;
+    rdfs:isDefinedBy shui: ;
+    rdfs:label "Number Field"@en, "Getalveld"@nl .
 
 shui:numberFieldEditorScore20
     a shui:WidgetScore ;

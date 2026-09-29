@@ -1,7 +1,10 @@
 PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-shui:BooleanEditor rdfs:label "Checkbox"@en, "Aankruisvakje"@nl .
+shui:BooleanEditor
+    a shui:Editor ;
+    rdfs:isDefinedBy shui: ;
+    rdfs:label "Checkbox"@en, "Aankruisvakje"@nl .
 
 shui:booleanEditorScore20
     a shui:WidgetScore ;

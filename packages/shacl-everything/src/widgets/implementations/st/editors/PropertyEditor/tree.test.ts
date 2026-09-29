@@ -55,6 +55,23 @@ test("readTree - nests properties and groups by sh:group, each level sorted by s
   expect(unusedGroups.map((group) => group.value)).toEqual([ex("unused").value]);
 });
 
+test("readTree - an unused group typed only with a subclass of sh:PropertyGroup is listed too", async () => {
+  const dataGraph = await parseRdf(`${prefixes}
+    @prefix st: <http://shapething.com/> .
+    ex:drawer a st:DrawerPropertyGroup .
+  `, "text/turtle");
+  // The subclass link lives in the renderer's own shapes graph (see addGroupTypeHierarchy).
+  const shapesGraph = await parseRdf(`${prefixes}
+    @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+    @prefix st: <http://shapething.com/> .
+    st:DrawerPropertyGroup rdfs:subClassOf sh:PropertyGroup .
+  `, "text/turtle");
+  expect(readTree([], dataGraph).unusedGroups).toEqual([]);
+  expect(readTree([], dataGraph, shapesGraph).unusedGroups.map((group) => group.value)).toEqual([
+    ex("drawer").value,
+  ]);
+});
+
 test("readTree - a group in a sh:group cycle is shown top level instead of looping", async () => {
   const dataGraph = await parseRdf(
     `${prefixes}
