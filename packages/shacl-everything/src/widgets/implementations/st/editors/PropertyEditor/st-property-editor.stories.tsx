@@ -105,23 +105,28 @@ export const stPropertyEditorKeyboardReorder: Story = {
 };
 
 // A real mouse drag: dnd-kit's MouseSensor reads mousedown on the handle, then mousemove/mouseup
-// on the document.
+// on the document. The target is measured only once the drag has started (starting it can shift
+// the layout), and moved onto twice: dnd-kit measures its droppables after activation, so a single
+// move can still be tested against stale or missing rects and miss the target.
 async function mouseDrag(source: HTMLElement, target: HTMLElement) {
   const from = source.getBoundingClientRect();
-  const to = target.getBoundingClientRect();
-  const at = (rect: DOMRect) => ({
+  const at = (rect: DOMRect, dy = 0) => ({
     clientX: rect.left + rect.width / 2,
-    clientY: rect.top + rect.height / 2,
+    clientY: rect.top + rect.height / 2 + dy,
     bubbles: true,
     button: 0,
   });
   source.dispatchEvent(new MouseEvent("mousedown", at(from)));
   await nextFrame();
-  document.dispatchEvent(new MouseEvent("mousemove", { ...at(from), clientY: at(from).clientY + 5 }));
+  document.dispatchEvent(new MouseEvent("mousemove", at(from, 5)));
   await nextFrame();
-  document.dispatchEvent(new MouseEvent("mousemove", at(to)));
   await nextFrame();
-  document.dispatchEvent(new MouseEvent("mouseup", at(to)));
+  document.dispatchEvent(new MouseEvent("mousemove", at(target.getBoundingClientRect())));
+  await nextFrame();
+  const to = target.getBoundingClientRect();
+  document.dispatchEvent(new MouseEvent("mousemove", at(to, 1)));
+  await nextFrame();
+  document.dispatchEvent(new MouseEvent("mouseup", at(to, 1)));
   await nextFrame();
 }
 
