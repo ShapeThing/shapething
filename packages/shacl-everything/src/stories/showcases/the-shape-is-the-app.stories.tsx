@@ -9,13 +9,17 @@ import { defaultPreprocessors, type Preprocessor } from "@/preprocess/index.ts";
 import { getReactivity, makeReactive } from "@/helpers/reactiveRdfStore.ts";
 import { rdf, rdfs, shui } from "@/helpers/namespaces.ts";
 import "./the-shape-is-the-app.css";
+// Not argsByTestFile("../meta/shape.ttl", ...): copyStoryFixtures.ts emits each fixture relative
+// to its own story dir (meta/shape.ttl lands at assets/shape.ttl), so a path reaching into another
+// story dir resolves to nothing in a production build. `?url` lets Vite resolve it in both.
+import metaShapeUrl from "../meta/shape.ttl?url";
 
 // <#shape> is the collection's data model and <#data> one artwork in it - the right-hand side's
 // own args. The left-hand side renders that same file as data, with meta/shape.ttl as its shapes:
 // its focus node is <#shape>, and its node shape (meta/shape.ttl's <#nodeShape>) is resolved from
 // targeting, since <#shape> is an sh:NodeShape.
 const appArgs = argsByTestFile("the-shape-is-the-app.ttl", import.meta.url);
-const metaShapesGraph = argsByTestFile("../meta/shape.ttl", import.meta.url).shapesGraph;
+const metaShapesGraph = argsByTestFile(metaShapeUrl, import.meta.url).shapesGraph;
 const artworkShape = appArgs.nodeShapes[0];
 
 /**
