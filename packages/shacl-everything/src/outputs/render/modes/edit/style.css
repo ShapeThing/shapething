@@ -43,6 +43,20 @@
   width: 100%;
 }
 
+/* A value of an st:orderBy property: drag handle beside the value itself (see SortableRow). */
+.st-property-sortable-item {
+  display: flex;
+  align-items: start;
+  gap: var(--size-2);
+}
+
+/* Beside the handle the value is a flex item, whose min-width defaults to its content - a long
+   IRI would push the row (and its remove button) past the container instead of truncating. */
+.st-property-sortable-item > .st-property-object-wrapper {
+  flex: 1;
+  min-width: 0;
+}
+
 .st-property-object-wrapper {
   display: flex;
   flex-direction: column;
@@ -221,6 +235,7 @@
 
 .st-member-shape-list__item-widget {
   flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: var(--size-2);

@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, test, vi } from "vite-plus/test";
 import { RdfStore } from "rdf-stores";
-import { resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
+import { clearOwlImportsCache, resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
 import { defaultEnvironment, type RawEnvironment } from "@/environment.ts";
 import { ex, owl } from "@/helpers/namespaces.ts";
 import { factory } from "@/helpers/factory.ts";
@@ -25,6 +25,7 @@ let fixtures: Record<string, string> = {};
 let fetchCalls: string[] = [];
 
 beforeEach(() => {
+  clearOwlImportsCache();
   fixtures = {};
   fetchCalls = [];
   vi.stubGlobal(
@@ -506,4 +507,23 @@ test("importedDataGraph leaves out a triple one source imports but another asser
 
   const imported = environment.importedDataGraph!.getQuads().map((quad) => quad.subject.value);
   expect(imported).toEqual([ex("b").value]);
+});
+
+test("an owl:imports target is fetched once per page, not once per preprocessing pass", async () => {
+  const data = `
+    @prefix owl: <http://www.w3.org/2002/07/owl#> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://example.org/b.ttl> .
+  `;
+  fixtures["http://example.org/b.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:b ex:name "B" .
+  `;
+
+  const first = await resolveRdfSources(rawEnvironment({ dataGraph: data }));
+  const second = await resolveRdfSources(rawEnvironment({ dataGraph: data }));
+
+  expect(first.dataGraph.getQuads(ex("b"), ex("name")).length).toBe(1);
+  expect(second.dataGraph.getQuads(ex("b"), ex("name")).length).toBe(1);
+  expect(fetchCalls).toEqual(["http://example.org/b.ttl"]);
 });

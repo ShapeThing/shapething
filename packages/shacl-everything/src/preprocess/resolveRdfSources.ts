@@ -153,36 +153,83 @@ const fetchText = async (
 // whichever caller's fetch actually runs writes into the one shared destination, and that scan
 // happens synchronously right after the text arrives, strictly before the cached promise
 // resolves - so it's always fully populated by the time any awaiter of it proceeds.
+const fetchAndParse = async (
+  url: URL,
+  corsProxyUrl: string | undefined,
+  prefixSink?: Map<string, string>,
+): Promise<Quad[]> => {
+  const hashlessUrl = new URL(url.href.split("#")[0]);
+  const { text, contentType } = await fetchText(hashlessUrl, corsProxyUrl);
+  extractSourcePrefixes(text, prefixSink);
+  // Content-negotiated ontology namespace IRIs (skos:, dct:, foaf:, ...) have no file
+  // extension for rdf-parse to detect a format from, so the server's own declared
+  // Content-Type is used instead in that case - the corsProxy explicitly requests one via an
+  // RDF-shaped Accept header. A URL with a real extension (.ttl, .jsonld, ...) keeps using
+  // that, since it's a more reliable signal than whatever a plain static file server happens
+  // to default its Content-Type header to.
+  const parseOptions: ParseOptions =
+    rdfParser.getContentTypeFromExtension(hashlessUrl.href) || !contentType
+      ? { path: hashlessUrl.href, baseIRI: url.href }
+      : { contentType: contentType.split(";")[0].trim(), baseIRI: url.href };
+  const store = await storeFromStream(rdfParser.parse(stringToStream(text), parseOptions));
+  return store.getQuads();
+};
+
 export const dereferenceUrl = async (
   url: URL,
   quadCache: Map<string, Promise<Quad[]>>,
   corsProxyUrl: string | undefined,
   prefixSink?: Map<string, string>,
 ): Promise<RdfStore> => {
-  const hashlessUrl = new URL(url.href.split("#")[0]);
+  const hashlessHref = url.href.split("#")[0];
 
-  let quadsPromise = quadCache.get(hashlessUrl.href);
+  let quadsPromise = quadCache.get(hashlessHref);
   if (!quadsPromise) {
-    quadsPromise = (async () => {
-      const { text, contentType } = await fetchText(hashlessUrl, corsProxyUrl);
-      extractSourcePrefixes(text, prefixSink);
-      // Content-negotiated ontology namespace IRIs (skos:, dct:, foaf:, ...) have no file
-      // extension for rdf-parse to detect a format from, so the server's own declared
-      // Content-Type is used instead in that case - the corsProxy explicitly requests one via an
-      // RDF-shaped Accept header. A URL with a real extension (.ttl, .jsonld, ...) keeps using
-      // that, since it's a more reliable signal than whatever a plain static file server happens
-      // to default its Content-Type header to.
-      const parseOptions: ParseOptions =
-        rdfParser.getContentTypeFromExtension(hashlessUrl.href) || !contentType
-          ? { path: hashlessUrl.href, baseIRI: url.href }
-          : { contentType: contentType.split(";")[0].trim(), baseIRI: url.href };
-      const store = await storeFromStream(rdfParser.parse(stringToStream(text), parseOptions));
-      return store.getQuads();
-    })();
-    quadCache.set(hashlessUrl.href, quadsPromise);
+    quadsPromise = fetchAndParse(url, corsProxyUrl, prefixSink);
+    quadCache.set(hashlessHref, quadsPromise);
   }
 
   return storeFromQuads(await quadsPromise);
+};
+
+// owl:imports targets are, unlike the shapes/data sources themselves, effectively static
+// vocabulary (sh:, skos:, a project's shared ontology...), yet every preprocessing pass - i.e.
+// every environment change, which in an editing app is every re-render that touches the
+// shapesGraph - would otherwise refetch and reparse them all. So they alone are cached for the
+// lifetime of the page, keyed by hashless href. The prefixes a document declares are cached
+// alongside its quads and replayed into each caller's prefixSink, since a cache hit never
+// rescans the text. A failed dereference is evicted so a later pass can retry it (a confirmed
+// 404 is already remembered separately, by notFoundCache).
+type CachedImport = { quads: Quad[]; prefixes: Map<string, string> };
+const owlImportsCache = new Map<string, Promise<CachedImport>>();
+
+export const clearOwlImportsCache = (): void => owlImportsCache.clear();
+
+const dereferenceImport = async (
+  url: URL,
+  quadCache: Map<string, Promise<Quad[]>>,
+  corsProxyUrl: string | undefined,
+  prefixSink?: Map<string, string>,
+): Promise<RdfStore> => {
+  const hashlessHref = url.href.split("#")[0];
+  // An import of a document this very pass already dereferences as a top-level source (e.g. an
+  // import cycle back to the dataGraph URL) reuses that fetch instead of a second one.
+  const current = quadCache.get(hashlessHref);
+  if (current) return storeFromQuads(await current);
+
+  let cached = owlImportsCache.get(hashlessHref);
+  if (!cached) {
+    const prefixes = new Map<string, string>();
+    cached = fetchAndParse(url, corsProxyUrl, prefixes).then((quads) => ({ quads, prefixes }));
+    owlImportsCache.set(hashlessHref, cached);
+    cached.catch(() => {
+      if (owlImportsCache.get(hashlessHref) === cached) owlImportsCache.delete(hashlessHref);
+    });
+  }
+
+  const { quads, prefixes } = await cached;
+  for (const [alias, iri] of prefixes) prefixSink?.set(alias, iri);
+  return storeFromQuads(quads);
 };
 
 const parseRdfText = (text: string, prefixSink?: Map<string, string>): Promise<RdfStore> => {
@@ -195,7 +242,7 @@ const parseRdfText = (text: string, prefixSink?: Map<string, string>): Promise<R
 // visitedImports is scoped to a single resolveRdfSource() call (one store) so that an import
 // cycle (A imports B, B imports A) terminates instead of looping forever. It must NOT be shared
 // across shapesGraph/dataGraph/scoresGraph: each of those needs the same import actually merged
-// into its own store, and quadCache (shared across all of them) already dedups the fetch itself -
+// into its own store, and owlImportsCache (page-wide) already dedups the fetch itself -
 // sharing visitedImports too would make whichever store claims an href first "consume" it, leaving
 // the others without the merge.
 //
@@ -229,7 +276,7 @@ const resolveOwlImports = async (
   // logged, not thrown.
   const hrefs = [...importUrls];
   const importedStores = await Promise.allSettled(
-    hrefs.map((href) => dereferenceUrl(new URL(href), quadCache, corsProxyUrl, prefixSink)),
+    hrefs.map((href) => dereferenceImport(new URL(href), quadCache, corsProxyUrl, prefixSink)),
   );
   for (const [index, result] of importedStores.entries()) {
     if (result.status === "rejected") {
@@ -252,7 +299,8 @@ const resolveOwlImports = async (
 // standalone resource - fetched with nothing but its data - name where its own shape lives (`<node>
 // sh:shape <shapeIri>`) instead of requiring the embedder to already know and pass it in. Every
 // distinct sh:shape object IRI is dereferenced the same way an owl:imports target is (same
-// quadCache, so a shape also reachable via an actual owl:imports isn't fetched twice), merged into
+// quadCache as the top-level sources, so a shape document also given as shapesGraph/dataGraph
+// isn't fetched twice), merged into
 // a fresh store, and resolveOwlImports is run on that afterwards so an owl:imports the fetched shape
 // document itself declares is still picked up.
 //

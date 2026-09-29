@@ -1,0 +1,162 @@
+.st-property-editor {
+  --st-property-editor-indentation: 24px; /* INDENTATION_WIDTH in widget.tsx */
+
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-3);
+  margin-bottom: var(--size-3);
+}
+
+.st-property-editor__tree,
+.st-property-editor__unused-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+}
+
+/* A tree row: SortableRow's drag handle, then the row body - indented by its depth. */
+.st-property-editor__row {
+  display: flex;
+  align-items: center;
+  gap: var(--size-1);
+  margin-inline-start: calc(
+    var(--st-property-editor-depth, 0) * var(--st-property-editor-indentation)
+  );
+}
+
+/* The framed part of a row: its label, path and type chip - shaped like st-value-chip, tinted like
+   its type chip, filling the row up to its action buttons. */
+.st-property-editor__name {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  gap: var(--size-2);
+  min-width: 0;
+  padding: var(--size-1) var(--size-2);
+  border: 1px solid var(--orange-3);
+  border-radius: var(--radius-2);
+  background-color: var(--orange-0);
+}
+
+.st-property-editor__row--group .st-property-editor__name {
+  border-color: var(--cyan-4);
+  background-color: var(--cyan-0);
+}
+
+.st-property-editor__row-body,
+.st-property-editor__unused-group {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  /* padding-inline-end: var(--size-1); */
+}
+
+.st-property-editor__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-property-editor__row--group .st-property-editor__label {
+  font-weight: bold;
+}
+
+.st-property-editor__path {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.85em;
+  color: var(--st-color-text-muted);
+}
+
+.st-property-editor__chip {
+  margin-inline-start: auto;
+  flex-shrink: 0;
+  padding: 0 var(--size-2);
+  border-radius: var(--radius-round);
+  font-size: 0.8em;
+  background-color: var(--orange-1);
+}
+
+.st-property-editor__row--group .st-property-editor__chip,
+.st-property-editor__unused-group .st-property-editor__chip {
+  background-color: var(--cyan-2);
+}
+
+/* A regular icon button, with the smaller, muted pencil the other editors use (see
+   ResourceEditButton). */
+.st-property-editor__edit {
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+
+  &:focus,
+  &:hover {
+    color: var(--st-primary-color);
+  }
+}
+
+.st-property-editor__empty {
+  margin: 0;
+  color: var(--st-color-text-muted);
+}
+
+.st-property-editor__unused-header {
+  display: flex;
+  flex-direction: column;
+  margin-block-end: var(--size-2);
+}
+
+.st-property-editor__unused-title {
+  font-weight: bold;
+}
+
+.st-property-editor__unused-description {
+  font-size: 0.9em;
+  color: var(--st-color-text-muted);
+}
+
+.st-property-editor__unused-group {
+  min-height: var(--size-8);
+}
+
+/* Not in use yet: a dashed frame, solid once something is dragged over it. */
+.st-property-editor__unused-group .st-property-editor__name {
+  border-style: dashed;
+  border-color: var(--cyan-4);
+  background-color: transparent;
+}
+
+.st-property-editor__unused-group[data-over] .st-property-editor__name {
+  border-style: solid;
+  border-color: var(--st-primary-color);
+  background-color: var(--cyan-1);
+}
+
+.st-property-editor__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--size-2);
+}
+
+.st-property-editor__draft-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--size-2);
+  margin-block-start: var(--size-3);
+}
+
+.st-property-editor__delete-modal p {
+  margin: 0 0 var(--size-2);
+}
+
+.st-property-editor__delete-shapes {
+  margin: 0;
+  padding-inline-start: var(--size-5);
+}

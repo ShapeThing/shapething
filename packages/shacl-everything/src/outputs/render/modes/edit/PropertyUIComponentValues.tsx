@@ -10,8 +10,32 @@ import { termKey } from "@/helpers/termKey.ts";
 import { shui } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
-import { Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Loading } from "@/helpers/icons.tsx";
+import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
+import SortableRow from "@/outputs/render/modes/edit/SortableRow.tsx";
+import {
+  isWritablePath,
+  orderByPath,
+  sortByOrderPath,
+  writeOrder,
+} from "@/structure/orderByValues.ts";
 
 /**
  * RDF values have no inherent order, and rdf-stores moves a value to the end of its internal
@@ -73,11 +97,23 @@ export default function PropertyUIComponentValues({
       : filterByContentLanguage(existingObjects, activeLanguage);
   // See reconcileOrder() above - keeps this property's values from reshuffling on every edit.
   const orderRef = useRef<string[]>([]);
-  const { order, objects: languageFilteredObjects } = reconcileOrder(
+  const { order, objects: reconciledObjects } = reconcileOrder(
     orderRef.current,
     unorderedLanguageFilteredObjects,
   );
   orderRef.current = order;
+  // st:orderBy (see structure/orderByValues.ts) overrides that order with each value's own
+  // position - read reactively, so editing a value's position (e.g. a nested sh:order field)
+  // re-sorts the list straight away. reconcileOrder's order still breaks ties.
+  const orderPath = useMemo(() => orderByPath(propertyUIElement), [propertyUIElement]);
+  const languageFilteredObjects = useReactiveRead(
+    propertyUIElement.dataGraph,
+    `order-by@${order.join("\n")}`,
+    () =>
+      orderPath
+        ? sortByOrderPath(reconciledObjects, orderPath, propertyUIElement.dataGraph)
+        : reconciledObjects,
+  );
   // setTerm (PropertyUIComponentObject) already knows exactly which old value became which new
   // one - patching orderRef here means an edit keeps its slot instead of looking, to
   // reconcileOrder on the next render, like an unrelated value disappearing and a new one
@@ -174,26 +210,73 @@ export default function PropertyUIComponentValues({
       ? 0
       : -1;
 
+  // Only existing values get a drag handle - never the trailing empty widget, which has no
+  // position to write yet - and only when the st:orderBy path is one we can write back through.
+  const isSortable = orderPath !== undefined && isWritablePath(orderPath) && !isSingleUnifiedWidget;
+  const sortableIds = isSortable ? languageFilteredObjects.map(termKey) : [];
+
+  const sensors = useSensors(
+    useSensor(MouseSensor),
+    useSensor(TouchSensor),
+    // Arrow keys step one whole item at a time, however tall it is (e.g. an open DetailsEditor),
+    // rather than the default fixed 25px.
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const onDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!orderPath || !over || active.id === over.id) return;
+    const oldIndex = sortableIds.indexOf(String(active.id));
+    const newIndex = sortableIds.indexOf(String(over.id));
+    if (oldIndex === -1 || newIndex === -1) return;
+    writeOrder(
+      arrayMove(languageFilteredObjects, oldIndex, newIndex),
+      orderPath,
+      propertyUIElement.dataGraph,
+    );
+  };
+
+  const items = objects.map((object, index) => {
+    const sortableId = sortableIds[index];
+    const content = (
+      <Suspense fallback={<Loading />}>
+        <PropertyUIComponentObject
+          propertyUIElement={propertyUIElement}
+          object={object}
+          labelledBy={labelId}
+          onReplace={replaceInOrder}
+          onTermSet={syncShowEmptyWidget}
+          // Removing a value can leave a single-valued field (its "+" always hidden, and now
+          // its "-" no longer hidden either) with none left and no other way back to an
+          // editable widget - re-show the empty one whenever that happens, for any field.
+          onRemove={syncShowEmptyWidget}
+          autoFocus={index === targetFocusIndex}
+        />
+      </Suspense>
+    );
+    // Keyed by term once values can move, so a dragged value keeps its own widget state (e.g. an
+    // open DetailsEditor) instead of handing it to whichever value lands on its old index.
+    return sortableId !== undefined ? (
+      <SortableRow key={sortableId} id={sortableId} className="st-property-sortable-item">
+        {content}
+      </SortableRow>
+    ) : (
+      <Fragment key={isSortable ? `empty-${index}` : index}>{content}</Fragment>
+    );
+  });
+
   return (
     <>
       <div className="st-property-items">
-        {objects.map((object, index) => (
-          <Suspense key={index} fallback={<Loading />}>
-            <PropertyUIComponentObject
-              key={index}
-              propertyUIElement={propertyUIElement}
-              object={object}
-              labelledBy={labelId}
-              onReplace={replaceInOrder}
-              onTermSet={syncShowEmptyWidget}
-              // Removing a value can leave a single-valued field (its "+" always hidden, and now
-              // its "-" no longer hidden either) with none left and no other way back to an
-              // editable widget - re-show the empty one whenever that happens, for any field.
-              onRemove={syncShowEmptyWidget}
-              autoFocus={index === targetFocusIndex}
-            />
-          </Suspense>
-        ))}
+        {isSortable ? (
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+              {items}
+            </SortableContext>
+          </DndContext>
+        ) : (
+          items
+        )}
       </div>
       {!isSingleUnifiedWidget && (
         <PropertyUIComponentAdd

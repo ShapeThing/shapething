@@ -203,6 +203,39 @@ export const undoRestoringARemovedListItemLeavesTheRestIntact: Story = {
   },
 };
 
+// dnd-kit measures layout between keyboard steps, so each step needs a frame to settle.
+const nextFrame = () => new Promise((resolve) => requestAnimationFrame(() => setTimeout(resolve)));
+
+export const keyboardReorderMovesAListItemOneWholeItem: Story = {
+  name: "Keyboard reorder moves an rdf:List item past a whole (tall) neighbour, Ctrl+Z restores it",
+  args: memberShapeListArgs,
+  play: async ({ canvasElement }) => {
+    const names = () =>
+      memberShapeListItems(canvasElement).map(
+        (item) => item.querySelector<HTMLInputElement>('input[type="text"]')?.value,
+      );
+    await waitFor(() => expect(names()).toEqual(["First", "Second", "Third"]));
+
+    // Each item is a whole DetailsEditor form, far taller than the KeyboardSensor's default 25px
+    // step - ArrowDown must still land on the next item (sortableKeyboardCoordinates).
+    const handle = memberShapeListItems(canvasElement)[0].querySelector<HTMLButtonElement>(
+      'button[aria-label="Reorder item"]',
+    )!;
+    handle.focus();
+    await userEvent.keyboard(" ");
+    await nextFrame();
+    await userEvent.keyboard("{ArrowDown}");
+    await nextFrame();
+    await userEvent.keyboard(" ");
+    await waitFor(() => expect(names()).toEqual(["Second", "First", "Third"]));
+
+    const submitButton = canvasElement.querySelector<HTMLButtonElement>('button[type="submit"]')!;
+    submitButton.focus();
+    await userEvent.keyboard("{Control>}z{/Control}");
+    await waitFor(() => expect(names()).toEqual(["First", "Second", "Third"]));
+  },
+};
+
 const blankNodeArgs: ShaclRendererProps = {
   ...argsByTestFile("undoRedoBlankNode.ttl", import.meta.url),
   enableUndoRedo: true,

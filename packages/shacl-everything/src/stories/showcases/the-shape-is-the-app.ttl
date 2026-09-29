@@ -1,0 +1,141 @@
+### A small museum collection: its data model (<#shape>) and the collection itself.
+###
+### In "The shape is the app", <#shape> is the data of the left-hand side, edited with
+### meta/shape.ttl - and the only thing the right-hand side is rendered from.
+
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix schema: <http://schema.org/>.
+@prefix ex: <http://example.org/>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:name "Artwork"@en, "Kunstwerk"@nl ;
+    sh:description "An object in the collection."@en, "Een object in de collectie."@nl ;
+    sh:targetClass schema:VisualArtwork ;
+    owl:imports sh: ;
+    sh:property
+        <#title>,
+        <#creator>,
+        <#material>,
+        <#inventoryNumber>,
+        <#lastRestored> ;
+    .
+
+<#title>
+    a sh:PropertyShape ;
+    sh:name "Title"@en, "Titel"@nl ;
+    sh:path schema:name ;
+    sh:order 1 ;
+    sh:datatype rdf:langString ;
+    sh:minCount 1 ;
+    .
+
+<#creator>
+    a sh:PropertyShape ;
+    sh:name "Creator"@en, "Maker"@nl ;
+    sh:path schema:creator ;
+    sh:order 2 ;
+    sh:group <#meta> ;
+    sh:class schema:Person ;
+    sh:nodeKind sh:IRI ;
+    sh:maxCount 1 ;
+    .
+
+<#material>
+    a sh:PropertyShape ;
+    sh:name "Material"@en, "Materiaal"@nl ;
+    sh:path schema:artMedium ;
+    sh:order 3 ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    .
+
+<#inventoryNumber>
+    a sh:PropertyShape ;
+    sh:name "Inventory number"@en, "Inventarisnummer"@nl ;
+    sh:path schema:identifier ;
+    sh:order 4 ;
+    sh:group <#meta> ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    .
+
+<#lastRestored>
+    a sh:PropertyShape ;
+    sh:name "Last restored"@en, "Laatst gerestaureerd"@nl ;
+    sh:path ex:lastRestored ;
+    sh:order 5 ;
+    sh:group <#meta> ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    .
+
+<#meta>
+    a sh:PropertyGroup ;
+    sh:name "Meta"@en, "Meta"@nl ;
+    sh:order 10 ;
+    sh:description "Metadata for the shape."@en, "Metadata voor de vorm."@nl ;
+    .
+
+ex:PersonShape
+    a sh:NodeShape ;
+    sh:name "Person"@en, "Persoon"@nl ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path schema:name ;
+        shui:propertyRole shui:LabelRole ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+<#data>
+    a schema:VisualArtwork ;
+    schema:name "Het melkmeisje"@nl, "The Milkmaid"@en ;
+    schema:creator ex:vermeer ;
+    schema:artMedium "oil on canvas" ;
+    schema:identifier "SK-A-2344" ;
+    .
+
+ex:nightWatch
+    a schema:VisualArtwork ;
+    schema:name "De Nachtwacht"@nl, "The Night Watch"@en ;
+    schema:creator ex:rembrandt ;
+    schema:artMedium "oil on canvas" ;
+    schema:identifier "SK-C-5" ;
+    .
+
+ex:littleStreet
+    a schema:VisualArtwork ;
+    schema:name "Het straatje"@nl, "The Little Street"@en ;
+    schema:creator ex:vermeer ;
+    schema:artMedium "oil on canvas" ;
+    schema:identifier "SK-A-2860" ;
+    .
+
+ex:selfPortrait
+    a schema:VisualArtwork ;
+    schema:name "Zelfportret"@nl, "Self-portrait"@en ;
+    schema:creator ex:vanGogh ;
+    schema:artMedium "oil on cardboard" ;
+    schema:identifier "SK-A-3262" ;
+    .
+
+ex:winterLandscape
+    a schema:VisualArtwork ;
+    schema:name "Winterlandschap met schaatsers"@nl, "Winter Landscape with Ice Skaters"@en ;
+    schema:creator ex:avercamp ;
+    schema:artMedium "oil on panel" ;
+    schema:identifier "SK-A-1718" ;
+    .
+
+ex:vermeer a schema:Person ; schema:name "Johannes Vermeer" .
+ex:rembrandt a schema:Person ; schema:name "Rembrandt van Rijn" .
+ex:vanGogh a schema:Person ; schema:name "Vincent van Gogh" .
+ex:avercamp a schema:Person ; schema:name "Hendrick Avercamp" .

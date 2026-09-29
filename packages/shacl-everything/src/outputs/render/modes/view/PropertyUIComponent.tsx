@@ -1,15 +1,18 @@
-import { useId } from "react";
+import { useId, useMemo } from "react";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useRegisterContentLanguageSwitcherWidget } from "@/outputs/render/hooks/useRegisterContentLanguageSwitcherWidget.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
+import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import MemberShapeList from "@/outputs/render/modes/view/MemberShapeList.tsx";
 import PropertyUIComponentObject from "@/outputs/render/modes/view/PropertyUIComponentObject.tsx";
 import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
+import { termKey } from "@/helpers/termKey.ts";
+import { orderByPath, sortByOrderPath } from "@/structure/orderByValues.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import "./style.css";
 
@@ -39,10 +42,20 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   const description = propertyUIElement.description([activeInterfaceLanguage]);
 
   const existingObjects = useDataGraphObjects(propertyUIElement);
-  const languageFilteredObjects =
+  const unorderedLanguageFilteredObjects =
     languageMode === "individual"
       ? existingObjects
       : filterByContentLanguage(existingObjects, activeLanguage);
+  // st:orderBy - same ordering as edit mode (see structure/orderByValues.ts).
+  const orderPath = useMemo(() => orderByPath(propertyUIElement), [propertyUIElement]);
+  const languageFilteredObjects = useReactiveRead(
+    propertyUIElement.dataGraph,
+    `order-by@${unorderedLanguageFilteredObjects.map(termKey).join("\n")}`,
+    () =>
+      orderPath
+        ? sortByOrderPath(unorderedLanguageFilteredObjects, orderPath, propertyUIElement.dataGraph)
+        : unorderedLanguageFilteredObjects,
+  );
 
   // A singleUnifiedWidget (e.g. ValueTableViewer) renders once for the whole property and reads
   // every value itself via `shape` - see PropertyUIComponentValues' identical reasoning in edit

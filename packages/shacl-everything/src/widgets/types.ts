@@ -73,6 +73,10 @@ export type WidgetMeta = {
   // once per value (PropertyUIComponent skips its per-value "+"/"-" buttons) - the widget reads
   // and writes the full value set itself via `shape` (see SubClassEditor for the first example).
   singleUnifiedWidget?: (shape: PropertyUIElement) => boolean;
+  // True for a widget that removes values itself, so the property's own "-" button (see
+  // PropertyUIComponentRemove) isn't rendered next to it - e.g. st:PropertyEditor, a
+  // singleUnifiedWidget whose "-" would clear every property of the shape in one click.
+  hideRemoveButton?: boolean;
   // True for a widget that reads/writes useContentLanguage()'s activeLanguage while editing (e.g.
   // TextFieldWithLangEditor, TextAreaWithLangEditor) - lets ContentLanguageSwitcher hide itself
   // when nothing in the current form would actually respond to it.

@@ -1,0 +1,40 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+<#stepShape>
+    a sh:NodeShape ;
+    sh:property [
+        sh:path schema:text ;
+        sh:datatype xsd:string ;
+        sh:name "Instruction"@en ;
+    ] ;
+    .
+
+# st:orderBy takes a property path, walked from each value of schema:step to find its position -
+# here a sequence path, so the position lives one node further in (ex:meta). Values are listed
+# by that position, and dragging one renumbers them 1..n.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:HowTo ;
+    sh:property [
+        sh:path schema:step ;
+        sh:name "Steps"@en ;
+        sh:node <#stepShape> ;
+        shui:editor shui:DetailsEditor ;
+        shui:viewer shui:DetailsViewer ;
+        st:orderBy ( ex:meta ex:position ) ;
+    ] ;
+    .
+
+<#data>
+    a schema:HowTo ;
+    schema:name "Pancakes"@en ;
+    schema:step
+        [ schema:text "Fry" ; ex:meta [ ex:position 3 ] ],
+        [ schema:text "Mix" ; ex:meta [ ex:position 1 ] ],
+        [ schema:text "Rest" ; ex:meta [ ex:position 2 ] ] ;
+    .

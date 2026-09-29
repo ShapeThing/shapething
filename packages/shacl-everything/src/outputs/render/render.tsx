@@ -6,7 +6,7 @@ import L10nProvider from "@/outputs/render/contexts/L10nProvider.tsx";
 import InterfaceLanguageProvider from "@/outputs/render/contexts/InterfaceLanguageProvider.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { identityKey, pickLiveProps } from "@/outputs/render/environmentProps.ts";
-import { lazy, useCallback, useId, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { lazy, useCallback, useId, useLayoutEffect, useMemo, useRef } from "react";
 import { ErrorBoundary, getErrorMessage } from "react-error-boundary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@/theme/index.css";
@@ -17,7 +17,6 @@ export type ShaclRendererProps = Partial<RawEnvironment> & {
 };
 
 export default function ShaclRenderer(inputProps: ShaclRendererProps) {
-  const [queryClient] = useState(() => new QueryClient());
   const baseId = useId();
 
   // Identity props rebuild the Environment (a new key remounts the preprocessed subtree, and a new
@@ -26,6 +25,12 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
   const { preprocessors, ...environmentProps } = inputProps;
   const identity = identityKey({ ...environmentProps, preprocessors });
   const instanceId = `${baseId}:${identity}`;
+
+  // A fresh cache per identity, too: most query keys (e.g. useWidget's) are scoped by property
+  // shape IRI rather than by Environment, so a new shapesGraph reusing the same IRIs would
+  // otherwise get the previous session's widget picks back.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const queryClient = useMemo(() => new QueryClient(), [identity]);
   const liveProps = pickLiveProps(environmentProps);
   const liveSignature = JSON.stringify(liveProps);
   // eslint-disable-next-line react-hooks/exhaustive-deps

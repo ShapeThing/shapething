@@ -130,6 +130,34 @@ property-path-editor-add-type-one-or-more = One or more
 property-path-editor-add-type-zero-or-one = Zero or one
 property-path-editor-add-predicate-in-use = Already in use
 property-path-editor-add-predicate-from-lov = Suggestions
+property-editor-property = Property
+property-editor-group = Group
+property-editor-edit =
+    .aria-label = Edit { $label }
+property-editor-remove =
+    .aria-label = Remove { $label }
+property-editor-edit-title = Edit <label>{ $label }</label>
+property-editor-new-property-title = New property
+property-editor-new-group-title = New group
+property-editor-save = Save
+property-editor-empty = No properties yet.
+property-editor-add-property = Add a property
+property-editor-add-group = Add a group
+property-editor-unused-groups = Unused groups
+property-editor-unused-groups-description = Groups this shape doesn't use yet. Drop a property or a group on one to start using it.
+property-editor-delete-group =
+    .aria-label = Delete { $label }
+property-editor-delete-group-title = Delete group?
+property-editor-delete-group-message = Delete { $label }? What is in it will no longer be in a group.
+property-editor-delete-group-used-by = { $count ->
+    [one] It is also used by this other shape:
+   *[other] It is also used by these other shapes:
+}
+property-editor-delete-group-cancel = Cancel
+property-editor-delete-group-confirm = Delete
+cardinality-property-group-required = Required
+cardinality-property-group-multiple = Multiple
+cardinality-property-group-advanced = Advanced
 datatype-xsd-string = Text
 datatype-rdf-langstring = Text with language
 datatype-xsd-anyuri = URI

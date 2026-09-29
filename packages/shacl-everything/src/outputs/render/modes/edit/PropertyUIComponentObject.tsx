@@ -93,13 +93,15 @@ export default function PropertyUIComponentObject({
             }))}
           />
         </div>
-        <PropertyUIComponentRemove
-          onRemove={onRemove}
-          propertyUIElement={propertyUIElement}
-          object={object}
-          clearAll={meta?.singleUnifiedWidget?.(propertyUIElement) === true}
-          disabled={isReadOnly}
-        />
+        {!meta?.hideRemoveButton && (
+          <PropertyUIComponentRemove
+            onRemove={onRemove}
+            propertyUIElement={propertyUIElement}
+            object={object}
+            clearAll={meta?.singleUnifiedWidget?.(propertyUIElement) === true}
+            disabled={isReadOnly}
+          />
+        )}
       </div>
     </div>
   );

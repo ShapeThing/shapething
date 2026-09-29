@@ -10,7 +10,12 @@ import {
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Localized } from "@fluent/react";
 import { getRdfListCells, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { Plus } from "@/helpers/icons.tsx";
@@ -165,7 +170,9 @@ export default function MemberShapeList({
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
-    useSensor(KeyboardSensor),
+    // Arrow keys step one whole item at a time, however tall it is (e.g. an open DetailsEditor),
+    // rather than the default fixed 25px.
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
   const onDragEnd = (event: DragEndEvent) => {

@@ -1,0 +1,138 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+# The form for a node shape: its name, and its properties - edited by st:PropertyEditor.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass sh:NodeShape ;
+
+    sh:property [
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path sh:name ;
+        sh:order 1 ;
+        sh:datatype rdf:langString ;
+    ] ;
+
+    sh:property [
+        sh:name "Properties"@en, "Eigenschappen"@nl ;
+        sh:path sh:property ;
+        sh:order 2 ;
+    ] ;
+    .
+
+# What a property shape is edited with, in the row's modal.
+<#propertyShape>
+    a sh:NodeShape ;
+    sh:targetClass sh:PropertyShape ;
+
+    sh:property [
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path sh:name ;
+        sh:order 1 ;
+        sh:datatype rdf:langString ;
+    ] ;
+
+    sh:property [
+        sh:name "Path"@en, "Pad"@nl ;
+        sh:path sh:path ;
+        sh:order 2 ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:name "Order"@en, "Volgorde"@nl ;
+        sh:path sh:order ;
+        sh:order 3 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+    ] ;
+    .
+
+# What a group is edited with.
+<#groupShape>
+    a sh:NodeShape ;
+    sh:targetClass sh:PropertyGroup ;
+
+    sh:property [
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path sh:name ;
+        sh:order 1 ;
+        sh:datatype rdf:langString ;
+    ] ;
+
+    sh:property [
+        sh:name "Order"@en, "Volgorde"@nl ;
+        sh:path sh:order ;
+        sh:order 2 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+    ] ;
+    .
+
+<#data>
+    a sh:NodeShape ;
+    sh:name "Person"@en, "Persoon"@nl ;
+
+    sh:property [
+        sh:name "Given name"@en, "Voornaam"@nl ;
+        sh:path schema:givenName ;
+        sh:group <#name> ;
+        sh:order 1 ;
+    ] ;
+
+    sh:property [
+        sh:name "Family name"@en, "Achternaam"@nl ;
+        sh:path schema:familyName ;
+        sh:group <#name> ;
+        sh:order 2 ;
+    ] ;
+
+    sh:property [
+        sh:name "Birth date"@en, "Geboortedatum"@nl ;
+        sh:path schema:birthDate ;
+        sh:group <#general> ;
+        sh:order 1 ;
+    ] ;
+
+    sh:property [
+        sh:name "Email"@en, "E-mail"@nl ;
+        sh:path schema:email ;
+        sh:order 2 ;
+    ] ;
+
+    sh:property [
+        sh:path schema:telephone ;
+        sh:order 3 ;
+    ] ;
+    .
+
+# Another shape sharing the Name group - listed when deleting that group.
+<#contactCard>
+    a sh:NodeShape ;
+    sh:name "Contact card"@en, "Visitekaartje"@nl ;
+
+    sh:property [
+        sh:name "Nickname"@en, "Bijnaam"@nl ;
+        sh:path schema:additionalName ;
+        sh:group <#name> ;
+    ] ;
+    .
+
+<#general>
+    a sh:PropertyGroup ;
+    sh:name "General"@en, "Algemeen"@nl ;
+    sh:order 1 .
+
+<#name>
+    a sh:PropertyGroup ;
+    sh:name "Name"@en, "Naam"@nl ;
+    sh:group <#general> ;
+    sh:order 2 .
+
+<#death>
+    a sh:PropertyGroup ;
+    sh:name "Death"@en, "Overlijden"@nl ;
+    sh:order 4 .

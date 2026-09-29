@@ -128,6 +128,34 @@ property-path-editor-add-type-one-or-more = Een of meer
 property-path-editor-add-type-zero-or-one = Nul of een
 property-path-editor-add-predicate-in-use = Al in gebruik
 property-path-editor-add-predicate-from-lov = Suggesties
+property-editor-property = Eigenschap
+property-editor-group = Groep
+property-editor-edit =
+    .aria-label = { $label } bewerken
+property-editor-remove =
+    .aria-label = { $label } verwijderen
+property-editor-edit-title = <label>{ $label }</label> bewerken
+property-editor-new-property-title = Nieuwe eigenschap
+property-editor-new-group-title = Nieuwe groep
+property-editor-save = Opslaan
+property-editor-empty = Nog geen eigenschappen.
+property-editor-add-property = Eigenschap toevoegen
+property-editor-add-group = Groep toevoegen
+property-editor-unused-groups = Ongebruikte groepen
+property-editor-unused-groups-description = Groepen die deze vorm nog niet gebruikt. Sleep een eigenschap of groep op een ervan om hem te gaan gebruiken.
+property-editor-delete-group =
+    .aria-label = { $label } verwijderen
+property-editor-delete-group-title = Groep verwijderen?
+property-editor-delete-group-message = { $label } verwijderen? Wat erin zit, zit dan niet meer in een groep.
+property-editor-delete-group-used-by = { $count ->
+    [one] Hij wordt ook gebruikt door deze andere vorm:
+   *[other] Hij wordt ook gebruikt door deze andere vormen:
+}
+property-editor-delete-group-cancel = Annuleren
+property-editor-delete-group-confirm = Verwijderen
+cardinality-property-group-required = Verplicht
+cardinality-property-group-multiple = Meerdere
+cardinality-property-group-advanced = Geavanceerd
 datatype-xsd-string = Tekst
 datatype-rdf-langstring = Tekst met taal
 datatype-xsd-anyuri = URI

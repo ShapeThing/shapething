@@ -285,6 +285,8 @@ export const resolutions = new Map<string, ResolutionFunction<any>>([
   // Unlike sh:in, not a constraint - just a hint of values worth offering first (see
   // EnumSelectEditor/AutoCompleteEditor), so every grouped shape's suggestions are kept.
   [st("suggestedValues").value, keepAllListItems],
+  // A property path (like sh:path), read by structure/orderByValues.ts - one per property.
+  [st("orderBy").value, keepFirst],
   [sh("rootClass").value, keepMostSpecificClasses],
   [sh("uniqueValuesFor").value, keepAllListItems],
   [sh("severity").value, keepMostSevere],

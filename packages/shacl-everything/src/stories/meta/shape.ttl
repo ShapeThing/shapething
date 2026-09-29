@@ -18,19 +18,20 @@
 
     sh:property [
         sh:name "Title"@en, "Titel"@nl ;
-        sh:order 1 ;
+        sh:order -100 ;
         sh:path [ sh:alternativePath (sh:name rdfs:label ) ] ;
         sh:uniqueLang true ;
-        sh:group <#metadata> ;
+        # sh:group <#metadata> ;
         sh:datatype ( xsd:string rdf:langString ) ;
     ] ;
 
     sh:property [
-        sh:order 2 ;
+        sh:order -99 ;
         sh:name "Description"@en, "Beschrijving"@nl ;
         sh:path [ sh:alternativePath (sh:description rdfs:comment ) ] ;
-        sh:group <#metadata> ;
+        # sh:group <#metadata> ;
         sh:uniqueLang true ;
+        sh:singleLine false ;
         sh:datatype ( xsd:string rdf:langString ) ;
     ] ;
 
@@ -59,17 +60,10 @@
     ] ;
 
     sh:property [
-        sh:order 5 ;
-        sh:name "Properties"@en, "Eigenschappen"@nl ;
-        sh:path sh:property ;
-        sh:group <#properties> ;
-        sh:nodeKind ( sh:IRI sh:BlankNode ) ;
-    ] ;
-
-    sh:property [
         sh:order 6 ;
         sh:name "Order"@en, "Volgorde"@nl ;
         sh:path sh:order ;
+        sh:maxCount 1 ;
         sh:group <#metadata> ;
         sh:datatype xsd:integer ;
     ] ;
@@ -85,6 +79,15 @@
     sh:description "A shape defines the structure and constraints for RDF nodes."@en, "Een vorm definieert de structuur en beperkingen voor RDF-knopen."@nl ;
 
     sh:node <#shape> ;
+
+    sh:property [
+        sh:order -98 ;
+        sh:name "Properties"@en, "Eigenschappen"@nl ;
+        sh:path sh:property ;
+        # sh:group <#properties> ;
+        sh:nodeKind ( sh:IRI sh:BlankNode ) ;
+        st:orderBy sh:order ;
+    ] ;
 
     sh:property [
         sh:order 3 ;
@@ -158,25 +161,28 @@
         sh:order 3 ;
         sh:name "Path"@en, "Pad"@nl ;
         sh:path sh:path ;
-        sh:group <#propertyConstraintsInner> ;
+        sh:order -96;
+        # sh:group <#propertyConstraintsInner> ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
     ] ;
 
+    # sh:minCount and sh:maxCount share <#cardinality>, whose st:CardinalityPropertyGroup shows them
+    # as "Required" / "Multiple" checkboxes, with these two fields in its "Advanced" section.
     sh:property [
-        sh:order 4 ;
+        sh:order 0 ;
         sh:name "Minimum count"@en, "Minimum aantal"@nl ;
         sh:path sh:minCount ;
-        sh:group <#propertyConstraintsInner> ;
+        sh:group <#cardinality> ;
         sh:maxCount 1 ;
         sh:datatype xsd:integer ;
     ] ;
 
     sh:property [
-        sh:order 5 ;
+        sh:order 1 ;
         sh:name "Maximum count"@en, "Maximum aantal"@nl ;
         sh:path sh:maxCount ;
-        sh:group <#propertyConstraintsInner> ;
+        sh:group <#cardinality> ;
         sh:maxCount 1 ;
         sh:datatype xsd:integer ;
     ] ;
@@ -215,7 +221,6 @@
         sh:path sh:group ;
         sh:class sh:PropertyGroup ;
         sh:group <#propertyConstraintsInner> ;
-        sh:minCount 1 ;
         sh:maxCount 1 ;
     ] ;
 
@@ -258,6 +263,114 @@
         sh:path sh:not ;
         sh:group <#propertyConstraintsInner> ;
         sh:nodeKind (sh:IRI sh:BlankNode) ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Allowed values"@en, "Toegestane waarden"@nl ;
+        sh:description "The only values this property may have."@en, "De enige waarden die deze eigenschap mag hebben."@nl ;
+        sh:path sh:in ;
+        sh:group <#valueConstraintsInner> ;
+        sh:maxCount 1 ;
+        sh:memberShape [
+            sh:or (
+                [ sh:datatype xsd:string ]
+                [ sh:nodeKind sh:IRI ]
+            ) ;
+        ] ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Pattern"@en, "Patroon"@nl ;
+        sh:description "A regular expression every value must match."@en, "Een reguliere expressie waar elke waarde aan moet voldoen."@nl ;
+        sh:path sh:pattern ;
+        sh:group <#valueConstraintsInner> ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Minimum length"@en, "Minimale lengte"@nl ;
+        sh:path sh:minLength ;
+        sh:group <#valueConstraintsInner> ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Maximum length"@en, "Maximale lengte"@nl ;
+        sh:path sh:maxLength ;
+        sh:group <#valueConstraintsInner> ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "Unique language"@en, "Unieke taal"@nl ;
+        sh:description "At most one value per language."@en, "Hoogstens één waarde per taal."@nl ;
+        sh:path sh:uniqueLang ;
+        sh:group <#valueConstraintsInner> ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean ;
+    ] ;
+
+    sh:property [
+        sh:order 6 ;
+        sh:name "Allowed languages"@en, "Toegestane talen"@nl ;
+        sh:path sh:languageIn ;
+        sh:group <#valueConstraintsInner> ;
+        sh:maxCount 1 ;
+        sh:memberShape [
+            sh:datatype xsd:string ;
+        ] ;
+    ] ;
+
+    .
+
+<#propertyGroup>
+    a sh:NodeShape ;
+    sh:targetClass sh:PropertyGroup ;
+
+    sh:name "Group"@en, "Groep"@nl ;
+    sh:description "A group shows properties together, in the order of its own sh:order among its siblings."@en, "Een groep toont eigenschappen samen, op de plek van zijn eigen sh:order tussen zijn buren."@nl ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path [ sh:alternativePath ( rdfs:label sh:name ) ] ;
+        sh:uniqueLang true ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:path [ sh:alternativePath ( sh:description rdfs:comment ) ] ;
+        sh:uniqueLang true ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Order"@en, "Volgorde"@nl ;
+        sh:path sh:order ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Group"@en, "Groep"@nl ;
+        sh:description "The group this group is shown in."@en, "De groep waarin deze groep getoond wordt."@nl ;
+        sh:path sh:group ;
+        sh:class sh:PropertyGroup ;
+        sh:maxCount 1 ;
     ] ;
 
     .
@@ -337,16 +450,41 @@ sh:IRIOrLiteral rdfs:label "IRI or literal"@en, "IRI of literal"@nl .
     .
 
 
+<#cardinality>
+    a sh:PropertyGroup, st:CardinalityPropertyGroup ;
+    sh:name "Cardinality"@en, "Kardinaliteit"@nl ;
+    sh:order -91 ;
+    .
+
 <#propertyConstraintsInner>
     a sh:PropertyGroup, st:DrawerPropertyGroup ;
     sh:order 1000 ;
     sh:group <#propertyConstraints> ;
     .
 
+<#valueConstraints>
+    a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
+    sh:name "Value constraints"@en, "Waardebeperkingen"@nl ;
+    sh:order 4 ;
+    st:color [
+        st:hue "287.2192513368984"^^xsd:decimal ;
+        st:saturation "91.21951219512198"^^xsd:decimal ;
+        st:lightness "59.80392156862745"^^xsd:decimal ;
+    ] ;
+    st:icon "iconmind:filter-outline-thin"^^<https://iconify.design> ;
+    sh:description "Constraints every value of the property must meet."@en, "Beperkingen waar elke waarde van de eigenschap aan moet voldoen."@nl ;
+    .
+
+<#valueConstraintsInner>
+    a sh:PropertyGroup, st:DrawerPropertyGroup ;
+    sh:order 1000 ;
+    sh:group <#valueConstraints> ;
+    .
+
 <#properties>
     a sh:PropertyGroup, st:VerticalTabbedPropertyGroup ;
     sh:name "Properties"@en, "Eigenschappen"@nl ;
-    sh:order 4 ;
+    sh:order 5 ;
     st:color [
         st:hue "67.2192513368984"^^xsd:decimal ;
         st:saturation "91.21951219512198"^^xsd:decimal ;

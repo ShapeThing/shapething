@@ -1,0 +1,37 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass sh:PropertyShape ;
+
+    sh:property [
+        sh:name "Minimum"@en, "Minimum"@nl ;
+        sh:path sh:minCount ;
+        sh:group <#cardinality> ;
+        sh:order 0 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+    ] ;
+
+    sh:property [
+        sh:name "Maximum"@en, "Maximum"@nl ;
+        sh:path sh:maxCount ;
+        sh:group <#cardinality> ;
+        sh:order 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+    ] ;
+    .
+
+<#cardinality>
+    a sh:PropertyGroup, st:CardinalityPropertyGroup ;
+    sh:name "Cardinality"@en, "Kardinaliteit"@nl ;
+    .
+
+<#data>
+    a sh:PropertyShape ;
+    sh:minCount 2 ;
+    sh:maxCount 5 ;
+    .
