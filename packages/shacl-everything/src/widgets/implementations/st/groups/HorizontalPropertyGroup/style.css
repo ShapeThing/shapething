@@ -38,6 +38,13 @@
   box-sizing: content-box;
 }
 
+/* TableHeaderColumns' copy of DetailsEditor's gear button - same element and classes as the real
+   one so it reserves exactly its box, just never seen or interacted with. */
+.st-table-header__invisible {
+  visibility: hidden;
+  pointer-events: none;
+}
+
 /* A single-instance use of this group (e.g. DetailsEditor-wrapped schema:prepTime, sh:maxCount 1
    - not a repeating MemberShapeList row, whose own rows never carry a label at all) still shows
    its "Amount"/"Unit" labels once, above the inputs, same as any FormElement. That label row is
@@ -50,5 +57,17 @@
   margin-top: var(--size-6);
 }
 .st-property-object:has(.st-property-group--horizontal) .st-details-editor__options {
-  margin-top: calc(var(--size-6) + var(--size-1));
+  margin-top: calc(var(--size-6) + var(--size-2));
+}
+
+/* ...except in a table-mode value list (see PropertyUIComponentValuesHeader), whose rows carry no
+   labels of their own - the column labels live once in the header row above, so there's no label
+   row to push past. Back to DetailsEditor's own gear offset. */
+.st-property-items--table .st-property-object:has(.st-property-group--horizontal) > .st-button {
+  margin-top: 0;
+}
+.st-property-items--table
+  .st-property-object:has(.st-property-group--horizontal)
+  .st-details-editor__options {
+  margin-top: var(--size-1);
 }

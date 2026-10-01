@@ -1,0 +1,53 @@
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Ontology ;
+    sh:property [
+        sh:name "Prefixes"@en ;
+        sh:path sh:declare ;
+        shui:editor shui:DetailsEditor ;
+        sh:node <#prefixShape> ;
+    ] ;
+    .
+
+<#prefixGroup>
+    a sh:PropertyGroup, st:HorizontalPropertyGroup ;
+    .
+
+<#prefixShape>
+    a sh:NodeShape ;
+    sh:property [
+        sh:name "Prefix"@en ;
+        sh:path sh:prefix ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 0 ;
+        sh:group <#prefixGroup> ;
+    ] ;
+    sh:property [
+        sh:name "Namespace"@en ;
+        sh:path sh:namespace ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 1 ;
+        sh:group <#prefixGroup> ;
+    ] ;
+    .
+
+<#data>
+    a ex:Ontology ;
+    sh:declare [
+        sh:prefix "ex" ;
+        sh:namespace <http://example.org/> ;
+    ], [
+        sh:prefix "schema" ;
+        sh:namespace <http://schema.org/> ;
+    ] ;
+    .

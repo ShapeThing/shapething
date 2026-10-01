@@ -18,6 +18,11 @@
   padding: var(--size-6);
   border-block-end: 1px solid var(--st-border-color, #ddd);
 
+  > * {
+    max-width: 770px;
+    margin-inline: auto;
+  }
+
   .st-button:not(:focus) {
     background-color: white;
   }
@@ -25,6 +30,8 @@
 
 .shape-is-the-app__content {
   padding: var(--size-9);
+  max-width: 900px;
+  margin-inline: auto;
 }
 
 .shape-is-the-app__header h2 {
@@ -41,6 +48,7 @@
 }
 
 .right {
+  min-height: 100vh;
   border-left: 1px solid var(--st-border-color, #ddd);
 }
 

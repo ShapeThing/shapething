@@ -31,8 +31,8 @@ function isExactMatch(result: SearchResult, search: string): boolean {
  * way a federated sh:select does (see useSelectOptions.tsx) - the fulltext-search counterpart to
  * searchInstances, for backends with their own text index. Results are then filtered down to only
  * the values that still conform to `shape`'s other constraints (see validateSearchResults.ts, spec
- * §10.2) - unlike searchInstances' local sh:class query, shui:searchQuery's results aren't
- * guaranteed to conform by construction. Non-NamedNode results are dropped since AutoCompleteEditor
+ * §10.2), the same as searchConformingInstances does for the local sh:class search. Non-NamedNode
+ * results are dropped since AutoCompleteEditor
  * only ever applies IRI values.
  */
 async function runSearchQuery(
@@ -75,6 +75,25 @@ async function runSearchQuery(
 }
 
 /**
+ * searchInstances' local sh:class search, filtered down to only the instances that also conform to
+ * `shape`'s other constraints - its sh:node in particular, which the sh:class query itself knows
+ * nothing about. Same check as runSearchQuery's results get (see validateSearchResults.ts).
+ */
+async function searchConformingInstances(
+  shape: PropertyUIElement,
+  search: string,
+  corsProxyUrl: string | undefined,
+): Promise<SearchResult[]> {
+  const results = await searchInstances(shape, search, corsProxyUrl);
+  const conforming = await filterConformingResults(
+    shape,
+    results.map((result) => ({ ...result, term: result.iri })),
+  );
+  const conformingValues = new Set(conforming.map((result) => result.term.value));
+  return results.filter((result) => conformingValues.has(result.iri.value));
+}
+
+/**
  * Search-as-you-type against `shape`'s sh:class instances (see searchInstances) - or, when `shape`
  * declares a `shui:searchQuery`, against that query instead (see runSearchQuery), then filtered to
  * only the results that still conform to `shape`'s other constraints (see validateSearchResults.ts,
@@ -114,7 +133,7 @@ export function useInstanceSearch(shape: PropertyUIElement): {
     queryFn: () =>
       (searchQuery
         ? runSearchQuery(shape, searchQuery, debounced ?? "", activeInterfaceLanguage, corsProxyUrl)
-        : searchInstances(shape, debounced ?? "", corsProxyUrl)
+        : searchConformingInstances(shape, debounced ?? "", corsProxyUrl)
       ).catch((cause) => {
         console.error("[shacl-everything] instance search failed", cause);
         throw cause;

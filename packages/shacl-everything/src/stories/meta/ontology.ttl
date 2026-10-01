@@ -36,7 +36,7 @@
     ] ;
 
     sh:property [
-        sh:name "Prefixes"@en ;
+        sh:name "" ;
         sh:path sh:declare ;
         shui:editor shui:DetailsEditor ;
         shui:viewer shui:DetailsViewer ;
@@ -50,6 +50,12 @@
         st:suggestedOptions ( <http://nlbegrip.nl/def/skosapnl#>) ;
     ] ;
 
+    sh:property [
+        sh:name "Version"@en ;
+        sh:path owl:versionInfo ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:Literal ;
+    ] ;
     .
 
 <#prefixGroup>

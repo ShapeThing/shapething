@@ -1,4 +1,5 @@
 import { languageLabels } from "@/helpers/languageLabels.ts";
+import { Settings } from "@/helpers/icons.tsx";
 import { rdf, sh } from "@/helpers/namespaces.ts";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
@@ -25,6 +26,34 @@ export default function MemberShapeListHeader({
   columns: PropertyUIElement[];
   columnLabelId: (index: number) => string;
 }) {
+  return (
+    <div className="st-member-shape-list__item st-member-shape-list__header">
+      <span
+        className="st-button st-member-shape-list__handle st-member-shape-list__header-spacer"
+        aria-hidden
+      />
+      <div className="st-member-shape-list__item-widget">
+        <TableHeaderColumns columns={columns} columnLabelId={columnLabelId} />
+      </div>
+      <span className="st-button st-member-shape-list__header-spacer" aria-hidden />
+    </div>
+  );
+}
+
+/**
+ * The part of a table-mode header shared by both list kinds (MemberShapeListHeader here, and
+ * PropertyUIComponentValuesHeader for an ordinary multi-valued property): the column labels,
+ * laid out with one row's own DetailsEditor -> HorizontalPropertyGroup class structure. Each
+ * caller wraps it in its own row kind's outer markup, so the handle/remove stand-ins line up with
+ * that kind's real controls.
+ */
+export function TableHeaderColumns({
+  columns,
+  columnLabelId,
+}: {
+  columns: PropertyUIElement[];
+  columnLabelId: (index: number) => string;
+}) {
   const {
     enableLogicalBranchSwitching,
     enableWidgetSwitching,
@@ -40,51 +69,50 @@ export default function MemberShapeListHeader({
   const showGearSpacer = enableLogicalBranchSwitching || enableWidgetSwitching;
 
   return (
-    <div className="st-member-shape-list__item st-member-shape-list__header">
-      <span
-        className="st-button st-member-shape-list__handle st-member-shape-list__header-spacer"
-        aria-hidden
-      />
-      <div className="st-member-shape-list__item-widget">
-        <div className="st-details-editor">
-          <div className="st-details-editor__body">
-            <fieldset className="st-property-group st-property-group--horizontal">
-              <div className="st-property-group__body">
-                {columns.map((column, index) => {
-                  const isRdfLangString = column.get(sh("datatype"))?.equals(rdf("langString"));
-                  const showLanguageTag =
-                    Boolean(activeLanguage) && isRdfLangString && languageMode === "switcher";
-                  return (
-                    <FormElement
-                      key={index}
-                      label={column.label([activeInterfaceLanguage])}
-                      labelSuffix={
-                        showLanguageTag ? (
-                          <span className="st-property-language-tag">
-                            ({Object.values(languageLabels([activeLanguage], activeInterfaceLanguage))})
-                          </span>
-                        ) : undefined
-                      }
-                      labelTitle={enableShPathInLabelTitle
-                        ? column.pathAsSparql({ prefixed: true, sourcePrefixes })
-                        : undefined}
-                      required={(column.get(sh("minCount")) ?? 0) > 0}
-                      labelId={columnLabelId(index)}
-                    />
-                  );
-                })}
-              </div>
-            </fieldset>
+    <div className="st-details-editor">
+      <div className="st-details-editor__body">
+        <fieldset className="st-property-group st-property-group--horizontal">
+          <div className="st-property-group__body">
+            {columns.map((column, index) => {
+              const isRdfLangString = column.get(sh("datatype"))?.equals(rdf("langString"));
+              const showLanguageTag =
+                Boolean(activeLanguage) && isRdfLangString && languageMode === "switcher";
+              return (
+                <FormElement
+                  key={index}
+                  label={column.label([activeInterfaceLanguage])}
+                  labelSuffix={
+                    showLanguageTag ? (
+                      <span className="st-property-language-tag">
+                        ({Object.values(languageLabels([activeLanguage], activeInterfaceLanguage))})
+                      </span>
+                    ) : undefined
+                  }
+                  labelTitle={enableShPathInLabelTitle
+                    ? column.pathAsSparql({ prefixed: true, sourcePrefixes })
+                    : undefined}
+                  required={(column.get(sh("minCount")) ?? 0) > 0}
+                  labelId={columnLabelId(index)}
+                />
+              );
+            })}
           </div>
-          {showGearSpacer && (
-            <span
-              className="st-icon-button st-details-editor__options st-member-shape-list__header-spacer"
-              aria-hidden
-            />
-          )}
-        </div>
+        </fieldset>
       </div>
-      <span className="st-button st-member-shape-list__header-spacer" aria-hidden />
+      {/* A real (but invisible, inert) copy of DetailsEditor's own gear button rather than a
+          sized <span>: .st-icon-button's width comes from aspect-ratio against its height plus
+          the UA's own <button> box, which a span stand-in with a fixed width never matched -
+          shifting every column of the header out of line with the rows below it. */}
+      {showGearSpacer && (
+        <button
+          type="button"
+          tabIndex={-1}
+          aria-hidden
+          className="st-icon-button st-details-editor__options st-table-header__invisible"
+        >
+          <Settings />
+        </button>
+      )}
     </div>
   );
 }

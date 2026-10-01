@@ -7,6 +7,7 @@ import type { WidgetProps } from "@/widgets/types.ts";
 import { valueNodeLabel } from "@/resolution/label.ts";
 import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import { Localized } from "@fluent/react/esm/localized.js";
+import { useConformingCandidates } from "@/outputs/render/hooks/useConformingCandidates.ts";
 import { useCreateInPlace } from "@/outputs/render/hooks/useCreateInPlace.ts";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
@@ -23,7 +24,7 @@ export default function InstancesSelectEditor({
   autoFocus,
 }: WidgetProps) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
-  const shClasses = shape.get(sh("class"));
+  const shClasses = useMemo(() => shape.get(sh("class")), [shape]);
   const existingObjects = useDataGraphObjects(shape);
 
   const subjects = useMemo(() => {
@@ -43,6 +44,17 @@ export default function InstancesSelectEditor({
     );
   }, [shClasses, shape, existingObjects, term]);
 
+  // Only instances that also satisfy the property's sh:node (etc.) are offered - except the
+  // current value, which stays listed even when it doesn't conform, so the trigger still matches
+  // an option and the validation report is what flags it.
+  const conforming = useConformingCandidates(shape, subjects);
+  const options = useMemo(() => {
+    const conformingValues = new Set(conforming?.map((subject) => subject.value));
+    return subjects
+      .filter((subject) => subject.value === term.value || conformingValues.has(subject.value))
+      .map((subject) => subject.value);
+  }, [subjects, conforming, term]);
+
   // "Create new…": staged in a scratch copy, only written for real on Done - see useCreateInPlace.
   // Not offered at all without a shape describing the new instance's own fields (its sh:node, or a
   // node shape targeting its sh:class - see canCreateInPlace/valueNodeShapes).
@@ -57,7 +69,7 @@ export default function InstancesSelectEditor({
         ariaLabelledby={labelledBy}
         autoFocus={autoFocus}
         value={term.value}
-        options={subjects.map((s) => s.value)}
+        options={options}
         onChange={(v) => setTerm(factory.namedNode(v))}
         renderTriggerContent={(v) =>
           v ? (

@@ -201,8 +201,37 @@ export const stPropertyEditorRemoveProperty: Story = {
     const canvas = within(canvasElement);
     await waitFor(() => expect(treeRows(canvasElement)).toEqual(initialRows));
 
-    await userEvent.click(canvas.getByRole("button", { name: /^Remove \W?schema:telephone\W?$/ }));
+    await userEvent.click(canvas.getByRole("button", { name: /^Edit \W?schema:telephone\W?$/ }));
+    const dialog = await within(document.body).findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Remove property" }));
     await waitFor(() => expect(treeRows(canvasElement)).toEqual(initialRows.slice(0, -1)));
+  },
+};
+
+export const stPropertyEditorCancel: Story = {
+  name: "Cancelling a property's modal, which asks first once something changed",
+  args,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await waitFor(() => expect(treeRows(canvasElement)).toEqual(initialRows));
+
+    // Untouched: closes straight away.
+    await userEvent.click(canvas.getByRole("button", { name: /^Edit \W?Email\W?$/ }));
+    let dialog = await within(document.body).findByRole("dialog");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => expect(document.querySelector("dialog[open]")).toBeNull());
+
+    // Edited: asks before discarding, and nothing is written.
+    await userEvent.click(canvas.getByRole("button", { name: /^Edit \W?Email\W?$/ }));
+    dialog = await within(document.body).findByRole("dialog");
+    const [name] = await within(dialog).findAllByRole("textbox");
+    await waitFor(() => expect(name).toHaveValue("Email"));
+    await userEvent.type(name, " address");
+    await userEvent.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    const confirm = await within(document.body).findByRole("dialog", { name: "Discard changes?" });
+    await userEvent.click(within(confirm).getByRole("button", { name: "Discard" }));
+    await waitFor(() => expect(document.querySelector("dialog[open]")).toBeNull());
+    expect(treeRows(canvasElement)).toEqual(initialRows);
   },
 };
 
@@ -249,13 +278,15 @@ export const stPropertyEditorMetaShapeGroups: Story = {
 
 export const stPropertyEditorDeleteGroup: Story = {
   name: "Deleting a group, which names the other shapes using it",
-  args,
+  args: metaArgs,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await waitFor(() => expect(treeRows(canvasElement)).toEqual(initialRows));
+    await waitFor(() => expect(treeRows(canvasElement)).toEqual(initialRows), { timeout: 15000 });
 
-    await userEvent.click(canvas.getByRole("button", { name: /^Delete \W?Name\W?$/ }));
-    const dialog = await within(document.body).findByRole("dialog");
+    await userEvent.click(canvas.getByRole("button", { name: /^Edit \W?Name\W?$/ }));
+    const draft = await within(document.body).findByRole("dialog");
+    await userEvent.click(within(draft).getByRole("button", { name: "Delete group" }));
+    const dialog = await within(document.body).findByRole("dialog", { name: "Delete group?" });
     expect(dialog).toHaveTextContent("Delete group?");
     expect(within(dialog).getByRole("listitem")).toHaveTextContent("Contact card");
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
@@ -278,13 +309,15 @@ export const stPropertyEditorDeleteGroup: Story = {
 
 export const stPropertyEditorDeleteUnusedGroup: Story = {
   name: "Deleting an unused group, used by no other shape",
-  args,
+  args: metaArgs,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await waitFor(() => expect(unusedGroups(canvasElement)).toEqual(["Death"]));
+    await waitFor(() => expect(unusedGroups(canvasElement)).toEqual(["Death"]), { timeout: 15000 });
 
-    await userEvent.click(canvas.getByRole("button", { name: /^Delete \W?Death\W?$/ }));
-    const dialog = await within(document.body).findByRole("dialog");
+    await userEvent.click(canvas.getByRole("button", { name: /^Edit \W?Death\W?$/ }));
+    const draft = await within(document.body).findByRole("dialog");
+    await userEvent.click(within(draft).getByRole("button", { name: "Delete group" }));
+    const dialog = await within(document.body).findByRole("dialog", { name: "Delete group?" });
     expect(within(dialog).queryByRole("list")).toBeNull();
     await userEvent.click(within(dialog).getByRole("button", { name: "Delete" }));
 

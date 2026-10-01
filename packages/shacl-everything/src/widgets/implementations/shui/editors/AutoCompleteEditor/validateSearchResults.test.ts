@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+import { factory } from "@/helpers/factory.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -69,4 +70,46 @@ test("filterConformingResults() filters against a local (no SERVICE) sh:in [ sh:
   const kept = await filterConformingResults(shape, asResults(ex("Netherlands"), ex("Atlantis")));
 
   expect(kept.map((result) => result.term.value)).toEqual([ex("Netherlands").value]);
+});
+
+test("filterConformingResults() checks sh:class and sh:node together", async () => {
+  const shape = await createShape(
+    `
+      ex:property1 a sh:PropertyShape ; sh:path ex:employer ;
+        sh:class ex:Organization ; sh:node ex:dutchShape .
+      ex:dutchShape a sh:NodeShape ; sh:property [ sh:path ex:country ; sh:hasValue ex:NL ] .
+    `,
+    `
+      ex:Acme a ex:Organization ; ex:country ex:NL .
+      ex:Globex a ex:Organization ; ex:country ex:DE .
+      ex:Dutchy ex:country ex:NL .
+    `,
+  );
+
+  const kept = await filterConformingResults(
+    shape,
+    asResults(ex("Acme"), ex("Globex"), ex("Dutchy")),
+  );
+
+  expect(kept.map((result) => result.term.value)).toEqual([ex("Acme").value]);
+});
+
+test("filterConformingResults() sees dataGraph writes made after its checker was cached", async () => {
+  const shape = await createShape(
+    `
+      ex:property1 a sh:PropertyShape ; sh:path ex:employer ;
+        sh:class ex:Organization ; sh:node ex:dutchShape .
+      ex:dutchShape a sh:NodeShape ; sh:property [ sh:path ex:country ; sh:hasValue ex:NL ] .
+    `,
+    `ex:Globex a ex:Organization ; ex:country ex:DE .`,
+  );
+
+  expect(await filterConformingResults(shape, asResults(ex("Globex")))).toEqual([]);
+
+  shape.dataGraph.addQuad(factory.quad(ex("Globex"), ex("country"), ex("NL")));
+
+  const kept = await filterConformingResults(shape, asResults(ex("Globex")));
+  expect(kept.map((result) => result.term.value)).toEqual([ex("Globex").value]);
+  // Validation only reads the dataGraph - its synthetic focus-node triple is never written into it.
+  expect(shape.dataGraph.getQuads(null, ex("employer"))).toEqual([]);
 });

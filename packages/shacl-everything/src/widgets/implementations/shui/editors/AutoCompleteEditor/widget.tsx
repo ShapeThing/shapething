@@ -5,6 +5,7 @@ import { Loading, Plus, Search } from "@/helpers/icons.tsx";
 import { sh, st } from "@/helpers/namespaces.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
+import { useConformingCandidates } from "@/outputs/render/hooks/useConformingCandidates.ts";
 import { useCreateInPlace } from "@/outputs/render/hooks/useCreateInPlace.ts";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
@@ -71,6 +72,9 @@ export default function AutoCompleteEditor({
         !existingObjects.some((obj) => obj.value === instance.value && obj.value !== term.value),
     );
   }, [canFacetSearch, shClasses, shape, existingObjects, term]);
+  // Narrowed to the instances that also satisfy this property's sh:node (etc.) - see
+  // useConformingCandidates.
+  const conformingFacetSearchCandidates = useConformingCandidates(shape, facetSearchCandidates);
 
   // Normally always starts as "view" regardless of whether `term` already has a value, so a
   // screen with several empty properties of this widget type doesn't turn into a race over which
@@ -261,7 +265,7 @@ export default function AutoCompleteEditor({
             onClose={() => setFacetSearching(false)}
             shape={shape}
             nodeShapes={nodeShapes}
-            candidateInstances={facetSearchCandidates}
+            candidateInstances={conformingFacetSearchCandidates ?? []}
             onSelect={(result) => {
               apply(result);
               setFacetSearching(false);

@@ -10,7 +10,7 @@ import { termKey } from "@/helpers/termKey.ts";
 import { shui } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
-import { Fragment, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   closestCenter,
   DndContext,
@@ -30,6 +30,10 @@ import {
 import { Loading } from "@/helpers/icons.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import SortableRow from "@/outputs/render/modes/edit/SortableRow.tsx";
+import PropertyUIComponentValuesHeader from "@/outputs/render/modes/edit/PropertyUIComponentValuesHeader.tsx";
+import { memberShapeTableContext } from "@/outputs/render/contexts/memberShapeTableContext.tsx";
+import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
+import { horizontalTableColumns } from "@/structure/horizontalTableColumns.ts";
 import {
   isWritablePath,
   orderByPath,
@@ -215,6 +219,17 @@ export default function PropertyUIComponentValues({
   const isSortable = orderPath !== undefined && isWritablePath(orderPath) && !isSingleUnifiedWidget;
   const sortableIds = isSortable ? languageFilteredObjects.map(termKey) : [];
 
+  // Same table mode as MemberShapeList (see horizontalTableColumns), for an ordinary multi-valued
+  // property instead of an rdf:List: one header row above the values, each value row label-less.
+  // Only when the values actually render through DetailsEditor - its nested form is what lays the
+  // HorizontalPropertyGroup out as a row; any other widget for a sh:node value never would.
+  const editorWidget = useWidget(shui("editor"), propertyUIElement);
+  const isDetailsEditor = editorWidget?.iri.equals(shui("DetailsEditor")) === true;
+  const shapeColumns = useMemo(() => horizontalTableColumns(propertyUIElement), [propertyUIElement]);
+  const tableColumns = isDetailsEditor && !isSingleUnifiedWidget ? shapeColumns : undefined;
+  const tableIdBase = useId();
+  const columnLabelId = (index: number) => `${tableIdBase}-col-${index}`;
+
   const sensors = useSensors(
     useSensor(MouseSensor),
     useSensor(TouchSensor),
@@ -251,6 +266,10 @@ export default function PropertyUIComponentValues({
           // editable widget - re-show the empty one whenever that happens, for any field.
           onRemove={syncShowEmptyWidget}
           autoFocus={index === targetFocusIndex}
+          // In table mode every row shows its "-" (disabled where it can't remove anything, e.g.
+          // the trailing empty row) - a row without one would be one button narrower than the
+          // header's stand-in, shifting its columns out of line.
+          alwaysShowRemove={tableColumns !== undefined}
         />
       </Suspense>
     );
@@ -267,16 +286,31 @@ export default function PropertyUIComponentValues({
 
   return (
     <>
-      <div className="st-property-items">
-        {isSortable ? (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
-              {items}
-            </SortableContext>
-          </DndContext>
-        ) : (
-          items
+      <div className={tableColumns ? "st-property-items st-property-items--table" : "st-property-items"}>
+        {tableColumns && (
+          <PropertyUIComponentValuesHeader
+            columns={tableColumns}
+            columnLabelId={columnLabelId}
+            sortable={isSortable}
+          />
         )}
+        <memberShapeTableContext.Provider
+          value={
+            tableColumns
+              ? { hideLabels: true, labelledByForColumn: columnLabelId }
+              : { hideLabels: false, labelledByForColumn: () => undefined }
+          }
+        >
+          {isSortable ? (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+              <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
+                {items}
+              </SortableContext>
+            </DndContext>
+          ) : (
+            items
+          )}
+        </memberShapeTableContext.Provider>
       </div>
       {!isSingleUnifiedWidget && (
         <PropertyUIComponentAdd

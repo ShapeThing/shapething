@@ -21,6 +21,9 @@ export type Draft = {
   node: NodeUIElement;
   // Writes the staged changes (and, for a new node, whatever links it in) as one undo step.
   save: () => void;
+  // An existing node's way out of the shape - removing a property, deleting a group. Throws away
+  // whatever was staged.
+  remove?: { label: ReactNode; run: () => void };
 };
 
 const changeKeys = (staging: StagingGraph) => {
@@ -61,6 +64,21 @@ export default function DraftModal({ draft, onClose }: { draft: Draft; onClose: 
         >
           <NodeUIElementChildren nodeUiElement={draft.node} autoFocusFirst />
           <div className="st-property-editor__draft-actions">
+            {draft.remove && (
+              <button
+                type="button"
+                className="st-button st-button--danger st-property-editor__draft-remove"
+                onClick={() => {
+                  onClose();
+                  draft.remove?.run();
+                }}
+              >
+                {draft.remove.label}
+              </button>
+            )}
+            <button type="button" className="st-button st-button--text" onClick={requestClose}>
+              <Localized id="property-editor-cancel">Cancel</Localized>
+            </button>
             <button type="submit" className="st-button st-button--primary">
               {draft.submitLabel}
             </button>

@@ -1,4 +1,4 @@
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties, type ReactNode } from "react";
 import { Localized, useLocalization } from "@fluent/react";
 import {
   closestCenter,
@@ -24,7 +24,7 @@ import type { RdfStore } from "rdf-stores";
 import { clsx } from "clsx";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { factory } from "@/helpers/factory.ts";
-import { Edit, Minus, Plus } from "@/helpers/icons.tsx";
+import { Plus } from "@/helpers/icons.tsx";
 import { rdf, sh, xsd } from "@/helpers/namespaces.ts";
 import { createStagingGraph } from "@/helpers/stagingGraph.ts";
 import { termKey } from "@/helpers/termKey.ts";
@@ -35,7 +35,9 @@ import { valueNodeShapes } from "@/resolution/label.ts";
 import { shapesForClass, shapesTargetingNode } from "@/resolution/targets.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import DeleteGroupModal from "@/widgets/implementations/st/editors/PropertyEditor/DeleteGroupModal.tsx";
-import DraftModal, { type Draft } from "@/widgets/implementations/st/editors/PropertyEditor/DraftModal.tsx";
+import DraftModal, {
+  type Draft,
+} from "@/widgets/implementations/st/editors/PropertyEditor/DraftModal.tsx";
 import {
   displayName,
   useRowLabel,
@@ -85,48 +87,26 @@ function KindChip({ kind }: { kind: TreeItem["kind"] }) {
   );
 }
 
-function EditButton({ name, onEdit }: { name: string; onEdit: (name: string) => void }) {
+// A row's framed name - a button opening it for editing, when it can be edited.
+function RowName({
+  name,
+  onEdit,
+  children,
+}: {
+  name: string;
+  onEdit?: (name: string) => void;
+  children: ReactNode;
+}) {
+  if (!onEdit) return <span className="st-property-editor__name">{children}</span>;
   return (
     <Localized id="property-editor-edit" attrs={{ "aria-label": true }} vars={{ label: name }}>
       <button
         type="button"
-        className="st-icon-button st-property-editor__edit"
+        className="st-property-editor__name"
         aria-label={`Edit ${name}`}
         onClick={() => onEdit(name)}
       >
-        <Edit />
-      </button>
-    </Localized>
-  );
-}
-
-function RemoveButton({ name, onRemove }: { name: string; onRemove: () => void }) {
-  return (
-    <Localized id="property-editor-remove" attrs={{ "aria-label": true }} vars={{ label: name }}>
-      <button
-        type="button"
-        className="st-icon-button st-property-editor__remove"
-        aria-label={`Remove ${name}`}
-        onClick={onRemove}
-      >
-        <Minus />
-      </button>
-    </Localized>
-  );
-}
-
-// Deleting a group (see DeleteGroupModal) - unlike removing a property, which only unlinks it from
-// this shape, the group itself goes, for every shape using it.
-function DeleteButton({ name, onDelete }: { name: string; onDelete: (name: string) => void }) {
-  return (
-    <Localized id="property-editor-delete-group" attrs={{ "aria-label": true }} vars={{ label: name }}>
-      <button
-        type="button"
-        className="st-icon-button st-property-editor__delete"
-        aria-label={`Delete ${name}`}
-        onClick={() => onDelete(name)}
-      >
-        <Minus />
+        {children}
       </button>
     </Localized>
   );
@@ -137,15 +117,11 @@ function TreeRow({
   depth,
   dataGraph,
   onEdit,
-  onRemove,
-  onDelete,
 }: {
   item: TreeItem;
   depth: number;
   dataGraph: RdfStore;
   onEdit?: (name: string) => void;
-  onRemove?: () => void;
-  onDelete?: (name: string) => void;
 }) {
   const labels = useRowLabel(item.term, dataGraph);
   const name = displayName(item.term, labels);
@@ -159,16 +135,13 @@ function TreeRow({
       style={{ "--st-property-editor-depth": depth } as CSSProperties}
     >
       <div className="st-property-editor__row-body" data-depth={depth}>
-        <span className="st-property-editor__name">
+        <RowName name={name} onEdit={onEdit}>
           {groupLabel && <span className="st-property-editor__label">{groupLabel}</span>}
           {item.kind === "property" && labels.path && (
             <code className="st-property-editor__path">{labels.path}</code>
           )}
           <KindChip kind={item.kind} />
-        </span>
-        {onEdit && <EditButton name={name} onEdit={onEdit} />}
-        {onRemove && <RemoveButton name={name} onRemove={onRemove} />}
-        {onDelete && <DeleteButton name={name} onDelete={onDelete} />}
+        </RowName>
       </div>
     </SortableRow>
   );
@@ -178,12 +151,10 @@ function UnusedGroup({
   group,
   dataGraph,
   onEdit,
-  onDelete,
 }: {
   group: Quad_Subject;
   dataGraph: RdfStore;
   onEdit?: (name: string) => void;
-  onDelete: (name: string) => void;
 }) {
   const name = displayName(group, useRowLabel(group, dataGraph));
   const { setNodeRef, isOver } = useDroppable({
@@ -192,18 +163,16 @@ function UnusedGroup({
   });
 
   return (
-    <li
+    <div
       ref={setNodeRef}
       className="st-property-editor__unused-group"
       data-over={isOver || undefined}
     >
-      <span className="st-property-editor__name">
+      <RowName name={name} onEdit={onEdit}>
         <span className="st-property-editor__label">{name}</span>
         <KindChip kind="group" />
-      </span>
-      {onEdit && <EditButton name={name} onEdit={onEdit} />}
-      <DeleteButton name={name} onDelete={onDelete} />
-    </li>
+      </RowName>
+    </div>
   );
 }
 
@@ -254,6 +223,7 @@ export default function PropertyEditor({ shape }: WidgetProps) {
     label: string,
     seed?: (store: RdfStore) => void,
     link?: () => void,
+    remove?: Draft["remove"],
   ) => {
     const staging = createStagingGraph(dataGraph, seed);
     setDraft({
@@ -269,6 +239,7 @@ export default function PropertyEditor({ shape }: WidgetProps) {
       node: nestedNodeElement(shape, node, { nodeShapes, dataGraph: staging.dataGraph }),
       // Content first, link last (see useCreateInPlace's commit).
       save: () => staging.commit(link),
+      remove,
     });
   };
 
@@ -282,6 +253,19 @@ export default function PropertyEditor({ shape }: WidgetProps) {
         </span>
       </Localized>,
       name,
+      undefined,
+      undefined,
+      // Removing a property only unlinks it from this shape; deleting a group asks first, since
+      // the group itself goes, for every shape using it (see DeleteGroupModal).
+      item.kind === "property"
+        ? {
+            label: <Localized id="property-editor-remove">Remove property</Localized>,
+            run: () => shape.removeObject(item.term),
+          }
+        : {
+            label: <Localized id="property-editor-delete-group">Delete group</Localized>,
+            run: () => setDeleting({ group: item.term, name }),
+          },
     );
 
   const addProperty = () => {
@@ -388,14 +372,6 @@ export default function PropertyEditor({ shape }: WidgetProps) {
                     depth={item.id === activeId && projection ? projection.depth : item.depth}
                     dataGraph={dataGraph}
                     onEdit={canEdit ? edit(item) : undefined}
-                    onRemove={
-                      item.kind === "property" ? () => shape.removeObject(item.term) : undefined
-                    }
-                    onDelete={
-                      item.kind === "group"
-                        ? (name) => setDeleting({ group: item.term, name })
-                        : undefined
-                    }
                   />
                 );
               })}
@@ -420,17 +396,16 @@ export default function PropertyEditor({ shape }: WidgetProps) {
                 </Localized>
               </span>
             </header>
-            <ul className="st-property-editor__unused-list">
+            <div className="st-property-editor__unused-list">
               {tree.unusedGroups.map((group) => (
                 <UnusedGroup
                   key={termKey(group)}
                   group={group}
                   dataGraph={dataGraph}
                   onEdit={canEditGroup ? edit({ term: group, kind: "group" }) : undefined}
-                  onDelete={(name) => setDeleting({ group, name })}
                 />
               ))}
-            </ul>
+            </div>
           </section>
         )}
       </DndContext>

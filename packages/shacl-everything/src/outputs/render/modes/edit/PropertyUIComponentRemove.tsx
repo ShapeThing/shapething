@@ -20,6 +20,7 @@ export default function PropertyUIComponentRemove({
   onRemove,
   clearAll = false,
   disabled = false,
+  alwaysShow = false,
 }: {
   propertyUIElement: PropertyUIElement;
   object: Term;
@@ -33,6 +34,10 @@ export default function PropertyUIComponentRemove({
   // renders the button (so the row's layout matches its editable siblings) but disables it, since
   // an inferred/read-only triple can't be removed through the form.
   disabled?: boolean;
+  // Renders the button disabled instead of not at all whenever it would otherwise be hidden - for
+  // a table-mode value list's row "-" (see PropertyUIComponentValuesHeader), where every row
+  // (the trailing empty one included) shows it, keeping each row as wide as the header row.
+  alwaysShow?: boolean;
 }) {
   const existingObjects = useDataGraphObjects(propertyUIElement);
   const minCount = propertyUIElement.get(sh("minCount")) ?? 0;
@@ -44,8 +49,8 @@ export default function PropertyUIComponentRemove({
   // hardBlockedByMaxCount), rather than shown disabled - a permanently-disabled control (e.g. a
   // required single value) is just noise the user learns to ignore. A Warning or Info severity
   // still lets the user remove past it, relying on validation to flag the result afterwards
-  // instead of blocking the action outright. `disabled` (read-only values) overrides this hiding -
-  // that case is shown-but-disabled instead, not hidden.
+  // instead of blocking the action outright. `disabled` (read-only values) and `alwaysShow`
+  // override this hiding - those cases are shown-but-disabled instead, not hidden.
   const hardBlockedByMinCount = minCountReached && (severity === undefined || severity === "error");
 
   const removeValue = () => {
@@ -61,22 +66,25 @@ export default function PropertyUIComponentRemove({
     onRemove();
   };
 
-  return disabled || (!hardBlockedByMinCount && existingObjects.length) ? (
+  const hidden = !disabled && (hardBlockedByMinCount || existingObjects.length === 0);
+  if (hidden && !alwaysShow) return null;
+
+  return (
     <Localized id="property-remove-value" attrs={{ "aria-label": true }}>
       <button
         className={clsx(
           "st-button",
-          existingObjects.length !== 0 &&
+          !hidden &&
             minCountReached &&
             severity && ["st-button--severity", `severity-${severity}`],
         )}
         type="button"
         aria-label="Remove value"
-        disabled={disabled || existingObjects.length === 0}
+        disabled={disabled || hidden}
         onClick={removeValue}
       >
         <Minus />
       </button>
     </Localized>
-  ) : null;
+  );
 }

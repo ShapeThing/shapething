@@ -22,6 +22,7 @@ export default function PropertyUIComponentObject({
   onTermSet,
   onRemove,
   autoFocus,
+  alwaysShowRemove,
 }: {
   propertyUIElement: PropertyUIElement;
   object: Term;
@@ -30,6 +31,8 @@ export default function PropertyUIComponentObject({
   onTermSet: () => void;
   onRemove: () => void;
   autoFocus?: boolean;
+  // See PropertyUIComponentRemove's alwaysShow.
+  alwaysShowRemove?: boolean;
 }) {
   const setTerm = useCallback(
     (newTerm: Term) => {
@@ -100,6 +103,7 @@ export default function PropertyUIComponentObject({
             object={object}
             clearAll={meta?.singleUnifiedWidget?.(propertyUIElement) === true}
             disabled={isReadOnly}
+            alwaysShow={alwaysShowRemove}
           />
         )}
       </div>

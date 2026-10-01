@@ -8,14 +8,21 @@
   margin-bottom: var(--size-3);
 }
 
-.st-property-editor__tree,
-.st-property-editor__unused-list {
+.st-property-editor__tree {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
   gap: var(--size-1);
+}
+
+.st-property-editor__unused-list {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: var(--size-2);
+  flex-wrap: wrap;
 }
 
 /* A tree row: SortableRow's drag handle, then the row body - indented by its depth. */
@@ -29,7 +36,7 @@
 }
 
 /* The framed part of a row: its label, path and type chip - shaped like st-value-chip, tinted like
-   its type chip, filling the row up to its action buttons. */
+   its type chip, filling the row. */
 .st-property-editor__name {
   display: flex;
   flex: 1;
@@ -47,14 +54,17 @@
   background-color: var(--cyan-0);
 }
 
-.st-property-editor__row-body,
 .st-property-editor__unused-group {
-  flex: 1;
-  min-width: 0;
+  flex: 0 1 calc(33.3% - (var(--size-3) / 3));
+  /* min-width: 0; */
   display: flex;
   align-items: center;
   gap: var(--size-2);
   /* padding-inline-end: var(--size-1); */
+}
+
+.st-property-editor__row-body {
+  width: 100%;
 }
 
 .st-property-editor__label {
@@ -90,21 +100,28 @@
   background-color: var(--cyan-2);
 }
 
-/* A regular icon button, with the smaller, muted pencil the other editors use (see
-   ResourceEditButton). */
-.st-property-editor__edit {
-  color: var(--st-color-text-muted);
-  font-size: var(--st-font-size-small);
+/* Clicking the name opens it for editing. */
+button.st-property-editor__name {
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  width: 100%;
 
-  &:focus,
+  &:focus-visible,
   &:hover {
-    color: var(--st-primary-color);
+    border-color: var(--st-primary-color);
   }
 }
 
 .st-property-editor__empty {
   margin: 0;
   color: var(--st-color-text-muted);
+}
+
+.st-property-editor__unused-group {
+  border: 1px dashed var(--cyan-4);
+  border-radius: var(--radius-2);
 }
 
 .st-property-editor__unused-header {
@@ -115,25 +132,22 @@
 
 .st-property-editor__unused-title {
   font-weight: bold;
+  margin-top: var(--size-2);
 }
 
 .st-property-editor__unused-description {
   font-size: 0.9em;
+  margin-block: var(--size-2);
   color: var(--st-color-text-muted);
-}
-
-.st-property-editor__unused-group {
-  min-height: var(--size-8);
 }
 
 /* Not in use yet: a dashed frame, solid once something is dragged over it. */
 .st-property-editor__unused-group .st-property-editor__name {
-  border-style: dashed;
-  border-color: var(--cyan-4);
   background-color: transparent;
+  border: none;
 }
 
-.st-property-editor__unused-group[data-over] .st-property-editor__name {
+.st-property-editor__unused-group[data-over] {
   border-style: solid;
   border-color: var(--st-primary-color);
   background-color: var(--cyan-1);
@@ -150,6 +164,10 @@
   justify-content: flex-end;
   gap: var(--size-2);
   margin-block-start: var(--size-3);
+}
+
+.st-property-editor__draft-remove {
+  margin-inline-end: auto;
 }
 
 .st-property-editor__delete-modal p {

@@ -1,8 +1,11 @@
 import type { NamedNode, Quad_Object, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { Engine as ShaclEngine } from "shacl-engine";
+import { datasetWithQuads } from "@/helpers/datasetWithQuads.ts";
 import { factory } from "@/helpers/factory.ts";
 import { rdf, sh } from "@/helpers/namespaces.ts";
+import { termKey } from "@/helpers/termKey.ts";
+import { createReactiveCache } from "@/scoring/helpers.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { selectQueryFor } from "@/structure/selectQuery.ts";
 import {
@@ -32,42 +35,20 @@ import {
 
 const CARDINALITY_PREDICATES: Set<string> = new Set([sh("minCount").value, sh("maxCount").value]);
 
-/**
- * A per-candidate conformance check for `shape`'s own local constraints (sh:class, sh:node,
- * sh:datatype, sh:nodeKind, a plain-list sh:in, ...), built once and reused across every
- * candidate in a single filterConformingResults call. Wraps the *actual* property shape node(s)
- * in a synthetic sh:NodeShape via sh:property, so shacl-engine's own property-shape/path
- * traversal resolves sh:node's nested shape references etc. against the real shapesGraph, rather
- * than this module re-implementing constraint-component semantics by hand. Each candidate is
- * checked against `shape.dataGraph` (plus the one synthetic `focusNode <path> value` triple) so
- * e.g. sh:class/sh:node can actually see a locally-known candidate's own type/property triples,
- * not just an empty synthetic dataset.
- *
- * Returns undefined - skipping local-constraint validation entirely - when: `shape`'s path isn't a
- * single predicate (out of scope for this pass - every real AutoCompleteEditor shape uses one);
- * `shape` declares no property shapes; or `shape`'s sh:in is the dynamic sh:select form (guarded
- * against here too, though filterConformingResults never actually calls this function in that
- * case - it routes to filterByInSelectMembership instead). That last case follows spec §10.2 ¶5
- * literally for a property shape combining sh:in [ sh:select ] with shui:searchQuery: "the
- * isolated property shape used to check a value node SHOULD contain only the sh:in constraint" -
- * sh:class/sh:node etc. are skipped here specifically because a value resolved dynamically
- * (whether via a local sh:select or one reaching out over SERVICE) generally has no local triples
- * of its own, and checking sh:class/sh:node against an empty local dataGraph would otherwise
- * reject every candidate - the exact spurious-violation risk the spec calls out.
- *
- * Cardinality (sh:minCount/sh:maxCount) is always excluded - checking it against one candidate in
- * isolation is meaningless (a minCount:2 shape would otherwise reject every individual candidate).
- */
-function buildLocalConstraintChecker(
-  shape: PropertyUIElement,
-): ((value: Term) => Promise<boolean>) | undefined {
-  if (selectQueryFor(shape) !== undefined) return undefined;
+type CompiledChecker = { shaclEngine: ShaclEngine; nodeShapeNode: Term; path: NamedNode };
 
+// Compiled checkers, per shapesGraph and per set of property shapes - building one copies the whole
+// shapesGraph and compiles a ShaclEngine from it, which is far too costly to repeat on every
+// candidate list (useConformingCandidates re-checks on every dataGraph write). Cleared whenever a
+// reactive shapesGraph is written to (see createReactiveCache); null caches "nothing to check".
+const compiledCheckerCache = createReactiveCache<CompiledChecker | null>();
+
+function compileChecker(shape: PropertyUIElement): CompiledChecker | null {
   const [firstPropertyShape] = shape.propertyShapes;
-  if (!firstPropertyShape) return undefined;
+  if (!firstPropertyShape) return null;
 
   const pathTerm = shape.shapesGraph.getQuads(firstPropertyShape, sh("path"))[0]?.object;
-  if (!pathTerm || pathTerm.termType !== "NamedNode") return undefined;
+  if (!pathTerm || pathTerm.termType !== "NamedNode") return null;
   const path: NamedNode = pathTerm;
 
   const propertyShapeValues = new Set(
@@ -90,32 +71,63 @@ function buildLocalConstraintChecker(
     isolatedShapesGraph.addQuad(factory.quad(nodeShapeNode, sh("property"), propertyShape));
   }
 
-  const shaclEngine = new ShaclEngine(isolatedShapesGraph.asDataset(), {
-    factory,
-  });
+  const shaclEngine = new ShaclEngine(isolatedShapesGraph.asDataset(), { factory });
+  return { shaclEngine, nodeShapeNode, path };
+}
 
-  // Copied once and reused across every candidate (see the addQuad/removeQuad pair below) rather
-  // than re-copying shape.dataGraph per candidate - safe because candidates are checked one at a
-  // time (see filterConformingResults' sequential loop), never concurrently.
-  const dataGraph = RdfStore.createDefault();
-  for (const quad of shape.dataGraph.getQuads()) dataGraph.addQuad(quad);
+/**
+ * A per-candidate conformance check for `shape`'s own local constraints (sh:class, sh:node,
+ * sh:datatype, sh:nodeKind, a plain-list sh:in, ...). Wraps the *actual* property shape node(s)
+ * in a synthetic sh:NodeShape via sh:property, so shacl-engine's own property-shape/path
+ * traversal resolves sh:node's nested shape references etc. against the real shapesGraph, rather
+ * than this module re-implementing constraint-component semantics by hand. Each candidate is
+ * checked against the live `shape.dataGraph` plus the one synthetic `focusNode <path> value`
+ * triple (see datasetWithQuads - nothing is copied or written), so e.g. sh:class/sh:node can
+ * actually see a locally-known candidate's own type/property triples. The compiled part is cached
+ * (see compiledCheckerCache), so calling this repeatedly for the same shape is cheap.
+ *
+ * Returns undefined - skipping local-constraint validation entirely - when: `shape`'s path isn't a
+ * single predicate (out of scope for this pass - every real AutoCompleteEditor shape uses one);
+ * `shape` declares no property shapes; or `shape`'s sh:in is the dynamic sh:select form (guarded
+ * against here too, though filterConformingResults never actually calls this function in that
+ * case - it routes to filterByInSelectMembership instead). That last case follows spec §10.2 ¶5
+ * literally for a property shape combining sh:in [ sh:select ] with shui:searchQuery: "the
+ * isolated property shape used to check a value node SHOULD contain only the sh:in constraint" -
+ * sh:class/sh:node etc. are skipped here specifically because a value resolved dynamically
+ * (whether via a local sh:select or one reaching out over SERVICE) generally has no local triples
+ * of its own, and checking sh:class/sh:node against an empty local dataGraph would otherwise
+ * reject every candidate - the exact spurious-violation risk the spec calls out.
+ *
+ * Cardinality (sh:minCount/sh:maxCount) is always excluded - checking it against one candidate in
+ * isolation is meaningless (a minCount:2 shape would otherwise reject every individual candidate).
+ */
+function buildLocalConstraintChecker(
+  shape: PropertyUIElement,
+): ((value: Term) => Promise<boolean>) | undefined {
+  if (selectQueryFor(shape) !== undefined) return undefined;
+
+  const compiled = compiledCheckerCache.getOrCompute(
+    shape.shapesGraph,
+    shape.propertyShapes.map(termKey).join(" "),
+    () => compileChecker(shape),
+  );
+  if (!compiled) return undefined;
+  const { shaclEngine, nodeShapeNode, path } = compiled;
 
   return async (value: Term) => {
     const focusNode = factory.blankNode();
-    const syntheticQuad = factory.quad(focusNode, path, value as Quad_Object);
-    dataGraph.addQuad(syntheticQuad);
+    const dataset = datasetWithQuads(shape.dataGraph.asDataset(), [
+      factory.quad(focusNode, path, value as Quad_Object),
+    ]);
 
     try {
-      const report = await shaclEngine.validate(
-        { dataset: dataGraph.asDataset(), terms: [focusNode] },
-        [{ terms: [nodeShapeNode] }],
-      );
+      const report = await shaclEngine.validate({ dataset, terms: [focusNode] }, [
+        { terms: [nodeShapeNode] },
+      ]);
       return report.conforms;
     } catch (error) {
       console.warn("[shacl-everything] shui:searchQuery result validation failed", error);
       return false;
-    } finally {
-      dataGraph.removeQuad(syntheticQuad);
     }
   };
 }
