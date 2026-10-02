@@ -28,6 +28,7 @@
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
     "lint": "vp lint",
+    "lint:fix": "vp lint --fix",
     "test": "vitest run",
     "test:watch": "vitest"
   },

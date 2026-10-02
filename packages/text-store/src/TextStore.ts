@@ -38,7 +38,7 @@ export class TextStore<
 
     this.#textIndex = new Index({
       tokenize: 'full',
-      ...(options.indexOptions ?? {})
+      ...options.indexOptions
     })
 
     if (options.storeOptions) {

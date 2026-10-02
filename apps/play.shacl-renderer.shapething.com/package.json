@@ -7,6 +7,7 @@
     "dev": "vite --port 8003",
     "build": "vite build",
     "lint": "vp lint --react-plugin",
+    "lint:fix": "vp lint --react-plugin --fix",
     "preview": "vite preview"
   },
   "dependencies": {

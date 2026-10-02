@@ -101,7 +101,7 @@ export function Turtle({
         }),
       ],
     });
-  }, [ref.current]);
+  }, []);
 
   useEffect(() => {
     const state = editor.current?.state;
@@ -110,7 +110,7 @@ export function Turtle({
       changes: { from: 0, to: state.doc.length, insert: value },
     });
     editor.current!.update([transaction]);
-  }, [value, editor.current]);
+  }, [value]);
 
   return <div className="turtle-editor" ref={ref}></div>;
 }

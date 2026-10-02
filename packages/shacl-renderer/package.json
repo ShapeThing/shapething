@@ -34,6 +34,7 @@
     "build": "vp pack",
     "dev": "vp pack --watch",
     "lint": "vp lint --react-plugin --jsx-a11y-plugin",
+    "lint:fix": "vp lint --react-plugin --jsx-a11y-plugin --fix",
     "test": "vp test",
     "check": "vp check",
     "analyze": "vite-bundle-visualizer -i src/index.ts -o stats.html",
