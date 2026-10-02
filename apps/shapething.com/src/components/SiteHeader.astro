@@ -1,0 +1,51 @@
+---
+
+---
+
+<header class="site-header">
+  <a class="site-link" href="/">
+    <img class="site-logo" src="/logo.svg" />
+  </a>
+  <nav class="menu">
+    <!-- <a class="menu-link" href="/documentation">Documentation</a> -->
+    <a class="menu-link app" href="https://app.shapething.com">Open app</a>
+  </nav>
+</header>
+
+<style>
+  .site-header {
+    padding-block: 1em;
+    width: 100%;
+    max-width: var(--max-width);
+    flex-wrap: wrap;
+    display: flex;
+    align-items: center;
+    gap: 1em;
+  }
+
+  .site-logo {
+    max-width: 220px;
+    margin-top: 6px;
+    margin-bottom: -6px;
+  }
+
+  .menu {
+    margin-left: auto;
+  }
+
+  .menu-link {
+    text-decoration: none;
+    color: var(--blue-dark);
+    font-weight: 500;
+    padding: 0.5em 1em;
+    border-radius: 0.5em;
+  }
+
+  .menu-link.app {
+    background-color: var(--purple);
+    font-style: italic;
+    font-weight: 800;
+
+    color: white;
+  }
+</style>

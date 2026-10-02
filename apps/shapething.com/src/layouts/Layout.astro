@@ -1,0 +1,79 @@
+---
+import '@fontsource-variable/alumni-sans'
+import '@fontsource-variable/roboto'
+import SiteFooter from '../components/SiteFooter.astro'
+import SiteHeader from '../components/SiteHeader.astro'
+
+type Props = {
+  class?: string
+}
+
+const a = ''
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, user-scalable=no" />
+    <title>ShapeThing</title>
+  </head>
+  <body class={Astro.props.class}>
+    <SiteHeader />
+    <main class="site-main">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>
+
+<style is:global>
+  html,
+  body {
+    margin: 0;
+    padding-inline: 1em;
+    width: 100%;
+    height: 100%;
+    font-family: 'Roboto Variable', sans-serif;
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    font-size: 19px;
+    color: var(--blue-dark);
+  }
+
+  :root {
+    --max-width: 1080px;
+    --blue-dark: #0044aa;
+    --blue-light: #2a7fff;
+    --blue-lightest: #c3dbff;
+    --purple: #d400aa;
+    --purple-dark: #520643;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: var(--blue-light);
+    letter-spacing: 1px;
+    font-family: 'Alumni Sans Variable', sans-serif;
+  }
+
+  h1 {
+    font-size: 2.3em;
+  }
+
+  .site-main {
+    max-width: var(--max-width);
+    width: 100%;
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+</style>

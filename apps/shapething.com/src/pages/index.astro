@@ -1,0 +1,113 @@
+---
+import Layout from '../layouts/Layout.astro'
+---
+
+<Layout class="homepage">
+  <header class="hero">
+    <div class="container">
+      <h1>👋 Welcome to ShapeThing</h1>
+      <p class="tagline"><strong>Your data has stories to tell. We help you bring them together.</strong></p>
+      <p>
+        ShapeThing is a simple, friendly tool that helps you organize, link, and explore your data — no tech background
+        required.
+      </p>
+    </div>
+  </header>
+
+  <section class="section what-is">
+    <div class="container">
+      <h2>🧩 What’s ShapeThing All About?</h2>
+      <p>Think of ShapeThing as a smart workspace where you can:</p>
+      <ul>
+        <li>Create custom data forms that fit your world</li>
+        <li>Link related things together (people, places, events — you name it!)</li>
+        <li>Keep everything neat, structured, and searchable</li>
+        <li>Export and share your data in open-friendly formats</li>
+      </ul>
+      <p>No complicated setups, no coding. Just you and your data — organized your way.</p>
+    </div>
+  </section>
+
+  <section class="section features">
+    <div class="container">
+      <h2>🌟 Why People Love ShapeThing</h2>
+      <ul>
+        <li><strong>Easy to Use</strong> – Everything happens in your browser. No installs, no fuss.</li>
+        <li><strong>Made for Humans</strong> – Use plain language and clear forms instead of cryptic codes.</li>
+        <li><strong>Connect the Dots</strong> – See how your data fits together with visual tools.</li>
+        <li><strong>Works With the Web</strong> – Your data stays portable, open, and future-ready.</li>
+        <li><strong>Built for Collaboration</strong> – Invite others, share your models, and work together.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section audience">
+    <div class="container">
+      <h2>👥 Who's It For?</h2>
+      <p>ShapeThing is for anyone who wants to make sense of complex information, like:</p>
+      <ul>
+        <li>Researchers & Students</li>
+        <li>Archivists & Librarians</li>
+        <li>Writers & Curators</li>
+        <li>Data tinkerers & toolmakers</li>
+        <li>Anyone working on digital projects with people, places, or ideas</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section capabilities">
+    <div class="container">
+      <h2>🛠️ What Can You Do?</h2>
+      <ul>
+        <li>Design custom forms for your data</li>
+        <li>Link entries to each other and to the wider web</li>
+        <li>Search, browse, and explore relationships</li>
+        <li>Export your data to use elsewhere</li>
+        <li>Validate your data and keep it tidy</li>
+      </ul>
+    </div>
+  </section>
+</Layout>
+
+<style is:global>
+  .homepage .site-main {
+    display: grid;
+    gap: 2em;
+  }
+
+  @media (min-width: 960px) {
+    .homepage .site-main {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: repeat(5, auto);
+      grid-template-areas: 'header header' 'left right';
+    }
+  }
+
+  .homepage .hero {
+    position: relative;
+    padding-block: 2em;
+
+    h1 {
+      color: var(--purple);
+    }
+  }
+  .homepage .hero:after {
+    display: block;
+    position: absolute;
+    background-color: var(--blue-light);
+    width: 100vw;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0.1;
+    height: 100%;
+    content: '';
+    z-index: -1;
+    top: 0;
+  }
+  @media (min-width: 960px) {
+    .homepage .hero {
+      grid-area: header;
+    }
+  }
+</style>
