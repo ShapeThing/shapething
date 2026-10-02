@@ -1,9 +1,6 @@
 packages:
   - 'apps/*'
   - 'packages/*'
-  # Standalone submodule (npm, consumes published @shapething/* packages); its unpatched
-  # shacl-engine@1.0.2 would collide with patches/shacl-engine@1.0.2.patch.
-  - '!apps/app.shapething.com'
 # Supply-chain hardening: never resolve a version published less than 7 days ago
 # (most malicious releases are detected and unpublished well within that window),
 # refuse versions whose publish trust level dropped compared to earlier releases,
@@ -16,6 +13,7 @@ trustPolicyExclude:
   - semver@6.3.1
   - undici-types@6.21.0
   - chokidar@4.0.3
+  - '@trickfilm400/rollup-plugin-off-main-thread@3.0.0-pre1'
 allowBuilds:
   '@parcel/watcher': true
   '@swc/core': true

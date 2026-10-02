@@ -90,3 +90,16 @@ test("createDefaultTerm's TextFieldWithLangEditor uses the active content langua
   expect(term.termType).toEqual("Literal");
   expect(literalLanguage(term)).toEqual("nl-NL");
 });
+
+test("createDefaultTerm tags an rdf:langString default with the content language", async () => {
+  const shape = await createElement(`ex:property1 a sh:PropertyShape ; sh:datatype rdf:langString .`);
+  const term = createDefaultTerm(shui("TextFieldEditor"), shape, { contentLanguage: "nl-NL" });
+  expect(term.termType).toEqual("Literal");
+  expect(literalLanguage(term)).toEqual("nl-NL");
+});
+
+test("defaultTermFromShape never returns a language-less rdf:langString literal", async () => {
+  const shape = await createElement(`ex:property1 a sh:PropertyShape ; sh:datatype rdf:langString .`);
+  const term = defaultTermFromShape(shape);
+  expect((term as { datatype: NamedNode }).datatype).toEqual(xsd("string"));
+});

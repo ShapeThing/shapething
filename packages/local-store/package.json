@@ -35,7 +35,7 @@
     "events": "^3.3.0",
     "hex-encoding": "^2.0.3",
     "idb-keyval": "^6.3.0",
-    "n3": "^1.26.0",
+    "n3": "^2.7.12",
     "readable-stream": "^4.7.0"
   },
   "devDependencies": {

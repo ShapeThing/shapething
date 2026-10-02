@@ -7,7 +7,7 @@ import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism"
 SyntaxHighlighter.registerLanguage("typescript", tsLang)
 SyntaxHighlighter.registerLanguage("turtle", turtleLang)
 
-const INSTALL_CMD = "npx jsr add @shapething/resource-fetcher"
+const INSTALL_CMD = "npm install @shapething/resource-fetcher"
 
 function InstallBlock() {
     const [copied, setCopied] = useState(false)
@@ -86,7 +86,6 @@ export default function UsageSection() {
     return (
         <section className="usage-section">
             <h2>Installation</h2>
-            <p>Resource Fetcher is currently packaged by <a target="_blank" href="https://jsr.io/">JSR.io</a>, it is compatible with NPM managed projects.</p>
             <InstallBlock />
             <h2>Usage</h2>
             <div className="code-tabs">

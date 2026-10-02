@@ -8,6 +8,7 @@ import { Parser, Store, Writer, type OTerm } from 'n3'
 import { Readable } from 'readable-stream'
 import { getAllFilesFromDirectory } from './helpers/getAllFilesFromDirectory.ts'
 import { getFileHandleByPath } from './helpers/getFileHandleByPath.ts'
+import { repairLangStrings } from './helpers/langString.ts'
 import { toTriple } from './helpers/toTriple.ts'
 
 type LocalStoreOptions = {
@@ -222,7 +223,7 @@ export class LocalStore implements Source, RdfJsStore {
 
     const contents = await file.text()
     const parser = new Parser({ baseIRI: graph.value })
-    const quads = parser.parse(contents)
+    const quads = parser.parse(repairLangStrings(contents))
 
     const existingQuads = new Store(quads)
     const quadsToDelete = new Store(update.deletions?.map(toTriple))
@@ -352,7 +353,7 @@ export class LocalStore implements Source, RdfJsStore {
     try {
       const parser = new Parser({ baseIRI: graph.value })
       const contents = await (await fileHandle.getFile()).text()
-      const strippedContents = contents.replace(/<(.|\/)(.*)\.ttl(.*)>/g, '<$1$2>')
+      const strippedContents = repairLangStrings(contents.replace(/<(.|\/)(.*)\.ttl(.*)>/g, '<$1$2>'))
       const quads = await parser.parse(strippedContents)
       /** @ts-expect-error an internal property of the parser */
       const prefixes = parser._prefixes

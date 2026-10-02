@@ -19,8 +19,13 @@ import type { CreateTermContext } from "@/widgets/types.ts";
  * preferred whenever it's one of the allowed kinds, blank node only when IRI isn't allowed at
  * all.
  */
-export function defaultTermFromShape(shape: PropertyUIElement): Term {
+export function defaultTermFromShape(shape: PropertyUIElement, context?: CreateTermContext): Term {
   const datatype = shape.get(sh("datatype"));
+  // rdf:langString is carried by a language tag, not a datatype argument (see coerceTermToBranch);
+  // without a content language to tag it with, a plain string is the closest valid literal.
+  if (datatype?.equals(rdf("langString"))) {
+    return context ? factory.literal("", context.contentLanguage) : factory.literal("");
+  }
   if (datatype) return factory.literal("", datatype as NamedNode);
 
   const nodeKinds = shape.get(sh("nodeKind"));
@@ -46,7 +51,7 @@ export function createDefaultTerm(
   context: CreateTermContext,
 ): Term {
   const createTerm = getWidgetMeta(widget, shape.widgetRegistry)?.createTerm;
-  return createTerm ? createTerm(context, shape) : defaultTermFromShape(shape);
+  return createTerm ? createTerm(context, shape) : defaultTermFromShape(shape, context);
 }
 
 /**
