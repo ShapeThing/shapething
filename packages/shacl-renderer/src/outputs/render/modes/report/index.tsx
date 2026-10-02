@@ -1,3 +1,5 @@
+import { clsx } from "clsx";
+import type { ModeProps } from "@/outputs/render/render.tsx";
 import { Localized } from "@fluent/react";
 import { useMemo } from "react";
 import ContentLanguageSwitcher from "@/outputs/render/components/ContentLanguageSwitcher/index.tsx";
@@ -19,12 +21,15 @@ const SEVERITIES = ["Violation", "Warning", "Info"];
  * only its affected properties - through the regular view-mode tree, each result inline under the
  * property (and value) it's about, the same way edit mode shows live validation.
  */
-export default function ReportModeWrapper() {
+export default function ReportModeWrapper({ className }: ModeProps) {
   const { report } = useEnvironment();
   const index = useMemo(() => indexValidationResults(report?.results ?? []), [report]);
   if (!report) return null;
 
-  const all = [...report.results, ...report.focusNodes.flatMap((focusNode) => focusNode.nodeResults)];
+  const all = [
+    ...report.results,
+    ...report.focusNodes.flatMap((focusNode) => focusNode.nodeResults),
+  ];
   const counts = new Map<string, number>();
   for (const result of all) {
     const severity = localName(result.severity) ?? "Violation";
@@ -33,7 +38,7 @@ export default function ReportModeWrapper() {
   }
 
   return (
-    <div className="st-view-mode st-report-mode">
+    <div className={clsx("st-view-mode st-report-mode", className)}>
       <header className="st-header">
         <InterfaceLanguageSwitcher />
         <ContentLanguageSwitcher />

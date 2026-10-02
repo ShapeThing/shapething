@@ -1,3 +1,5 @@
+import { clsx } from "clsx";
+import type { ModeProps } from "@/outputs/render/render.tsx";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Localized } from "@fluent/react";
 import type { Quad } from "@rdfjs/types";
@@ -29,7 +31,7 @@ import {
 } from "@/outputs/render/contexts/undoRedoScopeContext.tsx";
 import { worstSeverity } from "@/helpers/worstSeverity.ts";
 
-type Props = {
+type Props = ModeProps & {
   children?: React.ReactNode;
 };
 
@@ -52,7 +54,7 @@ function isEditableTarget(target: EventTarget | null): boolean {
 // sticks until another form takes it. The first form to mount holds it until then.
 let undoOwner: symbol | undefined;
 
-export default function EditModeWrapper({ children }: Props) {
+export default function EditModeWrapper({ children, className }: Props) {
   const {
     focusNode,
     shapesGraph,
@@ -110,13 +112,15 @@ export default function EditModeWrapper({ children }: Props) {
   // Whether the <form> below has been submitted at least once - usePropertyValidationResults
   // withholds validation results until this is true, so e.g. an untouched sh:minCount-violating
   // field doesn't show as an error before the user has tried to submit, matching how most form
-  // libraries gate validation display. Held as plain local state (not read via useContext here)
+  // libraries gate validation display. Data that already exists is shown validated straight away
+  // though: its violations aren't the user's unfinished input, and are worth seeing before editing.
+  // Held as plain local state (not read via useContext here)
   // and provided through its own narrow context rather than folded into ValidationContextProvider,
   // so a background revalidation run doesn't force *this* component to re-render: EditModeWrapper
   // sits above NodeUIComponent, and PropertyUIElement instances are rebuilt fresh on every render
   // (see structure/childrenForShape.ts) - re-rendering from up here would hand useWidget's Suspense
   // queries fresh cache keys for every property, remounting widgets mid-edit and stealing focus.
-  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(false);
+  const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(!isNew);
   const markSubmitAttempted = useCallback(() => setHasAttemptedSubmit(true), []);
 
   // Latest live-validation results (see ValidationContextProvider), written on every revalidation
@@ -250,7 +254,7 @@ export default function EditModeWrapper({ children }: Props) {
             onSubmit={handleSubmit}
             onFocusCapture={claimUndo}
             onPointerDownCapture={claimUndo}
-            className="st-edit-mode"
+            className={clsx("st-edit-mode", className)}
           >
             <header className="st-header">
               <InterfaceLanguageSwitcher />

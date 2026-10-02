@@ -24,10 +24,9 @@
   ];
 
   sh:property [
-    sh:name "Node shape" ;
+    sh:name "Node shapes" ;
     sh:path prop:nodeShape ;
-    sh:maxCount 1;
-    sh:description "The node shape to render the focus node with, a resource URI. Defaults to the shapes targeting the focus node." ;
+    sh:description "The node shapes to render the focus node with, resource URIs. Defaults to the shapes targeting the focus node." ;
   ];
 
   sh:property [

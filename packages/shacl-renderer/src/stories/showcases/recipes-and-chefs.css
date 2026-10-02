@@ -3,8 +3,8 @@
   --st-secondary-color: #ebf7ef;
 }
 
-.st-view-mode,
-.st-edit-mode {
+.recipes-render.st-view-mode,
+.recipes-render.st-edit-mode {
   display: grid;
   max-width: 1200px;
   margin-inline: auto;
@@ -19,8 +19,8 @@
 }
 
 @media (min-width: 1000px) {
-  .st-view-mode,
-  .st-edit-mode {
+  .recipes-render.st-view-mode,
+  .recipes-render.st-edit-mode {
     grid-template-columns: 1fr 340px;
     grid-template-rows: auto auto auto;
     grid-template-areas:

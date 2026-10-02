@@ -1,3 +1,5 @@
+import { clsx } from "clsx";
+import type { ModeProps } from "@/outputs/render/render.tsx";
 import { useEffect, useRef, type FormEvent } from "react";
 import { Localized } from "@fluent/react";
 import { RdfStore } from "rdf-stores";
@@ -8,7 +10,7 @@ import { createFilterShape, type FilterShape } from "@/facets/filterShape.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import NodeUIComponent from "@/outputs/render/modes/facet/NodeUIComponent.tsx";
 
-type Props = {
+type Props = ModeProps & {
   children?: React.ReactNode;
 };
 
@@ -27,7 +29,7 @@ const FACET_CHANGE_DEBOUNCE_MS = 200;
  * explicit apply action (mirroring edit mode's own <form>/submit button) and only calls onSubmit
  * then.
  */
-export default function FacetModeWrapper({ children }: Props) {
+export default function FacetModeWrapper({ children, className }: Props) {
   const { facetChangeMode = "live", onSubmit, focusNode } = useEnvironment();
 
   // The generated shape's own identity: Environment.focusNode, when an embedder actually set one
@@ -90,7 +92,7 @@ export default function FacetModeWrapper({ children }: Props) {
     };
 
     return (
-      <form onSubmit={handleSubmit} className="st-facet-mode">
+      <form onSubmit={handleSubmit} className={clsx("st-facet-mode", className)}>
         <NodeUIComponent filterShape={filterShape} />
         {children}
         <div className="st-facet-mode--actions">
@@ -103,7 +105,7 @@ export default function FacetModeWrapper({ children }: Props) {
   }
 
   return (
-    <div className="st-facet-mode">
+    <div className={clsx("st-facet-mode", className)}>
       <NodeUIComponent filterShape={filterShape} />
       {children}
     </div>

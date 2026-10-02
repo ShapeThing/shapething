@@ -36,7 +36,8 @@ body {
     overflow-x: hidden;
     min-height: 90vh;
 
-    .shacl-renderer {
+    .st-view-mode,
+    .st-edit-mode {
         padding: 2em;
 
     }
@@ -45,12 +46,10 @@ body {
 .right {
     padding-block: 1em;
     flex: 1 1 50%;
-    display: flex;
-    align-items: start;
-    justify-content: center;
 
     .actions,
-    .shacl-renderer {
+    .st-view-mode,
+    .st-edit-mode {
         margin: 0;
         max-width: none;
     }
@@ -138,9 +137,15 @@ body {
     padding: 2em;
 
     .actions,
-    .shacl-renderer {
+    .st-view-mode,
+    .st-edit-mode {
         max-width: none;
     }
+}
+
+// The options apply as soon as they change (see SettingsForm), so the form needs no submit button.
+.settings-form .st-edit-mode>.st-edit-mode--actions {
+    display: none;
 }
 
 .optional {
@@ -233,4 +238,13 @@ body {
     .right {
         grid-column: 3 / 5;
     }
+}
+
+.st-share-button {
+    margin-left: 1rem;
+    margin-top: 2px;
+}
+
+.st-header {
+    font-size: 1rem;
 }

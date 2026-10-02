@@ -14,6 +14,14 @@ import "./style.css";
 
 export type ShaclRendererProps = Partial<RawEnvironment> & {
   preprocessors?: readonly Preprocessor[];
+  // Extra class(es) for the active mode's root element (.st-edit-mode, .st-view-mode, ...), e.g.
+  // to scope an embedder's own styles. Not part of the Environment, so changing it never rebuilds
+  // the form.
+  className?: string;
+};
+
+export type ModeProps = {
+  className?: string;
 };
 
 export default function ShaclRenderer(inputProps: ShaclRendererProps) {
@@ -22,7 +30,7 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
   // Identity props rebuild the Environment (a new key remounts the preprocessed subtree, and a new
   // instanceId gives it a fresh preprocess query); live props are merged in on every render - see
   // environmentProps.ts.
-  const { preprocessors, ...environmentProps } = inputProps;
+  const { preprocessors, className, ...environmentProps } = inputProps;
   const identity = identityKey({ ...environmentProps, preprocessors });
   const instanceId = `${baseId}:${identity}`;
 
@@ -60,12 +68,13 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
           <L10nProvider interfaceLocales={interfaceLocales}>
             <EnvironmentContextProvider
               key={identity}
-              {...inputProps}
+              {...environmentProps}
+              preprocessors={preprocessors}
               onSubmit={onSubmit}
               liveProps={stableLiveProps}
               instanceId={instanceId}
             >
-              <ShaclRendererInner />
+              <ShaclRendererInner className={className} />
             </EnvironmentContextProvider>
           </L10nProvider>
         </InterfaceLanguageProvider>
@@ -74,15 +83,15 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
   );
 }
 
-const modesComponents: Record<Environment["mode"], React.ComponentType> = {
+const modesComponents: Record<Environment["mode"], React.ComponentType<ModeProps>> = {
   edit: lazy(() => import("@/outputs/render/modes/edit/index.tsx")),
   view: lazy(() => import("@/outputs/render/modes/view/index.tsx")),
   facet: lazy(() => import("@/outputs/render/modes/facet/index.tsx")),
   report: lazy(() => import("@/outputs/render/modes/report/index.tsx")),
 };
 
-function ShaclRendererInner() {
+function ShaclRendererInner({ className }: ModeProps) {
   const { mode } = useEnvironment();
   const ModeComponent = modesComponents[mode];
-  return <ModeComponent />;
+  return <ModeComponent className={className} />;
 }

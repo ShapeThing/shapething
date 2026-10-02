@@ -22,6 +22,7 @@ export const recipesAndChefs: Story = {
     enableWidgetSwitching: false,
     enableLogicalBranchSwitching: false,
     enableShPathInLabelTitle: false,
+    className: "recipes-render",
     enableFacetSearchForAutocomplete: true,
     enableFacetTextSearchMerging: true,
     enableFacetOptionCounts: true,

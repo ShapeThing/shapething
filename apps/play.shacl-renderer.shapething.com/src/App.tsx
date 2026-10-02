@@ -2,13 +2,9 @@ import "@fontsource-variable/roboto-condensed/index.css";
 import { Icon } from "@iconify/react/offline";
 import { write } from "@jeswr/pretty-turtle/dist";
 import factory from "@rdfjs/data-model";
-import {
-  AccordionItem,
-  ControlledAccordion,
-  useAccordionProvider,
-} from "@szhsin/react-accordion";
+import { AccordionItem, ControlledAccordion, useAccordionProvider } from "@szhsin/react-accordion";
 import { useLocalStorage } from "@uidotdev/usehooks";
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import Select from "react-select";
 import "share-api-polyfill";
@@ -22,7 +18,8 @@ import "@shapething/shacl-renderer/style.css";
 import type { RdfStore } from "rdf-stores";
 import { AccordionHeading } from "./components/AccordionHeading";
 import { Turtle } from "./components/Turtle";
-import { examples, settingsSubject } from "./constants";
+import { settingsSubject } from "./constants";
+import { examples } from "./examples";
 import { shareIcon } from "./helpers/icons";
 import "./style.scss";
 
@@ -41,22 +38,33 @@ const emptyIri = factory.namedNode("");
 // Settings hold IRIs as plain strings; the renderer wants terms.
 const rendererProps = (
   { focusNode, nodeShape, ...settings }: Record<string, unknown>,
-  dataString: string
+  dataString: string,
 ): ShaclRendererProps => {
   const props = settings as ShaclRendererProps;
   if (typeof focusNode === "string" && focusNode) props.focusNode = factory.namedNode(focusNode);
   else if (dataString) props.focusNode = emptyIri;
-  if (typeof nodeShape === "string" && nodeShape) props.nodeShapes = [factory.namedNode(nodeShape)];
+  const nodeShapes = (Array.isArray(nodeShape) ? nodeShape : [nodeShape]).filter(
+    (iri): iri is string => typeof iri === "string" && !!iri,
+  );
+  if (nodeShapes.length) props.nodeShapes = nodeShapes.map((iri) => factory.namedNode(iri));
   return props;
 };
 
 const prefixesOf = (text: string) =>
   Object.fromEntries(
-    [...text.matchAll(/@prefix\s+([\w.-]*):\s*<([^>]*)>\s*\./gi)].map(([, alias, iri]) => [alias, iri])
+    [...text.matchAll(/@prefix\s+([\w.-]*):\s*<([^>]*)>\s*\./gi)].map(([, alias, iri]) => [
+      alias,
+      iri,
+    ]),
   );
 
 // The Options panel edits the playground's settings (plain JSON in localStorage) with a form
-// rendered from props.ttl, converting to and from RDF with the shacl-renderer tools.
+// rendered from props.ttl, converting to and from RDF with the shacl-renderer tools. It applies
+// every change straight away: the renderer has no change callback, so any interaction that may
+// have changed a value (a change, picking an option, a button, leaving a text field, which is
+// when it commits its value) submits the form, a tick later. React events bubble through portals,
+// so picking an option in a widget's popup counts too. The form is only remounted when the
+// settings change from elsewhere (an example, a shared link), so focus isn't lost while editing.
 function SettingsForm({
   settings,
   onChange,
@@ -68,34 +76,66 @@ function SettingsForm({
   useEffect(() => {
     resolveRdfSource(propsUrl, new Map(), undefined).then(setPropsShapes);
   }, []);
+
+  // The settings the form currently shows, as JSON: only replaced when the settings change from
+  // elsewhere, not by this form's own submit.
+  const settingsJson = JSON.stringify(settings);
+  const [submittedJson, setSubmittedJson] = useState<string>();
+  const [formJson, setFormJson] = useState(settingsJson);
+  if (settingsJson !== submittedJson && settingsJson !== formJson) setFormJson(settingsJson);
+
+  // Rebuilt only along with the form: a new dataGraph would make the renderer start over.
+  const dataGraph = useMemo(
+    () =>
+      propsShapes &&
+      jsToRdf({
+        shapesGraph: propsShapes,
+        focusNode: settingsSubject,
+        nodeShapes: [propsShape],
+        data: JSON.parse(formJson),
+      }),
+    [propsShapes, formJson],
+  );
+
+  const wrapper = useRef<HTMLDivElement>(null);
+  const submitSoon = () => setTimeout(() => wrapper.current?.querySelector("form")?.requestSubmit());
+
   if (!propsShapes) return null;
 
-  const dataGraph = jsToRdf({
-    shapesGraph: propsShapes,
-    focusNode: settingsSubject,
-    nodeShapes: [propsShape],
-    data: settings,
-  });
-
   return (
-    <ShaclRenderer
-      key={JSON.stringify(settings)}
-      shapesGraph={propsShapes}
-      dataGraph={dataGraph}
-      focusNode={settingsSubject}
-      nodeShapes={[propsShape]}
-      mode="edit"
-      onSubmit={async (result) =>
-        onChange(
-          await rdfToJs({
+    <div
+      ref={wrapper}
+      className="settings-form"
+      onChange={submitSoon}
+      onBlur={submitSoon}
+      onClick={(event) => {
+        // Opening a popup changes nothing yet (and a submit would close it again).
+        const target = event.target as HTMLElement;
+        if (target.closest('[role="option"], button:not([aria-haspopup])')) submitSoon();
+      }}
+      onKeyUp={(event) => {
+        if (event.key === "Enter" || event.key === " ") submitSoon();
+      }}
+    >
+      <ShaclRenderer
+        key={formJson}
+        shapesGraph={propsShapes}
+        dataGraph={dataGraph}
+        focusNode={settingsSubject}
+        nodeShapes={[propsShape]}
+        mode="edit"
+        onSubmit={async (result) => {
+          const newSettings = await rdfToJs({
             shapesGraph: propsShapes,
             dataGraph: result.dataGraph,
             focusNode: settingsSubject,
             nodeShapes: [propsShape],
-          })
-        )
-      }
-    />
+          });
+          setSubmittedJson(JSON.stringify(newSettings));
+          onChange(newSettings);
+        }}
+      />
+    </div>
   );
 }
 
@@ -106,15 +146,9 @@ export default function App() {
 
   const [shapesString, setShapesString] = useLocalStorage<string>("shapes", "");
   const [dataString, setDataString] = useLocalStorage<string>("data", "");
-  const [initialDataString, setInitialDataString] = useLocalStorage<string>(
-    "initialData",
-    ""
-  );
+  const [initialDataString, setInitialDataString] = useLocalStorage<string>("initialData", "");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [settings, setSettings] = useLocalStorage<any>(
-    "settings",
-    defaultSettings
-  );
+  const [settings, setSettings] = useLocalStorage<any>("settings", defaultSettings);
 
   const exampleOptions = Object.entries(examples).map(([groupLabel, items]) => {
     return {
@@ -129,9 +163,7 @@ export default function App() {
   useEffect(() => {
     if (location.hash) {
       try {
-        const [shapesString, dataString, settings] = JSON.parse(
-          atob(location.hash.substring(1))
-        );
+        const [shapesString, dataString, settings] = JSON.parse(atob(location.hash.substring(1)));
         setDataString(dataString);
         setShapesString(shapesString);
         setSettings(settings);
@@ -145,9 +177,7 @@ export default function App() {
   }, []);
 
   const url =
-    window.location != window.parent.location
-      ? document.referrer
-      : document.location.href;
+    window.location != window.parent.location ? document.referrer : document.location.href;
 
   return (
     <>
@@ -155,17 +185,14 @@ export default function App() {
         <header className="site-header">
           {navigator.share ? (
             <button
-              className="button"
+              className="st-button st-share-button"
               onClick={() =>
                 navigator.share({
                   text: "",
                   title: "",
-                  url: `${url}${window.location != window.parent.location
-                    ? "playground"
-                    : ""
-                    }#${btoa(
-                      JSON.stringify([shapesString, dataString, settings])
-                    )}`,
+                  url: `${url}${
+                    window.location != window.parent.location ? "playground" : ""
+                  }#${btoa(JSON.stringify([shapesString, dataString, settings]))}`,
                 })
               }
             >
@@ -197,18 +224,10 @@ export default function App() {
                 return;
               }
 
-              const shapesString = await fetch(selectedExample.shapes).then(
-                (res) => res.text()
-              );
-              setShapesString(shapesString);
-
-              const dataString =
-                "data" in selectedExample
-                  ? await fetch(selectedExample.data).then((res) => res.text())
-                  : "";
-              setDataString(dataString);
-              setInitialDataString(dataString);
-              setSettings(selectedExample.props ?? defaultSettings);
+              setShapesString(selectedExample.shapes);
+              setDataString(selectedExample.data);
+              setInitialDataString(selectedExample.data);
+              setSettings({ ...defaultSettings, ...selectedExample.props });
             }}
           />
         </header>
@@ -252,10 +271,7 @@ export default function App() {
               />
             </ErrorBoundary>
           </AccordionItem>
-          <AccordionItem
-            itemKey={"options"}
-            header={<AccordionHeading>Options</AccordionHeading>}
-          >
+          <AccordionItem itemKey={"options"} header={<AccordionHeading>Options</AccordionHeading>}>
             <SettingsForm settings={settings} onChange={setSettings} />
           </AccordionItem>
         </ControlledAccordion>
@@ -270,14 +286,16 @@ export default function App() {
               dataGraph={dataString}
               onSubmit={async ({ dataGraph }) => {
                 const replaceSubject = factory.namedNode("urn:replace-me");
-                const quads = dataGraph.getQuads().map((quad) =>
-                  factory.quad(
-                    quad.subject.value === "" ? replaceSubject : quad.subject,
-                    quad.predicate,
-                    quad.object,
-                    quad.graph
-                  )
-                );
+                const quads = dataGraph
+                  .getQuads()
+                  .map((quad) =>
+                    factory.quad(
+                      quad.subject.value === "" ? replaceSubject : quad.subject,
+                      quad.predicate,
+                      quad.object,
+                      quad.graph,
+                    ),
+                  );
                 let dataString = await write(quads, {
                   prefixes: prefixesOf(shapesString + "\n" + initialDataString),
                 });
@@ -290,8 +308,8 @@ export default function App() {
           <div className="introduction">
             <h1>ShapeThing SHACL renderer Playground</h1>
             <p>
-              This is a playground. It allows you to test various configurations
-              of the SHACL renderer.
+              This is a playground. It allows you to test various configurations of the SHACL
+              renderer.
             </p>
             <p>You can find examples of shapes and data in the sidebar.</p>
           </div>
