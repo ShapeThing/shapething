@@ -22,19 +22,19 @@
     "build-storybook": "storybook build"
   },
   "dependencies": {
-    "@comunica/query-sparql-rdfjs": "^5.1.3",
+    "@comunica/query-sparql-rdfjs": "^5.4.1",
     "@fluent/bundle": "^0.19.1",
     "@fluent/react": "^0.15.2",
     "@rdfjs/namespace": "^2.0.1",
     "@rdfjs/types": "^2.0.1",
     "@shapething/shacl-renderer": "workspace:*",
-    "@tanstack/react-query": "^5.101.2",
-    "@tanstack/react-router": "^1.170.38",
+    "@tanstack/react-query": "^5.103.2",
+    "@tanstack/react-router": "^1.170.39",
     "@types/rdfjs__namespace": "^2.0.10",
-    "rdf-data-factory": "^2.0.2",
-    "rdf-stores": "^2.2.0",
-    "react": "^19.2.7",
-    "react-dom": "^19.2.7"
+    "rdf-data-factory": "^2.1.0",
+    "rdf-stores": "^2.5.1",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0"
   },
   "devDependencies": {
     "@chromatic-com/storybook": "latest",
@@ -43,15 +43,14 @@
     "@storybook/addon-docs": "^10.6.0",
     "@storybook/addon-vitest": "^10.6.0",
     "@storybook/react-vite": "^10.6.0",
-    "@types/node": "^26.1.1",
-    "@types/react": "^19.2.17",
-    "@types/react-dom": "^19.2.3",
-    "@vitest/browser-playwright": "4.1.9",
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitest/browser-playwright": "4.1.11",
     "playwright": "latest",
     "storybook": "^10.6.0",
     "typescript": "^7.0.2",
-    "vite": "^8.1.0",
-    "vite-plus": "^0.2.8",
-    "vitest": "4.1.9"
+    "vite-plus": "^0.3.3",
+    "vitest": "4.1.11"
   }
 }

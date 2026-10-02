@@ -10,13 +10,13 @@
     "preview": "astro preview"
   },
   "dependencies": {
-    "@fontsource-variable/alumni-sans": "^5.2.6",
-    "@fontsource-variable/roboto": "^5.2.6",
+    "@fontsource-variable/alumni-sans": "^5.3.0",
+    "@fontsource-variable/roboto": "^5.3.0",
     "@shapething/shacl-renderer": "workspace:*",
     "astro": "^5.6.1"
   },
   "devDependencies": {
-    "@types/node": "^24.10.1",
+    "@types/node": "^24.13.6",
     "ts-to-zod": "^5.1.0"
   }
 }

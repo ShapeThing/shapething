@@ -43,7 +43,7 @@ export default defineConfig({
   pack: {
     entry: { index: "src/index.tsx" },
     dts: {
-      tsgo: true,
+      generator: "tsgo",
     },
     exports: true,
     plugins: [typedSparql(), copyFtlAssets()],

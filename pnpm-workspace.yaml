@@ -4,17 +4,27 @@ packages:
   # Standalone submodule (npm, consumes published @shapething/* packages); its unpatched
   # shacl-engine@1.0.2 would collide with patches/shacl-engine@1.0.2.patch.
   - '!apps/app.shapething.com'
+# Supply-chain hardening: never resolve a version published less than 7 days ago
+# (most malicious releases are detected and unpublished well within that window),
+# refuse versions whose publish trust level dropped compared to earlier releases,
+# and refuse transitive dependencies pulled from git/tarball URLs.
+minimumReleaseAge: 10080
+trustPolicy: no-downgrade
+blockExoticSubdeps: true
+# Reviewed trust-downgrade false positives (older release lines published before provenance).
+trustPolicyExclude:
+  - semver@6.3.1
+  - undici-types@6.21.0
+  - chokidar@4.0.3
 allowBuilds:
   '@parcel/watcher': true
   '@swc/core': true
   esbuild: true
   msgpackr-extract: true
   sharp: true
-minimumReleaseAgeExclude:
-  - maplibre-gl-geo-editor@0.11.0
 packageExtensions:
   shacl-engine@1.0.2:
     dependencies:
-      '@comunica/query-sparql': ^4.5.0
+      '@comunica/query-sparql': ^5.4.1
 patchedDependencies:
   shacl-engine@1.0.2: patches/shacl-engine@1.0.2.patch

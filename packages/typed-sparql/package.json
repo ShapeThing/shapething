@@ -21,7 +21,10 @@
   "publishConfig": {
     "access": "public"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
     "lint": "vp lint",
@@ -29,13 +32,14 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@traqula/parser-sparql-1-2": "^1.0.7"
+    "@traqula/parser-sparql-1-2": "^1.4.0"
   },
   "devDependencies": {
     "@rdfjs/types": "^2.0.1",
-    "@types/node": "^22.15.29",
-    "vite": "^8.0.8",
+    "@types/node": "^22.20.4",
+    "typescript": "~5.9.3",
+    "vite": "^8.3.1",
     "vite-tsconfig-paths": "^6.1.1",
-    "vitest": "^4.1.4"
+    "vitest": "5.0.1"
   }
 }

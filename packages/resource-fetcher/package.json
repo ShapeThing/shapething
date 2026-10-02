@@ -31,20 +31,20 @@
   },
   "dependencies": {
     "@rdfjs/data-model": "^2.1.1",
-    "@rdfjs/dataset": "^2.0.2",
+    "@rdfjs/dataset": "^2.0.3",
     "@rdfjs/environment": "^1.0.0",
     "@rdfjs/namespace": "^2.0.1",
-    "grapoi": "^1.1.3",
-    "jsonld-context-parser": "^3.0.0"
+    "grapoi": "^1.3.0",
+    "jsonld-context-parser": "^3.1.1"
   },
   "devDependencies": {
-    "@comunica/query-sparql": "^4.5.0",
-    "@comunica/types": "^4.5.0",
-    "@comunica/utils-bindings-factory": "^4.5.0",
+    "@comunica/query-sparql": "^5.4.1",
+    "@comunica/types": "^5.4.0",
+    "@comunica/utils-bindings-factory": "^5.4.0",
     "@jeswr/pretty-turtle": "^1.8.2",
     "@rdfjs/types": "^2.0.1",
-    "@types/n3": "^1.26.1",
-    "@types/node": "^22.15.29",
+    "@types/n3": "^1.26.4",
+    "@types/node": "^22.20.4",
     "@types/rdfjs__data-model": "^2.0.9",
     "@types/rdfjs__dataset": "^2.0.7",
     "@types/rdfjs__environment": "^1.0.0",
@@ -52,7 +52,7 @@
     "n3": "^1.26.0",
     "sparqljs": "^3.7.3",
     "typescript": "~5.8.3",
-    "vite": "^6.3.5",
-    "vitest": "^3.1.4"
+    "vite": "^6.4.3",
+    "vitest": "5.0.1"
   }
 }

@@ -44,32 +44,15 @@ export type QueryOptions = {
   fetch?: typeof fetch;
 };
 
-// A query's prologue (PREFIX/BASE declarations) - has to stay at the top level when the rest of the
-// query is nested inside a SERVICE block (see asServiceQuery).
-const PROLOGUE = /^(\s*(?:PREFIX\s+[\w.-]*:\s*<[^>]*>|BASE\s*<[^>]*>)\s*)*/i;
-
-/**
- * `query` nested whole inside `SERVICE <endpoint> { ... }`, prologue kept outside. Comunica's own
- * source planner decides per query whether to ship it to a plain `sparql` source intact or split
- * it into smaller requests it then joins/filters/aggregates client-side - and it splits as soon as
- * it sees a function it has a local implementation for (the geof: extension functions), which
- * against a large endpoint means downloading whole predicates' worth of triples. A SERVICE clause
- * is always sent to its endpoint as one query, so every facet query stays a single request whose
- * aggregation the endpoint does itself.
- */
-export function asServiceQuery(query: string, endpoint: string): string {
-  const prologue = query.match(PROLOGUE)?.[0] ?? "";
-  return `${prologue}\nSELECT * WHERE { SERVICE <${endpoint}> { ${query.slice(prologue.length)} } }`;
-}
-
-// The empty store an endpoint query's SERVICE wrapper runs "against" - Comunica needs at least one
-// source, but everything the query reads comes from inside the SERVICE block.
-let emptyStore: RdfStore | undefined;
-
 /**
  * Runs a SELECT `query` against `source`, returning every binding. The GeoSPARQL extension
  * functions (helpers/geosparqlFunctions.ts) are registered for a local source only - an endpoint
- * query is shipped whole (see asServiceQuery) and the endpoint evaluates geof: itself.
+ * query is shipped whole and the endpoint evaluates geof: itself.
+ *
+ * An endpoint is passed as an explicit `sparql` source rather than wrapped in a SERVICE clause:
+ * Comunica 5 decomposes a SERVICE block's contents into per-pattern requests (one per VALUES row,
+ * each joined client-side), whereas a lone `sparql` source gets the whole query in one request,
+ * aggregates and geof: filters included.
  */
 export async function selectBindings(
   query: string,
@@ -80,11 +63,10 @@ export async function selectBindings(
   const fetchOverride =
     options.fetch ??
     (options.corsProxyUrl ? fetchWithCorsProxyFallback(options.corsProxyUrl) : undefined);
-  emptyStore ??= (await import("rdf-stores")).RdfStore.createDefault();
   const stream = await engine.queryBindings(
-    source.kind === "local" ? query : asServiceQuery(query, source.url),
+    query,
     {
-      sources: [source.kind === "local" ? source.store : emptyStore],
+      sources: [source.kind === "local" ? source.store : { type: "sparql", value: source.url }],
       ...(source.kind === "local" ? { extensionFunctions: geosparqlExtensionFunctions } : {}),
       ...(fetchOverride ? { fetch: fetchOverride } : {}),
     } as never,

@@ -5,6 +5,7 @@ import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes, shui, xsd } from "@/helpers/namespaces.ts";
 import { createDefaultTerm, defaultTermFromShape } from "@/widgets/defaultTerm.ts";
 import { defaultWidgets } from "@/widgets/registry.ts";
+import { literalLanguage } from "@/helpers/parseBCP47.ts";
 
 const createElement = async (turtle: string, propertyShapes: NamedNode[] = [ex("property1")]) => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${turtle}`, "text/turtle");
@@ -87,5 +88,5 @@ test("createDefaultTerm's TextFieldWithLangEditor uses the active content langua
     contentLanguage: "nl-NL",
   });
   expect(term.termType).toEqual("Literal");
-  expect((term as { language: string }).language).toEqual("nl-NL");
+  expect(literalLanguage(term)).toEqual("nl-NL");
 });

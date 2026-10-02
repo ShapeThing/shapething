@@ -19,7 +19,10 @@
   "publishConfig": {
     "access": "public"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "dev": "vite --port 7001",
     "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
@@ -31,22 +34,22 @@
     "@rdfjs/data-model": "^2.1.0",
     "events": "^3.3.0",
     "hex-encoding": "^2.0.3",
-    "idb-keyval": "^6.2.2",
-    "n3": "^1.25.2",
+    "idb-keyval": "^6.3.0",
+    "n3": "^1.26.0",
     "readable-stream": "^4.7.0"
   },
   "devDependencies": {
-    "@comunica/query-sparql": "^4.2.0",
+    "@comunica/query-sparql": "^5.4.1",
     "@rdfjs/types": "^2.0.1",
-    "@testing-library/dom": "^10.4.0",
+    "@testing-library/dom": "^10.4.2",
     "@types/events": "^3.0.3",
-    "@types/n3": "^1.25.3",
-    "@types/node": "^22.15.29",
+    "@types/n3": "^1.26.4",
+    "@types/node": "^22.20.4",
     "@types/rdfjs__data-model": "^2.0.9",
     "@types/wicg-file-system-access": "^2023.10.6",
-    "@vitest/browser": "^3.1.4",
+    "@vitest/browser-preview": "5.0.1",
     "typescript": "~5.8.3",
-    "vite": "^6.3.5",
-    "vitest": "^3.1.4"
+    "vite": "^6.4.3",
+    "vitest": "5.0.1"
   }
 }

@@ -115,7 +115,7 @@ export default defineConfig({
   pack: {
     entry: ["src/index.ts", "src/tools.ts", "src/astro.ts", "src/webcomponent.tsx"],
     dts: {
-      tsgo: true,
+      generator: "tsgo",
     },
     exports: true,
     plugins: [

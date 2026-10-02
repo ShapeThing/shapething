@@ -16,7 +16,10 @@
       "default": "./dist/TextStore.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
     "lint": "vp lint",
@@ -24,20 +27,20 @@
     "test:watch": "vitest"
   },
   "devDependencies": {
-    "@comunica/query-sparql": "^4.2.0",
+    "@comunica/query-sparql": "^5.4.1",
     "@rdfjs/types": "^2.0.1",
-    "@types/n3": "^1.24.2",
+    "@types/n3": "^1.26.4",
     "@types/rdfjs__data-model": "^2.0.9",
     "@types/rdfjs__namespace": "^2.0.10",
     "typescript": "~5.8.3",
-    "vite": "^6.3.4",
-    "vitest": "^3.1.2"
+    "vite": "^6.4.3",
+    "vitest": "5.0.1"
   },
   "dependencies": {
-    "n3": "^1.25.2",
     "@rdfjs/data-model": "^2.1.0",
     "@rdfjs/namespace": "^2.0.1",
-    "flexsearch": "^0.8.158"
+    "flexsearch": "^0.8.158",
+    "n3": "^1.26.0"
   },
   "publishConfig": {
     "access": "public"

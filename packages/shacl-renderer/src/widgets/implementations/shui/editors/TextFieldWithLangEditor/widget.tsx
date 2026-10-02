@@ -6,6 +6,7 @@ import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.ts
 import type { WidgetProps } from "@/widgets/types.ts";
 import ValueLanguageSelect from "@/outputs/render/components/ValueLanguageSelect/index.tsx";
 import type { BCP47 } from "@/types/BCP47.ts";
+import { literalLanguage } from "@/helpers/parseBCP47.ts";
 
 export default function TextFieldWithLangEditor({
   shape,
@@ -23,7 +24,7 @@ export default function TextFieldWithLangEditor({
   // content language, then to whatever this property's own sh:languageIn offers first, so typing
   // into the field never commits a languageless rdf:langString literal.
   const language =
-    (term.termType === "Literal" ? term.language : "") ||
+    literalLanguage(term) ||
     activeLanguage ||
     languages[0]?.value ||
     "";

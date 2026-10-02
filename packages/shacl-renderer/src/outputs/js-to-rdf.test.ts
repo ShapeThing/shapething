@@ -1,6 +1,7 @@
 import { expect, test } from "vite-plus/test";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { jsToRdf } from "@/outputs/js-to-rdf.ts";
+import { literalLanguage } from "@/helpers/parseBCP47.ts";
 import { ex, rdf, xsd } from "@/helpers/namespaces.ts";
 
 test("jsToRdf - writes a required scalar string property", async () => {
@@ -182,7 +183,7 @@ test("jsToRdf - writes an rdf:langString value tagged with the given contentLang
 
   const [quad] = dataGraph.getQuads(ex("recipe1"), ex("title"));
   expect(quad.object.value).toEqual("Chicken Soup");
-  expect((quad.object as { language: string }).language).toEqual("en-GB");
+  expect(literalLanguage(quad.object)).toEqual("en-GB");
   expect((quad.object as { datatype: { value: string } }).datatype.value).toEqual(
     rdf("langString").value,
   );

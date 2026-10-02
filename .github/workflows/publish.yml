@@ -43,7 +43,8 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Update npm for OIDC trusted publishing support
-        run: npm install -g npm@latest
+        # Pinned (not @latest) so CI never pulls a freshly published, unvetted npm release.
+        run: npm install -g npm@11.20.0
 
       - name: Create release PR
         id: changesets

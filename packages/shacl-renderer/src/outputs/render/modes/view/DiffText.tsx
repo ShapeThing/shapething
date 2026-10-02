@@ -3,7 +3,7 @@ import type { Literal } from "@rdfjs/types";
 import { languageLabels } from "@/helpers/languageLabels.ts";
 import { textDiff } from "@/helpers/textDiff.ts";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
-import type { BCP47 } from "@/types/BCP47.ts";
+import { literalLanguage } from "@/helpers/parseBCP47.ts";
 
 /**
  * One text value that was edited (see propertyDiff.ts's changedText): the new text, with what was
@@ -13,7 +13,7 @@ import type { BCP47 } from "@/types/BCP47.ts";
 export default function DiffText({ removed, added }: { removed: Literal; added: Literal }) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const segments = useMemo(() => textDiff(removed.value, added.value), [removed.value, added.value]);
-  const lang = added.language as BCP47;
+  const lang = literalLanguage(added);
   const label = lang ? languageLabels([lang], activeInterfaceLanguage)[lang] : undefined;
 
   return (

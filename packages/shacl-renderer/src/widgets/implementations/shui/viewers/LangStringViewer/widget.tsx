@@ -1,12 +1,12 @@
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { languageLabels } from "@/helpers/languageLabels.ts";
-import type { BCP47 } from "@/types/BCP47.ts";
+import { literalLanguage } from "@/helpers/parseBCP47.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 
 export default function LangStringViewer({ term }: WidgetProps) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
-  const lang = term.termType === "Literal" ? (term.language as BCP47) : "";
+  const lang = literalLanguage(term);
   const label = lang ? languageLabels([lang], activeInterfaceLanguage)[lang] : undefined;
 
   return (

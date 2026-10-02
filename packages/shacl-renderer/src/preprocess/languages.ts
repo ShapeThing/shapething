@@ -4,6 +4,7 @@ import type { BCP47 } from "@/types/BCP47.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import { mergeLocaleLoaders } from "@/l10n/locales.ts";
 import { primarySubtag } from "@/helpers/bestByLanguage.ts";
+import { literalLanguage } from "@/helpers/parseBCP47.ts";
 
 // Every distinct rdf:langString language tag actually used in `store`, in first-seen order.
 // With `predicates`, only quads whose predicate is in that set are considered - used to restrict
@@ -14,12 +15,12 @@ function usedLanguages(store: RdfStore, predicates?: Set<string>): BCP47[] {
 
   for (const quad of store.getQuads()) {
     if (predicates && !predicates.has(quad.predicate.value)) continue;
-    const object = quad.object;
-    if (object.termType === "Literal" && object.language) {
-      const key = object.language.toLowerCase();
+    const language = literalLanguage(quad.object);
+    if (language) {
+      const key = language.toLowerCase();
       if (!seen.has(key)) {
         seen.add(key);
-        languages.push(object.language as BCP47);
+        languages.push(language);
       }
     }
   }
