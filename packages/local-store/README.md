@@ -1,5 +1,7 @@
 # LocalStore
 
+[![Tests](https://github.com/ShapeThing/shapething/actions/workflows/test-local-store.yml/badge.svg?branch=main)](https://github.com/ShapeThing/shapething/actions/workflows/test-local-store.yml)
+
 A RDF/js Store that reads relative turtle files from disk and mutates them via a QueryEngine such as Comunica.
 
 ## How to use:

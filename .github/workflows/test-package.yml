@@ -1,10 +1,22 @@
-name: Test
+name: Test package
 
+# Reusable workflow: each package has its own test-<package>.yml that calls this one, so every
+# package gets its own status badge.
 on:
-  pull_request:
-  push:
-    branches:
-      - main
+  workflow_call:
+    inputs:
+      package:
+        description: The package's name, as passed to --filter.
+        required: true
+        type: string
+      browser:
+        description: Whether the package has browser-mode Vitest projects that need Chromium.
+        type: boolean
+        default: false
+      shards:
+        description: Run the tests in this many shards, each in a fresh browser. 0 disables sharding.
+        type: number
+        default: 0
 
 jobs:
   test:
@@ -37,19 +49,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Browser-mode Vitest projects (shacl-renderer's and shacl-manager's Storybook interaction
-      # tests) run in headless Chromium. Each package pins its own Playwright version, and each
-      # version needs its own matching browser build, so install through each package's own CLI.
+      # Browser-mode Vitest projects (Storybook interaction tests) run in headless Chromium. Each
+      # package pins its own Playwright version, and each version needs its own matching browser
+      # build, so install through the package's own CLI.
       - name: Install Playwright Chromium
-        run: |
-          pnpm --filter @shapething/shacl-renderer exec playwright install --with-deps chromium
-          pnpm --filter @shapething/shacl-manager exec playwright install --with-deps chromium
+        if: inputs.browser
+        run: pnpm --filter ${{ inputs.package }} exec playwright install --with-deps chromium
 
       # turbo.json's test task depends on ^build, so workspace dependencies (resource-fetcher's
       # dist for shacl-renderer's Storybook fixtures, shacl-renderer's dist for shacl-manager)
-      # are built first. --concurrency=1 keeps packages' test runs from competing for the runner.
+      # are built first.
       - name: Run tests
-        run: pnpm exec turbo run test --concurrency=1 --filter='!@shapething/shacl-renderer'
+        if: inputs.shards == 0
+        run: pnpm exec turbo run test --filter=${{ inputs.package }}
         env:
           CI: true
 
@@ -58,11 +70,12 @@ jobs:
       # in the network service but never resolve in the page) and the run hangs until Vitest
       # reports "Browser connection was closed while running tests". Sharding keeps each page
       # well under that.
-      - name: Run shacl-renderer tests
+      - name: Run tests in shards
+        if: inputs.shards > 0
         run: |
-          pnpm exec turbo run build --filter='@shapething/shacl-renderer^...'
-          for shard in 1 2 3 4; do
-            pnpm --filter @shapething/shacl-renderer exec vp test --shard=$shard/4
+          pnpm exec turbo run build --filter='${{ inputs.package }}^...'
+          for shard in $(seq 1 ${{ inputs.shards }}); do
+            pnpm --filter ${{ inputs.package }} exec vp test --shard=$shard/${{ inputs.shards }}
           done
         env:
           CI: true

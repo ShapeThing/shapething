@@ -1,5 +1,7 @@
 ![Logo](https://storybook-shacl-renderer.shapething.com/logo.svg)
 
+[![Tests](https://github.com/ShapeThing/shapething/actions/workflows/test-resource-fetcher.yml/badge.svg?branch=main)](https://github.com/ShapeThing/shapething/actions/workflows/test-resource-fetcher.yml)
+
 # Current state
 
 Work in progress. If you test it out and find bugs please submit them and ideally submit a testsuite case PR so that we can document what should work.

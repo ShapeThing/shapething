@@ -4,6 +4,7 @@ import { RdfStore } from "rdf-stores";
 import { withGraphInspector } from "./addons/graph-inspector/withGraphInspector.tsx";
 import { withSubmitPreview } from "./withSubmitPreview.tsx";
 import React from "react";
+import { configure } from "storybook/test";
 
 // EnvironmentContextProvider builds its Environment once per mount and never rebuilds it (see
 // environment.ts / EnvironmentContextProvider.tsx) - dataGraph becomes a live, mutable store that
@@ -109,6 +110,13 @@ const registerServiceWorker = async () => {
 };
 
 void registerServiceWorker();
+
+// Testing Library's findBy*/waitFor give up after 1000ms by default. Most stories render their
+// data-derived parts (facet options and counts, labels, search results) after an async query, which
+// under a loaded CI runner - several heavy story files sharing one browser page - regularly takes
+// longer than that, failing the play function with "Unable to find ..." even though the element
+// shows up moments later. An explicit `{ timeout }` on a call still overrides this.
+configure({ asyncUtilTimeout: 5000 });
 
 const preview: Preview = {
   decorators: [withArgsKeyRemount, withGraphInspector, withSubmitPreview, withMaxWidth],

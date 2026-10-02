@@ -1,5 +1,7 @@
 # @shapething/shacl-manager
 
+[![Tests](https://github.com/ShapeThing/shapething/actions/workflows/test-shacl-manager.yml/badge.svg?branch=main)](https://github.com/ShapeThing/shapething/actions/workflows/test-shacl-manager.yml)
+
 Manages a **data model**: one or more RDF graphs, of which exactly one is the *main graph*
 that can be written to.
 

@@ -1,5 +1,7 @@
 # @shapething/shacl-renderer
 
+[![Tests](https://github.com/ShapeThing/shapething/actions/workflows/test-shacl-renderer.yml/badge.svg?branch=main)](https://github.com/ShapeThing/shapething/actions/workflows/test-shacl-renderer.yml)
+
 A SHACL toolkit for React. Give it a SHACL shapes graph and an RDF data graph and it renders a
 user interface for them:
 

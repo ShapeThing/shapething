@@ -1,0 +1,16 @@
+name: Test SHACL renderer
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  test:
+    uses: ./.github/workflows/test-package.yml
+    secrets: inherit
+    with:
+      package: '@shapething/shacl-renderer'
+      browser: true
+      shards: 4
