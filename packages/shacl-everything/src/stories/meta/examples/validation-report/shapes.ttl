@@ -1,0 +1,55 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+ex:PersonShape
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property ex:PersonShape-name, ex:PersonShape-address, ex:PersonShape-birthDate ;
+    # A blank-node property shape: report.ttl's own blank node for it can never match this one, so
+    # its result is matched by sh:path instead.
+    sh:property [
+        sh:order 2 ;
+        sh:name "Email"@en, "E-mail"@nl ;
+        sh:path schema:email ;
+        sh:pattern "^[^@]+@[^@]+$" ;
+        sh:maxLength 30 ;
+        sh:severity sh:Warning ;
+    ] ;
+    .
+
+ex:PersonShape-name
+    sh:order 1 ;
+    sh:name "Name"@en, "Naam"@nl ;
+    sh:path schema:name ;
+    sh:minCount 1 ;
+    .
+
+ex:PersonShape-address
+    sh:order 3 ;
+    sh:name "Address"@en, "Adres"@nl ;
+    sh:path schema:address ;
+    sh:node ex:AddressShape ;
+    .
+
+ex:PersonShape-birthDate
+    sh:order 4 ;
+    sh:name "Birth date"@en, "Geboortedatum"@nl ;
+    sh:path schema:birthDate ;
+    sh:datatype xsd:date ;
+    sh:maxInclusive "2026-01-01"^^xsd:date ;
+    .
+
+ex:AddressShape
+    a sh:NodeShape ;
+    sh:name "Address"@en, "Adres"@nl ;
+    sh:property ex:AddressShape-postalCode ;
+    .
+
+ex:AddressShape-postalCode
+    sh:name "Postal code"@en, "Postcode"@nl ;
+    sh:path schema:postalCode ;
+    sh:pattern "^[0-9]{4} ?[A-Z]{2}$" ;
+    sh:message "Use a Dutch postal code, like 1234 AB"@en, "Gebruik een Nederlandse postcode, zoals 1234 AB"@nl ;
+    .

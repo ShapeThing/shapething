@@ -23,6 +23,13 @@
   --st-severity-warning: var(--yellow-6);
   --st-severity-error: var(--red-6);
   --st-severity-info: var(--blue-6);
+  --st-diff-added-background: var(--green-1);
+  --st-diff-added-border: var(--green-6);
+  --st-diff-added-text: var(--green-9);
+  --st-diff-removed-background: var(--red-1);
+  --st-diff-removed-border: var(--red-6);
+  --st-diff-removed-text: var(--red-9);
+  --st-diff-changed-border: var(--yellow-6);
 
   /* z-index scale — named cascade layers (declared above) keep these tiers
      from being silently out-cascaded by a more specific or later-loaded rule;
@@ -67,4 +74,14 @@
   display: inline-flex;
   align-items: baseline;
   gap: var(--size-1);
+}
+
+/* Text only screen readers announce, e.g. view mode's "Added"/"Removed" diff markers. */
+.st-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }

@@ -203,7 +203,7 @@ export const defaultWidgets: Widgets = {
 };
 
 export type { WidgetMode } from "@/widgets/lookup.ts";
-export { categoryFor, widgetModeForPredicate } from "@/widgets/lookup.ts";
+export { categoryFor, widgetModeForEnvironment, widgetModeForPredicate } from "@/widgets/lookup.ts";
 
 // widget-scoring.ttl and every score.ttl are static bundle contents - parsing them into an
 // RdfStore is pure and (mode, widgets)-scoped, so repeat calls (one per property, on every render)

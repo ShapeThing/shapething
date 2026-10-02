@@ -127,15 +127,18 @@ export default function DatatypeEditor({ term, setTerm, labelledBy, autoFocus }:
       onChange={(iri) => setTerm(factory.namedNode(iri))}
       renderTriggerContent={renderLabel}
       renderOption={renderLabel}
-      extraRow={{
-        content: (
-          <span className="st-create-option">
-            <Link />
-            <Localized id="datatype-custom-option">Use custom IRI…</Localized>
-          </span>
-        ),
-        onActivate: openCustom,
-      }}
+      extraRows={[
+        {
+          key: "custom",
+          content: (
+            <span className="st-create-option">
+              <Link />
+              <Localized id="datatype-custom-option">Use custom IRI…</Localized>
+            </span>
+          ),
+          onActivate: openCustom,
+        },
+      ]}
     />
   );
 }

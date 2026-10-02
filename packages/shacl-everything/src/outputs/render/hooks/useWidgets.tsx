@@ -2,7 +2,7 @@ import type { NamedNode, Term } from "@rdfjs/types";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { getWidgetComponent, getWidgetMeta, widgetModeForPredicate } from "@/widgets/registry.ts";
+import { getWidgetComponent, getWidgetMeta, widgetModeForEnvironment, widgetModeForPredicate } from "@/widgets/registry.ts";
 import type { WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { noRefetch } from "@/helpers/noRefetch.ts";
@@ -30,7 +30,7 @@ export function useWidgets(
   score: number;
 }[] {
   const { mode: environmentMode } = useEnvironment();
-  const mode = widgetModeForPredicate(widgetPredicate) ?? environmentMode;
+  const mode = widgetModeForPredicate(widgetPredicate) ?? widgetModeForEnvironment(environmentMode);
 
   const { data: widgets } = useQuery({
     queryKey: [

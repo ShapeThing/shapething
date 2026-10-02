@@ -1,0 +1,8 @@
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Opt-in only, via an explicit st:facet declaration: filtering on *how many* values an instance has
+# (rather than on the values themselves) is a deliberate choice for a property, never something any
+# property shape's own constraints signal on their own - so no WidgetScore rule at all.
+st:CountFacet rdfs:label "Count"@en, "Aantal"@nl .

@@ -94,3 +94,36 @@
   display: flex;
   align-items: start;
 }
+
+/* Environment.additionsGraph/deletionsGraph - see PropertyUIComponentObject. <ins>/<del> are only
+   used for their meaning; their default underline/strike-through is replaced by these markers. */
+.st-diff [data-widget] {
+  text-decoration: none;
+  border-radius: var(--radius-2);
+}
+
+.st-diff--added [data-widget] > * {
+  background-color: var(--st-diff-added-background);
+  border-radius: var(--radius-2);
+}
+
+.st-diff--removed [data-widget] > * {
+  background-color: var(--st-diff-removed-background);
+  border-radius: var(--radius-2);
+  text-decoration: line-through;
+  color: var(--st-color-text-muted);
+}
+
+.st-diff-text__removed {
+  text-decoration: line-through;
+  background-color: var(--st-diff-removed-background);
+  border-radius: var(--radius-2);
+  color: var(--st-diff-removed-text);
+}
+
+.st-diff-text__added {
+  text-decoration: none;
+  background-color: var(--st-diff-added-background);
+  color: var(--st-diff-added-text);
+  border-radius: var(--radius-2);
+}

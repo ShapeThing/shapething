@@ -1,14 +1,20 @@
 import { useId, useMemo } from "react";
+import type { Term } from "@rdfjs/types";
+import type { ValidationResult } from "@/outputs/render/contexts/validationContext.tsx";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
+import ResultMessages from "@/outputs/render/components/ValidationMessages/ResultMessages.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useRegisterContentLanguageSwitcherWidget } from "@/outputs/render/hooks/useRegisterContentLanguageSwitcherWidget.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
+import { useIsReport, useReportResults } from "@/outputs/render/hooks/useReportResults.tsx";
+import { Localized } from "@fluent/react";
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import MemberShapeList from "@/outputs/render/modes/view/MemberShapeList.tsx";
 import PropertyUIComponentObject from "@/outputs/render/modes/view/PropertyUIComponentObject.tsx";
+import { diffForValues } from "@/outputs/render/modes/view/propertyDiff.ts";
 import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
@@ -26,7 +32,7 @@ type PropertyUIComponentProps = {
  * values to show renders nothing at all rather than an empty field waiting to be filled in.
  */
 export default function PropertyUIComponent({ propertyUIElement }: PropertyUIComponentProps) {
-  const { languageMode, viewModeLabelLayout, sourcePrefixes } = useEnvironment();
+  const { languageMode, viewModeLabelLayout, sourcePrefixes, diffGraphs } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const isRdfLangString = propertyUIElement.get(sh("datatype"))?.equals(rdf("langString"));
@@ -61,49 +67,121 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   // every value itself via `shape` - see PropertyUIComponentValues' identical reasoning in edit
   // mode. Passing it every value here would render it once per value instead of once total.
   const isSingleUnifiedWidget = widget?.meta?.singleUnifiedWidget?.(propertyUIElement) === true;
-  const objects = isSingleUnifiedWidget
-    ? languageFilteredObjects.slice(0, 1)
+  // Environment.additionsGraph/deletionsGraph - see propertyDiff.ts. Not for a singleUnifiedWidget,
+  // which renders every value itself and so has no per-value slot to mark.
+  const diff = useMemo(
+    () =>
+      diffGraphs && !isSingleUnifiedWidget
+        ? diffForValues(propertyUIElement, languageFilteredObjects, diffGraphs)
+        : undefined,
+    [diffGraphs, isSingleUnifiedWidget, propertyUIElement, languageFilteredObjects],
+  );
+  // An edited text shows as one value (the new one, with the edit marked inside it), so the old
+  // value it replaced isn't listed separately.
+  const shownObjects = diff?.changedText
+    ? languageFilteredObjects.filter((object) => !object.equals(diff.changedText!.removed))
     : languageFilteredObjects;
+  const objects = isSingleUnifiedWidget ? shownObjects.slice(0, 1) : shownObjects;
 
-  // Nothing to view: unlike edit mode, there's no empty widget to fall back to. Also gates the
-  // sh:memberShape branch below - a list property with no head triple yet has nothing to walk.
-  if (objects.length === 0) return null;
+  // Report mode (see modes/report/): every result about this property, listed below its label and
+  // value(s).
+  const isReport = useIsReport();
+  const reportResults = useReportResults(propertyUIElement);
+
+  // Nothing to view: unlike edit mode, there's no empty widget to fall back to - except a report's
+  // result about the missing values themselves. Also gates the sh:memberShape branch below - a
+  // list property with no head triple yet has nothing to walk.
+  if (objects.length === 0 && reportResults.length === 0) return null;
 
   // "inline" only reads well for a single value sitting beside its label - a list of values (or
   // a singleUnifiedWidget like ValueTableViewer, inherently block-level) instead drops to its own
   // line below the label, same as "block", regardless of the global viewModeLabelLayout setting.
-  const isList =
-    memberShapeNodes.length > 0 || isSingleUnifiedWidget || languageFilteredObjects.length > 1;
-  const labelLayout = isList ? "block" : viewModeLabelLayout;
+  // A report is always inline instead - the label beside the value(s), the results on the next line.
+  const isList = memberShapeNodes.length > 0 || isSingleUnifiedWidget || objects.length > 1;
+  const labelLayout = isReport ? "inline" : isList ? "block" : viewModeLabelLayout;
 
-  return (
+  const renderValues = (rowObjects: Term[], labelledBy: string) =>
+    rowObjects.length === 0 ? (
+      isReport ? (
+        <Localized id="report-no-value">
+          <span className="st-report-no-value">No value has been given</span>
+        </Localized>
+      ) : null
+    ) : memberShapeNodes.length > 0 ? (
+      <MemberShapeList
+        propertyUIElement={propertyUIElement}
+        memberShapeNodes={memberShapeNodes}
+        labelledBy={labelledBy}
+      />
+    ) : (
+      <div className="st-property-items">
+        {rowObjects.map((object, index) => (
+          <PropertyUIComponentObject
+            key={index}
+            propertyUIElement={propertyUIElement}
+            object={object}
+            labelledBy={labelledBy}
+            diffStatus={diff?.status(object)}
+            changedFrom={
+              diff?.changedText?.added.equals(object) ? diff.changedText.removed : undefined
+            }
+          />
+        ))}
+      </div>
+    );
+
+  const renderRow = (
+    key: string,
+    rowLabelId: string,
+    rowObjects: Term[],
+    rowResults: ValidationResult[],
+  ) => (
     <FormElement
+      key={key}
       label={label}
       showColon={true}
       labelTitle={propertyUIElement.pathAsSparql({ prefixed: true, sourcePrefixes })}
-      labelId={labelId}
+      labelId={rowLabelId}
       dataId={propertyUIElement.dataId()}
       tooltip={description}
       labelLayout={labelLayout}
     >
-      {memberShapeNodes.length > 0 ? (
-        <MemberShapeList
-          propertyUIElement={propertyUIElement}
-          memberShapeNodes={memberShapeNodes}
-          labelledBy={labelId}
-        />
-      ) : (
-        <div className="st-property-items">
-          {objects.map((object, index) => (
-            <PropertyUIComponentObject
-              key={index}
-              propertyUIElement={propertyUIElement}
-              object={object}
-              labelledBy={labelId}
-            />
-          ))}
-        </div>
+      {renderValues(rowObjects, rowLabelId)}
+      {isReport && (
+        <ResultMessages results={rowResults} className="st-validation-messages--report" />
       )}
     </FormElement>
   );
+
+  // In a report, a value with results of its own (e.g. sh:pattern, about that one value) gets a row
+  // of its own, its messages right below it - otherwise, with several values, a message wouldn't
+  // say which value it's about. The values without such results share one row, and results not
+  // about any one shown value (sh:minCount, sh:maxCount, ...) come last.
+  const resultsFor = (object: Term) =>
+    reportResults.filter((result) => result.value?.equals(object));
+  const ownRowObjects =
+    isReport && objects.length > 1 && memberShapeNodes.length === 0
+      ? objects.filter((object) => resultsFor(object).length > 0)
+      : [];
+  if (ownRowObjects.length > 0) {
+    const sharedObjects = objects.filter((object) => !ownRowObjects.includes(object));
+    const otherResults = reportResults.filter(
+      (result) => !ownRowObjects.some((object) => result.value?.equals(object)),
+    );
+    // With no values left to share a row, the remaining results go below the last value instead
+    // of in an empty row that would claim "No value has been given".
+    const last = ownRowObjects.length - 1;
+    const rows = ownRowObjects.map((object, index) =>
+      renderRow(`value-${index}`, `${labelId}-${index}`, [object], [
+        ...resultsFor(object),
+        ...(index === last && sharedObjects.length === 0 ? otherResults : []),
+      ])
+    );
+    if (sharedObjects.length > 0) {
+      rows.push(renderRow("shared", labelId, sharedObjects, otherResults));
+    }
+    return <>{rows}</>;
+  }
+
+  return renderRow("all", labelId, objects, reportResults);
 }

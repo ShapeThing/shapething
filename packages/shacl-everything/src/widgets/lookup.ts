@@ -32,6 +32,12 @@ export function categoryFor(mode: WidgetMode, widgets: Widgets) {
 // instead of trusting the ambient Environment.mode - the two usually coincide (edit mode always
 // scores shui:editor, view always shui:viewer), but edit mode's read-only rendering deliberately
 // resolves a shui:viewer widget while Environment.mode stays "edit", so they can't be conflated.
+// Environment.mode's own widget pool: report mode renders through the view-mode tree (see
+// outputs/render/modes/report/), so it resolves viewers.
+export function widgetModeForEnvironment(mode: WidgetMode | "report"): WidgetMode {
+  return mode === "report" ? "view" : mode;
+}
+
 export function widgetModeForPredicate(
   widgetPredicate: Term,
 ): WidgetMode | undefined {

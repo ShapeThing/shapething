@@ -1,0 +1,31 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Given name"@en ;
+        sh:path schema:givenName ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:name "Country"@en ;
+        sh:path schema:addressCountry ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+        sh:defaultValue "Netherlands" ;
+    ] ;
+    sh:property [
+        sh:name "Number of children"@en ;
+        sh:path ex:numberOfChildren ;
+        sh:datatype xsd:integer ;
+        sh:maxCount 1 ;
+        sh:defaultValue 0 ;
+    ] ;
+    .
+
+# <#data> has no triples at all yet: a brand-new resource, so it starts out with the defaults.

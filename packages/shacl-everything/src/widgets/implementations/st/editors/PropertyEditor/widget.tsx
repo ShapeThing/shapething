@@ -24,6 +24,7 @@ import type { RdfStore } from "rdf-stores";
 import { clsx } from "clsx";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { factory } from "@/helpers/factory.ts";
+import { freshIri } from "@/helpers/freshIri.ts";
 import { Plus } from "@/helpers/icons.tsx";
 import { rdf, sh, xsd } from "@/helpers/namespaces.ts";
 import { createStagingGraph } from "@/helpers/stagingGraph.ts";
@@ -288,9 +289,10 @@ export default function PropertyEditor({ shape }: WidgetProps) {
   };
 
   // A new group isn't linked to anything yet - it shows up under the unused groups, ready to drop
-  // a property on. A random IRI, like useCreateInPlace's new instances.
+  // a property on. A random IRI (in shui:defaultNamespace, if configured), like useCreateInPlace's
+  // new instances.
   const addGroup = () => {
-    const group = factory.namedNode(`urn:uuid:${crypto.randomUUID()}`);
+    const group = freshIri(shape.shapesGraph);
     openDraft(
       group,
       groupShapes,

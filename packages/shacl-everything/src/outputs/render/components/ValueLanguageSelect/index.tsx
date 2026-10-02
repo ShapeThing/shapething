@@ -63,12 +63,15 @@ export default function ValueLanguageSelect({ ariaLabelledby, value, options, on
           renderTriggerContent={(v) => labels[v] ?? v}
           renderOption={(v) => labels[v] ?? v}
           wrapperClassName="st-value-language-select"
-          extraRow={
+          extraRows={
             showCreateOption
-              ? {
-                  content: <Localized id="content-language-create-option">Add language…</Localized>,
-                  onActivate: () => setCreateModalOpen(true),
-                }
+              ? [
+                  {
+                    key: "create",
+                    content: <Localized id="content-language-create-option">Add language…</Localized>,
+                    onActivate: () => setCreateModalOpen(true),
+                  },
+                ]
               : undefined
           }
         />

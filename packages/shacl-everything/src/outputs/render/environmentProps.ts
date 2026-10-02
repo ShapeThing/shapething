@@ -30,6 +30,7 @@ export const LIVE_PROPS = [
   "enableTitle",
   "enableEditInPlace",
   "enableCreateInPlace",
+  "enableFocusNodeEditor",
   "enableLinksToResources",
   "enableUndoRedo",
   "facetChangeMode",

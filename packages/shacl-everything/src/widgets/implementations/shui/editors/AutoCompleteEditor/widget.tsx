@@ -1,10 +1,12 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
 import type { NamedNode } from "@rdfjs/types";
-import { Loading, Plus, Search } from "@/helpers/icons.tsx";
+import { Loading, Search } from "@/helpers/icons.tsx";
 import { sh, st } from "@/helpers/namespaces.ts";
 import AutoCompleteOption from "@/outputs/render/components/AutoCompleteOption/index.tsx";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
+import CreateOptionLabel from "@/outputs/render/components/CreateOptionLabel/index.tsx";
+import DraftFocusNodeEditor from "@/outputs/render/components/FocusNodeEditor/DraftFocusNodeEditor.tsx";
 import { useConformingCandidates } from "@/outputs/render/hooks/useConformingCandidates.ts";
 import { useCreateInPlace } from "@/outputs/render/hooks/useCreateInPlace.ts";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
@@ -37,11 +39,12 @@ export default function AutoCompleteEditor({
   // values" - double as the facet-search modal's own scope and the edit-in-place resource shapes.
   const {
     canCreate,
+    choices: createChoices,
     nodeShapes,
     draft,
-    start: createNew,
     commit,
     cancel: cancelCreate,
+    renameSubject,
   } = useCreateInPlace(shape, setTerm);
 
   // Whether the search icon opens the facet-search modal instead of the ordinary inline typeahead
@@ -181,6 +184,7 @@ export default function AutoCompleteEditor({
   const submitCreate = () => {
     if (commit()) {
       reset();
+      setFacetSearching(false);
       setMode("view");
     }
   };
@@ -193,7 +197,7 @@ export default function AutoCompleteEditor({
   );
   // The create row (when offered) is appended after every search result as one more navigable
   // row of the same listbox - see the dropdown markup below.
-  const rowCount = options.length + (canCreate ? 1 : 0);
+  const rowCount = options.length + createChoices.length;
   const dropdownOpen = focused && (results !== undefined || showSuggestions || canCreate);
 
   // Rendered from both modes below - creating stays in "edit" mode until the modal is submitted
@@ -206,6 +210,7 @@ export default function AutoCompleteEditor({
       title={<Localized id="create-new-reference-title">New item</Localized>}
       dataGraph={draft.dataGraph}
     >
+      <DraftFocusNodeEditor draft={draft} renameSubject={renameSubject} />
       <NodeUIElementChildren nodeUiElement={draft.node} />
       <div className="st-autocomplete__create-actions">
         <button type="button" className="st-button st-button--primary" onClick={submitCreate}>
@@ -266,6 +271,7 @@ export default function AutoCompleteEditor({
             shape={shape}
             nodeShapes={nodeShapes}
             candidateInstances={conformingFacetSearchCandidates ?? []}
+            createChoices={createChoices}
             onSelect={(result) => {
               apply(result);
               setFacetSearching(false);
@@ -322,7 +328,7 @@ export default function AutoCompleteEditor({
               setActiveIndex(rowCount - 1);
             } else if (event.key === "Enter") {
               if (activeIndex >= options.length && canCreate) {
-                createNew();
+                createChoices[activeIndex - options.length]?.start();
               } else {
                 const target = options[activeIndex] ?? options[0];
                 if (target) apply(target);
@@ -374,27 +380,28 @@ export default function AutoCompleteEditor({
               <Localized id="autocomplete-no-results">No results found</Localized>
             </div>
           ) : null}
-          {canCreate && (
-            <div
-              id={`${listboxId}-option-${options.length}`}
-              ref={(el) => {
-                optionRefs.current[options.length] = el;
-              }}
-              className={`st-autocomplete__result st-autocomplete__result--create st-combo-result ${options.length === activeIndex ? "st-autocomplete__result--active st-combo-result--active" : ""}`}
-              role="option"
-              aria-selected={false}
-              // Keeps focus on the input during the click, same as every result row above - onClick
-              // still runs normally afterwards.
-              onMouseDown={(event) => event.preventDefault()}
-              onMouseEnter={() => setActiveIndex(options.length)}
-              onClick={createNew}
-            >
-              <span className="st-create-option">
-                <Plus />
-                <Localized id="create-new-reference-option">Create new…</Localized>
-              </span>
-            </div>
-          )}
+          {createChoices.map((choice, choiceIndex) => {
+            const index = options.length + choiceIndex;
+            return (
+              <div
+                key={`create-${choice.key}`}
+                id={`${listboxId}-option-${index}`}
+                ref={(el) => {
+                  optionRefs.current[index] = el;
+                }}
+                className={`st-autocomplete__result st-autocomplete__result--create st-combo-result ${index === activeIndex ? "st-autocomplete__result--active st-combo-result--active" : ""}`}
+                role="option"
+                aria-selected={false}
+                // Keeps focus on the input during the click, same as every result row above - onClick
+                // still runs normally afterwards.
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setActiveIndex(index)}
+                onClick={choice.start}
+              >
+                <CreateOptionLabel label={choice.label} />
+              </div>
+            );
+          })}
         </div>
       )}
       {createModal}

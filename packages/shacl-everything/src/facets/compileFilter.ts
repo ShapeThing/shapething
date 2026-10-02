@@ -180,7 +180,9 @@ function compileConstraint(
   const areaSparql = area && termToSparql(area);
   if (areaSparql) conditions.push(`<${geof("sfWithin").value}>(${value}, ${areaSparql})`);
 
-  if (conditions.length === 0 && extraPatterns.length === 0) return undefined;
+  const countPattern = compileValueCount(read(sh("minCount"))[0], read(sh("maxCount"))[0], pathSparql, prefix);
+
+  if (conditions.length === 0 && extraPatterns.length === 0) return countPattern;
 
   const body = [
     `?this ${pathSparql} ${value} .`,
@@ -192,7 +194,36 @@ function compileConstraint(
   // wrong outer binding, so an area constraint is a plain join instead: it can repeat ?this once per
   // matching value, which every query built on these patterns absorbs (COUNT(DISTINCT ?this),
   // SELECT DISTINCT ?this, MIN/MAX).
-  return areaSparql ? `{ ${body} }` : `FILTER EXISTS { ${body} }`;
+  const valuePattern = areaSparql ? `{ ${body} }` : `FILTER EXISTS { ${body} }`;
+  return countPattern ? `${valuePattern}\n${countPattern}` : valuePattern;
+}
+
+/**
+ * st:CountFacet's sh:minCount/sh:maxCount - unlike every value-level constraint above ("some value
+ * matches"), these are about how many values `?this` holds on the path, so they sit directly on
+ * the sh:property node with their plain SHACL meaning. Counted per instance by a grouped subquery
+ * left-joined onto `?this` - which must already be bound by then (see matchingInstancesQuery) - so
+ * an instance with no value at all counts as 0 rather than dropping out.
+ */
+function compileValueCount(
+  minCount: Term | undefined,
+  maxCount: Term | undefined,
+  pathSparql: string,
+  prefix: string,
+): string | undefined {
+  const count = `COALESCE(?${prefix}Count, 0)`;
+  const conditions: string[] = [];
+  const min = minCount ? parseInt(minCount.value, 10) : Number.NaN;
+  const max = maxCount ? parseInt(maxCount.value, 10) : Number.NaN;
+  if (!Number.isNaN(min)) conditions.push(`${count} >= ${min}`);
+  if (!Number.isNaN(max)) conditions.push(`${count} <= ${max}`);
+  if (conditions.length === 0) return undefined;
+
+  const value = `?${prefix}CountValue`;
+  return [
+    `OPTIONAL { { SELECT ?this (COUNT(DISTINCT ${value}) AS ?${prefix}Count) WHERE { ?this ${pathSparql} ${value} . } GROUP BY ?this } }`,
+    `FILTER(${conditions.join(" && ")})`,
+  ].join(" ");
 }
 
 // sparqlFilterForBucket speaks in fixed ?hue/?sat/?light variables - renamed per constraint so two

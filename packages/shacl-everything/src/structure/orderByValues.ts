@@ -19,7 +19,9 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
  * sh:order lists a node shape's sh:property values by each property shape's own sh:order.
  */
 export function orderByPath(propertyUIElement: PropertyUIElement): PropertyPath | undefined {
-  const node = propertyUIElement.get(st("orderBy")) as Term | undefined;
+  // keepFirst (constraintResolutions.ts) resolves st:orderBy to a single term, but st() isn't
+  // literal-typed, so get()'s PredicateReturn can't know that and falls back to Term[].
+  const node = propertyUIElement.get(st("orderBy")) as unknown as Term | undefined;
   if (!node || node.termType === "Literal") return undefined;
   if (isUnsetPathNode(node, propertyUIElement.shapesGraph)) return undefined;
   return parsePathNode(node, propertyUIElement.shapesGraph);

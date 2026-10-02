@@ -17,6 +17,7 @@ details-editor-options =
     .aria-label = Field options
 select-an-option = - Select an option -
 create-new-reference-option = Create new…
+create-new-reference-option-class = Create new { $class }…
 create-new-reference-title = New item
 create-new-reference-done = Done
 widget-switcher-label = Pick a widget
@@ -84,6 +85,132 @@ property-federated-search-tooltip = This field searches an external data source
 validation-severity-violation = Error:
 validation-severity-warning = Warning:
 validation-severity-info = Info:
+report-count-violation = { $count ->
+    [one] 1 error
+   *[other] { $count } errors
+}
+report-count-warning = { $count ->
+    [one] 1 warning
+   *[other] { $count } warnings
+}
+report-count-info = { $count ->
+    [one] 1 notice
+   *[other] { $count } notices
+}
+report-count-other = { $count ->
+    [one] 1 other remark
+   *[other] { $count } other remarks
+}
+report-conforms = No problems found
+report-does-not-conform = Does not conform
+report-unnamed-resource = Unnamed resource
+report-no-value = No value has been given
+report-constraint-class = { $known ->
+    [yes] Must be a { $value }
+   *[no] Is not of the expected type
+}
+report-constraint-datatype = { $known ->
+    [yes] Must be of type { $value }
+   *[no] Has the wrong type of value
+}
+report-constraint-node-kind = { $known ->
+    [yes] Must be a { $value }
+   *[no] Is the wrong kind of value
+}
+report-constraint-min-count = { $known ->
+    [yes] { $value ->
+        [one] Is required
+       *[other] Must have at least { $value } values
+    }
+   *[no] Has too few values
+}
+report-constraint-max-count = { $known ->
+    [yes] { $value ->
+        [0] Must not have a value
+        [one] Must have only one value
+       *[other] Must have at most { $value } values
+    }
+   *[no] Has too many values
+}
+report-constraint-min-exclusive = { $known ->
+    [yes] Must be greater than { $value }
+   *[no] Is too small
+}
+report-constraint-min-inclusive = { $known ->
+    [yes] Must be at least { $value }
+   *[no] Is too small
+}
+report-constraint-max-exclusive = { $known ->
+    [yes] Must be less than { $value }
+   *[no] Is too large
+}
+report-constraint-max-inclusive = { $known ->
+    [yes] Must be at most { $value }
+   *[no] Is too large
+}
+report-constraint-min-length = { $known ->
+    [yes] Must be at least { $value } characters long
+   *[no] Is too short
+}
+report-constraint-max-length = { $known ->
+    [yes] Must be at most { $value } characters long
+   *[no] Is too long
+}
+report-constraint-pattern = { $known ->
+    [yes] Does not match the pattern { $value }
+   *[no] Does not have the expected format
+}
+report-constraint-language-in = { $known ->
+    [yes] Must be in { $value }
+   *[no] Is in a language that is not allowed
+}
+report-constraint-unique-lang = Has more than one value in the same language
+report-constraint-equals = { $known ->
+    [yes] Must have the same values as { $value }
+   *[no] Does not match a related property
+}
+report-constraint-disjoint = { $known ->
+    [yes] Must not share a value with { $value }
+   *[no] Shares a value with a related property
+}
+report-constraint-less-than = { $known ->
+    [yes] Must be less than { $value }
+   *[no] Is not less than a related property
+}
+report-constraint-less-than-or-equals = { $known ->
+    [yes] Must not be greater than { $value }
+   *[no] Is greater than a related property
+}
+report-constraint-not = { $known ->
+    [yes] Must not be a { $value }
+   *[no] Matches something it must not
+}
+report-constraint-and = Does not meet all of the required conditions
+report-constraint-or = Does not meet any of the allowed alternatives
+report-constraint-xone = Must meet exactly one of the alternatives
+report-constraint-node = { $known ->
+    [yes] Is not a valid { $value }
+   *[no] Does not have the expected structure
+}
+report-constraint-qualified-min-count = { $known ->
+    [yes] Must have at least { $value } values of the required kind
+   *[no] Has too few values of the required kind
+}
+report-constraint-qualified-max-count = { $known ->
+    [yes] Must have at most { $value } values of the required kind
+   *[no] Has too many values of the required kind
+}
+report-constraint-closed = Is not allowed here
+report-constraint-has-value = { $known ->
+    [yes] Must include { $value }
+   *[no] Is missing a required value
+}
+report-constraint-in = { $known ->
+    [yes] Must be { $value }
+   *[no] Is not one of the allowed values
+}
+report-constraint-sparql = Does not meet a custom rule
+report-constraint-other = Does not meet a requirement ({ $constraint })
 fileupload-description = Drag some files here or click to select files
 fileupload-missing-upload-url = Missing st:uploadUrl on the property shape
 fileupload-error = Upload failed
@@ -202,3 +329,12 @@ iri-editor-suggestion-from-lov = Suggestions
 iri-editor-suggestion-type-class = class
 iri-editor-suggestion-type-property = property
 widget-render-error = This field could not be displayed.
+focus-node-editor =
+    .label = Identifier
+    .description = The IRI that identifies this resource.
+focus-node-editor-invalid = Enter an absolute IRI, such as https://example.org/alice.
+focus-node-editor-in-use = This IRI already identifies another resource.
+focus-node-editor-pattern = This IRI doesn't match the pattern the shape requires.
+diff-added = Added:
+diff-removed = Removed:
+diff-changed = Changed:

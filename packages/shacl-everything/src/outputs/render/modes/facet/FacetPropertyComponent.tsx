@@ -38,6 +38,9 @@ const SINGLE_CONDITION_PREDICATES = [
   sh("maxExclusive"),
   sh("pattern"),
   st("withinArea"),
+  // st:CountFacet's value-count range.
+  sh("minCount"),
+  sh("maxCount"),
 ];
 
 /**

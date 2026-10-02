@@ -17,6 +17,7 @@ details-editor-options =
     .aria-label = Veldopties
 select-an-option = - Selecteer een optie -
 create-new-reference-option = Nieuw aanmaken…
+create-new-reference-option-class = Nieuw: { $class }…
 create-new-reference-title = Nieuw item
 create-new-reference-done = Klaar
 widget-switcher-label = Selecteer een widget
@@ -82,6 +83,132 @@ property-federated-search-tooltip = Dit veld doorzoekt een externe gegevensbron
 validation-severity-violation = Fout:
 validation-severity-warning = Waarschuwing:
 validation-severity-info = Info:
+report-count-violation = { $count ->
+    [one] 1 fout
+   *[other] { $count } fouten
+}
+report-count-warning = { $count ->
+    [one] 1 waarschuwing
+   *[other] { $count } waarschuwingen
+}
+report-count-info = { $count ->
+    [one] 1 melding
+   *[other] { $count } meldingen
+}
+report-count-other = { $count ->
+    [one] 1 andere opmerking
+   *[other] { $count } andere opmerkingen
+}
+report-conforms = Geen problemen gevonden
+report-does-not-conform = Voldoet niet
+report-unnamed-resource = Naamloze bron
+report-no-value = Er is geen waarde opgegeven
+report-constraint-class = { $known ->
+    [yes] Moet een { $value } zijn
+   *[no] Is niet van het verwachte type
+}
+report-constraint-datatype = { $known ->
+    [yes] Moet van het type { $value } zijn
+   *[no] Heeft het verkeerde type waarde
+}
+report-constraint-node-kind = { $known ->
+    [yes] Moet een { $value } zijn
+   *[no] Is het verkeerde soort waarde
+}
+report-constraint-min-count = { $known ->
+    [yes] { $value ->
+        [one] Is verplicht
+       *[other] Moet minstens { $value } waarden hebben
+    }
+   *[no] Heeft te weinig waarden
+}
+report-constraint-max-count = { $known ->
+    [yes] { $value ->
+        [0] Mag geen waarde hebben
+        [one] Mag maar één waarde hebben
+       *[other] Mag hoogstens { $value } waarden hebben
+    }
+   *[no] Heeft te veel waarden
+}
+report-constraint-min-exclusive = { $known ->
+    [yes] Moet groter zijn dan { $value }
+   *[no] Is te klein
+}
+report-constraint-min-inclusive = { $known ->
+    [yes] Moet minstens { $value } zijn
+   *[no] Is te klein
+}
+report-constraint-max-exclusive = { $known ->
+    [yes] Moet kleiner zijn dan { $value }
+   *[no] Is te groot
+}
+report-constraint-max-inclusive = { $known ->
+    [yes] Mag hoogstens { $value } zijn
+   *[no] Is te groot
+}
+report-constraint-min-length = { $known ->
+    [yes] Moet minstens { $value } tekens lang zijn
+   *[no] Is te kort
+}
+report-constraint-max-length = { $known ->
+    [yes] Mag hoogstens { $value } tekens lang zijn
+   *[no] Is te lang
+}
+report-constraint-pattern = { $known ->
+    [yes] Komt niet overeen met het patroon { $value }
+   *[no] Heeft niet het verwachte formaat
+}
+report-constraint-language-in = { $known ->
+    [yes] Moet in { $value } zijn
+   *[no] Is in een taal die niet is toegestaan
+}
+report-constraint-unique-lang = Heeft meer dan één waarde in dezelfde taal
+report-constraint-equals = { $known ->
+    [yes] Moet dezelfde waarden hebben als { $value }
+   *[no] Komt niet overeen met een gerelateerde eigenschap
+}
+report-constraint-disjoint = { $known ->
+    [yes] Mag geen waarde delen met { $value }
+   *[no] Deelt een waarde met een gerelateerde eigenschap
+}
+report-constraint-less-than = { $known ->
+    [yes] Moet kleiner zijn dan { $value }
+   *[no] Is niet kleiner dan een gerelateerde eigenschap
+}
+report-constraint-less-than-or-equals = { $known ->
+    [yes] Mag niet groter zijn dan { $value }
+   *[no] Is groter dan een gerelateerde eigenschap
+}
+report-constraint-not = { $known ->
+    [yes] Mag geen { $value } zijn
+   *[no] Voldoet aan iets waaraan het niet mag voldoen
+}
+report-constraint-and = Voldoet niet aan alle vereiste voorwaarden
+report-constraint-or = Voldoet aan geen van de toegestane alternatieven
+report-constraint-xone = Moet aan precies één van de alternatieven voldoen
+report-constraint-node = { $known ->
+    [yes] Voldoet niet aan de eisen voor { $value }
+   *[no] Heeft niet de verwachte structuur
+}
+report-constraint-qualified-min-count = { $known ->
+    [yes] Moet minstens { $value } waarden van de vereiste soort hebben
+   *[no] Heeft te weinig waarden van de vereiste soort
+}
+report-constraint-qualified-max-count = { $known ->
+    [yes] Mag hoogstens { $value } waarden van de vereiste soort hebben
+   *[no] Heeft te veel waarden van de vereiste soort
+}
+report-constraint-closed = Is hier niet toegestaan
+report-constraint-has-value = { $known ->
+    [yes] Moet { $value } bevatten
+   *[no] Mist een verplichte waarde
+}
+report-constraint-in = { $known ->
+    [yes] Moet { $value } zijn
+   *[no] Is niet een van de toegestane waarden
+}
+report-constraint-sparql = Voldoet niet aan een aangepaste regel
+report-constraint-other = Voldoet niet aan een eis ({ $constraint })
 switch-to-iri = Verander naaro IRI
 fileupload-description = Sleep hier bestanden of klik om bestanden te selecteren
 fileupload-missing-upload-url = st:uploadUrl ontbreekt op de property shape
@@ -200,3 +327,12 @@ iri-editor-suggestion-from-lov = Suggesties
 iri-editor-suggestion-type-class = klasse
 iri-editor-suggestion-type-property = property
 widget-render-error = Dit veld kon niet worden weergegeven.
+focus-node-editor =
+    .label = Identificatie
+    .description = De IRI waarmee deze resource wordt geïdentificeerd.
+focus-node-editor-invalid = Vul een absolute IRI in, zoals https://example.org/alice.
+focus-node-editor-in-use = Deze IRI identificeert al een andere resource.
+focus-node-editor-pattern = Deze IRI voldoet niet aan het patroon dat de shape vereist.
+diff-added = Toegevoegd:
+diff-removed = Verwijderd:
+diff-changed = Gewijzigd:

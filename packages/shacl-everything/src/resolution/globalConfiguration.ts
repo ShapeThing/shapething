@@ -53,3 +53,49 @@ export function getLabelPreference(shapesGraph: RdfStore): PropertyPath[] {
     )
     : [];
 }
+
+/**
+ * shui:defaultNamespace (3.4): the namespace fresh user-added nodes are minted in (see
+ * helpers/freshIri.ts). The value is a literal whose lexical form is an IRI, but an IRI node is
+ * accepted too - only its string value is used. Returns undefined when unconfigured.
+ */
+export function getDefaultNamespace(shapesGraph: RdfStore): string | undefined {
+  const subject = configurationSubject(shapesGraph);
+  const value = subject &&
+    shapesGraph.getQuads(subject, shui("defaultNamespace"))[0]?.object.value;
+  return value || undefined;
+}
+
+/**
+ * shui:timeZone (3.4): the IANA time zone new xsd:dateTime terms are constructed in (see
+ * helpers/timeZone.ts). An identifier the platform's Intl doesn't recognize is ignored with a
+ * warning rather than thrown, so a typo degrades to the unconfigured behavior instead of breaking
+ * every date-time widget. Returns undefined when unconfigured.
+ */
+export function getTimeZone(shapesGraph: RdfStore): string | undefined {
+  const subject = configurationSubject(shapesGraph);
+  const value = subject &&
+    shapesGraph.getQuads(subject, shui("timeZone"))[0]?.object.value;
+  if (!value) return undefined;
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: value });
+    return value;
+  } catch {
+    console.warn(`shui:timeZone "${value}" is not a recognized time zone, ignoring it`);
+    return undefined;
+  }
+}
+
+/**
+ * shui:readOnlyGraph (3.4): the named graphs whose triples can't be edited (e.g. inferred by a
+ * reasoner). Returns [] when unconfigured - see preprocess/readOnlyGraphs.ts for how these feed
+ * Environment.readOnlyGraph.
+ */
+export function getReadOnlyGraphs(shapesGraph: RdfStore): Term[] {
+  const subject = configurationSubject(shapesGraph);
+  const head = subject &&
+    shapesGraph.getQuads(subject, shui("readOnlyGraph"))[0]?.object;
+  return head
+    ? expandListOrTerm(head, shapesGraph).filter((term) => term.termType === "NamedNode")
+    : [];
+}

@@ -1,0 +1,32 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+
+<#configuration>
+    a shui:Configuration ;
+    shui:readOnlyGraph ( <#inferred> ) .
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Product ;
+    sh:property [
+        sh:name "Name"@en ;
+        sh:path schema:name ;
+        sh:datatype xsd:string ;
+    ], [
+        sh:name "Tag"@en ;
+        sh:path ex:tag ;
+        sh:datatype xsd:string ;
+    ] .
+
+<#data>
+    a schema:Product ;
+    schema:name "Widget" ;
+    ex:tag "Alpha", "Bravo" .
+
+# Triples a reasoner derived - listed in shui:readOnlyGraph above, so they can't be edited.
+<#inferred> {
+    <#data> ex:tag "Inferred" .
+}

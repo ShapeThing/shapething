@@ -1,0 +1,11 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+
+# Three emails: one valid, two invalid for different reasons - see multiple-values-report.ttl.
+ex:hendrik
+    a schema:Person ;
+    rdfs:label "Hendrik" ;
+    schema:name "Hendrik" ;
+    schema:email "hendrik@example.org", "hendrik.example.org", "hendrik.jansen.from.amersfoort@example.org" ;
+    .

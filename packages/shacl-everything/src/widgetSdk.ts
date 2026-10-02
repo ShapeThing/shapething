@@ -49,6 +49,7 @@ export { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 export {
   useFacetColorBuckets,
   useFacetValueBounds,
+  useFacetValueCountBounds,
   useFacetValueCounts,
   useFacetValues,
 } from "@/outputs/render/modes/facet/facetData.tsx";

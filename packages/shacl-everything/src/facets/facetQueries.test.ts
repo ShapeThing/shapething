@@ -21,6 +21,7 @@ import {
   parseValueCounts,
   toCountMap,
   valueBoundsQuery,
+  valueCountBoundsQuery,
   valueCountsQuery,
 } from "@/facets/facetQueries.ts";
 import { createFilterShape, setFilterConstraintForProperty } from "@/facets/filterShape.ts";
@@ -134,6 +135,45 @@ describe.each(sources)("facet queries (%s)", (kind, makeSource) => {
     const { run, targets } = await setup();
     const bounds = parseValueBounds(await run(valueBoundsQuery(`<${ex("price").value}>`, { targets, filter: "" })));
     expect([bounds.min?.value, bounds.max?.value]).toEqual(["15", "900"]);
+  });
+
+  test("value count bounds count an instance without any value as 0", async () => {
+    const { run, targets } = await setup();
+    const bounds = parseValueBounds(
+      await run(valueCountBoundsQuery(`<${ex("category").value}>`, { targets, filter: "" })),
+    );
+    expect([bounds.min?.value, bounds.max?.value]).toEqual(["0", "2"]);
+  });
+
+  test("sh:minCount/sh:maxCount filter on how many values an instance holds", async () => {
+    const { run, targets, property, classGraphs } = await setup();
+    const matchingFor = async (entries: [ReturnType<typeof sh>, string][], candidates?: Quad_Subject[]) => {
+      const filterShape = createFilterShape();
+      for (const [predicate, value] of entries) {
+        setFilterConstraintForProperty(
+          filterShape,
+          property("categoryProperty"),
+          predicate,
+          factory.literal(value, xsd("integer")),
+        );
+      }
+      const filter = compileFilter(filterShape, { classGraphs });
+      const query = candidates
+        ? matchingInstancesQuery({ targets: "", filter }, candidates)
+        : matchingInstancesQuery({ targets, filter });
+      return parseInstances(await run(query)).map((term) => term.value).sort();
+    };
+
+    expect(await matchingFor([[sh("minCount"), "2"]])).toEqual([ex("laptop").value]);
+    expect(await matchingFor([[sh("minCount"), "1"], [sh("maxCount"), "1"]])).toEqual(
+      [ex("desk"), ex("phone")].map((term) => term.value).sort(),
+    );
+    // Zero values is a count too - ex:novel has no category at all.
+    expect(await matchingFor([[sh("maxCount"), "0"]])).toEqual([ex("novel").value]);
+    // The same holds when the instances come from an explicit candidate list (FacetSearchModal).
+    expect(
+      await matchingFor([[sh("maxCount"), "0"]], [ex("novel"), ex("laptop")] as Quad_Subject[]),
+    ).toEqual([ex("novel").value]);
   });
 
   test("color buckets are classified by the source, and a bucket pick filters the same way", async () => {

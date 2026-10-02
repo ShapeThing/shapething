@@ -5,6 +5,7 @@ import type { BCP47 } from "@/types/BCP47.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
 import type { LocaleLoaderOverrides } from "@/l10n/locales.ts";
 import type { Widgets } from "@/widgets/types.ts";
+import type { ResolvedReport } from "@/validation/report.ts";
 
 // What the edit mode form hands back on submit: a fresh RdfStore containing a copy of every quad
 // currently in dataGraph (not the live, reactive dataGraph itself), plus the quads added/removed
@@ -13,6 +14,9 @@ export type SubmitResult = {
   dataGraph: RdfStore;
   additions: Quad[];
   deletions: Quad[];
+  // Edit mode only: the focus node as submitted - Environment.focusNode, unless it was renamed
+  // through Environment.enableFocusNodeEditor, in which case every quad above already uses this.
+  focusNode?: NamedNode;
 };
 
 export type Environment = {
@@ -22,12 +26,36 @@ export type Environment = {
   // Existing triples also present here render read-only in edit mode - their shui:viewer widget
   // instead of their shui:editor, with no remove control - found by walking a property's own path
   // through this graph the same way getObjects() walks dataGraph (see
-  // PropertyUIElement.isReadOnly()). Driven purely by graph membership, nothing else: there is no
-  // per-shape/per-widget declarative opt-in (yet) - the motivating case is an embedder materializing
-  // inferred/derived triples into dataGraph alongside the user's own asserted ones, which shouldn't
-  // be directly editable. Unset (the default) means nothing is read-only, same as before this field
-  // existed. Ignored outside mode "edit".
+  // PropertyUIElement.isReadOnly()). Driven purely by graph membership, nothing else - the
+  // motivating case is an embedder materializing inferred/derived triples into dataGraph alongside
+  // the user's own asserted ones, which shouldn't be directly editable. The shapes graph's
+  // shui:readOnlyGraph (3.4) adds dataGraph's triples in the named graphs it lists to this (see
+  // preprocess/readOnlyGraphs.ts). Unset (the default) means nothing is read-only, same as before
+  // this field existed. Ignored outside mode "edit".
   readOnlyGraph?: RdfStore;
+  // View mode only: what changed in dataGraph, rendered as a diff. dataGraph is the data as it is
+  // *now*; additionsGraph holds the triples that were added to get there, deletionsGraph the ones
+  // that were removed (and so are no longer in dataGraph) - exactly SubmitResult's additions and
+  // deletions, so an edit's result can be shown back as-is. Removed values are rendered (struck
+  // through) alongside the current ones, added values are highlighted, and a property where one
+  // xsd:string/rdf:langString value was swapped for another shows a single value with the change
+  // marked inside its text. Values are matched by term equality, so blank nodes only line up when
+  // the graphs share the same blank node terms (as SubmitResult's do). Ignored in other modes.
+  additionsGraph?: RdfStore;
+  deletionsGraph?: RdfStore;
+  // Report mode only, and required there: a SHACL validation report (an sh:ValidationReport and
+  // its sh:result values, SHACL 1.2 Core 3.6) to render. shapesGraph and dataGraph are both
+  // optional alongside it - without shapes, each result renders under a property generated from
+  // its own sh:resultPath; without data, the values the report itself mentions are shown (see
+  // preprocess/validationReport.ts). Ignored in other modes.
+  validationReport?: RdfStore;
+  // Filled in by preprocessing (preprocess/validationReport.ts), not by callers, in report mode:
+  // validationReport's results matched onto shapesGraph - see validation/report.ts.
+  report?: ResolvedReport;
+  // Filled in by preprocessing (preprocess/diff.ts), not by callers, when additionsGraph or
+  // deletionsGraph is given in view mode: the data as it is now and as it was before the change.
+  // dataGraph itself then holds both (now plus the deletions), so removed values still render.
+  diffGraphs?: { current: RdfStore; previous: RdfStore };
   // Filled in by preprocessing, not by callers: the triples dataGraph gained from its owl:imports
   // (and not asserted by the data itself). They stay in dataGraph so labels/class hierarchies from
   // imported vocabulary still resolve, but this separate record lets SubmitResult.dataGraph leave
@@ -67,7 +95,7 @@ export type Environment = {
   // array (e.g. an embedder passing in pre-parsed data) - there's no source text left to read a
   // prefix declaration from in that case.
   sourcePrefixes: Record<string, string>;
-  mode: "edit" | "view" | "facet";
+  mode: "edit" | "view" | "facet" | "report";
   interfaceLanguage: BCP47;
   // Interface locales (Fluent .ftl loaders), keyed by BCP47 tag, layered over the ones the
   // library ships out of the box. A tag already shipped built-in can be given here too, either to
@@ -149,6 +177,13 @@ export type Environment = {
   // creating rather than editing a referenced resource. When false, only existing instances can be
   // picked, same as before this option existed.
   enableCreateInPlace?: boolean;
+  // Edit mode only. Shows an "Identifier" field above the form for the IRI of the resource being
+  // edited - and, with enableCreateInPlace, of a resource created in place, instead of keeping its
+  // minted urn:uuid. The rename is applied when the form is submitted (every quad using the old IRI,
+  // as subject or object, then uses the new one - see SubmitResult.focusNode), not while editing,
+  // so the rest of the form keeps working against the focus node it was opened for. Off by default:
+  // most embedders mint identifiers themselves rather than letting users pick them.
+  enableFocusNodeEditor?: boolean;
   // Shows a link icon next to a NamedNode value in AutoCompleteOption (used by
   // shui:AutoCompleteEditor/InstancesSelectEditor's dropdown and selected-value display), linking
   // out to the term's own IRI in a new tab. When false, the icon is omitted and the value is
@@ -263,13 +298,22 @@ export type Environment = {
 export type RawEnvironment =
   & Omit<
     Environment,
-    "shapesGraph" | "dataGraph" | "scoresGraph" | "readOnlyGraph"
+    | "shapesGraph"
+    | "dataGraph"
+    | "scoresGraph"
+    | "readOnlyGraph"
+    | "additionsGraph"
+    | "deletionsGraph"
+    | "validationReport"
   >
   & {
     shapesGraph: RdfSource;
     dataGraph: RdfSource;
     scoresGraph: RdfSource;
     readOnlyGraph?: RdfSource;
+    additionsGraph?: RdfSource;
+    deletionsGraph?: RdfSource;
+    validationReport?: RdfSource;
   };
 
 export const defaultEnvironment: Environment = {
@@ -298,6 +342,7 @@ export const defaultEnvironment: Environment = {
   enableEditInPlace: true,
   enableViewInPlace: true,
   enableCreateInPlace: true,
+  enableFocusNodeEditor: false,
   enableLinksToResources: true,
   enableUndoRedo: true,
   facetChangeMode: "live",
@@ -338,6 +383,7 @@ export const minimalEnvironment: Omit<
   enableEditInPlace: false,
   enableViewInPlace: false,
   enableCreateInPlace: false,
+  enableFocusNodeEditor: false,
   enableLinksToResources: false,
   enableUndoRedo: false,
   facetChangeMode: "live",

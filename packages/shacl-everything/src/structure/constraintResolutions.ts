@@ -299,4 +299,7 @@ export const resolutions = new Map<string, ResolutionFunction<any>>([
   // sh:order is a decimal, so parsed as a float rather than truncated to an integer.
   [sh("order").value, keepLowestLiteral],
   [sh("group").value, keepFirst],
+  // A UI hint, not a constraint: every co-path shape's default is kept and seeded (see
+  // structure/defaultValues.ts) - a multi-valued property can start out with several.
+  [sh("defaultValue").value, keepAll],
 ]);

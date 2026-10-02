@@ -11,8 +11,8 @@ type SelectListboxProps<T extends any> = {
   renderTriggerContent: (value: T) => ReactNode;
   /** Receives `close` so inline actions (e.g. a per-row delete button) can close the dropdown. */
   renderOption: (value: T, close: () => void) => ReactNode;
-  /** Extra row appended after all options, e.g. "Add language…". */
-  extraRow?: { content: ReactNode; onActivate: () => void };
+  /** Extra rows appended after all options, e.g. "Add language…". */
+  extraRows?: { key: string; content: ReactNode; onActivate: () => void }[];
   /** Called when Delete is pressed on the keyboard-highlighted option. */
   onDeleteKey?: (value: T) => void;
   /** BEM block prefix for generated class names. Defaults to "st-listbox". */
@@ -30,7 +30,7 @@ export default function SelectListbox<T extends any>({
   onChange,
   renderTriggerContent,
   renderOption,
-  extraRow,
+  extraRows = [],
   onDeleteKey,
   classPrefix = "st-listbox",
   autoFocus,
@@ -44,7 +44,7 @@ export default function SelectListbox<T extends any>({
   const dropdownRef = useDropdownEscapeModal<HTMLDivElement>("min-width");
   const triggerId_ = triggerId ?? generatedId;
 
-  const rowCount = options.length + (extraRow ? 1 : 0);
+  const rowCount = options.length + extraRows.length;
 
   useEffect(() => {
     if (open && activeIndex >= 0)
@@ -66,11 +66,17 @@ export default function SelectListbox<T extends any>({
   const activateRow = (index: number) => {
     if (index < options.length) {
       selectOption(options[index]);
-    } else if (extraRow) {
-      close();
-      triggerRef.current?.focus();
-      extraRow.onActivate();
+    } else {
+      activateExtraRow(index - options.length);
     }
+  };
+
+  const activateExtraRow = (extraIndex: number) => {
+    const row = extraRows[extraIndex];
+    if (!row) return;
+    close();
+    triggerRef.current?.focus();
+    row.onActivate();
   };
 
   return (
@@ -158,29 +164,29 @@ export default function SelectListbox<T extends any>({
               {renderOption(option, close)}
             </div>
           ))}
-          {extraRow && (
-            <div
-              id={`${listboxId}-option-${options.length}`}
-              ref={(el) => {
-                optionRefs.current[options.length] = el;
-              }}
-              role="option"
-              aria-selected={false}
-              className={
-                `${classPrefix}__option` +
-                (activeIndex === options.length ? ` ${classPrefix}__option--active` : "")
-              }
-              onMouseDown={(event) => event.preventDefault()}
-              onMouseEnter={() => setActiveIndex(options.length)}
-              onClick={() => {
-                close();
-                triggerRef.current?.focus();
-                extraRow.onActivate();
-              }}
-            >
-              {extraRow.content}
-            </div>
-          )}
+          {extraRows.map((row, extraIndex) => {
+            const index = options.length + extraIndex;
+            return (
+              <div
+                key={`extra-${row.key}`}
+                id={`${listboxId}-option-${index}`}
+                ref={(el) => {
+                  optionRefs.current[index] = el;
+                }}
+                role="option"
+                aria-selected={false}
+                className={
+                  `${classPrefix}__option` +
+                  (activeIndex === index ? ` ${classPrefix}__option--active` : "")
+                }
+                onMouseDown={(event) => event.preventDefault()}
+                onMouseEnter={() => setActiveIndex(index)}
+                onClick={() => activateExtraRow(extraIndex)}
+              >
+                {row.content}
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

@@ -1,0 +1,23 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+<#configuration>
+    a shui:Configuration ;
+    shui:timeZone "Europe/Amsterdam" .
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Event ;
+    sh:property [
+        sh:name "Start"@en ;
+        sh:path schema:startDate ;
+        sh:datatype xsd:dateTime ;
+        sh:maxCount 1 ;
+    ] .
+
+# 07:30 UTC is 09:30 in Amsterdam (CEST), which is what the date-time picker shows.
+<#data>
+    a schema:Event ;
+    schema:startDate "2024-05-01T07:30:00Z"^^xsd:dateTime .

@@ -109,12 +109,15 @@ export default function ContentLanguageSwitcher() {
               )}
             </>
           )}
-          extraRow={
+          extraRows={
             showCreateOption
-              ? {
-                  content: <Localized id="content-language-create-option">Add language…</Localized>,
-                  onActivate: () => setCreateModalOpen(true),
-                }
+              ? [
+                  {
+                    key: "create",
+                    content: <Localized id="content-language-create-option">Add language…</Localized>,
+                    onActivate: () => setCreateModalOpen(true),
+                  },
+                ]
               : undefined
           }
           onDeleteKey={(language) => {

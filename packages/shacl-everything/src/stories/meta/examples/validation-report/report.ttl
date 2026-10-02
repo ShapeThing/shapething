@@ -1,0 +1,58 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+# The report a SHACL engine produced for data.ttl against shapes.ttl - kept in its own file, as it
+# would be in practice, so its blank nodes (e.g. the email property shape's) are its own.
+[]
+    a sh:ValidationReport ;
+    sh:conforms false ;
+    sh:result [
+        a sh:ValidationResult ;
+        sh:focusNode ex:hendrik ;
+        sh:resultPath schema:email ;
+        sh:value "hendrik.example.org" ;
+        sh:resultSeverity sh:Warning ;
+        sh:sourceShape _:emailShape ;
+        sh:sourceConstraintComponent sh:PatternConstraintComponent ;
+        sh:resultMessage "Value does not match pattern \"^[^@]+@[^@]+$\""@en ;
+    ] ;
+    sh:result [
+        a sh:ValidationResult ;
+        sh:focusNode ex:hendrik ;
+        sh:resultPath schema:address ;
+        sh:value ex:hendrik-address ;
+        sh:resultSeverity sh:Violation ;
+        sh:sourceShape ex:PersonShape-address ;
+        sh:sourceConstraintComponent sh:NodeConstraintComponent ;
+        sh:detail [
+            a sh:ValidationResult ;
+            sh:focusNode ex:hendrik-address ;
+            sh:resultPath schema:postalCode ;
+            sh:value "38111BH" ;
+            sh:resultSeverity sh:Violation ;
+            sh:sourceShape ex:AddressShape-postalCode ;
+            sh:sourceConstraintComponent sh:PatternConstraintComponent ;
+            sh:resultMessage "Use a Dutch postal code, like 1234 AB"@en, "Gebruik een Nederlandse postcode, zoals 1234 AB"@nl ;
+        ] ;
+    ] ;
+    sh:result [
+        a sh:ValidationResult ;
+        sh:focusNode ex:hendrik ;
+        sh:resultPath schema:birthDate ;
+        sh:value "2031-04-01"^^xsd:date ;
+        sh:resultSeverity sh:Violation ;
+        sh:sourceShape ex:PersonShape-birthDate ;
+        sh:sourceConstraintComponent sh:MaxInclusiveConstraintComponent ;
+    ] ;
+    sh:result [
+        a sh:ValidationResult ;
+        sh:focusNode ex:anonymous ;
+        sh:resultPath schema:name ;
+        sh:resultSeverity sh:Violation ;
+        sh:sourceShape ex:PersonShape-name ;
+        sh:sourceConstraintComponent sh:MinCountConstraintComponent ;
+        sh:resultMessage "Less than 1 values on ex:anonymous->schema:name"@en ;
+    ] ;
+    .

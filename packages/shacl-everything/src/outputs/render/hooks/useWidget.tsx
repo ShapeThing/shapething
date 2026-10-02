@@ -5,7 +5,7 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import {
   getWidgetComponent,
   getWidgetMeta,
-  widgetModeForPredicate,
+  widgetModeForEnvironment, widgetModeForPredicate,
   type WidgetMode,
 } from "@/widgets/registry.ts";
 import type { FacetWidgetComponent, WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
@@ -76,7 +76,7 @@ export function useWidget<T extends WidgetComponent | FacetWidgetComponent = Wid
     }
   | undefined {
   const { mode: environmentMode } = useEnvironment();
-  const mode = widgetModeForPredicate(widgetPredicate) ?? environmentMode;
+  const mode = widgetModeForPredicate(widgetPredicate) ?? widgetModeForEnvironment(environmentMode);
 
   const { data: widget, isPlaceholderData } = useQuery({
     ...widgetQueryOptions(mode, widgetPredicate, property, valueNode),

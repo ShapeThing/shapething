@@ -78,6 +78,7 @@ const modesComponents: Record<Environment["mode"], React.ComponentType> = {
   edit: lazy(() => import("@/outputs/render/modes/edit/index.tsx")),
   view: lazy(() => import("@/outputs/render/modes/view/index.tsx")),
   facet: lazy(() => import("@/outputs/render/modes/facet/index.tsx")),
+  report: lazy(() => import("@/outputs/render/modes/report/index.tsx")),
 };
 
 function ShaclRendererInner() {

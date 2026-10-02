@@ -1,5 +1,8 @@
 import type { Environment, RawEnvironment } from "@/environment.ts";
 import { resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
+import { resolveDiffGraphs } from "@/preprocess/diff.ts";
+import { resolveValidationReport } from "@/preprocess/validationReport.ts";
+import { resolveReadOnlyGraphs } from "@/preprocess/readOnlyGraphs.ts";
 import {
   distillInterfaceLanguages,
   distillLanguages,
@@ -24,6 +27,9 @@ export type Preprocessor = (
 
 export const defaultPreprocessors: readonly Preprocessor[] = [
   resolveRdfSources,
+  resolveValidationReport,
+  resolveDiffGraphs,
+  resolveReadOnlyGraphs,
   dropShapesWithMultiplePaths,
   distillLanguages,
   distillInterfaceLanguages,

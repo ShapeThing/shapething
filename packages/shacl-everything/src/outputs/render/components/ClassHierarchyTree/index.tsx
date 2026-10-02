@@ -12,6 +12,7 @@ type NodeProps = {
   inputType: "checkbox" | "radio";
   groupName: string;
   isChecked: (term: NamedNode) => boolean;
+  isDisabled: ((term: NamedNode) => boolean) | undefined;
   activeTerm: string | undefined;
   rowRefs: RefObject<Map<string, HTMLLabelElement>>;
   valueCounts: Map<string, number> | undefined;
@@ -24,6 +25,7 @@ function ClassHierarchyTreeNode({
   inputType,
   groupName,
   isChecked,
+  isDisabled,
   activeTerm,
   rowRefs,
   valueCounts,
@@ -34,6 +36,7 @@ function ClassHierarchyTreeNode({
   // descendants actually match. The caller's flattenVisibleClassNodes-derived keyboard nav stays in
   // sync with this same check.
   const matches = !query || node.label.toLowerCase().includes(query);
+  const disabled = isDisabled?.(node.term) === true;
 
   return (
     <div className="st-class-tree__node">
@@ -43,7 +46,7 @@ function ClassHierarchyTreeNode({
             if (el) rowRefs.current.set(node.term.value, el);
             else rowRefs.current.delete(node.term.value);
           }}
-          className={`st-option ${node.term.value === activeTerm ? "st-option--active" : ""}`}
+          className={`st-option ${node.term.value === activeTerm ? "st-option--active" : ""} ${disabled ? "st-option--disabled" : ""}`}
           // Keeps focus on the search input during the click, exactly like AutoCompleteEditor's and
           // EnumSelectEditor's own result rows - without this, the mousedown shifts focus onto this
           // label/input first, which fires the container's onBlur and closes the panel before the
@@ -57,6 +60,7 @@ function ClassHierarchyTreeNode({
             className="st-checkbox"
             name={inputType === "radio" ? groupName : undefined}
             checked={isChecked(node.term)}
+            disabled={disabled}
             onChange={(event) => onToggle(node.term, event.target.checked)}
             // Keyboard nav is entirely driven by the caller's own search input (arrow keys/enter) -
             // mirrors AutoCompleteEditor/EnumSelectEditor, whose result rows aren't part of the tab
@@ -83,6 +87,7 @@ function ClassHierarchyTreeNode({
               inputType={inputType}
               groupName={groupName}
               isChecked={isChecked}
+              isDisabled={isDisabled}
               activeTerm={activeTerm}
               rowRefs={rowRefs}
               valueCounts={valueCounts}
@@ -101,6 +106,9 @@ export type ClassHierarchyTreeProps = {
   inputType: "checkbox" | "radio";
   groupName: string;
   isChecked: (term: NamedNode) => boolean;
+  // A class that can't be picked, but still shows (and keeps its subtree reachable) - e.g.
+  // shui:SubClassEditor's dash:abstract classes on an rdf:type property.
+  isDisabled?: (term: NamedNode) => boolean;
   activeTerm: string | undefined;
   rowRefs: RefObject<Map<string, HTMLLabelElement>>;
   onToggle: (term: NamedNode, checked: boolean) => void;
@@ -123,6 +131,7 @@ export default function ClassHierarchyTree({
   inputType,
   groupName,
   isChecked,
+  isDisabled,
   activeTerm,
   rowRefs,
   valueCounts,
@@ -137,6 +146,7 @@ export default function ClassHierarchyTree({
           inputType={inputType}
           groupName={groupName}
           isChecked={isChecked}
+          isDisabled={isDisabled}
           activeTerm={activeTerm}
           rowRefs={rowRefs}
           valueCounts={valueCounts}

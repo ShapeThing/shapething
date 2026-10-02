@@ -2,7 +2,8 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Localized } from "@fluent/react";
 import type { NamedNode, Term } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
-import { sh } from "@/helpers/namespaces.ts";
+import { isAbstract } from "@/helpers/isAbstract.ts";
+import { rdf, sh } from "@/helpers/namespaces.ts";
 import { valueNodeLabel } from "@/resolution/label.ts";
 import ClassHierarchyTree from "@/outputs/render/components/ClassHierarchyTree/index.tsx";
 import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
@@ -77,6 +78,19 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
       rowRefs.current.get(activeTerm)?.scrollIntoView({ block: "nearest" });
     }
   }, [isOpen, activeTerm]);
+
+  // dash:abstract classes can't have direct instances (see helpers/isAbstract.ts) - so when this
+  // property *is* the resource's own rdf:type, they stay in the tree (their subclasses are what
+  // can be picked) but can't be picked themselves. Classes as plain values of any other property
+  // aren't instantiated by picking them, so nothing is disabled there.
+  const pathIsRdfType = useMemo(() => {
+    const path = shape.propertyPath();
+    return path?.type === "predicate" && path.predicate.equals(rdf("type"));
+  }, [shape]);
+  const isDisabled = pathIsRdfType
+    ? (candidate: NamedNode) =>
+        !isChecked(candidate) && isAbstract(candidate, [shape.shapesGraph, shape.dataGraph])
+    : undefined;
 
   const isChecked = (candidate: NamedNode): boolean =>
     isMultiValued
@@ -183,7 +197,7 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
               } else if (event.key === "Enter") {
                 event.preventDefault();
                 const target = visibleItems[activeIndex] ?? visibleItems[0];
-                if (target) toggle(target.term, isMultiValued ? !isChecked(target.term) : true);
+                if (target && !isDisabled?.(target.term)) toggle(target.term, isMultiValued ? !isChecked(target.term) : true);
               }
             }}
           />
@@ -198,6 +212,7 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
             inputType={inputType}
             groupName={groupName}
             isChecked={isChecked}
+            isDisabled={isDisabled}
             activeTerm={activeTerm}
             rowRefs={rowRefs}
             onToggle={toggle}

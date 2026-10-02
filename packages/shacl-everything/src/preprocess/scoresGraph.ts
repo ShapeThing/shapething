@@ -1,6 +1,6 @@
 import { RdfStore } from "rdf-stores";
 import type { Preprocessor } from "@/preprocess/index.ts";
-import { getScoringGraph, type WidgetMode } from "@/widgets/registry.ts";
+import { getScoringGraph, widgetModeForEnvironment, type WidgetMode } from "@/widgets/registry.ts";
 import type { Widgets } from "@/widgets/types.ts";
 
 // Callers only need to supply scoresGraph explicitly when they want to override the built-in
@@ -24,8 +24,9 @@ export const resolveScoresGraph: Preprocessor = async (environment) => {
   // read-only (through the view-mode render tree) from inside edit mode.
   const needsViewerScores =
     environment.readOnlyGraph !== undefined || Boolean(environment.enableViewInPlace);
-  const modes: WidgetMode[] =
-    environment.mode === "edit" && needsViewerScores ? ["edit", "view"] : [environment.mode];
+  // Report mode renders through the view-mode tree (see modes/report/), so it scores viewers.
+  const mode = widgetModeForEnvironment(environment.mode);
+  const modes: WidgetMode[] = mode === "edit" && needsViewerScores ? ["edit", "view"] : [mode];
 
   if (modes.length === 1) {
     return { ...environment, scoresGraph: await getScoringGraph(modes[0], widgets) };

@@ -63,6 +63,18 @@ SELECT (MIN(?value) AS ?min) (MAX(?value) AS ?max) WHERE ${where(patterns, `?thi
 }
 
 /**
+ * The fewest and most values any one instance holds on `path` - st:CountFacet's bounds. An instance
+ * without any value counts as 0 (the OPTIONAL), not as missing - COALESCEd, since Comunica leaves a
+ * COUNT over nothing but unbound values unbound rather than 0.
+ */
+export function valueCountBoundsQuery(pathSparql: string, patterns: FacetPatterns): string {
+  return `${queryPrefixes}
+SELECT (MIN(COALESCE(?valueCount, 0)) AS ?min) (MAX(COALESCE(?valueCount, 0)) AS ?max) WHERE {
+  { SELECT ?this (COUNT(DISTINCT ?value) AS ?valueCount) WHERE ${where(patterns, `OPTIONAL { ?this ${pathSparql} ?value . }`)} GROUP BY ?this }
+}`;
+}
+
+/**
  * How many instances have a color value (st:hue/st:saturation/st:lightness - see
  * helpers/colorBuckets.ts) in each named bucket, classified by the source itself via the same
  * sparqlFilterForBucket text an st:colorBucket constraint compiles to - so the swatches a
@@ -104,8 +116,11 @@ export function matchingInstancesQuery(
       .map(termToSparql)
       .filter((term): term is string => term !== undefined)
       .join(" ")} }`;
+  // `candidates` go first, so ?this is already bound before the filter's own patterns - a value
+  // count constraint (see compileFilter) left-joins its per-instance count onto whatever ?this is
+  // bound so far, so binding it only afterwards would lose every candidate holding no value at all.
   return `${queryPrefixes}
-SELECT DISTINCT ?this WHERE ${where(patterns, values ?? "")}${limit !== undefined ? `\nLIMIT ${limit}` : ""}`;
+SELECT DISTINCT ?this WHERE ${where({ ...patterns, targets: [values, patterns.targets].filter(Boolean).join("\n") })}${limit !== undefined ? `\nLIMIT ${limit}` : ""}`;
 }
 
 /**

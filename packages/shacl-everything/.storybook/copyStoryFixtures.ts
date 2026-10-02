@@ -21,6 +21,7 @@ import type { Plugin } from "vite";
 // `assets/score.ttl` output name.
 const FIXTURE_EXTENSIONS = new Set([
   ".ttl",
+  ".trig",
   ".svg",
   ".jpg",
   ".jpeg",

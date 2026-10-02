@@ -10,6 +10,15 @@
   &.st-option--active {
     background-color: var(--st-primary-color-lighter);
   }
+
+  &.st-option--disabled {
+    color: var(--st-color-text-muted);
+    cursor: default;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
 }
 
 .st-checkbox {

@@ -1,5 +1,6 @@
 import type { Quad_Subject } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
+import { isAbstract } from "@/helpers/isAbstract.ts";
 import { isDeactivated } from "@/helpers/isDeactivated.ts";
 import { facetableRootShapes, shapesTargetingNode, targetsOfShape } from "@/resolution/targets.ts";
 
@@ -47,10 +48,12 @@ export function resolveFocusNodeAndNodeShapePairs(
 
   // Step 3: focus node given, node shape absent - one pair per (non-deactivated) shape that
   // targets it. Every matching shape is returned, not just the first - see the spec's own note
-  // that resolution enumerates and discards nothing.
+  // that resolution enumerates and discards nothing - except a dash:abstract one that a concrete
+  // shape also covers (see preferConcreteShapes).
   if (focusNode && !nodeShape) {
-    return shapesTargetingNode(focusNode, shapesGraph, dataGraph)
-      .filter((shape) => !isDeactivated(shape, shapesGraph))
+    const shapes = shapesTargetingNode(focusNode, shapesGraph, dataGraph)
+      .filter((shape) => !isDeactivated(shape, shapesGraph));
+    return preferConcreteShapes(shapes, [shapesGraph, dataGraph])
       .map((shape) => ({ focusNode, nodeShape: shape }));
   }
 
@@ -58,8 +61,9 @@ export function resolveFocusNodeAndNodeShapePairs(
   // facetableRootShapes already enumerates exactly the shapes that can produce a target (every
   // explicit target predicate, plus implicit class-shapes/shui:ShapeClass) - a shape with none of
   // those contributes an empty target set either way, so reusing it here is equivalent to (and
-  // cheaper than) walking every sh:NodeShape-typed subject.
-  return facetableRootShapes(shapesGraph)
+  // cheaper than) walking every sh:NodeShape-typed subject. Per focus node, a dash:abstract shape
+  // gives way to a concrete one the same way step 3 does (see preferConcreteShapes).
+  const pairs = facetableRootShapes(shapesGraph)
     .filter((shape) => !isDeactivated(shape, shapesGraph))
     .flatMap((shape) =>
       targetsOfShape(shape, shapesGraph, dataGraph).map((target) => ({
@@ -67,4 +71,26 @@ export function resolveFocusNodeAndNodeShapePairs(
         nodeShape: shape,
       })),
     );
+  const graphs = [shapesGraph, dataGraph];
+  return pairs.filter(
+    (pair) =>
+      !isAbstract(pair.nodeShape, graphs) ||
+      !pairs.some(
+        (other) => other.focusNode.equals(pair.focusNode) && !isAbstract(other.nodeShape, graphs),
+      ),
+  );
+}
+
+/**
+ * `shapes` (all targeting one focus node) without the dash:abstract ones, unless that would leave
+ * nothing. An instance of a concrete subclass is a SHACL instance of its abstract superclass too,
+ * so both shapes target it - but the abstract one only exists to be specialized (and its
+ * properties already come along with the concrete shape, see withSuperClassShapes), so offering it
+ * as a pair of its own would render the same resource twice. When no concrete shape targets the
+ * node (e.g. data typed with the abstract class directly), the abstract shape is still the best
+ * description there is and stays.
+ */
+function preferConcreteShapes(shapes: Quad_Subject[], graphs: RdfStore[]): Quad_Subject[] {
+  const concrete = shapes.filter((shape) => !isAbstract(shape, graphs));
+  return concrete.length > 0 ? concrete : shapes;
 }

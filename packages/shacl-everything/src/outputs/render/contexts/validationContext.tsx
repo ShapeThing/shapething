@@ -24,6 +24,16 @@ export type ValidationResult = {
   // render tree can pick the one matching the current interface language - see PropertyUIComponent/
   // PropertyUIComponentObject, which resolve it the same way sh:name/sh:description are resolved.
   message: Literal[];
+  // The sh:sourceConstraintComponent that produced this result (e.g. sh:MinCountConstraintComponent)
+  // - lets a result with no message of its own still be described (see ResultMessages).
+  constraintComponent?: Term;
+  // The shape in shapesGraph holding that constraint's parameters (sh:minCount's value, ...) - only
+  // set when that shape is actually known. Differs from sourceShape for a validation report's
+  // results (see validation/report.ts), where sourceShape is whichever property shape the result
+  // renders under, possibly one generated from sh:resultPath.
+  constraintShape?: Term;
+  // sh:detail's nested results (SHACL 1.2 Core, 3.6.2.7).
+  details?: ValidationResult[];
 };
 
 export type ValidationSnapshot = {

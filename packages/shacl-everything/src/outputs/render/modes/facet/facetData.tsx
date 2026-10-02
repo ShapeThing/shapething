@@ -16,6 +16,7 @@ import {
   parseValueCounts,
   toCountMap,
   valueBoundsQuery,
+  valueCountBoundsQuery,
   valueCountsQuery,
   type FacetQueryRunner,
   type ValueBounds,
@@ -225,6 +226,18 @@ export function useFacetValueBounds(): ValueBounds {
   const { targets } = useFacetSource();
   const query =
     pathSparql !== undefined ? valueBoundsQuery(pathSparql, { targets, filter: "" }) : undefined;
+  return useFacetQueryResult(query, parseValueBounds).data ?? {};
+}
+
+/**
+ * The fewest/most values any one target instance holds on this facet's path (0 for none) - see
+ * st:CountFacet.
+ */
+export function useFacetValueCountBounds(): ValueBounds {
+  const { pathSparql } = useFacetPropertyData();
+  const { targets } = useFacetSource();
+  const query =
+    pathSparql !== undefined ? valueCountBoundsQuery(pathSparql, { targets, filter: "" }) : undefined;
   return useFacetQueryResult(query, parseValueBounds).data ?? {};
 }
 

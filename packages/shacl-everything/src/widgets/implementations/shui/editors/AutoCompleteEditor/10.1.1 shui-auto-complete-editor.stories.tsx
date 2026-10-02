@@ -178,3 +178,43 @@ export const shuiAutoCompleteEditorFacetSearch: Story = {
     await expect(canvas.findByText("Japan")).resolves.toBeVisible();
   },
 };
+
+// Environment.enableFacetSearchForAutocomplete + enableCreateInPlace: the facet-search modal
+// replaces the inline dropdown, so it has to carry that dropdown's "Create new…" row too - the
+// draft's own "New item" modal opens on top of it, and Done closes both, adopting the new value.
+export const shuiAutoCompleteEditorFacetSearchCreate: Story = {
+  name: "Facet search modal with create in place (Environment.enableCreateInPlace)",
+  args: {
+    ...argsByTestFile("10.1.1 shui-auto-complete-editor-facet-search.ttl", import.meta.url),
+    enableFacetSearchForAutocomplete: true,
+    enableCreateInPlace: true,
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.click(await canvas.findByRole("button", { name: "Edit" }));
+    const facetDialog = await canvas.findByRole("dialog");
+    const facetScope = within(facetDialog);
+    await expect(facetScope.findByText("Netherlands")).resolves.toBeVisible();
+
+    await userEvent.click(await facetScope.findByText("Create new…"));
+
+    const createDialog = await waitFor(() => {
+      const dialog = canvas
+        .getAllByRole("dialog")
+        .find((element) => within(element).queryByText("New item"));
+      if (!dialog) throw new Error('Could not find the "New item" dialog');
+      return dialog;
+    });
+    const createScope = within(createDialog);
+
+    // countryShape's LabelRole property ("Search") is its first field. TextFieldEditor only
+    // commits on blur (see useDeferredInput), hence the trailing tab.
+    await userEvent.type(createScope.getAllByRole("textbox")[0], "Atlantis");
+    await userEvent.tab();
+
+    await userEvent.click(createScope.getByRole("button", { name: "Done" }));
+    await waitFor(() => expect(canvas.queryByRole("dialog")).toBeNull());
+    await expect(canvas.findByText("Atlantis")).resolves.toBeVisible();
+  },
+};

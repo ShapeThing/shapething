@@ -4,11 +4,13 @@ import { Localized } from "@fluent/react";
 import { rdf, sh } from "@/helpers/namespaces.ts";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
 import Teaser from "@/outputs/render/components/Teaser/index.tsx";
+import CreateOptionLabel from "@/outputs/render/components/CreateOptionLabel/index.tsx";
 import ShaclRenderer from "@/outputs/render/render.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
+import type { CreateInPlaceChoice } from "@/outputs/render/hooks/useCreateInPlace.ts";
 import type { SearchResult } from "@/outputs/render/hooks/query.ts";
 import type { SubmitResult } from "@/environment.ts";
 import type { FilterShape } from "@/facets/filterShape.ts";
@@ -29,6 +31,10 @@ type Props = {
   // narrow down, mirroring InstancesSelectEditor's own equivalent computation.
   candidateInstances: NamedNode[];
   onSelect: (result: SearchResult) => void;
+  // The owning AutoCompleteEditor's own "Create new…" rows (see useCreateInPlace), appended after
+  // the results the same way its inline dropdown does - the draft's Modal itself stays owned by
+  // the widget, opening on top of this one.
+  createChoices: CreateInPlaceChoice[];
 };
 
 /**
@@ -51,6 +57,7 @@ export default function FacetSearchModal({
   nodeShapes,
   candidateInstances,
   onSelect,
+  createChoices,
 }: Props) {
   const outerEnvironment = useEnvironment();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
@@ -150,6 +157,17 @@ export default function FacetSearchModal({
               );
             })
           )}
+          {createChoices.map((choice) => (
+            <div
+              key={`create-${choice.key}`}
+              role="option"
+              aria-selected={false}
+              className="st-autocomplete__result st-autocomplete__result--create"
+              onClick={choice.start}
+            >
+              <CreateOptionLabel label={choice.label} />
+            </div>
+          ))}
         </div>
       </div>
     </Modal>

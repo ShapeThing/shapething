@@ -2,6 +2,8 @@ import { factory } from "@/helpers/factory.ts";
 import { rdf, sh, xsd } from "@/helpers/namespaces.ts";
 import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
 import { useDeferredInput } from "@/outputs/render/hooks/useDeferredInput.ts";
+import { getTimeZone } from "@/resolution/globalConfiguration.ts";
+import { inTimeZone, withTimeZone } from "@/helpers/timeZone.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import type { NamedNode } from "@rdfjs/types";
 
@@ -50,9 +52,15 @@ export default function TextFieldEditor({
       ? declared
       : dataTypesMapping[type];
 
-  const { localValue, onChange, onBlur } = useDeferredInput(term, (value: string) =>
-    setTerm(factory.literal(withSeconds(value, type), datatype)),
-  );
+  // shui:timeZone (3.4): with a zone configured, a datetime-local input shows an existing value's
+  // wall-clock time in that zone, and a new value is written with that zone's offset.
+  const timeZone = type === "datetime-local" ? getTimeZone(shape.shapesGraph) : undefined;
+  const shown = timeZone ? factory.literal(inTimeZone(term.value, timeZone)) : term;
+
+  const { localValue, onChange, onBlur } = useDeferredInput(shown, (value: string) => {
+    const lexical = withSeconds(value, type);
+    setTerm(factory.literal(timeZone ? withTimeZone(lexical, timeZone) : lexical, datatype));
+  });
   const ref = useAutoFocusRef<HTMLInputElement>(autoFocus);
 
   return (

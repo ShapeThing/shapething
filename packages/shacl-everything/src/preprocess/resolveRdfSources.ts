@@ -435,17 +435,32 @@ export const resolveRdfSources = async (
   const sourcePrefixes = new Map<string, string>();
   const { corsProxyUrl } = raw;
   const importedDataGraph = RdfStore.createDefault();
-  const [resolvedShapesGraph, dataGraph, scoresGraph, readOnlyGraph] =
-    await Promise.all([
+  const optional = (source: RdfSource | undefined) =>
+    source !== undefined ? resolveRdfSource(source, quadCache, corsProxyUrl) : undefined;
+  const [
+    resolvedShapesGraph,
+    dataGraph,
+    scoresGraph,
+    readOnlyGraph,
+    additionsGraph,
+    deletionsGraph,
+    validationReport,
+  ] = await Promise.all([
       resolveRdfSource(raw.shapesGraph, quadCache, corsProxyUrl, sourcePrefixes),
       resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl, sourcePrefixes, importedDataGraph),
       resolveRdfSource(raw.scoresGraph, quadCache, corsProxyUrl),
-      raw.readOnlyGraph !== undefined
-        ? resolveRdfSource(raw.readOnlyGraph, quadCache, corsProxyUrl)
+      optional(raw.readOnlyGraph),
+      optional(raw.additionsGraph),
+      optional(raw.deletionsGraph),
+      // Its own prefixes count too: a report's sh:resultPath is rendered prefixed.
+      raw.validationReport !== undefined
+        ? resolveRdfSource(raw.validationReport, quadCache, corsProxyUrl, sourcePrefixes)
         : undefined,
     ]);
 
-  const shapesGraph = resolvedShapesGraph.size === 0
+  // A report renders fine without shapes (see preprocess/validationReport.ts), so report mode never
+  // goes looking for them through the data's own rdf:type/sh:shapesGraph.
+  const shapesGraph = resolvedShapesGraph.size === 0 && raw.mode !== "report"
     ? ((await dereferenceShapeTargets(dataGraph, quadCache, corsProxyUrl, sourcePrefixes)) ??
       resolvedShapesGraph)
     : resolvedShapesGraph;
@@ -472,6 +487,9 @@ export const resolveRdfSources = async (
     dataGraph,
     scoresGraph,
     readOnlyGraph,
+    additionsGraph,
+    deletionsGraph,
+    validationReport,
     importedDataGraph,
     nodeShapes: raw.nodeShapes?.length ? raw.nodeShapes : nodeShapes,
     sourcePrefixes: Object.fromEntries(sourcePrefixes),

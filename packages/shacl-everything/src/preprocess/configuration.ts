@@ -1,7 +1,7 @@
 import { RdfStore } from "rdf-stores";
 import type { Environment, RawEnvironment } from "@/environment.ts";
 
-const MODES = ["edit", "view", "facet"] as const;
+const MODES = ["edit", "view", "facet", "report"] as const;
 const LANGUAGE_MODES = ["switcher", "individual"] as const;
 const BCP47_PATTERN = /^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|\d{3}))?$/;
 
@@ -28,7 +28,13 @@ export const assertValidEnvironment = (environment: RawEnvironment): Environment
   // resolution/targets.ts's facetableRootShapes) - focusNode/nodeShapes stay at their harmless
   // defaultEnvironment placeholders and are simply never read, so neither is required here. For
   // every other mode both remain mandatory, same as before.
-  if (environment.mode !== "facet") {
+  // Report mode renders whichever focus nodes the report mentions, so it has no single focus node
+  // either - it needs the report itself instead.
+  if (environment.mode === "report") {
+    if (!(environment.validationReport instanceof RdfStore)) {
+      errors.push("validationReport must resolve to an RdfStore in report mode");
+    }
+  } else if (environment.mode !== "facet") {
     if (!isNamedNode(environment.focusNode)) {
       errors.push(`focusNode must be a NamedNode, got ${JSON.stringify(environment.focusNode)}`);
     }

@@ -45,6 +45,14 @@ export type History = {
    * of a quad add/remove when this step is undone/redone.
    */
   effect: (callbacks: { undo: () => void; redo: () => void }) => void;
+  /**
+   * Runs `fn` without recording any of its writes - they still notify subscribers, they just never
+   * become an undo()/redo() step of their own, nor part of a surrounding transaction(). For writes
+   * that set up the starting state rather than being an edit the user made (e.g. seeding a new
+   * resource's sh:defaultValue values, see EditModeWrapper) - undoing those would be undoing past
+   * the point the user started from.
+   */
+  untracked: <T>(fn: () => T) => T;
   /** Undoes the most recent step. Returns false (a no-op) if there was nothing to undo. */
   undo: () => boolean;
   /** Redoes the most recently undone step. Returns false (a no-op) if there was nothing to redo. */
@@ -88,11 +96,13 @@ export function makeReactive(store: RdfStore): RdfStore {
   // inverse of what just happened; undo()/redo() replay entries against `store` directly (not
   // through this Proxy), so a replay is never itself recorded as a new entry.
   let depth = 0;
+  let untrackedDepth = 0;
   let buffer: Transaction | null = null;
   const undoStack: Transaction[] = [];
   const redoStack: Transaction[] = [];
 
   function record(entry: HistoryEntry) {
+    if (untrackedDepth > 0) return;
     redoStack.length = 0;
     if (buffer) {
       buffer.push(entry);
@@ -200,6 +210,14 @@ export function makeReactive(store: RdfStore): RdfStore {
     effect: (callbacks) => {
       record({ type: "effect", ...callbacks });
     },
+    untracked: (fn) => {
+      untrackedDepth++;
+      try {
+        return fn();
+      } finally {
+        untrackedDepth--;
+      }
+    },
     undo: () => {
       const transaction = undoStack.pop();
       if (!transaction) return false;
@@ -240,6 +258,15 @@ export function getHistory(store: RdfStore): History | undefined {
 export function transact<T>(store: RdfStore, fn: () => T): T {
   const history = getHistory(store);
   return history ? history.transaction(fn) : fn();
+}
+
+/**
+ * Runs `fn` with none of its writes on `store` recorded for undo/redo - see History.untracked().
+ * Falls back to just calling `fn()` when `store` isn't reactive, same as transact().
+ */
+export function untracked<T>(store: RdfStore, fn: () => T): T {
+  const history = getHistory(store);
+  return history ? history.untracked(fn) : fn();
 }
 
 /**

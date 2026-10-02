@@ -11,6 +11,12 @@ const SEVERITY_RANK: Record<string, number> = {
   Info: 0,
 };
 
+// How severe a sh:severity local name is, for sorting - higher is worse. A custom severity (SHACL
+// allows any sh:Severity instance) ranks with sh:Info, same as worstSeverity below treats it.
+export function severityRank(name: string): number {
+  return SEVERITY_RANK[name] ?? 0;
+}
+
 // The worst (most severe) sh:severity local name across a set of validation results, e.g.
 // "Violation" beating "Warning" beating "Info". Undefined only when `results` is empty.
 export function worstSeverity(results: ValidationResult[]): string | undefined {

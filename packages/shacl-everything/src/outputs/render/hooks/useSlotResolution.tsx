@@ -8,7 +8,7 @@ import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { widgetQueryOptions } from "@/outputs/render/hooks/useWidget.tsx";
 import { logicalBranches, withBranch, type LogicalBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { getWidgetComponent, getWidgetMeta, widgetModeForPredicate } from "@/widgets/registry.ts";
+import { getWidgetComponent, getWidgetMeta, widgetModeForEnvironment, widgetModeForPredicate } from "@/widgets/registry.ts";
 import type { WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
 
 export type SlotResolution = {
@@ -50,7 +50,7 @@ export function useSlotResolution(
 ): SlotResolution {
   const queryClient = useQueryClient();
   const { mode: environmentMode } = useEnvironment();
-  const mode = widgetModeForPredicate(widgetPredicate) ?? environmentMode;
+  const mode = widgetModeForPredicate(widgetPredicate) ?? widgetModeForEnvironment(environmentMode);
   const branches = useMemo(() => logicalBranches(property), [property]);
 
   const { data, isPlaceholderData } = useQuery({

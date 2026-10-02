@@ -5,15 +5,21 @@ import { RdfStore } from "rdf-stores";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
 import { rebuildRdfList } from "@/helpers/rdfList.ts";
-import { getHistory, transact } from "@/helpers/reactiveRdfStore.ts";
+import { getHistory, transact, untracked } from "@/helpers/reactiveRdfStore.ts";
+import { renameInQuads } from "@/helpers/renameTerm.ts";
+import { termKey } from "@/helpers/termKey.ts";
 import NodeUIComponent from "@/outputs/render/modes/edit/NodeUIComponent.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { orphanedTargetWhereObjects, shapesWhereTargetingFocusNode } from "@/resolution/targets.ts";
 import { removePropertyPath } from "@/structure/paths/removePropertyPath.ts";
+import { seedDefaultValues } from "@/structure/defaultValues.ts";
+import { NodeUIElement } from "@/structure/NodeUIElement.ts";
+import { NO_WIDGETS } from "@/widgets/lookup.ts";
 import ContentLanguageSwitcher from "@/outputs/render/components/ContentLanguageSwitcher/index.tsx";
 import InterfaceLanguageSwitcher from "@/outputs/render/components/InterfaceLanguageSwitcher/index.tsx";
 import Title from "@/outputs/render/components/Title/index.tsx";
+import FocusNodeEditor from "@/outputs/render/components/FocusNodeEditor/index.tsx";
 import ValidationContextProvider from "@/outputs/render/contexts/ValidationContextProvider.tsx";
 import type { ValidationResult } from "@/outputs/render/contexts/validationContext.tsx";
 import { submitAttemptContext } from "@/outputs/render/contexts/submitAttemptContext.tsx";
@@ -26,6 +32,9 @@ import { worstSeverity } from "@/helpers/worstSeverity.ts";
 type Props = {
   children?: React.ReactNode;
 };
+
+const quadKey = (quad: Quad) =>
+  [quad.subject, quad.predicate, quad.object, quad.graph].map(termKey).join(" ");
 
 // True for an element the browser already gives its own text-undo (a text input/textarea, or a
 // contentEditable like RichTextEditor) - Ctrl+Z/Ctrl+Y there is left alone (see the keydown
@@ -48,19 +57,20 @@ export default function EditModeWrapper({ children }: Props) {
     focusNode,
     shapesGraph,
     dataGraph,
+    scoresGraph,
+    widgets,
     importedDataGraph,
     nodeShapes,
     readOnlyGraph,
     onSubmit,
     enableUndoRedo,
     enableTitle,
+    enableFocusNodeEditor,
   } = useEnvironment();
-  const hasTriples = useReactiveRead(
-    dataGraph,
-    focusNode.value,
-    () => dataGraph.getQuads(focusNode, null, null).length > 0,
-  );
-
+  // What Environment.enableFocusNodeEditor's field has renamed the focus node to - applied to the
+  // submitted quads only (see handleSubmit), so the live form keeps reading and writing the focus
+  // node it was opened for.
+  const [renamedFocusNode, setRenamedFocusNode] = useState(focusNode);
   // dataGraph's identity is stable for the life of this edit session (EnvironmentContextProvider
   // builds the Environment once and never rebuilds it), so this lazy initializer only ever runs on
   // this component's very first render - before any widget has had a chance to mutate dataGraph.
@@ -69,6 +79,33 @@ export default function EditModeWrapper({ children }: Props) {
   // The title's Create/Edit pick, fixed at mount (unlike the submit button's live hasTriples) so
   // "Create Person" doesn't turn into "Edit A" as soon as the user starts typing a name.
   const [isNew] = useState(() => dataGraph.getQuads(focusNode, null, null).length === 0);
+  // A brand-new resource starts out with its shapes' sh:defaultValue values (see
+  // structure/defaultValues.ts) - written after the mount-time snapshot above, so they're part of
+  // what onSubmit reports as additions, but untracked, so Ctrl+Z can't undo past where the form
+  // started. Runs before any widget mounts, so nothing has subscribed yet to re-render mid-render.
+  const [seededQuadKeys] = useState(() => {
+    if (!isNew) return new Set<string>();
+    const node = new NodeUIElement({
+      shapesGraph,
+      dataGraph,
+      scoresGraph,
+      widgetRegistry: widgets ?? NO_WIDGETS,
+      focusNode,
+      nodeShapes,
+    });
+    return new Set(untracked(dataGraph, () => seedDefaultValues(node)).map(quadKey));
+  });
+
+  // Whether the focus node holds anything beyond its own seeded defaults - an untouched new
+  // resource still reads "Create", not "Update", just because a default prefilled one field.
+  const hasTriples = useReactiveRead(
+    dataGraph,
+    focusNode.value,
+    () =>
+      dataGraph
+        .getQuads(focusNode, null, null)
+        .some((quad) => !seededQuadKeys.has(quadKey(quad))),
+  );
 
   // Whether the <form> below has been submitted at least once - usePropertyValidationResults
   // withholds validation results until this is true, so e.g. an untouched sh:minCount-violating
@@ -126,7 +163,9 @@ export default function EditModeWrapper({ children }: Props) {
     });
 
     const originalQuads = originalQuadsRef.current!;
-    const finalQuads = dataGraph.getQuads();
+    const finalQuads = renamedFocusNode.equals(focusNode)
+      ? dataGraph.getQuads()
+      : renameInQuads(dataGraph.getQuads(), focusNode, renamedFocusNode);
     const { additions, deletions } = diffQuads(originalQuads, finalQuads);
 
     // Vocabulary merged in from owl:imports (see Environment.importedDataGraph) isn't the
@@ -140,7 +179,7 @@ export default function EditModeWrapper({ children }: Props) {
       if (!isImported) store.addQuad(quad);
     }
 
-    onSubmit?.({ dataGraph: store, additions, deletions });
+    onSubmit?.({ dataGraph: store, additions, deletions, focusNode: renamedFocusNode });
   };
 
   // A Modal editing its own staging graph (see Modal's `dataGraph` prop) pushes its scope here
@@ -222,6 +261,16 @@ export default function EditModeWrapper({ children }: Props) {
                 action={isNew ? "create" : "edit"}
                 nodeShapes={nodeShapes}
                 focusNode={focusNode}
+              />
+            )}
+            {enableFocusNodeEditor && (
+              <FocusNodeEditor
+                current={focusNode}
+                value={renamedFocusNode}
+                onChange={setRenamedFocusNode}
+                dataGraph={dataGraph}
+                shapesGraph={shapesGraph}
+                nodeShapes={nodeShapes}
               />
             )}
 

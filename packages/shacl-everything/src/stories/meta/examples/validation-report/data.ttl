@@ -1,0 +1,26 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+# The data as it is now - Hendrik's email has been fixed since report.ttl was produced, which
+# report mode ignores: it shows the reported (old) value.
+
+ex:hendrik
+    a schema:Person ;
+    schema:name "Hendrik" ;
+    rdfs:label "Hendrik" ;
+    schema:email "hendrik@example.org" ;
+    schema:address ex:hendrik-address ;
+    schema:birthDate "2031-04-01"^^xsd:date ;
+    .
+
+ex:hendrik-address
+    rdfs:label "Breestraat 1, Amersfoort" ;
+    schema:postalCode "38111BH" ;
+    .
+
+ex:anonymous
+    a schema:Person ;
+    rdfs:label "Anonymous person"@en, "Anoniem persoon"@nl ;
+    .

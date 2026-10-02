@@ -1,0 +1,28 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+# Two results about two different values of the same property, each breaking a different rule -
+# the valid email in multiple-values-data.ttl isn't mentioned, as no engine would report it.
+[]
+    a sh:ValidationReport ;
+    sh:conforms false ;
+    sh:result [
+        a sh:ValidationResult ;
+        sh:focusNode ex:hendrik ;
+        sh:resultPath schema:email ;
+        sh:value "hendrik.example.org" ;
+        sh:resultSeverity sh:Warning ;
+        sh:sourceShape _:emailShape ;
+        sh:sourceConstraintComponent sh:PatternConstraintComponent ;
+    ] ;
+    sh:result [
+        a sh:ValidationResult ;
+        sh:focusNode ex:hendrik ;
+        sh:resultPath schema:email ;
+        sh:value "hendrik.jansen.from.amersfoort@example.org" ;
+        sh:resultSeverity sh:Warning ;
+        sh:sourceShape _:emailShape ;
+        sh:sourceConstraintComponent sh:MaxLengthConstraintComponent ;
+    ] ;
+    .

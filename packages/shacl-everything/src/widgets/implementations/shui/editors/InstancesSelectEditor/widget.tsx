@@ -1,7 +1,6 @@
 import { useMemo } from "react";
 import type { Quad_Subject } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
-import { Plus } from "@/helpers/icons.tsx";
 import { sh } from "@/helpers/namespaces.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import { valueNodeLabel } from "@/resolution/label.ts";
@@ -13,6 +12,8 @@ import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import SelectListbox from "@/outputs/render/components/SelectListbox/index.tsx";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
+import CreateOptionLabel from "@/outputs/render/components/CreateOptionLabel/index.tsx";
+import DraftFocusNodeEditor from "@/outputs/render/components/FocusNodeEditor/DraftFocusNodeEditor.tsx";
 import NodeUIElementChildren from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 import "./style.css";
 
@@ -58,7 +59,7 @@ export default function InstancesSelectEditor({
   // "Create new…": staged in a scratch copy, only written for real on Done - see useCreateInPlace.
   // Not offered at all without a shape describing the new instance's own fields (its sh:node, or a
   // node shape targeting its sh:class - see canCreateInPlace/valueNodeShapes).
-  const { canCreate, draft, start: createNew, commit, cancel: cancelCreate } = useCreateInPlace(
+  const { choices, draft, commit, cancel: cancelCreate, renameSubject } = useCreateInPlace(
     shape,
     setTerm,
   );
@@ -93,19 +94,11 @@ export default function InstancesSelectEditor({
         // available to pick - and visually set apart (see style.css) from the ordinary options
         // above it, since picking it does something categorically different (creates new data)
         // rather than just selecting among what already exists.
-        extraRow={
-          canCreate
-            ? {
-                content: (
-                  <span className="st-create-option">
-                    <Plus />
-                    <Localized id="create-new-reference-option">Create new…</Localized>
-                  </span>
-                ),
-                onActivate: createNew,
-              }
-            : undefined
-        }
+        extraRows={choices.map((choice) => ({
+          key: choice.key,
+          content: <CreateOptionLabel label={choice.label} />,
+          onActivate: choice.start,
+        }))}
       />
       {draft && (
         <Modal
@@ -114,6 +107,7 @@ export default function InstancesSelectEditor({
           title={<Localized id="create-new-reference-title">New item</Localized>}
           dataGraph={draft.dataGraph}
         >
+          <DraftFocusNodeEditor draft={draft} renameSubject={renameSubject} />
           <NodeUIElementChildren nodeUiElement={draft.node} />
           <div className="st-instances-select-editor__create-actions">
             <button type="button" className="st-button st-button--primary" onClick={commit}>

@@ -7,6 +7,7 @@ import type { Plugin } from "vite";
 // a build-time emitted asset) answers the HTTP request directly.
 const FIXTURE_CONTENT_TYPES: Record<string, string> = {
   ".ttl": "text/turtle; charset=utf-8",
+  ".trig": "application/trig; charset=utf-8",
   ".svg": "image/svg+xml",
   ".jpg": "image/jpeg",
   ".jpeg": "image/jpeg",

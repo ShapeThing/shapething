@@ -1,0 +1,20 @@
+@prefix ex: <http://example.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Book ;
+    sh:property [
+        sh:name "Authors"@en ;
+        sh:path schema:author ;
+        st:facet st:CountFacet ;
+    ] ;
+    .
+
+<#data> a schema:Book ; schema:name "Anthology" ; schema:author ex:ann, ex:bob, ex:cyd .
+<#book2> a schema:Book ; schema:name "Duet" ; schema:author ex:ann, ex:bob .
+<#book3> a schema:Book ; schema:name "Solo" ; schema:author ex:cyd .
+<#book4> a schema:Book ; schema:name "Anonymous" .

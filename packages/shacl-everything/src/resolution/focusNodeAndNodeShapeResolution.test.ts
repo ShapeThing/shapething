@@ -113,3 +113,46 @@ test("step 4: several node shapes targeting the same focus node each produce the
     [ex("Alice").value, ex("PersonShape").value],
   ]);
 });
+
+test("step 3: a dash:abstract shape gives way to a concrete shape targeting the same node", async () => {
+  const { shapesGraph, dataGraph } = await graphs({
+    shapes: `
+      ex:AnimalShape a sh:NodeShape ; sh:targetClass ex:Animal ; dash:abstract true .
+      ex:DogShape a sh:NodeShape ; sh:targetClass ex:Dog .
+      ex:Dog rdfs:subClassOf ex:Animal .
+    `,
+    data: `ex:Rex a ex:Dog .`,
+  });
+
+  const pairs = resolveFocusNodeAndNodeShapePairs({ shapesGraph, dataGraph, focusNode: ex("Rex") });
+
+  expect(pairsAsValues(pairs)).toEqual([[ex("Rex").value, ex("DogShape").value]]);
+});
+
+test("step 3: a dash:abstract shape still resolves when no concrete shape targets the node", async () => {
+  const { shapesGraph, dataGraph } = await graphs({
+    shapes: `ex:AnimalShape a sh:NodeShape ; sh:targetClass ex:Animal ; dash:abstract true .`,
+    data: `ex:Blob a ex:Animal .`,
+  });
+
+  const pairs = resolveFocusNodeAndNodeShapePairs({ shapesGraph, dataGraph, focusNode: ex("Blob") });
+
+  expect(pairsAsValues(pairs)).toEqual([[ex("Blob").value, ex("AnimalShape").value]]);
+});
+
+test("step 4: per focus node, a dash:abstract class-shape gives way to a concrete one", async () => {
+  const { shapesGraph, dataGraph } = await graphs({
+    shapes: `
+      ex:Animal a sh:NodeShape, rdfs:Class ; dash:abstract true .
+      ex:Dog a sh:NodeShape, rdfs:Class ; rdfs:subClassOf ex:Animal .
+    `,
+    data: `ex:Rex a ex:Dog . ex:Blob a ex:Animal .`,
+  });
+
+  const pairs = resolveFocusNodeAndNodeShapePairs({ shapesGraph, dataGraph });
+
+  expect(pairsAsValues(pairs)).toEqual([
+    [ex("Blob").value, ex("Animal").value],
+    [ex("Rex").value, ex("Dog").value],
+  ]);
+});

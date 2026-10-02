@@ -1,6 +1,7 @@
 import type { Quad_Subject } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
+import { freshIri } from "@/helpers/freshIri.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import { transact } from "@/helpers/reactiveRdfStore.ts";
 import { useAutoFocusRef } from "@/outputs/render/hooks/useAutoFocusRef.ts";
@@ -8,16 +9,6 @@ import type { WidgetProps } from "@/widgets/types.ts";
 import "./style.css";
 import { Code, Swap } from "@/helpers/icons.tsx";
 import { Localized } from "@fluent/react";
-
-// A fresh, non-empty IRI - never the empty string. rdf-stores' own dictionary encodes a
-// zero-length NamedNode value indistinguishably from the DefaultGraph term (both have value ""),
-// so a quad built from factory.namedNode("") silently comes back out as DefaultGraph the moment
-// it round-trips through the store - not the NamedNode this widget just assigned. See also
-// "generated" in the sense the user asked for: a real identifier the value can be found by, which
-// urn:uuid also sidesteps needing this shape's own base IRI/minting convention.
-function generateIdentifier(): string {
-  return `urn:uuid:${crypto.randomUUID()}`;
-}
 
 // Moves `from`'s whole subgraph onto `to`: every quad hanging off it as subject (its own raw
 // properties, rendered as the fields below) and every quad pointing at it as object (the parent
@@ -74,7 +65,7 @@ export default function BlankNodeEditor({
           ref={assignRef}
           type="button"
           className="st-button st-blank-node-editor__assign"
-          onClick={() => changeIdentity(factory.namedNode(generateIdentifier()))}
+          onClick={() => changeIdentity(freshIri(shape.shapesGraph))}
         >
           <Swap />
           <Localized id="blank-node-editor-switch-to-iri">Switch to IRI</Localized>

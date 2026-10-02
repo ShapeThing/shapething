@@ -1,7 +1,13 @@
-import { expect, test } from "vite-plus/test";
+import { expect, test, vi } from "vite-plus/test";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
-import { getLabelPreference, getLanguagePreference } from "@/resolution/globalConfiguration.ts";
+import {
+  getDefaultNamespace,
+  getLabelPreference,
+  getLanguagePreference,
+  getReadOnlyGraphs,
+  getTimeZone,
+} from "@/resolution/globalConfiguration.ts";
 
 const graph = (turtle: string) => parseRdf(`${queryPrefixes}\n\n${turtle}`, "text/turtle");
 
@@ -61,3 +67,32 @@ test("getLabelPreference parses a complex path member via the same path-expressi
 const skosPrefLabel = "http://www.w3.org/2004/02/skos/core#prefLabel";
 const dctermsTitle = "http://purl.org/dc/terms/title";
 const rdfsLabel = "http://www.w3.org/2000/01/rdf-schema#label";
+
+test("getDefaultNamespace reads the namespace literal, undefined when unconfigured", async () => {
+  expect(getDefaultNamespace(await graph(`ex:config a shui:Configuration .`))).toBeUndefined();
+  const shapesGraph = await graph(
+    `ex:config a shui:Configuration ; shui:defaultNamespace "http://example.org/data/" .`,
+  );
+  expect(getDefaultNamespace(shapesGraph)).toBe("http://example.org/data/");
+});
+
+test("getTimeZone reads an IANA identifier and ignores one Intl doesn't recognize", async () => {
+  expect(getTimeZone(await graph(`ex:config a shui:Configuration .`))).toBeUndefined();
+  expect(
+    getTimeZone(await graph(`ex:config a shui:Configuration ; shui:timeZone "Europe/Amsterdam" .`)),
+  ).toBe("Europe/Amsterdam");
+  const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+  expect(
+    getTimeZone(await graph(`ex:config a shui:Configuration ; shui:timeZone "Mars/Olympus" .`)),
+  ).toBeUndefined();
+  expect(warn).toHaveBeenCalled();
+  warn.mockRestore();
+});
+
+test("getReadOnlyGraphs reads an ordered list of graph IRIs, [] when unconfigured", async () => {
+  expect(getReadOnlyGraphs(await graph(`ex:config a shui:Configuration .`))).toEqual([]);
+  const shapesGraph = await graph(
+    `ex:config a sh:Graph ; shui:readOnlyGraph ( ex:inferred ex:imported ) .`,
+  );
+  expect(getReadOnlyGraphs(shapesGraph)).toEqual([ex("inferred"), ex("imported")]);
+});

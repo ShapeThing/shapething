@@ -1,4 +1,5 @@
 import { Localized } from "@fluent/react";
+import type { ReactNode } from "react";
 import "./style.css";
 import { Violation, Warning, Info } from "@/helpers/icons.tsx";
 
@@ -7,7 +8,14 @@ export type ValidationMessage = {
   // SHACL vocabulary term rather than the lowercase Severity keyword Tooltip uses elsewhere, to
   // match FormElement's own existing data-severity convention.
   severity: string;
-  message: string;
+  message: ReactNode;
+  // Shown in place of the ftl severity label for a severity with none of its own - SHACL allows
+  // custom sh:Severity instances beyond sh:Violation/sh:Warning/sh:Info (e.g. a report's own
+  // ex:MySeverity), which still deserve a visible label.
+  severityLabel?: string;
+  // Rendered below the message text - e.g. ValidationResultsViewer's result path/value/constraint
+  // facts and nested sh:detail results.
+  extra?: ReactNode;
 };
 
 const SEVERITY_ICONS: Record<string, typeof Violation> = {
@@ -51,12 +59,15 @@ export default function ValidationMessages({
               <Icon />
             </span>
             <span className="st-validation-message-text">
-              {labelId && (
+              {labelId ? (
                 <Localized id={labelId}>
                   <strong className="st-validation-message-severity">{message.severity}</strong>
                 </Localized>
-              )}
+              ) : message.severityLabel ? (
+                <strong className="st-validation-message-severity">{message.severityLabel}:</strong>
+              ) : null}
               {message.message}
+              {message.extra}
             </span>
           </li>
         );

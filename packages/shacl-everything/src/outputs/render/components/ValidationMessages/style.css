@@ -73,3 +73,46 @@
 .st-validation-message[data-severity="Info"] .st-validation-message-icon {
   background: color-mix(in srgb, var(--st-severity-info) 80%, black);
 }
+
+/* A custom sh:Severity (anything but sh:Violation/sh:Warning/sh:Info, e.g. from a validation
+   report) has no severity color of its own - a neutral one keeps its icon visible. */
+.st-validation-message:not(
+  [data-severity="Violation"],
+  [data-severity="Warning"],
+  [data-severity="Info"]
+) {
+  background: color-mix(in srgb, var(--st-color-text-muted) 8%, white);
+}
+
+.st-validation-message:not(
+    [data-severity="Violation"],
+    [data-severity="Warning"],
+    [data-severity="Info"]
+  )
+  .st-validation-message-icon {
+  background: var(--st-color-text-muted);
+}
+
+/* sh:detail's nested results (ResultMessages' DetailList): plain lines inside their parent's own
+   message, no box or icon of their own. */
+.st-validation-details {
+  margin: var(--size-1) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.st-validation-detail {
+  margin-top: var(--size-1);
+}
+
+/* Inline-block so ::first-letter applies - a generated property's local-name label ("postal Code")
+   is capitalized the same way FormElement capitalizes field labels. */
+.st-validation-message-property {
+  display: inline-block;
+  margin-right: var(--size-1);
+  font-weight: 600;
+}
+
+.st-validation-message-property::first-letter {
+  text-transform: uppercase;
+}

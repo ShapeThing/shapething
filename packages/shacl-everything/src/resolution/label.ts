@@ -2,6 +2,7 @@ import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { hslToHex } from "@/helpers/colorBuckets.ts";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { factory } from "@/helpers/factory.ts";
+import { isAbstract } from "@/helpers/isAbstract.ts";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { rdf, rdfs, sh, shui, st } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
@@ -18,7 +19,12 @@ import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { orderedValues } from "@/structure/orderedValues.ts";
 import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
-import { shapesTargetingClass } from "@/resolution/targets.ts";
+import {
+  descendantClasses,
+  shapesForClass,
+  shapesTargetingClass,
+  withSuperClassShapes,
+} from "@/resolution/targets.ts";
 import type { Literal, NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 
@@ -331,7 +337,66 @@ export function valueNodeShapes(
  * be created is a bare, label-less urn:uuid the user can't do anything further with.
  */
 export function canCreateInPlace(propertyShape: PropertyUIElement): boolean {
-  return propertyShape.get(sh("class")).length > 0 && valueNodeShapes(propertyShape).length > 0;
+  return createInPlaceOptions(propertyShape).length > 0;
+}
+
+/**
+ * One kind of new instance "Create new…" can mint for a property: the rdf:type(s) it starts with
+ * and the node shape(s) its own fields are rendered against.
+ */
+export type CreateInPlaceOption = {
+  classes: NamedNode[];
+  nodeShapes: Quad_Subject[];
+};
+
+/**
+ * Every kind of new instance "Create new…" can offer for `propertyShape` - see canCreateInPlace.
+ * Normally exactly one: an instance typed with every sh:class at once (they're conjunctive), its
+ * fields from valueNodeShapes. A dash:abstract sh:class can't be instantiated directly (see
+ * helpers/isAbstract.ts), so it's replaced by a choice instead: one option per concrete subclass
+ * (of every abstract sh:class, when there's more than one), each with that subclass's own shapes
+ * plus the inherited ones (withSuperClassShapes). Empty when there's nothing to type a new instance
+ * with, or no shape describing its fields.
+ */
+export function createInPlaceOptions(propertyShape: PropertyUIElement): CreateInPlaceOption[] {
+  const { shapesGraph, dataGraph } = propertyShape;
+  const graphs = [shapesGraph, dataGraph];
+  const shClasses = propertyShape
+    .get(sh("class"))
+    .filter((classIri): classIri is NamedNode => classIri.termType === "NamedNode");
+  if (shClasses.length === 0) return [];
+
+  const abstractClasses = shClasses.filter((classIri) => isAbstract(classIri, graphs));
+  if (abstractClasses.length === 0) {
+    const nodeShapes = valueNodeShapes(propertyShape);
+    return nodeShapes.length > 0 ? [{ classes: shClasses, nodeShapes }] : [];
+  }
+
+  const concreteClasses = shClasses.filter((classIri) => !isAbstract(classIri, graphs));
+  const subclassesOfEveryAbstractClass = abstractClasses
+    .map((classIri) => descendantClasses(classIri, graphs).slice(1))
+    .reduce((acc, subclasses) =>
+      acc.filter((candidate) => subclasses.some((other) => other.equals(candidate))),
+    );
+  const explicitNodes = propertyShape.get(sh("node")) as Quad_Subject[];
+
+  return subclassesOfEveryAbstractClass
+    .filter((candidate): candidate is NamedNode =>
+      candidate.termType === "NamedNode" && !isAbstract(candidate, graphs),
+    )
+    .map((candidate) => ({
+      classes: [candidate, ...concreteClasses],
+      nodeShapes: withSuperClassShapes(
+        dedupeTerms([
+          ...explicitNodes,
+          ...shapesForClass(candidate, shapesGraph),
+          ...valueNodeShapes(propertyShape),
+        ]) as Quad_Subject[],
+        shapesGraph,
+        dataGraph,
+      ),
+    }))
+    .filter((option) => option.nodeShapes.length > 0);
 }
 
 /**

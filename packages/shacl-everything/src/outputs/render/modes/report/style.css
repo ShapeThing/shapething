@@ -1,0 +1,84 @@
+/* Report mode's own chrome (summary, focus node headings) sits outside FormElement, which is
+   otherwise what applies the theme font - so the root sets it for everything below. */
+.st-report-mode {
+  font-family: var(--st-font-family);
+  color: var(--st-color-text);
+}
+
+.st-report-mode__summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2);
+  margin: 0 0 var(--size-4);
+}
+
+.st-report-mode__count {
+  padding: var(--size-1) var(--size-2);
+  border-radius: var(--radius-2);
+  font-size: var(--st-font-size-small);
+  font-weight: bold;
+  color: var(--st-color-text);
+  background: color-mix(in srgb, var(--st-color-text-muted) 12%, white);
+}
+
+.st-report-mode__count[data-severity="Violation"] {
+  background: color-mix(in srgb, var(--st-severity-error) 16%, white);
+}
+
+.st-report-mode__count[data-severity="Warning"] {
+  background: color-mix(in srgb, var(--st-severity-warning) 16%, white);
+}
+
+.st-report-mode__count[data-severity="Info"] {
+  background: color-mix(in srgb, var(--st-severity-info) 16%, white);
+}
+
+.st-report-mode__count[data-severity="None"] {
+  background: color-mix(in srgb, var(--st-diff-added-border) 16%, white);
+}
+
+.st-report-mode__focus-node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-3);
+  padding-block: var(--size-3);
+  border-top: 1px solid var(--st-color-border);
+}
+
+.st-report-mode__focus-node-label {
+  margin: 0;
+  font-size: var(--st-font-size-big);
+  font-weight: 600;
+}
+
+.st-report-mode__focus-node-label a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.st-report-mode__focus-node-label a:hover {
+  text-decoration: underline;
+}
+
+/* Every property inline (see view mode's PropertyUIComponent): the label beside the value(s),
+   the results wrapping onto their own line below both. */
+.st-report-mode .st-form-element[data-label-layout="inline"] {
+  align-items: baseline;
+}
+
+.st-report-mode .st-form-element[data-label-layout="inline"] > .st-validation-messages--report {
+  flex-basis: 100%;
+  margin-top: var(--size-1);
+}
+
+/* A property the report says has no (or too few) values: a placeholder where the value would be,
+   set apart from real values - muted, italic, outlined - so it can't be mistaken for one. */
+.st-report-no-value {
+  display: inline-block;
+  padding: 0 var(--size-2);
+  border: 1px dashed var(--st-color-border);
+  border-radius: var(--radius-2);
+  color: var(--st-color-text-muted);
+  font-style: italic;
+  line-height: var(--size-6);
+}
