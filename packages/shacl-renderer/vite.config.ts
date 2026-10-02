@@ -163,6 +163,12 @@ export default defineConfig({
         ],
         test: {
           name: "storybook",
+          // Browser mode's default 15s per-test timeout is shorter than the per-query
+          // `findBy*` timeouts some federated stories need: they run several lookups one after
+          // another against live SPARQL endpoints such as TOOI, and on a CI runner a single lookup
+          // can take close to 10s. Missing elements still fail fast through each query's own
+          // timeout. This limit is only the overall cap per story.
+          testTimeout: 60000,
           browser: {
             enabled: true,
             headless: true,

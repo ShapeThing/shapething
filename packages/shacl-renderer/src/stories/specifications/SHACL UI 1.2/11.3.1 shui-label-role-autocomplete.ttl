@@ -6,9 +6,10 @@
 
 # A deliberately minimal skos:Concept shape, showing just the two things this demo is about: a
 # local shui:AutoCompleteEditor field (skos:broader, searching skos:Concept instances already
-# present in the local dataGraph) and a federated one (skos:broadMatch, searching the real TOOI
-# thesaurus over SPARQL - the same public endpoint and shui:searchQuery
-# skos-ap-nl-tooi-federation.ttl uses for the identical predicate). Each field links to another
+# present in the local dataGraph) and a federated one (skos:broadMatch, searching the TOOI
+# thesaurus over SPARQL - the same endpoint IRI and shui:searchQuery skos-ap-nl-tooi-federation.ttl
+# uses for the identical predicate; the story stubs that endpoint with a verbatim TOOI subset, see
+# its tooiSubset). Each field links to another
 # *Concept*, not a scheme directly - <#conceptLabelShape> below shows that concept's own
 # skos:prefLabel as its LabelRole, and its skos:ConceptScheme itself (via the single-hop
 # skos:inScheme) as a shui:ClassificationRole (rendered as a chip by LabelViewer/AutoCompleteOption,
@@ -89,7 +90,7 @@
   # A real TOOI skos:Concept (https://identifier.overheid.nl/tooi/def/thes/upl/gemeente,
   # skos:prefLabel "gemeente"@nl, skos:inScheme .../Bestuurslagen, rdfs:label "Bestuurslagen"@nl -
   # TOOI only labels these in Dutch) - already linked so both its own label and its scheme's
-  # ClassificationRole label resolve live against the federated endpoint on load, with no search
+  # ClassificationRole label resolve through the federated endpoint on load, with no search
   # interaction needed.
   skos:broadMatch <https://identifier.overheid.nl/tooi/def/thes/upl/gemeente> .
 
