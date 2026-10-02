@@ -6,11 +6,15 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   test:
     uses: ./.github/workflows/test-package.yml
     secrets: inherit
     with:
+      badge: test-shacl-renderer
       package: '@shapething/shacl-renderer'
       browser: true
       shards: 4

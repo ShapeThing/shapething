@@ -1,6 +1,6 @@
 # @shapething/shacl-manager
 
-[![Tests](https://github.com/ShapeThing/shapething/actions/workflows/test-shacl-manager.yml/badge.svg?branch=main)](https://github.com/ShapeThing/shapething/actions/workflows/test-shacl-manager.yml)
+[![Unit tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ShapeThing/shapething/badges/test-shacl-manager-unit.json)](https://github.com/ShapeThing/shapething/actions/workflows/test-shacl-manager.yml) [![Storybook tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ShapeThing/shapething/badges/test-shacl-manager-storybook.json)](https://github.com/ShapeThing/shapething/actions/workflows/test-shacl-manager.yml)
 
 Manages a **data model**: one or more RDF graphs, of which exactly one is the *main graph*
 that can be written to.

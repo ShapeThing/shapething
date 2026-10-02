@@ -17,10 +17,17 @@ on:
         description: Run the tests in this many shards, each in a fresh browser. 0 disables sharding.
         type: number
         default: 0
+      badge:
+        description: The badge file's name on the badges branch, without .json.
+        required: true
+        type: string
 
 jobs:
   test:
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
@@ -61,7 +68,10 @@ jobs:
       # are built first.
       - name: Run tests
         if: inputs.shards == 0
-        run: pnpm exec turbo run test --filter=${{ inputs.package }}
+        run: |
+          mkdir -p $RUNNER_TEMP/results
+          pnpm exec turbo run test --filter=${{ inputs.package }} -- \
+            --reporter=default --reporter=json --outputFile.json=$RUNNER_TEMP/results/results.json
         env:
           CI: true
 
@@ -69,16 +79,100 @@ jobs:
       # story files in one page, that page stops processing network responses (requests complete
       # in the network service but never resolve in the page) and the run hangs until Vitest
       # reports "Browser connection was closed while running tests". Sharding keeps each page
-      # well under that.
+      # well under that. Every shard runs even after one fails, so the badge counts the whole suite.
       - name: Run tests in shards
         if: inputs.shards > 0
         run: |
+          mkdir -p $RUNNER_TEMP/results
           pnpm exec turbo run build --filter='${{ inputs.package }}^...'
+          status=0
           for shard in $(seq 1 ${{ inputs.shards }}); do
-            pnpm --filter ${{ inputs.package }} exec vp test --shard=$shard/${{ inputs.shards }}
+            pnpm --filter ${{ inputs.package }} exec vp test --shard=$shard/${{ inputs.shards }} \
+              --reporter=default --reporter=json --outputFile.json=$RUNNER_TEMP/results/shard-$shard.json || status=1
           done
+          exit $status
         env:
           CI: true
           # Playwright's browser-process log: when headless Chromium dies mid-run ("Browser
           # connection was closed while running tests"), this records why (OOM kill, renderer crash).
           DEBUG: pw:browser
+
+      # Counts the tests in the Vitest JSON reports (one per shard) into shields.io endpoint files,
+      # so the badges show counts rather than only passing/failing: <badge>.json for all tests, and
+      # <badge>-unit.json and <badge>-storybook.json split by whether the test file is a story. No
+      # report at all means the run broke before or during the tests.
+      - name: Write badges
+        if: always()
+        run: |
+          mkdir -p $RUNNER_TEMP/badge
+          shopt -s nullglob
+          reports=($RUNNER_TEMP/results/*.json)
+          for kind in all unit storybook; do
+            file=$RUNNER_TEMP/badge/${{ inputs.badge }}$([ $kind = all ] || echo "-$kind").json
+            label=$([ $kind = all ] && echo tests || echo "$kind tests")
+            if [ ${#reports[@]} -eq 0 ]; then
+              message=error color=red
+            else
+              read passed failed skipped < <(jq -rs --arg kind $kind '
+                [.[].testResults[]
+                  | select($kind == "all" or ((.name | test("\\.stories\\.")) == ($kind == "storybook")))
+                  | .assertionResults[].status]
+                | [(map(select(. == "passed")) | length),
+                   (map(select(. == "failed")) | length),
+                   (map(select(. != "passed" and . != "failed")) | length)]
+                | @tsv' "${reports[@]}")
+              message="$passed passed"
+              [ "$failed" -gt 0 ] && message="$message, $failed failed"
+              [ "$skipped" -gt 0 ] && message="$message, $skipped skipped"
+              color=$([ "$failed" -gt 0 ] && echo red || echo brightgreen)
+            fi
+            jq -n --arg label "$label" --arg message "$message" --arg color "$color" \
+              '{schemaVersion: 1, $label, $message, $color}' > $file
+            echo "$(basename $file): $message"
+          done
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: badge
+          path: ${{ runner.temp }}/badge
+
+  # Publishes the badge files to the badges branch, which the READMEs' badges read through
+  # shields.io. Only main's results count, and only this job can write, so the test job (which
+  # runs pull request code) keeps a read-only token.
+  badge:
+    needs: test
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: badge
+          path: badge
+
+      # Every package's workflow pushes here at about the same time. Each writes only its own
+      # files, so a rejected push is retried on top of the new branch head.
+      - name: Push to badges branch
+        run: |
+          git init -q repo && cd repo
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git remote add origin https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git
+          for attempt in 1 2 3 4 5; do
+            if git fetch -q --depth=1 origin badges; then
+              git checkout -q -B badges FETCH_HEAD
+            else
+              git checkout -q --orphan badges
+            fi
+            cp ../badge/*.json .
+            git add *.json
+            git diff --cached --quiet && exit 0
+            git commit -q -m "Update ${{ inputs.badge }} badges"
+            git push -q origin badges && exit 0
+            sleep $((attempt * 2))
+          done
+          exit 1

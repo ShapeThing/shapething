@@ -6,9 +6,13 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write
+
 jobs:
   test:
     uses: ./.github/workflows/test-package.yml
     secrets: inherit
     with:
+      badge: test-local-store
       package: '@shapething/localstore'

@@ -1,6 +1,6 @@
 # Typed SPARQL
 
-[![Tests](https://github.com/ShapeThing/shapething/actions/workflows/test-typed-sparql.yml/badge.svg?branch=main)](https://github.com/ShapeThing/shapething/actions/workflows/test-typed-sparql.yml)
+[![Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ShapeThing/shapething/badges/test-typed-sparql.json)](https://github.com/ShapeThing/shapething/actions/workflows/test-typed-sparql.yml)
 
 A development toolkit that generates @rdf/js types for SPARQL queries.
 

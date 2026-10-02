@@ -1,6 +1,6 @@
 ![Logo](https://storybook-shacl-renderer.shapething.com/logo.svg)
 
-[![Tests](https://github.com/ShapeThing/shapething/actions/workflows/test-resource-fetcher.yml/badge.svg?branch=main)](https://github.com/ShapeThing/shapething/actions/workflows/test-resource-fetcher.yml)
+[![Tests](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/ShapeThing/shapething/badges/test-resource-fetcher.json)](https://github.com/ShapeThing/shapething/actions/workflows/test-resource-fetcher.yml)
 
 # Current state
 
