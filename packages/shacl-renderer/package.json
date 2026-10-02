@@ -32,7 +32,7 @@
   },
   "scripts": {
     "build": "vp pack",
-    "dev": "vp pack --watch",
+    "dev": "vp pack --watch --no-clean",
     "lint": "vp lint --react-plugin --jsx-a11y-plugin",
     "lint:fix": "vp lint --react-plugin --jsx-a11y-plugin --fix",
     "test": "vp test",

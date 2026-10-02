@@ -14,7 +14,7 @@
   },
   "scripts": {
     "build": "vp pack",
-    "dev": "vp pack --watch",
+    "dev": "vp pack --watch --no-clean",
     "test": "vp test",
     "check": "vp check",
     "prepublishOnly": "vp run build",
