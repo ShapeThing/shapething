@@ -19,8 +19,10 @@ jobs:
           APP_DEPLOY_KEY: ${{ secrets.APP_DEPLOY_KEY }}
         run: |
           mkdir -p ~/.ssh
-          echo "$APP_DEPLOY_KEY" > ~/.ssh/app_deploy_key
+          printf '%s\n' "$APP_DEPLOY_KEY" | tr -d '\r' > ~/.ssh/app_deploy_key
           chmod 600 ~/.ssh/app_deploy_key
+          ssh-keygen -y -f ~/.ssh/app_deploy_key > /dev/null \
+            || { echo "::error::APP_DEPLOY_KEY secret is not a valid OpenSSH private key"; exit 1; }
           GIT_SSH_COMMAND="ssh -i ~/.ssh/app_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
             git submodule update --init apps/app.shapething.com
       - uses: pnpm/action-setup@v4
