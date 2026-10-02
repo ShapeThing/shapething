@@ -1,6 +1,6 @@
 import type { StoryObj } from "@storybook/react-vite";
 import type { NamedNode, Quad, Quad_Graph } from "@rdfjs/types";
-import { dereferenceUrl } from "@shapething/shacl-everything";
+import { dereferenceUrl } from "@shapething/shacl-renderer";
 import { ShaclManager } from "../index.tsx";
 import { factory } from "@/helpers/factory.ts";
 import { CORS_PROXY_PATH } from "../../.storybook/corsProxy.ts";
@@ -59,7 +59,7 @@ export const Default: Story = {
   args: {
     dataModelIRI,
     loadGraph,
-    // shacl-everything's own corsProxyUrl fallback (Environment.corsProxyUrl) templates a target
+    // shacl-renderer's own corsProxyUrl fallback (Environment.corsProxyUrl) templates a target
     // in directly - `${corsProxyUrl}${encodeURIComponent(url)}` - unlike this story's own
     // proxiedUrl() helper above which spells out the `?url=` itself, so it must be included here.
     corsProxyUrl: `${CORS_PROXY_PATH}?url=`,

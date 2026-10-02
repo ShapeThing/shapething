@@ -1,0 +1,3 @@
+[submodule "apps/app.shapething.com"]
+	path = apps/app.shapething.com
+	url = git@github.com:ShapeThing/app.git

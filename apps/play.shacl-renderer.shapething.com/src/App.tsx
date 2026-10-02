@@ -8,25 +8,96 @@ import {
   useAccordionProvider,
 } from "@szhsin/react-accordion";
 import { useLocalStorage } from "@uidotdev/usehooks";
-import { useEffect, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { ErrorBoundary } from "react-error-boundary";
 import Select from "react-select";
 import "share-api-polyfill";
 import {
   ShaclRenderer,
+  resolveRdfSource,
   type ShaclRendererProps,
 } from "@shapething/shacl-renderer";
+import { jsToRdf, rdfToJs } from "@shapething/shacl-renderer/tools";
 import "@shapething/shacl-renderer/style.css";
+import type { RdfStore } from "rdf-stores";
 import { AccordionHeading } from "./components/AccordionHeading";
 import { Turtle } from "./components/Turtle";
-import { context, examples } from "./constants";
+import { examples, settingsSubject } from "./constants";
 import { shareIcon } from "./helpers/icons";
 import "./style.scss";
 
 const defaultSettings = {
   mode: "edit",
-  languageMode: "tabs",
+  languageMode: "switcher",
 };
+
+const propsUrl = new URL("./props.ttl", location.href);
+const propsShape = factory.namedNode(propsUrl.href);
+
+// The playground's convention: example data describes its resource as <>, which parses (without a
+// base IRI) to the empty IRI - so that is the default focus node whenever there is data.
+const emptyIri = factory.namedNode("");
+
+// Settings hold IRIs as plain strings; the renderer wants terms.
+const rendererProps = (
+  { focusNode, nodeShape, ...settings }: Record<string, unknown>,
+  dataString: string
+): ShaclRendererProps => {
+  const props = settings as ShaclRendererProps;
+  if (typeof focusNode === "string" && focusNode) props.focusNode = factory.namedNode(focusNode);
+  else if (dataString) props.focusNode = emptyIri;
+  if (typeof nodeShape === "string" && nodeShape) props.nodeShapes = [factory.namedNode(nodeShape)];
+  return props;
+};
+
+const prefixesOf = (text: string) =>
+  Object.fromEntries(
+    [...text.matchAll(/@prefix\s+([\w.-]*):\s*<([^>]*)>\s*\./gi)].map(([, alias, iri]) => [alias, iri])
+  );
+
+// The Options panel edits the playground's settings (plain JSON in localStorage) with a form
+// rendered from props.ttl, converting to and from RDF with the shacl-renderer tools.
+function SettingsForm({
+  settings,
+  onChange,
+}: {
+  settings: Record<string, unknown>;
+  onChange: (settings: Record<string, unknown>) => void;
+}) {
+  const [propsShapes, setPropsShapes] = useState<RdfStore>();
+  useEffect(() => {
+    resolveRdfSource(propsUrl, new Map(), undefined).then(setPropsShapes);
+  }, []);
+  if (!propsShapes) return null;
+
+  const dataGraph = jsToRdf({
+    shapesGraph: propsShapes,
+    focusNode: settingsSubject,
+    nodeShapes: [propsShape],
+    data: settings,
+  });
+
+  return (
+    <ShaclRenderer
+      key={JSON.stringify(settings)}
+      shapesGraph={propsShapes}
+      dataGraph={dataGraph}
+      focusNode={settingsSubject}
+      nodeShapes={[propsShape]}
+      mode="edit"
+      onSubmit={async (result) =>
+        onChange(
+          await rdfToJs({
+            shapesGraph: propsShapes,
+            dataGraph: result.dataGraph,
+            focusNode: settingsSubject,
+            nodeShapes: [propsShape],
+          })
+        )
+      }
+    />
+  );
+}
 
 export default function App() {
   const providerValue = useAccordionProvider({});
@@ -185,19 +256,7 @@ export default function App() {
             itemKey={"options"}
             header={<AccordionHeading>Options</AccordionHeading>}
           >
-            <ShaclRenderer
-              shapes={new URL("./props.ttl", location.href)}
-              mode="edit"
-              context={context}
-              data={settings}
-              onSubmit={async ({ json }) => setSettings(json)}
-            >
-              {(submit) => (
-                <button className="button primary big outline" onClick={submit}>
-                  Update
-                </button>
-              )}
-            </ShaclRenderer>
+            <SettingsForm settings={settings} onChange={setSettings} />
           </AccordionItem>
         </ControlledAccordion>
       </div>
@@ -206,11 +265,12 @@ export default function App() {
           <ErrorBoundary fallback={<div>Error rendering</div>}>
             <ShaclRenderer
               key={shapesString + initialDataString + JSON.stringify(settings)}
-              data={dataString}
-              shapes={shapesString}
-              onSubmit={async ({ dataset, context }) => {
+              {...rendererProps(settings, dataString)}
+              shapesGraph={shapesString}
+              dataGraph={dataString}
+              onSubmit={async ({ dataGraph }) => {
                 const replaceSubject = factory.namedNode("urn:replace-me");
-                const quads = [...dataset].map((quad) =>
+                const quads = dataGraph.getQuads().map((quad) =>
                   factory.quad(
                     quad.subject.value === "" ? replaceSubject : quad.subject,
                     quad.predicate,
@@ -219,18 +279,12 @@ export default function App() {
                   )
                 );
                 let dataString = await write(quads, {
-                  prefixes: context.jsonLdContext.getContextRaw(),
+                  prefixes: prefixesOf(shapesString + "\n" + initialDataString),
                 });
                 dataString = dataString.replace(/urn:replace-me/g, "");
                 setDataString(dataString);
               }}
-              {...(settings as ShaclRendererProps)}
-              subject={
-                "subject" in settings && settings.subject
-                  ? factory.namedNode(settings.subject)
-                  : undefined
-              }
-            ></ShaclRenderer>
+            />
           </ErrorBoundary>
         ) : (
           <div className="introduction">

@@ -1,6 +1,6 @@
 import type { NamedNode } from "@rdfjs/types";
-import { ShaclRenderer } from "@shapething/shacl-everything";
-import "@shapething/shacl-everything/style.css";
+import { ShaclRenderer } from "@shapething/shacl-renderer";
+import "@shapething/shacl-renderer/style.css";
 import { factory } from "@/helpers/factory.ts";
 import { useDataModel } from "@/hooks/useDataModel";
 import { dataModelRoute } from "@/router";

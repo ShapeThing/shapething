@@ -1,6 +1,9 @@
 packages:
   - 'apps/*'
   - 'packages/*'
+  # Standalone submodule (npm, consumes published @shapething/* packages); its unpatched
+  # shacl-engine@1.0.2 would collide with patches/shacl-engine@1.0.2.patch.
+  - '!apps/app.shapething.com'
 allowBuilds:
   '@parcel/watcher': true
   '@swc/core': true

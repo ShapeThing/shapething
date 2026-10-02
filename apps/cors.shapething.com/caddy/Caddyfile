@@ -1,0 +1,9 @@
+{
+	servers {
+		protocols h1 h2
+	}
+}
+
+cors.shapething.com {
+	reverse_proxy cors:8080
+}

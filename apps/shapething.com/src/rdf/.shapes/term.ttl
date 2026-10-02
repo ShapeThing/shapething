@@ -1,0 +1,50 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix st: <http://shapething.com/> .
+
+# Every term of the ShapeThing ontology - buildOntology() gives each one rdfs:isDefinedBy st:.
+<>
+  a sh:NodeShape ;
+  sh:targetSubjectsOf rdfs:isDefinedBy ;
+  sh:name "Ontology term"@en ;
+  sh:nodeKind sh:IRI ;
+
+  sh:property [
+    sh:name "Type"@en ;
+    sh:path rdf:type ;
+    sh:nodeKind sh:IRI ;
+    sh:minCount 1 ;
+  ] ;
+
+  sh:property [
+    sh:name "Label"@en ;
+    sh:path rdfs:label ;
+    sh:datatype rdf:langString ;
+    sh:uniqueLang true ;
+  ] ;
+
+  sh:property [
+    sh:name "Description"@en ;
+    sh:path rdfs:comment ;
+    sh:datatype rdf:langString ;
+    sh:uniqueLang true ;
+  ] ;
+
+  sh:property [
+    sh:name "Subclass of"@en ;
+    sh:path rdfs:subClassOf ;
+    sh:nodeKind sh:IRI ;
+  ] ;
+
+  sh:property [
+    sh:name "Domain"@en ;
+    sh:path rdfs:domain ;
+    sh:nodeKind sh:IRI ;
+  ] ;
+
+  sh:property [
+    sh:name "Range"@en ;
+    sh:path rdfs:range ;
+    sh:nodeKind sh:IRI ;
+  ] .

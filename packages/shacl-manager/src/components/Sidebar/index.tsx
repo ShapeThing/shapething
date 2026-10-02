@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useParams } from "@tanstack/react-router";
 import { Localized } from "@fluent/react";
-import { localName } from "@shapething/shacl-everything";
+import { localName } from "@shapething/shacl-renderer";
 import fetchClassHierarchy from "./fetchClassHierarchy.rq";
 import fetchShapes from "./fetchShapes.rq";
 import fetchPropertyShapes from "./fetchPropertyShapes.rq";

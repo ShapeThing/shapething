@@ -1,0 +1,25 @@
+services:
+  cors:
+    build:
+      context: ../..
+      dockerfile: apps/cors.shapething.com/Dockerfile
+    restart: unless-stopped
+    expose:
+      - "8080"
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy:/etc/caddy:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - cors
+
+volumes:
+  caddy_data:
+  caddy_config:

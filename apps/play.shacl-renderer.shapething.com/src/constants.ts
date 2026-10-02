@@ -1,10 +1,5 @@
 import factory from "@rdfjs/data-model";
 
-export const context = {
-  "@vocab": "http://ontology.shapething.com/shacl-renderer/props/",
-  sh: "http://www.w3.org/ns/shacl#",
-};
-
 export const settingsSubject = factory.namedNode(
   "http://ontology.shapething.com/shacl-renderer/playground/settings"
 );
@@ -45,7 +40,7 @@ export const examples = {
       data: new URL("./data/academic-data.ttl", location.href),
       props: {
         mode: "edit",
-        subject: "http://example.org/alice",
+        focusNode: "http://example.org/alice",
       },
     },
   },

@@ -13,6 +13,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # apps/app.shapething.com is a private submodule. The deploy key only grants access to
+      # ShapeThing/app, so it is used for this fetch alone, not for the main checkout.
+      - name: Checkout private app submodule
+        env:
+          APP_DEPLOY_KEY: ${{ secrets.APP_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$APP_DEPLOY_KEY" > ~/.ssh/app_deploy_key
+          chmod 600 ~/.ssh/app_deploy_key
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/app_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+            git submodule update --init apps/app.shapething.com
+
       - uses: pnpm/action-setup@v4
 
       - uses: actions/setup-node@v4
@@ -23,32 +35,32 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      # Browser-mode Vitest projects (shacl-everything's and shacl-manager's Storybook interaction
+      # Browser-mode Vitest projects (shacl-renderer's and shacl-manager's Storybook interaction
       # tests) run in headless Chromium. Each package pins its own Playwright version, and each
       # version needs its own matching browser build, so install through each package's own CLI.
       - name: Install Playwright Chromium
         run: |
-          pnpm --filter @shapething/shacl-everything exec playwright install --with-deps chromium
+          pnpm --filter @shapething/shacl-renderer exec playwright install --with-deps chromium
           pnpm --filter @shapething/shacl-manager exec playwright install --with-deps chromium
 
       # turbo.json's test task depends on ^build, so workspace dependencies (resource-fetcher's
-      # dist for shacl-everything's Storybook fixtures, shacl-everything's dist for shacl-manager)
+      # dist for shacl-renderer's Storybook fixtures, shacl-renderer's dist for shacl-manager)
       # are built first. --concurrency=1 keeps packages' test runs from competing for the runner.
       - name: Run tests
-        run: pnpm exec turbo run test --concurrency=1 --filter='!@shapething/shacl-everything'
+        run: pnpm exec turbo run test --concurrency=1 --filter='!@shapething/shacl-renderer'
         env:
           CI: true
 
-      # shacl-everything's Storybook suite runs in shards, each in a fresh browser. Past ~50 heavy
+      # shacl-renderer's Storybook suite runs in shards, each in a fresh browser. Past ~50 heavy
       # story files in one page, that page stops processing network responses (requests complete
       # in the network service but never resolve in the page) and the run hangs until Vitest
       # reports "Browser connection was closed while running tests". Sharding keeps each page
       # well under that.
-      - name: Run shacl-everything tests
+      - name: Run shacl-renderer tests
         run: |
-          pnpm exec turbo run build --filter='@shapething/shacl-everything^...'
+          pnpm exec turbo run build --filter='@shapething/shacl-renderer^...'
           for shard in 1 2 3 4; do
-            pnpm --filter @shapething/shacl-everything exec vp test --shard=$shard/4
+            pnpm --filter @shapething/shacl-renderer exec vp test --shard=$shard/4
           done
         env:
           CI: true

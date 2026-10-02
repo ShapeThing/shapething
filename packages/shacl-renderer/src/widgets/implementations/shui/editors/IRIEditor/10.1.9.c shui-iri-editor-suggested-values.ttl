@@ -1,0 +1,26 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix ex: <http://example.org/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    # No shui:editor - a plain sh:nodeKind sh:IRI property scores shui:IRIEditor on its own.
+    sh:property [
+        sh:name "License"@en ;
+        sh:path schema:license ;
+        sh:nodeKind sh:IRI ;
+        st:suggestedValues ( ex:cc-by ex:cc-by-sa ex:mit ) ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:relatedProject <http://example.org/project-alpha> ;
+    .

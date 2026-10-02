@@ -3,7 +3,7 @@ import { useState } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { Localized } from "@fluent/react";
-import "@shapething/shacl-everything/style.css";
+import "@shapething/shacl-renderer/style.css";
 import DataModelProvider from "@/contexts/DataModelProvider.tsx";
 import { createShaclManagerRouter } from "@/router.tsx";
 import InterfaceLanguageProvider from "@/contexts/InterfaceLanguageProvider.tsx";

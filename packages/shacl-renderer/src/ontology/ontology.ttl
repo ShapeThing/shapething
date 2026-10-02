@@ -1,0 +1,164 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix st: <http://shapething.com/> .
+
+# The hand-written part of the ShapeThing ontology. buildOntology.ts merges in the widgets
+# (editors, viewers, facets, property groups) from src/widgets/implementations/st, so widgets are
+# not listed here - only vocabulary that isn't a widget of its own.
+
+st:
+    a owl:Ontology ;
+    rdfs:label "ShapeThing"@en ;
+    dcterms:title "ShapeThing ontology"@en ;
+    rdfs:comment "Extensions to SHACL and SHACL UI used by the ShapeThing SHACL renderer."@en ;
+    rdfs:seeAlso <https://shacl-renderer.shapething.com> .
+
+# Classes
+
+st:Facet
+    a rdfs:Class ;
+    rdfs:label "Facet"@en ;
+    rdfs:comment "A widget that renders a property shape as a search filter in facet mode, the facet counterpart of shui:Editor and shui:Viewer."@en .
+
+# Property shapes - widget selection and widget options
+
+st:facet
+    a rdf:Property ;
+    rdfs:label "facet"@en ;
+    rdfs:comment "The facet counterpart of shui:editor and shui:viewer: names the facet widget for a property shape, or the facet widget a shui:WidgetScore applies to."@en ;
+    rdfs:range st:Facet .
+
+st:suggestedValues
+    a rdf:Property ;
+    rdfs:label "suggested values"@en ;
+    rdfs:comment "Values offered first as suggestions, as a dropdown or as the list shown before the user types. Unlike sh:in this is not a constraint."@en ;
+    rdfs:domain sh:PropertyShape ;
+    rdfs:range rdf:List .
+
+st:orderBy
+    a rdf:Property ;
+    rdfs:label "order by"@en ;
+    rdfs:comment "A property path, in the same syntax as sh:path. The property's values are sorted by the number this path reaches from each value. In edit mode, drag reordering writes the new order back through the path when the path is simple enough to write through."@en ;
+    rdfs:domain sh:PropertyShape .
+
+st:iriType
+    a rdf:Property ;
+    rdfs:label "IRI type"@en ;
+    rdfs:comment "Limits the IRI editor's vocabulary suggestions to classes (rdfs:Class) or to properties (rdf:Property). Without it, both are suggested."@en ;
+    rdfs:domain sh:PropertyShape .
+
+st:durationPattern
+    a rdf:Property ;
+    rdfs:label "duration pattern"@en ;
+    rdfs:comment "Chooses which units st:DurationEditor shows, and in which order, as a string of the tokens {dd}, {hh}, {mm}, {ss} and {fff}. The default is \"{dd}{hh}{mm}{ss}{fff}\"."@en ;
+    rdfs:domain sh:PropertyShape ;
+    rdfs:range xsd:string .
+
+st:iconifyCollections
+    a rdf:Property ;
+    rdfs:label "Iconify collections"@en ;
+    rdfs:comment "Limits st:IconifyEditor's icon search to the given Iconify icon sets, for example \"mdi\". May be repeated."@en ;
+    rdfs:domain sh:PropertyShape ;
+    rdfs:range xsd:string .
+
+st:isoCountryCodes
+    a rdf:Property ;
+    rdfs:label "ISO country codes"@en ;
+    rdfs:comment "Limits st:AddressEditor's address search to the given countries, as ISO 3166-1 alpha-2 codes such as \"nl\". May be repeated."@en ;
+    rdfs:domain sh:PropertyShape ;
+    rdfs:range xsd:string .
+
+st:uploadUrl
+    a rdf:Property ;
+    rdfs:label "upload URL"@en ;
+    rdfs:comment "The endpoint st:FileUploadEditor posts uploaded files to, as multipart form data in the field \"files\". It must respond with a JSON array of URLs, which become the property's values."@en ;
+    rdfs:domain sh:PropertyShape ;
+    rdfs:range xsd:string .
+
+st:mergeAlternatives
+    a rdf:Property ;
+    rdfs:label "merge alternatives"@en ;
+    rdfs:comment "On a shui:LabelRole property shape whose sh:path is an sh:alternativePath: when true, the label joins the values of every alternative instead of using the first alternative that has a value."@en ;
+    rdfs:domain sh:PropertyShape ;
+    rdfs:range xsd:boolean .
+
+# Node shapes and property groups
+
+st:cssImport
+    a rdf:Property ;
+    rdfs:label "CSS import"@en ;
+    rdfs:comment "A stylesheet that is loaded whenever a node conforming to this shape is rendered. A relative IRI is resolved against the document it is in."@en ;
+    rdfs:domain sh:NodeShape .
+
+st:icon
+    a rdf:Property ;
+    rdfs:label "icon"@en ;
+    rdfs:comment "The icon of a property group, as an Iconify icon name typed <https://iconify.design> (for example \"mdi:home\") or as an image URL."@en ;
+    rdfs:domain sh:PropertyGroup .
+
+st:color
+    a rdf:Property ;
+    rdfs:label "color"@en ;
+    rdfs:comment "The color of a property group, as a node with st:hue, st:saturation and st:lightness."@en ;
+    rdfs:domain sh:PropertyGroup .
+
+# HSL colors, as written by st:ColorEditor and read by st:color
+
+st:hue
+    a rdf:Property ;
+    rdfs:label "hue"@en ;
+    rdfs:comment "The hue of an HSL color, in degrees from 0 to 360."@en ;
+    rdfs:range xsd:decimal .
+
+st:saturation
+    a rdf:Property ;
+    rdfs:label "saturation"@en ;
+    rdfs:comment "The saturation of an HSL color, as a percentage from 0 to 100."@en ;
+    rdfs:range xsd:decimal .
+
+st:lightness
+    a rdf:Property ;
+    rdfs:label "lightness"@en ;
+    rdfs:comment "The lightness of an HSL color, as a percentage from 0 to 100."@en ;
+    rdfs:range xsd:decimal .
+
+# Property roles, values of shui:propertyRole
+
+st:DescriptionRole
+    a shui:PropertyRole ;
+    rdfs:label "description role"@en ;
+    rdfs:comment "Marks the property that holds a longer text summary of a resource, shown as a snippet on teaser cards such as the search results of shui:AutoCompleteEditor."@en .
+
+st:ColorRole
+    a shui:PropertyRole ;
+    rdfs:label "color role"@en ;
+    rdfs:comment "Marks the property that gives a resource its color, as a CSS color string or an HSL node. Used to color classification chips and st:CategoryFacet options. It is read from the node shapes that target the resource's own rdf:type."@en .
+
+st:GeoRole
+    a shui:PropertyRole ;
+    rdfs:label "geo role"@en ;
+    rdfs:comment "Marks the property that holds a resource's geometry, as a WKT or GeoJSON literal, so st:MapViewer can place the resource on the map."@en .
+
+# Facet filter shapes - written by the facet widgets into the filter shape facet mode submits,
+# not by shape authors. Each comes with an equivalent sh:sparql constraint.
+
+st:classIn
+    a rdf:Property ;
+    rdfs:label "class in"@en ;
+    rdfs:comment "Filters on values that are an instance of one of the given classes or of any of their rdfs:subClassOf descendants. Written by st:SubClassFacet."@en .
+
+st:colorBucket
+    a rdf:Property ;
+    rdfs:label "color bucket"@en ;
+    rdfs:comment "Filters on color values that fall in the named bucket: red, orange, yellow, green, cyan, blue, purple, pink, white, gray or black. Written by st:ColorFacet."@en ;
+    rdfs:range xsd:string .
+
+st:withinArea
+    a rdf:Property ;
+    rdfs:label "within area"@en ;
+    rdfs:comment "Filters on geometry values within the given area, a GeoSPARQL WKT MultiPolygon. Written by st:MapFacet."@en .

@@ -13,8 +13,7 @@
     "@fontsource-variable/alumni-sans": "^5.2.6",
     "@fontsource-variable/roboto": "^5.2.6",
     "@shapething/shacl-renderer": "workspace:*",
-    "astro": "^5.6.1",
-    "glob": "^13.0.6"
+    "astro": "^5.6.1"
   },
   "devDependencies": {
     "@types/node": "^24.10.1",

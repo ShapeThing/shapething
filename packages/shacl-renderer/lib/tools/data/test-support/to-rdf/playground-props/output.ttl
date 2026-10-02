@@ -1,4 +1,0 @@
-@prefix prop: <http://ontology.shapething.com/shacl-renderer/props/> .
-
-<urn:no-subject-given> prop:languageMode "tabs" ;
-  prop:mode "edit" .

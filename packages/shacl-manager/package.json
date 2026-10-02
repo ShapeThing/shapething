@@ -27,7 +27,7 @@
     "@fluent/react": "^0.15.2",
     "@rdfjs/namespace": "^2.0.1",
     "@rdfjs/types": "^2.0.1",
-    "@shapething/shacl-everything": "workspace:*",
+    "@shapething/shacl-renderer": "workspace:*",
     "@tanstack/react-query": "^5.101.2",
     "@tanstack/react-router": "^1.170.38",
     "@types/rdfjs__namespace": "^2.0.10",

@@ -1,33 +1,17 @@
+import { astroLoader } from '@shapething/shacl-renderer/astro'
 import { glob } from 'astro/loaders'
 import { defineCollection, z } from 'astro:content'
-import { propertySchema } from './property'
-import { shapethingLoader } from './shapethingLoader'
-const context = {
-  '@base': 'http://example.com/',
-  type: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#type',
-  shape: 'http://www.w3.org/ns/shacl#shapesGraph',
-  label: 'http://www.w3.org/2000/01/rdf-schema#label',
-  description: 'http://www.w3.org/2000/01/rdf-schema#comment'
-}
+import { OntologyTermSchema } from './term'
 
-const properties = defineCollection({
-  loader: shapethingLoader({
-    shape: './rdf/.shapes/property.ttl',
-    data: './rdf/ontology.ttl',
-    typesFolder: './',
-    context
+// public/index.ttl is the ShapeThing ontology, written by the ontology integration in astro.config.mjs.
+const terms = defineCollection({
+  loader: astroLoader({
+    shapes: './src/rdf/.shapes/term.ttl',
+    data: './public/index.ttl',
+    languages: ['en'],
+    schemaFile: './src/term.ts'
   }),
-  schema: propertySchema
-})
-
-const classes = defineCollection({
-  loader: shapethingLoader({
-    shape: './rdf/.shapes/class.ttl',
-    data: './rdf/ontology.ttl',
-    typesFolder: './',
-    context
-  }),
-  schema: propertySchema
+  schema: OntologyTermSchema
 })
 
 const pages = defineCollection({
@@ -37,4 +21,4 @@ const pages = defineCollection({
   })
 })
 
-export const collections = { properties, classes, pages }
+export const collections = { terms, pages }

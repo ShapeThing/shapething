@@ -1,8 +1,8 @@
 // The embed bundle: registers <shacl-renderer> and injects the library stylesheet, so a page only
 // needs this one script tag. The element renders into light DOM, so the stylesheet goes into the
 // document once, not per element.
-import "@shapething/shacl-everything/webcomponent";
-import css from "@shapething/shacl-everything/style.css?inline";
+import "@shapething/shacl-renderer/webcomponent";
+import css from "@shapething/shacl-renderer/style.css?inline";
 
 const STYLE_ID = "shacl-renderer-embed-style";
 

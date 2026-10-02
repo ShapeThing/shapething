@@ -2,7 +2,7 @@ import type { TypedQuery } from "@shapething/typed-sparql";
 import type { RdfStore } from "rdf-stores";
 
 // Dynamically imported and cached so nothing pays for Comunica's SPARQL engine until a query
-// actually runs - mirrors shacl-everything's outputs/render/hooks/query.ts.
+// actually runs - mirrors shacl-renderer's outputs/render/hooks/query.ts.
 let enginePromise:
   | Promise<import("@comunica/query-sparql-rdfjs").QueryEngine>
   | undefined;

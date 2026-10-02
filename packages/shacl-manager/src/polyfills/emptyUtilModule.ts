@@ -1,4 +1,4 @@
-// @shapething/shacl-everything's dereferenceUrl() pulls in readable-stream (via
+// @shapething/shacl-renderer's dereferenceUrl() pulls in readable-stream (via
 // string-to-stream/rdf-parse), which maps `util` to `false` in its own package.json "browser"
 // field - Vite doesn't honor that bare-specifier remap, so it falls back to its default
 // browser-external stub, which warns on every property access even from readable-stream's own

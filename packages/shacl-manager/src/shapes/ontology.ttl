@@ -47,7 +47,7 @@
         sh:name "Imports"@en ;
         sh:path owl:imports ;
         sh:nodeKind sh:IRI ;
-        st:suggestedOptions ( <http://nlbegrip.nl/def/skosapnl#>) ;
+        st:suggestedValues ( <http://nlbegrip.nl/def/skosapnl#>) ;
     ] ;
 
     .

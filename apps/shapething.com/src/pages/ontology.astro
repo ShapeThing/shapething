@@ -1,0 +1,76 @@
+---
+import { getCollection } from 'astro:content'
+import Layout from '../layouts/Layout.astro'
+
+const terms = await getCollection('terms')
+
+const prefixes: Record<string, string> = {
+  st: 'http://shapething.com/',
+  rdf: 'http://www.w3.org/1999/02/22-rdf-syntax-ns#',
+  rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
+  xsd: 'http://www.w3.org/2001/XMLSchema#',
+  sh: 'http://www.w3.org/ns/shacl#',
+  shui: 'http://www.w3.org/ns/shacl-ui/'
+}
+
+const compact = (iri: string) => {
+  for (const [prefix, namespace] of Object.entries(prefixes)) {
+    if (iri.startsWith(namespace)) return `${prefix}:${iri.slice(namespace.length)}`
+  }
+  return iri
+}
+
+type Term = (typeof terms)[number]
+const is = (term: Term, type: string) => term.data.type.includes(type)
+const isGroup = (term: Term) => term.data.subClassOf?.includes(prefixes.sh + 'PropertyGroup') ?? false
+
+// A term lands in the first section it matches.
+const sections: { title: string; matches: (term: Term) => boolean }[] = [
+  { title: 'Editors', matches: term => is(term, prefixes.shui + 'Editor') },
+  { title: 'Viewers', matches: term => is(term, prefixes.shui + 'Viewer') },
+  { title: 'Facets', matches: term => is(term, prefixes.st + 'Facet') },
+  { title: 'Property groups', matches: isGroup },
+  { title: 'Property roles', matches: term => is(term, prefixes.shui + 'PropertyRole') },
+  { title: 'Classes', matches: term => is(term, prefixes.rdfs + 'Class') },
+  { title: 'Properties', matches: term => is(term, prefixes.rdf + 'Property') }
+]
+
+const remaining = [...terms].sort((a, b) => a.id.localeCompare(b.id))
+const grouped = sections.map(section => {
+  const matching = remaining.filter(section.matches)
+  for (const term of matching) remaining.splice(remaining.indexOf(term), 1)
+  return { ...section, terms: matching }
+})
+---
+
+<Layout>
+  <h1>ShapeThing ontology</h1>
+  <p>
+    The <code>http://shapething.com/</code> namespace. Also available as <a href="/index.ttl">Turtle</a>.
+  </p>
+
+  {
+    grouped
+      .filter(section => section.terms.length)
+      .map(section => (
+        <section>
+          <h2>{section.title}</h2>
+          {section.terms.map(term => {
+            const localName = term.id.slice(prefixes.st.length)
+            return (
+              <div id={localName}>
+                <h3>
+                  <a href={'#' + localName}>{term.data.label ?? localName}</a>
+                </h3>
+                <em>{compact(term.id)}</em>
+                {term.data.comment && <p>{term.data.comment}</p>}
+                {term.data.subClassOf?.length && <p>Subclass of {term.data.subClassOf.map(compact).join(', ')}</p>}
+                {term.data.domain?.length && <p>Domain: {term.data.domain.map(compact).join(', ')}</p>}
+                {term.data.range?.length && <p>Range: {term.data.range.map(compact).join(', ')}</p>}
+              </div>
+            )
+          })}
+        </section>
+      ))
+  }
+</Layout>

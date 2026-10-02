@@ -48,8 +48,9 @@ Now add the following React code in App.tsx.
 
 ```typescript
 import { ShaclRenderer } from '@shapething/shacl-renderer'
+import '@shapething/shacl-renderer/style.css'
 
 export function MyForm() {
-  return <ShaclRenderer mode="edit" shapes={new URL('/shapes/contact.ttl', location.origin)} />
+  return <ShaclRenderer mode="edit" shapesGraph={new URL('/shapes/contact.ttl', location.origin)} />
 }
 ```

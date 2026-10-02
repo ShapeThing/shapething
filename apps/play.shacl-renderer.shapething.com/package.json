@@ -26,6 +26,7 @@
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-error-boundary": "^6.0.0",
+    "rdf-stores": "^2.2.0",
     "react-select": "^5.10.2",
     "share-api-polyfill": "^1.1.1"
   },

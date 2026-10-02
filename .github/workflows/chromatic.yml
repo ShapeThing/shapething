@@ -12,6 +12,17 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      # apps/app.shapething.com is a private submodule. The deploy key only grants access to
+      # ShapeThing/app, so it is used for this fetch alone, not for the main checkout.
+      - name: Checkout private app submodule
+        env:
+          APP_DEPLOY_KEY: ${{ secrets.APP_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$APP_DEPLOY_KEY" > ~/.ssh/app_deploy_key
+          chmod 600 ~/.ssh/app_deploy_key
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/app_deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new" \
+            git submodule update --init apps/app.shapething.com
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:

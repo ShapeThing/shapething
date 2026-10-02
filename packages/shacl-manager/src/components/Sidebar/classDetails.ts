@@ -1,5 +1,5 @@
 import type { TypedQuery } from "@shapething/typed-sparql";
-import { localName } from "@shapething/shacl-everything";
+import { localName } from "@shapething/shacl-renderer";
 import { factory } from "@/helpers/factory.ts";
 import type fetchPropertyShapes from "./fetchPropertyShapes.rq";
 import type fetchOntologyProperties from "./fetchOntologyProperties.rq";

@@ -1,29 +1,25 @@
 {
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": ".",
-    "emitDeclarationOnly": true,
-
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "module": "ESNext",
-    "skipLibCheck": true,
-
-    /* Bundler mode */
+    "jsx": "react-jsx",
+    "target": "esnext",
+    "lib": ["esnext", "DOM"],
+    "moduleDetection": "force",
+    "module": "esnext",
     "moduleResolution": "bundler",
     "resolveJsonModule": true,
-    "isolatedModules": true,
-    "allowJs": true,
-    "declaration": true,
-    "jsx": "react-jsx",
-
-    /* Linting */
+    "types": ["node"],
     "strict": true,
     "noUnusedLocals": true,
-    "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "declaration": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "verbatimModuleSyntax": true,
+    "skipLibCheck": true,
+    "paths": {
+      "@/*": ["./src/*"]
+    }
   },
-  "include": ["lib/**/*"],
-  "exclude": ["lib/stories/**/*.stories.tsx"]
+  "include": ["src", ".storybook", "vite-env.d.ts"]
 }
