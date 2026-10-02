@@ -29,7 +29,7 @@ export const reportOnly: Story = {
     // Without shapes, properties are named after their sh:resultPath (capitalized by CSS)...
     expect(await canvas.findByText("birth Date")).toBeVisible();
     // ...the reported values come from the report itself...
-    expect(canvas.getByText("2031-04-01")).toBeVisible();
+    expect(await canvas.findByText("2031-04-01")).toBeVisible();
     // ...and a message is generic unless the report carries its own.
     expect(canvas.getByText("Is too large")).toBeVisible();
   },
