@@ -48,18 +48,8 @@ export async function select(
   for (
     const widgetScore of orderedWidgetScores(scoringGraph, widgetPredicate)
   ) {
-    const widgetIRI = widgetScore.widget;
-
-    const isMatch = await match({
-      ...props,
-      matcherNode: widgetScore.widgetScore,
-    });
-
-    if (isMatch) {
-      const isAccepted = await accept({ ...props, widgetIRI });
-      if (isAccepted) {
-        return widgetIRI as NamedNode;
-      }
+    if (await applies(props, widgetScore)) {
+      return widgetScore.widget as NamedNode;
     }
   }
 }
@@ -78,28 +68,26 @@ export async function score(
 ): Promise<Array<WidgetScoreResult>> {
   const { scoringGraph, widgetPredicate } = props;
 
-  const widgetScores = orderedWidgetScores(scoringGraph, widgetPredicate);
-
   const results: Array<WidgetScoreResult> = [];
 
-  for (const widgetScore of widgetScores) {
-    const isMatch = await match({
-      ...props,
-      matcherNode: widgetScore.widgetScore,
-    });
-
-    if (!isMatch) continue;
-
-    const isAccepted = await accept({
-      ...props,
-      widgetIRI: widgetScore.widget,
-    });
-    if (!isAccepted) continue;
-
-    results.push(widgetScore);
+  for (
+    const widgetScore of orderedWidgetScores(scoringGraph, widgetPredicate)
+  ) {
+    if (await applies(props, widgetScore)) results.push(widgetScore);
   }
 
   return results;
+}
+
+/**
+ * A WidgetScore rule applies when its own matcher matches and its widget is accepted.
+ */
+async function applies(
+  props: PublicInterfaceProps,
+  widgetScore: WidgetScoreResult,
+): Promise<boolean> {
+  return await match({ ...props, matcherNode: widgetScore.widgetScore }) &&
+    await accept({ ...props, widgetIRI: widgetScore.widget });
 }
 
 type matchProps = BaseProps & {
