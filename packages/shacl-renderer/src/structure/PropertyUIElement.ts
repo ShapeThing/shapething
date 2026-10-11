@@ -451,7 +451,6 @@ export class PropertyUIElement {
       shapesGraph,
       scoringGraph: this.scoresGraph,
       widgetPredicate,
-      widgets: this.widgetRegistry,
     });
   }
 

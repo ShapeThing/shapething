@@ -1,6 +1,6 @@
-import type { Quad, Term } from "@rdfjs/types";
+import type { Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
-import { shui } from "@/helpers/namespaces.ts";
+import { rdf, shui } from "@/helpers/namespaces.ts";
 import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
 import { validate, type ValidateProps } from "@/validation/validate.ts";
 import { termKey } from "@/helpers/termKey.ts";
@@ -21,24 +21,30 @@ export function compareScored(
 }
 
 /**
- * Orders shui:WidgetScore quads (subject = the rule, object = its widget, as found via the mode's
- * widgetPredicate) by compareScored. A rule with no shui:score sorts as 0 here - score() is the
- * one that rejects such a rule outright. Returns a new array; `widgetScores` is left untouched.
+ * All shui:WidgetScore rules for the given mode (widgetPredicate), ordered by compareScored.
+ * Throws on a rule without a numeric shui:score.
  */
-export const orderByScore = (
-  widgetScores: Array<Quad>,
+export function orderedWidgetScores(
   scoringGraph: RdfStore,
-): Quad[] =>
-  widgetScores
-    .map((quad) => ({
-      quad,
-      widget: quad.object,
-      score: parseFloat(
-        scoringGraph.getQuads(quad.subject, shui("score"))[0]?.object.value ?? "0",
-      ),
-    }))
-    .sort(compareScored)
-    .map(({ quad }) => quad);
+  widgetPredicate: Term,
+): Array<{ widgetScore: Term; widget: Term; score: number }> {
+  return scoringGraph.getQuads(null, widgetPredicate)
+    .filter((quad) => hasType(scoringGraph, quad.subject, shui("WidgetScore")))
+    .map((quad) => {
+      const widgetScore = quad.subject;
+      const [scoreQuad] = scoringGraph.getQuads(widgetScore, shui("score"));
+      const score = scoreQuad ? parseFloat(scoreQuad.object.value) : NaN;
+
+      if (isNaN(score)) {
+        throw new Error(
+          `Invalid Widget Score definition for ${widgetScore.value}`,
+        );
+      }
+
+      return { widgetScore, widget: quad.object, score };
+    })
+    .sort(compareScored);
+}
 
 /**
  * A string-keyed cache of values derived from one RdfStore, for memoizing an expensive computation
@@ -102,4 +108,21 @@ export async function cachedValidate(props: ValidateProps): Promise<boolean> {
     `${termKey(focusNode)}-${termKey(shapeNode)}`,
     () => validate(props),
   );
+}
+
+export const hasType = (graph: RdfStore, subject: Term, type: Term): boolean =>
+  graph.getQuads(subject, rdf("type"), type).length > 0;
+
+export const objects = (graph: RdfStore, subject: Term, predicate: Term): Term[] =>
+  graph.getQuads(subject, predicate).map((quad) => quad.object);
+
+/** Whether focusNode conforms to every one of shapeNodes, stopping at the first failure. */
+export async function allValid(
+  props: Omit<ValidateProps, "shapeNode">,
+  shapeNodes: Term[],
+): Promise<boolean> {
+  for (const shapeNode of shapeNodes) {
+    if (!(await cachedValidate({ ...props, shapeNode }))) return false;
+  }
+  return true;
 }
