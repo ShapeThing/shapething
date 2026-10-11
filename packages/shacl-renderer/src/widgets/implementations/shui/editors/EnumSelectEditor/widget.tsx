@@ -118,8 +118,9 @@ export default function EnumSelectEditor({
                 propertyShape: shape,
                 languages: [activeInterfaceLanguage],
               }),
-            classification: match?.classification,
+            classifications: match?.classifications,
             depiction: match?.depiction,
+            icon: match?.icon,
           };
         })
   ).sort((a, b) => {
@@ -148,8 +149,9 @@ export default function EnumSelectEditor({
       ? {
           term,
           label: currentValueLookups[0].label,
-          classification: currentValueLookups[0].classification,
+          classifications: currentValueLookups[0].classifications,
           depiction: currentValueLookups[0].depiction,
+          icon: currentValueLookups[0].icon,
         }
       : undefined);
 
@@ -225,8 +227,9 @@ export default function EnumSelectEditor({
           <AutoCompleteOption
             term={term}
             label={current?.label}
-            classification={current?.classification}
+            classifications={current?.classifications}
             depiction={current?.depiction}
+            icon={current?.icon}
             resourceEditor={
               enableEditInPlace
                 ? {
@@ -274,8 +277,9 @@ export default function EnumSelectEditor({
               <AutoCompleteOption
                 term={option.term}
                 label={option.label}
-                classification={option.classification}
+                classifications={option.classifications}
                 depiction={option.depiction}
+                icon={option.icon}
               />
             </div>
           ))}

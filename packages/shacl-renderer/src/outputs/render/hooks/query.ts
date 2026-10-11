@@ -1,16 +1,20 @@
 import type { Bindings, NamedNode, Term } from "@rdfjs/types";
 import { queryPrefixes, sh } from "@/helpers/namespaces.ts";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
+import { descriptionText } from "@/helpers/descriptionText.ts";
 import { escapeSparqlLiteral } from "@/helpers/sparqlLiteral.ts";
 import { fetchWithCorsProxyFallback, getQueryEngine } from "@/helpers/queryEngine.ts";
 import { geosparqlExtensionFunctions } from "@/helpers/geosparqlFunctions.ts";
 import {
   classificationRolePropertyPaths,
+  asIconIri,
   depictionRolePropertyPaths,
   descriptionRolePropertyPaths,
   effectiveLabelPredicates,
+  iconRolePropertyPaths,
   labelRolePropertyPaths,
   valueNodeColor,
+  valueNodeIcon,
 } from "@/resolution/label.ts";
 import { toSparql } from "@/structure/paths/toSparql.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -32,11 +36,17 @@ const EXACT_MATCH_WEIGHT = 100;
 // HTTP round trip per property, short enough to be imperceptible as added latency.
 const ROLE_LOOKUP_BATCH_DELAY_MS = 100;
 
+type ResolvedClassification = { term: Term; label: string; color?: string };
+
 export type ResolvedTerm = {
   term: Term;
   label?: string;
-  classification?: { term: Term; label: string; color?: string };
+  // Every distinct shui:ClassificationRole value (e.g. each skos:inScheme of a Concept in several
+  // schemes), one chip each - see toResolvedTerms for how the query's one-row-per-classification
+  // bindings are folded back into a single ResolvedTerm per value.
+  classifications?: ResolvedClassification[];
   depiction?: NamedNode;
+  icon?: NamedNode;
   description?: string;
 };
 
@@ -45,8 +55,9 @@ export type ResolvedTerm = {
 export type SearchResult = {
   iri: NamedNode;
   label?: string;
-  classification?: { term: Term; label: string; color?: string };
+  classifications?: ResolvedClassification[];
   depiction?: NamedNode;
+  icon?: NamedNode;
   description?: string;
 };
 
@@ -115,46 +126,146 @@ export function insertValuesClause(query: string, variable: string, values: Name
   return query.slice(0, braceIndex + 1) + valuesClause + query.slice(braceIndex + 1);
 }
 
+const IRI_REF = /<[^<>"{}|^`\\\x00-\x20]*>/y;
+
+// Index of every `{`/`}` in `query` that is actual SPARQL syntax - i.e. not inside a string
+// literal, an IRI (e.g. a PREFIX's `<...#>`) or a `#` comment.
+
+function structuralBraceIndexes(query: string): number[] {
+  const indexes: number[] = [];
+  let index = 0;
+  while (index < query.length) {
+    const char = query[index];
+    IRI_REF.lastIndex = index;
+    if (char === "#") {
+      const newline = query.indexOf("\n", index);
+      index = newline === -1 ? query.length : newline + 1;
+    } else if (char === '"' || char === "'") {
+      const quote = query.startsWith(char.repeat(3), index) ? char.repeat(3) : char;
+      let end = index + quote.length;
+      while (end < query.length && !query.startsWith(quote, end)) end += query[end] === "\\" ? 2 : 1;
+      index = end + quote.length;
+    } else if (char === "<" && IRI_REF.test(query)) {
+      index = IRI_REF.lastIndex;
+    } else {
+      if (char === "{" || char === "}") indexes.push(index);
+      index++;
+    }
+  }
+  return indexes;
+}
+
+function matchingBraceIndex(braces: number[], query: string, openIndex: number): number {
+  let depth = 0;
+  for (const brace of braces) {
+    if (brace < openIndex) continue;
+    depth += query[brace] === "{" ? 1 : -1;
+    if (depth === 0) return brace;
+  }
+  return -1;
+}
+
+const ONLY_WHITESPACE_OR_COMMENTS = /^(?:\s|#[^\n]*)*$/;
+
+/**
+ * When `query`'s whole WHERE body is a single `SERVICE <endpoint> { ... }` block (the usual shape
+ * of a shape-authored federated sh:select/shui:searchQuery), returns that query with the SERVICE
+ * wrapper removed, plus the endpoint - so runQuery can hand the whole thing to that endpoint as
+ * Comunica's sole `sparql` source in one request. Left wrapped, Comunica 5 decomposes the SERVICE
+ * body into per-pattern requests joined client-side - e.g. a FILTER NOT EXISTS re-requested once
+ * per ?label binding, ~190 requests for a single country (see helpers/queryEngine.ts's
+ * selectBindings). Anything else (local patterns next to the SERVICE, several SERVICE clauses,
+ * SERVICE SILENT, whose "errors become no results" semantics a plain source wouldn't keep) is left
+ * alone.
+ */
+export function unwrapSoleService(query: string): { query: string; endpoint: string } | undefined {
+  const serviceMatch = query.match(/\bSERVICE\s*<([^>]+)>\s*\{/i);
+  if (serviceMatch?.index === undefined) return undefined;
+
+  const braces = structuralBraceIndexes(query);
+  const serviceOpen = serviceMatch.index + serviceMatch[0].length - 1;
+  const outerOpen = braces[0];
+  if (outerOpen === undefined || !braces.includes(serviceOpen)) return undefined;
+  if (!ONLY_WHITESPACE_OR_COMMENTS.test(query.slice(outerOpen + 1, serviceMatch.index))) {
+    return undefined;
+  }
+
+  const serviceClose = matchingBraceIndex(braces, query, serviceOpen);
+  const outerClose = matchingBraceIndex(braces, query, outerOpen);
+  if (serviceClose === -1 || outerClose === -1) return undefined;
+  if (!ONLY_WHITESPACE_OR_COMMENTS.test(query.slice(serviceClose + 1, outerClose))) {
+    return undefined;
+  }
+
+  const body = query.slice(serviceOpen + 1, serviceClose);
+  if (/\bSERVICE\b/i.test(body)) return undefined;
+
+  return {
+    query: query.slice(0, outerOpen + 1) + body + query.slice(outerClose),
+    endpoint: serviceMatch[1],
+  };
+}
+
 // `valueVariable` is the query's first projected variable (see runQuery), so sh:select queries need
 // not name it ?value. It has to come from the query's own projection rather than from `binding`
 // itself: a Bindings' iteration order follows the engine's join order, not the SELECT clause's -
 // e.g. a nested ClassificationRole optional can put ?classification ahead of ?value.
+//
+// A value with several ClassificationRole values comes back as several bindings - one per
+// ?classification (buildSearchQuery/buildRoleLookupQuery group on it rather than sampling it, and a
+// shape-authored sh:select may do the same) - folded back here into one ResolvedTerm per value, in
+// first-seen order (so buildSearchQuery's ranking survives). Every other role keeps the first
+// binding that has it; a classification seen twice (e.g. once per label language) keeps its first
+// label.
 function toResolvedTerms(bindings: Bindings[], valueVariable: string): ResolvedTerm[] {
-  return bindings.flatMap((binding): ResolvedTerm[] => {
+  const resolvedByValue = new Map<string, ResolvedTerm>();
+
+  for (const binding of bindings) {
     const term = binding.get(valueVariable);
-    if (!term) return [];
+    if (!term) continue;
 
     const labelTerm = binding.get("label");
     const classificationTerm = binding.get("classification");
     const classificationLabelTerm = binding.get("classificationLabel");
     const depictionTerm = binding.get("depiction");
+    const iconTerm = binding.get("icon");
     const descriptionTerm = binding.get("description");
 
-    return [
-      {
-        term,
-        label: labelTerm?.termType === "Literal" ? labelTerm.value : undefined,
-        // classificationTerm is whatever the shape's ClassificationRole path ends on - a literal
-        // (e.g. skos:definition) or a linked resource (e.g. skos:inScheme). Kept as `term` either
-        // way so a chip can link out to it; `label` prefers that resource's own resolved label
-        // (classificationLabelTerm - see buildRoleLookupQuery/buildSearchQuery's second, nested
-        // lookup), then classificationTerm's own lexical form, then its local name.
-        classification: classificationTerm
-          ? {
-              term: classificationTerm,
-              label:
-                classificationLabelTerm?.termType === "Literal"
-                  ? classificationLabelTerm.value
-                  : classificationTerm.termType === "Literal"
-                    ? classificationTerm.value
-                    : (localNameLabel(classificationTerm) ?? classificationTerm.value),
-            }
-          : undefined,
-        depiction: depictionTerm?.termType === "NamedNode" ? depictionTerm : undefined,
-        description: descriptionTerm?.termType === "Literal" ? descriptionTerm.value : undefined,
-      },
-    ];
-  });
+    const key = `${term.termType}:${term.value}`;
+    const resolved = resolvedByValue.get(key) ?? { term };
+    resolvedByValue.set(key, resolved);
+
+    resolved.label ??= labelTerm?.termType === "Literal" ? labelTerm.value : undefined;
+    resolved.depiction ??= depictionTerm?.termType === "NamedNode" ? depictionTerm : undefined;
+    resolved.icon ??= iconTerm && asIconIri(iconTerm);
+    resolved.description ??=
+      descriptionTerm?.termType === "Literal" ? descriptionText(descriptionTerm) : undefined;
+
+    // classificationTerm is whatever the shape's ClassificationRole path ends on - a literal (e.g.
+    // skos:definition) or a linked resource (e.g. skos:inScheme). Kept as `term` either way so a
+    // chip can link out to it; `label` prefers that resource's own resolved label
+    // (classificationLabelTerm - see buildRoleLookupQuery/buildSearchQuery's second, nested
+    // lookup), then classificationTerm's own lexical form, then its local name.
+    if (
+      classificationTerm &&
+      !resolved.classifications?.some((existing) => existing.term.equals(classificationTerm))
+    ) {
+      resolved.classifications = [
+        ...(resolved.classifications ?? []),
+        {
+          term: classificationTerm,
+          label:
+            classificationLabelTerm?.termType === "Literal"
+              ? classificationLabelTerm.value
+              : classificationTerm.termType === "Literal"
+                ? classificationTerm.value
+                : (localNameLabel(classificationTerm) ?? classificationTerm.value),
+        },
+      ];
+    }
+  }
+
+  return [...resolvedByValue.values()];
 }
 
 // Shared by searchInstances and fetchOptions, whose callers only ever deal in IRIs - a class-
@@ -167,9 +278,9 @@ function toSearchResults(results: ResolvedTerm[]): SearchResult[] {
 }
 
 // A ClassificationRole value's own swatch color (st:ColorRole, resolved off its own rdf:type - see
-// resolution/label.ts's valueNodeColor), applied uniformly wherever this module produces a
-// ResolvedTerm with a `classification`. Deliberately a plain local-graph lookup (propertyShape.
-// dataGraph/shapesGraph), not a SPARQL-projected column: unlike LabelRole/ClassificationRole/
+// resolution/label.ts's valueNodeColor), applied to each of a ResolvedTerm's `classifications`
+// independently, wherever this module produces one. Deliberately a plain local-graph lookup
+// (propertyShape.dataGraph/shapesGraph), not a SPARQL-projected column: unlike LabelRole/ClassificationRole/
 // DepictionRole (resolved statically from propertyShape's own sh:node/sh:class, so their SPARQL
 // path text can be built up front), which node shape's st:ColorRole applies depends on the
 // classification value's own rdf:type - only known once the query has already run. A federated
@@ -180,20 +291,39 @@ function withClassificationColor(
   result: ResolvedTerm,
   propertyShape: PropertyUIElement,
 ): ResolvedTerm {
-  if (!result.classification) return result;
-  const color = valueNodeColor({ term: result.classification.term, propertyShape });
-  return color ? { ...result, classification: { ...result.classification, color } } : result;
+  if (!result.classifications) return result;
+  return {
+    ...result,
+    classifications: result.classifications.map((classification) => {
+      const color = valueNodeColor({ term: classification.term, propertyShape });
+      return color ? { ...classification, color } : classification;
+    }),
+  };
+}
+
+// A result the query found no IconRole value for still gets one from the local graphs - the value's
+// own local triples, else the IconRole property shape's sh:defaultValue (see label.ts's
+// valueNodeIcon). Icons are usually one class-wide default, which lives in the shapes graph and so
+// never comes back from a (possibly federated) query.
+function withIconFallback(result: ResolvedTerm, propertyShape: PropertyUIElement): ResolvedTerm {
+  if (result.icon) return result;
+  const icon = valueNodeIcon({ term: result.term, propertyShape });
+  return icon ? { ...result, icon } : result;
 }
 
 // `endpoint`, when given (facet mode's Environment.facetsEndpoint), runs the query against that
 // SPARQL endpoint instead of the local dataGraph - e.g. a TextSearchFacet's shui:searchQuery body,
-// which searches the same data the facets themselves are querying.
+// which searches the same data the facets themselves are querying. Without one, a query that is
+// just a single SERVICE block runs against that SERVICE's endpoint directly (see unwrapSoleService).
 export async function runQuery(
-  query: string,
+  rawQuery: string,
   propertyShape: PropertyUIElement,
   corsProxyUrl?: string,
-  endpoint?: string,
+  explicitEndpoint?: string,
 ): Promise<ResolvedTerm[]> {
+  const unwrapped = explicitEndpoint ? undefined : unwrapSoleService(rawQuery);
+  const query = unwrapped?.query ?? rawQuery;
+  const endpoint = explicitEndpoint ?? unwrapped?.endpoint;
   const engine = await getQueryEngine();
   const result = await engine.query(query, {
     sources: endpoint ? [{ type: "sparql", value: endpoint }] : [propertyShape.dataGraph],
@@ -211,7 +341,7 @@ export async function runQuery(
 
   const bindings = await (await result.execute()).toArray();
   return toResolvedTerms(bindings, valueVariable.value).map((resolved) =>
-    withClassificationColor(resolved, propertyShape),
+    withIconFallback(withClassificationColor(resolved, propertyShape), propertyShape),
   );
 }
 
@@ -226,20 +356,20 @@ export async function runQuery(
  * but an empty array is still handled (label scoring simply drops out, leaving IRI-only matching)
  * since this function is a plain SPARQL-builder, not itself aware of that fallback.
  * `classificationPaths` and `depictionPaths` are walked the same way to bind
- * `?classification`/`?depiction` alongside each result. Unlike sh:in's role resolution (see
+ * `?classification`/`?depiction` alongside each result. Ranking and SEARCH_RESULT_LIMIT happen in
+ * a subquery that leaves classifications out, joined back on afterwards one row per
+ * ?classification (folded per value client-side, see toResolvedTerms) - so a value with several
+ * classifications neither gets one picked arbitrarily nor uses up more than one slot of the limit. Unlike sh:in's role resolution (see
  * buildRoleLookupQuery), these roles can't be split into a separate lookup afterwards - the label
  * match has to happen inside the ranking query itself, since it's what's being ranked on. When
- * `?iriClassification` lands on a resource rather than a literal (e.g. skos:inScheme), a nested
+ * `?classification` lands on a resource rather than a literal (e.g. skos:inScheme), a nested
  * optional resolves *that* resource's own `?classificationLabel` too - via `labelPaths` (the same
  * paths used for the candidate's own label) falling back to plain rdfs:label, mirroring
- * valueNodeClassification's recursive valueNodeLabel call for the local (non-federated) case.
+ * valueNodeClassifications' recursive valueNodeLabel call for the local (non-federated) case.
  */
 export function buildSearchQuery(
   classIri: NamedNode,
-  labelPaths: string[],
-  classificationPaths: string[],
-  depictionPaths: string[],
-  descriptionPaths: string[],
+  { labelPaths, classificationPaths, depictionPaths, iconPaths, descriptionPaths }: RolePaths,
   search: string,
 ): string {
   const needle = escapeSparqlLiteral(search.trim().toLowerCase());
@@ -256,14 +386,16 @@ export function buildSearchQuery(
   const classificationPattern =
     classificationPaths.length > 0
       ? `optional {
-          ?value ${classificationPaths.join("|")} ?iriClassification .
-          optional { ?iriClassification ${classificationLabelPaths.join("|")} ?iriClassificationLabel }
+          ?value ${classificationPaths.join("|")} ?classification .
+          optional { ?classification ${classificationLabelPaths.join("|")} ?classificationLabel }
         }`
       : "";
   const depictionPattern =
     depictionPaths.length > 0
       ? `optional { ?value ${depictionPaths.join("|")} ?iriDepiction }`
       : "";
+  const iconPattern =
+    iconPaths.length > 0 ? `optional { ?value ${iconPaths.join("|")} ?iriIcon }` : "";
   const descriptionPattern =
     descriptionPaths.length > 0
       ? `optional { ?value ${descriptionPaths.join("|")} ?iriDescription }`
@@ -271,21 +403,27 @@ export function buildSearchQuery(
 
   return `
     ${queryPrefixes}
-    select ?value (sample(?iriLabel) as ?label) (sample(?iriClassification) as ?classification) (sample(?iriClassificationLabel) as ?classificationLabel) (sample(?iriDepiction) as ?depiction) (sample(?iriDescription) as ?description) (max(?matchScore) as ?score) where {
-      ?value a <${classIri.value}> .
-      ${labelPattern}
+    select ?value ?label ?classification ?classificationLabel ?depiction ?icon ?description ?score where {
+      {
+        select ?value (sample(?iriLabel) as ?label) (sample(?iriDepiction) as ?depiction) (sample(?iriIcon) as ?icon) (sample(?iriDescription) as ?description) (max(?matchScore) as ?score) where {
+          ?value a <${classIri.value}> .
+          ${labelPattern}
+          ${depictionPattern}
+          ${iconPattern}
+          ${descriptionPattern}
+          bind(${labelScoreExpression} as ?labelScore)
+          bind(if(contains(lcase(str(?value)), "${needle}"), ${IRI_MATCH_WEIGHT}, 0) as ?iriScore)
+          bind(${exactScoreExpression} as ?exactScore)
+          bind(?labelScore + ?iriScore + ?exactScore as ?matchScore)
+          filter(?matchScore > 0)
+        }
+        group by ?value
+        order by desc(?score)
+        limit ${SEARCH_RESULT_LIMIT}
+      }
       ${classificationPattern}
-      ${depictionPattern}
-      ${descriptionPattern}
-      bind(${labelScoreExpression} as ?labelScore)
-      bind(if(contains(lcase(str(?value)), "${needle}"), ${IRI_MATCH_WEIGHT}, 0) as ?iriScore)
-      bind(${exactScoreExpression} as ?exactScore)
-      bind(?labelScore + ?iriScore + ?exactScore as ?matchScore)
-      filter(?matchScore > 0)
     }
-    group by ?value
     order by desc(?score)
-    limit ${SEARCH_RESULT_LIMIT}
   `;
 }
 
@@ -296,25 +434,25 @@ export function buildSearchQuery(
  * instead of one query per value. `uiLanguage` is optional - when given, a label/classification
  * only counts if it matches that language (or has none), the way a federated lookup needs to
  * disambiguate a remote endpoint's multi-language literals; local-only lookups leave it out and
- * take whatever's there, the same as `?value`'s own rdfs:label would. `endpoint`, when given, wraps
- * the whole lookup in `SERVICE <endpoint>` so it stays a single HTTP request to that endpoint
- * instead of something Comunica's join planner could split further - see resolveRoles for why that
- * matters.
+ * take whatever's there, the same as `?value`'s own rdfs:label would. A federated lookup is not
+ * wrapped in `SERVICE <endpoint>` here - runRoleLookupQuery runs it with that endpoint as Comunica's
+ * sole `sparql` source instead, since Comunica 5 decomposes a SERVICE block's contents into
+ * per-pattern requests (each OPTIONAL fetched unbound - e.g. every dbo:thumbnail on DBpedia -
+ * then joined client-side), whereas a lone `sparql` source ships the whole query in one request
+ * (see helpers/queryEngine.ts's selectBindings).
  *
  * When `?roleClassification` lands on a resource rather than a literal (e.g. skos:inScheme, on a
  * skos:ConceptScheme), a nested optional resolves *that* resource's own `?classificationLabel` too
  * - via `labelPaths` (the same paths used for `?value`'s own label) falling back to plain
- * rdfs:label, mirroring valueNodeClassification's recursive valueNodeLabel call for the local
- * (non-federated) case.
+ * rdfs:label, mirroring valueNodeClassifications' recursive valueNodeLabel call for the local
+ * (non-federated) case. Grouped per ?roleClassification as well as ?value, so a value with several
+ * classifications comes back as one row per classification (folded per value client-side, see
+ * toResolvedTerms) rather than having one sampled arbitrarily.
  */
 function buildRoleLookupQuery(
   values: Term[],
-  labelPaths: string[],
-  classificationPaths: string[],
-  depictionPaths: string[],
-  descriptionPaths: string[],
+  { labelPaths, classificationPaths, depictionPaths, iconPaths, descriptionPaths }: RolePaths,
   uiLanguage: string | undefined,
-  endpoint: string | undefined,
 ): string {
   const languageFilter = uiLanguage
     ? (variable: string) => {
@@ -336,6 +474,7 @@ function buildRoleLookupQuery(
         )} ?roleClassificationLabel${languageFilter("?roleClassificationLabel")} }
       }`,
     depictionPaths.length > 0 && `optional { ?value ${depictionPaths.join("|")} ?roleDepiction }`,
+    iconPaths.length > 0 && `optional { ?value ${iconPaths.join("|")} ?roleIcon }`,
     descriptionPaths.length > 0 &&
       `optional { ?value ${descriptionPaths.join("|")} ?roleDescription${languageFilter("?roleDescription")} }`,
   ]
@@ -343,16 +482,13 @@ function buildRoleLookupQuery(
     .join("\n");
 
   const valuesClause = `values ?value { ${values.map((value) => `<${value.value}>`).join(" ")} }`;
-  const where = endpoint
-    ? `service <${endpoint}> { ${valuesClause} ${patterns} }`
-    : `${valuesClause} ${patterns}`;
 
   return `
     ${queryPrefixes}
-    select ?value (sample(?roleLabel) as ?label) (sample(?roleClassification) as ?classification) (sample(?roleClassificationLabel) as ?classificationLabel) (sample(?roleDepiction) as ?depiction) (sample(?roleDescription) as ?description) where {
-      ${where}
+    select ?value (sample(?roleLabel) as ?label) (sample(?roleClassification) as ?classification) (sample(?roleClassificationLabel) as ?classificationLabel) (sample(?roleDepiction) as ?depiction) (sample(?roleIcon) as ?icon) (sample(?roleDescription) as ?description) where {
+      ${valuesClause} ${patterns}
     }
-    group by ?value
+    group by ?value ?roleClassification
   `;
 }
 
@@ -370,13 +506,24 @@ function labelPathsFor(propertyShape: PropertyUIElement) {
     : effectiveLabelPredicates(propertyShape.shapesGraph, "term");
 }
 
-// Shared by resolveRoles and fetchOptions/batchRoleLookup so both compute the exact same set of
-// SPARQL path expressions for a given shape.
-function rolePathsFor(propertyShape: PropertyUIElement) {
+// Every role's SPARQL path expressions for a shape - what buildSearchQuery/buildRoleLookupQuery walk
+// from ?value to bind each role's column.
+type RolePaths = {
+  labelPaths: string[];
+  classificationPaths: string[];
+  depictionPaths: string[];
+  iconPaths: string[];
+  descriptionPaths: string[];
+};
+
+// Shared by searchInstances, resolveRoles and fetchOptions/batchRoleLookup so all of them compute
+// the exact same set of SPARQL path expressions for a given shape.
+function rolePathsFor(propertyShape: PropertyUIElement): RolePaths {
   return {
     labelPaths: labelPathsFor(propertyShape).map((path) => toSparql(path)),
     classificationPaths: classificationRolePropertyPaths(propertyShape).map((path) => toSparql(path)),
     depictionPaths: depictionRolePropertyPaths(propertyShape).map((path) => toSparql(path)),
+    iconPaths: iconRolePropertyPaths(propertyShape).map((path) => toSparql(path)),
     descriptionPaths: descriptionRolePropertyPaths(propertyShape).map((path) => toSparql(path)),
   };
 }
@@ -387,22 +534,11 @@ function rolePathsFor(propertyShape: PropertyUIElement) {
 async function runRoleLookupQuery(
   values: Term[],
   propertyShape: PropertyUIElement,
-  labelPaths: string[],
-  classificationPaths: string[],
-  depictionPaths: string[],
-  descriptionPaths: string[],
+  paths: RolePaths,
   options: RoleLookupOptions,
 ): Promise<ResolvedTerm[]> {
-  const query = buildRoleLookupQuery(
-    values,
-    labelPaths,
-    classificationPaths,
-    depictionPaths,
-    descriptionPaths,
-    options.uiLanguage,
-    options.endpoint,
-  );
-  const resolved = await runQuery(query, propertyShape, options.corsProxyUrl);
+  const query = buildRoleLookupQuery(values, paths, options.uiLanguage);
+  const resolved = await runQuery(query, propertyShape, options.corsProxyUrl, options.endpoint);
   const resolvedByValue = new Map(resolved.map((result) => [result.term.value, result]));
 
   return values.map((term) => ({ term, ...resolvedByValue.get(term.value) }));
@@ -424,18 +560,7 @@ async function resolveRoles(
 ): Promise<ResolvedTerm[]> {
   if (values.length === 0) return [];
 
-  const { labelPaths, classificationPaths, depictionPaths, descriptionPaths } =
-    rolePathsFor(propertyShape);
-
-  return runRoleLookupQuery(
-    values,
-    propertyShape,
-    labelPaths,
-    classificationPaths,
-    depictionPaths,
-    descriptionPaths,
-    options,
-  );
+  return runRoleLookupQuery(values, propertyShape, rolePathsFor(propertyShape), options);
 }
 
 /**
@@ -452,18 +577,7 @@ export async function searchInstances(
   const classIri = shape.get(sh("class"))[0] as NamedNode | undefined;
   if (!classIri) return [];
 
-  const labelPaths = labelPathsFor(shape).map((path) => toSparql(path));
-  const classificationPaths = classificationRolePropertyPaths(shape).map((path) => toSparql(path));
-  const depictionPaths = depictionRolePropertyPaths(shape).map((path) => toSparql(path));
-  const descriptionPaths = descriptionRolePropertyPaths(shape).map((path) => toSparql(path));
-  const query = buildSearchQuery(
-    classIri,
-    labelPaths,
-    classificationPaths,
-    depictionPaths,
-    descriptionPaths,
-    search,
-  );
+  const query = buildSearchQuery(classIri, rolePathsFor(shape), search);
 
   return toSearchResults(await runQuery(query, shape, corsProxyUrl));
 }
@@ -484,18 +598,13 @@ type RoleLookupBatchEntry = {
 // their buildRoleLookupQuery call would otherwise be identical modulo `values`.
 const roleLookupBatches = new WeakMap<object, Map<string, RoleLookupBatchEntry>>();
 
-function roleLookupBatchKey(
-  labelPaths: string[],
-  classificationPaths: string[],
-  depictionPaths: string[],
-  descriptionPaths: string[],
-  options: RoleLookupOptions,
-): string {
+function roleLookupBatchKey(paths: RolePaths, options: RoleLookupOptions): string {
   return JSON.stringify([
-    labelPaths,
-    classificationPaths,
-    depictionPaths,
-    descriptionPaths,
+    paths.labelPaths,
+    paths.classificationPaths,
+    paths.depictionPaths,
+    paths.iconPaths,
+    paths.descriptionPaths,
     options.uiLanguage,
     options.endpoint,
     options.corsProxyUrl,
@@ -508,20 +617,14 @@ function roleLookupBatchKey(
 async function runRoleLookupBatch(
   entry: RoleLookupBatchEntry,
   propertyShape: PropertyUIElement,
-  labelPaths: string[],
-  classificationPaths: string[],
-  depictionPaths: string[],
-  descriptionPaths: string[],
+  paths: RolePaths,
   options: RoleLookupOptions,
 ): Promise<void> {
   try {
     const resolved = await runRoleLookupQuery(
       [...entry.values.values()],
       propertyShape,
-      labelPaths,
-      classificationPaths,
-      depictionPaths,
-      descriptionPaths,
+      paths,
       options,
     );
     const resolvedByValue = new Map(resolved.map((result) => [result.term.value, result]));
@@ -545,10 +648,7 @@ async function runRoleLookupBatch(
 function batchRoleLookup(
   values: Term[],
   propertyShape: PropertyUIElement,
-  labelPaths: string[],
-  classificationPaths: string[],
-  depictionPaths: string[],
-  descriptionPaths: string[],
+  paths: RolePaths,
   options: RoleLookupOptions,
 ): Promise<ResolvedTerm[]> {
   let batchesForGraph = roleLookupBatches.get(propertyShape.dataGraph);
@@ -557,13 +657,7 @@ function batchRoleLookup(
     roleLookupBatches.set(propertyShape.dataGraph, batchesForGraph);
   }
 
-  const key = roleLookupBatchKey(
-    labelPaths,
-    classificationPaths,
-    depictionPaths,
-    descriptionPaths,
-    options,
-  );
+  const key = roleLookupBatchKey(paths, options);
   let entry = batchesForGraph.get(key);
   if (!entry) {
     entry = { values: new Map(), waiters: [] };
@@ -572,15 +666,7 @@ function batchRoleLookup(
     batchesForGraph.set(key, newEntry);
     setTimeout(() => {
       graphBatches.delete(key);
-      void runRoleLookupBatch(
-        newEntry,
-        propertyShape,
-        labelPaths,
-        classificationPaths,
-        depictionPaths,
-        descriptionPaths,
-        options,
-      );
+      void runRoleLookupBatch(newEntry, propertyShape, paths, options);
     }, ROLE_LOOKUP_BATCH_DELAY_MS);
   }
 
@@ -610,19 +696,7 @@ export async function fetchOptions(
 ): Promise<SearchResult[]> {
   if (iris.length === 0) return [];
 
-  const { labelPaths, classificationPaths, depictionPaths, descriptionPaths } = rolePathsFor(shape);
-
-  return toSearchResults(
-    await batchRoleLookup(
-      iris,
-      shape,
-      labelPaths,
-      classificationPaths,
-      depictionPaths,
-      descriptionPaths,
-      options,
-    ),
-  );
+  return toSearchResults(await batchRoleLookup(iris, shape, rolePathsFor(shape), options));
 }
 
 /**

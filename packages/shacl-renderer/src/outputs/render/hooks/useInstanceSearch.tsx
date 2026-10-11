@@ -55,8 +55,9 @@ async function runSearchQuery(
             {
               iri: result.term,
               label: result.label,
-              classification: result.classification,
+              classifications: result.classifications,
               depiction: result.depiction,
+              icon: result.icon,
             },
           ]
         : [],

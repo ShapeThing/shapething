@@ -132,7 +132,9 @@ st:lightness
 st:DescriptionRole
     a shui:PropertyRole ;
     rdfs:label "description role"@en ;
-    rdfs:comment "Marks the property that holds a longer text summary of a resource, shown as a snippet on teaser cards such as the search results of shui:AutoCompleteEditor."@en .
+    rdfs:comment "Deprecated: use shui:DescriptionRole, which SHACL UI now defines. Still recognized as an alias of it."@en ;
+    owl:deprecated true ;
+    rdfs:seeAlso shui:DescriptionRole .
 
 st:ColorRole
     a shui:PropertyRole ;

@@ -1,10 +1,11 @@
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { hslToHex } from "@/helpers/colorBuckets.ts";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
+import { descriptionText } from "@/helpers/descriptionText.ts";
 import { factory } from "@/helpers/factory.ts";
 import { isAbstract } from "@/helpers/isAbstract.ts";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
-import { rdf, rdfs, sh, shui, st } from "@/helpers/namespaces.ts";
+import { rdf, rdfs, sh, shui, st, xsd } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import language, {
   configuredLanguages,
@@ -502,7 +503,7 @@ export function depictionRolePropertyPaths(
  * node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole
  * shui:ClassificationRole - secondary, disambiguating info shown alongside the main LabelRole label
  * (e.g. a pseudonym next to a person's name, or a linked concept's own scheme). The path may end on
- * a literal directly or on a resource - see valueNodeClassification for how the latter then gets
+ * a literal directly or on a resource - see valueNodeClassifications for how the latter then gets
  * its own label resolved. Mirrors labelRolePropertyPaths.
  */
 export function classificationRolePropertyPaths(
@@ -514,16 +515,18 @@ export function classificationRolePropertyPaths(
 /**
  * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
  * node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole
- * st:DescriptionRole - a longer, free-text summary of a value (e.g. a chef's own biography), as
- * opposed to LabelRole's short display name. Not part of the shui: spec - a ShapeThing-original
- * role, the same kind of extension st:GeoRole is (see st:MapViewer's geometry.ts): declared via
- * the very same generic `shui:propertyRole` predicate, just with an `st:` role value instead of a
- * `shui:` one. Mirrors labelRolePropertyPaths/depictionRolePropertyPaths.
+ * shui:DescriptionRole - a longer, free-text summary of a value (e.g. a chef's own biography), as
+ * opposed to LabelRole's short display name. Also matches st:DescriptionRole, the ShapeThing-original
+ * role that predates the spec's own and is kept as a deprecated alias so existing shapes keep
+ * working. Mirrors labelRolePropertyPaths/depictionRolePropertyPaths.
  */
 export function descriptionRolePropertyPaths(
   propertyShape: PropertyUIElement,
 ): PropertyPath[] {
-  return propertyPathsByRole(propertyShape, st("DescriptionRole"));
+  return [
+    ...propertyPathsByRole(propertyShape, shui("DescriptionRole")),
+    ...propertyPathsByRole(propertyShape, st("DescriptionRole")),
+  ];
 }
 
 /**
@@ -551,7 +554,7 @@ function ownClassNodeShapes(
  * The property paths (sh:path) of every property shape on a node shape targeting `term`'s own
  * rdf:type (see ownClassNodeShapes) that's annotated shui:propertyRole st:ColorRole - i.e. what to
  * walk from `term` itself (not from some enclosing property's value) to find a swatch color for
- * it. Not part of the spec; a ShapeThing-original role like st:GeoRole/st:DescriptionRole, but
+ * it. Not part of the spec; a ShapeThing-original role like st:GeoRole, but
  * resolved off the value's own class rather than propertyShape's valueNodeShapes - see
  * valueNodeColor.
  */
@@ -723,41 +726,46 @@ type ValueNodeClassificationOptions = {
 };
 
 /**
- * Secondary, disambiguating info for V: the best-language match from a shui:ClassificationRole-
- * annotated path from V in the data graph (e.g. a pseudonym alongside a person's name, or a linked
- * concept's own scheme). The path's end can be either a literal directly (e.g. skos:definition) or
- * a resource (e.g. skos:inScheme, landing on a skos:ConceptScheme) - a resource is kept as `term`
- * as-is (so e.g. a chip can still link out to it), with `label` resolved via valueNodeLabel *again*,
- * this time rooted at that resource rather than V - the same recursive "find this term's own label"
- * step a resource's own LabelRole/rdfs:label would otherwise apply to V itself. Not part of the
- * spec; a project-specific extension mirroring valueNodeLabel's step 2 only for the initial
+ * Secondary, disambiguating info for V: every value of a shui:ClassificationRole-annotated path
+ * from V in the data graph (e.g. a pseudonym alongside a person's name, or each of a linked
+ * concept's own schemes). The path's end can be either a literal directly (e.g. skos:definition)
+ * or a resource (e.g. skos:inScheme, landing on a skos:ConceptScheme) - every distinct resource is
+ * kept, as `term` as-is (so e.g. a chip can still link out to it), with `label` resolved via
+ * valueNodeLabel *again*, this time rooted at that resource rather than V - the same recursive
+ * "find this term's own label" step a resource's own LabelRole/rdfs:label would otherwise apply to
+ * V itself. Literals are language alternatives of one another rather than separate
+ * classifications, so only the best-language match among them is kept. Not part of the spec; a
+ * project-specific extension mirroring valueNodeLabel's step 2 only for the initial
  * ClassificationRole hop.
  */
-export function valueNodeClassification({
+export function valueNodeClassifications({
   term,
   propertyShape,
   languages,
-}: ValueNodeClassificationOptions): { term: Term; label: string } | undefined {
-  if (term.termType === "Literal") return undefined;
+}: ValueNodeClassificationOptions): { term: Term; label: string }[] {
+  if (term.termType === "Literal") return [];
 
   const { dataGraph } = propertyShape;
   const effLanguages = effectiveLanguages(propertyShape, languages ?? []);
-  const classifications = classificationRolePropertyPaths(propertyShape)
+  const values = classificationRolePropertyPaths(propertyShape)
     .flatMap((path) => walkPropertyPath(path, term, dataGraph));
 
-  const classification = classifications.length > 0
-    ? language(classifications, effLanguages)
-    : undefined;
-  if (!classification) return undefined;
-  if (classification.termType === "Literal") {
-    return { term: classification, label: classification.value };
-  }
+  const literals = values.filter((value) => value.termType === "Literal");
+  const resources = values.filter(
+    (value, index) =>
+      value.termType !== "Literal" &&
+      values.findIndex((other) => other.equals(value)) === index,
+  );
 
-  return {
-    term: classification,
-    label:
-      valueNodeLabel({ term: classification, propertyShape, languages }).value,
-  };
+  const bestLiteral = literals.length > 0 ? language(literals, effLanguages) : undefined;
+
+  return [
+    ...(bestLiteral ? [{ term: bestLiteral, label: bestLiteral.value }] : []),
+    ...resources.map((resource) => ({
+      term: resource,
+      label: valueNodeLabel({ term: resource, propertyShape, languages }).value,
+    })),
+  ];
 }
 
 type ValueNodeDepictionOptions = {
@@ -783,6 +791,79 @@ export function valueNodeDepiction({
     .find((value): value is NamedNode => value.termType === "NamedNode");
 }
 
+/**
+ * The property paths (sh:path) of every property shape on `propertyShape`'s sh:node (or on any
+ * node shape targeting its sh:class via sh:targetClass) that's annotated shui:propertyRole
+ * shui:IconRole - what to walk from a value node to find its own icon, e.g. to build a SPARQL query
+ * (see query.ts). Mirrors depictionRolePropertyPaths; a shape-level sh:defaultValue icon is
+ * resolved separately, see valueNodeIcon.
+ */
+export function iconRolePropertyPaths(propertyShape: PropertyUIElement): PropertyPath[] {
+  return propertyPathsByRole(propertyShape, shui("IconRole"));
+}
+
+/**
+ * Every property shape on `propertyShape`'s valueNodeShapes annotated shui:propertyRole
+ * shui:IconRole - the property shapes themselves rather than just their paths (unlike
+ * propertyPathsByRole), since valueNodeIcon also needs each one's own sh:defaultValue.
+ */
+function iconRolePropertyShapes(propertyShape: PropertyUIElement): Quad_Subject[] {
+  const { shapesGraph } = propertyShape;
+  return valueNodeShapes(propertyShape).flatMap((node) =>
+    shapesGraph
+      .getQuads(node, sh("property"))
+      .map(({ object }) => object as Quad_Subject)
+      .filter(
+        (property) =>
+          shapesGraph.getQuads(property, shui("propertyRole"), shui("IconRole")).length > 0,
+      ),
+  );
+}
+
+// An IconRole value is an image IRI, either as a plain IRI (sh:nodeKind sh:IRI) or as an
+// xsd:anyURI literal - both normalized to a NamedNode so callers render them the same way. Also used
+// by query.ts for an IconRole value bound by a (possibly federated) SPARQL lookup.
+export function asIconIri(value: Term): NamedNode | undefined {
+  if (value.termType === "NamedNode") return value;
+  if (value.termType === "Literal" && value.datatype.equals(xsd("anyURI"))) {
+    return factory.namedNode(value.value);
+  }
+  return undefined;
+}
+
+type ValueNodeIconOptions = {
+  term: Term;
+  propertyShape: PropertyUIElement;
+};
+
+/**
+ * A small icon shown next to V's label: the first value of a shui:IconRole-annotated path from V in
+ * the data graph (e.g. schema:logo), falling back to that property shape's own sh:defaultValue -
+ * icons are typically shared by every instance of a class, so a shape-level default is the common
+ * case rather than a per-resource triple. Unlike valueNodeDepiction, the default also applies to a
+ * value with no local triples at all (e.g. a federated IRI), since it never needs the data graph.
+ */
+export function valueNodeIcon({
+  term,
+  propertyShape,
+}: ValueNodeIconOptions): NamedNode | undefined {
+  if (term.termType === "Literal") return undefined;
+
+  const { dataGraph, shapesGraph } = propertyShape;
+  const properties = iconRolePropertyShapes(propertyShape);
+
+  const ownValue = iconRolePropertyPaths(propertyShape)
+    .flatMap((path) => walkPropertyPath(path, term, dataGraph))
+    .map(asIconIri)
+    .find((icon) => icon !== undefined);
+  if (ownValue) return ownValue;
+
+  return properties
+    .flatMap((property) => shapesGraph.getQuads(property, sh("defaultValue")))
+    .map(({ object }) => asIconIri(object))
+    .find((icon) => icon !== undefined);
+}
+
 type ValueNodeDescriptionOptions = {
   term: Term;
   propertyShape: PropertyUIElement;
@@ -791,7 +872,7 @@ type ValueNodeDescriptionOptions = {
 
 /**
  * A longer, free-text summary of V (e.g. a chef's own biography): the best-language match from a
- * st:DescriptionRole-annotated path from V in the data graph. Undefined when V is a literal
+ * shui:DescriptionRole-annotated path from V in the data graph. Undefined when V is a literal
  * (nothing to walk from) or no such value exists - mirrors valueNodeDepiction, but resolving to a
  * language-selected string rather than an image IRI, the same way propertyDescription resolves a
  * property's own help text.
@@ -809,10 +890,11 @@ export function valueNodeDescription({
   const values = descriptionRolePropertyPaths(propertyShape).flatMap((path) =>
     walkPropertyPath(path, term, dataGraph),
   );
-  return language(
+  const best = language(
     values.filter((v): v is Literal => v.termType === "Literal"),
     effLanguages,
-  )?.value;
+  );
+  return best && descriptionText(best);
 }
 
 type ValueNodeColorOptions = {

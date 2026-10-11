@@ -79,7 +79,7 @@ ex:ChefShape a sh:NodeShape ;
         sh:singleLine false ;
         sh:order 6 ;
         sh:name "Biography"@en, "Biografie"@nl ;
-        shui:propertyRole st:DescriptionRole ;
+        shui:propertyRole shui:DescriptionRole ;
     ] ;
     sh:property [
         sh:path schema:sameAs ;

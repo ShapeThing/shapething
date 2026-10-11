@@ -1,0 +1,71 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+# Same ex:Island shape as 12.3.5 shui-icon-role.ttl (the spec's example 44), here picked in edit
+# mode: once from the local data graph, once from a federated endpoint (stubbed in the story).
+<#islandShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Island ;
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path ex:islandIcon ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:defaultValue <./shui-icon-role-island.svg> ;
+        shui:propertyRole shui:IconRole ;
+    ] ;
+    .
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Visited island (local)"@en ;
+        sh:path ex:visited ;
+        sh:class ex:Island ;
+        sh:nodeKind sh:IRI ;
+        sh:order 1 ;
+        shui:editor shui:AutoCompleteEditor ;
+    ] ;
+    sh:property [
+        sh:name "Dream island (federated)"@en ;
+        sh:path ex:dreamIsland ;
+        # sh:node rather than sh:class: a remote island has no local rdf:type, so an sh:class would
+        # filter every search result out (see AutoCompleteEditor's validateSearchResults.ts).
+        sh:node <#islandShape> ;
+        sh:nodeKind sh:IRI ;
+        sh:order 2 ;
+        shui:editor shui:AutoCompleteEditor ;
+        shui:searchQuery """
+            PREFIX ex: <http://example.org/>
+            PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+            SELECT DISTINCT ?value WHERE {
+                SERVICE <https://islands.example.org/sparql> {
+                    ?value a ex:Island ; rdfs:label ?searchLabel .
+                    FILTER(CONTAINS(LCASE(?searchLabel), LCASE($searchTerm)))
+                }
+            }
+        """ ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:visited ex:krakatoa ;
+    # Only exists on the remote endpoint - its icon is resolved there (see the story's stub).
+    ex:dreamIsland ex:surtsey ;
+    .
+
+ex:texel a ex:Island ; rdfs:label "Texel"@en .
+
+ex:krakatoa a ex:Island ;
+    rdfs:label "Krakatoa"@en ;
+    ex:islandIcon <./shui-icon-role-volcano.svg> ;
+    .

@@ -2,7 +2,8 @@ import { useState } from "react";
 import type { NamedNode, Term } from "@rdfjs/types";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
-import ClassificationChip, {
+import {
+  ClassificationChips,
   type Classification,
 } from "@/outputs/render/components/ClassificationChip/index.tsx";
 import "./style.css";
@@ -10,18 +11,21 @@ import "./style.css";
 type Props = {
   term: Term;
   label?: string;
-  classification?: Classification;
+  classifications?: Classification[];
   depiction?: NamedNode;
-  // A longer, free-text summary (see resolution/label.ts's valueNodeDescription/st:DescriptionRole
-  // - a ShapeThing-original property role, not part of the shui: spec) - shown as a clamped
-  // snippet, not the full text, since this is a browsing card, not the value's own detail view.
+  // A shui:IconRole icon, shown small in front of the title - unlike `depiction`, which is the
+  // card's own (per-resource) picture.
+  icon?: NamedNode;
+  // A longer, free-text summary (see resolution/label.ts's valueNodeDescription/shui:DescriptionRole)
+  // - shown as a clamped snippet, not the full text, since this is a browsing card, not the
+  // value's own detail view.
   description?: string;
   highlight?: string;
 };
 
 /**
  * A reusable, read-only "teaser card" for a value: its DepictionRole image, LabelRole label,
- * ClassificationRole chip, and st:DescriptionRole description snippet - a richer, card-shaped
+ * ClassificationRole chip, and shui:DescriptionRole description snippet - a richer, card-shaped
  * alternative to AutoCompleteOption's single-line dropdown row, for contexts that show several
  * candidates at once with room to browse rather than pick from a compact list (e.g.
  * FacetSearchModal's own results). Purely presentational: no edit-in-place/link-out affordances,
@@ -31,12 +35,14 @@ type Props = {
 export default function Teaser({
   term,
   label,
-  classification,
+  classifications,
   depiction,
+  icon,
   description,
   highlight,
 }: Props) {
   const [hasError, setHasError] = useState<boolean | undefined>(undefined);
+  const [hasIconError, setHasIconError] = useState(false);
   const displayLabel = label ?? localNameLabel(term) ?? term.value;
   const isDirectRenderable =
     depiction?.value.includes(".svg") || depiction?.value.includes("data:");
@@ -61,10 +67,23 @@ export default function Teaser({
       )}
       <span className="st-teaser__body">
         <span className="st-teaser__heading">
+          {icon && !hasIconError && (
+            <img
+              loading="lazy"
+              onError={() => setHasIconError(true)}
+              className="st-teaser__icon"
+              src={
+                icon.value.includes(".svg") || icon.value.includes("data:")
+                  ? icon.value
+                  : `//wsrv.nl/?url=${encodeURIComponent(icon.value)}&w=48&h=48&fit=contain`
+              }
+              alt=""
+            />
+          )}
           <span className="st-teaser__title">
             {highlightMatches(displayLabel, highlight, "st-teaser__match")}
           </span>
-          {classification && <ClassificationChip classification={classification} />}
+          <ClassificationChips classifications={classifications} />
         </span>
         {description && <span className="st-teaser__description">{description}</span>}
       </span>

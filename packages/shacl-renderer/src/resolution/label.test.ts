@@ -4,7 +4,7 @@ import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { propertyLabel, valueNodeColor, valueNodeLabel } from "@/resolution/label.ts";
+import { propertyLabel, valueNodeColor, valueNodeIcon, valueNodeLabel } from "@/resolution/label.ts";
 import { defaultWidgets } from "@/widgets/registry.ts";
 
 const createShape = async ({
@@ -405,4 +405,55 @@ test("valueNodeLabel terminates on cyclic LabelRole data, falling back to the re
 
   // a -> b -> a: the second visit to ex:a skips the LabelRole step and resolves by local name.
   expect(valueNodeLabel({ term: ex("a"), propertyShape: shape }).value).toBe("a");
+});
+
+const iconShapes = `
+  ex:islandsProperty a sh:PropertyShape ; sh:path ex:island ; sh:class ex:Island .
+  ex:IslandShape a sh:NodeShape ;
+    sh:targetClass ex:Island ;
+    sh:property [
+      sh:path ex:islandIcon ;
+      sh:defaultValue <https://example.org/icons/island.svg> ;
+      shui:propertyRole shui:IconRole ;
+    ] .
+`;
+
+test("valueNodeIcon falls back to the IconRole property shape's sh:defaultValue", async () => {
+  const shape = await createShape({
+    shapes: iconShapes,
+    data: `ex:texel a ex:Island .`,
+    propertyShapes: [ex("islandsProperty")],
+  });
+
+  expect(valueNodeIcon({ term: ex("texel"), propertyShape: shape })?.value).toBe(
+    "https://example.org/icons/island.svg",
+  );
+});
+
+test("valueNodeIcon prefers the value's own IconRole value, as an IRI or xsd:anyURI literal", async () => {
+  const shape = await createShape({
+    shapes: iconShapes,
+    data: `
+      ex:krakatoa a ex:Island ; ex:islandIcon <https://example.org/icons/volcano.svg> .
+      ex:surtsey a ex:Island ; ex:islandIcon "https://example.org/icons/new.svg"^^xsd:anyURI .
+    `,
+    propertyShapes: [ex("islandsProperty")],
+  });
+
+  expect(valueNodeIcon({ term: ex("krakatoa"), propertyShape: shape })?.value).toBe(
+    "https://example.org/icons/volcano.svg",
+  );
+  const surtseyIcon = valueNodeIcon({ term: ex("surtsey"), propertyShape: shape });
+  expect(surtseyIcon?.termType).toBe("NamedNode");
+  expect(surtseyIcon?.value).toBe("https://example.org/icons/new.svg");
+});
+
+test("valueNodeIcon is undefined when no IconRole is declared", async () => {
+  const shape = await createShape({
+    shapes: `ex:islandsProperty a sh:PropertyShape ; sh:path ex:island ; sh:class ex:Island .`,
+    data: `ex:texel a ex:Island .`,
+    propertyShapes: [ex("islandsProperty")],
+  });
+
+  expect(valueNodeIcon({ term: ex("texel"), propertyShape: shape })).toBeUndefined();
 });

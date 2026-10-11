@@ -8,6 +8,7 @@ import {
   runQuery,
   searchInstances,
   substituteSearchParameters,
+  unwrapSoleService,
 } from "./query.ts";
 import { defaultWidgets } from "@/widgets/registry.ts";
 
@@ -79,8 +80,48 @@ test("searchInstances() resolves a ClassificationRole value's own st:ColorRole, 
 
   const results = await searchInstances(shape, "bicycle");
 
-  expect(results[0]?.classification?.term.value).toBe(ex("transport").value);
-  expect(results[0]?.classification?.color).toBe("#22c55e");
+  expect(results[0]?.classifications?.[0]?.term.value).toBe(ex("transport").value);
+  expect(results[0]?.classifications?.[0]?.color).toBe("#22c55e");
+});
+
+// buildSearchQuery/buildRoleLookupQuery return one row per ?classification rather than sampling
+// one - toResolvedTerms folds those back into a single result per value, keeping every scheme.
+test("searchInstances()/fetchOptions() keep every ClassificationRole value, each colored off its own rdf:type", async () => {
+  const shape = await createShape(
+    `
+      ex:property1 a sh:PropertyShape ; sh:class ex:Concept ; sh:node ex:ConceptShape .
+      ex:ConceptShape sh:property ex:nameProperty, ex:schemeProperty .
+      ex:nameProperty sh:path ex:name ; shui:propertyRole shui:LabelRole .
+      ex:schemeProperty sh:path ex:inScheme ; shui:propertyRole shui:ClassificationRole .
+      ex:SchemeShape a sh:NodeShape ; sh:targetClass ex:Scheme ;
+        sh:property [ sh:path ex:swatch ; shui:propertyRole st:ColorRole ] .
+    `,
+    `
+      ex:p1 a ex:Concept ; ex:name "Bicycle" ; ex:inScheme ex:transport, ex:sport .
+      ex:p2 a ex:Concept ; ex:name "Bicycle bell" ; ex:inScheme ex:transport .
+      ex:transport a ex:Scheme ; rdfs:label "Transport"@en, "Vervoer"@nl ; ex:swatch "#22c55e" .
+      ex:sport a ex:Scheme ; rdfs:label "Sport" .
+    `,
+  );
+
+  const byLabel = (classifications: { label: string; color?: string }[] = []) =>
+    classifications.map(({ label, color }) => ({ label, color })).toSorted((a, b) =>
+      a.label.localeCompare(b.label),
+    );
+
+  const searched = await searchInstances(shape, "bicycle");
+  // Still one result per value, in ranked order - p1's two schemes don't duplicate it.
+  expect(searched.map((result) => result.iri.value)).toEqual([ex("p1").value, ex("p2").value]);
+  expect(searched[0]?.classifications).toHaveLength(2);
+  expect(byLabel(searched[0]?.classifications).map(({ color }) => color)).toEqual([
+    undefined,
+    "#22c55e",
+  ]);
+  expect(searched[1]?.classifications).toHaveLength(1);
+
+  const [fetched] = await fetchOptions(shape, [ex("p1")]);
+  expect(fetched?.classifications).toHaveLength(2);
+  expect(byLabel(fetched?.classifications)[0]).toEqual({ label: "Sport", color: undefined });
 });
 
 test("searchInstances() leaves classification.color undefined when the classification's own class declares no st:ColorRole", async () => {
@@ -98,8 +139,8 @@ test("searchInstances() leaves classification.color undefined when the classific
 
   const results = await searchInstances(shape, "p1");
 
-  expect(results[0]?.classification?.term.value).toBe(ex("transport").value);
-  expect(results[0]?.classification?.color).toBeUndefined();
+  expect(results[0]?.classifications?.[0]?.term.value).toBe(ex("transport").value);
+  expect(results[0]?.classifications?.[0]?.color).toBeUndefined();
 });
 
 test("fetchOptions() resolves every requested iri's label in a single batched query", async () => {
@@ -150,7 +191,7 @@ test("searchInstances()/fetchOptions() key results on ?value, not on whichever v
   const [fetched] = await fetchOptions(shape, [ex("gordon")]);
   expect(fetched?.iri.value).toBe(ex("gordon").value);
   expect(fetched?.label).toBe("Gordon");
-  expect(fetched?.classification?.label).toBe("British");
+  expect(fetched?.classifications?.[0]?.label).toBe("British");
   expect(fetched?.depiction?.value).toBe("http://example.org/gordon.jpg");
 });
 
@@ -265,7 +306,7 @@ test("fetchOptions() keys results on ?value even when a ClassificationRole IRI i
       ex:ChefShape sh:property
         [ sh:path ex:name ; shui:propertyRole shui:LabelRole ],
         [ sh:path ex:image ; shui:propertyRole shui:DepictionRole ],
-        [ sh:path ex:bio ; shui:propertyRole st:DescriptionRole ],
+        [ sh:path ex:bio ; shui:propertyRole shui:DescriptionRole ],
         [ sh:path ex:cuisine ; shui:propertyRole shui:ClassificationRole ] .
     `,
     `
@@ -279,5 +320,86 @@ test("fetchOptions() keys results on ?value even when a ClassificationRole IRI i
 
   expect(result.iri.value).toBe(ex("julia").value);
   expect(result.label).toBe("Julia Child");
-  expect(result.classification?.label).toBe("French");
+  expect(result.classifications?.[0]?.label).toBe("French");
+});
+
+test("unwrapSoleService() strips a SERVICE block that is the whole WHERE body", () => {
+  const unwrapped = unwrapSoleService(`
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    SELECT ?value WHERE {
+      # a "}" in a comment
+      SERVICE <https://example.com/sparql> {
+        ?value rdfs:label "a { b" .
+        FILTER NOT EXISTS { ?value rdfs:comment ?comment }
+      }
+    }
+    ORDER BY ?value
+  `);
+
+  expect(unwrapped?.endpoint).toBe("https://example.com/sparql");
+  expect(unwrapped?.query).not.toContain("SERVICE");
+  expect(unwrapped?.query).toContain(`?value rdfs:label "a { b"`);
+  expect(unwrapped?.query).toContain("FILTER NOT EXISTS { ?value rdfs:comment ?comment }");
+  expect(unwrapped?.query).toMatch(/}\s*ORDER BY \?value\s*$/);
+});
+
+test("unwrapSoleService() leaves a SERVICE alongside local patterns (or SILENT) alone", () => {
+  expect(
+    unwrapSoleService(`SELECT ?value WHERE {
+      ?value a <http://example.org/Local> .
+      SERVICE <https://example.com/sparql> { ?value ?p ?o }
+    }`),
+  ).toBeUndefined();
+  expect(
+    unwrapSoleService(`SELECT ?value WHERE {
+      SERVICE <https://example.com/sparql> { ?value ?p ?o }
+      ?value a <http://example.org/Local> .
+    }`),
+  ).toBeUndefined();
+  expect(
+    unwrapSoleService(`SELECT ?value WHERE { SERVICE SILENT <https://example.com/sparql> { ?value ?p ?o } }`),
+  ).toBeUndefined();
+});
+
+const islandShapes = `
+  ex:property1 a sh:PropertyShape ; sh:class ex:Island .
+  ex:IslandShape a sh:NodeShape ; sh:targetClass ex:Island ; sh:property
+    [ sh:path ex:name ; shui:propertyRole shui:LabelRole ],
+    [ sh:path ex:about ; shui:propertyRole shui:DescriptionRole ],
+    [
+      sh:path ex:islandIcon ;
+      sh:defaultValue <http://example.org/icons/island.svg> ;
+      shui:propertyRole shui:IconRole
+    ] .
+`;
+
+const islandData = `
+  ex:texel a ex:Island ; ex:name "Texel" .
+  ex:krakatoa a ex:Island ; ex:name "Krakatoa" ; ex:islandIcon <http://example.org/icons/volcano.svg> .
+  ex:surtsey a ex:Island ; ex:name "Surtsey" ;
+    ex:islandIcon "http://example.org/icons/new.svg"^^xsd:anyURI ;
+    ex:about "<p>A <b>new</b> island.</p>"^^rdf:HTML .
+`;
+
+test("fetchOptions() resolves a value's own IconRole value (IRI or xsd:anyURI), else the sh:defaultValue icon", async () => {
+  const shape = await createShape(islandShapes, islandData);
+
+  const results = await fetchOptions(shape, [ex("texel"), ex("krakatoa"), ex("surtsey")]);
+  const iconOf = (name: string) => results.find((r) => r.label === name)?.icon?.value;
+
+  expect(iconOf("Texel")).toBe("http://example.org/icons/island.svg");
+  expect(iconOf("Krakatoa")).toBe("http://example.org/icons/volcano.svg");
+  expect(iconOf("Surtsey")).toBe("http://example.org/icons/new.svg");
+});
+
+test("searchInstances() resolves IconRole icons and flattens an rdf:HTML DescriptionRole value to text", async () => {
+  const shape = await createShape(islandShapes, islandData);
+
+  const results = await searchInstances(shape, "e");
+  const surtsey = results.find((r) => r.label === "Surtsey");
+  const texel = results.find((r) => r.label === "Texel");
+
+  expect(surtsey?.icon?.value).toBe("http://example.org/icons/new.svg");
+  expect(surtsey?.description).toBe("A new island.");
+  expect(texel?.icon?.value).toBe("http://example.org/icons/island.svg");
 });

@@ -3,9 +3,10 @@ import type { Classification } from "@/outputs/render/components/ClassificationC
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import {
-  valueNodeClassification,
+  valueNodeClassifications,
   valueNodeColor,
   valueNodeDepiction,
+  valueNodeIcon,
   valueNodeLabel,
 } from "@/resolution/label.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -13,13 +14,14 @@ import type { BCP47 } from "@/types/BCP47.ts";
 
 export type ResolvedValueNode = {
   label: string;
-  classification?: Classification;
+  classifications?: Classification[];
   depiction?: NamedNode;
+  icon?: NamedNode;
 };
 
 /**
- * A value node's label/classification/depiction - same roles as valueNodeLabel/valueNodeClassification/
- * valueNodeDepiction (resolution/label.ts), but also covering a value whose LabelRole/DepictionRole
+ * A value node's label/classification/depiction/icon - same roles as valueNodeLabel/valueNodeClassifications/
+ * valueNodeDepiction/valueNodeIcon (resolution/label.ts), but also covering a value whose LabelRole/DepictionRole
  * only exist on a remote endpoint (e.g. a federated `sh:in [ sh:select ... ]` result like a
  * dbpedia country IRI, which has genuinely no local triples of its own to walk). Mirrors
  * AutoCompleteEditor's own "resolve the currently applied value's roles" call (useOptionLookups) -
@@ -38,18 +40,26 @@ export function useResolvedValueNode(
   term: Term,
   languages: BCP47[],
 ): ResolvedValueNode {
-  const { localLabel, localClassification, localDepiction } = useReactiveRead(
+  const { localLabel, localClassifications, localDepiction, localIcon } = useReactiveRead(
     shape.dataGraph,
     `resolved-value-node@${term.value}@${languages.join(",")}`,
     () => {
-      const classification = valueNodeClassification({ term, propertyShape: shape, languages });
       // Same st:ColorRole enrichment query.ts's withClassificationColor gives a remote result.
-      const color =
-        classification && valueNodeColor({ term: classification.term, propertyShape: shape });
+      const classifications = valueNodeClassifications({
+        term,
+        propertyShape: shape,
+        languages,
+      }).map((classification) => {
+        const color = valueNodeColor({ term: classification.term, propertyShape: shape });
+        return color ? { ...classification, color } : classification;
+      });
       return {
         localLabel: valueNodeLabel({ term, propertyShape: shape, languages }),
-        localClassification: classification && color ? { ...classification, color } : classification,
+        localClassifications: classifications,
         localDepiction: valueNodeDepiction({ term, propertyShape: shape }),
+        // Resolves even for a federated value with no local triples: a shui:IconRole is most often
+        // a shape-level sh:defaultValue shared by every instance (see valueNodeIcon).
+        localIcon: valueNodeIcon({ term, propertyShape: shape }),
       };
     },
   );
@@ -61,7 +71,8 @@ export function useResolvedValueNode(
 
   return {
     label: resolved?.label ?? localLabel.value,
-    classification: resolved?.classification ?? localClassification,
+    classifications: resolved?.classifications ?? localClassifications,
     depiction: resolved?.depiction ?? localDepiction,
+    icon: resolved?.icon ?? localIcon,
   };
 }

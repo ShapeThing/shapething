@@ -1,0 +1,12 @@
+/* The "+N" chip's Tooltip wrapper sits between it and the chip before it, so ValueChip's own
+   `.st-value-chip + .st-value-chip` spacing can't reach it. */
+.st-classification-chips__more {
+  margin-inline-start: var(--size-1);
+  vertical-align: middle;
+}
+
+.st-classification-chips__hidden {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-1);
+}

@@ -7,6 +7,10 @@ import {
 import { factory } from "@/helpers/factory.ts";
 import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
 import { shapesGraphWithoutDynamicIn } from "@/structure/shapesGraphWithoutDynamicIn.ts";
+import {
+  federatedPropertyShapes,
+  withoutUncheckableRemoteValueResults,
+} from "@/structure/federatedPropertyShapes.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { validateDynamicInProperties } from "@/outputs/render/contexts/validateDynamicInProperties.ts";
 import {
@@ -69,6 +73,8 @@ export default function ValidationContextProvider({ children, latestResultsRef }
 
   // Federated dynamic sh:in results, reused across revalidations - see validateDynamicInProperties.
   const dynamicInCacheRef = useRef(new Map<string, Promise<Set<string>>>());
+  const federatedShapesRef = useRef<Set<string> | null>(null);
+  federatedShapesRef.current ??= federatedPropertyShapes(shapesGraph);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,7 +102,12 @@ export default function ValidationContextProvider({ children, latestResultsRef }
           dynamicInCacheRef.current,
         );
         if (isCurrent()) {
-          const combined = [...flattenResults(report.results), ...dynamicInResults];
+          const localResults = withoutUncheckableRemoteValueResults(
+            report.results,
+            federatedShapesRef.current!,
+            dataGraph,
+          );
+          const combined = [...flattenResults(localResults), ...dynamicInResults];
           store.setResults(combined);
           if (latestResultsRef) latestResultsRef.current = combined;
         }

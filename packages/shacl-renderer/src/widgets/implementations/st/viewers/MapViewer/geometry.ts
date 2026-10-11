@@ -4,7 +4,7 @@ import { literalToGeometry } from "@/helpers/geometryLiteral.ts";
 import { st } from "@/helpers/namespaces.ts";
 import {
   propertyPathsByRole,
-  valueNodeClassification,
+  valueNodeClassifications,
   valueNodeLabel,
 } from "@/resolution/label.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
@@ -36,11 +36,9 @@ function tooltipProperties(
 ): GeoJsonProperties {
   if (row.termType !== "NamedNode" && row.termType !== "BlankNode") return null;
   const title = valueNodeLabel({ term: row, propertyShape: shape, languages }).value;
-  const classification = valueNodeClassification({
-    term: row,
-    propertyShape: shape,
-    languages,
-  })?.label;
+  const classification = valueNodeClassifications({ term: row, propertyShape: shape, languages })
+    .map(({ label }) => label)
+    .join(", ");
   return classification ? { title, classification } : { title };
 }
 

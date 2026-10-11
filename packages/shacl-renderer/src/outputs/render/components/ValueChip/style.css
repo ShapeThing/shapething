@@ -9,6 +9,12 @@
   background-color: var(--gray-2);
 }
 
+/* Several chips in a row (e.g. a value in more than one ClassificationRole scheme) mostly render
+   as inline content, where there is no flex gap to space them apart. */
+.st-value-chip + .st-value-chip {
+  margin-inline-start: var(--size-1);
+}
+
 .st-value-chip__label {
   overflow: hidden;
   text-overflow: ellipsis;

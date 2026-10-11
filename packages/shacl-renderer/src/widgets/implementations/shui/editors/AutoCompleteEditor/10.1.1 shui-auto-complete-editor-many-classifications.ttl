@@ -1,0 +1,59 @@
+@prefix ex: <http://example.org/>.
+@prefix schema: <http://schema.org/>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    sh:property [
+        sh:name "Favourite topic"@en ;
+        sh:path ex:favouriteTopic ;
+        sh:class skos:Concept ;
+        sh:node <#conceptShape> ;
+        shui:editor shui:AutoCompleteEditor ;
+    ] ;
+    .
+
+<#conceptShape>
+    sh:property [
+        sh:path skos:prefLabel ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path skos:inScheme ;
+        shui:propertyRole shui:ClassificationRole ;
+    ] .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:favouriteTopic ex:bicycle .
+
+# ex:bicycle sits in five concept schemes at once - only the first two (by label) get their own
+# chip, the other three collapse into a single "+3" chip that lists them in its tooltip.
+ex:bicycle a skos:Concept ;
+    skos:prefLabel "Bicycle"@en ;
+    skos:inScheme ex:transportScheme, ex:sportScheme, ex:leisureScheme, ex:healthScheme,
+        ex:urbanPlanningScheme .
+
+ex:car a skos:Concept ;
+    skos:prefLabel "Car"@en ;
+    skos:inScheme ex:transportScheme .
+
+ex:transportScheme a skos:ConceptScheme ;
+    skos:prefLabel "Transport"@en .
+
+ex:sportScheme a skos:ConceptScheme ;
+    skos:prefLabel "Sport"@en .
+
+ex:leisureScheme a skos:ConceptScheme ;
+    skos:prefLabel "Leisure"@en .
+
+ex:healthScheme a skos:ConceptScheme ;
+    skos:prefLabel "Health"@en .
+
+ex:urbanPlanningScheme a skos:ConceptScheme ;
+    skos:prefLabel "Urban planning"@en .

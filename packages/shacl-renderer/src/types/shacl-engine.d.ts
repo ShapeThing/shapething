@@ -33,6 +33,8 @@ declare module "shacl-engine" {
     shape: { ptr: Pointer };
     severity: Term;
     message: Literal[];
+    // e.g. sh:ClassConstraintComponent.
+    constraintComponent?: Term;
   };
 
   type ValidateReport = {

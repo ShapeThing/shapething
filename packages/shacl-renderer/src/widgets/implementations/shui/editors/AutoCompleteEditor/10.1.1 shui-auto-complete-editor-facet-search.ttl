@@ -60,7 +60,7 @@ ex:Asia a ex:Continent ; rdfs:label "Asia"@en .
     sh:property [
         sh:path ex:blurb ;
         sh:datatype xsd:string ;
-        shui:propertyRole st:DescriptionRole ;
+        shui:propertyRole shui:DescriptionRole ;
     ] ;
     .
 

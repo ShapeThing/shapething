@@ -1,0 +1,58 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+
+# The spec's own example 44: every ex:Island shares one icon via sh:defaultValue, unless it has
+# its own ex:islandIcon value. The relative IRIs resolve to the .svg files next to this fixture.
+<#islandShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Island ;
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property <#islandIcon> ;
+    .
+
+<#islandIcon>
+    a sh:PropertyShape ;
+    sh:path ex:islandIcon ;
+    sh:name "island icon"@en ;
+    sh:nodeKind sh:IRI ;
+    sh:maxCount 1 ;
+    sh:defaultValue <./shui-icon-role-island.svg> ;
+    shui:propertyRole shui:IconRole ;
+    .
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Archipelago ;
+    sh:property [
+        sh:name "Name"@en ;
+        sh:path rdfs:label ;
+    ] ;
+    sh:property [
+        sh:name "Islands"@en ;
+        sh:path ex:island ;
+        sh:class ex:Island ;
+        shui:viewer shui:LabelViewer ;
+    ] ;
+    .
+
+<#data>
+    a ex:Archipelago ;
+    rdfs:label "Fictional Isles"@en ;
+    ex:island ex:texel, ex:vlieland, ex:krakatoa ;
+    .
+
+# No ex:islandIcon of their own - both fall back to the shared sh:defaultValue icon.
+ex:texel a ex:Island ; rdfs:label "Texel"@en .
+ex:vlieland a ex:Island ; rdfs:label "Vlieland"@en .
+
+# Its own value overrides the default.
+ex:krakatoa a ex:Island ;
+    rdfs:label "Krakatoa"@en ;
+    ex:islandIcon <./shui-icon-role-volcano.svg> ;
+    .

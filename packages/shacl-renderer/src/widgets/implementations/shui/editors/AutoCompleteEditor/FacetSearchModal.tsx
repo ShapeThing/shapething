@@ -149,8 +149,9 @@ export default function FacetSearchModal({
                   <Teaser
                     term={result.iri}
                     label={result.label}
-                    classification={result.classification}
+                    classifications={result.classifications}
                     depiction={result.depiction}
+                    icon={result.icon}
                     description={result.description}
                   />
                 </div>

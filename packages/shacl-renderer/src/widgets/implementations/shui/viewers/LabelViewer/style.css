@@ -12,6 +12,13 @@
   border-radius: var(--radius-1);
 }
 
+/* A shui:IconRole image is a symbol (often an SVG), not a photo - show it whole rather than
+   cropped to fill the square. */
+.st-label-viewer__icon {
+  object-fit: contain;
+  border-radius: 0;
+}
+
 /* The classification chip is a sibling, not a child, of .st-label-viewer (see widget.tsx) -
    it renders outside the <a> so a shui:ClassificationRole badge is never part of the link. */
 .st-label-viewer + .st-value-chip {

@@ -3,7 +3,7 @@ import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.ts
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { useResolvedValueNode } from "@/outputs/render/hooks/useResolvedValueNode.tsx";
-import ClassificationChip from "@/outputs/render/components/ClassificationChip/index.tsx";
+import { ClassificationChips } from "@/outputs/render/components/ClassificationChip/index.tsx";
 import Modal from "@/outputs/render/components/Modal/index.tsx";
 import NodeUIElementChildren from "@/outputs/render/modes/view/NodeUIElementChildren.tsx";
 import { shapesTargetingNode } from "@/resolution/targets.ts";
@@ -23,11 +23,14 @@ import "./style.css";
  * flag) - the same depiction AutoCompleteOption already shows while editing this same value, so
  * view mode doesn't lose it. A broken/slow-to-load depiction just hides itself (onError) rather
  * than leaving a broken-image icon next to a label that's otherwise perfectly fine to show.
+ * A shui:IconRole (often a class-wide sh:defaultValue, see valueNodeIcon) takes precedence over the
+ * depiction here: it's the role meant for exactly this small, next-to-the-label slot, whereas a
+ * depiction is a per-resource picture that merely doubles as one when no icon is declared.
  *
  * A shui:ClassificationRole, when one resolves, renders as a chip alongside the main label - the
  * same secondary disambiguating text AutoCompleteOption/EnumSelectEditor already resolve for this
  * same value while editing (see useResolvedValueNode), so view mode doesn't lose it either - via the
- * same ClassificationChip, so st:ColorRole/gradient coloring matches edit mode.
+ * same ClassificationChips, so st:ColorRole/gradient coloring matches edit mode.
  *
  * When Environment.enableViewInPlace is on and the value both already exists in dataGraph and is
  * targeted by at least one shape in shapesGraph (resolution/targets.ts's shapesTargetingNode),
@@ -41,11 +44,13 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
   const { enableViewInPlace } = useEnvironment();
   const [hasImageError, setHasImageError] = useState(false);
   const [open, setOpen] = useState(false);
-  const { label, classification, depiction } = useResolvedValueNode(shape, term, [activeLanguage]);
+  const { label, classifications, depiction, icon } = useResolvedValueNode(shape, term, [
+    activeLanguage,
+  ]);
+  const image = icon ?? depiction;
   // SVGs/data URIs render directly; anything else goes through wsrv.nl to resize a (typically
   // much larger) hotlinked source image down to icon size - same reasoning as AutoCompleteOption.
-  const isDirectRenderable =
-    depiction?.value.includes(".svg") || depiction?.value.includes("data:");
+  const isDirectRenderable = image?.value.includes(".svg") || image?.value.includes("data:");
 
   const nodeShapes = useReactiveRead(
     shape.dataGraph,
@@ -65,19 +70,17 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
     { nodeShapes },
   );
 
-  const classificationChip = classification && (
-    <ClassificationChip classification={classification} />
-  );
+  const classificationChip = <ClassificationChips classifications={classifications} />;
 
-  const image = depiction && !hasImageError && (
+  const imageElement = image && !hasImageError && (
     <img
       loading="lazy"
       onError={() => setHasImageError(true)}
-      className="st-label-viewer__depiction"
+      className={icon ? "st-label-viewer__depiction st-label-viewer__icon" : "st-label-viewer__depiction"}
       src={
         isDirectRenderable
-          ? depiction.value
-          : `//wsrv.nl/?url=${encodeURIComponent(depiction.value)}&w=48&h=48&fit=cover`
+          ? image.value
+          : `//wsrv.nl/?url=${encodeURIComponent(image.value)}&w=48&h=48&fit=cover`
       }
       alt=""
     />
@@ -86,7 +89,7 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
   if (term.termType !== "NamedNode") {
     return (
       <span className="st-label-viewer">
-        {image}
+        {imageElement}
         {label}
         {classificationChip}
       </span>
@@ -121,7 +124,7 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
             : undefined
         }
       >
-        {image}
+        {imageElement}
         {label}
       </a>
       {classificationChip}

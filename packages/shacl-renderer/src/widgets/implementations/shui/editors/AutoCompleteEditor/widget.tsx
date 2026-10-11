@@ -234,8 +234,9 @@ export default function AutoCompleteEditor({
             <AutoCompleteOption
               term={term}
               label={current?.label}
-              classification={current?.classification}
+              classifications={current?.classifications}
               depiction={current?.depiction}
+              icon={current?.icon}
               resourceEditor={
                 enableEditInPlace
                   ? {
@@ -369,8 +370,9 @@ export default function AutoCompleteEditor({
                 <AutoCompleteOption
                   term={result.iri}
                   label={result.label}
-                  classification={result.classification}
+                  classifications={result.classifications}
                   depiction={result.depiction}
+                  icon={result.icon}
                   highlight={search}
                 />
               </div>

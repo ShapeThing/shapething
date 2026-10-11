@@ -30,12 +30,15 @@
     position-area: center right;
   }
 
+  /* span-all rather than center: a center column is only as wide as the anchor itself, so a
+     narrow anchor (e.g. ClassificationChips' "+N" chip) capped the tooltip's max-width at its own
+     width. A spanning area still centers the tooltip on the anchor (anchor-center). */
   &[data-placement="top"] {
-    position-area: top center;
+    position-area: top span-all;
   }
 
   &[data-placement="bottom"] {
-    position-area: bottom center;
+    position-area: bottom span-all;
   }
 
   &:after {

@@ -5,9 +5,9 @@ import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
-// st:DescriptionRole is a ShapeThing-original shui:propertyRole value for a value's longer,
-// free-text summary (see resolution/label.ts's descriptionRolePropertyPaths). It's rendered by the
-// Teaser card - here, the AutoCompleteEditor's facet-search modal results.
+// st:DescriptionRole is the deprecated, ShapeThing-original predecessor of shui:DescriptionRole
+// (see SHACL UI 1.2's 12.3.4 story), still recognized as an alias of it (see resolution/label.ts's
+// descriptionRolePropertyPaths) - this story keeps existing shapes that use it covered.
 export default {
   title: "Specifications/ShapeThing (living document)/Predicates/st:DescriptionRole",
   component: ShaclRenderer,

@@ -1,0 +1,60 @@
+@prefix ex: <http://example.org/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Born in"@en, "Geboren in"@nl ;
+        sh:path ex:bornIn ;
+        sh:class ex:Country ;
+        sh:nodeKind sh:IRI ;
+        shui:editor shui:AutoCompleteEditor ;
+    ] ;
+    .
+
+<#countryShape>
+    a sh:NodeShape ;
+    sh:targetClass ex:Country ;
+    sh:property [
+        sh:name "Search"@en, "Zoeken"@nl ;
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property <#Comment> ;
+    .
+
+# The spec's example 43, verbatim: its values are shown as a clamped snippet on each Teaser card
+# in the facet-search modal, in the best-matching content language. An rdf:HTML value is flattened
+# to its text there rather than rendered as markup.
+<#Comment> a sh:PropertyShape ;
+    sh:path rdfs:comment ;
+    sh:name "comments" ;
+    sh:description "The comments of this resource, possibly in multiple languages." ;
+    sh:datatype ( xsd:string rdf:langString rdf:dirLangString rdf:HTML ) ;
+    shui:propertyRole shui:DescriptionRole ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" ;
+    ex:bornIn ex:Netherlands ;
+    .
+
+ex:Netherlands a ex:Country ;
+    rdfs:label "Netherlands"@en ;
+    rdfs:comment "A low-lying country famous for its canals, tulips and windmills."@en,
+        "Een laaggelegen land, beroemd om zijn grachten, tulpen en molens."@nl .
+
+ex:Iceland a ex:Country ;
+    rdfs:label "Iceland"@en ;
+    rdfs:comment "<p>A <strong>volcanic</strong> island nation of glaciers and geysers.</p>"^^rdf:HTML .
+
+ex:Japan a ex:Country ;
+    rdfs:label "Japan"@en ;
+    rdfs:comment "An island nation blending ancient temples with cutting-edge technology." .

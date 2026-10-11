@@ -5,7 +5,8 @@ import { Link } from "@/helpers/icons.tsx";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
-import ClassificationChip, {
+import {
+  ClassificationChips,
   type Classification,
 } from "@/outputs/render/components/ClassificationChip/index.tsx";
 import ResourceEditButton, {
@@ -17,8 +18,11 @@ export type { ResourceEditor };
 type Props = {
   term: Term;
   label?: string;
-  classification?: Classification;
+  classifications?: Classification[];
   depiction?: NamedNode;
+  // A shui:IconRole icon - takes the image slot over `depiction` when both resolve, the same
+  // precedence LabelViewer gives it, since this small next-to-the-label slot is what icons are for.
+  icon?: NamedNode;
   highlight?: string;
   // Only passed for the currently selected value (never for a row in a dropdown list) - see
   // EnumSelectEditor. Offers a small "edit" affordance that opens `term` in a modal, rendered
@@ -30,29 +34,34 @@ type Props = {
 export default function AutoCompleteOption({
   term,
   label,
-  classification,
+  classifications,
   depiction,
+  icon,
   highlight,
   resourceEditor,
 }: Props) {
   const [hasError, setHasError] = useState<boolean | undefined>(undefined);
   const { enableLinksToResources } = useEnvironment();
   const displayLabel = label ?? localNameLabel(term) ?? term.value;
-  const isDirectRenderable =
-    depiction?.value.includes(".svg") || depiction?.value.includes("data:");
+  const image = icon ?? depiction;
+  const isDirectRenderable = image?.value.includes(".svg") || image?.value.includes("data:");
 
   return (
     <span className="st-autocomplete-option">
-      {depiction && !hasError ? (
+      {image && !hasError ? (
         <img
           loading="lazy"
           onError={() => setHasError(true)}
           onLoad={() => setHasError(false)}
-          className="st-autocomplete-option__depiction"
+          className={
+            icon
+              ? "st-autocomplete-option__depiction st-autocomplete-option__icon"
+              : "st-autocomplete-option__depiction"
+          }
           src={
             isDirectRenderable
-              ? depiction.value
-              : `//wsrv.nl/?url=${encodeURIComponent(depiction.value)}&w=64&h=64&fit=cover&default=${encodeURIComponent(depiction.value)}`
+              ? image.value
+              : `//wsrv.nl/?url=${encodeURIComponent(image.value)}&w=64&h=64&fit=cover&default=${encodeURIComponent(image.value)}`
           }
           alt=""
         />
@@ -64,7 +73,7 @@ export default function AutoCompleteOption({
           {highlightMatches(displayLabel, highlight, "st-autocomplete-option__match")}
           &nbsp;&nbsp;
         </span>
-        {classification && <ClassificationChip classification={classification} />}
+        <ClassificationChips classifications={classifications} />
       </span>
       <span className="st-autocomplete-option__content">
         {term.termType === "NamedNode" && (

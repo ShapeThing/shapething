@@ -7,7 +7,7 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
 
 // Generic over T so a caller picking among Literals gets a Literal back, while a caller picking
-// among arbitrary Terms (e.g. valueNodeClassification's IRI-or-literal candidates - a non-Literal
+// among arbitrary Terms (e.g. valueNodeClassifications' IRI-or-literal candidates - a non-Literal
 // term is simply "languageless", see bestByLanguage) gets the same term type it passed in.
 export default function language<T extends Term>(terms: T[], languages: LanguageRange[] = []): T {
   return bestByLanguage(terms, languages) as T;
@@ -33,7 +33,7 @@ export function configuredLanguages(
 
 /**
  * 8.1 Language Resolution's priority order for a VALUE node's own label (valueNodeLabel/
- * valueNodeClassification): 1) sh:languageIn declared on `propertyShape` (already cross-shape-intersected
+ * valueNodeClassifications): 1) sh:languageIn declared on `propertyShape` (already cross-shape-intersected
  * via PropertyUIElement.get()'s keepListIntersection resolution), 2) the caller-supplied `languages`,
  * 3) shui:languagePreference. Unlike configuredLanguages, sh:languageIn is included here - it's
  * exactly the axis that governs which language of this property's own content is preferred.

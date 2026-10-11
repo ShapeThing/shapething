@@ -57,6 +57,11 @@ export const shuiAutoCompleteEditorFederatedSearch: Story = {
     expect(tooltips[0].querySelector(".st-property-search-endpoints")?.textContent).toBe(
       "https://dbpedia.org/sparql",
     );
+
+    // Play functions also run when the story is simply opened in Storybook - leave the pointer
+    // off the icon so its tooltip doesn't stay open there.
+    await userEvent.unhover(searchIcon);
+    await waitFor(() => expect(canvasElement.querySelectorAll(".tooltip")).toHaveLength(0));
   },
 };
 
@@ -116,6 +121,67 @@ export const shuiAutoCompleteEditorColorRole: Story = {
   },
 };
 
+// A value with two shui:ClassificationRole values (ex:bicycle is skos:inScheme both the "Transport"
+// and the "Sport" skos:ConceptScheme) shows one chip per classification next to its label.
+export const shuiAutoCompleteEditorMultipleClassifications: Story = {
+  name: "Selected value with two classifications (shui:ClassificationRole)",
+  args: argsByTestFile(
+    "10.1.1 shui-auto-complete-editor-multiple-classifications.ttl",
+    import.meta.url,
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(canvas.findByText("Bicycle")).resolves.toBeVisible();
+    await waitFor(() => {
+      const chips = [...canvasElement.querySelectorAll<HTMLElement>(".st-value-chip")].map(
+        (chip) => chip.textContent?.trim(),
+      );
+      expect(chips.sort()).toEqual(["Sport", "Transport"]);
+    });
+  },
+};
+
+// Past two classifications (ClassificationChip's VISIBLE_CLASSIFICATIONS), the rest collapse into
+// one "+N" chip - ex:bicycle is in five schemes, so "Health" and "Leisure" (first by label) get
+// their own chip and a "+3" chip's tooltip lists the remaining three.
+export const shuiAutoCompleteEditorManyClassifications: Story = {
+  name: "Selected value with five classifications, collapsed past two (shui:ClassificationRole)",
+  args: argsByTestFile("10.1.1 shui-auto-complete-editor-many-classifications.ttl", import.meta.url),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(canvas.findByText("Bicycle")).resolves.toBeVisible();
+    const chipLabels = () =>
+      [...canvasElement.querySelectorAll<HTMLElement>(".st-autocomplete-option__label .st-value-chip")]
+        .filter((chip) => !chip.closest(".tooltip"))
+        .map((chip) => chip.textContent?.trim());
+    await waitFor(() => expect(chipLabels()).toEqual(["Health", "Leisure", "+3"]));
+
+    await userEvent.hover(canvas.getByText("+3"));
+    const tooltip = await waitFor(() => {
+      const element = canvasElement.querySelector<HTMLElement>(".tooltip");
+      if (!element) throw new Error("Could not find the +3 chip's tooltip");
+      return element;
+    });
+    await waitFor(() =>
+      expect(
+        [...tooltip.querySelectorAll(".st-value-chip")].map((chip) => chip.textContent?.trim()),
+      ).toEqual(["Sport", "Transport", "Urban planning"]),
+    );
+    // The tooltip sits above a chip only a few characters wide - its chips still have to show their
+    // whole label rather than ellipsizing down to the tooltip's own width.
+    for (const label of tooltip.querySelectorAll<HTMLElement>(".st-value-chip__label")) {
+      expect(label.scrollWidth).toBeLessThanOrEqual(label.clientWidth);
+    }
+
+    // Play functions also run when the story is simply opened in Storybook - leave the pointer
+    // off the chip so its tooltip doesn't stay open there.
+    await userEvent.unhover(canvas.getByText("+3"));
+    await waitFor(() => expect(canvasElement.querySelector(".tooltip")).toBeNull());
+  },
+};
+
 export const shuiAutoCompleteEditorInvalidSearchResults: Story = {
   name: "Search results outside sh:in are filtered out (spec §10.2)",
   args: argsByTestFile(
@@ -128,7 +194,7 @@ export const shuiAutoCompleteEditorInvalidSearchResults: Story = {
 // nested ShaclRenderer in facet mode, scoped to ex:Country) instead of the ordinary inline
 // typeahead, since ex:Country has its own facetable node shape (see valueNodeShapes). Its results
 // render as Teaser cards (not AutoCompleteOption, which stays reserved for the currently selected
-// value/inline dropdown), each including its own st:DescriptionRole blurb.
+// value/inline dropdown), each including its own shui:DescriptionRole blurb.
 export const shuiAutoCompleteEditorFacetSearch: Story = {
   name: "Facet search modal (Environment.enableFacetSearchForAutocomplete)",
   args: {
@@ -150,7 +216,7 @@ export const shuiAutoCompleteEditorFacetSearch: Story = {
     ).resolves.toBeVisible();
 
     // Every ex:Country instance shows up as a selectable result before any facet is touched, each
-    // as a Teaser card - including its own st:DescriptionRole blurb (ex:blurb), not just its label.
+    // as a Teaser card - including its own shui:DescriptionRole blurb (ex:blurb), not just its label.
     await expect(dialogScope.findByText("Netherlands")).resolves.toBeVisible();
     await expect(dialogScope.findByText("Germany")).resolves.toBeVisible();
     await expect(dialogScope.findByText("Japan")).resolves.toBeVisible();

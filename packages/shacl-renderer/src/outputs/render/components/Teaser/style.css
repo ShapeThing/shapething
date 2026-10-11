@@ -31,6 +31,14 @@
   aspect-ratio: 1 / 1;
 }
 
+.st-teaser__icon {
+  flex-shrink: 0;
+  height: 1.25em;
+  width: auto;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+}
+
 .st-teaser__body {
   display: flex;
   flex-direction: column;
@@ -44,6 +52,12 @@
   align-items: center;
   gap: var(--size-2);
   min-width: 0;
+
+  /* The flex gap above already spaces chips apart. */
+  .st-value-chip + .st-value-chip,
+  .st-classification-chips__more {
+    margin-inline-start: 0;
+  }
 }
 
 .st-teaser__title {
