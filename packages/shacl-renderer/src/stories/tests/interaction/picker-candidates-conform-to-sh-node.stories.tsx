@@ -63,7 +63,9 @@ export const instancesSelectEditor: Story = {
     await userEvent.click(await canvas.findByText("- Select an option -", {}, { timeout: 5000 }));
 
     const listbox = await canvas.findByRole("listbox");
-    await expect(within(listbox).findByRole("option", { name: "Acme Corp" })).resolves.toBeVisible();
+    await expect(
+      within(listbox).findByRole("option", { name: "Acme Corp" }),
+    ).resolves.toBeVisible();
     expect(within(listbox).queryByRole("option", { name: "Globex Corp" })).toBeNull();
   },
 };
@@ -92,7 +94,8 @@ export const autoCompleteEditor: Story = {
         const texts = within(listbox)
           .queryAllByRole("option")
           .map((option) => option.textContent ?? "");
-        if (!texts.some((text) => text.includes("Acme Corp"))) throw new Error("No Acme result yet");
+        if (!texts.some((text) => text.includes("Acme Corp")))
+          throw new Error("No Acme result yet");
         return texts;
       },
       { timeout: 5000 },

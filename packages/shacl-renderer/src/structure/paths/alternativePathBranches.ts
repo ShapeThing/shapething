@@ -40,8 +40,8 @@ export function branchHoldingValue(
 ): NamedNode | undefined {
   return branches.find((branch) =>
     walkPropertyPath({ type: "predicate", predicate: branch }, focusNode, dataGraph).some((term) =>
-      term.equals(value)
-    )
+      term.equals(value),
+    ),
   );
 }
 
@@ -60,7 +60,7 @@ export function defaultWriteBranch(
   return (
     branches.find(
       (branch) =>
-        walkPropertyPath({ type: "predicate", predicate: branch }, focusNode, dataGraph).length > 0
+        walkPropertyPath({ type: "predicate", predicate: branch }, focusNode, dataGraph).length > 0,
     ) ?? branches[0]
   );
 }

@@ -8,8 +8,8 @@ On Cloudflare Pages, `functions/_middleware.ts` handles content negotiation. A r
 
 Run from the monorepo root:
 
-| Command                                      | Action                                    |
-| :------------------------------------------- | :---------------------------------------- |
-| `pnpm --filter @shapething/website dev`      | Starts the dev server at `localhost:8000` |
-| `pnpm --filter @shapething/website build`    | Builds the site to `./dist/`              |
-| `pnpm --filter @shapething/website preview`  | Previews the build                        |
+| Command                                     | Action                                    |
+| :------------------------------------------ | :---------------------------------------- |
+| `pnpm --filter @shapething/website dev`     | Starts the dev server at `localhost:8000` |
+| `pnpm --filter @shapething/website build`   | Builds the site to `./dist/`              |
+| `pnpm --filter @shapething/website preview` | Previews the build                        |

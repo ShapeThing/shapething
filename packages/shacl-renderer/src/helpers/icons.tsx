@@ -17,6 +17,8 @@ import SwapIcon from "~icons/ic/round-swap-horiz";
 import ChevronRight from "~icons/ic/round-chevron-right";
 import CloudUploadIcon from "~icons/ic/round-cloud-upload";
 import SettingsIcon from "~icons/ic/round-settings";
+import ArrowUpIcon from "~icons/ic/round-keyboard-arrow-up";
+import ArrowDownIcon from "~icons/ic/round-keyboard-arrow-down";
 
 export const Loading = LoadingTwotoneLoopIcon;
 export const Plus = PlusIcon;
@@ -37,3 +39,5 @@ export const Swap = SwapIcon;
 export const Chevron = ChevronRight;
 export const Upload = CloudUploadIcon;
 export const Settings = SettingsIcon;
+export const ArrowUp = ArrowUpIcon;
+export const ArrowDown = ArrowDownIcon;

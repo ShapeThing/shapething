@@ -281,11 +281,10 @@ function generateFromFakerAnnotation(
   if (!declared) return undefined;
 
   const parts = expandListOrTerm(declared, property.shapesGraph);
-  const rendered = parts.map(
-    (part): FakerValue =>
-      part.termType === "Literal"
-        ? part.value
-        : callFakerGenerator(part.value.slice(FAKER_BASE.length), fakerSettings),
+  const rendered = parts.map((part): FakerValue =>
+    part.termType === "Literal"
+      ? part.value
+      : callFakerGenerator(part.value.slice(FAKER_BASE.length), fakerSettings),
   );
 
   return rendered.length === 1 ? rendered[0] : rendered.map(String).join("");

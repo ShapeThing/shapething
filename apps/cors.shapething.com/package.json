@@ -1,13 +1,11 @@
 {
   "name": "@shapething/cors",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "PORT=8005 node --experimental-strip-types --watch src/index.ts",
     "build": "tsc",
-    "lint": "vp lint",
-    "lint:fix": "vp lint --fix",
     "start": "node dist/index.js"
   },
   "devDependencies": {

@@ -138,7 +138,8 @@ function propertyShapesWithPath(
     const pathNode = first(shapesGraph, propertyShape, sh("path"));
     if (!pathNode) continue;
     try {
-      if (pathKey(parsePathNode(pathNode, shapesGraph)) === key) return propertyShape as Quad_Subject;
+      if (pathKey(parsePathNode(pathNode, shapesGraph)) === key)
+        return propertyShape as Quad_Subject;
     } catch {
       // A malformed sh:path can't match anything.
     }
@@ -208,7 +209,7 @@ export function resolveReport(
         ? [result.sourceShape]
         : shapesTargetingNode(result.focusNode, shapesGraph, dataGraph);
     const ownPropertyShapes = nodeShapes.flatMap((nodeShape) =>
-      shapesGraph.getQuads(nodeShape, sh("property")).map((quad) => quad.object)
+      shapesGraph.getQuads(nodeShape, sh("property")).map((quad) => quad.object),
     );
     return (
       propertyShapesWithPath(key, ownPropertyShapes, shapesGraph) ??
@@ -239,7 +240,10 @@ export function resolveReport(
   const results: ValidationResult[] = [];
   // The reported values per focus node + path, written into dataGraph once every result has been
   // matched (matching itself reads dataGraph, e.g. its rdf:type for shapesTargetingNode).
-  const reportedValues = new Map<string, { focusNode: Quad_Subject; path: PropertyPath; values: Term[] }>();
+  const reportedValues = new Map<
+    string,
+    { focusNode: Quad_Subject; path: PropertyPath; values: Term[] }
+  >();
 
   for (const reportResult of report.results) {
     const result = toValidationResult(reportResult);
@@ -265,8 +269,11 @@ export function resolveReport(
     }
     if (reportResult.path && reportResult.value) {
       const valuesKey = `${key} ${pathKey(reportResult.path)}`;
-      const entry = reportedValues.get(valuesKey) ??
-        { focusNode: reportResult.focusNode, path: reportResult.path, values: [] };
+      const entry = reportedValues.get(valuesKey) ?? {
+        focusNode: reportResult.focusNode,
+        path: reportResult.path,
+        values: [],
+      };
       if (!entry.values.some((value) => value.equals(reportResult.value))) {
         entry.values.push(reportResult.value);
       }
@@ -297,8 +304,10 @@ export function resolveReport(
   const worst = (focusNode: ReportFocusNode) =>
     Math.max(
       -1,
-      ...[...focusNode.nodeResults, ...results.filter((r) => r.focusNode.equals(focusNode.focusNode))]
-        .map((r) => severityRank(localName(r.severity) ?? "")),
+      ...[
+        ...focusNode.nodeResults,
+        ...results.filter((r) => r.focusNode.equals(focusNode.focusNode)),
+      ].map((r) => severityRank(localName(r.severity) ?? "")),
     );
   const sortedFocusNodes = [...focusNodes.values()]
     .map(({ propertyShapes: _, ...focusNode }) => ({
@@ -307,7 +316,11 @@ export function resolveReport(
     }))
     .sort((a, b) => worst(b) - worst(a));
 
-  return { conforms: report.conforms, focusNodes: sortedFocusNodes, results: sortBySeverity(results) };
+  return {
+    conforms: report.conforms,
+    focusNodes: sortedFocusNodes,
+    results: sortBySeverity(results),
+  };
 }
 
 const sortBySeverity = (results: ValidationResult[]) =>

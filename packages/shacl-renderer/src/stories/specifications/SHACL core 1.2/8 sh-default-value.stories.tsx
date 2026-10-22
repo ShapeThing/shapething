@@ -35,7 +35,9 @@ export const newResourceStartsWithDefaults: Story = {
   play: async ({ canvasElement }) => {
     submitted = undefined;
     const canvas = within(canvasElement);
-    await waitFor(async () => expect(await inputFor(canvasElement, "Country")).toHaveValue("Netherlands"));
+    await waitFor(async () =>
+      expect(await inputFor(canvasElement, "Country")).toHaveValue("Netherlands"),
+    );
     expect(await inputFor(canvasElement, "Number of children")).toHaveValue(0);
     expect(await inputFor(canvasElement, "Given name")).toHaveValue("");
 
@@ -68,7 +70,9 @@ export const existingResourceIsLeftAlone: Story = {
   name: "An existing resource without the property is not filled in",
   args: argsByTestFile("8 sh-default-value.b.ttl", import.meta.url),
   play: async ({ canvasElement }) => {
-    await waitFor(async () => expect(await inputFor(canvasElement, "Given name")).toHaveValue("Hendrik"));
+    await waitFor(async () =>
+      expect(await inputFor(canvasElement, "Given name")).toHaveValue("Hendrik"),
+    );
     expect(await inputFor(canvasElement, "Country")).toHaveValue("");
   },
 };

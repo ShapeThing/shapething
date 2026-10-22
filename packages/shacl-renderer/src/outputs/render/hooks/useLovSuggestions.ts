@@ -17,10 +17,12 @@ const LOV_SEARCH_DEBOUNCE_MS = 200;
 // half the same way, so a large candidate list can't make the dropdown unbounded.
 const MAX_LOCAL_SUGGESTIONS = 20;
 
-export type Suggestion = { kind: "suggested" | "local"; iri: NamedNode } | {
-  kind: "lov";
-  term: LovTerm;
-};
+export type Suggestion =
+  | { kind: "suggested" | "local"; iri: NamedNode }
+  | {
+      kind: "lov";
+      term: LovTerm;
+    };
 
 // Two suggestion sources for an IRI-typed autocomplete field: IRIs the caller already knows are
 // relevant (instant, zero-latency, and the only source that can ever know about a project-
@@ -61,19 +63,14 @@ export function useLovSuggestions(
       setDebounced(undefined);
       return;
     }
-    const timeout = setTimeout(
-      () => setDebounced(query),
-      LOV_SEARCH_DEBOUNCE_MS,
-    );
+    const timeout = setTimeout(() => setDebounced(query), LOV_SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timeout);
   }, [query, enabled]);
 
   // Only a query naming a vocabulary prefix can be answered at all (see lovTermSearch.ts) - an
   // unprefixed one is left disabled here rather than fired and answered empty, so the dropdown
   // never flashes the LOV half's loading row for it.
-  const lovQuery = debounced !== undefined && isLovSearchable(debounced)
-    ? debounced
-    : undefined;
+  const lovQuery = debounced !== undefined && isLovSearchable(debounced) ? debounced : undefined;
 
   // A LOV network failure degrades to "no LOV results" rather than being surfaced anywhere, so
   // React Query's own error state is deliberately left unread - `retry: false` avoids silently
@@ -95,13 +92,10 @@ export function useLovSuggestions(
   // match against any of the three.
   const matchesQuery = (candidate: NamedNode) => {
     const lowerQuery = query.toLowerCase();
-    if (
-      (localName(candidate) ?? "").toLowerCase().startsWith(lowerQuery)
-    ) return true;
+    if ((localName(candidate) ?? "").toLowerCase().startsWith(lowerQuery)) return true;
     if (candidate.value.toLowerCase().startsWith(lowerQuery)) return true;
     const prefixed = prefixedIri(candidate, sourcePrefixes);
-    return prefixed !== undefined &&
-      prefixed.toLowerCase().startsWith(lowerQuery);
+    return prefixed !== undefined && prefixed.toLowerCase().startsWith(lowerQuery);
   };
 
   const suggestedMatches = query ? suggested.filter(matchesQuery) : suggested;
@@ -109,10 +103,8 @@ export function useLovSuggestions(
 
   const localMatches = query
     ? candidates
-      .filter((candidate) =>
-        !suggestedUris.has(candidate.value) && matchesQuery(candidate)
-      )
-      .slice(0, MAX_LOCAL_SUGGESTIONS)
+        .filter((candidate) => !suggestedUris.has(candidate.value) && matchesQuery(candidate))
+        .slice(0, MAX_LOCAL_SUGGESTIONS)
     : [];
 
   // A candidate already offered as a "suggested" or "local" match can also come back from the
@@ -122,9 +114,7 @@ export function useLovSuggestions(
     ...suggestedUris,
     ...localMatches.map((candidate) => candidate.value),
   ]);
-  const lovMatches = (lovResults ?? []).filter((term) =>
-    !shownUris.has(term.uri.value)
-  );
+  const lovMatches = (lovResults ?? []).filter((term) => !shownUris.has(term.uri.value));
 
   const suggestions: Suggestion[] = [
     ...suggestedMatches.map((iri): Suggestion => ({ kind: "suggested", iri })),

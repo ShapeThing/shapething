@@ -8,7 +8,9 @@ test("a single filename resolves shapesGraph/dataGraph to one URL", () => {
 
   expect(args.shapesGraph).toEqual(new URL("foo.ttl", cwd));
   expect(args.dataGraph).toEqual(new URL("foo.ttl", cwd));
-  expect(args.nodeShapes).toEqual([expect.objectContaining({ value: "http://example.org/fixtures/foo.ttl#shape" })]);
+  expect(args.nodeShapes).toEqual([
+    expect.objectContaining({ value: "http://example.org/fixtures/foo.ttl#shape" }),
+  ]);
   expect(args.focusNode.value).toBe("http://example.org/fixtures/foo.ttl#data");
 });
 

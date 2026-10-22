@@ -46,7 +46,13 @@ export type FacetSource = {
 
 const FacetSourceContext = createContext<FacetSource | undefined>(undefined);
 
-export function FacetSourceProvider({ value, children }: { value: FacetSource; children: ReactNode }) {
+export function FacetSourceProvider({
+  value,
+  children,
+}: {
+  value: FacetSource;
+  children: ReactNode;
+}) {
   return <FacetSourceContext.Provider value={value}>{children}</FacetSourceContext.Provider>;
 }
 
@@ -134,7 +140,11 @@ export function useFacetQueryResult<T>(
   parse: (bindings: Bindings[]) => T,
 ): { data: T | undefined; isLoading: boolean; error: unknown } {
   const { run, sourceKey } = useFacetSource();
-  const { data: bindings, isLoading, error } = useQuery({
+  const {
+    data: bindings,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ["facet-query", sourceKey, query],
     queryFn: async () => {
       try {
@@ -174,7 +184,9 @@ export function FacetPropertyDataProvider({
   value: FacetPropertyData;
   children: ReactNode;
 }) {
-  return <FacetPropertyDataContext.Provider value={value}>{children}</FacetPropertyDataContext.Provider>;
+  return (
+    <FacetPropertyDataContext.Provider value={value}>{children}</FacetPropertyDataContext.Provider>
+  );
 }
 
 function useFacetPropertyData(): FacetPropertyData {
@@ -237,7 +249,9 @@ export function useFacetValueCountBounds(): ValueBounds {
   const { pathSparql } = useFacetPropertyData();
   const { targets } = useFacetSource();
   const query =
-    pathSparql !== undefined ? valueCountBoundsQuery(pathSparql, { targets, filter: "" }) : undefined;
+    pathSparql !== undefined
+      ? valueCountBoundsQuery(pathSparql, { targets, filter: "" })
+      : undefined;
   return useFacetQueryResult(query, parseValueBounds).data ?? {};
 }
 
@@ -253,7 +267,9 @@ export function useFacetColorBuckets(): {
   const { targets, countsEnabled } = useFacetSource();
   const filter = useCompiledFilter(pathSparql);
   const availableQuery =
-    pathSparql !== undefined ? colorBucketCountsQuery(pathSparql, { targets, filter: "" }) : undefined;
+    pathSparql !== undefined
+      ? colorBucketCountsQuery(pathSparql, { targets, filter: "" })
+      : undefined;
   const countsQuery =
     countsEnabled && pathSparql !== undefined
       ? colorBucketCountsQuery(pathSparql, { targets, filter })

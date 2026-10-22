@@ -18,9 +18,8 @@ const testSuiteDir = dirname(fileURLToPath(import.meta.url));
 const testCases = await discoverTestCases(testSuiteDir);
 
 for (const queryBindings of [createQueryBindingsComunica]) {
-
   for (const testCase of testCases) {
-    test(`suite ${queryBindings.name.replace('createQueryBindings', '')}: ${testCase.name}`, async () => {
+    test(`suite ${queryBindings.name.replace("createQueryBindings", "")}: ${testCase.name}`, async () => {
       if (!testCase.iri) {
         throw new Error(`Missing iri.txt in ${testCase.path}`);
       }
@@ -48,9 +47,7 @@ for (const queryBindings of [createQueryBindingsComunica]) {
         shapesPointer = grapoi({
           dataset,
           factory: dataFactory,
-          term: testCase.shapeIri
-            ? dataFactory.namedNode(testCase.shapeIri)
-            : undefined,
+          term: testCase.shapeIri ? dataFactory.namedNode(testCase.shapeIri) : undefined,
         });
       }
 
@@ -66,7 +63,7 @@ for (const queryBindings of [createQueryBindingsComunica]) {
       const outputTurtle = await write(results, {
         ordered: true,
         prefixes: Object.fromEntries(
-          Object.entries(prefixes).map(([key, ns]) => [key, ns().value])
+          Object.entries(prefixes).map(([key, ns]) => [key, ns().value]),
         ),
       });
 

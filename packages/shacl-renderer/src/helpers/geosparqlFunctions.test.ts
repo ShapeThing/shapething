@@ -16,16 +16,27 @@ test("geof:sfWithin is registered under its full IRI and true booleans a Point i
 
 test("geof:sfWithin is false for a Point outside the polygon", async () => {
   const sfWithin = geosparqlExtensionFunctions[geof("sfWithin").value];
-  expect(await sfWithin([tokyo, europeRectangle])).toEqual(factory.literal("false", xsd("boolean")));
+  expect(await sfWithin([tokyo, europeRectangle])).toEqual(
+    factory.literal("false", xsd("boolean")),
+  );
 });
 
 test("geof:sfContains is booleanWithin's inverse", async () => {
   const sfContains = geosparqlExtensionFunctions[geof("sfContains").value];
-  expect(await sfContains([europeRectangle, paris])).toEqual(factory.literal("true", xsd("boolean")));
+  expect(await sfContains([europeRectangle, paris])).toEqual(
+    factory.literal("true", xsd("boolean")),
+  );
 });
 
 test("geof:sfIntersects/sfDisjoint/sfEquals/sfTouches/sfCrosses/sfOverlaps are all registered", async () => {
-  for (const name of ["sfIntersects", "sfDisjoint", "sfEquals", "sfTouches", "sfCrosses", "sfOverlaps"]) {
+  for (const name of [
+    "sfIntersects",
+    "sfDisjoint",
+    "sfEquals",
+    "sfTouches",
+    "sfCrosses",
+    "sfOverlaps",
+  ]) {
     expect(geosparqlExtensionFunctions[geof(name).value]).toBeTypeOf("function");
   }
 });
@@ -33,7 +44,9 @@ test("geof:sfIntersects/sfDisjoint/sfEquals/sfTouches/sfCrosses/sfOverlaps are a
 test("a relation is false, not thrown, for an argument that isn't a recognizable geometry", async () => {
   const sfWithin = geosparqlExtensionFunctions[geof("sfWithin").value];
   const notAGeometry = factory.literal("just some text", xsd("string"));
-  expect(await sfWithin([notAGeometry, europeRectangle])).toEqual(factory.literal("false", xsd("boolean")));
+  expect(await sfWithin([notAGeometry, europeRectangle])).toEqual(
+    factory.literal("false", xsd("boolean")),
+  );
 });
 
 test("a relation is false, not thrown, for a missing second argument", async () => {

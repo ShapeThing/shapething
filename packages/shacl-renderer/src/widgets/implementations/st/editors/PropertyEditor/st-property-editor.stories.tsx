@@ -49,9 +49,9 @@ const unusedGroups = (canvasElement: HTMLElement) =>
 // The aria-labels interpolate the row's name, which Fluent wraps in Unicode isolation marks - hence
 // the optional non-word characters around it in the name matchers below.
 const handleOf = (canvasElement: HTMLElement, name: string) => {
-  const row = [...canvasElement.querySelectorAll<HTMLElement>(".st-property-editor__tree > li")].find(
-    (row) => row.querySelector(".st-property-editor__row-body")?.textContent?.includes(name),
-  );
+  const row = [
+    ...canvasElement.querySelectorAll<HTMLElement>(".st-property-editor__tree > li"),
+  ].find((row) => row.querySelector(".st-property-editor__row-body")?.textContent?.includes(name));
   if (!row) throw new Error(`No row for ${name}`);
   return within(row).getByRole("button", { name: "Reorder item" });
 };
@@ -64,9 +64,9 @@ export const stPropertyEditor: Story = {
     expect(unusedGroups(canvasElement)).toEqual(["Death"]);
     // Rows have their own remove buttons; the property-level "-" (clearing every property) is hidden.
     // Scoped to the Properties field - the shape's own Name value keeps its "-".
-    const field = canvasElement.querySelector<HTMLElement>(".st-property-editor")!.closest<HTMLElement>(
-      ".st-property-object",
-    )!;
+    const field = canvasElement
+      .querySelector<HTMLElement>(".st-property-editor")!
+      .closest<HTMLElement>(".st-property-object")!;
     expect(within(field).queryByRole("button", { name: "Remove value" })).toBeNull();
   },
 };

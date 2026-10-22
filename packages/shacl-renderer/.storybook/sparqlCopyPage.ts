@@ -41,7 +41,9 @@ export function sparqlCopyPage(): Plugin {
     // page makes the app log links to it - not a consumer's own Vite dev server, nor test runs.
     config() {
       if (process.env.VITEST) return;
-      return { define: { "import.meta.env.SPARQL_COPY_PAGE": JSON.stringify(SPARQL_COPY_PAGE_PATH) } };
+      return {
+        define: { "import.meta.env.SPARQL_COPY_PAGE": JSON.stringify(SPARQL_COPY_PAGE_PATH) },
+      };
     },
     configureServer(server) {
       server.middlewares.use((req, res, next) => {

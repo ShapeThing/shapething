@@ -52,7 +52,8 @@ export const stColorFacet: Story = {
       );
       const sparqlNode = submitResult.dataGraph.getQuads(null, sh("sparql"))[0]?.object;
       expect(sparqlNode).toBeDefined();
-      const selectQuery = submitResult.dataGraph.getQuads(sparqlNode, sh("select"))[0]?.object.value;
+      const selectQuery = submitResult.dataGraph.getQuads(sparqlNode, sh("select"))[0]?.object
+        .value;
       expect(selectQuery).toContain("st:hue");
       expect(selectQuery).toContain("?hue < 15 || ?hue >= 345");
     });

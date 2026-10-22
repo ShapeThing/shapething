@@ -25,7 +25,11 @@ import { defaultWidgets } from "@/widgets/registry.ts";
 
 // Value-level constraints (sh:in, sh:pattern, the range bounds) live inside the constraint node's
 // sh:qualifiedValueShape - this returns the quads for `predicate` wherever they physically live.
-function valueQuads(filterShape: FilterShape, node: Quad_Subject, predicate: Parameters<typeof sh>[0]) {
+function valueQuads(
+  filterShape: FilterShape,
+  node: Quad_Subject,
+  predicate: Parameters<typeof sh>[0],
+) {
   const qualified = filterShape.store.getQuads(node, sh("qualifiedValueShape"))[0]?.object as
     | Quad_Subject
     | undefined;
@@ -131,9 +135,9 @@ test("setFilterConstraint: writes, replaces, and removes a plain single value", 
   expect(valueQuads(filterShape, node, "minInclusive")[0]?.object.value).toEqual("10");
 
   setFilterConstraint(filterShape, node, sh("minInclusive"), factory.literal("20", xsd("integer")));
-  expect(
-    valueQuads(filterShape, node, "minInclusive").map((quad) => quad.object.value),
-  ).toEqual(["20"]);
+  expect(valueQuads(filterShape, node, "minInclusive").map((quad) => quad.object.value)).toEqual([
+    "20",
+  ]);
 
   setFilterConstraint(filterShape, node, sh("minInclusive"), undefined);
   expect(valueQuads(filterShape, node, "minInclusive")).toEqual([]);
@@ -328,11 +332,13 @@ test("instancesMatchingFilterShape: a class-taxonomy pick (st:classIn, SubClassF
   const filterShape = createFilterShape();
   setFilterConstraintForProperty(filterShape, property, st("classIn"), [ex("Electronics")]);
 
-  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("widget"), ex("laptop"), ex("novel")]);
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [
+    ex("widget"),
+    ex("laptop"),
+    ex("novel"),
+  ]);
 
-  expect(matchingValues).toEqual(
-    [ex("widget").value, ex("laptop").value].sort(),
-  );
+  expect(matchingValues).toEqual([ex("widget").value, ex("laptop").value].sort());
 });
 
 test("instancesMatchingFilterShape: plain sh:in (CategoryFacet) still requires an exact match despite a subClassOf relation existing", async () => {
@@ -360,7 +366,10 @@ test("instancesMatchingFilterShape: plain sh:in (CategoryFacet) still requires a
   const filterShape = createFilterShape();
   setFilterConstraintForProperty(filterShape, property, sh("in"), [ex("Electronics")]);
 
-  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("widget"), ex("laptop")]);
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [
+    ex("widget"),
+    ex("laptop"),
+  ]);
 
   expect(matchingValues).toEqual([ex("widget").value]);
 });
@@ -392,7 +401,10 @@ test("instancesMatchingFilterShape: st:withinArea (MapFacet) matches an instance
     factory.literal("POLYGON ((-10 35, 20 35, 20 60, -10 60, -10 35))", geosparql("wktLiteral")),
   );
 
-  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("paris"), ex("tokyo")]);
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [
+    ex("paris"),
+    ex("tokyo"),
+  ]);
 
   expect(matchingValues).toEqual([ex("paris").value]);
 });
@@ -430,11 +442,13 @@ test("instancesMatchingFilterShape: st:withinArea matches any instance value aga
     ),
   );
 
-  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("paris"), ex("tokyo"), ex("capeTown")]);
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [
+    ex("paris"),
+    ex("tokyo"),
+    ex("capeTown"),
+  ]);
 
-  expect(matchingValues).toEqual(
-    [ex("paris").value, ex("tokyo").value].sort(),
-  );
+  expect(matchingValues).toEqual([ex("paris").value, ex("tokyo").value].sort());
 });
 
 test("setFilterConstraintForProperty: st:withinArea also writes a sibling sh:sparql SPARQLConstraint built on geof:sfWithin", async () => {
@@ -451,7 +465,9 @@ test("setFilterConstraintForProperty: st:withinArea also writes a sibling sh:spa
   const constraintNode = findFilterConstraintNode(filterShape, property)!;
   const sparqlNode = filterShape.store.getQuads(constraintNode, sh("sparql"))[0]?.object;
   expect(sparqlNode).toBeDefined();
-  expect(filterShape.store.getQuads(sparqlNode, rdf("type"), sh("SPARQLConstraint")).length).toBe(1);
+  expect(filterShape.store.getQuads(sparqlNode, rdf("type"), sh("SPARQLConstraint")).length).toBe(
+    1,
+  );
 
   const selectQuery = filterShape.store.getQuads(sparqlNode, sh("select"))[0]?.object.value;
   expect(selectQuery).toContain("geof:sfWithin");
@@ -518,14 +534,18 @@ test("instancesMatchingFilterShape: st:colorBucket (ColorFacet) matches an insta
   const dataGraph = await parseRdf("", "text/turtle");
   dataGraph.addQuad(factory.quad(ex("fireTruck"), ex("color"), redColor));
   dataGraph.addQuad(factory.quad(redColor, st("hue"), factory.literal("0", xsd("decimal"))));
-  dataGraph.addQuad(factory.quad(redColor, st("saturation"), factory.literal("100", xsd("decimal"))));
+  dataGraph.addQuad(
+    factory.quad(redColor, st("saturation"), factory.literal("100", xsd("decimal"))),
+  );
   dataGraph.addQuad(factory.quad(redColor, st("lightness"), factory.literal("50", xsd("decimal"))));
   dataGraph.addQuad(factory.quad(ex("sky"), ex("color"), blueColor));
   dataGraph.addQuad(factory.quad(blueColor, st("hue"), factory.literal("240", xsd("decimal"))));
   dataGraph.addQuad(
     factory.quad(blueColor, st("saturation"), factory.literal("100", xsd("decimal"))),
   );
-  dataGraph.addQuad(factory.quad(blueColor, st("lightness"), factory.literal("50", xsd("decimal"))));
+  dataGraph.addQuad(
+    factory.quad(blueColor, st("lightness"), factory.literal("50", xsd("decimal"))),
+  );
 
   const property = new PropertyUIElement({
     widgetRegistry: defaultWidgets,
@@ -537,7 +557,10 @@ test("instancesMatchingFilterShape: st:colorBucket (ColorFacet) matches an insta
   const filterShape = createFilterShape();
   setFilterConstraintForProperty(filterShape, property, st("colorBucket"), factory.literal("red"));
 
-  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("fireTruck"), ex("sky")]);
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [
+    ex("fireTruck"),
+    ex("sky"),
+  ]);
 
   expect(matchingValues).toEqual([ex("fireTruck").value]);
 });
@@ -551,7 +574,9 @@ test("setFilterConstraintForProperty: st:colorBucket also writes a sibling sh:sp
   const constraintNode = findFilterConstraintNode(filterShape, property)!;
   const sparqlNode = filterShape.store.getQuads(constraintNode, sh("sparql"))[0]?.object;
   expect(sparqlNode).toBeDefined();
-  expect(filterShape.store.getQuads(sparqlNode, rdf("type"), sh("SPARQLConstraint")).length).toBe(1);
+  expect(filterShape.store.getQuads(sparqlNode, rdf("type"), sh("SPARQLConstraint")).length).toBe(
+    1,
+  );
 
   const selectQuery = filterShape.store.getQuads(sparqlNode, sh("select"))[0]?.object.value;
   expect(selectQuery).toContain("st:hue");
@@ -584,7 +609,9 @@ test("setFilterConstraintForProperty: the generated sh:select for st:colorBucket
   expect(selectQuery).toMatch(/select \$this where/);
   expect(selectQuery).toMatch(/filter not exists \{/);
   expect(selectQuery).toContain("$this <http://example.org/color> ?colorValue");
-  expect(selectQuery).toContain("?colorValue st:hue ?hue ; st:saturation ?sat ; st:lightness ?light");
+  expect(selectQuery).toContain(
+    "?colorValue st:hue ?hue ; st:saturation ?sat ; st:lightness ?light",
+  );
   expect(selectQuery).toContain("(?hue < 15 || ?hue >= 345)");
 });
 
@@ -608,7 +635,11 @@ test("instancesMatchingFilterShape: sh:minInclusive/sh:maxInclusive keep only in
     factory.literal("20", xsd("integer")),
   );
 
-  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("widget"), ex("gadget"), ex("novel")]);
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [
+    ex("widget"),
+    ex("gadget"),
+    ex("novel"),
+  ]);
 
   expect(matchingValues).toEqual([ex("widget").value]);
 });
@@ -633,7 +664,11 @@ test("instancesMatchingFilterShape: sh:minExclusive/sh:maxExclusive exclude thei
     factory.literal("20", xsd("integer")),
   );
 
-  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("widget"), ex("gadget"), ex("novel")]);
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [
+    ex("widget"),
+    ex("gadget"),
+    ex("novel"),
+  ]);
 
   // widget (10) and novel (20) sit exactly on the exclusive boundaries, so only gadget (15) matches.
   expect(matchingValues).toEqual([ex("gadget").value]);
@@ -718,7 +753,10 @@ test("instancesMatchingFilterShape: sh:pattern (TextSearchFacet) matches when an
     [sh("flags"), factory.literal("i", xsd("string"))],
   ]);
 
-  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("gordon"), ex("massimo")]);
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [
+    ex("gordon"),
+    ex("massimo"),
+  ]);
 
   expect(matchingValues).toEqual([ex("gordon").value]);
 });
@@ -752,7 +790,10 @@ test("instancesMatchingFilterShape: a range bound matches when any one value fal
     factory.literal("10", xsd("integer")),
   );
 
-  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [ex("mixed"), ex("cheap")]);
+  const matchingValues = await matching(filterShape, dataGraph, property.shapesGraph, [
+    ex("mixed"),
+    ex("cheap"),
+  ]);
 
   expect(matchingValues).toEqual([ex("mixed").value]);
 });
@@ -795,9 +836,14 @@ test("instancesMatchingFilterShape: sh:in matches an instance with several value
 
 test("instancesMatchingFilterShape: an explicit empty sh:in (a search with no results) matches nothing", async () => {
   const property = await propertyFor(`ex:property1 sh:path ex:name .`);
-  const dataGraph = await parseRdf(`${queryPrefixes}\n\n ex:a ex:name "A" . ex:b ex:other "B" .`, "text/turtle");
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\n ex:a ex:name "A" . ex:b ex:other "B" .`,
+    "text/turtle",
+  );
   const filterShape = createFilterShape();
   setFilterConstraintForProperty(filterShape, property, sh("in"), rdf("nil"));
 
-  expect(await matching(filterShape, dataGraph, property.shapesGraph, [ex("a"), ex("b")])).toEqual([]);
+  expect(await matching(filterShape, dataGraph, property.shapesGraph, [ex("a"), ex("b")])).toEqual(
+    [],
+  );
 });

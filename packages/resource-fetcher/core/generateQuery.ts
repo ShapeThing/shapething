@@ -85,7 +85,7 @@ const generateTriplePatterns = (pattern: QueryPattern): string => {
           triples.push(`${currentNode} ${predicateVar} ${nextNode}.`);
           // Then add the list traversal pattern
           triples.push(
-            `${nextNode} <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ${listNode}.`
+            `${nextNode} <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest>*/<http://www.w3.org/1999/02/22-rdf-syntax-ns#first> ${listNode}.`,
           );
           nodeCounter += 2; // Increment by 2: one for intermediate node, one for list node
           isLastNodeList = true;
@@ -149,7 +149,7 @@ export const generateQuery = (patterns: QueryPattern[], graph?: string): string 
   }
 
   const whereClause = unions.join("\n    UNION\n");
-  const graphClause = graph ? `<${graph}>` : '?g';
+  const graphClause = graph ? `<${graph}>` : "?g";
 
   return `SELECT * WHERE {
   GRAPH ${graphClause} {

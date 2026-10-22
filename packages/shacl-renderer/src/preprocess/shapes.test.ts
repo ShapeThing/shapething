@@ -79,8 +79,8 @@ test("addMissingShapes - sets sh:nodeKind and sh:datatype when every instance's 
     shapesGraph
       .getQuads(ex("Cat"), sh("property"))
       .map((quad) => quad.object as Quad_Subject)
-      .find((propertyNode) =>
-        shapesGraph.getQuads(propertyNode, sh("path"), predicate).length > 0,
+      .find(
+        (propertyNode) => shapesGraph.getQuads(propertyNode, sh("path"), predicate).length > 0,
       )!;
 
   const nameProperty = propertyFor(ex("name"));
@@ -111,7 +111,9 @@ test("addMissingShapes - leaves sh:class off a predicate whose IRI values don't 
   const ownerProperty = shapesGraph
     .getQuads(ex("Cat"), sh("property"))
     .map((quad) => quad.object as Quad_Subject)
-    .find((propertyNode) => shapesGraph.getQuads(propertyNode, sh("path"), ex("owner")).length > 0)!;
+    .find(
+      (propertyNode) => shapesGraph.getQuads(propertyNode, sh("path"), ex("owner")).length > 0,
+    )!;
 
   // Still narrowed to sh:nodeKind sh:IRI (both values are IRIs), just not to a single sh:class -
   // alice and bob don't share a common rdf:type, so nothing is asserted about which class either
@@ -139,7 +141,9 @@ test("addMissingShapes - leaves sh:class off a predicate whose IRI values share 
   const ownerProperty = shapesGraph
     .getQuads(ex("Cat"), sh("property"))
     .map((quad) => quad.object as Quad_Subject)
-    .find((propertyNode) => shapesGraph.getQuads(propertyNode, sh("path"), ex("owner")).length > 0)!;
+    .find(
+      (propertyNode) => shapesGraph.getQuads(propertyNode, sh("path"), ex("owner")).length > 0,
+    )!;
 
   // Both ex:Person and ex:Agent are shared by every value - no single one is picked automatically.
   expect(shapesGraph.getQuads(ownerProperty, sh("class"))).toHaveLength(0);
@@ -160,7 +164,9 @@ test("addMissingShapes - leaves sh:nodeKind/sh:datatype off a predicate whose va
   const nicknameProperty = shapesGraph
     .getQuads(ex("Cat"), sh("property"))
     .map((quad) => quad.object as Quad_Subject)
-    .find((propertyNode) => shapesGraph.getQuads(propertyNode, sh("path"), ex("nickname")).length > 0)!;
+    .find(
+      (propertyNode) => shapesGraph.getQuads(propertyNode, sh("path"), ex("nickname")).length > 0,
+    )!;
 
   expect(shapesGraph.getQuads(nicknameProperty, sh("nodeKind"))).toHaveLength(0);
   expect(shapesGraph.getQuads(nicknameProperty, sh("datatype"))).toHaveLength(0);
@@ -275,7 +281,9 @@ test("addMissingShapes - does nothing at all once a shape already declares every
   const resultShapesGraph = result.shapesGraph as RdfStore;
 
   expect(resultShapesGraph.getQuads(ex("CatShape"), sh("property"))).toHaveLength(1);
-  expect(resultShapesGraph.getQuads(ex("CatShape"), sh("property"))[0]!.object.equals(nameProperty)).toBe(true);
+  expect(
+    resultShapesGraph.getQuads(ex("CatShape"), sh("property"))[0]!.object.equals(nameProperty),
+  ).toBe(true);
 });
 
 test("addMissingShapes - covers a second, unshaped class found in the same data graph while topping up the already-shaped one", async () => {
@@ -317,9 +325,13 @@ test("addMissingShapes - never generates a property shape for a predicate listed
   const shapesGraph = RdfStore.createDefault();
   shapesGraph.addQuad(factory.quad(ex("CatShape"), rdf("type"), sh("NodeShape")));
   shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("targetClass"), ex("Cat")));
-  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("closed"), factory.literal("true", xsd("boolean"))));
+  shapesGraph.addQuad(
+    factory.quad(ex("CatShape"), sh("closed"), factory.literal("true", xsd("boolean"))),
+  );
   const ignoredListHead = rebuildRdfList(rdf("nil"), [ex("internalId")], shapesGraph);
-  shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("ignoredProperties"), ignoredListHead as Quad_Object));
+  shapesGraph.addQuad(
+    factory.quad(ex("CatShape"), sh("ignoredProperties"), ignoredListHead as Quad_Object),
+  );
 
   const result = await addMissingShapes(
     rawEnvironment({ dataGraph, shapesGraph, enableMissingShapesGeneration: true }),
@@ -344,9 +356,19 @@ test("addMissingShapes - never generates a property shape for a predicate alread
   const shapesGraph = RdfStore.createDefault();
   shapesGraph.addQuad(factory.quad(ex("CatShape"), rdf("type"), sh("NodeShape")));
   shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("targetClass"), ex("Cat")));
-  const alternativePathListHead = rebuildRdfList(rdf("nil"), [ex("title"), rdfs("label")], shapesGraph);
+  const alternativePathListHead = rebuildRdfList(
+    rdf("nil"),
+    [ex("title"), rdfs("label")],
+    shapesGraph,
+  );
   const alternativePathNode = factory.blankNode();
-  shapesGraph.addQuad(factory.quad(alternativePathNode, sh("alternativePath"), alternativePathListHead as Quad_Object));
+  shapesGraph.addQuad(
+    factory.quad(
+      alternativePathNode,
+      sh("alternativePath"),
+      alternativePathListHead as Quad_Object,
+    ),
+  );
   const titleProperty = factory.blankNode();
   shapesGraph.addQuad(factory.quad(titleProperty, sh("path"), alternativePathNode));
   shapesGraph.addQuad(factory.quad(ex("CatShape"), sh("property"), titleProperty));
@@ -452,9 +474,13 @@ test("mergeFacetTextSearchProperties - does nothing unless mode is facet and ena
   const notFacetMode = await mergeFacetTextSearchProperties(
     rawEnvironment({ dataGraph, shapesGraph, mode: "edit", enableFacetTextSearchMerging: true }),
   );
-  expect((notFacetMode.shapesGraph as RdfStore).getQuads(ex("Cat"), sh("property"))).toHaveLength(0);
+  expect((notFacetMode.shapesGraph as RdfStore).getQuads(ex("Cat"), sh("property"))).toHaveLength(
+    0,
+  );
 
-  const flagOff = await mergeFacetTextSearchProperties(facetEnvironment({ dataGraph, shapesGraph, enableFacetTextSearchMerging: false }));
+  const flagOff = await mergeFacetTextSearchProperties(
+    facetEnvironment({ dataGraph, shapesGraph, enableFacetTextSearchMerging: false }),
+  );
   expect((flagOff.shapesGraph as RdfStore).getQuads(ex("Cat"), sh("property"))).toHaveLength(0);
 });
 
@@ -488,7 +514,9 @@ test("mergeFacetTextSearchProperties - merges every sh:datatype xsd:string/rdf:l
   const result = await mergeFacetTextSearchProperties(facetEnvironment({ shapesGraph }));
   const resultShapesGraph = result.shapesGraph as RdfStore;
 
-  const properties = resultShapesGraph.getQuads(ex("Cat"), sh("property")).map((quad) => quad.object);
+  const properties = resultShapesGraph
+    .getQuads(ex("Cat"), sh("property"))
+    .map((quad) => quad.object);
   // name/bio were unlinked from the shape and replaced by one generated property; age is untouched.
   expect(properties).toHaveLength(2);
   expect(properties.some((property) => property.equals(ageProperty))).toBe(true);
@@ -502,9 +530,12 @@ test("mergeFacetTextSearchProperties - merges every sh:datatype xsd:string/rdf:l
 
   const pathNode = resultShapesGraph.getQuads(generatedProperty, sh("path"))[0]?.object;
   if (!pathNode) throw new Error("expected the generated property to have an sh:path");
-  const alternativePathListHead = resultShapesGraph.getQuads(pathNode, sh("alternativePath"))[0]?.object;
+  const alternativePathListHead = resultShapesGraph.getQuads(pathNode, sh("alternativePath"))[0]
+    ?.object;
   if (!alternativePathListHead) throw new Error("expected sh:path to be an sh:alternativePath");
-  const mergedPredicates = getRdfList(alternativePathListHead, resultShapesGraph).map((term) => term.value);
+  const mergedPredicates = getRdfList(alternativePathListHead, resultShapesGraph).map(
+    (term) => term.value,
+  );
 
   expect(new Set(mergedPredicates)).toEqual(new Set([ex("name").value, ex("bio").value]));
 });
@@ -522,12 +553,16 @@ test("mergeFacetTextSearchProperties - leaves a property alone (never folds it i
   const result = await mergeFacetTextSearchProperties(facetEnvironment({ shapesGraph }));
   const resultShapesGraph = result.shapesGraph as RdfStore;
 
-  const properties = resultShapesGraph.getQuads(ex("Cat"), sh("property")).map((quad) => quad.object);
+  const properties = resultShapesGraph
+    .getQuads(ex("Cat"), sh("property"))
+    .map((quad) => quad.object);
   // colorProperty (already faceted) stays linked as-is; name was folded into a new generated
   // property - two properties total, not three, and not zero.
   expect(properties).toHaveLength(2);
   expect(properties.some((property) => property.equals(colorProperty))).toBe(true);
-  expect(resultShapesGraph.getQuads(colorProperty, st("facet"), st("CategoryFacet"))).toHaveLength(1);
+  expect(resultShapesGraph.getQuads(colorProperty, st("facet"), st("CategoryFacet"))).toHaveLength(
+    1,
+  );
 });
 
 test("mergeFacetTextSearchProperties - does nothing when every property already has its own st:facet", async () => {
@@ -542,7 +577,9 @@ test("mergeFacetTextSearchProperties - does nothing when every property already 
   const resultShapesGraph = result.shapesGraph as RdfStore;
 
   expect(resultShapesGraph.getQuads(ex("Cat"), sh("property"))).toHaveLength(1);
-  expect(resultShapesGraph.getQuads(ex("Cat"), sh("property"))[0]!.object.equals(colorProperty)).toBe(true);
+  expect(
+    resultShapesGraph.getQuads(ex("Cat"), sh("property"))[0]!.object.equals(colorProperty),
+  ).toBe(true);
 });
 
 test("mergeFacetTextSearchProperties - does not mutate the caller-supplied shapesGraph in place", () => {

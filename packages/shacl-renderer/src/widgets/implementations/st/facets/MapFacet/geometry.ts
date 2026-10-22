@@ -17,9 +17,8 @@ export function valuesToFeatureCollection(values: Term[]): FeatureCollection {
   const features = values
     .map((value) => literalToGeometry(value))
     .filter((geometry): geometry is NonNullable<typeof geometry> => geometry !== undefined)
-    .map(
-      (geometry): Feature =>
-        geometry.type === "Feature" ? geometry : { type: "Feature", geometry, properties: null },
+    .map((geometry): Feature =>
+      geometry.type === "Feature" ? geometry : { type: "Feature", geometry, properties: null },
     );
   return { type: "FeatureCollection", features };
 }
@@ -43,14 +42,12 @@ export function areaLiteralToFeatureCollection(literal: Term | undefined): Featu
 
   return {
     type: "FeatureCollection",
-    features: polygons.map(
-      (coordinates, index): Feature => ({
-        type: "Feature",
-        id: index,
-        geometry: { type: "Polygon", coordinates },
-        properties: {},
-      }),
-    ),
+    features: polygons.map((coordinates, index): Feature => ({
+      type: "Feature",
+      id: index,
+      geometry: { type: "Polygon", coordinates },
+      properties: {},
+    })),
   };
 }
 

@@ -247,7 +247,12 @@ export default function EnumSelectEditor({
       </button>
 
       {open && (
-        <div ref={dropdownRef} id={listboxId} className="st-enum-select__results st-combo-results" role="listbox">
+        <div
+          ref={dropdownRef}
+          id={listboxId}
+          className="st-enum-select__results st-combo-results"
+          role="listbox"
+        >
           {selectError ? (
             <div className="st-enum-select__empty st-combo-empty" role="alert">
               <Localized id="autocomplete-search-error">Search failed</Localized>

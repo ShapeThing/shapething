@@ -236,9 +236,7 @@ export function readFilterConstraint(
     ? qualifiedValueShapeOf(store, constraintNode)
     : constraintNode;
   if (!subject) return [];
-  return store
-    .getQuads(subject, predicate)
-    .flatMap((quad) => expandListOrTerm(quad.object, store));
+  return store.getQuads(subject, predicate).flatMap((quad) => expandListOrTerm(quad.object, store));
 }
 
 /** Whether `predicate` is set on `constraintNode` at all - true even for an explicit empty list. */
@@ -321,7 +319,11 @@ export function setFilterConstraint(
     syncWithinAreaSparqlConstraint(store, constraintNode, Array.isArray(value) ? undefined : value);
   }
   if (predicate.equals(st("colorBucket"))) {
-    syncColorBucketSparqlConstraint(store, constraintNode, Array.isArray(value) ? undefined : value);
+    syncColorBucketSparqlConstraint(
+      store,
+      constraintNode,
+      Array.isArray(value) ? undefined : value,
+    );
   }
   if (predicate.equals(st("classIn")) && shapesGraph) {
     syncClassInSparqlConstraint(store, constraintNode, shapesGraph);
@@ -356,8 +358,10 @@ function syncQualifiedValueShape(
     return;
   }
   if (!isEmpty) return;
-  for (const quad of store.getQuads(constraintNode, sh("qualifiedValueShape"))) store.removeQuad(quad);
-  for (const quad of store.getQuads(constraintNode, sh("qualifiedMinCount"))) store.removeQuad(quad);
+  for (const quad of store.getQuads(constraintNode, sh("qualifiedValueShape")))
+    store.removeQuad(quad);
+  for (const quad of store.getQuads(constraintNode, sh("qualifiedMinCount")))
+    store.removeQuad(quad);
 }
 
 /**

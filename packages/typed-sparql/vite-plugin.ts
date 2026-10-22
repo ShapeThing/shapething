@@ -1,8 +1,8 @@
-import { Parser } from '@traqula/parser-sparql-1-2'
-import fs from 'node:fs'
-import path from 'node:path'
-import type { Plugin } from 'vite'
-import { findRqFiles, processRqFile } from './index.ts'
+import { Parser } from "@traqula/parser-sparql-1-2";
+import fs from "node:fs";
+import path from "node:path";
+import type { Plugin } from "vite";
+import { findRqFiles, processRqFile } from "./index.ts";
 
 /**
  * Options for the `sparqlTypes` Vite plugin, allowing users to customize the TypeScript types generated for SPARQL queries based on function return types and predicate-object patterns. This enables more precise typings for query results, improving type safety and developer experience when working with SPARQL queries in a TypeScript codebase.
@@ -28,7 +28,7 @@ export interface SparqlTypesOptions {
    *   },
    * })
    */
-  functions?: Record<string, string>
+  functions?: Record<string, string>;
   /**
    * Additional predicate → object TypeScript type rules, merged on top of the
    * built-in SHACL/RDF rules.
@@ -43,7 +43,7 @@ export interface SparqlTypesOptions {
    *   },
    * })
    */
-  predicateObjectTypes?: Record<string, string>
+  predicateObjectTypes?: Record<string, string>;
 }
 
 /**
@@ -53,17 +53,17 @@ export interface SparqlTypesOptions {
  * @returns A Vite plugin instance.
  */
 export function typedSparql(options: SparqlTypesOptions = {}): Plugin {
-  const parser = new Parser()
+  const parser = new Parser();
 
   return {
-    name: 'typed-sparql',
-    enforce: 'pre',
+    name: "typed-sparql",
+    enforce: "pre",
 
     buildStart() {
-      const srcDir = path.resolve(process.cwd(), 'src')
+      const srcDir = path.resolve(process.cwd(), "src");
       for (const rqFile of findRqFiles(srcDir)) {
-        processRqFile(rqFile, options, parser)
-        this.addWatchFile(rqFile)
+        processRqFile(rqFile, options, parser);
+        this.addWatchFile(rqFile);
       }
     },
 
@@ -71,16 +71,16 @@ export function typedSparql(options: SparqlTypesOptions = {}): Plugin {
       // Handle bare `.rq` imports (no ?raw suffix) — return the file content as
       // a default-exported string so the runtime value matches the TypedQuery<T>
       // declaration generated in the .rq.d.ts file.
-      if (id.endsWith('.rq')) {
-        const content = fs.readFileSync(id, 'utf-8')
-        return `export default ${JSON.stringify(content)}\n`
+      if (id.endsWith(".rq")) {
+        const content = fs.readFileSync(id, "utf-8");
+        return `export default ${JSON.stringify(content)}\n`;
       }
     },
 
     watchChange(id, { event }) {
-      if (id.endsWith('.rq') && event !== 'delete') {
-        processRqFile(id, options, parser)
+      if (id.endsWith(".rq") && event !== "delete") {
+        processRqFile(id, options, parser);
       }
     },
-  }
+  };
 }

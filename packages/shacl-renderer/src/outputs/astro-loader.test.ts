@@ -44,7 +44,9 @@ test("loads one entry per shape target and writes a zod schema", async () => {
     generateDigest: () => "digest",
   });
 
-  expect(entries).toEqual([{ id: "http://example.org/name", data: { label: "Naam" }, digest: "digest" }]);
+  expect(entries).toEqual([
+    { id: "http://example.org/name", data: { label: "Naam" }, digest: "digest" },
+  ]);
   const schema = await readFile(path.join(root, "schema/property.ts"), "utf8");
   expect(schema).toContain(`import { z } from "astro:content";`);
   expect(schema).toContain("export const OntologyPropertySchema = z.object({");

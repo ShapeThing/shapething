@@ -15,8 +15,13 @@ import { Localized } from "@fluent/react";
 import "./style.css";
 
 export default function ContentLanguageSwitcher() {
-  const { mode, languageMode, enableContentLanguageCreation, enableFullLanguageRemoval, dataGraph } =
-    useEnvironment();
+  const {
+    mode,
+    languageMode,
+    enableContentLanguageCreation,
+    enableFullLanguageRemoval,
+    dataGraph,
+  } = useEnvironment();
   const {
     languages,
     activeLanguage,
@@ -114,7 +119,9 @@ export default function ContentLanguageSwitcher() {
               ? [
                   {
                     key: "create",
-                    content: <Localized id="content-language-create-option">Add language…</Localized>,
+                    content: (
+                      <Localized id="content-language-create-option">Add language…</Localized>
+                    ),
                     onActivate: () => setCreateModalOpen(true),
                   },
                 ]

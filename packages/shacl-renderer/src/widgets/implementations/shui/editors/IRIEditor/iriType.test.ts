@@ -22,7 +22,7 @@ test("iriTypesFor() returns undefined (search both) when st:iriType isn't declar
   expect(iriTypesFor(shape)).toBeUndefined();
 });
 
-test("iriTypesFor() maps rdfs:Class to \"class\"", async () => {
+test('iriTypesFor() maps rdfs:Class to "class"', async () => {
   const shape = await createShape(
     `ex:property1 a sh:PropertyShape ; sh:path ex:name ; st:iriType rdfs:Class .`,
   );
@@ -30,7 +30,7 @@ test("iriTypesFor() maps rdfs:Class to \"class\"", async () => {
   expect(iriTypesFor(shape)).toEqual(["class"]);
 });
 
-test("iriTypesFor() maps rdf:Property to \"property\"", async () => {
+test('iriTypesFor() maps rdf:Property to "property"', async () => {
   const shape = await createShape(
     `ex:property1 a sh:PropertyShape ; sh:path ex:name ; st:iriType rdf:Property .`,
   );

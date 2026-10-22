@@ -1,4 +1,5 @@
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
+import PropertyShapeSources from "@/outputs/render/components/PropertyShapeSources/index.tsx";
 import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
 import ValidationMessages from "@/outputs/render/components/ValidationMessages/index.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
@@ -91,6 +92,7 @@ export default function PropertyUIComponent({
       labelSuffix={
         label ? (
           <>
+            <PropertyShapeSources propertyUIElement={propertyUIElement} />
             {showSearchIcon && (
               <Tooltip
                 bare

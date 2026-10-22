@@ -2,7 +2,12 @@ import type { NamedNode, Term } from "@rdfjs/types";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { getWidgetComponent, getWidgetMeta, widgetModeForEnvironment, widgetModeForPredicate } from "@/widgets/registry.ts";
+import {
+  getWidgetComponent,
+  getWidgetMeta,
+  widgetModeForEnvironment,
+  widgetModeForPredicate,
+} from "@/widgets/registry.ts";
 import type { WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { noRefetch } from "@/helpers/noRefetch.ts";
@@ -61,7 +66,11 @@ export function useWidgets(
       .map(({ widget, score }) => ({
         // mode is never "facet" here (see the early return above) - registry.ts's own doc comment
         // on getWidgetComponent says this union is the caller's to narrow, same as useWidget's `as T`.
-        Widget: getWidgetComponent(mode, widget as NamedNode, property.widgetRegistry)! as WidgetComponent,
+        Widget: getWidgetComponent(
+          mode,
+          widget as NamedNode,
+          property.widgetRegistry,
+        )! as WidgetComponent,
         meta: getWidgetMeta(widget as NamedNode, property.widgetRegistry),
         iri: widget,
         score,

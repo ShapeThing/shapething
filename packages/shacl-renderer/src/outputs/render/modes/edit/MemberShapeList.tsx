@@ -176,7 +176,9 @@ export default function MemberShapeList({
 
   return (
     <div className="st-member-shape-list">
-      {tableColumns && <MemberShapeListHeader columns={tableColumns} columnLabelId={columnLabelId} />}
+      {tableColumns && (
+        <MemberShapeListHeader columns={tableColumns} columnLabelId={columnLabelId} />
+      )}
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
         <SortableContext
           items={cells.map((entry) => entry.cell.value)}

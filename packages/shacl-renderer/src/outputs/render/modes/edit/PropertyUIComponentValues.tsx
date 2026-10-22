@@ -10,7 +10,16 @@ import { termKey } from "@/helpers/termKey.ts";
 import { shui } from "@/helpers/namespaces.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
-import { Fragment, Suspense, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import {
+  Fragment,
+  Suspense,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   closestCenter,
   DndContext,
@@ -208,11 +217,7 @@ export default function PropertyUIComponentValues({
   // Which rendered index (if any) should receive focus this render - the newly-appended
   // placeholder from an actual "+" click takes priority over autoFocusFirst, though in practice
   // the two never fire on the same render (see the autoFocusFirst prop doc above).
-  const targetFocusIndex = justClickedAddRef.current
-    ? objects.length - 1
-    : autoFocusFirst
-      ? 0
-      : -1;
+  const targetFocusIndex = justClickedAddRef.current ? objects.length - 1 : autoFocusFirst ? 0 : -1;
 
   // Only existing values get a drag handle - never the trailing empty widget, which has no
   // position to write yet - and only when the st:orderBy path is one we can write back through.
@@ -225,7 +230,10 @@ export default function PropertyUIComponentValues({
   // HorizontalPropertyGroup out as a row; any other widget for a sh:node value never would.
   const editorWidget = useWidget(shui("editor"), propertyUIElement);
   const isDetailsEditor = editorWidget?.iri.equals(shui("DetailsEditor")) === true;
-  const shapeColumns = useMemo(() => horizontalTableColumns(propertyUIElement), [propertyUIElement]);
+  const shapeColumns = useMemo(
+    () => horizontalTableColumns(propertyUIElement),
+    [propertyUIElement],
+  );
   const tableColumns = isDetailsEditor && !isSingleUnifiedWidget ? shapeColumns : undefined;
   const tableIdBase = useId();
   const columnLabelId = (index: number) => `${tableIdBase}-col-${index}`;
@@ -286,7 +294,11 @@ export default function PropertyUIComponentValues({
 
   return (
     <>
-      <div className={tableColumns ? "st-property-items st-property-items--table" : "st-property-items"}>
+      <div
+        className={
+          tableColumns ? "st-property-items st-property-items--table" : "st-property-items"
+        }
+      >
         {tableColumns && (
           <PropertyUIComponentValuesHeader
             columns={tableColumns}

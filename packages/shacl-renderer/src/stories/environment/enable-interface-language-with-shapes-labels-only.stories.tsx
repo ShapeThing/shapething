@@ -56,12 +56,14 @@ export const disabled: Story = {
     const canvas = within(canvasElement);
     await canvas.findByDisplayValue("Hendrik", {}, { timeout: 5000 });
     await openInterfaceLanguageMenu(canvasElement);
-    expect(canvasElement.querySelector('.st-interface-language-switcher [data-value="de"]')).toBeNull();
+    expect(
+      canvasElement.querySelector('.st-interface-language-switcher [data-value="de"]'),
+    ).toBeNull();
   },
 };
 
 export const enabled: Story = {
-  name: 'On (defaultEnvironment\'s own setting): "de" is offered too, picked up from the shape\'s own sh:name@de',
+  name: "On (defaultEnvironment's own setting): \"de\" is offered too, picked up from the shape's own sh:name@de",
   args: {
     ...baseArgs,
     enableInterfaceLanguageWithShapesLabelsOnly: true,

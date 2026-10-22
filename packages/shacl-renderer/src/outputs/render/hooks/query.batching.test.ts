@@ -18,7 +18,10 @@ vi.mock("@comunica/query-sparql", () => {
   class FakeQueryEngine {
     async query(query: string, context: { sources: Array<{ type?: string; value?: unknown }> }) {
       const endpoint = context.sources.find((source) => source.type === "sparql")?.value;
-      recordedQueries.push({ query, endpoint: typeof endpoint === "string" ? endpoint : undefined });
+      recordedQueries.push({
+        query,
+        endpoint: typeof endpoint === "string" ? endpoint : undefined,
+      });
       return {
         resultType: "bindings",
         metadata: async () => ({ variables: [] }),
@@ -64,10 +67,12 @@ test("fetchOptions() never merges calls for different federated endpoints into o
 
   expect(recordedQueries).toHaveLength(2);
 
-  const queryForA = recordedQueries.find(({ endpoint }) => endpoint?.includes("endpoint-a.example"))
-    ?.query;
-  const queryForB = recordedQueries.find(({ endpoint }) => endpoint?.includes("endpoint-b.example"))
-    ?.query;
+  const queryForA = recordedQueries.find(({ endpoint }) =>
+    endpoint?.includes("endpoint-a.example"),
+  )?.query;
+  const queryForB = recordedQueries.find(({ endpoint }) =>
+    endpoint?.includes("endpoint-b.example"),
+  )?.query;
 
   expect(queryForA).toContain(`<${ex("p1").value}>`);
   expect(queryForA).not.toContain(`<${ex("p2").value}>`);

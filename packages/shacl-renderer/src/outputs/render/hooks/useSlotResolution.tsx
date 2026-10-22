@@ -8,7 +8,12 @@ import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { widgetQueryOptions } from "@/outputs/render/hooks/useWidget.tsx";
 import { logicalBranches, withBranch, type LogicalBranch } from "@/structure/logicalBranches.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { getWidgetComponent, getWidgetMeta, widgetModeForEnvironment, widgetModeForPredicate } from "@/widgets/registry.ts";
+import {
+  getWidgetComponent,
+  getWidgetMeta,
+  widgetModeForEnvironment,
+  widgetModeForPredicate,
+} from "@/widgets/registry.ts";
 import type { WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
 
 export type SlotResolution = {
@@ -27,7 +32,11 @@ export type SlotResolution = {
   isPlaceholderData: boolean;
 };
 
-type ResolvedSlot = { detectedBranchKey: string | null; activeBranchKey: string | null; iri: Term | null };
+type ResolvedSlot = {
+  detectedBranchKey: string | null;
+  activeBranchKey: string | null;
+  iri: Term | null;
+};
 
 /**
  * One value slot's whole resolution - which sh:or/sh:xone branch is active and which widget

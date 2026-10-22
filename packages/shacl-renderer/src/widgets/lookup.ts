@@ -38,9 +38,7 @@ export function widgetModeForEnvironment(mode: WidgetMode | "report"): WidgetMod
   return mode === "report" ? "view" : mode;
 }
 
-export function widgetModeForPredicate(
-  widgetPredicate: Term,
-): WidgetMode | undefined {
+export function widgetModeForPredicate(widgetPredicate: Term): WidgetMode | undefined {
   if (widgetPredicate.equals(shui("editor"))) return "edit";
   if (widgetPredicate.equals(shui("viewer"))) return "view";
   if (widgetPredicate.equals(st("facet"))) return "facet";
@@ -71,10 +69,7 @@ export function getWidgetComponent(
   // `mode` is what actually picks the right category (and, with it, the right Component shape) at
   // runtime, same "narrow past the union yourself" story as this function's own return type (see
   // its doc comment above).
-  return findWidget(
-    categoryFor(mode, widgets) as Record<string, WidgetRegistryEntry>,
-    widget,
-  )
+  return findWidget(categoryFor(mode, widgets) as Record<string, WidgetRegistryEntry>, widget)
     ?.Component;
 }
 
@@ -86,12 +81,8 @@ export function getWidgetComponent(
  * categories are searched, by IRI equality, without needing to know which one a caller's widget
  * came from.
  */
-export function getWidgetMeta(
-  widget: NamedNode,
-  widgets: Widgets,
-): WidgetMeta | undefined {
-  return findWidget(widgets.editors, widget)?.meta ??
-    findWidget(widgets.viewers, widget)?.meta;
+export function getWidgetMeta(widget: NamedNode, widgets: Widgets): WidgetMeta | undefined {
+  return findWidget(widgets.editors, widget)?.meta ?? findWidget(widgets.viewers, widget)?.meta;
 }
 
 /**

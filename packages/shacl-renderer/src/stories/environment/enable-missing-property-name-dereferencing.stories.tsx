@@ -32,9 +32,13 @@ export const withoutDereferencing: Story = {
     await canvas.findByDisplayValue("Acme", {}, { timeout: 5000 });
     // No sh:name and nothing dereferenced - propertyLabel() falls all the way back to the sh:path
     // predicate's own local name, humanized (see resolution/label.ts, localNameLabel.ts).
-    await canvas.findByText("enable missing property name dereferencing term ttl", {}, {
-      timeout: 5000,
-    });
+    await canvas.findByText(
+      "enable missing property name dereferencing term ttl",
+      {},
+      {
+        timeout: 5000,
+      },
+    );
   },
 };
 

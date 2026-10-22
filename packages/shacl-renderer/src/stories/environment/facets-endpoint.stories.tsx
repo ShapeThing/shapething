@@ -73,7 +73,9 @@ export const facetsFromAnEndpoint: Story = {
     await canvas.findByLabelText("Books 1");
 
     // The price range's bounds come from a MIN/MAX query.
-    const priceContainer = (await canvas.findByText("Price")).closest(".st-form-element") as HTMLElement;
+    const priceContainer = (await canvas.findByText("Price")).closest(
+      ".st-form-element",
+    ) as HTMLElement;
     const [minPrice] = within(priceContainer).getAllByRole("spinbutton") as HTMLInputElement[];
     await waitFor(() => expect(minPrice).toHaveAttribute("placeholder", "12"));
 
@@ -83,7 +85,9 @@ export const facetsFromAnEndpoint: Story = {
     await within(priceContainer).findByText("2");
 
     // Every facet query went out as one aggregate query, not triple-pattern fragments.
-    expect(endpointFetch!.requests.some((query) => /COUNT\(DISTINCT \?this\)/.test(query))).toBe(true);
+    expect(endpointFetch!.requests.some((query) => /COUNT\(DISTINCT \?this\)/.test(query))).toBe(
+      true,
+    );
     expect(endpointFetch!.requests.some((query) => /MIN\(\?value\)/.test(query))).toBe(true);
   },
 };

@@ -1,13 +1,17 @@
 {
   "name": "@shapething/resource-fetcher",
   "version": "3.0.10",
-  "type": "module",
   "license": "GPL-3.0-only",
   "repository": {
     "type": "git",
     "url": "https://github.com/ShapeThing/shapething.git",
     "directory": "packages/resource-fetcher"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "type": "module",
   "main": "./dist/ResourceFetcher.js",
   "types": "./dist/ResourceFetcher.d.ts",
   "exports": {
@@ -19,14 +23,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
-    "lint": "vp lint",
-    "lint:fix": "vp lint --fix",
     "test": "vitest run",
     "test:watch": "vitest"
   },

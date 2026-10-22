@@ -197,7 +197,8 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
               } else if (event.key === "Enter") {
                 event.preventDefault();
                 const target = visibleItems[activeIndex] ?? visibleItems[0];
-                if (target && !isDisabled?.(target.term)) toggle(target.term, isMultiValued ? !isChecked(target.term) : true);
+                if (target && !isDisabled?.(target.term))
+                  toggle(target.term, isMultiValued ? !isChecked(target.term) : true);
               }
             }}
           />

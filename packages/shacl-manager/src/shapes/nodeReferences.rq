@@ -1,0 +1,9 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# sh:node on a node shape: every focus node must also conform to ?node, which makes ?node's
+# property shapes apply too. sh:node on a property shape constrains its *values* instead, so those
+# are left out.
+SELECT DISTINCT ?shape ?node WHERE {
+    ?shape sh:node ?node .
+    FILTER NOT EXISTS { ?shape sh:path ?anyPath }
+}

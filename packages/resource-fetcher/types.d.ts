@@ -1,1 +1,1 @@
-declare module 'grapoi'
+declare module "grapoi";

@@ -9,6 +9,10 @@
     "url": "https://github.com/ShapeThing/shapething.git",
     "directory": "packages/typed-sparql"
   },
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -21,14 +25,8 @@
   "publishConfig": {
     "access": "public"
   },
-  "files": [
-    "dist",
-    "README.md"
-  ],
   "scripts": {
     "build": "vite build --config vite.lib.config.ts && tsc -p tsconfig.build.json",
-    "lint": "vp lint",
-    "lint:fix": "vp lint --fix",
     "test": "vitest run",
     "test:watch": "vitest"
   },

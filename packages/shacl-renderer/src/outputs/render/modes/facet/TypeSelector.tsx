@@ -95,7 +95,9 @@ export default function TypeSelector({
     if (!countsEnabled) return undefined;
     const branches = rootShapes.flatMap((rootShape) => {
       const key = termToSparql(classFor(rootShape));
-      return key ? [{ key, targets: compileTargets([rootShape], shapesGraph, compileOptions) }] : [];
+      return key
+        ? [{ key, targets: compileTargets([rootShape], shapesGraph, compileOptions) }]
+        : [];
     });
     return branches.length > 0 ? keyedCountsQuery(branches) : undefined;
   }, [countsEnabled, rootShapes, classFor, shapesGraph, compileOptions]);
@@ -125,8 +127,7 @@ export default function TypeSelector({
   if (!widget) return null;
   const { Widget } = widget;
 
-  const getConstraint = (predicate: NamedNode): Term[] =>
-    constraint.get(predicate.value) ?? [];
+  const getConstraint = (predicate: NamedNode): Term[] => constraint.get(predicate.value) ?? [];
 
   // Only auto-vivifies this facet's sh:property/sh:path node on an actual selection - see
   // setFilterConstraintForProperty's own doc comment for why it (not getFilterConstraintNode +

@@ -24,19 +24,19 @@ across separate queries.
 ## Usage
 
 ```typescript
-import { ResourceFetcher } from '@shapething/resource-fetcher'
-import { QueryEngine } from '@comunica/query-sparql'
-import { namedNode } from '@rdfjs/data-model'
+import { ResourceFetcher } from "@shapething/resource-fetcher";
+import { QueryEngine } from "@comunica/query-sparql";
+import { namedNode } from "@rdfjs/data-model";
 
 const fetcher = new ResourceFetcher({
-  subject: namedNode('http://example.org/person/john'),
+  subject: namedNode("http://example.org/person/john"),
   engine: new QueryEngine(), // Comunica
-  sources: ['https://example.org/data.ttl'], // Comunica compatible sources.
+  sources: ["https://example.org/data.ttl"], // Comunica compatible sources.
   shapes: myShapesDataset, // Optional
-  furtherShapes: furtherShapes // Optional
-})
+  furtherShapes: furtherShapes, // Optional
+});
 
-const result = await fetcher.execute()
+const result = await fetcher.execute();
 ```
 
 ## License

@@ -18,7 +18,10 @@ import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import FacetPropertyComponent from "@/outputs/render/modes/facet/FacetPropertyComponent.tsx";
 import Title from "@/outputs/render/components/Title/index.tsx";
 import TypeSelector from "@/outputs/render/modes/facet/TypeSelector.tsx";
-import { FacetSourceProvider, useFacetSourceValue } from "@/outputs/render/modes/facet/facetData.tsx";
+import {
+  FacetSourceProvider,
+  useFacetSourceValue,
+} from "@/outputs/render/modes/facet/facetData.tsx";
 import { resolvedWidgets } from "@/preprocess/widgets.ts";
 
 // The class a root shape represents for the type/category selector - its own sh:targetClass when
@@ -159,37 +162,39 @@ export default function NodeUIComponent({ filterShape }: { filterShape: FilterSh
 
   return (
     <FacetSourceProvider value={facetSource}>
-    <div className="st-facet-node-ui-component">
-      {/* Several shapes at once (union mode) have no single label - Title falls back to "Search". */}
-      {enableTitle && <Title action="search" nodeShapes={activeShapes.length === 1 ? activeShapes : []} />}
-      {!enableFacetTypeUnion && rootShapes.length > 1 && activeRootShape && (
-        <TypeSelector
-          rootShapes={rootShapes}
-          classFor={(rootShape) => classFor(rootShape, shapesGraph)}
-          shapesGraph={shapesGraph}
-          dataGraph={dataGraph}
-          scoresGraph={scoresGraph}
-          widgets={widgets}
-          filterShape={filterShape}
-          selectedRootShape={activeRootShape}
-          onSelectRootShape={setSelectedRootShape}
-        />
-      )}
-      {properties.map((property, index) => (
-        // Keyed on the active root shape too, not just position: several facet widgets (text
-        // search, number/date range) keep their typed-but-not-yet-committed text as local
-        // component state rather than deriving it from the filter shape's own store (see e.g.
-        // TextSearchFacet), so an index-only key would let React reuse the same widget instance -
-        // and its stale local state - across a type switch, even though the property at that
-        // position now means something completely different (and its old constraint was just
-        // pruned above). Forcing a fresh mount per root shape resets that local state along with it.
-        <FacetPropertyComponent
-          key={`${facetKeyPrefix}|${pathSparqlFor(property) ?? index}`}
-          property={property}
-          filterShape={filterShape}
-        />
-      ))}
-    </div>
+      <div className="st-facet-node-ui-component">
+        {/* Several shapes at once (union mode) have no single label - Title falls back to "Search". */}
+        {enableTitle && (
+          <Title action="search" nodeShapes={activeShapes.length === 1 ? activeShapes : []} />
+        )}
+        {!enableFacetTypeUnion && rootShapes.length > 1 && activeRootShape && (
+          <TypeSelector
+            rootShapes={rootShapes}
+            classFor={(rootShape) => classFor(rootShape, shapesGraph)}
+            shapesGraph={shapesGraph}
+            dataGraph={dataGraph}
+            scoresGraph={scoresGraph}
+            widgets={widgets}
+            filterShape={filterShape}
+            selectedRootShape={activeRootShape}
+            onSelectRootShape={setSelectedRootShape}
+          />
+        )}
+        {properties.map((property, index) => (
+          // Keyed on the active root shape too, not just position: several facet widgets (text
+          // search, number/date range) keep their typed-but-not-yet-committed text as local
+          // component state rather than deriving it from the filter shape's own store (see e.g.
+          // TextSearchFacet), so an index-only key would let React reuse the same widget instance -
+          // and its stale local state - across a type switch, even though the property at that
+          // position now means something completely different (and its old constraint was just
+          // pruned above). Forcing a fresh mount per root shape resets that local state along with it.
+          <FacetPropertyComponent
+            key={`${facetKeyPrefix}|${pathSparqlFor(property) ?? index}`}
+            property={property}
+            filterShape={filterShape}
+          />
+        ))}
+      </div>
     </FacetSourceProvider>
   );
 }

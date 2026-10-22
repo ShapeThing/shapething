@@ -39,7 +39,9 @@ export const stCardinalityPropertyGroup: Story = {
     // Shown as one ordinary field: a FormElement label, not a group title.
     const field = canvasElement.querySelector(".st-cardinality-property-group")!;
     expect(field).toHaveClass("st-form-element");
-    expect(field.querySelector(":scope > .st-form-element__header")).toHaveTextContent("Cardinality");
+    expect(field.querySelector(":scope > .st-form-element__header")).toHaveTextContent(
+      "Cardinality",
+    );
     expect(canvasElement.querySelector(".st-property-group__title")).toBeNull();
     expect(group.required).toBeChecked();
     expect(group.multiple).not.toBeChecked();

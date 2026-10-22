@@ -79,10 +79,11 @@ export const stVerticalTabbedPropertyGroupViewHidesEmptyTabs: Story = {
     const canvas = within(canvasElement);
 
     const tablist = await canvas.findByRole("tablist");
-    expect(within(tablist).getAllByRole("tab").map((tab) => tab.textContent)).toEqual([
-      "Personal details",
-      "Contact",
-    ]);
+    expect(
+      within(tablist)
+        .getAllByRole("tab")
+        .map((tab) => tab.textContent),
+    ).toEqual(["Personal details", "Contact"]);
     expect(await canvas.findByText("Hendrik")).toBeInTheDocument();
 
     await userEvent.click(within(tablist).getByRole("tab", { name: /Contact/ }));

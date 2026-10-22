@@ -51,10 +51,13 @@ export function resolveFocusNodeAndNodeShapePairs(
   // that resolution enumerates and discards nothing - except a dash:abstract one that a concrete
   // shape also covers (see preferConcreteShapes).
   if (focusNode && !nodeShape) {
-    const shapes = shapesTargetingNode(focusNode, shapesGraph, dataGraph)
-      .filter((shape) => !isDeactivated(shape, shapesGraph));
-    return preferConcreteShapes(shapes, [shapesGraph, dataGraph])
-      .map((shape) => ({ focusNode, nodeShape: shape }));
+    const shapes = shapesTargetingNode(focusNode, shapesGraph, dataGraph).filter(
+      (shape) => !isDeactivated(shape, shapesGraph),
+    );
+    return preferConcreteShapes(shapes, [shapesGraph, dataGraph]).map((shape) => ({
+      focusNode,
+      nodeShape: shape,
+    }));
   }
 
   // Step 4: both absent - the targets of every non-deactivated node shape in the shapes graph.

@@ -74,9 +74,7 @@ export default function PropertyUIComponentRemove({
       <button
         className={clsx(
           "st-button",
-          !hidden &&
-            minCountReached &&
-            severity && ["st-button--severity", `severity-${severity}`],
+          !hidden && minCountReached && severity && ["st-button--severity", `severity-${severity}`],
         )}
         type="button"
         aria-label="Remove value"

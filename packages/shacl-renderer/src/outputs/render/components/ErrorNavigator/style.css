@@ -1,0 +1,18 @@
+.st-error-navigator {
+  display: flex;
+  gap: var(--size-1);
+
+  &[hidden] {
+    display: none;
+  }
+
+  .st-button {
+    font-size: 1.2rem;
+    padding: var(--size-1);
+
+    /* Sits over the scrolling form (see .st-edit-mode--actions' own sticky positioning). */
+    &:not(:hover):not(:focus) {
+      background-color: white;
+    }
+  }
+}

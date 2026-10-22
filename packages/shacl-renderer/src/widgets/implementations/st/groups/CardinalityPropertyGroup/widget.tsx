@@ -73,7 +73,11 @@ export default function CardinalityPropertyGroup({ group }: GroupWidgetProps) {
 
   if (mode === "view") {
     return (
-      <FormElement label={label} className="st-cardinality-property-group" dataId={group.node.value}>
+      <FormElement
+        label={label}
+        className="st-cardinality-property-group"
+        dataId={group.node.value}
+      >
         <ViewUIElementChildren elements={group.children} />
       </FormElement>
     );
@@ -118,7 +122,11 @@ export default function CardinalityPropertyGroup({ group }: GroupWidgetProps) {
       className="st-cardinality-property-group"
       dataId={group.node.value}
     >
-      <div className="st-cardinality-property-group__control" role="group" aria-labelledby={labelId}>
+      <div
+        className="st-cardinality-property-group__control"
+        role="group"
+        aria-labelledby={labelId}
+      >
         <div className="st-cardinality-property-group__checkboxes">
           {minProperty && (
             <label className="st-option">

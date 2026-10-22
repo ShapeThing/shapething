@@ -5,7 +5,8 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import {
   getWidgetComponent,
   getWidgetMeta,
-  widgetModeForEnvironment, widgetModeForPredicate,
+  widgetModeForEnvironment,
+  widgetModeForPredicate,
   type WidgetMode,
 } from "@/widgets/registry.ts";
 import type { FacetWidgetComponent, WidgetComponent, WidgetMeta } from "@/widgets/types.ts";

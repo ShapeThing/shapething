@@ -1,11 +1,4 @@
-import React, {
-  Suspense,
-  startTransition,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import React, { Suspense, startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { RdfStore } from "rdf-stores";
 import { Loading } from "@/helpers/icons.tsx";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";

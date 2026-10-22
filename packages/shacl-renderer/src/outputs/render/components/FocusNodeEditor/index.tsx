@@ -82,7 +82,12 @@ export default function FocusNodeEditor({
               <ValidationMessages
                 messages={
                   problem
-                    ? [{ severity: "Violation", message: l10n.getString(PROBLEM_MESSAGE_IDS[problem]) }]
+                    ? [
+                        {
+                          severity: "Violation",
+                          message: l10n.getString(PROBLEM_MESSAGE_IDS[problem]),
+                        },
+                      ]
                     : []
                 }
               />

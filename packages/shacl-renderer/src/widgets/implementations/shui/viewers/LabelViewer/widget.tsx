@@ -76,7 +76,9 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
     <img
       loading="lazy"
       onError={() => setHasImageError(true)}
-      className={icon ? "st-label-viewer__depiction st-label-viewer__icon" : "st-label-viewer__depiction"}
+      className={
+        icon ? "st-label-viewer__depiction st-label-viewer__icon" : "st-label-viewer__depiction"
+      }
       src={
         isDirectRenderable
           ? image.value

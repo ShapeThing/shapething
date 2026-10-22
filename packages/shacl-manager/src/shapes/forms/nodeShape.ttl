@@ -1,0 +1,85 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+### The form for a node shape. Its property shapes are managed in the focus view's property table,
+### so sh:property is ignored here.
+
+<#nodeShape>
+    a sh:NodeShape ;
+    sh:name "Node shape"@en, "Node shape"@nl ;
+    sh:ignoredProperties ( sh:property ) ;
+
+    sh:property [
+        sh:name "Title"@en, "Titel"@nl ;
+        sh:order 1 ;
+        sh:group <#descriptive> ;
+        sh:path [ sh:alternativePath ( sh:name rdfs:label ) ] ;
+        sh:uniqueLang true ;
+        sh:datatype rdf:langString ;
+    ] ;
+
+    sh:property [
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:order 2 ;
+        sh:group <#descriptive> ;
+        sh:path [ sh:alternativePath ( sh:description rdfs:comment ) ] ;
+        sh:uniqueLang true ;
+        sh:datatype rdf:langString ;
+    ] ;
+
+    sh:property [
+        sh:name "Target class"@en, "Doelklasse"@nl ;
+        sh:order 10 ;
+        sh:group <#targeting> ;
+        sh:path sh:targetClass ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:name "Target node"@en, "Doelknoop"@nl ;
+        sh:order 11 ;
+        sh:group <#targeting> ;
+        sh:path sh:targetNode ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:name "Subjects of"@en, "Subjecten van"@nl ;
+        sh:order 12 ;
+        sh:group <#targeting> ;
+        sh:path sh:targetSubjectsOf ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:name "Objects of"@en, "Objecten van"@nl ;
+        sh:order 13 ;
+        sh:group <#targeting> ;
+        sh:path sh:targetObjectsOf ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:name "Also conforms to (sh:node)"@en, "Voldoet ook aan (sh:node)"@nl ;
+        sh:order 20 ;
+        sh:group <#composition> ;
+        sh:path sh:node ;
+        sh:nodeKind sh:IRI ;
+    ] .
+
+<#descriptive>
+    a sh:PropertyGroup ;
+    sh:name "Descriptive"@en, "Beschrijvend"@nl ;
+    sh:order 1 .
+
+<#targeting>
+    a sh:PropertyGroup ;
+    sh:name "Targeting"@en, "Doelselectie"@nl ;
+    sh:order 2 .
+
+<#composition>
+    a sh:PropertyGroup ;
+    sh:name "Composition"@en, "Samenstelling"@nl ;
+    sh:order 3 .

@@ -69,19 +69,13 @@ const eagerComponents = import.meta.glob(
     "!/src/widgets/implementations/st/editors/EditorJsEditor/widget.tsx",
   ],
   { eager: true, import: "default" },
-) as Record<
-  string,
-  WidgetComponent | GroupWidgetComponent | FacetWidgetComponent
->;
+) as Record<string, WidgetComponent | GroupWidgetComponent | FacetWidgetComponent>;
 
-const scoringGraphs = import.meta.glob(
-  "/src/widgets/implementations/*/*/*/score.ttl",
-  {
-    eager: true,
-    query: "?raw",
-    import: "default",
-  },
-) as Record<string, string>;
+const scoringGraphs = import.meta.glob("/src/widgets/implementations/*/*/*/score.ttl", {
+  eager: true,
+  query: "?raw",
+  import: "default",
+}) as Record<string, string>;
 
 // Only editors ever produce a fresh/empty term for a property, so meta.ts (and createTerm) is an
 // editor-only concept in practice - viewers/groups have nothing to create - but is discovered the
@@ -117,9 +111,7 @@ function widgetIri(path: string): NamedNode {
   return factory.namedNode(`${prefix}${folderName(path)}`);
 }
 
-function buildEntries(
-  category: "editors" | "viewers",
-): Record<string, WidgetRegistryEntry> {
+function buildEntries(category: "editors" | "viewers"): Record<string, WidgetRegistryEntry> {
   const entries: Record<string, WidgetRegistryEntry> = {};
   for (const [path, Component] of Object.entries(eagerComponents)) {
     if (categorySegment(path) !== category) continue;
@@ -166,14 +158,11 @@ function buildFacetEntries(): Record<string, FacetWidgetRegistryEntry> {
 
 // A group's meta.ttl describes the group type itself (its rdfs:subClassOf sh:PropertyGroup, see
 // GroupWidgetRegistryEntry.metaGraph) - it carries no score, groups don't score.
-const groupMetaGraphs = import.meta.glob(
-  "/src/widgets/implementations/*/groups/*/meta.ttl",
-  {
-    eager: true,
-    query: "?raw",
-    import: "default",
-  },
-) as Record<string, string>;
+const groupMetaGraphs = import.meta.glob("/src/widgets/implementations/*/groups/*/meta.ttl", {
+  eager: true,
+  query: "?raw",
+  import: "default",
+}) as Record<string, string>;
 
 function buildGroupEntries(): Record<string, GroupWidgetRegistryEntry> {
   const entries: Record<string, GroupWidgetRegistryEntry> = {};
@@ -212,10 +201,7 @@ export { categoryFor, widgetModeForEnvironment, widgetModeForPredicate } from "@
 // `defaultWidgets` is a stable module singleton so the common case caches exactly as before: a
 // caller-supplied `widgets` object should likewise be constructed once and reused, not rebuilt on
 // every render, or it never benefits from this cache.
-const scoringGraphCache = new WeakMap<
-  Widgets,
-  Map<WidgetMode, Promise<RdfStore>>
->();
+const scoringGraphCache = new WeakMap<Widgets, Map<WidgetMode, Promise<RdfStore>>>();
 
 /**
  * Combines the shared widget-scoring.ttl shape definitions with every editor's/viewer's/facet's
@@ -226,8 +212,7 @@ export function getScoringGraph(
   mode: WidgetMode,
   widgets: Widgets = defaultWidgets,
 ): Promise<RdfStore> {
-  const modeCache = scoringGraphCache.get(widgets) ??
-    new Map<WidgetMode, Promise<RdfStore>>();
+  const modeCache = scoringGraphCache.get(widgets) ?? new Map<WidgetMode, Promise<RdfStore>>();
   scoringGraphCache.set(widgets, modeCache);
 
   const cached = modeCache.get(mode);

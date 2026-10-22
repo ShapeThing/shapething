@@ -49,7 +49,9 @@ export const disabled: Story = {
   play: async ({ canvasElement }) => {
     const input = await findWidgetInput(canvasElement);
     input.focus();
-    await waitFor(() => expect(canvasElement.querySelector(".st-property-object__fly-out")).not.toBeNull());
+    await waitFor(() =>
+      expect(canvasElement.querySelector(".st-property-object__fly-out")).not.toBeNull(),
+    );
     expect(canvasElement.querySelector(".st-widget-switcher")).toBeNull();
   },
 };

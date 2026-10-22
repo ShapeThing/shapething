@@ -1,0 +1,38 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# One row per (shape, targeting method, target). A shape without any target still gets a row with
+# ?targetKind unbound, so it shows up as "untargeted".
+SELECT DISTINCT ?shape ?targetKind ?target WHERE {
+    {
+        ?shape sh:targetClass ?target .
+        BIND("class" AS ?targetKind)
+    } UNION {
+        # SHACL implicit class target: the shape is itself a class
+        VALUES ?classType { rdfs:Class owl:Class }
+        ?shape a sh:NodeShape, ?classType .
+        BIND(?shape AS ?target)
+        BIND("implicitClass" AS ?targetKind)
+    } UNION {
+        ?shape a sh:ShapeClass .
+        BIND(?shape AS ?target)
+        BIND("implicitClass" AS ?targetKind)
+    } UNION {
+        ?shape sh:targetNode ?target .
+        BIND("node" AS ?targetKind)
+    } UNION {
+        ?shape sh:targetSubjectsOf ?target .
+        BIND("subjectsOf" AS ?targetKind)
+    } UNION {
+        ?shape sh:targetObjectsOf ?target .
+        BIND("objectsOf" AS ?targetKind)
+    } UNION {
+        ?shape a sh:NodeShape .
+    } UNION {
+        # Only reused through sh:node, e.g. skosapnl:Concept
+        ?anyShape sh:node ?shape .
+        FILTER NOT EXISTS { ?anyShape sh:path ?anyPath }
+    }
+}

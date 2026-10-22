@@ -78,10 +78,7 @@ const isCrossOrigin = (url: URL): boolean => {
   }
 };
 
-const fetchText = async (
-  url: URL,
-  corsProxyUrl: string | undefined,
-): Promise<FetchedText> => {
+const fetchText = async (url: URL, corsProxyUrl: string | undefined): Promise<FetchedText> => {
   // A URL already known (from a previous page load) to 404 is skipped outright, rather than
   // paying the full retry+proxy-fallback cost again for a resource that's already confirmed gone.
   if (isKnownNotFound(url.href)) {
@@ -97,7 +94,7 @@ const fetchText = async (
   const proxyOnly = corsProxyUrl !== undefined && isCrossOrigin(url);
   const fetchUrl = proxyOnly ? withCorsProxy(url.href, corsProxyUrl) : url;
 
-  for (let attempt = 0;; attempt++) {
+  for (let attempt = 0; ; attempt++) {
     const response = await fetch(fetchUrl).catch((error: Error) => error);
     if (response instanceof Response && response.ok) return toFetchedText(response);
 
@@ -107,10 +104,9 @@ const fetchText = async (
       // (Already routed through the proxy from the start above when proxyOnly, so there's no
       // separate fallback attempt left to make here.)
       if (corsProxyUrl && !proxyOnly) {
-        const proxied = await fetch(withCorsProxy(url.href, corsProxyUrl))
-          .catch(
-            (error: Error) => error,
-          );
+        const proxied = await fetch(withCorsProxy(url.href, corsProxyUrl)).catch(
+          (error: Error) => error,
+        );
         if (proxied instanceof Response) {
           if (proxied.ok) return toFetchedText(proxied);
           // The proxied response is a same-origin, fully readable status - a stronger signal
@@ -258,10 +254,7 @@ const resolveOwlImports = async (
 ): Promise<void> => {
   const importUrls = new Set<string>();
   for (const quad of store.getQuads(null, owl("imports"), null, null)) {
-    if (
-      quad.object.termType === "NamedNode" &&
-      !visitedImports.has(quad.object.value)
-    ) {
+    if (quad.object.termType === "NamedNode" && !visitedImports.has(quad.object.value)) {
       importUrls.add(quad.object.value);
     }
   }
@@ -382,7 +375,7 @@ export const resolveRdfSource = async (
     const sinks = source.map(() => RdfStore.createDefault());
     const stores = await Promise.all(
       source.map((nestedSource, index) =>
-        resolveRdfSource(nestedSource, quadCache, corsProxyUrl, prefixSink, sinks[index])
+        resolveRdfSource(nestedSource, quadCache, corsProxyUrl, prefixSink, sinks[index]),
       ),
     );
     const merged = RdfStore.createDefault();
@@ -404,15 +397,16 @@ export const resolveRdfSource = async (
     return merged;
   }
 
-  const store = source instanceof RdfStore
-    ? copyStore(source)
-    : source instanceof URL
-    ? await dereferenceUrl(source, quadCache, corsProxyUrl, prefixSink)
-    : Array.isArray(source)
-    ? storeFromQuads(source)
-    : typeof source === "string"
-    ? await parseRdfText(source, prefixSink)
-    : storeFromQuads(source);
+  const store =
+    source instanceof RdfStore
+      ? copyStore(source)
+      : source instanceof URL
+        ? await dereferenceUrl(source, quadCache, corsProxyUrl, prefixSink)
+        : Array.isArray(source)
+          ? storeFromQuads(source)
+          : typeof source === "string"
+            ? await parseRdfText(source, prefixSink)
+            : storeFromQuads(source);
 
   await resolveOwlImports(
     store,
@@ -425,9 +419,7 @@ export const resolveRdfSource = async (
   return store;
 };
 
-export const resolveRdfSources = async (
-  raw: RawEnvironment,
-): Promise<Environment> => {
+export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environment> => {
   const quadCache = new Map<string, Promise<Quad[]>>();
   // Shared by both graphs (rather than one Map each) so a source URL dereferenced once for, say,
   // shapesGraph but then cache-hit by dataGraph's own resolveRdfSource call still contributes its
@@ -446,24 +438,25 @@ export const resolveRdfSources = async (
     deletionsGraph,
     validationReport,
   ] = await Promise.all([
-      resolveRdfSource(raw.shapesGraph, quadCache, corsProxyUrl, sourcePrefixes),
-      resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl, sourcePrefixes, importedDataGraph),
-      resolveRdfSource(raw.scoresGraph, quadCache, corsProxyUrl),
-      optional(raw.readOnlyGraph),
-      optional(raw.additionsGraph),
-      optional(raw.deletionsGraph),
-      // Its own prefixes count too: a report's sh:resultPath is rendered prefixed.
-      raw.validationReport !== undefined
-        ? resolveRdfSource(raw.validationReport, quadCache, corsProxyUrl, sourcePrefixes)
-        : undefined,
-    ]);
+    resolveRdfSource(raw.shapesGraph, quadCache, corsProxyUrl, sourcePrefixes),
+    resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl, sourcePrefixes, importedDataGraph),
+    resolveRdfSource(raw.scoresGraph, quadCache, corsProxyUrl),
+    optional(raw.readOnlyGraph),
+    optional(raw.additionsGraph),
+    optional(raw.deletionsGraph),
+    // Its own prefixes count too: a report's sh:resultPath is rendered prefixed.
+    raw.validationReport !== undefined
+      ? resolveRdfSource(raw.validationReport, quadCache, corsProxyUrl, sourcePrefixes)
+      : undefined,
+  ]);
 
   // A report renders fine without shapes (see preprocess/validationReport.ts), so report mode never
   // goes looking for them through the data's own rdf:type/sh:shapesGraph.
-  const shapesGraph = resolvedShapesGraph.size === 0 && raw.mode !== "report"
-    ? ((await dereferenceShapeTargets(dataGraph, quadCache, corsProxyUrl, sourcePrefixes)) ??
-      resolvedShapesGraph)
-    : resolvedShapesGraph;
+  const shapesGraph =
+    resolvedShapesGraph.size === 0 && raw.mode !== "report"
+      ? ((await dereferenceShapeTargets(dataGraph, quadCache, corsProxyUrl, sourcePrefixes)) ??
+        resolvedShapesGraph)
+      : resolvedShapesGraph;
 
   // With no nodeShapes given but a real focusNode (not defaultEnvironment's placeholder), render
   // whatever shapes actually target that node (3.1.3, via rdf:type + rdfs:subClassOf etc). Without

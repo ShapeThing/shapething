@@ -51,7 +51,9 @@ export function indexValidationResults(
     else previousBySignature.set(key, [result]);
   }
 
-  const reused = results.map((result) => previousBySignature.get(signature(result))?.shift() ?? result);
+  const reused = results.map(
+    (result) => previousBySignature.get(signature(result))?.shift() ?? result,
+  );
 
   const byProperty = new Map<string, ValidationResult[]>();
   for (const result of reused) {
@@ -63,7 +65,8 @@ export function indexValidationResults(
   }
   for (const [key, group] of byProperty) {
     const previousGroup = previous.byProperty.get(key);
-    if (previousGroup && shallowEqualArrays(previousGroup, group)) byProperty.set(key, previousGroup);
+    if (previousGroup && shallowEqualArrays(previousGroup, group))
+      byProperty.set(key, previousGroup);
   }
 
   return { results: reused, byProperty };

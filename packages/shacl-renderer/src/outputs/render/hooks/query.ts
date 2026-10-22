@@ -143,7 +143,8 @@ function structuralBraceIndexes(query: string): number[] {
     } else if (char === '"' || char === "'") {
       const quote = query.startsWith(char.repeat(3), index) ? char.repeat(3) : char;
       let end = index + quote.length;
-      while (end < query.length && !query.startsWith(quote, end)) end += query[end] === "\\" ? 2 : 1;
+      while (end < query.length && !query.startsWith(quote, end))
+        end += query[end] === "\\" ? 2 : 1;
       index = end + quote.length;
     } else if (char === "<" && IRI_REF.test(query)) {
       index = IRI_REF.lastIndex;
@@ -501,9 +502,7 @@ type RoleLookupOptions = { uiLanguage?: string; endpoint?: string; corsProxyUrl?
 // instead of silently falling back to the raw IRI. Shared by rolePathsFor and searchInstances.
 function labelPathsFor(propertyShape: PropertyUIElement) {
   const roles = labelRolePropertyPaths(propertyShape);
-  return roles.length > 0
-    ? roles
-    : effectiveLabelPredicates(propertyShape.shapesGraph, "term");
+  return roles.length > 0 ? roles : effectiveLabelPredicates(propertyShape.shapesGraph, "term");
 }
 
 // Every role's SPARQL path expressions for a shape - what buildSearchQuery/buildRoleLookupQuery walk
@@ -521,7 +520,9 @@ type RolePaths = {
 function rolePathsFor(propertyShape: PropertyUIElement): RolePaths {
   return {
     labelPaths: labelPathsFor(propertyShape).map((path) => toSparql(path)),
-    classificationPaths: classificationRolePropertyPaths(propertyShape).map((path) => toSparql(path)),
+    classificationPaths: classificationRolePropertyPaths(propertyShape).map((path) =>
+      toSparql(path),
+    ),
     depictionPaths: depictionRolePropertyPaths(propertyShape).map((path) => toSparql(path)),
     iconPaths: iconRolePropertyPaths(propertyShape).map((path) => toSparql(path)),
     descriptionPaths: descriptionRolePropertyPaths(propertyShape).map((path) => toSparql(path)),

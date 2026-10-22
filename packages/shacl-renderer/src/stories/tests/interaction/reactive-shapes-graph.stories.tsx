@@ -11,7 +11,9 @@ import type { RdfSource } from "@/types/RdfSource.ts";
 const args = argsByTestFile("reactive-shapes-graph.ttl", import.meta.url);
 const sh = (name: string) => factory.namedNode(`http://www.w3.org/ns/shacl#${name}`);
 const xsd = (name: string) => factory.namedNode(`http://www.w3.org/2001/XMLSchema#${name}`);
-const lastRestored = factory.namedNode(`${(args.shapesGraph as URL).href.split("#")[0]}#lastRestored`);
+const lastRestored = factory.namedNode(
+  `${(args.shapesGraph as URL).href.split("#")[0]}#lastRestored`,
+);
 
 // Built fresh per story render (a loader) and kept module-level rather than passed as an arg -
 // Storybook must never try to serialise a raw RdfStore (see shacl_everything_storybook_arg_display).
@@ -54,7 +56,9 @@ export const shapeWritesUpdateInPlace: Story = {
     transact(shapesGraph, () => {
       shapesGraph.removeQuad(factory.quad(lastRestored, sh("datatype"), xsd("string")));
       shapesGraph.addQuad(factory.quad(lastRestored, sh("datatype"), xsd("date")));
-      shapesGraph.addQuad(factory.quad(lastRestored, sh("minCount"), factory.literal("1", xsd("integer"))));
+      shapesGraph.addQuad(
+        factory.quad(lastRestored, sh("minCount"), factory.literal("1", xsd("integer"))),
+      );
     });
 
     await waitFor(

@@ -88,7 +88,9 @@ test("readOutputData - reads a document in shacl-renderer's EditorJsEditor layou
     `,
     "text/turtle",
   );
-  const node = store.getQuads(ex("post"), ex("body"))[0].object as ReturnType<typeof factory.blankNode>;
+  const node = store.getQuads(ex("post"), ex("body"))[0].object as ReturnType<
+    typeof factory.blankNode
+  >;
 
   expect(readOutputData(store, node)).toEqual({
     time: 1234,

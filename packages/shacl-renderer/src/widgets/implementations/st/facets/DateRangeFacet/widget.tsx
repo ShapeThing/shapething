@@ -46,10 +46,7 @@ export default function DateRangeFacet({
         onChange={(event) => {
           const raw = event.target.value;
           setFrom(raw);
-          setConstraint(
-            sh("minInclusive"),
-            raw === "" ? undefined : toLiteral(raw),
-          );
+          setConstraint(sh("minInclusive"), raw === "" ? undefined : toLiteral(raw));
         }}
       />
       <span className="st-date-range-facet__separator" aria-hidden>
@@ -63,10 +60,7 @@ export default function DateRangeFacet({
         onChange={(event) => {
           const raw = event.target.value;
           setTill(raw);
-          setConstraint(
-            sh("maxInclusive"),
-            raw === "" ? undefined : toLiteral(raw),
-          );
+          setConstraint(sh("maxInclusive"), raw === "" ? undefined : toLiteral(raw));
         }}
       />
     </div>

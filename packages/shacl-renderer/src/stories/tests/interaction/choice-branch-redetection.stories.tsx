@@ -14,7 +14,8 @@ export const replacingAValueReDetectsTheBranch: Story = {
   name: "Replacing a value re-detects the node-level sh:or branch",
   args: argsByTestFile("choice-branch-redetection.ttl", import.meta.url),
   play: async ({ canvasElement }) => {
-    const picker = () => canvasElement.querySelector(".st-choice-element .st-logical-constraint-switcher");
+    const picker = () =>
+      canvasElement.querySelector(".st-choice-element .st-logical-constraint-switcher");
 
     await waitFor(() => expect(picker()?.textContent).toContain("Starts with A"), {
       timeout: 5000,

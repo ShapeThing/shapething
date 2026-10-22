@@ -31,7 +31,10 @@ export function federatedPropertyShapes(shapesGraph: RdfStore): Set<string> {
 }
 
 // Value-node constraints that inspect the value's own triples.
-const VALUE_DESCRIPTION_COMPONENTS = [sh("ClassConstraintComponent"), sh("NodeConstraintComponent")];
+const VALUE_DESCRIPTION_COMPONENTS = [
+  sh("ClassConstraintComponent"),
+  sh("NodeConstraintComponent"),
+];
 
 /**
  * `results` minus the sh:class/sh:node results on a federated property's (see

@@ -9,7 +9,10 @@ import {
   displayName,
   useRowLabel,
 } from "@/widgets/implementations/st/editors/PropertyEditor/labels.ts";
-import { deleteGroup, shapesUsingGroup } from "@/widgets/implementations/st/editors/PropertyEditor/tree.ts";
+import {
+  deleteGroup,
+  shapesUsingGroup,
+} from "@/widgets/implementations/st/editors/PropertyEditor/tree.ts";
 
 function ShapeName({ shape, dataGraph }: { shape: Quad_Subject; dataGraph: RdfStore }) {
   return <li>{displayName(shape, useRowLabel(shape, dataGraph))}</li>;

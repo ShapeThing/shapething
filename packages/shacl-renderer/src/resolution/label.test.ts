@@ -4,7 +4,12 @@ import { parseRdf } from "@/helpers/rdf.ts";
 import { factory } from "@/helpers/factory.ts";
 import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
-import { propertyLabel, valueNodeColor, valueNodeIcon, valueNodeLabel } from "@/resolution/label.ts";
+import {
+  propertyLabel,
+  valueNodeColor,
+  valueNodeIcon,
+  valueNodeLabel,
+} from "@/resolution/label.ts";
 import { defaultWidgets } from "@/widgets/registry.ts";
 
 const createShape = async ({

@@ -1,0 +1,42 @@
+import { defineConfig } from "vite-plus";
+
+// Root Vite+ config: the single source of truth for `vp lint`, `vp fmt`, `vp check` and
+// `vp staged` across the whole monorepo, and for the Oxc VS Code extension (see
+// .vscode/settings.json's oxc.fmt.configPath). Vite+ does not apply nested lint/fmt blocks from a
+// package's own vite.config.ts, so package-specific settings go in `overrides` below.
+
+// apps/app.shapething.com is a separate (private) repo pulled in as a submodule, with its own ESLint
+// setup - left out here so a root `vp fmt`/`vp lint` never rewrites or judges another repo's files.
+const ignorePatterns = [
+  "**/dist/**",
+  "**/storybook-static/**",
+  "**/.turbo/**",
+  "**/*.min.js",
+  "apps/app.shapething.com/**",
+];
+
+export default defineConfig({
+  lint: {
+    ignorePatterns,
+    overrides: [
+      {
+        files: [
+          "packages/shacl-renderer/**",
+          "apps/play.shacl-renderer.shapething.com/**",
+          "apps/resource-fetcher.shapething.com/**",
+        ],
+        plugins: ["react"],
+      },
+      {
+        files: ["packages/shacl-renderer/**"],
+        plugins: ["jsx-a11y"],
+      },
+    ],
+  },
+  fmt: {
+    ignorePatterns: [...ignorePatterns, "pnpm-lock.yaml"],
+  },
+  staged: {
+    "*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}": "vp check --fix",
+  },
+});

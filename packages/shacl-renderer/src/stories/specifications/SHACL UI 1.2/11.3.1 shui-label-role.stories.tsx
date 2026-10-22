@@ -8,7 +8,8 @@ import { sparqlEndpointFetch } from "@/facets/testing/sparqlEndpointShim.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Specifications/SHACL UI 1.2/11. Property Roles/11.3 Built-in Property Roles/11.3.1 shui:LabelRole",
+  title:
+    "Specifications/SHACL UI 1.2/11. Property Roles/11.3 Built-in Property Roles/11.3.1 shui:LabelRole",
   component: ShaclRenderer,
 };
 
@@ -97,9 +98,9 @@ export const labelRoleAutoComplete: Story = {
     // ClassificationRole chip too - both for a local (dataGraph) search and a federated
     // (shui:searchQuery, stubbed TOOI endpoint) one. The federated search must chip both a upl
     // scheme (rdfs:label) and a kern one (skos:prefLabel).
-    const localField = (
-      await canvas.findByText("Breder begrip (lokaal)")
-    ).closest(".st-form-element") as HTMLElement;
+    const localField = (await canvas.findByText("Breder begrip (lokaal)")).closest(
+      ".st-form-element",
+    ) as HTMLElement;
     await userEvent.click(localField.querySelector(".st-edit-button") as HTMLElement);
     await userEvent.type(within(localField).getByRole("combobox"), "dier");
     const localListbox = await within(localField).findByRole("listbox");

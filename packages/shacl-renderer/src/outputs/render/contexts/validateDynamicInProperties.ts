@@ -48,9 +48,14 @@ export async function validateDynamicInProperties(
   corsProxyUrl?: string,
   cache?: Map<string, Promise<Set<string>>>,
 ): Promise<ValidationResult[]> {
-  const properties = childrenForShape(shapesGraph, dataGraph, nodeShapes, focusNode, undefined, NO_WIDGETS).filter(
-    (element) => element.kind === "property",
-  );
+  const properties = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    nodeShapes,
+    focusNode,
+    undefined,
+    NO_WIDGETS,
+  ).filter((element) => element.kind === "property");
 
   const results: ValidationResult[] = [];
 

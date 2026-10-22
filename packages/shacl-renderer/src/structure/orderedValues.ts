@@ -30,13 +30,9 @@ const DASH_ALIASES = new Map<string, NamedNode>([
 // both a keepFirst-style resolution and language selection rely on to break ties consistently.
 // Used by propertyLabel (resolution/label.ts), which needs the raw, un-language-resolved list
 // itself (to try a strict language match first, falling back to the ontology before a looser one).
-export function orderedValues(
-  element: ShapeValueSource,
-  predicate: NamedNode,
-): Term[] {
+export function orderedValues(element: ShapeValueSource, predicate: NamedNode): Term[] {
   const orderedShapes = [...element.propertyShapes].sort(
-    (a, b) =>
-      shapeOrder(a, element.shapesGraph) - shapeOrder(b, element.shapesGraph),
+    (a, b) => shapeOrder(a, element.shapesGraph) - shapeOrder(b, element.shapesGraph),
   );
   const alias = DASH_ALIASES.get(predicate.value);
   return orderedShapes.flatMap((shape) => {

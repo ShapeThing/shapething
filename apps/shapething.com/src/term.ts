@@ -2,10 +2,10 @@
 import { z } from "astro:content";
 
 export const OntologyTermSchema = z.object({
-    type: z.array(z.string()),
-    label: z.string().optional(),
-    comment: z.string().optional(),
-    subClassOf: z.array(z.string()).optional(),
-    domain: z.array(z.string()).optional(),
-    range: z.array(z.string()).optional()
+  type: z.array(z.string()),
+  label: z.string().optional(),
+  comment: z.string().optional(),
+  subClassOf: z.array(z.string()).optional(),
+  domain: z.array(z.string()).optional(),
+  range: z.array(z.string()).optional(),
 });

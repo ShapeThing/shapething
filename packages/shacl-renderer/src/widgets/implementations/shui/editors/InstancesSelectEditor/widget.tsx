@@ -59,10 +59,13 @@ export default function InstancesSelectEditor({
   // "Create new…": staged in a scratch copy, only written for real on Done - see useCreateInPlace.
   // Not offered at all without a shape describing the new instance's own fields (its sh:node, or a
   // node shape targeting its sh:class - see canCreateInPlace/valueNodeShapes).
-  const { choices, draft, commit, cancel: cancelCreate, renameSubject } = useCreateInPlace(
-    shape,
-    setTerm,
-  );
+  const {
+    choices,
+    draft,
+    commit,
+    cancel: cancelCreate,
+    renameSubject,
+  } = useCreateInPlace(shape, setTerm);
 
   return (
     <>

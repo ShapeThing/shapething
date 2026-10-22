@@ -1,0 +1,30 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+<#class>
+    a sh:NodeShape ;
+    sh:name "Class"@en, "Klasse"@nl ;
+
+    sh:property [
+        sh:name "Label"@en, "Label"@nl ;
+        sh:order 1 ;
+        sh:path rdfs:label ;
+        sh:uniqueLang true ;
+        sh:datatype rdf:langString ;
+    ] ;
+
+    sh:property [
+        sh:name "Comment"@en, "Toelichting"@nl ;
+        sh:order 2 ;
+        sh:path rdfs:comment ;
+        sh:uniqueLang true ;
+        sh:datatype rdf:langString ;
+    ] ;
+
+    sh:property [
+        sh:name "Subclass of"@en, "Subklasse van"@nl ;
+        sh:order 3 ;
+        sh:path rdfs:subClassOf ;
+        sh:nodeKind sh:IRI ;
+    ] .

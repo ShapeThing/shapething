@@ -4,11 +4,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider } from "@tanstack/react-router";
 import { Localized } from "@fluent/react";
 import "@shapething/shacl-renderer/style.css";
-import DataModelProvider from "@/contexts/DataModelProvider.tsx";
-import { createShaclManagerRouter } from "@/router.tsx";
-import InterfaceLanguageProvider from "@/contexts/InterfaceLanguageProvider.tsx";
-import L10nProvider from "@/contexts/L10nProvider.tsx";
-import { DEFAULT_LOCALE, type LocaleLoaderOverrides } from "@/l10n/locales.ts";
+import DataModelProvider from "@/data-model/DataModelProvider.tsx";
+import { createShaclManagerRouter } from "@/app/router.tsx";
+import InterfaceLanguageProvider from "@/app/InterfaceLanguageProvider.tsx";
+import L10nProvider from "@/app/L10nProvider.tsx";
+import { DEFAULT_LOCALE, type LocaleLoaderOverrides } from "@/app/l10n/locales.ts";
 
 export type ShaclManagerProps = {
   dataModelIRI: NamedNode;

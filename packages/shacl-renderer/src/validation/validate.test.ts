@@ -46,7 +46,5 @@ test("shacl-engine - validates a blank-node sh:memberShape (with shui:editor/vie
   );
 
   expect(report.conforms).toBe(false);
-  expect(report.results.map((result) => result.focusNode.term.value)).toEqual([
-    ex("recipe").value,
-  ]);
+  expect(report.results.map((result) => result.focusNode.term.value)).toEqual([ex("recipe").value]);
 });

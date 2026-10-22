@@ -15,4 +15,4 @@ jobs:
     secrets: inherit
     with:
       badge: test-text-store
-      package: '@shapething/textstore'
+      package: "@shapething/textstore"

@@ -57,7 +57,9 @@ export const disabled: Story = {
   play: async ({ canvasElement }) => {
     const input = await findWidgetInput(canvasElement);
     input.focus();
-    await waitFor(() => expect(canvasElement.querySelector(".st-property-object__fly-out")).not.toBeNull());
+    await waitFor(() =>
+      expect(canvasElement.querySelector(".st-property-object__fly-out")).not.toBeNull(),
+    );
     expect(canvasElement.querySelector(".st-logical-constraint-switcher")).toBeNull();
   },
 };
@@ -68,6 +70,8 @@ export const enabled: Story = {
   play: async ({ canvasElement }) => {
     const input = await findWidgetInput(canvasElement);
     input.focus();
-    await waitFor(() => expect(canvasElement.querySelector(".st-logical-constraint-switcher")).not.toBeNull());
+    await waitFor(() =>
+      expect(canvasElement.querySelector(".st-logical-constraint-switcher")).not.toBeNull(),
+    );
   },
 };

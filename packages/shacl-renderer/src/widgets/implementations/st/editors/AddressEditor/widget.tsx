@@ -238,7 +238,12 @@ export default function AddressEditor({
       </Localized>
 
       {dropdownOpen && (
-        <div ref={dropdownRef} id={listboxId} className="st-address-editor__results st-combo-results" role="listbox">
+        <div
+          ref={dropdownRef}
+          id={listboxId}
+          className="st-address-editor__results st-combo-results"
+          role="listbox"
+        >
           {error ? (
             <div className="st-combo-empty" role="alert">
               <Localized id="autocomplete-search-error">Search failed</Localized>

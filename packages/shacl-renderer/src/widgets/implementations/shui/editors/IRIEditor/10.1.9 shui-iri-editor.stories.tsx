@@ -41,9 +41,7 @@ export const shuiIRIEditor: Story = {
     // Blurring without changing anything collapses it back to the display text.
     await userEvent.tab();
     expect(canvas.queryByRole("combobox", { name: "See also" })).toBeNull();
-    expect(await canvas.findByRole("button", { name: "See also" })).toHaveTextContent(
-      "more info",
-    );
+    expect(await canvas.findByRole("button", { name: "See also" })).toHaveTextContent("more info");
   },
 };
 
@@ -113,8 +111,8 @@ export const shuiIRIEditorSuggestedValues: Story = {
     const canvas = within(canvasElement);
     // Each row shows the IRI either as is or compacted plus in full - its text always ends with it.
     const suggestedTexts = () =>
-      [...canvasElement.querySelectorAll<HTMLElement>('[data-group="suggested"]')].map((element) =>
-        element.textContent?.match(/http:\/\/example\.org\/[\w-]+$/)?.[0],
+      [...canvasElement.querySelectorAll<HTMLElement>('[data-group="suggested"]')].map(
+        (element) => element.textContent?.match(/http:\/\/example\.org\/[\w-]+$/)?.[0],
       );
 
     // A bare focus - nothing typed yet - already lists every suggested value, in the shape's order.

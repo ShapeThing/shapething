@@ -15,5 +15,5 @@ jobs:
     secrets: inherit
     with:
       badge: test-shacl-manager
-      package: '@shapething/shacl-manager'
+      package: "@shapething/shacl-manager"
       browser: true

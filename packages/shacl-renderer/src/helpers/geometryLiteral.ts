@@ -50,4 +50,3 @@ export function literalToGeometry(term: Term): Feature | Geometry | undefined {
   }
   return parseJsonGeometry(term.value);
 }
-

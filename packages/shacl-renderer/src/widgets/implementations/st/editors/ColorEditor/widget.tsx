@@ -72,9 +72,12 @@ export default function ColorEditor({ shape, term, setTerm, labelledBy, autoFocu
 
     transact(shape.dataGraph, () => {
       for (const predicate of [st("hue"), st("saturation"), st("lightness")]) {
-        for (const quad of shape.dataGraph.getQuads(node, predicate)) shape.dataGraph.removeQuad(quad);
+        for (const quad of shape.dataGraph.getQuads(node, predicate))
+          shape.dataGraph.removeQuad(quad);
       }
-      shape.dataGraph.addQuad(factory.quad(node, st("hue"), factory.literal(String(hsl.h), xsd("decimal"))));
+      shape.dataGraph.addQuad(
+        factory.quad(node, st("hue"), factory.literal(String(hsl.h), xsd("decimal"))),
+      );
       shape.dataGraph.addQuad(
         factory.quad(node, st("saturation"), factory.literal(String(hsl.s), xsd("decimal"))),
       );

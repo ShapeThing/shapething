@@ -22,7 +22,8 @@ const KNOWN_SEVERITIES = new Set(["Violation", "Warning", "Info"]);
 // parameter value worth repeating ("Has more than one value in the same language").
 const PARAMETERLESS = new Set(["UniqueLang", "And", "Or", "Xone", "Closed", "SPARQL"]);
 
-const NUMERIC_DATATYPE = /#(integer|decimal|double|float|long|int|short|byte|nonNegativeInteger|positiveInteger|nonPositiveInteger|negativeInteger|unsigned\w+)$/;
+const NUMERIC_DATATYPE =
+  /#(integer|decimal|double|float|long|int|short|byte|nonNegativeInteger|positiveInteger|nonPositiveInteger|negativeInteger|unsigned\w+)$/;
 
 type Context = {
   shapesGraph: RdfStore;
@@ -36,7 +37,7 @@ function termLabel(term: Term, context: Context): string | undefined {
   for (const graph of [context.shapesGraph, context.dataGraph]) {
     const label = bestByLanguage(
       [rdfs("label"), sh("name")].flatMap((predicate) =>
-        graph.getQuads(term, predicate).map((quad) => quad.object)
+        graph.getQuads(term, predicate).map((quad) => quad.object),
       ),
       context.languages,
     );
@@ -62,7 +63,9 @@ function formatTerm(term: Term, context: Context): string | number | undefined {
   if (label) return label;
   // A blank-node parameter (e.g. an inline sh:node [ ... ]) has nothing readable to show.
   if (term.termType !== "NamedNode") return undefined;
-  return prefixedIri(term as NamedNode, context.sourcePrefixes) ?? localNameLabel(term) ?? term.value;
+  return (
+    prefixedIri(term as NamedNode, context.sourcePrefixes) ?? localNameLabel(term) ?? term.value
+  );
 }
 
 type Description = { id: string; vars: Record<string, string | number>; precise: boolean };
@@ -156,7 +159,9 @@ function DetailList({ results, context }: { results: ValidationResult[]; context
           <li key={index} className="st-validation-detail">
             {name && <span className="st-validation-message-property">{name}:</span>}
             <ResultMessage result={result} context={context} />
-            {result.details?.length ? <DetailList results={result.details} context={context} /> : null}
+            {result.details?.length ? (
+              <DetailList results={result.details} context={context} />
+            ) : null}
           </li>
         );
       })}

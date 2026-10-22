@@ -135,7 +135,11 @@ test("step 3: a dash:abstract shape still resolves when no concrete shape target
     data: `ex:Blob a ex:Animal .`,
   });
 
-  const pairs = resolveFocusNodeAndNodeShapePairs({ shapesGraph, dataGraph, focusNode: ex("Blob") });
+  const pairs = resolveFocusNodeAndNodeShapePairs({
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Blob"),
+  });
 
   expect(pairsAsValues(pairs)).toEqual([[ex("Blob").value, ex("AnimalShape").value]]);
 });

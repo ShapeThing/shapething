@@ -58,7 +58,7 @@ export class ChoiceElement {
    */
   children(): (PropertyUIElement | ChoiceElement)[][] {
     this.#children ??= getRdfList(this.list, this.shapesGraph).map((branchShape) =>
-      this.#expandBranch(branchShape)
+      this.#expandBranch(branchShape),
     );
     return this.#children;
   }

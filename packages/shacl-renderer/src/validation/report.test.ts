@@ -16,9 +16,7 @@ const PREFIXES = `
 const turtle = (body: string) => parseRdf(PREFIXES + body, "text/turtle");
 
 const pathOf = (shape: unknown, shapesGraph: RdfStore) =>
-  toSparql(
-    parsePathNode(shapesGraph.getQuads(shape as never, sh("path"))[0].object, shapesGraph),
-  );
+  toSparql(parsePathNode(shapesGraph.getQuads(shape as never, sh("path"))[0].object, shapesGraph));
 
 test("parseValidationReport - reads conforms, every result and its sh:detail", async () => {
   const report = await turtle(`
@@ -44,7 +42,9 @@ test("parseValidationReport - reads conforms, every result and its sh:detail", a
   expect(parsed.results).toHaveLength(1);
   const [result] = parsed.results;
   expect(result.focusNode.equals(ex("alice"))).toBe(true);
-  expect(result.path && toSparql(result.path)).toBe("<http://example.org/address> / <http://example.org/city>");
+  expect(result.path && toSparql(result.path)).toBe(
+    "<http://example.org/address> / <http://example.org/city>",
+  );
   expect(result.value?.value).toBe("Amstrdam");
   expect(result.severity.equals(sh("Warning"))).toBe(true);
   expect(result.messages.map((message) => message.language).sort()).toEqual(["en", "nl"]);
@@ -72,7 +72,11 @@ test("resolveReport - uses sh:sourceShape when the shapes graph has it", async (
         sh:sourceShape ex:PersonShape-name ; sh:sourceConstraintComponent sh:MinCountConstraintComponent ;
       ] .
   `);
-  const resolved = resolveReport(parseValidationReport(report), shapesGraph, RdfStore.createDefault());
+  const resolved = resolveReport(
+    parseValidationReport(report),
+    shapesGraph,
+    RdfStore.createDefault(),
+  );
 
   expect(resolved.results).toHaveLength(1);
   expect(resolved.results[0].sourceShape?.equals(ex("PersonShape-name"))).toBe(true);
@@ -147,7 +151,11 @@ test("resolveReport - sh:closed's undeclared property gets its own generated sha
         sh:sourceConstraintComponent sh:ClosedConstraintComponent ;
       ] .
   `);
-  const resolved = resolveReport(parseValidationReport(report), shapesGraph, RdfStore.createDefault());
+  const resolved = resolveReport(
+    parseValidationReport(report),
+    shapesGraph,
+    RdfStore.createDefault(),
+  );
 
   const [result] = resolved.results;
   expect(result.sourceShape?.equals(ex("CompanyShape-founded"))).toBe(false);

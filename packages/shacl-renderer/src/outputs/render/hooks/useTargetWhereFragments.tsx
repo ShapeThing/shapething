@@ -118,7 +118,10 @@ export function useTargetWhereFragments(
       if (attached.length > 0 || detached.length > 0) {
         console.log(
           `[shacl-renderer] sh:targetWhere fragments changed for focus node <${focusNode.value}>`,
-          { attached: attached.map((shape) => shape.value), detached: detached.map((shape) => shape.value) },
+          {
+            attached: attached.map((shape) => shape.value),
+            detached: detached.map((shape) => shape.value),
+          },
         );
       }
     }

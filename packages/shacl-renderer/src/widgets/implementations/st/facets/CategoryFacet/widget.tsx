@@ -120,7 +120,8 @@ export default function CategoryFacet({
         const endpointLabel = endpointLookups.find((result) => result.iri.equals(option))?.label;
         const label = selectQuery
           ? (federatedLabel ?? option.value)
-          : (endpointLabel ?? valueNodeLabel({
+          : (endpointLabel ??
+            valueNodeLabel({
               term: option,
               propertyShape: shape,
               languages: [activeLanguage],

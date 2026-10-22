@@ -27,8 +27,9 @@ export const stCssImportEdit: Story = {
   args: argsByTestFile("st-css-import.ttl", import.meta.url),
   play: async ({ canvasElement }) => {
     await waitFor(() => {
-      expect(document.head.querySelector('link[rel="stylesheet"][href$="st-css-import.css"]'))
-        .not.toBeNull();
+      expect(
+        document.head.querySelector('link[rel="stylesheet"][href$="st-css-import.css"]'),
+      ).not.toBeNull();
     });
     await waitFor(() => {
       expect(getComputedStyle(findGroup(canvasElement)).outlineStyle).toBe("dashed");

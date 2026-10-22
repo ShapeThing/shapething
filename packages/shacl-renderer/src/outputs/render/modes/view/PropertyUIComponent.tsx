@@ -2,6 +2,7 @@ import { useId, useMemo } from "react";
 import type { Term } from "@rdfjs/types";
 import type { ValidationResult } from "@/outputs/render/contexts/validationContext.tsx";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
+import PropertyShapeSources from "@/outputs/render/components/PropertyShapeSources/index.tsx";
 import ResultMessages from "@/outputs/render/components/ValidationMessages/ResultMessages.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useRegisterContentLanguageSwitcherWidget } from "@/outputs/render/hooks/useRegisterContentLanguageSwitcherWidget.tsx";
@@ -141,6 +142,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
       label={label}
       showColon={true}
       labelTitle={propertyUIElement.pathAsSparql({ prefixed: true, sourcePrefixes })}
+      labelSuffix={<PropertyShapeSources propertyUIElement={propertyUIElement} />}
       labelId={rowLabelId}
       dataId={propertyUIElement.dataId()}
       tooltip={description}
@@ -172,10 +174,15 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
     // of in an empty row that would claim "No value has been given".
     const last = ownRowObjects.length - 1;
     const rows = ownRowObjects.map((object, index) =>
-      renderRow(`value-${index}`, `${labelId}-${index}`, [object], [
-        ...resultsFor(object),
-        ...(index === last && sharedObjects.length === 0 ? otherResults : []),
-      ])
+      renderRow(
+        `value-${index}`,
+        `${labelId}-${index}`,
+        [object],
+        [
+          ...resultsFor(object),
+          ...(index === last && sharedObjects.length === 0 ? otherResults : []),
+        ],
+      ),
     );
     if (sharedObjects.length > 0) {
       rows.push(renderRow("shared", labelId, sharedObjects, otherResults));

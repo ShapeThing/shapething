@@ -98,7 +98,8 @@ function SettingsForm({
   );
 
   const wrapper = useRef<HTMLDivElement>(null);
-  const submitSoon = () => setTimeout(() => wrapper.current?.querySelector("form")?.requestSubmit());
+  const submitSoon = () =>
+    setTimeout(() => wrapper.current?.querySelector("form")?.requestSubmit());
 
   if (!propsShapes) return null;
 

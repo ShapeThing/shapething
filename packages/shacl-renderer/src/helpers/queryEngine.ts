@@ -34,9 +34,7 @@ export function fetchWithCorsProxyFallback(corsProxyUrl: string): typeof fetch {
  * the endpoint in one request (aggregates, EXISTS and all) instead of decomposing it into triple
  * patterns - which is what makes facet queries viable against a huge endpoint at all.
  */
-export type QuerySource =
-  | { kind: "local"; store: RdfStore }
-  | { kind: "endpoint"; url: string };
+export type QuerySource = { kind: "local"; store: RdfStore } | { kind: "endpoint"; url: string };
 
 export type QueryOptions = {
   corsProxyUrl?: string;
@@ -63,13 +61,10 @@ export async function selectBindings(
   const fetchOverride =
     options.fetch ??
     (options.corsProxyUrl ? fetchWithCorsProxyFallback(options.corsProxyUrl) : undefined);
-  const stream = await engine.queryBindings(
-    query,
-    {
-      sources: [source.kind === "local" ? source.store : { type: "sparql", value: source.url }],
-      ...(source.kind === "local" ? { extensionFunctions: geosparqlExtensionFunctions } : {}),
-      ...(fetchOverride ? { fetch: fetchOverride } : {}),
-    } as never,
-  );
+  const stream = await engine.queryBindings(query, {
+    sources: [source.kind === "local" ? source.store : { type: "sparql", value: source.url }],
+    ...(source.kind === "local" ? { extensionFunctions: geosparqlExtensionFunctions } : {}),
+    ...(fetchOverride ? { fetch: fetchOverride } : {}),
+  } as never);
   return stream.toArray();
 }

@@ -24,7 +24,13 @@ export type DebugEvent =
   /** One algorithm step finished. `branches` is a full snapshot of the branch tree. */
   | { type: "step-complete"; step: number; newQuads: number; branches: BranchSnapshot[] }
   /** A nested fetch completed. Contains the full event log and results of the nested execution. */
-  | { type: "nested-fetch"; resourceIri: string; events: DebugEvent[]; results: OurQuad[]; stepCount: number }
+  | {
+      type: "nested-fetch";
+      resourceIri: string;
+      events: DebugEvent[];
+      results: OurQuad[];
+      stepCount: number;
+    }
   /** Graph detection result. `graph` is the IRI of the single detected graph, or null when multiple graphs are present. */
   | { type: "graph-detected"; graph: string | null };
 
@@ -32,13 +38,11 @@ function snapshotToString(snapshot: BranchSnapshot, indent = ""): string {
   const done = snapshot.done ? `✔ (${snapshot.done})` : "⏱";
   const list = snapshot.isList ? " LIST" : "";
   const line = `${done} ${snapshot.path}${list} ${snapshot.type.toUpperCase()}`;
-  const children = snapshot.children
-    .map((c) => snapshotToString(c, indent + "  "))
-    .join("\n");
+  const children = snapshot.children.map((c) => snapshotToString(c, indent + "  ")).join("\n");
   return indent + line + (children ? "\n" + children : "");
 }
 
-export type QueryBindings = (query: string) => Promise<Bindings[]>
+export type QueryBindings = (query: string) => Promise<Bindings[]>;
 
 /**
  * ResourceFetcher class to fetch RDF resources with recursive branching.
@@ -94,9 +98,8 @@ export class ResourceFetcher {
     this.#recursionStepMultiplier = recursionStepMultiplier;
     this.#queryBindings = queryBindings;
     this.#shapesPointer =
-      shapesPointer ?? (shapesGraph && shapeIris
-        ? createShapesPointer(shapesGraph, shapeIris)
-        : undefined);
+      shapesPointer ??
+      (shapesGraph && shapeIris ? createShapesPointer(shapesGraph, shapeIris) : undefined);
     this.#accumulatedDataset = datasetFactory.dataset<OurQuad>();
     if (debug) {
       if (typeof debug === "function") {
@@ -107,17 +110,15 @@ export class ResourceFetcher {
           if (event.type === "query") {
             console.info(`[query #${event.step}]\n${event.query}`);
           } else if (event.type === "step-complete") {
-            const tree = event.branches
-              .map((b) => snapshotToString(b))
-              .join("\n");
+            const tree = event.branches.map((b) => snapshotToString(b)).join("\n");
             console.info(`[step ${event.step}] +${event.newQuads} quads\n${tree}\n`);
           } else if (event.type === "nested-fetch") {
-            console.info(`[nested-fetch] ${event.resourceIri} (${event.stepCount} steps, ${event.results.length} quads)`);
+            console.info(
+              `[nested-fetch] ${event.resourceIri} (${event.stepCount} steps, ${event.results.length} quads)`,
+            );
           } else if (event.type === "graph-detected") {
             console.info(
-              event.graph
-                ? `[graph-detected] ${event.graph}`
-                : "[graph-detected] multiple graphs"
+              event.graph ? `[graph-detected] ${event.graph}` : "[graph-detected] multiple graphs",
             );
           }
         };
@@ -199,9 +200,7 @@ export class ResourceFetcher {
 
     return {
       results: [
-        ...this.#rootBranches.flatMap((branch) =>
-          branch.getResults([this.#resourceIri])
-        ),
+        ...this.#rootBranches.flatMap((branch) => branch.getResults([this.#resourceIri])),
         ...this.#nestedResults,
       ],
       steps: step + this.#nestedSteps,
@@ -253,7 +252,7 @@ export class ResourceFetcher {
             stepCount,
           });
           return results;
-        })
+        }),
       );
       this.#nestedResults.push(...batchResults.flat());
     }
@@ -265,21 +264,19 @@ export class ResourceFetcher {
       const properties = allShapeSubShapes(this.#shapesPointer)
         .out(sh("property"))
         .hasOut(sh("path"));
-      const rootShapeBranches: Branch[] = properties.map(
-        (propertyPointer: Grapoi) => {
-          const path = parsePath(propertyPointer.out(sh("path")));
-          const isList = !!propertyPointer.out(sh("memberShape")).term;
+      const rootShapeBranches: Branch[] = properties.map((propertyPointer: Grapoi) => {
+        const path = parsePath(propertyPointer.out(sh("path")));
+        const isList = !!propertyPointer.out(sh("memberShape")).term;
 
-          return new Branch({
-            path,
-            depth: 1,
-            isList,
-            propertyPointer,
-            resourceFetcher: this,
-            type: "shape",
-          });
-        }
-      );
+        return new Branch({
+          path,
+          depth: 1,
+          isList,
+          propertyPointer,
+          resourceFetcher: this,
+          type: "shape",
+        });
+      });
       this.#rootBranches.push(...rootShapeBranches);
     }
 
@@ -291,10 +288,10 @@ export class ResourceFetcher {
     const quads = numberedBindingsToQuads(bindings);
     // Lets create data branches for the first level.
     const firstLevelQuads = [...quads].filter(
-      (quad) => quad.subject.value === this.#resourceIri.value
+      (quad) => quad.subject.value === this.#resourceIri.value,
     );
     const firstLevelShapePredicates = this.#rootBranches.flatMap((branch) =>
-      branch.getFirstPredicatesInPath()
+      branch.getFirstPredicatesInPath(),
     );
 
     const firstLevelDataPredicates = new Set(
@@ -302,10 +299,8 @@ export class ResourceFetcher {
         .map((quad) => quad.predicate.value)
         .filter(
           (predicate) =>
-            !firstLevelShapePredicates.some(
-              (shapePredicate) => shapePredicate.value === predicate
-            )
-        )
+            !firstLevelShapePredicates.some((shapePredicate) => shapePredicate.value === predicate),
+        ),
     );
 
     const rootDataBranches = [...firstLevelDataPredicates].map((predicate) => {
@@ -341,9 +336,7 @@ export class ResourceFetcher {
 
     this.#emit?.({ type: "query", step: 0, query });
 
-    const bindings = await this.#queryBindings(
-      query
-    );
+    const bindings = await this.#queryBindings(query);
 
     if (bindings.length === 1) {
       const graphTerm = bindings[0].get("g");
@@ -367,9 +360,7 @@ export class ResourceFetcher {
   }
 
   async #nextStep(step: number) {
-    const queryPatterns = this.#rootBranches.flatMap((branch) =>
-      branch.toQueryPatterns()
-    );
+    const queryPatterns = this.#rootBranches.flatMap((branch) => branch.toQueryPatterns());
     const query = generateQuery(queryPatterns, this.#graph);
     this.#emit?.({ type: "query", step, query });
 

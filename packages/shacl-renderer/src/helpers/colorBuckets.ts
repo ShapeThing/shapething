@@ -93,7 +93,7 @@ export function hslToHex({ h, s, l }: Hsl): string {
   const lightness = l / 100;
 
   const c = (1 - Math.abs(2 * lightness - 1)) * saturation;
-  const hPrime = ((h % 360) + 360) % 360 / 60;
+  const hPrime = (((h % 360) + 360) % 360) / 60;
   const x = c * (1 - Math.abs((hPrime % 2) - 1));
   const m = lightness - c / 2;
 

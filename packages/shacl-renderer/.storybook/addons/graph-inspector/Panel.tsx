@@ -35,7 +35,10 @@ export const GraphInspectorPanel = ({ active }: Props) => {
     [GRAPH_INSPECTOR_EVENT]: (payload: GraphInspectorPayload) => {
       setPayloadsByStory((prev) => ({ ...prev, [payload.storyId]: payload }));
     },
-    [GRAPH_INSPECTOR_MATERIALIZED_EVENT]: ({ storyId, text }: GraphInspectorMaterializedPayload) => {
+    [GRAPH_INSPECTOR_MATERIALIZED_EVENT]: ({
+      storyId,
+      text,
+    }: GraphInspectorMaterializedPayload) => {
       setMaterializedByStory((prev) => ({ ...prev, [storyId]: text }));
     },
   });

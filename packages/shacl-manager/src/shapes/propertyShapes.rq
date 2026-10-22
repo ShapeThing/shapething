@@ -1,0 +1,13 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+SELECT DISTINCT ?owner ?propertyShape ?path ?minCount ?maxCount ?order ?datatype ?class ?nodeKind WHERE {
+    ?owner sh:property ?propertyShape .
+
+    OPTIONAL { ?propertyShape sh:path ?path . }
+    OPTIONAL { ?propertyShape sh:minCount ?minCount . }
+    OPTIONAL { ?propertyShape sh:maxCount ?maxCount . }
+    OPTIONAL { ?propertyShape sh:order ?order . }
+    OPTIONAL { ?propertyShape sh:datatype ?datatype . }
+    OPTIONAL { ?propertyShape sh:class ?class . }
+    OPTIONAL { ?propertyShape sh:nodeKind ?nodeKind . }
+}

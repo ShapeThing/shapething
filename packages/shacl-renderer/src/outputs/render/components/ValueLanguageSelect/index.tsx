@@ -68,7 +68,9 @@ export default function ValueLanguageSelect({ ariaLabelledby, value, options, on
               ? [
                   {
                     key: "create",
-                    content: <Localized id="content-language-create-option">Add language…</Localized>,
+                    content: (
+                      <Localized id="content-language-create-option">Add language…</Localized>
+                    ),
                     onActivate: () => setCreateModalOpen(true),
                   },
                 ]

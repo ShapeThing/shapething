@@ -33,16 +33,17 @@ export default function Title({ action, nodeShapes, focusNode }: Props) {
     () =>
       withResourceLabel
         ? focusNodeLabel({
-          term: focusNode,
-          nodeShapes,
-          shapesGraph,
-          dataGraph,
-          languages: [activeLanguage],
-        })
+            term: focusNode,
+            nodeShapes,
+            shapesGraph,
+            dataGraph,
+            languages: [activeLanguage],
+          })
         : undefined,
   );
-  const label = resourceLabel
-    ?? nodeShapeLabel({ nodeShapes, shapesGraph, languages: [activeInterfaceLanguage] });
+  const label =
+    resourceLabel ??
+    nodeShapeLabel({ nodeShapes, shapesGraph, languages: [activeInterfaceLanguage] });
 
   if (!label) {
     if (action !== "search") return null;

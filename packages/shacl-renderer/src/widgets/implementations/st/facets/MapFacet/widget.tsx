@@ -168,11 +168,6 @@ export default function MapFacet({ getConstraint, setConstraint, labelledBy }: F
   }, [collection]);
 
   return (
-    <div
-      ref={containerRef}
-      className="st-map-facet"
-      role="group"
-      aria-labelledby={labelledBy}
-    />
+    <div ref={containerRef} className="st-map-facet" role="group" aria-labelledby={labelledBy} />
   );
 }

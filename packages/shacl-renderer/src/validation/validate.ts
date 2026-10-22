@@ -33,14 +33,15 @@ export function getShaclEngine(shapesGraph: RdfStore): ShaclEngine {
   return shaclEngine;
 }
 
-export async function validate(
-  { focusNode, targetGraph, shapeNode, shapesGraph }: ValidateProps,
-): Promise<boolean> {
+export async function validate({
+  focusNode,
+  targetGraph,
+  shapeNode,
+  shapesGraph,
+}: ValidateProps): Promise<boolean> {
   if (!shapeNode) return true;
 
-  const dataset = targetGraph.size > 0
-    ? targetGraph.asDataset()
-    : shapesGraph.asDataset();
+  const dataset = targetGraph.size > 0 ? targetGraph.asDataset() : shapesGraph.asDataset();
 
   const shaclEngine = getShaclEngine(shapesGraph);
   try {
@@ -53,10 +54,7 @@ export async function validate(
     );
     return report.conforms;
   } catch (error) {
-    console.warn(
-      `SHACL validation failed for shape ${shapeNode.value}:`,
-      error,
-    );
+    console.warn(`SHACL validation failed for shape ${shapeNode.value}:`, error);
     return false;
   }
 }

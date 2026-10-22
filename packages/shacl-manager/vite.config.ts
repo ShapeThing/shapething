@@ -11,16 +11,16 @@ import { corsProxy } from "./.storybook/corsProxy.ts";
 const dirname =
   typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 
-// l10n/locales.ts fetches locale bundles at runtime via `new URL("./ftl/xx-XX.ftl",
+// app/l10n/locales.ts fetches locale bundles at runtime via `new URL("./ftl/xx-XX.ftl",
 // import.meta.url)`, relative to wherever that code ends up compiled to - but `vp pack`'s
 // tsdown/rolldown bundler, unlike Vite's own dev/app-build asset handling, never detects or
 // copies a file that's only referenced through a runtime `new URL(...)` call (there's no static
 // `import` for it to follow). Left alone, every *published* consumer of this package 404s trying
-// to load its interface-language bundles. This mirrors src/l10n/ftl next to the built output so
+// to load its interface-language bundles. This mirrors src/app/l10n/ftl next to the built output so
 // the existing relative fetch keeps resolving, without requiring a consumer to vendor/copy these
 // files into their own public dir themselves.
 function copyFtlAssets() {
-  const ftlSourceDir = path.join(dirname, "src/l10n/ftl");
+  const ftlSourceDir = path.join(dirname, "src/app/l10n/ftl");
   return {
     name: "copy-ftl-assets",
     async writeBundle(options: { dir?: string }) {
@@ -48,20 +48,23 @@ export default defineConfig({
     exports: true,
     plugins: [typedSparql(), copyFtlAssets()],
   },
-  lint: {
-    options: {
-      typeAware: true,
-      typeCheck: true,
-    },
-  },
   resolve: {
     alias: {
       "@": path.join(dirname, "src"),
     },
   },
-  fmt: {},
   test: {
     projects: [
+      {
+        // The domain model functions (ontology/, shapes/, alignment/) are pure: rows in, domain
+        // objects out, so they are tested in plain Node.
+        extends: true,
+        test: {
+          name: "unit",
+          include: ["src/**/*.test.ts"],
+          environment: "node",
+        },
+      },
       {
         extends: true,
         resolve: {

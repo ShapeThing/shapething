@@ -103,10 +103,15 @@ export const doneWritesTheNewInstanceAndLinksIt: Story = {
     });
     const result = await submit(canvasElement);
     expect(result.deletions).toEqual([]);
-    const subject = result.additions.find((quad) => quad.predicate.value.endsWith("#type"))?.subject;
+    const subject = result.additions.find((quad) =>
+      quad.predicate.value.endsWith("#type"),
+    )?.subject;
     expect(subject?.value).toMatch(/^urn:uuid:/);
     const summary = result.additions
-      .map((quad) => `${quad.subject.equals(subject!) ? "new" : quad.subject.value} ${quad.predicate.value} ${quad.object.equals(subject!) ? "new" : quad.object.value}`)
+      .map(
+        (quad) =>
+          `${quad.subject.equals(subject!) ? "new" : quad.subject.value} ${quad.predicate.value} ${quad.object.equals(subject!) ? "new" : quad.object.value}`,
+      )
       .sort();
     expect(summary).toEqual([
       "http://example.org/data http://example.org/employer new",

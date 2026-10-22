@@ -1,0 +1,61 @@
+.st-property-shape-sources {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-inline-start: var(--size-2);
+  translate: 0 2px;
+  cursor: help;
+  font-size: var(--st-font-size-smallest);
+  font-weight: normal;
+  color: var(--st-color-text-muted);
+}
+
+.st-property-shape-sources svg {
+  width: var(--size-3);
+  height: var(--size-3);
+}
+
+/* More than one property shape shares this path - the merge is what's worth inspecting. */
+.st-property-shape-sources[data-merged] {
+  color: var(--st-primary-color);
+}
+
+.st-property-shape-sources__list {
+  margin: 0;
+  padding-inline-start: var(--size-4);
+  font-size: var(--st-font-size-small);
+  text-align: start;
+}
+
+.st-property-shape-sources__shape + .st-property-shape-sources__shape {
+  margin-block-start: var(--size-2);
+}
+
+.st-property-shape-sources__iri {
+  font-weight: bold;
+  word-break: break-all;
+}
+
+.st-property-shape-sources__declared-by {
+  opacity: 0.75;
+}
+
+.st-property-shape-sources__triples {
+  border-collapse: collapse;
+  margin-block-start: var(--size-1);
+}
+
+.st-property-shape-sources__triples th,
+.st-property-shape-sources__triples td {
+  padding: 0 var(--size-2) 0 0;
+  text-align: start;
+  vertical-align: top;
+  font-family: monospace;
+  font-weight: normal;
+  word-break: break-all;
+}
+
+.st-property-shape-sources__triples th {
+  white-space: nowrap;
+  word-break: normal;
+}

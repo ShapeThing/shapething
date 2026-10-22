@@ -51,7 +51,9 @@ export default function RadiosCheckboxesEditor({ shape, term, setTerm, labelledB
       return { term: option, label: match?.label, depiction: match?.depiction };
     })
     .sort((a, b) =>
-      a.label && b.label ? a.label.localeCompare(b.label) : a.term.value.localeCompare(b.term.value),
+      a.label && b.label
+        ? a.label.localeCompare(b.label)
+        : a.term.value.localeCompare(b.term.value),
     );
 
   // singleUnifiedWidget (see meta.ts) means this is the property's only widget instance when

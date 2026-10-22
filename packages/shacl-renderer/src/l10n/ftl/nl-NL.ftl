@@ -83,6 +83,12 @@ property-federated-search-tooltip = Dit veld doorzoekt een externe gegevensbron
 validation-severity-violation = Fout:
 validation-severity-warning = Waarschuwing:
 validation-severity-info = Info:
+error-navigator-previous =
+    .aria-label = Vorige fout
+    .title = Vorige fout
+error-navigator-next =
+    .aria-label = Volgende fout
+    .title = Volgende fout
 report-count-violation = { $count ->
     [one] 1 fout
    *[other] { $count } fouten

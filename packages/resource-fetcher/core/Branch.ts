@@ -17,10 +17,7 @@ export type QueryPattern = Record<string, Quad_Subject>;
 // on RDF objects which can have circular factory references.
 function pathIdentity(path: Path): string {
   return path
-    .map(
-      (s) =>
-        `${s.quantifier}|${s.start}|${s.end}|${s.predicates.map((p) => p.value).join(",")}`
-    )
+    .map((s) => `${s.quantifier}|${s.start}|${s.end}|${s.predicates.map((p) => p.value).join(",")}`)
     .join(";");
 }
 
@@ -126,9 +123,7 @@ export class Branch {
   createChildBranchesByMemberShape() {
     if (!this.#isList || !this.#propertyPointer) return;
 
-    const listProperties = allShapeSubShapes(
-      this.#propertyPointer.out(sh("memberShape"))
-    )
+    const listProperties = allShapeSubShapes(this.#propertyPointer.out(sh("memberShape")))
       .out(sh("property"))
       .hasOut(sh("path"));
 
@@ -173,23 +168,21 @@ export class Branch {
       .out(sh("property"))
       .hasOut(sh("path"));
 
-    const shapeBranches = [...shaclPropertiesToFollow].map(
-      (propertyPointer: Grapoi) => {
-        const path = parsePath(propertyPointer.out(sh("path")));
-        const isList = !!propertyPointer.out(sh("memberShape")).term;
+    const shapeBranches = [...shaclPropertiesToFollow].map((propertyPointer: Grapoi) => {
+      const path = parsePath(propertyPointer.out(sh("path")));
+      const isList = !!propertyPointer.out(sh("memberShape")).term;
 
-        return new Branch({
-          path,
-          depth: this.#depth + 1,
-          propertyPointer,
-          isList,
-          resourceFetcher: this.#resourceFetcher,
-          parent: this,
-          type: "shape",
-          nodeShapeDepth: this.#nodeShapeDepth + 1,
-        });
-      }
-    );
+      return new Branch({
+        path,
+        depth: this.#depth + 1,
+        propertyPointer,
+        isList,
+        resourceFetcher: this.#resourceFetcher,
+        parent: this,
+        type: "shape",
+        nodeShapeDepth: this.#nodeShapeDepth + 1,
+      });
+    });
 
     for (const branch of shapeBranches) {
       const identity = pathIdentity(branch.#path);
@@ -205,9 +198,7 @@ export class Branch {
   createChildBranchesByDataQuads(quads: Quad[]) {
     if (
       this.#path.some(
-        (segment) =>
-          segment.quantifier === "oneOrMore" ||
-          segment.quantifier === "zeroOrMore"
+        (segment) => segment.quantifier === "oneOrMore" || segment.quantifier === "zeroOrMore",
       )
     ) {
       return [];
@@ -217,15 +208,11 @@ export class Branch {
     const predicates = new Set<string>();
 
     // Get all blank node objects for CBD expansion
-    const blankNodes = quads
-      .filter((q) => q.object.termType === "BlankNode")
-      .map((q) => q.object);
+    const blankNodes = quads.filter((q) => q.object.termType === "BlankNode").map((q) => q.object);
 
     // For each blank node, find its outgoing predicates in the dataset
     for (const blankNode of blankNodes) {
-      const blankNodeQuads = quads.filter(
-        (q) => q.subject.value === blankNode.value
-      );
+      const blankNodeQuads = quads.filter((q) => q.subject.value === blankNode.value);
 
       for (const quad of blankNodeQuads) {
         predicates.add(quad.predicate.value);
@@ -234,10 +221,7 @@ export class Branch {
 
     const filteredPredicates = [...predicates].filter((predicate) => {
       // Skip rdf:first and rdf:rest if this is a list branch - they're handled by list expansion
-      if (
-        this.#isList &&
-        (predicate === rdf("first").value || predicate === rdf("rest").value)
-      ) {
+      if (this.#isList && (predicate === rdf("first").value || predicate === rdf("rest").value)) {
         return false;
       }
 
@@ -246,7 +230,7 @@ export class Branch {
       // so we don't need child branches for them
       if (this.#isList) {
         const predicateInCurrentPath = this.#path.some((segment) =>
-          segment.predicates.some((p) => p.value === predicate)
+          segment.predicates.some((p) => p.value === predicate),
         );
         if (predicateInCurrentPath) {
           return false;
@@ -285,29 +269,25 @@ export class Branch {
 
   createChildBranchesByPropertyPointer() {
     const shaclPropertiesToFollow = this.#propertyPointer
-      ? allShapeSubShapes(this.#propertyPointer)
-          .out(sh("property"))
-          .hasOut(sh("path"))
+      ? allShapeSubShapes(this.#propertyPointer).out(sh("property")).hasOut(sh("path"))
       : null;
 
-    const shapeBranches = [...(shaclPropertiesToFollow ?? [])].map(
-      (propertyPointer: Grapoi) => {
-        const path = parsePath(propertyPointer.out(sh("path")));
+    const shapeBranches = [...(shaclPropertiesToFollow ?? [])].map((propertyPointer: Grapoi) => {
+      const path = parsePath(propertyPointer.out(sh("path")));
 
-        const isList = !!propertyPointer.out(sh("memberShape")).term;
+      const isList = !!propertyPointer.out(sh("memberShape")).term;
 
-        return new Branch({
-          path,
-          depth: this.#depth + 1,
-          propertyPointer,
-          isList,
-          resourceFetcher: this.#resourceFetcher,
-          parent: this,
-          type: "shape",
-          nodeShapeDepth: this.#nodeShapeDepth,
-        });
-      }
-    );
+      return new Branch({
+        path,
+        depth: this.#depth + 1,
+        propertyPointer,
+        isList,
+        resourceFetcher: this.#resourceFetcher,
+        parent: this,
+        type: "shape",
+        nodeShapeDepth: this.#nodeShapeDepth,
+      });
+    });
 
     for (const branch of shapeBranches) {
       const identity = pathIdentity(branch.#path);
@@ -362,7 +342,7 @@ export class Branch {
       (s) =>
         s.quantifier === "oneOrMore" ||
         s.quantifier === "zeroOrMore" ||
-        s.quantifier === "zeroOrOne"
+        s.quantifier === "zeroOrOne",
     );
 
     // Base case: no more special quantifiers
@@ -375,20 +355,12 @@ export class Branch {
     const afterSegment = path.slice(specialIndex + 1);
     const expandedPaths: Path[] = [];
 
-    if (
-      segment.quantifier === "oneOrMore" ||
-      segment.quantifier === "zeroOrMore"
-    ) {
+    if (segment.quantifier === "oneOrMore" || segment.quantifier === "zeroOrMore") {
       const maxRepetitions =
-        (this.#queryCounter + 1) *
-        this.#resourceFetcher.recursionStepMultiplier;
+        (this.#queryCounter + 1) * this.#resourceFetcher.recursionStepMultiplier;
       const minRepetitions = segment.quantifier === "zeroOrMore" ? 0 : 1;
 
-      for (
-        let repetitions = minRepetitions;
-        repetitions <= maxRepetitions;
-        repetitions++
-      ) {
+      for (let repetitions = minRepetitions; repetitions <= maxRepetitions; repetitions++) {
         const repeated: Path = [];
         for (let i = 0; i < repetitions; i++) {
           repeated.push({ ...segment, quantifier: "one" });
@@ -400,9 +372,7 @@ export class Branch {
     } else if (segment.quantifier === "zeroOrOne") {
       // Exclude the segment (0 repetitions)
       const pathWithoutSegment = [...beforeSegment, ...afterSegment];
-      expandedPaths.push(
-        ...this.#expandPathWithQuantifiers(pathWithoutSegment)
-      );
+      expandedPaths.push(...this.#expandPathWithQuantifiers(pathWithoutSegment));
 
       // Include the segment (1 repetition)
       const pathWithSegment = [
@@ -425,12 +395,10 @@ export class Branch {
       const pattern: QueryPattern = { node_0 };
       predicates.forEach((predicate, index) => {
         const segment = path[index];
-        const prefix =
-          segment.start === "object" ? "reverse_predicate" : "predicate";
+        const prefix = segment.start === "object" ? "reverse_predicate" : "predicate";
         const isLastSegment = index === path.length - 1;
-        pattern[
-          `${prefix}_${this.#isList && isLastSegment ? "isList_" : ""}${index + 1}`
-        ] = predicate;
+        pattern[`${prefix}_${this.#isList && isLastSegment ? "isList_" : ""}${index + 1}`] =
+          predicate;
       });
       return pattern;
     });
@@ -486,9 +454,7 @@ export class Branch {
     const listQuads = getListQuadsFromPointer(thisBranchDataPointer);
 
     if (listQuads.length) {
-      const valueQuads = listQuads.filter((q) =>
-        q.predicate.equals(rdf("first"))
-      );
+      const valueQuads = listQuads.filter((q) => q.predicate.equals(rdf("first")));
       if (valueQuads.length) this.createChildBranchesByMemberShape();
     }
 
@@ -518,10 +484,7 @@ export class Branch {
       if (nodeShapePointer.term != null) {
         for (const term of thisBranchDataPointer.terms) {
           if (term.termType === "NamedNode") {
-            this.#resourceFetcher.registerNestedFetch(
-              term as Quad_Subject,
-              nodeShapePointer
-            );
+            this.#resourceFetcher.registerNestedFetch(term as Quad_Subject, nodeShapePointer);
           }
         }
       }
@@ -539,27 +502,21 @@ export class Branch {
     // check if we need to continue fetching more data
     if (
       this.#path.some(
-        (segment) =>
-          segment.quantifier === "oneOrMore" ||
-          segment.quantifier === "zeroOrMore"
+        (segment) => segment.quantifier === "oneOrMore" || segment.quantifier === "zeroOrMore",
       )
     ) {
       let pointer = parentPointer;
       for (const pathSegment of this.#path) {
         pointer = pointer.execute(pathSegment);
-        if (
-          pathSegment.quantifier === "oneOrMore" ||
-          pathSegment.quantifier === "zeroOrMore"
-        ) {
+        if (pathSegment.quantifier === "oneOrMore" || pathSegment.quantifier === "zeroOrMore") {
           const finished =
             this.#results.length > 1 &&
-            this.#results.at(-1)!.quads.length ===
-              this.#results.at(-2)!.quads.length;
+            this.#results.at(-1)!.quads.length === this.#results.at(-2)!.quads.length;
 
           // Don't mark as finished if we have children that haven't been processed yet
           // This handles cases like rdf:nil where we need to traverse from named nodes
           const hasUnprocessedChildren = this.#children.some(
-            (child) => child.#results.length === 0
+            (child) => child.#results.length === 0,
           );
 
           if (finished && !hasUnprocessedChildren) {
@@ -606,10 +563,7 @@ export class Branch {
     // Mark as done if all children are done
     // BUT only if we have children OR if we have no blank nodes
     // (if we have blank nodes but no children, we need another step to fetch their data)
-    if (
-      this.#children.length > 0 &&
-      this.#children.every((child) => child.#done)
-    ) {
+    if (this.#children.length > 0 && this.#children.every((child) => child.#done)) {
       this.#done = ALL_CHILDREN_DONE;
       return;
     }
@@ -624,9 +578,7 @@ export class Branch {
     // Detect if we're stuck (same results for 3 consecutive steps)
     if (this.#results.length >= 3 && !this.#done) {
       const lastSteps = this.#results.slice(-3);
-      const allSameLength = lastSteps.every(
-        (r) => r.quads.length === lastSteps[0].quads.length
-      );
+      const allSameLength = lastSteps.every((r) => r.quads.length === lastSteps[0].quads.length);
       if (allSameLength && lastSteps[0].quads.length > 0) {
         this.#done = SAME_CONSECUTIVE_RESULT;
       }
@@ -636,7 +588,7 @@ export class Branch {
   getResults(subjects: Quad_Subject[]): Quad[] {
     // TODO this might give some cruft, lets check if we can improve it at a later time.
     const dataset = datasetFactory.dataset(
-      this.#results.flatMap((stepResults) => stepResults.quads)
+      this.#results.flatMap((stepResults) => stepResults.quads),
     );
     const branchDataPointer = grapoi({
       factory: dataFactory,
@@ -644,26 +596,20 @@ export class Branch {
       terms: subjects,
     });
     const myQuads = [...branchDataPointer.executeAll(this.#path).quads()];
-    const listQuads = getListQuadsFromPointer(
-      branchDataPointer.executeAll(this.#path)
-    );
+    const listQuads = getListQuadsFromPointer(branchDataPointer.executeAll(this.#path));
 
     const nextSubjects = [...myQuads, ...listQuads]
       .map((q) => (q.object.termType !== "Literal" ? q.object : undefined))
       .filter(Boolean);
 
-    const childQuads = this.#children.flatMap((child) =>
-      child.getResults(nextSubjects)
-    );
+    const childQuads = this.#children.flatMap((child) => child.getResults(nextSubjects));
 
     return [...myQuads, ...childQuads, ...listQuads];
   }
 
   toSnapshot(): BranchSnapshot {
     const path = this.#path
-      .map((segment) =>
-        segment.predicates.map((p) => context.compactIri(p.value)).join(" | ")
-      )
+      .map((segment) => segment.predicates.map((p) => context.compactIri(p.value)).join(" | "))
       .join(" / ");
 
     return {
@@ -683,9 +629,7 @@ export class Branch {
 
   debug(): string {
     const path = this.#path
-      .map((segment) =>
-        segment.predicates.map((p) => context.compactIri(p.value)).join(" | ")
-      )
+      .map((segment) => segment.predicates.map((p) => context.compactIri(p.value)).join(" | "))
       .join(" / ");
 
     const childrenDebug = this.#children

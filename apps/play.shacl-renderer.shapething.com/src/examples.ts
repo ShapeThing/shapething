@@ -35,7 +35,7 @@ const fixture = (filename: string, text: string) => {
 
 const example = (
   { shapes, data }: { shapes: string; data: string },
-  props: Record<string, unknown>
+  props: Record<string, unknown>,
 ): Example => ({ shapes, data, props });
 
 const academicFixture = fixture("academic.ttl", academic);
@@ -49,7 +49,10 @@ const productCatalogFixture = fixture("product-catalog-facets.ttl", productCatal
 // serves from its own asset URL instead.
 const recipesFixture = fixture(
   "recipes-and-chefs.ttl",
-  recipesAndChefs.replace("<./recipes-and-chefs.css>", `<${new URL(recipesAndChefsCss, location.href).href}>`)
+  recipesAndChefs.replace(
+    "<./recipes-and-chefs.css>",
+    `<${new URL(recipesAndChefsCss, location.href).href}>`,
+  ),
 );
 const travelBlogsFixture = fixture("travel-blogs.ttl", travelBlogs);
 

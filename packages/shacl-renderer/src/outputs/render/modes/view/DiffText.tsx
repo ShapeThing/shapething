@@ -12,7 +12,10 @@ import { literalLanguage } from "@/helpers/parseBCP47.ts";
  */
 export default function DiffText({ removed, added }: { removed: Literal; added: Literal }) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
-  const segments = useMemo(() => textDiff(removed.value, added.value), [removed.value, added.value]);
+  const segments = useMemo(
+    () => textDiff(removed.value, added.value),
+    [removed.value, added.value],
+  );
   const lang = literalLanguage(added);
   const label = lang ? languageLabels([lang], activeInterfaceLanguage)[lang] : undefined;
 

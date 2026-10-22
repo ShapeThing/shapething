@@ -1,13 +1,11 @@
 {
   "name": "@shapething/resource-fetcher-website",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --port 8002",
     "build": "tsc -b && vite build",
-    "lint": "vp lint --react-plugin",
-    "lint:fix": "vp lint --react-plugin --fix",
     "preview": "vite preview"
   },
   "dependencies": {

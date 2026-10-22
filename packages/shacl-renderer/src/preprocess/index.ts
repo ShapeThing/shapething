@@ -3,10 +3,7 @@ import { resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
 import { resolveDiffGraphs } from "@/preprocess/diff.ts";
 import { resolveValidationReport } from "@/preprocess/validationReport.ts";
 import { resolveReadOnlyGraphs } from "@/preprocess/readOnlyGraphs.ts";
-import {
-  distillInterfaceLanguages,
-  distillLanguages,
-} from "@/preprocess/languages.ts";
+import { distillInterfaceLanguages, distillLanguages } from "@/preprocess/languages.ts";
 import { resolveScoresGraph } from "@/preprocess/scoresGraph.ts";
 import { resolveWidgets } from "@/preprocess/widgets.ts";
 import {

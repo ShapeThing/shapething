@@ -24,7 +24,13 @@ const contentKey = (data: OutputData | undefined) => stableStringify(data?.block
  * owns the ed:* subgraph directly and rewrites it wholesale on every change. Headers and lists are
  * the only tools enabled, the same pair the original shipped.
  */
-export default function EditorJsEditor({ shape, term, setTerm, labelledBy, autoFocus }: WidgetProps) {
+export default function EditorJsEditor({
+  shape,
+  term,
+  setTerm,
+  labelledBy,
+  autoFocus,
+}: WidgetProps) {
   const node = term as Quad_Subject;
   const { l10n } = useLocalization();
   const holderRef = useRef<HTMLDivElement>(null);

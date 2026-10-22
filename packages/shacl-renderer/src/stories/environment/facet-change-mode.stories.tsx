@@ -81,7 +81,8 @@ export const submitMode: Story = {
 
     await userEvent.click(canvas.getByRole("button", { name: "Apply filters" }));
     await waitFor(() => {
-      if (submitCount !== 1) throw new Error("onSubmit did not fire exactly once after Apply filters");
+      if (submitCount !== 1)
+        throw new Error("onSubmit did not fire exactly once after Apply filters");
     });
   },
 };

@@ -43,16 +43,19 @@ export function logicalBranches(element: PropertyUIElement): LogicalBranch[] {
  * view keeps its merged scoring shape (and every widget query keyed on it) stable too.
  */
 export function withBranch(element: PropertyUIElement, branch: Term): PropertyUIElement {
-  return withBranchMemo([element], termKey(branch), () =>
-    new PropertyUIElement({
-      shapesGraph: element.shapesGraph,
-      dataGraph: element.dataGraph,
-      scoresGraph: element.scoresGraph,
-      widgetRegistry: element.widgetRegistry,
-      focusNode: element.focusNode,
-      propertyShapes: [...element.propertyShapes, branch as NamedNode],
-      ancestorPath: element.ancestorPath,
-    })
+  return withBranchMemo(
+    [element],
+    termKey(branch),
+    () =>
+      new PropertyUIElement({
+        shapesGraph: element.shapesGraph,
+        dataGraph: element.dataGraph,
+        scoresGraph: element.scoresGraph,
+        widgetRegistry: element.widgetRegistry,
+        focusNode: element.focusNode,
+        propertyShapes: [...element.propertyShapes, branch as NamedNode],
+        ancestorPath: element.ancestorPath,
+      }),
   );
 }
 

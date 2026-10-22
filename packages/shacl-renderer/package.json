@@ -33,8 +33,6 @@
   "scripts": {
     "build": "vp pack",
     "dev": "vp pack --watch --no-clean",
-    "lint": "vp lint --react-plugin --jsx-a11y-plugin",
-    "lint:fix": "vp lint --react-plugin --jsx-a11y-plugin --fix",
     "test": "vp test",
     "check": "vp check",
     "analyze": "vite-bundle-visualizer -i src/index.ts -o stats.html",
@@ -79,16 +77,6 @@
     "string-to-stream": "^3.0.1",
     "wkt": "^0.1.1"
   },
-  "peerDependencies": {
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "ts-to-zod": "^5.1.0"
-  },
-  "peerDependenciesMeta": {
-    "ts-to-zod": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@chromatic-com/storybook": "^5.3.1",
     "@iconify/json": "^2.2.533",
@@ -124,6 +112,16 @@
     "vite-bundle-visualizer": "^1.2.1",
     "vite-plus": "^0.3.3",
     "vitest": "4.1.11"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "ts-to-zod": "^5.1.0"
+  },
+  "peerDependenciesMeta": {
+    "ts-to-zod": {
+      "optional": true
+    }
   },
   "inlinedDependencies": {
     "maplibre-gl": "6.11.2"

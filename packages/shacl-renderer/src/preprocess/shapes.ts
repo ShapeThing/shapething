@@ -8,11 +8,7 @@ import { getRdfList, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import type { Widgets } from "@/widgets/types.ts";
-import {
-  facetableRootShapes,
-  shapesForClass,
-  withSuperClassShapes,
-} from "@/resolution/targets.ts";
+import { facetableRootShapes, shapesForClass, withSuperClassShapes } from "@/resolution/targets.ts";
 
 // Every distinct rdf:type object used anywhere in `dataGraph`. Blank-node "classes" are excluded -
 // sh:targetClass can only ever point at a NamedNode, so a blank-node type could never be covered by
@@ -94,19 +90,10 @@ function predicatesCoveredByShapeNodes(
 // Every predicate actually used on dataGraph's own instances of `classIri` - rdf:type itself
 // excluded, since every SHACL instance carries it by definition and the generated shape already
 // covers it implicitly (see addMissingShapes below).
-function predicatesUsedByInstancesOf(
-  classIri: NamedNode,
-  dataGraph: RdfStore,
-): NamedNode[] {
+function predicatesUsedByInstancesOf(classIri: NamedNode, dataGraph: RdfStore): NamedNode[] {
   const seen = new Set<string>();
   const predicates: NamedNode[] = [];
-  for (
-    const { subject: instance } of dataGraph.getQuads(
-      null,
-      rdf("type"),
-      classIri,
-    )
-  ) {
+  for (const { subject: instance } of dataGraph.getQuads(null, rdf("type"), classIri)) {
     for (const quad of dataGraph.getQuads(instance)) {
       if (quad.predicate.equals(rdf("type"))) continue;
       if (quad.predicate.termType !== "NamedNode") continue;
@@ -268,10 +255,11 @@ export const addMissingShapes: Preprocessor = (environment) => {
       const propertyNode = factory.blankNode();
       shapesGraph.addQuad(factory.quad(propertyNode, sh("path"), predicate));
 
-      const { nodeKind, datatype, classIri: valueClass } = inferredConstraints(
-        valuesUsedFor(classIri, predicate, dataGraph),
-        dataGraph,
-      );
+      const {
+        nodeKind,
+        datatype,
+        classIri: valueClass,
+      } = inferredConstraints(valuesUsedFor(classIri, predicate, dataGraph), dataGraph);
       if (nodeKind) shapesGraph.addQuad(factory.quad(propertyNode, sh("nodeKind"), nodeKind));
       if (datatype) shapesGraph.addQuad(factory.quad(propertyNode, sh("datatype"), datatype));
       if (valueClass) shapesGraph.addQuad(factory.quad(propertyNode, sh("class"), valueClass));
@@ -347,9 +335,15 @@ export const mergeFacetTextSearchProperties: Preprocessor = (environment) => {
 
     for (const { link } of toMerge) shapesGraph.removeQuad(link);
 
-    const listHead = rebuildRdfList(rdf("nil"), toMerge.map((entry) => entry.path), shapesGraph);
+    const listHead = rebuildRdfList(
+      rdf("nil"),
+      toMerge.map((entry) => entry.path),
+      shapesGraph,
+    );
     const alternativePathNode = factory.blankNode();
-    shapesGraph.addQuad(factory.quad(alternativePathNode, sh("alternativePath"), listHead as Quad_Object));
+    shapesGraph.addQuad(
+      factory.quad(alternativePathNode, sh("alternativePath"), listHead as Quad_Object),
+    );
 
     const propertyNode = factory.blankNode();
     shapesGraph.addQuad(factory.quad(propertyNode, sh("path"), alternativePathNode));

@@ -25,7 +25,7 @@ export const editTitle: Story = {
     await userEvent.type(input, "Bob");
     await userEvent.tab();
     await waitFor(() =>
-      expect(canvasElement.querySelector(".st-title")?.textContent).toMatch(/Bob/)
+      expect(canvasElement.querySelector(".st-title")?.textContent).toMatch(/Bob/),
     );
   },
 };

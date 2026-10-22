@@ -1,0 +1,25 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# Anything that acts as a class: declared as one, part of a subClassOf edge, or targeted by a shape
+# (a shape may target a class the loaded ontologies never declare).
+SELECT DISTINCT ?class ?superClass WHERE {
+    {
+        VALUES ?classType { rdfs:Class owl:Class }
+        ?class a ?classType .
+    } UNION {
+        ?class rdfs:subClassOf ?anySuperClass .
+    } UNION {
+        ?anySubClass rdfs:subClassOf ?class .
+    } UNION {
+        ?anyShape sh:targetClass ?class .
+    }
+    FILTER(isIRI(?class))
+
+    OPTIONAL {
+        ?class rdfs:subClassOf ?superClass .
+        FILTER(isIRI(?superClass))
+    }
+}

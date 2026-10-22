@@ -2,8 +2,8 @@
 import { z } from "astro:content";
 
 export const OntologyPropertySchema = z.object({
-    type: z.string(),
-    shapesGraph: z.string(),
-    label: z.string(),
-    comment: z.string()
+  type: z.string(),
+  shapesGraph: z.string(),
+  label: z.string(),
+  comment: z.string(),
 });

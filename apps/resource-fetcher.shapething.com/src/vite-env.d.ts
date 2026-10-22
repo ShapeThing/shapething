@@ -1,3 +1,3 @@
 /// <reference types="vite/client" />
 
-declare module 'n3'
+declare module "n3";

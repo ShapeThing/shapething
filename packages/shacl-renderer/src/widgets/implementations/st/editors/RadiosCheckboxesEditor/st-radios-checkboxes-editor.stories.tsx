@@ -69,7 +69,9 @@ export const stRadiosCheckboxesEditor: Story = {
       expect(toppings).toEqual(
         [ex("mushroom").value, ex("basil").value, ex("pepperoni").value].sort(),
       );
-      const crusts = submitResult.dataGraph.getQuads(null, ex("crust")).map((quad) => quad.object.value);
+      const crusts = submitResult.dataGraph
+        .getQuads(null, ex("crust"))
+        .map((quad) => quad.object.value);
       expect(crusts).toEqual([ex("thickCrust").value]);
     });
   },

@@ -38,7 +38,9 @@ export default function FacetModeWrapper({ children, className }: Props) {
   // so the returned shape always has a stable IRI rather than an anonymous blank node.
   const filterShapeRef = useRef<FilterShape | null>(null);
   filterShapeRef.current ??= createFilterShape(
-    focusNode.equals(ex("focusNode")) ? undefined : focusNode,
+    focusNode.termType === "NamedNode" && !focusNode.equals(ex("focusNode"))
+      ? focusNode
+      : undefined,
   );
   const filterShape = filterShapeRef.current;
 

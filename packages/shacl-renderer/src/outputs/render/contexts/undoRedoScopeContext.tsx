@@ -15,6 +15,4 @@ export type UndoRedoScopeContextValue = {
   push: (scope: UndoRedoScope) => () => void;
 };
 
-export const undoRedoScopeContext = createContext<UndoRedoScopeContextValue | undefined>(
-  undefined,
-);
+export const undoRedoScopeContext = createContext<UndoRedoScopeContextValue | undefined>(undefined);

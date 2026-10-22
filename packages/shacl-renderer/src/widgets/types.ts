@@ -50,7 +50,9 @@ export type FacetWidgetProps = {
   shape: PropertyUIElement;
   getConstraint: (predicate: NamedNode) => Term[];
   setConstraint: (predicate: NamedNode, value: Term | Term[] | undefined) => void;
-  setConstraints?: (entries: ReadonlyArray<readonly [NamedNode, Term | Term[] | undefined]>) => void;
+  setConstraints?: (
+    entries: ReadonlyArray<readonly [NamedNode, Term | Term[] | undefined]>,
+  ) => void;
   labelledBy?: string;
 };
 

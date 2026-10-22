@@ -12,16 +12,8 @@ export const getListQuadsFromPointer = (pointer: Grapoi): Quad[] => {
 
     while (currentNode && !currentNode.equals(rdf("nil"))) {
       // Get the value at rdf:first
-      const [firstQuad] = dataset.match(
-        currentNode as Quad_Subject,
-        rdf("first"),
-        null
-      );
-      const [restQuad] = dataset.match(
-        currentNode as Quad_Subject,
-        rdf("rest"),
-        null
-      );
+      const [firstQuad] = dataset.match(currentNode as Quad_Subject, rdf("first"), null);
+      const [restQuad] = dataset.match(currentNode as Quad_Subject, rdf("rest"), null);
 
       if (firstQuad && restQuad) {
         listQuads.push(firstQuad, restQuad);
@@ -29,9 +21,7 @@ export const getListQuadsFromPointer = (pointer: Grapoi): Quad[] => {
 
       // Move to the next node via rdf:rest
       const nextNode =
-        !restQuad?.object || restQuad.object?.equals(rdf("nil"))
-          ? null
-          : restQuad.object;
+        !restQuad?.object || restQuad.object?.equals(rdf("nil")) ? null : restQuad.object;
       if (!nextNode) break;
       currentNode = nextNode;
     }

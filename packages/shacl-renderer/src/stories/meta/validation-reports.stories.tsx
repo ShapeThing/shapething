@@ -18,7 +18,8 @@ export default {
   },
 };
 
-const example = (file: string) => fixtureUrl(`./examples/validation-report/${file}`, import.meta.url);
+const example = (file: string) =>
+  fixtureUrl(`./examples/validation-report/${file}`, import.meta.url);
 
 export const reportOnly: Story = {
   name: "Report only",
@@ -37,7 +38,11 @@ export const reportOnly: Story = {
 
 export const reportWithShapes: Story = {
   name: "Report and shapes",
-  args: { mode: "report", validationReport: example("report.ttl"), shapesGraph: example("shapes.ttl") },
+  args: {
+    mode: "report",
+    validationReport: example("report.ttl"),
+    shapesGraph: example("shapes.ttl"),
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     // The shapes' own sh:name, and messages built from their parameters.
@@ -64,7 +69,9 @@ export const reportWithShapesAndData: Story = {
     const anonymous = canvas.getByRole("heading", { name: "Anonymous person" }).closest("section")!;
 
     // Hendrik's violations sort him first.
-    expect(hendrik.compareDocumentPosition(anonymous) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      hendrik.compareDocumentPosition(anonymous) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
 
     // The postal code's own sh:message, nested under the address it's about (sh:detail).
     const address = await within(hendrik as HTMLElement).findByText("Breestraat 1, Amersfoort");

@@ -340,7 +340,12 @@ export default function AutoCompleteEditor({
       </Localized>
 
       {dropdownOpen && (
-        <div ref={dropdownRef} id={listboxId} className="st-autocomplete__results st-combo-results" role="listbox">
+        <div
+          ref={dropdownRef}
+          id={listboxId}
+          className="st-autocomplete__results st-combo-results"
+          role="listbox"
+        >
           {error && !showSuggestions ? (
             <div className="st-autocomplete__empty st-combo-empty" role="alert">
               <Localized id="autocomplete-search-error">Search failed</Localized>

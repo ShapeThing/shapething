@@ -50,8 +50,11 @@ export const timeZone: Story = {
     const canvas = within(canvasElement);
     submittedResult = undefined;
     // Stored as 07:30 UTC, shown as Amsterdam's (summer time) 09:30.
-    const input = (await canvas.findByDisplayValue(/^2024-05-01T09:30/, {}, { timeout: 5000 })) as
-      HTMLInputElement;
+    const input = (await canvas.findByDisplayValue(
+      /^2024-05-01T09:30/,
+      {},
+      { timeout: 5000 },
+    )) as HTMLInputElement;
 
     // A real focus/blur pair: React's onBlur listens for focusout, which a synthetic "blur" lacks.
     input.focus();

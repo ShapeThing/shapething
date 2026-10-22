@@ -46,7 +46,7 @@ const baseArgs = {
 };
 
 export const defaultStyle: Story = {
-  name: "Default: OpenFreeMap's public \"bright\" style (defaultEnvironment.mapStyleUrl)",
+  name: 'Default: OpenFreeMap\'s public "bright" style (defaultEnvironment.mapStyleUrl)',
   args: baseArgs as ShaclRendererProps,
 };
 

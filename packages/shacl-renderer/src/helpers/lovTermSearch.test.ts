@@ -56,9 +56,9 @@ function mockMirror(vocabularies: Record<string, MockVocabulary>) {
     if (!vocabulary) return new Response("<html>Page not found</html>", { status: 404 });
     return match[2] === "meta.json"
       ? new Response(
-        JSON.stringify({ prefix: match[1], namespace: vocabulary.namespace, ok: true }),
-        { status: 200 },
-      )
+          JSON.stringify({ prefix: match[1], namespace: vocabulary.namespace, ok: true }),
+          { status: 200 },
+        )
       : new Response(vocabulary.turtle, { status: 200 });
   });
 }
@@ -103,7 +103,10 @@ test("matches the typed local text case-insensitively", async () => {
 
   const terms = await searchLovProperties("skos:BROADER");
 
-  expect(terms.map((term) => term.prefixedName)).toEqual(["skos:broader", "skos:broaderTransitive"]);
+  expect(terms.map((term) => term.prefixedName)).toEqual([
+    "skos:broader",
+    "skos:broaderTransitive",
+  ]);
 });
 
 test("a bare prefix lists that vocabulary's own terms, leaving out terms it types from other namespaces", async () => {
@@ -125,7 +128,8 @@ test("caps the result list at 10 terms", async () => {
   const namespace = "http://example.com/big#";
   const turtle = Array.from(
     { length: 12 },
-    (_, index) => `<${namespace}p${String(index).padStart(2, "0")}> a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> .`,
+    (_, index) =>
+      `<${namespace}p${String(index).padStart(2, "0")}> a <http://www.w3.org/1999/02/22-rdf-syntax-ns#Property> .`,
   ).join("\n");
   mockMirror({ big: { namespace, turtle } });
 

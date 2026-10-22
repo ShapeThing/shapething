@@ -4,20 +4,23 @@ h3,
 h4,
 h5,
 h6 {
-  font-family: 'Alumni Sans Variable', sans-serif;
-  font-size-adjust: .8;
+  font-family: "Alumni Sans Variable", sans-serif;
+  font-size-adjust: 0.8;
 }
 
 h1 {
-    color: var(--pink);
+  color: var(--pink);
 }
 
-h2, h3, h4, h5 {
-    color: var(--blue-dark);
+h2,
+h3,
+h4,
+h5 {
+  color: var(--blue-dark);
 }
 
 body {
-  font-family: 'Roboto Condensed Variable', sans-serif;
+  font-family: "Roboto Condensed Variable", sans-serif;
   margin: 0;
   padding: 0;
   color: var(--text);
@@ -37,8 +40,6 @@ html {
 }
 
 :root {
-
-
   --blue-light: #2a7fff;
   --blue-dark: #0044aa;
   --pink: #d400aa;
@@ -51,7 +52,6 @@ html {
   --primary-rgb: 42, 127, 255;
   --secondary: var(--blue-dark);
   --secondary-rgb: 0, 68, 170;
-
 }
 
 a {
@@ -63,7 +63,8 @@ table {
   margin-bottom: 2rem;
   text-align: left;
 
-  th, td {
+  th,
+  td {
     border-bottom: 1px solid var(--pink-light);
   }
 }

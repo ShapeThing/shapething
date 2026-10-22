@@ -52,7 +52,8 @@ export function compileTargets(
       .map(termToSparql)
       .filter((value): value is string => value !== undefined);
     if (classes.length === 1) branches.push(`?this a ${classes[0]} .`);
-    else if (classes.length > 1) branches.push(`?this a ?thisType . VALUES ?thisType { ${classes.join(" ")} }`);
+    else if (classes.length > 1)
+      branches.push(`?this a ?thisType . VALUES ?thisType { ${classes.join(" ")} }`);
   };
 
   for (const shape of rootShapes) {
@@ -77,7 +78,8 @@ export function compileTargets(
     for (const quad of shapesGraph.getQuads(shape, sh("targetObjectsOf"))) {
       if (quad.object.termType === "NamedNode") branches.push(`[] <${quad.object.value}> ?this .`);
     }
-    if (shape.termType === "NamedNode") branches.push(`?this <${sh("shape").value}> <${shape.value}> .`);
+    if (shape.termType === "NamedNode")
+      branches.push(`?this <${sh("shape").value}> <${shape.value}> .`);
   }
 
   const unique = [...new Set(branches)];
@@ -173,14 +175,21 @@ function compileConstraint(
     extraPatterns.push(
       `${value} <${st("hue").value}> ?${prefix}hue ; <${st("saturation").value}> ?${prefix}sat ; <${st("lightness").value}> ?${prefix}light .`,
     );
-    conditions.push(prefixBucketVariables(sparqlFilterForBucket(bucket.value as ColorBucket), prefix));
+    conditions.push(
+      prefixBucketVariables(sparqlFilterForBucket(bucket.value as ColorBucket), prefix),
+    );
   }
 
   const area = read(st("withinArea"))[0];
   const areaSparql = area && termToSparql(area);
   if (areaSparql) conditions.push(`<${geof("sfWithin").value}>(${value}, ${areaSparql})`);
 
-  const countPattern = compileValueCount(read(sh("minCount"))[0], read(sh("maxCount"))[0], pathSparql, prefix);
+  const countPattern = compileValueCount(
+    read(sh("minCount"))[0],
+    read(sh("maxCount"))[0],
+    pathSparql,
+    prefix,
+  );
 
   if (conditions.length === 0 && extraPatterns.length === 0) return countPattern;
 

@@ -324,7 +324,10 @@ export function pathsReferencedByTargetWhereShapes(shapesGraph: RdfStore): Targe
   }
 
   // Value-level: a property shape's own sh:node/sh:and apply to each value at the end of its path.
-  function valueDependenciesOf(propertyShape: Term, ancestors: Set<string>): TargetWhereDependency[] {
+  function valueDependenciesOf(
+    propertyShape: Term,
+    ancestors: Set<string>,
+  ): TargetWhereDependency[] {
     return composedShapes(propertyShape).flatMap((composed) => dependenciesOf(composed, ancestors));
   }
 
@@ -337,9 +340,7 @@ export function pathsReferencedByTargetWhereShapes(shapesGraph: RdfStore): Targe
     ];
   }
 
-  return dedupeDependencies(
-    declarations.flatMap((quad) => dependenciesOf(quad.object, new Set())),
-  );
+  return dedupeDependencies(declarations.flatMap((quad) => dependenciesOf(quad.object, new Set())));
 }
 
 function dedupeDependencies(dependencies: TargetWhereDependency[]): TargetWhereDependency[] {
@@ -434,8 +435,10 @@ export async function orphanedTargetWhereObjects(
   // applies) rather than on PropertyUIElements, so this module doesn't import the structure
   // element classes - which import resolution/label.ts, which imports this module.
   const activePaths = new Set(
-    groupShapesByPath(shapesGraph, walkShapeComposition(shapesGraph, effectiveNodeShapes).propertyShapes)
-      .keys(),
+    groupShapesByPath(
+      shapesGraph,
+      walkShapeComposition(shapesGraph, effectiveNodeShapes).propertyShapes,
+    ).keys(),
   );
 
   const orphaned: OrphanedTargetWhereEntry[] = [];
@@ -451,9 +454,12 @@ export async function orphanedTargetWhereObjects(
         if (
           readOnlyGraph &&
           walkPropertyPath(path, focusNode, readOnlyGraph).some((term) => term.equals(value))
-        ) continue;
+        )
+          continue;
         orphaned.push(
-          isMemberShapeList ? { kind: "memberShapeList", path, head: value } : { kind: "value", path, value },
+          isMemberShapeList
+            ? { kind: "memberShapeList", path, head: value }
+            : { kind: "value", path, value },
         );
       }
     }

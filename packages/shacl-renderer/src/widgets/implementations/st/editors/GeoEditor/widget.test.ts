@@ -50,7 +50,11 @@ test("syncFromEditor() leaves an untouched value alone rather than removing and 
     stubEditor({
       type: "FeatureCollection",
       features: [
-        { type: "Feature", geometry: { type: "Point", coordinates: [4.9041, 52.36] }, properties: {} },
+        {
+          type: "Feature",
+          geometry: { type: "Point", coordinates: [4.9041, 52.36] },
+          properties: {},
+        },
       ],
     }),
   );

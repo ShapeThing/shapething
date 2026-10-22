@@ -42,7 +42,9 @@ export function sparqlEndpointFetch(store: RdfStore): typeof fetch & { requests:
     // rejects a plain application/json response as an unknown results format.
     const headers = { "content-type": "application/sparql-results+json" };
     if (result.resultType === "boolean") {
-      return new Response(JSON.stringify({ head: {}, boolean: await result.execute() }), { headers });
+      return new Response(JSON.stringify({ head: {}, boolean: await result.execute() }), {
+        headers,
+      });
     }
     if (result.resultType !== "bindings") throw new Error("shim only answers SELECT/ASK");
 
@@ -53,7 +55,9 @@ export function sparqlEndpointFetch(store: RdfStore): typeof fetch & { requests:
         head: { vars: variables },
         results: {
           bindings: bindings.map((binding) =>
-            Object.fromEntries([...binding].map(([variable, term]) => [variable.value, termToJson(term)])),
+            Object.fromEntries(
+              [...binding].map(([variable, term]) => [variable.value, termToJson(term)]),
+            ),
           ),
         },
       }),

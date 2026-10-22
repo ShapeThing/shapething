@@ -1,13 +1,11 @@
 {
   "name": "@shapething/website",
-  "type": "module",
   "version": "0.0.1",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "astro dev --port 8000",
     "build": "astro build",
-    "lint": "vp lint",
-    "lint:fix": "vp lint --fix",
     "preview": "astro preview"
   },
   "dependencies": {

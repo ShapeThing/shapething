@@ -136,6 +136,8 @@ export const subClassEditorDisablesAbstractTypes: Story = {
     expect(dogInput).toBeEnabled();
 
     await userEvent.click(canvas.getByText("Dog"));
-    await waitFor(() => expect(canvasElement.querySelector(".st-value-chip")?.textContent).toContain("Dog"));
+    await waitFor(() =>
+      expect(canvasElement.querySelector(".st-value-chip")?.textContent).toContain("Dog"),
+    );
   },
 };

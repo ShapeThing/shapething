@@ -7,9 +7,8 @@ import { fileURLToPath } from "node:url";
 import { storybookTest } from "@storybook/addon-vitest/vitest-plugin";
 import { playwright } from "@vitest/browser-playwright";
 import { serveAbsoluteStoryFixtures } from "./.storybook/serveAbsoluteStoryFixtures.ts";
-const dirname = typeof __dirname !== "undefined"
-  ? __dirname
-  : path.dirname(fileURLToPath(import.meta.url));
+const dirname =
+  typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 import Icons from "unplugin-icons/vite";
 import react from "@vitejs/plugin-react";
 import { corsProxy } from "./.storybook/corsProxy.ts";
@@ -24,13 +23,9 @@ function rawImportFallback() {
     name: "raw-import-fallback",
     async resolveId(source: string, importer: string | undefined) {
       if (!source.endsWith("?raw")) return null;
-      const resolved = await this.resolve(
-        source.slice(0, -"?raw".length),
-        importer,
-        {
-          skipSelf: true,
-        },
-      );
+      const resolved = await this.resolve(source.slice(0, -"?raw".length), importer, {
+        skipSelf: true,
+      });
       return resolved ? `${resolved.id}?raw` : null;
     },
     async load(id: string) {
@@ -87,7 +82,9 @@ function workerUrlFallback() {
       }>;
       const chunks = outputs.flatMap((o) => o.output).filter((c) => c.type === "chunk");
       if (chunks.length !== 1) {
-        throw new Error(`Expected one self-contained worker chunk for ${entry}, got ${chunks.length}`);
+        throw new Error(
+          `Expected one self-contained worker chunk for ${entry}, got ${chunks.length}`,
+        );
       }
       return [
         `const source = ${JSON.stringify(chunks[0]!.code)};`,
@@ -118,11 +115,7 @@ export default defineConfig({
       generator: "tsgo",
     },
     exports: true,
-    plugins: [
-      Icons({ compiler: "jsx", jsx: "react" }),
-      rawImportFallback(),
-      workerUrlFallback(),
-    ],
+    plugins: [Icons({ compiler: "jsx", jsx: "react" }), rawImportFallback(), workerUrlFallback()],
     // Third-party CSS a widget imports for its side effect (e.g. maplibre-gl/dist/maplibre-gl.css)
     // is bundled into dist/style.css alongside this package's own styles, instead of surviving
     // as a bare `import "pkg/x.css"` in a lazy chunk - which only a CSS-aware bundler can load,
@@ -135,7 +128,6 @@ export default defineConfig({
       onlyBundle: [/\.css$/, /\?worker&url$/, "maplibre-gl"],
     },
   },
-  fmt: {},
   test: {
     projects: [
       {

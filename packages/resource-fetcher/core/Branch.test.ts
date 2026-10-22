@@ -3,18 +3,18 @@ import { Branch } from "../core/Branch.ts";
 import { ResourceFetcher } from "../ResourceFetcher.ts";
 import type { QueryBindings } from "../ResourceFetcher.ts";
 import { rf } from "../helpers/namespaces.ts";
-import dataFactory from '@rdfjs/data-model'
+import dataFactory from "@rdfjs/data-model";
 
 const resourceFetcher = {
-    resourceIri: rf("resource"),
-    maxNodeShapeDepth: 2,
-    recursionStepMultiplier: 3
+  resourceIri: rf("resource"),
+  maxNodeShapeDepth: 2,
+  recursionStepMultiplier: 3,
 } as unknown as ResourceFetcher;
 
 test("single path segment toQueryPatterns", () => {
   const branch = new Branch({
     depth: 0,
-    type: 'data',
+    type: "data",
     resourceFetcher,
     path: [
       {
@@ -38,7 +38,7 @@ test("single path segment toQueryPatterns", () => {
 test("alternative path segment toQueryPatterns", () => {
   const branch = new Branch({
     depth: 0,
-    type: 'data',
+    type: "data",
     resourceFetcher,
     path: [
       {
@@ -71,7 +71,7 @@ test("sequence path segment toQueryPatterns", () => {
   const branch = new Branch({
     depth: 0,
     resourceFetcher,
-    type: 'data',
+    type: "data",
     path: [
       {
         quantifier: "one",
@@ -98,55 +98,52 @@ test("sequence path segment toQueryPatterns", () => {
   ]);
 });
 
-test(
-  "sequence path segment and a alternative path segment toQueryPatterns",
-  () => {
-    const branch = new Branch({
-      depth: 0,
-      resourceFetcher,
-      type: 'data',
-      path: [
-        {
-          quantifier: "one",
-          start: "subject",
-          end: "object",
-          predicates: [rf("base")],
-        },
-        {
-          quantifier: "one",
-          start: "subject",
-          end: "object",
-          predicates: [rf("toBe"), rf("orNotToBe"), rf("maybe")],
-        },
-      ],
-    });
+test("sequence path segment and a alternative path segment toQueryPatterns", () => {
+  const branch = new Branch({
+    depth: 0,
+    resourceFetcher,
+    type: "data",
+    path: [
+      {
+        quantifier: "one",
+        start: "subject",
+        end: "object",
+        predicates: [rf("base")],
+      },
+      {
+        quantifier: "one",
+        start: "subject",
+        end: "object",
+        predicates: [rf("toBe"), rf("orNotToBe"), rf("maybe")],
+      },
+    ],
+  });
 
-    const patterns = branch.toQueryPatterns();
-    expect(patterns).toEqual([
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("base"),
-        predicate_2: rf("toBe"),
-      },
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("base"),
-        predicate_2: rf("orNotToBe"),
-      },
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("base"),
-        predicate_2: rf("maybe"),
-      },
-    ]);
-  }
-);
+  const patterns = branch.toQueryPatterns();
+  expect(patterns).toEqual([
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("base"),
+      predicate_2: rf("toBe"),
+    },
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("base"),
+      predicate_2: rf("orNotToBe"),
+    },
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("base"),
+      predicate_2: rf("maybe"),
+    },
+  ]);
+});
 
 test("reverse path segment toQueryPatterns", () => {
   const branch = new Branch({
     depth: 0,
     resourceFetcher,
-    type: 'data',
+    type: "data",
     path: [
       {
         quantifier: "one",
@@ -170,7 +167,7 @@ test("reverse path segment inside a sequence toQueryPatterns", () => {
   const branch = new Branch({
     depth: 0,
     resourceFetcher,
-    type: 'data',
+    type: "data",
     path: [
       {
         quantifier: "one",
@@ -208,7 +205,7 @@ test("oneOrMore path segment with a counter of 0 toQueryPatterns", () => {
   const branch = new Branch({
     depth: 0,
     resourceFetcher,
-    type: 'data',
+    type: "data",
     path: [
       {
         quantifier: "oneOrMore",
@@ -239,127 +236,121 @@ test("oneOrMore path segment with a counter of 0 toQueryPatterns", () => {
   ]);
 });
 
-test(
-  "sequence and oneOrMore path segment with a counter of 0 toQueryPatterns",
-  () => {
-    const branch = new Branch({
-      depth: 0,
-      resourceFetcher,
-      type: 'data',
-      path: [
-        {
-          quantifier: "one",
-          start: "subject",
-          end: "object",
-          predicates: [rf("toBe")],
-        },
-        {
-          quantifier: "oneOrMore",
-          start: "subject",
-          end: "object",
-          predicates: [rf("rest")],
-        },
-      ],
-    });
+test("sequence and oneOrMore path segment with a counter of 0 toQueryPatterns", () => {
+  const branch = new Branch({
+    depth: 0,
+    resourceFetcher,
+    type: "data",
+    path: [
+      {
+        quantifier: "one",
+        start: "subject",
+        end: "object",
+        predicates: [rf("toBe")],
+      },
+      {
+        quantifier: "oneOrMore",
+        start: "subject",
+        end: "object",
+        predicates: [rf("rest")],
+      },
+    ],
+  });
 
-    const patterns = branch.toQueryPatterns();
-    expect(patterns).toEqual([
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("toBe"),
-        predicate_2: rf("rest"),
-      },
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("toBe"),
-        predicate_2: rf("rest"),
-        predicate_3: rf("rest"),
-      },
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("toBe"),
-        predicate_2: rf("rest"),
-        predicate_3: rf("rest"),
-        predicate_4: rf("rest"),
-      },
-    ]);
-  }
-);
+  const patterns = branch.toQueryPatterns();
+  expect(patterns).toEqual([
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("toBe"),
+      predicate_2: rf("rest"),
+    },
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("toBe"),
+      predicate_2: rf("rest"),
+      predicate_3: rf("rest"),
+    },
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("toBe"),
+      predicate_2: rf("rest"),
+      predicate_3: rf("rest"),
+      predicate_4: rf("rest"),
+    },
+  ]);
+});
 
-test(
-  "sequence and oneOrMore path segment with a counter of 1 toQueryPatterns",
-  () => {
-    const branch = new Branch({
-      depth: 0,
-      queryCounter: 1,
-      type: 'data',
-      resourceFetcher,
-      path: [
-        {
-          quantifier: "one",
-          start: "subject",
-          end: "object",
-          predicates: [rf("toBe")],
-        },
-        {
-          quantifier: "oneOrMore",
-          start: "subject",
-          end: "object",
-          predicates: [rf("rest")],
-        },
-      ],
-    });
+test("sequence and oneOrMore path segment with a counter of 1 toQueryPatterns", () => {
+  const branch = new Branch({
+    depth: 0,
+    queryCounter: 1,
+    type: "data",
+    resourceFetcher,
+    path: [
+      {
+        quantifier: "one",
+        start: "subject",
+        end: "object",
+        predicates: [rf("toBe")],
+      },
+      {
+        quantifier: "oneOrMore",
+        start: "subject",
+        end: "object",
+        predicates: [rf("rest")],
+      },
+    ],
+  });
 
-    const patterns = branch.toQueryPatterns();
-    expect(patterns).toEqual([
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("toBe"),
-        predicate_2: rf("rest"),
-      },
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("toBe"),
-        predicate_2: rf("rest"),
-        predicate_3: rf("rest"),
-      },
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("toBe"),
-        predicate_2: rf("rest"),
-        predicate_3: rf("rest"),
-        predicate_4: rf("rest"),
-      },
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("toBe"),
-        predicate_2: rf("rest"),
-        predicate_3: rf("rest"),
-        predicate_4: rf("rest"),
-        predicate_5: rf("rest"),
-      },
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("toBe"),
-        predicate_2: rf("rest"),
-        predicate_3: rf("rest"),
-        predicate_4: rf("rest"),
-        predicate_5: rf("rest"),
-        predicate_6: rf("rest"),
-      },
-      {
-        node_0: rf("resource"),
-        predicate_1: rf("toBe"),
-        predicate_2: rf("rest"),
-        predicate_3: rf("rest"),
-        predicate_4: rf("rest"),
-        predicate_5: rf("rest"),
-        predicate_6: rf("rest"),
-        predicate_7: rf("rest"),
-      },
-    ]);
-  }
-);
+  const patterns = branch.toQueryPatterns();
+  expect(patterns).toEqual([
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("toBe"),
+      predicate_2: rf("rest"),
+    },
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("toBe"),
+      predicate_2: rf("rest"),
+      predicate_3: rf("rest"),
+    },
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("toBe"),
+      predicate_2: rf("rest"),
+      predicate_3: rf("rest"),
+      predicate_4: rf("rest"),
+    },
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("toBe"),
+      predicate_2: rf("rest"),
+      predicate_3: rf("rest"),
+      predicate_4: rf("rest"),
+      predicate_5: rf("rest"),
+    },
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("toBe"),
+      predicate_2: rf("rest"),
+      predicate_3: rf("rest"),
+      predicate_4: rf("rest"),
+      predicate_5: rf("rest"),
+      predicate_6: rf("rest"),
+    },
+    {
+      node_0: rf("resource"),
+      predicate_1: rf("toBe"),
+      predicate_2: rf("rest"),
+      predicate_3: rf("rest"),
+      predicate_4: rf("rest"),
+      predicate_5: rf("rest"),
+      predicate_6: rf("rest"),
+      predicate_7: rf("rest"),
+    },
+  ]);
+});
 
 test("oneOrMore path segment with recursionStepMultiplier of 2", () => {
   const customResourceFetcher = new ResourceFetcher({
@@ -370,7 +361,7 @@ test("oneOrMore path segment with recursionStepMultiplier of 2", () => {
 
   const branch = new Branch({
     depth: 0,
-    type: 'data',
+    type: "data",
     resourceFetcher: customResourceFetcher,
     path: [
       {
@@ -400,7 +391,7 @@ test("zeroOrMore path segment with a counter of 0 toQueryPatterns", () => {
   const branch = new Branch({
     depth: 0,
     resourceFetcher,
-    type: 'data',
+    type: "data",
     path: [
       {
         quantifier: "zeroOrMore",
@@ -439,7 +430,7 @@ test("zeroOrMore path segment with a counter of 1 toQueryPatterns", () => {
     depth: 0,
     queryCounter: 1,
     resourceFetcher,
-    type: 'data',
+    type: "data",
     path: [
       {
         quantifier: "zeroOrMore",
@@ -501,7 +492,7 @@ test("zeroOrOne path segment toQueryPatterns", () => {
   const branch = new Branch({
     depth: 0,
     resourceFetcher,
-    type: 'data',
+    type: "data",
     path: [
       {
         quantifier: "zeroOrOne",
@@ -528,7 +519,7 @@ test("double zeroOrOne path segment toQueryPatterns", () => {
   const branch = new Branch({
     depth: 0,
     resourceFetcher,
-    type: 'data',
+    type: "data",
     path: [
       {
         quantifier: "zeroOrOne",
@@ -579,7 +570,7 @@ test("double zeroOrOne path segment toQueryPatterns", () => {
 test("reversed zeroOrOne path segment toQueryPatterns", () => {
   const branch = new Branch({
     depth: 0,
-    type: 'data',
+    type: "data",
     resourceFetcher,
     path: [
       {
@@ -607,7 +598,7 @@ test("nested branches with each a simple Path toQueryPatterns", () => {
   const rootBranch = new Branch({
     depth: 0,
     resourceFetcher,
-    type: 'data',
+    type: "data",
     path: [
       {
         quantifier: "one",
@@ -618,11 +609,20 @@ test("nested branches with each a simple Path toQueryPatterns", () => {
     ],
   });
 
-  const a = dataFactory.blankNode()
+  const a = dataFactory.blankNode();
 
-  const addedBranches = rootBranch.createChildBranchesByDataQuads([dataFactory.quad(rf("b1"), rf("b1"), a), dataFactory.quad(a, rf("b1"), dataFactory.blankNode())]);
-  rootBranch.createChildBranchesByDataQuads([dataFactory.quad(rf("b2"), rf("b2"), a), dataFactory.quad(a, rf("b2"), dataFactory.blankNode())]);
-  addedBranches[0].createChildBranchesByDataQuads([dataFactory.quad(rf("c1"), rf("c1"), a), dataFactory.quad(a, rf("c1"), dataFactory.blankNode())]);
+  const addedBranches = rootBranch.createChildBranchesByDataQuads([
+    dataFactory.quad(rf("b1"), rf("b1"), a),
+    dataFactory.quad(a, rf("b1"), dataFactory.blankNode()),
+  ]);
+  rootBranch.createChildBranchesByDataQuads([
+    dataFactory.quad(rf("b2"), rf("b2"), a),
+    dataFactory.quad(a, rf("b2"), dataFactory.blankNode()),
+  ]);
+  addedBranches[0].createChildBranchesByDataQuads([
+    dataFactory.quad(rf("c1"), rf("c1"), a),
+    dataFactory.quad(a, rf("c1"), dataFactory.blankNode()),
+  ]);
 
   const patterns = rootBranch.toQueryPatterns();
   expect(patterns).toEqual([
@@ -644,7 +644,7 @@ test("zeroOrOne path segment with isList toQueryPatterns", () => {
   const branch = new Branch({
     depth: 0,
     resourceFetcher,
-    type: 'data',
+    type: "data",
     isList: true,
     path: [
       {

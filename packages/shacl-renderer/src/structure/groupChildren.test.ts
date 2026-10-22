@@ -28,7 +28,14 @@ test("properties sharing a sh:group nest under one GroupUIElement, sorted by sh:
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  const elements = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Person"),
+    ex("Hendrik"),
+    undefined,
+    defaultWidgets,
+  );
   const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets);
 
   expect(grouped).toHaveLength(1);
@@ -60,7 +67,14 @@ test("a group whose own sh:group points at another group nests underneath it", a
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  const elements = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Person"),
+    ex("Hendrik"),
+    undefined,
+    defaultWidgets,
+  );
   const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets);
 
   expect(grouped).toHaveLength(1);
@@ -91,7 +105,14 @@ test("ungrouped properties and top-level groups interleave by sh:order", async (
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  const elements = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Person"),
+    ex("Hendrik"),
+    undefined,
+    defaultWidgets,
+  );
   const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets);
 
   expect(grouped).toHaveLength(2);
@@ -115,7 +136,14 @@ test("a shapes graph with no sh:group/sh:order at all sorts identically to the f
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  const elements = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Person"),
+    ex("Hendrik"),
+    undefined,
+    defaultWidgets,
+  );
   const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets);
 
   expect(grouped).toHaveLength(2);
@@ -142,8 +170,21 @@ test("a group typed only with a subclass of sh:PropertyGroup is a group too", as
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
-  const [group] = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets) as GroupUIElement[];
+  const elements = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Person"),
+    ex("Hendrik"),
+    undefined,
+    defaultWidgets,
+  );
+  const [group] = groupChildren(
+    elements,
+    shapesGraph,
+    dataGraph,
+    ex("Hendrik"),
+    defaultWidgets,
+  ) as GroupUIElement[];
 
   expect(group).toBeInstanceOf(GroupUIElement);
   expect(group.node.value).toEqual(ex("nameGroup").value);
@@ -162,10 +203,17 @@ test("throws when a property's sh:group references a node not typed sh:PropertyG
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
-  expect(() => groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets)).toThrow(
-    /Missing sh:PropertyGroup definition/,
+  const elements = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Person"),
+    ex("Hendrik"),
+    undefined,
+    defaultWidgets,
   );
+  expect(() =>
+    groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets),
+  ).toThrow(/Missing sh:PropertyGroup definition/);
 });
 
 test("a ChoiceElement (sh:or) is never grouped, but still participates in top-level ordering", async () => {
@@ -187,7 +235,14 @@ test("a ChoiceElement (sh:or) is never grouped, but still participates in top-le
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Hendrik"), undefined, defaultWidgets);
+  const elements = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Person"),
+    ex("Hendrik"),
+    undefined,
+    defaultWidgets,
+  );
   const grouped = groupChildren(elements, shapesGraph, dataGraph, ex("Hendrik"), defaultWidgets);
 
   expect(grouped).toHaveLength(2);

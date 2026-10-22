@@ -105,9 +105,9 @@ test("searchInstances()/fetchOptions() keep every ClassificationRole value, each
   );
 
   const byLabel = (classifications: { label: string; color?: string }[] = []) =>
-    classifications.map(({ label, color }) => ({ label, color })).toSorted((a, b) =>
-      a.label.localeCompare(b.label),
-    );
+    classifications
+      .map(({ label, color }) => ({ label, color }))
+      .toSorted((a, b) => a.label.localeCompare(b.label));
 
   const searched = await searchInstances(shape, "bicycle");
   // Still one result per value, in ranked order - p1's two schemes don't duplicate it.
@@ -357,7 +357,9 @@ test("unwrapSoleService() leaves a SERVICE alongside local patterns (or SILENT) 
     }`),
   ).toBeUndefined();
   expect(
-    unwrapSoleService(`SELECT ?value WHERE { SERVICE SILENT <https://example.com/sparql> { ?value ?p ?o } }`),
+    unwrapSoleService(
+      `SELECT ?value WHERE { SERVICE SILENT <https://example.com/sparql> { ?value ?p ?o } }`,
+    ),
   ).toBeUndefined();
 });
 

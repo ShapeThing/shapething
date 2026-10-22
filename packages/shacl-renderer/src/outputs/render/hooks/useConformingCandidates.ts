@@ -31,7 +31,10 @@ export function useConformingCandidates<T extends Term>(
 
   useEffect(() => {
     let cancelled = false;
-    filterConformingResults(shape, candidates.map((term) => ({ term }))).then((kept) => {
+    filterConformingResults(
+      shape,
+      candidates.map((term) => ({ term })),
+    ).then((kept) => {
       if (cancelled) return;
       const keptValues = new Set(kept.map((result) => result.term.value));
       setConforming(candidates.filter((candidate) => keptValues.has(candidate.value)));

@@ -5,10 +5,7 @@ import { factory } from "@/helpers/factory.ts";
 import { hashString } from "@/helpers/hashString.ts";
 import { shui } from "@/helpers/namespaces.ts";
 import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
-import {
-  parsePropertyPath,
-  type PropertyPath,
-} from "@/structure/paths/parsePropertyPath.ts";
+import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import { insertPropertyPath } from "@/structure/paths/insertPropertyPath.ts";
 import { replacePropertyPath } from "@/structure/paths/replacePropertyPath.ts";
@@ -62,26 +59,19 @@ type NumberPredicates = ShIri<
   | "maxInclusive"
 >;
 type BooleanPredicates = ShIri<
-  | "closed"
-  | "singleLine"
-  | "uniqueLang"
-  | "uniqueMembers"
-  | "reificationRequired"
+  "closed" | "singleLine" | "uniqueLang" | "uniqueMembers" | "reificationRequired"
 >;
-type SingleTermPredicates = ShIri<
-  | "name"
-  | "codeIdentifier"
-  | "group"
-  | "severity"
-  | "datatype"
->;
+type SingleTermPredicates = ShIri<"name" | "codeIdentifier" | "group" | "severity" | "datatype">;
 
 export type PredicateReturn<Iri extends string> = Iri extends NumberPredicates
   ? number | undefined
-  : Iri extends BooleanPredicates ? boolean | undefined
-  : Iri extends ShIri<"pattern"> ? RegExp | undefined
-  : Iri extends SingleTermPredicates ? Term | undefined
-  : Term[];
+  : Iri extends BooleanPredicates
+    ? boolean | undefined
+    : Iri extends ShIri<"pattern">
+      ? RegExp | undefined
+      : Iri extends SingleTermPredicates
+        ? Term | undefined
+        : Term[];
 
 export class PropertyUIElement {
   // A tag, not just a class to `instanceof`-check against: Vite HMR can reload this module (or one
@@ -130,10 +120,7 @@ export class PropertyUIElement {
    * declared value by sh:order.
    */
   get<Iri extends string>(predicate: NamedNode<Iri>): PredicateReturn<Iri>;
-  get(
-    predicate: NamedNode,
-    languages: LanguageRange[] | undefined,
-  ): Term | undefined;
+  get(predicate: NamedNode, languages: LanguageRange[] | undefined): Term | undefined;
   get(predicate: NamedNode, languages?: LanguageRange[]): unknown {
     const values = orderedValues(this, predicate);
     if (languages !== undefined) {
@@ -176,15 +163,13 @@ export class PropertyUIElement {
   addObject(value: Term): void {
     const path = this.propertyPath();
     if (!path) return;
-    transact(
-      this.dataGraph,
-      () =>
-        insertPropertyPath(
-          resolveAlternativeWritePath(this, path),
-          this.focusNode,
-          this.dataGraph,
-          value,
-        ),
+    transact(this.dataGraph, () =>
+      insertPropertyPath(
+        resolveAlternativeWritePath(this, path),
+        this.focusNode,
+        this.dataGraph,
+        value,
+      ),
     );
   }
 
@@ -197,8 +182,9 @@ export class PropertyUIElement {
     const path = this.propertyPath();
     if (!path) return;
     transact(this.dataGraph, () => {
-      const existing = walkPropertyPath(path, this.focusNode, this.dataGraph)
-        .some((term) => term.equals(oldValue));
+      const existing = walkPropertyPath(path, this.focusNode, this.dataGraph).some((term) =>
+        term.equals(oldValue),
+      );
 
       if (!existing) {
         insertPropertyPath(
@@ -227,15 +213,13 @@ export class PropertyUIElement {
   removeObject(value: Term): void {
     const path = this.propertyPath();
     if (!path) return;
-    transact(
-      this.dataGraph,
-      () =>
-        removePropertyPath(
-          resolveAlternativeWritePath(this, path, value),
-          this.focusNode,
-          this.dataGraph,
-          value,
-        ),
+    transact(this.dataGraph, () =>
+      removePropertyPath(
+        resolveAlternativeWritePath(this, path, value),
+        this.focusNode,
+        this.dataGraph,
+        value,
+      ),
     );
   }
 
@@ -321,9 +305,7 @@ export class PropertyUIElement {
   isReadOnly(value: Term, readOnlyGraph: RdfStore): boolean {
     const path = this.propertyPath();
     if (!path) return false;
-    return walkPropertyPath(path, this.focusNode, readOnlyGraph).some((term) =>
-      term.equals(value)
-    );
+    return walkPropertyPath(path, this.focusNode, readOnlyGraph).some((term) => term.equals(value));
   }
 
   /**
@@ -383,8 +365,7 @@ export class PropertyUIElement {
    */
   label(languages?: BCP47[]): string {
     const path = this.propertyPath();
-    const predicate = (path && terminalPredicate(path)) ??
-      this.propertyShapes[0];
+    const predicate = (path && terminalPredicate(path)) ?? this.propertyShapes[0];
     return propertyLabel({
       term: predicate,
       propertyShape: this,
@@ -401,8 +382,7 @@ export class PropertyUIElement {
    */
   description(languages?: BCP47[]): string | undefined {
     const path = this.propertyPath();
-    const predicate = (path && terminalPredicate(path)) ??
-      this.propertyShapes[0];
+    const predicate = (path && terminalPredicate(path)) ?? this.propertyShapes[0];
     return propertyDescription({
       term: predicate,
       propertyShape: this,

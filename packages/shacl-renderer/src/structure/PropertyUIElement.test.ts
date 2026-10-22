@@ -32,10 +32,9 @@ test("get() passes a single value through unchanged for predicates without a res
 });
 
 test("get() falls back to a shape's dash: value when the sh: predicate is absent (sh:singleLine/dash:singleLine)", async () => {
-  const element = await createElement(
-    `ex:property1 a sh:PropertyShape ; dash:singleLine true .`,
-    [ex("property1")],
-  );
+  const element = await createElement(`ex:property1 a sh:PropertyShape ; dash:singleLine true .`, [
+    ex("property1"),
+  ]);
   expect(element.get(sh("singleLine"))).toBe(true);
 });
 
@@ -280,9 +279,7 @@ test("sh:datatype resolves a list of alternatives to its first entry, not the li
     [ex("property1")],
   );
 
-  expect(element.get(sh("datatype"))?.value).toBe(
-    "http://www.w3.org/2001/XMLSchema#string",
-  );
+  expect(element.get(sh("datatype"))?.value).toBe("http://www.w3.org/2001/XMLSchema#string");
 });
 
 test("sh:datatype intersects a list of alternatives with another shape's single datatype", async () => {
@@ -925,8 +922,7 @@ test("removeObject() does nothing when the property shape has no sh:path", async
   expect(element.getObjects()).toEqual([]);
 });
 
-const alternativeTitleShape =
-  `ex:titleShape a sh:PropertyShape ; sh:path [ sh:alternativePath (ex:title ex:label) ] .`;
+const alternativeTitleShape = `ex:titleShape a sh:PropertyShape ; sh:path [ sh:alternativePath (ex:title ex:label) ] .`;
 
 test("addObject() on a switchable alternativePath writes to whichever branch already has a value", async () => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
@@ -945,9 +941,12 @@ test("addObject() on a switchable alternativePath writes to whichever branch alr
   element.addObject(factory.literal("New"));
 
   expect(dataGraph.getQuads(ex("Alice"), ex("title")).length).toBe(0);
-  expect(dataGraph.getQuads(ex("Alice"), ex("label")).map((quad) => quad.object.value).sort()).toEqual(
-    ["Existing", "New"].sort(),
-  );
+  expect(
+    dataGraph
+      .getQuads(ex("Alice"), ex("label"))
+      .map((quad) => quad.object.value)
+      .sort(),
+  ).toEqual(["Existing", "New"].sort());
 });
 
 test("addObject() on a switchable alternativePath falls back to the first declared branch when neither has a value yet", async () => {
@@ -970,10 +969,7 @@ test("addObject() on a switchable alternativePath falls back to the first declar
 
 test("replaceObject() on a switchable alternativePath swaps the value on whichever branch actually holds it", async () => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
-  const dataGraph = await parseRdf(
-    `${queryPrefixes}\n\n ex:Alice ex:label "Old" .`,
-    "text/turtle",
-  );
+  const dataGraph = await parseRdf(`${queryPrefixes}\n\n ex:Alice ex:label "Old" .`, "text/turtle");
   const element = new PropertyUIElement({
     widgetRegistry: defaultWidgets,
     shapesGraph,
@@ -1008,9 +1004,12 @@ test("replaceObject()'s not-yet-existing fallback on a switchable alternativePat
   // path PropertyUIComponentObject's setTerm takes for a brand new value.
   element.replaceObject(factory.literal("placeholder"), factory.literal("New"));
 
-  expect(dataGraph.getQuads(ex("Alice"), ex("label")).map((quad) => quad.object.value).sort()).toEqual(
-    ["Existing", "New"].sort(),
-  );
+  expect(
+    dataGraph
+      .getQuads(ex("Alice"), ex("label"))
+      .map((quad) => quad.object.value)
+      .sort(),
+  ).toEqual(["Existing", "New"].sort());
 });
 
 test("removeObject() on a switchable alternativePath removes from whichever branch actually holds the value", async () => {
@@ -1041,7 +1040,10 @@ const complexAlternativeShape = `
 `;
 
 test("addObject()/replaceObject()/removeObject() still throw for a complex alternativePath (a branch that's itself a sequence)", async () => {
-  const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${complexAlternativeShape}`, "text/turtle");
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\n${complexAlternativeShape}`,
+    "text/turtle",
+  );
   const dataGraph = await parseRdf("", "text/turtle");
   const element = new PropertyUIElement({
     widgetRegistry: defaultWidgets,
@@ -1071,10 +1073,9 @@ test("alternativePathBranches() returns the branch predicates in declaration ord
 });
 
 test("alternativePathBranches() is undefined for a plain predicate path", async () => {
-  const element = await createElement(
-    `ex:nameShape a sh:PropertyShape ; sh:path ex:name .`,
-    [ex("nameShape")],
-  );
+  const element = await createElement(`ex:nameShape a sh:PropertyShape ; sh:path ex:name .`, [
+    ex("nameShape"),
+  ]);
   expect(element.alternativePathBranches()).toBeUndefined();
 });
 
@@ -1085,10 +1086,7 @@ test("alternativePathBranches() is undefined for a complex alternativePath", asy
 
 test("activeAlternativePathBranch() returns which branch currently holds the value", async () => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
-  const dataGraph = await parseRdf(
-    `${queryPrefixes}\n\n ex:Alice ex:label "L" .`,
-    "text/turtle",
-  );
+  const dataGraph = await parseRdf(`${queryPrefixes}\n\n ex:Alice ex:label "L" .`, "text/turtle");
   const element = new PropertyUIElement({
     widgetRegistry: defaultWidgets,
     shapesGraph,
@@ -1125,10 +1123,7 @@ test("defaultAlternativePathBranch() prefers a branch that already has data, els
 
 test("setAlternativePathBranch() moves a value from its current branch to a new one", async () => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
-  const dataGraph = await parseRdf(
-    `${queryPrefixes}\n\n ex:Alice ex:title "T" .`,
-    "text/turtle",
-  );
+  const dataGraph = await parseRdf(`${queryPrefixes}\n\n ex:Alice ex:title "T" .`, "text/turtle");
   const element = new PropertyUIElement({
     widgetRegistry: defaultWidgets,
     shapesGraph,
@@ -1147,10 +1142,7 @@ test("setAlternativePathBranch() moves a value from its current branch to a new 
 
 test("setAlternativePathBranch() is a no-op when the value is already on the target branch", async () => {
   const shapesGraph = await parseRdf(`${queryPrefixes}\n\n${alternativeTitleShape}`, "text/turtle");
-  const dataGraph = await parseRdf(
-    `${queryPrefixes}\n\n ex:Alice ex:title "T" .`,
-    "text/turtle",
-  );
+  const dataGraph = await parseRdf(`${queryPrefixes}\n\n ex:Alice ex:title "T" .`, "text/turtle");
   const element = new PropertyUIElement({
     widgetRegistry: defaultWidgets,
     shapesGraph,

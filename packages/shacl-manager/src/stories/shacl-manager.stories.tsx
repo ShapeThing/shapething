@@ -6,22 +6,32 @@ import { factory } from "@/helpers/factory.ts";
 import { CORS_PROXY_PATH } from "../../.storybook/corsProxy.ts";
 import { owl, rdf } from "@/helpers/namespaces.ts";
 
-const modelUrl = new URL("../examples/nl-sbb-begrippenkader/model.ttl", import.meta.url);
-const dataModelIRI = factory.namedNode("https://data.norg.nl/def/begrippenkader#");
-const skosapnlUrl = new URL(
-  "../examples/nl-sbb-begrippenkader/imports/skosapnl.ttl",
-  import.meta.url,
-);
-
-// model.ttl's own owl:imports names skosapnl's real namespace IRI (http://nlbegrip.nl/def/
-// skosapnl#), which doesn't currently resolve live (404) - imports/skosapnl.ttl is the vendored,
-// read-only copy of that same content, so this story serves it locally instead of depending on
-// that IRI actually being reachable. Anything else loadGraph is asked for (skosapnl's own further
-// owl:imports - skos, iso-thes, dct, foaf - all real, live-dereferenceable namespaces) falls
-// through to a real fetch.
+// Each example's model.ttl names its imports by their real namespace IRIs, which don't all resolve
+// live (skosapnl's 404s, for one) - the vendored, read-only copies under imports/ are served
+// locally instead. Anything else loadGraph is asked for (e.g. skosapnl's own further owl:imports -
+// skos, iso-thes, dct, foaf - all real, live-dereferenceable namespaces) falls through to a real
+// fetch.
 const localGraphs = new Map<string, URL>([
-  ["http://nlbegrip.nl/def/skosapnl#", skosapnlUrl],
-  ["https://data.norg.nl/def/begrippenkader#", modelUrl],
+  [
+    "https://data.norg.nl/def/begrippenkader#",
+    new URL("../examples/nl-sbb-begrippenkader/model.ttl", import.meta.url),
+  ],
+  [
+    "http://nlbegrip.nl/def/skosapnl#",
+    new URL("../examples/nl-sbb-begrippenkader/imports/skosapnl.ttl", import.meta.url),
+  ],
+  [
+    "https://data.norg.nl/def/opendata#",
+    new URL("../examples/dcat-ap-nl-catalogus/model.ttl", import.meta.url),
+  ],
+  [
+    "https://semiceu.github.io/DCAT-AP/releases/3.0.0/html/shacl/shapes.ttl",
+    new URL("../examples/dcat-ap-nl-catalogus/imports/dcat-ap-eu-SHACL.ttl", import.meta.url),
+  ],
+  [
+    "http://modellen.geostandaarden.nl/dcat-ap-nl/id/shape/",
+    new URL("../examples/dcat-ap-nl-catalogus/imports/dcat-ap-nl-SHACL.ttl", import.meta.url),
+  ],
 ]);
 const quadCache = new Map<string, Promise<Quad[]>>();
 
@@ -55,13 +65,23 @@ export default {
 };
 
 export const Default: Story = {
-  name: "Default",
+  name: "Begrippenkader (NL-SBB)",
   args: {
-    dataModelIRI,
+    dataModelIRI: factory.namedNode("https://data.norg.nl/def/begrippenkader#"),
     loadGraph,
     // shacl-renderer's own corsProxyUrl fallback (Environment.corsProxyUrl) templates a target
     // in directly - `${corsProxyUrl}${encodeURIComponent(url)}` - unlike this story's own
     // proxiedUrl() helper above which spells out the `?url=` itself, so it must be included here.
     corsProxyUrl: `${CORS_PROXY_PATH}?url=`,
+  },
+};
+
+// DCAT-AP-NL builds on the EU DCAT-AP baseline: many shapes, several targeting methods and blank
+// node property shapes, so a good stress test for the overview and the split/merged rows.
+export const DcatApNl: Story = {
+  name: "Open data catalogue (DCAT-AP-NL)",
+  args: {
+    ...Default.args,
+    dataModelIRI: factory.namedNode("https://data.norg.nl/def/opendata#"),
   },
 };

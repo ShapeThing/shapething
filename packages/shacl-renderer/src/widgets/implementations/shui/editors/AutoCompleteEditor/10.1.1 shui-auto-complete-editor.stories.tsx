@@ -6,7 +6,8 @@ import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Specifications/SHACL UI 1.2/10. Built-in Widgets/10.1 Editors/10.1.1 shui:AutoCompleteEditor",
+  title:
+    "Specifications/SHACL UI 1.2/10. Built-in Widgets/10.1 Editors/10.1.1 shui:AutoCompleteEditor",
   component: ShaclRenderer,
 };
 
@@ -73,7 +74,9 @@ export const shuiAutoCompleteEditorSuggestedValues: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const editButton = await waitFor(() => {
-      const element = canvasElement.querySelector<HTMLButtonElement>(".st-autocomplete .st-edit-button");
+      const element = canvasElement.querySelector<HTMLButtonElement>(
+        ".st-autocomplete .st-edit-button",
+      );
       if (!element) throw new Error("Could not find the AutoCompleteEditor search button");
       return element;
     });
@@ -134,8 +137,8 @@ export const shuiAutoCompleteEditorMultipleClassifications: Story = {
 
     await expect(canvas.findByText("Bicycle")).resolves.toBeVisible();
     await waitFor(() => {
-      const chips = [...canvasElement.querySelectorAll<HTMLElement>(".st-value-chip")].map(
-        (chip) => chip.textContent?.trim(),
+      const chips = [...canvasElement.querySelectorAll<HTMLElement>(".st-value-chip")].map((chip) =>
+        chip.textContent?.trim(),
       );
       expect(chips.sort()).toEqual(["Sport", "Transport"]);
     });
@@ -147,13 +150,20 @@ export const shuiAutoCompleteEditorMultipleClassifications: Story = {
 // their own chip and a "+3" chip's tooltip lists the remaining three.
 export const shuiAutoCompleteEditorManyClassifications: Story = {
   name: "Selected value with five classifications, collapsed past two (shui:ClassificationRole)",
-  args: argsByTestFile("10.1.1 shui-auto-complete-editor-many-classifications.ttl", import.meta.url),
+  args: argsByTestFile(
+    "10.1.1 shui-auto-complete-editor-many-classifications.ttl",
+    import.meta.url,
+  ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
     await expect(canvas.findByText("Bicycle")).resolves.toBeVisible();
     const chipLabels = () =>
-      [...canvasElement.querySelectorAll<HTMLElement>(".st-autocomplete-option__label .st-value-chip")]
+      [
+        ...canvasElement.querySelectorAll<HTMLElement>(
+          ".st-autocomplete-option__label .st-value-chip",
+        ),
+      ]
         .filter((chip) => !chip.closest(".tooltip"))
         .map((chip) => chip.textContent?.trim());
     await waitFor(() => expect(chipLabels()).toEqual(["Health", "Leisure", "+3"]));

@@ -79,11 +79,7 @@ export default function VerticalTabbedPropertyGroup({ group }: GroupWidgetProps)
 
   return (
     <div className="st-vertical-tabbed-group" data-iri={group.node.value}>
-      <div
-        className="st-vertical-tabbed-group-nav"
-        role="tablist"
-        aria-orientation="vertical"
-      >
+      <div className="st-vertical-tabbed-group-nav" role="tablist" aria-orientation="vertical">
         {tabs.map((tab) => {
           const active = tab.node.equals(activeTab.node);
           const description = tab.description([activeInterfaceLanguage]);

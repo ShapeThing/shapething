@@ -35,6 +35,8 @@ test("buildOntology - defines every term by the ontology", () => {
   const subjects = new Set(ontology.getQuads().map((quad) => quad.subject.value));
   subjects.delete(st("").value);
   for (const subject of subjects) {
-    expect(ontology.getQuads(factory.namedNode(subject), rdfs("isDefinedBy"), st("")).length).toBe(1);
+    expect(ontology.getQuads(factory.namedNode(subject), rdfs("isDefinedBy"), st("")).length).toBe(
+      1,
+    );
   }
 });

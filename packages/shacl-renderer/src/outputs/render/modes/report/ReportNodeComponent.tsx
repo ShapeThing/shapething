@@ -16,7 +16,11 @@ import type { ReportFocusNode } from "@/validation/report.ts";
  * whole, then its affected properties - reportFocusNode.nodeShape lists exactly those (see
  * validation/report.ts), rendered by the view-mode tree with each result inline.
  */
-export default function ReportNodeComponent({ reportFocusNode }: { reportFocusNode: ReportFocusNode }) {
+export default function ReportNodeComponent({
+  reportFocusNode,
+}: {
+  reportFocusNode: ReportFocusNode;
+}) {
   const { shapesGraph, dataGraph, scoresGraph, widgets, enableLinksToResources } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
   const { focusNode, nodeShape, nodeResults } = reportFocusNode;
@@ -43,7 +47,10 @@ export default function ReportNodeComponent({ reportFocusNode }: { reportFocusNo
       shapesGraph,
       dataGraph,
       languages: [activeLanguage],
-    }) ?? (focusNode.termType === "NamedNode" ? (localNameLabel(focusNode) ?? focusNode.value) : undefined);
+    }) ??
+    (focusNode.termType === "NamedNode"
+      ? (localNameLabel(focusNode) ?? focusNode.value)
+      : undefined);
 
   const heading = label ? (
     focusNode.termType === "NamedNode" && enableLinksToResources ? (

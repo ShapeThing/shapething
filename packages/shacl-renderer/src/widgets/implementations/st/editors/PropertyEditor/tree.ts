@@ -74,7 +74,11 @@ function byOrder(nodes: Quad_Subject[], dataGraph: RdfStore): Quad_Subject[] {
  */
 export function allGroups(dataGraph: RdfStore, shapesGraph?: RdfStore): Quad_Subject[] {
   const groups = new Map<string, Quad_Subject>();
-  for (const group of shaclInstancesOfClass(sh("PropertyGroup"), dataGraph, shapesGraph ?? dataGraph)) {
+  for (const group of shaclInstancesOfClass(
+    sh("PropertyGroup"),
+    dataGraph,
+    shapesGraph ?? dataGraph,
+  )) {
     groups.set(termKey(group), group);
   }
   for (const quad of dataGraph.getQuads(null, sh("group"))) {

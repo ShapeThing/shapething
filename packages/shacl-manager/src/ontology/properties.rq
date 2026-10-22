@@ -1,0 +1,19 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+
+SELECT DISTINCT ?property ?type ?domain ?range WHERE {
+    VALUES ?type { rdf:Property owl:ObjectProperty owl:DatatypeProperty owl:AnnotationProperty }
+    ?property a ?type .
+    FILTER(isIRI(?property))
+
+    OPTIONAL {
+        ?property rdfs:domain ?domain .
+        FILTER(isIRI(?domain))
+    }
+
+    OPTIONAL {
+        ?property rdfs:range ?range .
+        FILTER(isIRI(?range))
+    }
+}

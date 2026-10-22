@@ -10,7 +10,6 @@ The main command is:
 
 `npm create vite@latest shacl-example -- --template react-ts`
 
-
 ## Installing
 
 Run the following command in your terminal in the root of your project:

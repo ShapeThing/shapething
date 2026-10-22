@@ -2,10 +2,7 @@ import type { Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
-import {
-  parsePathNode,
-  type PropertyPath,
-} from "@/structure/paths/parsePropertyPath.ts";
+import { parsePathNode, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import type { LanguageRange } from "@/types/BCP47.ts";
 
 // 3.4 SHACL Global Configuration: the shui:Configuration-typed (or sh:Graph-typed - sh:Graph is
@@ -14,9 +11,8 @@ import type { LanguageRange } from "@/types/BCP47.ts";
 // a tie-break for more than one such subject; first match wins, an edge case not worth more ceremony.
 function configurationSubject(shapesGraph: RdfStore): Term | undefined {
   return (
-    shapesGraph.getQuads(null, rdf("type"), shui("Configuration"))[0]
-      ?.subject ??
-      shapesGraph.getQuads(null, rdf("type"), sh("Graph"))[0]?.subject
+    shapesGraph.getQuads(null, rdf("type"), shui("Configuration"))[0]?.subject ??
+    shapesGraph.getQuads(null, rdf("type"), sh("Graph"))[0]?.subject
   );
 }
 
@@ -27,13 +23,8 @@ function configurationSubject(shapesGraph: RdfStore): Term | undefined {
  */
 export function getLanguagePreference(shapesGraph: RdfStore): LanguageRange[] {
   const subject = configurationSubject(shapesGraph);
-  const head = subject &&
-    shapesGraph.getQuads(subject, shui("languagePreference"))[0]?.object;
-  return head
-    ? expandListOrTerm(head, shapesGraph).map((term) =>
-      term.value as LanguageRange
-    )
-    : [];
+  const head = subject && shapesGraph.getQuads(subject, shui("languagePreference"))[0]?.object;
+  return head ? expandListOrTerm(head, shapesGraph).map((term) => term.value as LanguageRange) : [];
 }
 
 /**
@@ -45,12 +36,9 @@ export function getLanguagePreference(shapesGraph: RdfStore): LanguageRange[] {
  */
 export function getLabelPreference(shapesGraph: RdfStore): PropertyPath[] {
   const subject = configurationSubject(shapesGraph);
-  const head = subject &&
-    shapesGraph.getQuads(subject, shui("labelPreference"))[0]?.object;
+  const head = subject && shapesGraph.getQuads(subject, shui("labelPreference"))[0]?.object;
   return head
-    ? expandListOrTerm(head, shapesGraph).map((term) =>
-      parsePathNode(term, shapesGraph)
-    )
+    ? expandListOrTerm(head, shapesGraph).map((term) => parsePathNode(term, shapesGraph))
     : [];
 }
 
@@ -61,8 +49,7 @@ export function getLabelPreference(shapesGraph: RdfStore): PropertyPath[] {
  */
 export function getDefaultNamespace(shapesGraph: RdfStore): string | undefined {
   const subject = configurationSubject(shapesGraph);
-  const value = subject &&
-    shapesGraph.getQuads(subject, shui("defaultNamespace"))[0]?.object.value;
+  const value = subject && shapesGraph.getQuads(subject, shui("defaultNamespace"))[0]?.object.value;
   return value || undefined;
 }
 
@@ -74,8 +61,7 @@ export function getDefaultNamespace(shapesGraph: RdfStore): string | undefined {
  */
 export function getTimeZone(shapesGraph: RdfStore): string | undefined {
   const subject = configurationSubject(shapesGraph);
-  const value = subject &&
-    shapesGraph.getQuads(subject, shui("timeZone"))[0]?.object.value;
+  const value = subject && shapesGraph.getQuads(subject, shui("timeZone"))[0]?.object.value;
   if (!value) return undefined;
   try {
     new Intl.DateTimeFormat("en", { timeZone: value });
@@ -93,8 +79,7 @@ export function getTimeZone(shapesGraph: RdfStore): string | undefined {
  */
 export function getReadOnlyGraphs(shapesGraph: RdfStore): Term[] {
   const subject = configurationSubject(shapesGraph);
-  const head = subject &&
-    shapesGraph.getQuads(subject, shui("readOnlyGraph"))[0]?.object;
+  const head = subject && shapesGraph.getQuads(subject, shui("readOnlyGraph"))[0]?.object;
   return head
     ? expandListOrTerm(head, shapesGraph).filter((term) => term.termType === "NamedNode")
     : [];

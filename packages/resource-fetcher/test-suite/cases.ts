@@ -12,7 +12,6 @@ interface TestCase {
   shapeDefinition?: string;
 }
 
-
 async function readFileIfExists(path: string): Promise<string | undefined> {
   try {
     return await readFile(path, "utf-8");

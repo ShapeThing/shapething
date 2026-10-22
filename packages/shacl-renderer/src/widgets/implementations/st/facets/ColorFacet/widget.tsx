@@ -3,7 +3,11 @@ import { factory } from "@/helpers/factory.ts";
 import { st } from "@/helpers/namespaces.ts";
 import { useFacetColorBuckets } from "@/outputs/render/modes/facet/facetData.tsx";
 import type { FacetWidgetProps } from "@/widgets/types.ts";
-import { COLOR_BUCKET_ORDER, COLOR_BUCKET_SWATCH, type ColorBucket } from "@/helpers/colorBuckets.ts";
+import {
+  COLOR_BUCKET_ORDER,
+  COLOR_BUCKET_SWATCH,
+  type ColorBucket,
+} from "@/helpers/colorBuckets.ts";
 import "./style.css";
 
 const BUCKET_LABEL_IDS: Record<ColorBucket, string> = {
@@ -61,14 +65,21 @@ export default function ColorFacet({ getConstraint, setConstraint, labelledBy }:
   const selectedBucket = getConstraint(st("colorBucket"))[0]?.value as ColorBucket | undefined;
 
   const selectBucket = (bucket: ColorBucket) => {
-    setConstraint(st("colorBucket"), bucket === selectedBucket ? undefined : factory.literal(bucket));
+    setConstraint(
+      st("colorBucket"),
+      bucket === selectedBucket ? undefined : factory.literal(bucket),
+    );
   };
 
   return (
     <div className="st-color-facet" role="radiogroup" aria-labelledby={labelledBy}>
       {buckets.map((bucket) => {
         const checked = bucket === selectedBucket;
-        const label = l10n.getString(BUCKET_LABEL_IDS[bucket], undefined, BUCKET_LABEL_FALLBACKS[bucket]);
+        const label = l10n.getString(
+          BUCKET_LABEL_IDS[bucket],
+          undefined,
+          BUCKET_LABEL_FALLBACKS[bucket],
+        );
         const count = counts ? (counts.get(bucket) ?? 0) : undefined;
 
         return (

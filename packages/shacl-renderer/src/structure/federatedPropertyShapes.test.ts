@@ -36,10 +36,9 @@ const validate = async (dataTurtle: string) => {
   const shapesGraph = await parse(shapesTurtle);
   const dataGraph = await parse(dataTurtle);
   const engine = new ShaclEngine(shapesGraphWithoutDynamicIn(shapesGraph).asDataset(), { factory });
-  const report = await engine.validate(
-    { dataset: dataGraph.asDataset(), terms: [ex("alice")] },
-    [{ terms: [ex("PersonShape")] }],
-  );
+  const report = await engine.validate({ dataset: dataGraph.asDataset(), terms: [ex("alice")] }, [
+    { terms: [ex("PersonShape")] },
+  ]);
   return withoutUncheckableRemoteValueResults(
     report.results,
     federatedPropertyShapes(shapesGraph),
@@ -80,7 +79,13 @@ test("withoutUncheckableRemoteValueResults() keeps those results for local value
     result.shape.ptr.term.value,
     result.constraintComponent?.value,
   ]);
-  expect(summary).toContainEqual([ex("federatedProperty").value, sh("ClassConstraintComponent").value]);
-  expect(summary).toContainEqual([ex("federatedProperty").value, sh("NodeConstraintComponent").value]);
+  expect(summary).toContainEqual([
+    ex("federatedProperty").value,
+    sh("ClassConstraintComponent").value,
+  ]);
+  expect(summary).toContainEqual([
+    ex("federatedProperty").value,
+    sh("NodeConstraintComponent").value,
+  ]);
   expect(summary).toContainEqual([ex("localProperty").value, sh("ClassConstraintComponent").value]);
 });

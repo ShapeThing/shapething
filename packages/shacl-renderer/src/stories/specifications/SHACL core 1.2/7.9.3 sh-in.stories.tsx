@@ -5,7 +5,8 @@ import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Specifications/SHACL core 1.2/7. Core Constraint Components/7.9 Other Constraint Components/7.9.3 sh:in",
+  title:
+    "Specifications/SHACL core 1.2/7. Core Constraint Components/7.9 Other Constraint Components/7.9.3 sh:in",
   component: ShaclRenderer,
 };
 

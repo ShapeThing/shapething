@@ -5,10 +5,7 @@
 // importing it at the top here used to - evaluates preprocess/index.ts before resolveRdfSources is
 // initialized, and the built dist throws "Cannot access 'resolveRdfSources' before
 // initialization" on import. Entering through render.tsx evaluates resolveRdfSources.ts fully first.
-export {
-  default as ShaclRenderer,
-  type ShaclRendererProps,
-} from "@/outputs/render/render.tsx";
+export { default as ShaclRenderer, type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { dereferenceUrl, resolveRdfSource } from "@/preprocess/resolveRdfSources.ts";
 export {
   default as ShaclUIApplication,
@@ -44,11 +41,7 @@ export { type Preprocessor, defaultPreprocessors } from "@/preprocess/index.ts";
 export type { RdfSource } from "@/types/RdfSource.ts";
 export type { BCP47, LanguageRange } from "@/types/BCP47.ts";
 export type { Severity } from "@/types/severity.ts";
-export {
-  DEFAULT_LOCALE,
-  type LocaleLoader,
-  type LocaleLoaderOverrides,
-} from "@/l10n/locales.ts";
+export { DEFAULT_LOCALE, type LocaleLoader, type LocaleLoaderOverrides } from "@/l10n/locales.ts";
 // The widget SDK: widget contract types, the bundled registry, structure elements and the hooks
 // bundled widgets are built on - see widgetSdk.ts.
 export * from "@/widgetSdk.ts";

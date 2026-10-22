@@ -26,6 +26,7 @@ export const LIVE_PROPS = [
   "enableAlternativePathSwitching",
   "enableContentLanguageCreation",
   "enableShPathInLabelTitle",
+  "enablePropertyShapeSources",
   "enableFullLanguageRemoval",
   "enableTitle",
   "enableEditInPlace",
@@ -79,7 +80,12 @@ function serialize(value: unknown): string {
   if (value instanceof URL) return `url:${value.href}`;
   if (isTerm(value)) {
     if (value.termType === "Quad") {
-      const quad = value as unknown as { subject: Term; predicate: Term; object: Term; graph: Term };
+      const quad = value as unknown as {
+        subject: Term;
+        predicate: Term;
+        object: Term;
+        graph: Term;
+      };
       return `<<${[quad.subject, quad.predicate, quad.object, quad.graph].map(serialize).join(" ")}>>`;
     }
     return termKey(value);

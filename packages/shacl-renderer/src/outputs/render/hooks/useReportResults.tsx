@@ -18,4 +18,3 @@ export function useReportResults(propertyUIElement: PropertyUIElement): Validati
 export function useIsReport(): boolean {
   return useContext(reportResultsContext) !== undefined;
 }
-

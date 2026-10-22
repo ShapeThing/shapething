@@ -147,8 +147,8 @@ export function useCreateInPlace(
   const cancel = () => setState(undefined);
 
   const renameSubject = (iri: NamedNode) =>
-    setState((current) =>
-      current && { ...current, draft: { ...current.draft, renamedSubject: iri } },
+    setState(
+      (current) => current && { ...current, draft: { ...current.draft, renamedSubject: iri } },
     );
 
   return {

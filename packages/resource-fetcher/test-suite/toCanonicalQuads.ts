@@ -21,7 +21,10 @@ export function toCanonicalQuads(turtle: string): string[] {
     }
   }
 
-  function termSig(term: Quad["subject"] | Quad["predicate"] | Quad["object"], visited = new Set<string>()): string {
+  function termSig(
+    term: Quad["subject"] | Quad["predicate"] | Quad["object"],
+    visited = new Set<string>(),
+  ): string {
     if (term.termType === "BlankNode") {
       if (visited.has(term.value)) return "_:CYCLE";
       const next = new Set(visited).add(term.value);

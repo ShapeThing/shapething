@@ -8,7 +8,5 @@ export const cartesianProduct = (arrays: Quad_Subject[][]): Quad_Subject[][] => 
   const [first, ...rest] = arrays;
   const restProduct = cartesianProduct(rest);
 
-  return first.flatMap((item) =>
-    restProduct.map((restItems) => [item, ...restItems])
-  );
+  return first.flatMap((item) => restProduct.map((restItems) => [item, ...restItems]));
 };

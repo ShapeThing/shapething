@@ -20,9 +20,9 @@ export default {
 const baseArgs = argsByTestFile("unique-lang-add-button.ttl", import.meta.url);
 
 function findAddButton(canvasElement: HTMLElement): HTMLButtonElement | null {
-  return within(canvasElement).queryByRole("button", { name: "Add value" }) as
-    | HTMLButtonElement
-    | null;
+  return within(canvasElement).queryByRole("button", {
+    name: "Add value",
+  }) as HTMLButtonElement | null;
 }
 
 export const switcherModeHidesTheAddButton: Story = {

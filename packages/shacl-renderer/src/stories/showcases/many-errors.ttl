@@ -1,0 +1,180 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix ex: <http://example.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+### A long employee record where nearly every field violates its shape, spread over a few groups,
+### so the form is taller than the viewport and errors sit both above and below the fold - a
+### playground for navigating between validation errors. Existing data is validated straight
+### away in edit mode (see hasAttemptedSubmit in modes/edit/index.tsx), so every error shows on load.
+### Two fields (nickname, department) are valid on purpose, so navigation has something to skip.
+
+<#shape> a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+
+    # --- Personal ---
+    sh:property [
+        sh:path schema:givenName ; sh:name "Given name"@en ;
+        sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:minLength 2 ;
+        sh:order 1 ; sh:group <#personal> ;
+    ] ;
+    sh:property [
+        sh:path schema:familyName ; sh:name "Family name"@en ;
+        sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:order 2 ; sh:group <#personal> ;
+    ] ;
+    sh:property [
+        sh:path schema:alternateName ; sh:name "Nickname"@en ;
+        sh:datatype xsd:string ; sh:maxCount 1 ;
+        sh:order 3 ; sh:group <#personal> ;
+    ] ;
+    sh:property [
+        sh:path schema:birthDate ; sh:name "Birth date"@en ;
+        sh:datatype xsd:date ; sh:maxCount 1 ; sh:maxInclusive "2026-01-01"^^xsd:date ;
+        sh:order 4 ; sh:group <#personal> ;
+    ] ;
+    sh:property [
+        sh:path schema:gender ; sh:name "Gender"@en ;
+        sh:in ("female" "male" "non-binary" "prefer not to say") ; sh:maxCount 1 ;
+        sh:order 5 ; sh:group <#personal> ;
+    ] ;
+    sh:property [
+        sh:path schema:nationality ; sh:name "Nationality"@en ;
+        sh:datatype xsd:string ; sh:pattern "^[A-Z]{2}$" ; sh:maxCount 1 ;
+        sh:description "Two-letter ISO 3166 country code."@en ;
+        sh:order 6 ; sh:group <#personal> ;
+    ] ;
+    sh:property [
+        sh:path schema:knowsLanguage ; sh:name "Languages"@en ;
+        sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 3 ;
+        sh:order 7 ; sh:group <#personal> ;
+    ] ;
+
+    # --- Contact ---
+    sh:property [
+        sh:path schema:email ; sh:name "Email"@en ;
+        sh:datatype xsd:string ; sh:pattern "^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$" ; sh:minCount 1 ; sh:maxCount 2 ;
+        sh:order 1 ; sh:group <#contact> ;
+    ] ;
+    sh:property [
+        sh:path schema:telephone ; sh:name "Phone"@en ;
+        sh:datatype xsd:string ; sh:pattern "^\\+?[0-9 ]{8,15}$" ; sh:maxCount 1 ;
+        sh:order 2 ; sh:group <#contact> ;
+    ] ;
+    sh:property [
+        sh:path schema:url ; sh:name "Website"@en ;
+        sh:nodeKind sh:IRI ; sh:maxCount 1 ;
+        sh:order 3 ; sh:group <#contact> ;
+    ] ;
+    sh:property [
+        sh:path schema:streetAddress ; sh:name "Street address"@en ;
+        sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:maxLength 40 ;
+        sh:order 4 ; sh:group <#contact> ;
+    ] ;
+    sh:property [
+        sh:path schema:postalCode ; sh:name "Postal code"@en ;
+        sh:datatype xsd:string ; sh:pattern "^[1-9][0-9]{3} ?[A-Z]{2}$" ; sh:maxCount 1 ;
+        sh:message "Use a Dutch postal code, like 1234 AB"@en ;
+        sh:order 5 ; sh:group <#contact> ;
+    ] ;
+    sh:property [
+        sh:path schema:addressLocality ; sh:name "City"@en ;
+        sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:order 6 ; sh:group <#contact> ;
+    ] ;
+
+    # --- Employment ---
+    sh:property [
+        sh:path ex:employeeNumber ; sh:name "Employee number"@en ;
+        sh:datatype xsd:string ; sh:pattern "^EMP-[0-9]{5}$" ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:order 1 ; sh:group <#employment> ;
+    ] ;
+    sh:property [
+        sh:path schema:jobTitle ; sh:name "Job title"@en ;
+        sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ; sh:minLength 3 ;
+        sh:order 2 ; sh:group <#employment> ;
+    ] ;
+    sh:property [
+        sh:path ex:department ; sh:name "Department"@en ;
+        sh:in ("Engineering" "Sales" "Support" "Finance") ; sh:maxCount 1 ;
+        sh:order 3 ; sh:group <#employment> ;
+    ] ;
+    sh:property [
+        sh:path ex:startDate ; sh:name "Start date"@en ;
+        sh:datatype xsd:date ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:lessThan ex:endDate ;
+        sh:order 4 ; sh:group <#employment> ;
+    ] ;
+    sh:property [
+        sh:path ex:endDate ; sh:name "End date"@en ;
+        sh:datatype xsd:date ; sh:maxCount 1 ;
+        sh:order 5 ; sh:group <#employment> ;
+    ] ;
+    sh:property [
+        sh:path ex:hoursPerWeek ; sh:name "Hours per week"@en ;
+        sh:datatype xsd:integer ; sh:minInclusive 0 ; sh:maxInclusive 40 ; sh:maxCount 1 ;
+        sh:order 6 ; sh:group <#employment> ;
+    ] ;
+    sh:property [
+        sh:path ex:salary ; sh:name "Monthly salary"@en ;
+        sh:datatype xsd:decimal ; sh:minExclusive 0 ; sh:maxCount 1 ;
+        sh:order 7 ; sh:group <#employment> ;
+    ] ;
+    sh:property [
+        sh:path ex:vacationDays ; sh:name "Vacation days"@en ;
+        sh:datatype xsd:integer ; sh:minInclusive 20 ; sh:maxCount 1 ;
+        sh:order 8 ; sh:group <#employment> ;
+    ] ;
+    sh:property [
+        sh:path ex:remote ; sh:name "Works remotely"@en ;
+        sh:datatype xsd:boolean ; sh:minCount 1 ; sh:maxCount 1 ;
+        sh:order 9 ; sh:group <#employment> ;
+    ] ;
+
+    # --- Notes ---
+    sh:property [
+        sh:path schema:description ; sh:name "Bio"@en ;
+        sh:datatype xsd:string ; sh:singleLine false ; sh:maxCount 1 ; sh:maxLength 80 ;
+        sh:order 1 ; sh:group <#notes> ;
+    ] ;
+    sh:property [
+        sh:path ex:tag ; sh:name "Tags"@en ;
+        sh:datatype xsd:string ; sh:pattern "^[a-z-]+$" ;
+        sh:order 2 ; sh:group <#notes> ;
+    ] ;
+    .
+
+<#personal> a sh:PropertyGroup ; sh:order 1 ; sh:name "Personal"@en .
+<#contact> a sh:PropertyGroup ; sh:order 2 ; sh:name "Contact"@en .
+<#employment> a sh:PropertyGroup ; sh:order 3 ; sh:name "Employment"@en .
+<#notes> a sh:PropertyGroup ; sh:order 4 ; sh:name "Notes"@en .
+
+<#data> a schema:Person ;
+    # Personal
+    schema:givenName "J" ;                                      # minLength
+    # schema:familyName missing                                 # minCount
+    schema:alternateName "Jo" ;                                 # valid
+    schema:birthDate "2031-04-01"^^xsd:date ;                   # maxInclusive
+    schema:gender "unknown" ;                                   # sh:in
+    schema:nationality "Dutch" ;                                # pattern
+    schema:knowsLanguage "Dutch", "English", "German", "French" ; # maxCount
+    # Contact
+    schema:email "jo.example.org", "jo@" ;                      # pattern (twice)
+    schema:telephone "call me" ;                                # pattern
+    schema:url "not a url" ;                                    # nodeKind
+    schema:streetAddress "Laan van de Langste Straatnaam Ter Wereld 123456 bis" ; # maxLength
+    schema:postalCode "12345" ;                                 # pattern + sh:message
+    # schema:addressLocality missing                            # minCount
+    # Employment
+    ex:employeeNumber "12345" ;                                 # pattern
+    schema:jobTitle "QA" ;                                      # minLength
+    ex:department "Engineering" ;                               # valid
+    ex:startDate "2024-06-01"^^xsd:date ;                       # lessThan endDate
+    ex:endDate "2023-12-31"^^xsd:date ;
+    ex:hoursPerWeek 60 ;                                        # maxInclusive
+    ex:salary "-1500"^^xsd:decimal ;                            # minExclusive
+    ex:vacationDays "lots" ;                                    # datatype
+    # ex:remote missing                                         # minCount
+    # Notes
+    schema:description "A very long bio that goes on and on well past the eighty character limit set by the shape." ; # maxLength
+    ex:tag "Senior", "team-lead", "on call" .                   # pattern (twice)

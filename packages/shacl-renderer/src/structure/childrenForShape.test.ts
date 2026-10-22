@@ -24,7 +24,14 @@ test("sh:node directly on a shape expands to that node shape's own properties", 
 
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"), undefined, defaultWidgets);
+  const elements = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Recipe"),
+    ex("ChickenSoup"),
+    undefined,
+    defaultWidgets,
+  );
   expect(elements).toHaveLength(1);
   expect(elements[0]).toBeInstanceOf(PropertyUIElement);
 });
@@ -104,7 +111,14 @@ test("a sh:and branch containing a further sh:or recurses into a nested ChoiceEl
 
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"), undefined, defaultWidgets);
+  const elements = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Recipe"),
+    ex("ChickenSoup"),
+    undefined,
+    defaultWidgets,
+  );
   expect(elements).toHaveLength(2);
   expect(elements[0]).toBeInstanceOf(PropertyUIElement);
   expect(elements[1]).toBeInstanceOf(ChoiceElement);
@@ -160,8 +174,22 @@ test("a plain sh:property-only shape matches propertiesForShape directly", async
 
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const expected = propertiesForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"), undefined, defaultWidgets);
-  const actual = childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"), undefined, defaultWidgets);
+  const expected = propertiesForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Recipe"),
+    ex("ChickenSoup"),
+    undefined,
+    defaultWidgets,
+  );
+  const actual = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Recipe"),
+    ex("ChickenSoup"),
+    undefined,
+    defaultWidgets,
+  );
 
   // Not a deep toEqual: both sides construct their own PropertyUIElement instances (only
   // childrenForShape memoizes), so compare shape-derived content rather than instance internals.
@@ -189,7 +217,14 @@ test("a sh:deactivated property shape is neither rendered nor merged into its co
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  const elements = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("Alice"), undefined, defaultWidgets);
+  const elements = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Person"),
+    ex("Alice"),
+    undefined,
+    defaultWidgets,
+  );
   expect(elements).toHaveLength(1);
   const [name] = elements as PropertyUIElement[];
   expect(name.propertyShapes.map((shape) => shape.value)).toEqual([ex("nameShape").value]);
@@ -208,5 +243,14 @@ test("a sh:deactivated shape reached via sh:node contributes no properties", asy
   );
   const dataGraph = await parseRdf("", "text/turtle");
 
-  expect(childrenForShape(shapesGraph, dataGraph, ex("Recipe"), ex("ChickenSoup"), undefined, defaultWidgets)).toHaveLength(0);
+  expect(
+    childrenForShape(
+      shapesGraph,
+      dataGraph,
+      ex("Recipe"),
+      ex("ChickenSoup"),
+      undefined,
+      defaultWidgets,
+    ),
+  ).toHaveLength(0);
 });

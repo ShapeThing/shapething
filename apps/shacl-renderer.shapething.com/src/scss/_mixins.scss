@@ -1,5 +1,5 @@
-@mixin horizontalLine () {
-  content: '';
+@mixin horizontalLine() {
+  content: "";
   display: block;
   position: absolute;
   width: 100vw;
@@ -10,22 +10,22 @@
   border-top: 1px dotted var(--line-color);
 }
 
-@mixin horizontalLineBottom () {
+@mixin horizontalLineBottom() {
   &:after {
     @include horizontalLine();
     bottom: 0;
   }
 }
 
-@mixin horizontalLineTop () {
+@mixin horizontalLineTop() {
   &:before {
     @include horizontalLine();
     top: 0;
   }
 }
 
-@mixin verticalLine () {
-  content: '';
+@mixin verticalLine() {
+  content: "";
   display: block;
   position: absolute;
   height: 100%;
@@ -36,14 +36,14 @@
   border-left: 1px dotted var(--line-color);
 }
 
-@mixin verticalLineLeft () {
+@mixin verticalLineLeft() {
   &:before {
     @include verticalLine();
     left: 0;
   }
 }
 
-@mixin verticalLineRight () {
+@mixin verticalLineRight() {
   &:after {
     @include verticalLine();
     right: 0;

@@ -42,7 +42,12 @@ export default function WidgetSlot({
       <div className="st-property-object__widget" data-widget={localName(iri)}>
         <WidgetErrorBoundary resetKeys={[termKey(object), iri?.value]} widget={iri?.value}>
           <Suspense fallback={<Loading />}>
-            <Widget shape={effectiveProperty} term={object} setTerm={noop} labelledBy={labelledBy} />
+            <Widget
+              shape={effectiveProperty}
+              term={object}
+              setTerm={noop}
+              labelledBy={labelledBy}
+            />
           </Suspense>
         </WidgetErrorBoundary>
       </div>

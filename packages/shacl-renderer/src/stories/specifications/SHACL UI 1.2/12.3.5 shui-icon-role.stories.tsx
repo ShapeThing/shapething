@@ -8,7 +8,8 @@ import { sparqlEndpointFetch } from "@/facets/testing/sparqlEndpointShim.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Specifications/SHACL UI 1.2/11. Property Roles/11.3 Built-in Property Roles/12.3.5 shui:IconRole",
+  title:
+    "Specifications/SHACL UI 1.2/11. Property Roles/11.3 Built-in Property Roles/12.3.5 shui:IconRole",
   component: ShaclRenderer,
 };
 

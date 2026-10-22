@@ -39,7 +39,7 @@ export function groupChildren(
   widgets: Widgets,
 ): Child[] {
   return memo([elements, shapesGraph, dataGraph, widgets], termKey(focusNode), () =>
-    buildGroupTree(elements, shapesGraph, dataGraph, focusNode, widgets)
+    buildGroupTree(elements, shapesGraph, dataGraph, focusNode, widgets),
   );
 }
 

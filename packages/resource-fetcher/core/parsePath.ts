@@ -23,9 +23,7 @@ function parseStep(ptr: Grapoi) {
       quantifier: "one" as const,
       start: "subject" as const,
       end: "object" as const,
-      predicates: [...alternativePtr.list()].map(
-        (ptr) => ptr.term as NamedNode
-      ),
+      predicates: [...alternativePtr.list()].map((ptr) => ptr.term as NamedNode),
     };
   }
 
@@ -83,9 +81,7 @@ function parsePath(ptr: Grapoi): Path {
     return [parseStep(ptr)].filter(nonNullable);
   }
 
-  return [...ptr.list()]
-    .map((stepPtr) => parseStep(stepPtr))
-    .filter(nonNullable);
+  return [...ptr.list()].map((stepPtr) => parseStep(stepPtr)).filter(nonNullable);
 }
 
 export default parsePath;

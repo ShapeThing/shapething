@@ -2,7 +2,7 @@ import { clsx } from "clsx";
 import type { ModeProps } from "@/outputs/render/render.tsx";
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { Localized } from "@fluent/react";
-import type { Quad } from "@rdfjs/types";
+import type { NamedNode, Quad } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
@@ -22,6 +22,7 @@ import ContentLanguageSwitcher from "@/outputs/render/components/ContentLanguage
 import InterfaceLanguageSwitcher from "@/outputs/render/components/InterfaceLanguageSwitcher/index.tsx";
 import Title from "@/outputs/render/components/Title/index.tsx";
 import FocusNodeEditor from "@/outputs/render/components/FocusNodeEditor/index.tsx";
+import ErrorNavigator from "@/outputs/render/components/ErrorNavigator/index.tsx";
 import ValidationContextProvider from "@/outputs/render/contexts/ValidationContextProvider.tsx";
 import type { ValidationResult } from "@/outputs/render/contexts/validationContext.tsx";
 import { submitAttemptContext } from "@/outputs/render/contexts/submitAttemptContext.tsx";
@@ -71,8 +72,9 @@ export default function EditModeWrapper({ children, className }: Props) {
   } = useEnvironment();
   // What Environment.enableFocusNodeEditor's field has renamed the focus node to - applied to the
   // submitted quads only (see handleSubmit), so the live form keeps reading and writing the focus
-  // node it was opened for.
-  const [renamedFocusNode, setRenamedFocusNode] = useState(focusNode);
+  // node it was opened for. Only a NamedNode focus node can be renamed (a blank node has no
+  // identifier to edit), so for a blank node this always stays the focus node itself.
+  const [renamedFocusNode, setRenamedFocusNode] = useState<NamedNode>();
   // dataGraph's identity is stable for the life of this edit session (EnvironmentContextProvider
   // builds the Environment once and never rebuilds it), so this lazy initializer only ever runs on
   // this component's very first render - before any widget has had a chance to mutate dataGraph.
@@ -100,13 +102,8 @@ export default function EditModeWrapper({ children, className }: Props) {
 
   // Whether the focus node holds anything beyond its own seeded defaults - an untouched new
   // resource still reads "Create", not "Update", just because a default prefilled one field.
-  const hasTriples = useReactiveRead(
-    dataGraph,
-    focusNode.value,
-    () =>
-      dataGraph
-        .getQuads(focusNode, null, null)
-        .some((quad) => !seededQuadKeys.has(quadKey(quad))),
+  const hasTriples = useReactiveRead(dataGraph, focusNode.value, () =>
+    dataGraph.getQuads(focusNode, null, null).some((quad) => !seededQuadKeys.has(quadKey(quad))),
   );
 
   // Whether the <form> below has been submitted at least once - usePropertyValidationResults
@@ -167,9 +164,10 @@ export default function EditModeWrapper({ children, className }: Props) {
     });
 
     const originalQuads = originalQuadsRef.current!;
-    const finalQuads = renamedFocusNode.equals(focusNode)
-      ? dataGraph.getQuads()
-      : renameInQuads(dataGraph.getQuads(), focusNode, renamedFocusNode);
+    const finalQuads =
+      !renamedFocusNode || renamedFocusNode.equals(focusNode)
+        ? dataGraph.getQuads()
+        : renameInQuads(dataGraph.getQuads(), focusNode, renamedFocusNode);
     const { additions, deletions } = diffQuads(originalQuads, finalQuads);
 
     // Vocabulary merged in from owl:imports (see Environment.importedDataGraph) isn't the
@@ -179,11 +177,17 @@ export default function EditModeWrapper({ children, className }: Props) {
     for (const quad of finalQuads) {
       const isImported =
         importedDataGraph !== undefined &&
-        importedDataGraph.getQuads(quad.subject, quad.predicate, quad.object, quad.graph).length > 0;
+        importedDataGraph.getQuads(quad.subject, quad.predicate, quad.object, quad.graph).length >
+          0;
       if (!isImported) store.addQuad(quad);
     }
 
-    onSubmit?.({ dataGraph: store, additions, deletions, focusNode: renamedFocusNode });
+    onSubmit?.({
+      dataGraph: store,
+      additions,
+      deletions,
+      focusNode: renamedFocusNode ?? focusNode,
+    });
   };
 
   // A Modal editing its own staging graph (see Modal's `dataGraph` prop) pushes its scope here
@@ -267,10 +271,10 @@ export default function EditModeWrapper({ children, className }: Props) {
                 focusNode={focusNode}
               />
             )}
-            {enableFocusNodeEditor && (
+            {enableFocusNodeEditor && focusNode.termType === "NamedNode" && (
               <FocusNodeEditor
                 current={focusNode}
-                value={renamedFocusNode}
+                value={renamedFocusNode ?? focusNode}
                 onChange={setRenamedFocusNode}
                 dataGraph={dataGraph}
                 shapesGraph={shapesGraph}
@@ -281,6 +285,7 @@ export default function EditModeWrapper({ children, className }: Props) {
             <NodeUIComponent noWrapper />
             {children}
             <div className="st-edit-mode--actions">
+              <ErrorNavigator />
               <button className="st-button st-button--primary" type="submit">
                 {hasTriples ? (
                   <Localized id="node-ui-submit-update">Update</Localized>

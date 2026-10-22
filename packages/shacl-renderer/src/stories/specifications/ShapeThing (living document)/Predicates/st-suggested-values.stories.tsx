@@ -57,8 +57,11 @@ export const stSuggestedValuesEnumSelect: Story = {
     await userEvent.click(trigger);
 
     const listbox = await canvas.findByRole("listbox");
-    expect(within(listbox).getAllByRole("option").map((option) => option.textContent?.trim()))
-      .toEqual(["ACT", "NSW", "VIC"]);
+    expect(
+      within(listbox)
+        .getAllByRole("option")
+        .map((option) => option.textContent?.trim()),
+    ).toEqual(["ACT", "NSW", "VIC"]);
     await userEvent.keyboard("{Escape}");
   },
 };

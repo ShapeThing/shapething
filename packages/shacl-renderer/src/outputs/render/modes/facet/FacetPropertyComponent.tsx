@@ -74,13 +74,22 @@ export default function FacetPropertyComponent({ property, filterShape }: Props)
       const values = new Map<string, Term[]>();
       const present = new Set<string>();
       if (node) {
-        for (const predicate of [...SINGLE_CONDITION_PREDICATES, sh("in"), sh("flags"), st("colorBucket"), st("classIn")]) {
+        for (const predicate of [
+          ...SINGLE_CONDITION_PREDICATES,
+          sh("in"),
+          sh("flags"),
+          st("colorBucket"),
+          st("classIn"),
+        ]) {
           values.set(predicate.value, readFilterConstraint(filterShape, node, predicate));
           if (hasFilterConstraint(filterShape, node, predicate)) present.add(predicate.value);
         }
         for (const quad of filterShape.store.getQuads(node)) {
           if (!values.has(quad.predicate.value)) {
-            values.set(quad.predicate.value, readFilterConstraint(filterShape, node, quad.predicate as NamedNode));
+            values.set(
+              quad.predicate.value,
+              readFilterConstraint(filterShape, node, quad.predicate as NamedNode),
+            );
             present.add(quad.predicate.value);
           }
         }
@@ -89,7 +98,8 @@ export default function FacetPropertyComponent({ property, filterShape }: Props)
     },
   );
 
-  const getConstraint = (predicate: NamedNode): Term[] => constraint.values.get(predicate.value) ?? [];
+  const getConstraint = (predicate: NamedNode): Term[] =>
+    constraint.values.get(predicate.value) ?? [];
 
   // A search facet over a property declaring shui:searchQuery writes the query's matches as an
   // sh:in instead of an sh:pattern (see TextSearchFacet) - still a single overall condition, unlike
@@ -115,15 +125,18 @@ export default function FacetPropertyComponent({ property, filterShape }: Props)
   // For a widget that needs to write more than one predicate as a single user gesture - see
   // setFilterConstraintsForProperty's own doc comment for why two separate setConstraint calls
   // can't safely stand in for this on a property no facet has touched yet.
-  const setConstraints = (entries: ReadonlyArray<readonly [NamedNode, Term | Term[] | undefined]>) =>
-    setFilterConstraintsForProperty(filterShape, property, entries);
+  const setConstraints = (
+    entries: ReadonlyArray<readonly [NamedNode, Term | Term[] | undefined]>,
+  ) => setFilterConstraintsForProperty(filterShape, property, entries);
 
   return (
     <FormElement
       label={label}
       actions={
         singleConditionActive &&
-        matchCount !== undefined && <span className="st-form-element__count-badge">{matchCount}</span>
+        matchCount !== undefined && (
+          <span className="st-form-element__count-badge">{matchCount}</span>
+        )
       }
       showColon
       labelId={labelId}

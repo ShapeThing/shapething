@@ -24,7 +24,10 @@ const rawEnvironment = async (shapes: string, overrides: Partial<RawEnvironment>
 };
 
 const values = (store: RdfStore | undefined) =>
-  store?.getQuads().map((quad) => quad.object.value).sort();
+  store
+    ?.getQuads()
+    .map((quad) => quad.object.value)
+    .sort();
 
 test("resolveReadOnlyGraphs leaves the environment alone without shui:readOnlyGraph", async () => {
   const environment = await rawEnvironment(`ex:config a shui:Configuration .`);

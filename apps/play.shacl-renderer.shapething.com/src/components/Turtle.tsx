@@ -73,13 +73,7 @@ function turtle() {
   return new LanguageSupport(TurtleLanguage, [turtleCompletion]);
 }
 
-export function Turtle({
-  onChange,
-  value,
-}: {
-  onChange: (value: string) => void;
-  value: string;
-}) {
+export function Turtle({ onChange, value }: { onChange: (value: string) => void; value: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const editor = useRef<EditorView>(null);
 
@@ -92,13 +86,15 @@ export function Turtle({
         basicSetup,
         turtle(),
 
-        EditorView.focusChangeEffect.of((state: { doc: { toString: () => string } }, focusing: boolean) => {
-          if (!focusing) {
-            const newContent = state.doc.toString();
-            onChange(newContent);
-          }
-          return null;
-        }),
+        EditorView.focusChangeEffect.of(
+          (state: { doc: { toString: () => string } }, focusing: boolean) => {
+            if (!focusing) {
+              const newContent = state.doc.toString();
+              onChange(newContent);
+            }
+            return null;
+          },
+        ),
       ],
     });
   }, []);

@@ -66,7 +66,10 @@ async function fixture() {
 // Every query runs both against the local store and through the SPARQL endpoint shim serving the
 // same store - Environment.facetsEndpoint's exact code path.
 const sources = [
-  ["local", (dataGraph: RdfStore) => ({ source: { kind: "local", store: dataGraph } as QuerySource })],
+  [
+    "local",
+    (dataGraph: RdfStore) => ({ source: { kind: "local", store: dataGraph } as QuerySource }),
+  ],
   [
     "endpoint",
     (dataGraph: RdfStore) => {
@@ -82,10 +85,15 @@ const sources = [
 describe.each(sources)("facet queries (%s)", (kind, makeSource) => {
   async function setup() {
     const { shapesGraph, dataGraph, property } = await fixture();
-    const { source, fetch } = makeSource(dataGraph) as { source: QuerySource; fetch?: typeof globalThis.fetch & { requests: string[] } };
+    const { source, fetch } = makeSource(dataGraph) as {
+      source: QuerySource;
+      fetch?: typeof globalThis.fetch & { requests: string[] };
+    };
     const run = facetQueryRunner(source, { fetch });
     const classGraphs = kind === "local" ? [shapesGraph, dataGraph] : [shapesGraph];
-    const targets = compileTargets([ex("ProductShape") as Quad_Subject], shapesGraph, { classGraphs });
+    const targets = compileTargets([ex("ProductShape") as Quad_Subject], shapesGraph, {
+      classGraphs,
+    });
     const filterShape = createFilterShape();
     return { shapesGraph, dataGraph, property, run, classGraphs, targets, filterShape, fetch };
   }
@@ -100,17 +108,23 @@ describe.each(sources)("facet queries (%s)", (kind, makeSource) => {
 
   test("value counts count distinct instances per value, most common first", async () => {
     const { run, targets } = await setup();
-    const counts = parseValueCounts(await run(valueCountsQuery(`<${ex("category").value}>`, { targets, filter: "" })));
-    expect(counts.map(({ value, count }) => [value.value, count])).toEqual([
-      [ex("Electronics").value, 2],
-      [ex("Office").value, 2],
-    ].sort((a, b) => (b[1] as number) - (a[1] as number)));
+    const counts = parseValueCounts(
+      await run(valueCountsQuery(`<${ex("category").value}>`, { targets, filter: "" })),
+    );
+    expect(counts.map(({ value, count }) => [value.value, count])).toEqual(
+      [
+        [ex("Electronics").value, 2],
+        [ex("Office").value, 2],
+      ].sort((a, b) => (b[1] as number) - (a[1] as number)),
+    );
     // ex:alice (a Person, not a target) holds Electronics too but isn't counted.
   });
 
   test("another facet's constraint narrows the counts; the facet's own constraint doesn't", async () => {
     const { run, targets, filterShape, property, classGraphs } = await setup();
-    setFilterConstraintForProperty(filterShape, property("categoryProperty"), sh("in"), [ex("Office")]);
+    setFilterConstraintForProperty(filterShape, property("categoryProperty"), sh("in"), [
+      ex("Office"),
+    ]);
     setFilterConstraintForProperty(
       filterShape,
       property("priceProperty"),
@@ -119,9 +133,16 @@ describe.each(sources)("facet queries (%s)", (kind, makeSource) => {
     );
 
     // Category counts, narrowed by price only: phone (500) and desk (200) remain.
-    const categoryFilter = compileFilter(filterShape, { classGraphs, excludePath: `<${ex("category").value}>` });
+    const categoryFilter = compileFilter(filterShape, {
+      classGraphs,
+      excludePath: `<${ex("category").value}>`,
+    });
     const categoryCounts = toCountMap(
-      parseValueCounts(await run(valueCountsQuery(`<${ex("category").value}>`, { targets, filter: categoryFilter }))),
+      parseValueCounts(
+        await run(
+          valueCountsQuery(`<${ex("category").value}>`, { targets, filter: categoryFilter }),
+        ),
+      ),
     );
     expect(categoryCounts.get(termKey(ex("Electronics")))).toBe(1);
     expect(categoryCounts.get(termKey(ex("Office")))).toBe(1);
@@ -133,7 +154,9 @@ describe.each(sources)("facet queries (%s)", (kind, makeSource) => {
 
   test("value bounds are computed by the source", async () => {
     const { run, targets } = await setup();
-    const bounds = parseValueBounds(await run(valueBoundsQuery(`<${ex("price").value}>`, { targets, filter: "" })));
+    const bounds = parseValueBounds(
+      await run(valueBoundsQuery(`<${ex("price").value}>`, { targets, filter: "" })),
+    );
     expect([bounds.min?.value, bounds.max?.value]).toEqual(["15", "900"]);
   });
 
@@ -147,7 +170,10 @@ describe.each(sources)("facet queries (%s)", (kind, makeSource) => {
 
   test("sh:minCount/sh:maxCount filter on how many values an instance holds", async () => {
     const { run, targets, property, classGraphs } = await setup();
-    const matchingFor = async (entries: [ReturnType<typeof sh>, string][], candidates?: Quad_Subject[]) => {
+    const matchingFor = async (
+      entries: [ReturnType<typeof sh>, string][],
+      candidates?: Quad_Subject[],
+    ) => {
       const filterShape = createFilterShape();
       for (const [predicate, value] of entries) {
         setFilterConstraintForProperty(
@@ -161,13 +187,18 @@ describe.each(sources)("facet queries (%s)", (kind, makeSource) => {
       const query = candidates
         ? matchingInstancesQuery({ targets: "", filter }, candidates)
         : matchingInstancesQuery({ targets, filter });
-      return parseInstances(await run(query)).map((term) => term.value).sort();
+      return parseInstances(await run(query))
+        .map((term) => term.value)
+        .sort();
     };
 
     expect(await matchingFor([[sh("minCount"), "2"]])).toEqual([ex("laptop").value]);
-    expect(await matchingFor([[sh("minCount"), "1"], [sh("maxCount"), "1"]])).toEqual(
-      [ex("desk"), ex("phone")].map((term) => term.value).sort(),
-    );
+    expect(
+      await matchingFor([
+        [sh("minCount"), "1"],
+        [sh("maxCount"), "1"],
+      ]),
+    ).toEqual([ex("desk"), ex("phone")].map((term) => term.value).sort());
     // Zero values is a count too - ex:novel has no category at all.
     expect(await matchingFor([[sh("maxCount"), "0"]])).toEqual([ex("novel").value]);
     // The same holds when the instances come from an explicit candidate list (FacetSearchModal).
@@ -179,10 +210,17 @@ describe.each(sources)("facet queries (%s)", (kind, makeSource) => {
   test("color buckets are classified by the source, and a bucket pick filters the same way", async () => {
     const { run, targets, filterShape, property, classGraphs } = await setup();
     const colorPath = `<${ex("color").value}>`;
-    const buckets = parseColorBucketCounts(await run(colorBucketCountsQuery(colorPath, { targets, filter: "" })));
+    const buckets = parseColorBucketCounts(
+      await run(colorBucketCountsQuery(colorPath, { targets, filter: "" })),
+    );
     expect(Object.fromEntries(buckets)).toEqual({ red: 1, blue: 1 });
 
-    setFilterConstraintForProperty(filterShape, property("colorProperty"), st("colorBucket"), factory.literal("blue"));
+    setFilterConstraintForProperty(
+      filterShape,
+      property("colorProperty"),
+      st("colorBucket"),
+      factory.literal("blue"),
+    );
     const filter = compileFilter(filterShape, { classGraphs });
     const matching = parseInstances(await run(matchingInstancesQuery({ targets, filter })));
     expect(matching.map((term) => term.value)).toEqual([ex("phone").value]);
@@ -204,7 +242,9 @@ describe.each(sources)("facet queries (%s)", (kind, makeSource) => {
   if (kind === "endpoint") {
     test("each facet query is shipped to the endpoint whole, as a single request", async () => {
       const { run, targets, filterShape, property, classGraphs, fetch } = await setup();
-      setFilterConstraintForProperty(filterShape, property("categoryProperty"), sh("in"), [ex("Office")]);
+      setFilterConstraintForProperty(filterShape, property("categoryProperty"), sh("in"), [
+        ex("Office"),
+      ]);
       const filter = compileFilter(filterShape, { classGraphs });
       await run(matchCountQuery({ targets, filter }));
       fetch!.requests.length = 0;

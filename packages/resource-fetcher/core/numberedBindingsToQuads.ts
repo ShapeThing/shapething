@@ -11,9 +11,7 @@ import type { OurQuad } from "../ResourceFetcher.ts";
 import datasetFactory from "@rdfjs/dataset";
 import { rdf } from "../helpers/namespaces.ts";
 
-export const numberedBindingsToQuads = (
-  bindings: Bindings[]
-): DatasetCore<OurQuad> => {
+export const numberedBindingsToQuads = (bindings: Bindings[]): DatasetCore<OurQuad> => {
   const store = datasetFactory.dataset<OurQuad>();
   const keys: Set<string> = new Set();
 
@@ -23,15 +21,10 @@ export const numberedBindingsToQuads = (
   }
 
   const highestNode = Math.max(
-    ...[...keys]
-      .filter((key) => key.includes("_"))
-      .map((key) => parseInt(key.split("_").pop()!))
+    ...[...keys].filter((key) => key.includes("_")).map((key) => parseInt(key.split("_").pop()!)),
   );
 
-  const lists: Map<
-    string,
-    { firstListNode: Term; items: Map<string, Term> }
-  > = new Map();
+  const lists: Map<string, { firstListNode: Term; items: Map<string, Term> }> = new Map();
 
   // Generate all the lists.
   for (const binding of bindings) {
@@ -66,14 +59,13 @@ export const numberedBindingsToQuads = (
 
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
-      const nextListNode =
-        i === items.length - 1 ? rdf.nil : factory.blankNode();
+      const nextListNode = i === items.length - 1 ? rdf.nil : factory.blankNode();
 
       // rdf:first triple
       const first = factory.quad(
         currentListNode as Quad_Subject,
         rdf.first as Quad_Predicate,
-        item as Quad_Object
+        item as Quad_Object,
       ) as OurQuad;
 
       store.add(first);
@@ -82,7 +74,7 @@ export const numberedBindingsToQuads = (
       const rest = factory.quad(
         currentListNode as Quad_Subject,
         rdf.rest as Quad_Predicate,
-        nextListNode as Quad_Object
+        nextListNode as Quad_Object,
       ) as OurQuad;
 
       store.add(rest);
@@ -90,14 +82,12 @@ export const numberedBindingsToQuads = (
       // console.log({ first, rest });
       currentListNode = nextListNode;
     }
-
   }
 
   // Process bindings
   for (const binding of bindings) {
     for (let depth = 0; depth <= highestNode; depth++) {
-      const subject =
-        binding.get(`node_${depth}`) ?? binding.get(`node_list_${depth}`);
+      const subject = binding.get(`node_${depth}`) ?? binding.get(`node_list_${depth}`);
       const predicate = binding.get(`predicate_${depth + 1}`);
       const reverse_predicate = binding.get(`reverse_predicate_${depth + 1}`);
       const object = binding.get(`node_${depth + 1}`);
@@ -106,7 +96,7 @@ export const numberedBindingsToQuads = (
         const quad: OurQuad = factory.quad(
           subject as Quad_Subject,
           predicate as Quad_Predicate,
-          object as Quad_Object
+          object as Quad_Object,
         );
         // We never reach the highestNode as that is only for the last object.
         if (depth === highestNode - 1) quad.isLeaf = true;
@@ -118,7 +108,7 @@ export const numberedBindingsToQuads = (
         const quad: OurQuad = factory.quad(
           object as Quad_Subject,
           reverse_predicate as Quad_Predicate,
-          subject as Quad_Object
+          subject as Quad_Object,
         );
         if (depth === highestNode - 1) quad.isLeaf = true;
         quad.isReverse = true;

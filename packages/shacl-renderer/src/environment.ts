@@ -1,4 +1,4 @@
-import type { NamedNode, Quad, Quad_Subject } from "@rdfjs/types";
+import type { BlankNode, NamedNode, Quad, Quad_Subject } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { ex } from "@/helpers/namespaces.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
@@ -16,7 +16,7 @@ export type SubmitResult = {
   deletions: Quad[];
   // Edit mode only: the focus node as submitted - Environment.focusNode, unless it was renamed
   // through Environment.enableFocusNodeEditor, in which case every quad above already uses this.
-  focusNode?: NamedNode;
+  focusNode?: NamedNode | BlankNode;
 };
 
 export type Environment = {
@@ -81,7 +81,9 @@ export type Environment = {
   // anything other than the default placeholder) as the IRI of the generated filter shape itself
   // - see structure/filterShape.ts's createFilterShape. Facet mode has no single focus node to
   // render, so there's nothing else this field could otherwise mean there.
-  focusNode: NamedNode;
+  // A blank node works too (e.g. a SHACL property shape declared inline as `sh:property [ ... ]`),
+  // with one difference: it has no identifier to edit, so the focus node editor is never offered.
+  focusNode: NamedNode | BlankNode;
   nodeShapes: Quad_Subject[];
   // Every `@prefix alias: <base>` (or `PREFIX`/JSON-LD `@context` equivalent) declaration actually
   // found while parsing shapesGraph's and dataGraph's own RDF source text/URLs (see
@@ -149,6 +151,10 @@ export type Environment = {
   enableContentLanguageCreation?: boolean;
   // When true, the predicate of a property will be included in the label's title attribute. This is useful for debugging and for users who want to see the underlying data model.
   enableShPathInLabelTitle?: boolean;
+  // When true, every property renders a collapsible debug block listing the property shapes that were
+  // merged into it (all sharing its sh:path), the node shape(s) declaring each, and each one's own
+  // triples - for tracing a merged constraint back to where it was declared.
+  enablePropertyShapeSources?: boolean;
   // When true, shows a trash icon inside the content language switcher.
   enableFullLanguageRemoval?: boolean;
   // When true, renders a heading above the form: "Edit {resource label}" / "Create {shape label}"
@@ -295,26 +301,24 @@ export type Environment = {
 // still be an unparsed/undereferenced RdfSource rather than a ready RdfStore. RdfStore is itself
 // a valid RdfSource, so a fully-resolved Environment already satisfies this type - preprocessors
 // don't need a different type per stage of the chain.
-export type RawEnvironment =
-  & Omit<
-    Environment,
-    | "shapesGraph"
-    | "dataGraph"
-    | "scoresGraph"
-    | "readOnlyGraph"
-    | "additionsGraph"
-    | "deletionsGraph"
-    | "validationReport"
-  >
-  & {
-    shapesGraph: RdfSource;
-    dataGraph: RdfSource;
-    scoresGraph: RdfSource;
-    readOnlyGraph?: RdfSource;
-    additionsGraph?: RdfSource;
-    deletionsGraph?: RdfSource;
-    validationReport?: RdfSource;
-  };
+export type RawEnvironment = Omit<
+  Environment,
+  | "shapesGraph"
+  | "dataGraph"
+  | "scoresGraph"
+  | "readOnlyGraph"
+  | "additionsGraph"
+  | "deletionsGraph"
+  | "validationReport"
+> & {
+  shapesGraph: RdfSource;
+  dataGraph: RdfSource;
+  scoresGraph: RdfSource;
+  readOnlyGraph?: RdfSource;
+  additionsGraph?: RdfSource;
+  deletionsGraph?: RdfSource;
+  validationReport?: RdfSource;
+};
 
 export const defaultEnvironment: Environment = {
   shapesGraph: RdfStore.createDefault(),
@@ -355,10 +359,7 @@ export const defaultEnvironment: Environment = {
   mapStyleUrl: "https://tiles.openfreemap.org/styles/bright",
 };
 
-export const minimalEnvironment: Omit<
-  Environment,
-  "scoresGraph" | "shapesGraph" | "dataGraph"
-> = {
+export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph" | "dataGraph"> = {
   focusNode: ex("focusNode"),
   nodeShapes: [],
   sourcePrefixes: {},
@@ -405,10 +406,7 @@ export const minimalEnvironmentWithContentLanguages: Omit<
   contentLanguages: ["en-GB", "nl-NL", "fr-FR"],
 };
 
-export const testingEnvironment: Omit<
-  Environment,
-  "scoresGraph" | "shapesGraph" | "dataGraph"
-> = {
+export const testingEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph" | "dataGraph"> = {
   focusNode: ex("focusNode"),
   nodeShapes: [],
   sourcePrefixes: {},

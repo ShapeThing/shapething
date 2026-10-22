@@ -40,6 +40,7 @@ const webComponentProps = {
   enableAlternativePathSwitching: "boolean",
   enableContentLanguageCreation: "boolean",
   enableShPathInLabelTitle: "boolean",
+  enablePropertyShapeSources: "boolean",
   enableFullLanguageRemoval: "boolean",
   enableTitle: "boolean",
   enableInterfaceLanguageWithShapesLabelsOnly: "boolean",
@@ -128,6 +129,7 @@ function Wrapper(props: WrapperProps) {
     enableAlternativePathSwitching: attributes.enableAlternativePathSwitching,
     enableContentLanguageCreation: attributes.enableContentLanguageCreation,
     enableShPathInLabelTitle: attributes.enableShPathInLabelTitle,
+    enablePropertyShapeSources: attributes.enablePropertyShapeSources,
     enableFullLanguageRemoval: attributes.enableFullLanguageRemoval,
     enableInterfaceLanguageWithShapesLabelsOnly:
       attributes.enableInterfaceLanguageWithShapesLabelsOnly,

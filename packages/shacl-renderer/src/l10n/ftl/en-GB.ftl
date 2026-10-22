@@ -85,6 +85,12 @@ property-federated-search-tooltip = This field searches an external data source
 validation-severity-violation = Error:
 validation-severity-warning = Warning:
 validation-severity-info = Info:
+error-navigator-previous =
+    .aria-label = Previous error
+    .title = Previous error
+error-navigator-next =
+    .aria-label = Next error
+    .title = Next error
 report-count-violation = { $count ->
     [one] 1 error
    *[other] { $count } errors

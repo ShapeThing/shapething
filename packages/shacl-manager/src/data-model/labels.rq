@@ -1,0 +1,12 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX dct: <http://purl.org/dc/terms/>
+
+# Every human readable name in the store, whatever vocabulary it comes from. Which one wins (and in
+# which language) is decided in labels.ts, not here.
+SELECT DISTINCT ?subject ?predicate ?label WHERE {
+    VALUES ?predicate { sh:name rdfs:label skos:prefLabel dct:title }
+    ?subject ?predicate ?label .
+    FILTER(isLiteral(?label))
+}

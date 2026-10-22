@@ -88,9 +88,11 @@ export function TableHeaderColumns({
                       </span>
                     ) : undefined
                   }
-                  labelTitle={enableShPathInLabelTitle
-                    ? column.pathAsSparql({ prefixed: true, sourcePrefixes })
-                    : undefined}
+                  labelTitle={
+                    enableShPathInLabelTitle
+                      ? column.pathAsSparql({ prefixed: true, sourcePrefixes })
+                      : undefined
+                  }
                   required={(column.get(sh("minCount")) ?? 0) > 0}
                   labelId={columnLabelId(index)}
                 />

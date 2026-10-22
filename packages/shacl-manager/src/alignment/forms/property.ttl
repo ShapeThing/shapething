@@ -1,0 +1,223 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+### Forms for the property side of a data model. The focus node of #merged, #mergedShaclFirst and
+### #propertyShape is a SHACL property shape; the focus node of #owlProperty is an OWL property.
+###
+### In the merged forms the descriptive fields reach through sh:path into the OWL property, so a
+### property that is the same thing on both sides is edited once. The renderer writes a new value
+### to the first branch of an sh:alternativePath, which is why there are two variants:
+### - #merged: OWL first. rdfs:label belongs on the property; sh:name is optional in SHACL.
+### - #mergedShaclFirst: for an OWL property from a read-only import. Edits go to sh:name and
+###   act as a local override.
+
+<#merged>
+    a sh:NodeShape ;
+    sh:name "Property"@en, "Eigenschap"@nl ;
+    sh:property <#mergedTitle>, <#mergedDescription>, <#domain>, <#range> ;
+    sh:property <#path>, <#minCount>, <#maxCount>, <#order>, <#datatype>, <#class>, <#nodeKind> .
+
+<#mergedShaclFirst>
+    a sh:NodeShape ;
+    sh:name "Property"@en, "Eigenschap"@nl ;
+    sh:property <#mergedTitleShaclFirst>, <#mergedDescriptionShaclFirst>, <#domain>, <#range> ;
+    sh:property <#path>, <#minCount>, <#maxCount>, <#order>, <#datatype>, <#class>, <#nodeKind> .
+
+<#propertyShape>
+    a sh:NodeShape ;
+    sh:name "Property shape"@en, "Property shape"@nl ;
+    sh:property <#shaclTitle>, <#shaclDescription> ;
+    sh:property <#path>, <#minCount>, <#maxCount>, <#order>, <#datatype>, <#class>, <#nodeKind> .
+
+<#owlProperty>
+    a sh:NodeShape ;
+    sh:name "OWL property"@en, "OWL-eigenschap"@nl ;
+    sh:property <#owlTitle>, <#owlDescription>, <#owlDomain>, <#owlRange>, <#owlSubPropertyOf> .
+
+### Descriptive
+
+<#mergedTitle>
+    sh:name "Title"@en, "Titel"@nl ;
+    sh:order 1 ;
+    sh:group <#descriptive> ;
+    sh:path [ sh:alternativePath ( ( sh:path rdfs:label ) sh:name ) ] ;
+    sh:uniqueLang true ;
+    sh:datatype rdf:langString .
+
+<#mergedDescription>
+    sh:name "Description"@en, "Beschrijving"@nl ;
+    sh:order 2 ;
+    sh:group <#descriptive> ;
+    sh:path [ sh:alternativePath ( ( sh:path rdfs:comment ) sh:description ) ] ;
+    sh:uniqueLang true ;
+    sh:datatype rdf:langString .
+
+<#mergedTitleShaclFirst>
+    sh:name "Title"@en, "Titel"@nl ;
+    sh:order 1 ;
+    sh:group <#descriptive> ;
+    sh:path [ sh:alternativePath ( sh:name ( sh:path rdfs:label ) ) ] ;
+    sh:uniqueLang true ;
+    sh:datatype rdf:langString .
+
+<#mergedDescriptionShaclFirst>
+    sh:name "Description"@en, "Beschrijving"@nl ;
+    sh:order 2 ;
+    sh:group <#descriptive> ;
+    sh:path [ sh:alternativePath ( sh:description ( sh:path rdfs:comment ) ) ] ;
+    sh:uniqueLang true ;
+    sh:datatype rdf:langString .
+
+<#shaclTitle>
+    sh:name "Title"@en, "Titel"@nl ;
+    sh:order 1 ;
+    sh:group <#descriptive> ;
+    sh:path sh:name ;
+    sh:uniqueLang true ;
+    sh:datatype rdf:langString .
+
+<#shaclDescription>
+    sh:name "Description"@en, "Beschrijving"@nl ;
+    sh:order 2 ;
+    sh:group <#descriptive> ;
+    sh:path sh:description ;
+    sh:uniqueLang true ;
+    sh:datatype rdf:langString .
+
+<#owlTitle>
+    sh:name "Label"@en, "Label"@nl ;
+    sh:order 1 ;
+    sh:group <#descriptive> ;
+    sh:path rdfs:label ;
+    sh:uniqueLang true ;
+    sh:datatype rdf:langString .
+
+<#owlDescription>
+    sh:name "Comment"@en, "Toelichting"@nl ;
+    sh:order 2 ;
+    sh:group <#descriptive> ;
+    sh:path rdfs:comment ;
+    sh:uniqueLang true ;
+    sh:datatype rdf:langString .
+
+### Ontology (through sh:path in the merged forms, direct on #owlProperty)
+
+<#domain>
+    sh:name "Domain"@en, "Domein"@nl ;
+    sh:order 10 ;
+    sh:group <#ontology> ;
+    sh:path ( sh:path rdfs:domain ) ;
+    sh:nodeKind sh:IRI .
+
+<#range>
+    sh:name "Range"@en, "Bereik"@nl ;
+    sh:order 11 ;
+    sh:group <#ontology> ;
+    sh:path ( sh:path rdfs:range ) ;
+    sh:nodeKind sh:IRI .
+
+<#owlDomain>
+    sh:name "Domain"@en, "Domein"@nl ;
+    sh:order 10 ;
+    sh:group <#ontology> ;
+    sh:path rdfs:domain ;
+    sh:nodeKind sh:IRI .
+
+<#owlRange>
+    sh:name "Range"@en, "Bereik"@nl ;
+    sh:order 11 ;
+    sh:group <#ontology> ;
+    sh:path rdfs:range ;
+    sh:nodeKind sh:IRI .
+
+<#owlSubPropertyOf>
+    sh:name "Subproperty of"@en, "Subeigenschap van"@nl ;
+    sh:order 12 ;
+    sh:group <#ontology> ;
+    sh:path rdfs:subPropertyOf ;
+    sh:nodeKind sh:IRI .
+
+### Constraints (SHACL only)
+
+<#path>
+    sh:name "Path"@en, "Pad"@nl ;
+    sh:order 20 ;
+    sh:group <#constraints> ;
+    sh:path sh:path ;
+    sh:minCount 1 ;
+    sh:maxCount 1 .
+
+<#minCount>
+    sh:name "Minimum count"@en, "Minimum aantal"@nl ;
+    sh:order 21 ;
+    sh:group <#constraints> ;
+    sh:path sh:minCount ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:integer .
+
+<#maxCount>
+    sh:name "Maximum count"@en, "Maximum aantal"@nl ;
+    sh:order 22 ;
+    sh:group <#constraints> ;
+    sh:path sh:maxCount ;
+    sh:maxCount 1 ;
+    sh:datatype xsd:integer .
+
+<#order>
+    sh:name "Order"@en, "Volgorde"@nl ;
+    sh:order 23 ;
+    sh:group <#constraints> ;
+    sh:path sh:order ;
+    sh:maxCount 1 ;
+    # Any decimal in SHACL; data uses xsd:integer as often as xsd:decimal, so no sh:datatype.
+    sh:nodeKind sh:Literal .
+
+<#datatype>
+    sh:name "Datatype"@en, "Datatype"@nl ;
+    sh:order 24 ;
+    sh:group <#constraints> ;
+    sh:path sh:datatype ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI .
+
+<#class>
+    sh:name "Class"@en, "Klasse"@nl ;
+    sh:order 25 ;
+    sh:group <#constraints> ;
+    sh:path sh:class ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI .
+
+<#nodeKind>
+    sh:name "Node kind"@en, "Node kind"@nl ;
+    sh:order 26 ;
+    sh:group <#constraints> ;
+    sh:path sh:nodeKind ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    sh:in ( sh:IRI sh:BlankNode sh:Literal sh:BlankNodeOrIRI sh:BlankNodeOrLiteral sh:IRIOrLiteral ) .
+
+sh:IRI rdfs:label "IRI"@en, "IRI"@nl .
+sh:BlankNode rdfs:label "Blank node"@en, "Blanco node"@nl .
+sh:Literal rdfs:label "Literal"@en, "Literal"@nl .
+sh:BlankNodeOrIRI rdfs:label "Blank node or IRI"@en, "Blanco node of IRI"@nl .
+sh:BlankNodeOrLiteral rdfs:label "Blank node or literal"@en, "Blanco node of literal"@nl .
+sh:IRIOrLiteral rdfs:label "IRI or literal"@en, "IRI of literal"@nl .
+
+<#descriptive>
+    a sh:PropertyGroup ;
+    sh:name "Descriptive"@en, "Beschrijvend"@nl ;
+    sh:order 1 .
+
+<#ontology>
+    a sh:PropertyGroup ;
+    sh:name "Ontology"@en, "Ontologie"@nl ;
+    sh:order 2 .
+
+<#constraints>
+    a sh:PropertyGroup ;
+    sh:name "Constraints"@en, "Beperkingen"@nl ;
+    sh:order 3 .

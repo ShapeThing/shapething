@@ -28,7 +28,8 @@ export function orderedWidgetScores(
   scoringGraph: RdfStore,
   widgetPredicate: Term,
 ): Array<{ widgetScore: Term; widget: Term; score: number }> {
-  return scoringGraph.getQuads(null, widgetPredicate)
+  return scoringGraph
+    .getQuads(null, widgetPredicate)
     .filter((quad) => hasType(scoringGraph, quad.subject, shui("WidgetScore")))
     .map((quad) => {
       const widgetScore = quad.subject;
@@ -36,9 +37,7 @@ export function orderedWidgetScores(
       const score = scoreQuad ? parseFloat(scoreQuad.object.value) : NaN;
 
       if (isNaN(score)) {
-        throw new Error(
-          `Invalid Widget Score definition for ${widgetScore.value}`,
-        );
+        throw new Error(`Invalid Widget Score definition for ${widgetScore.value}`);
       }
 
       return { widgetScore, widget: quad.object, score };

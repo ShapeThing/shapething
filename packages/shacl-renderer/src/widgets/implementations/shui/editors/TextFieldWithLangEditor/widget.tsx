@@ -23,11 +23,7 @@ export default function TextFieldWithLangEditor({
   // createTerm ran, or pre-existing data that just never had one) - fall back to the active
   // content language, then to whatever this property's own sh:languageIn offers first, so typing
   // into the field never commits a languageless rdf:langString literal.
-  const language =
-    literalLanguage(term) ||
-    activeLanguage ||
-    languages[0]?.value ||
-    "";
+  const language = literalLanguage(term) || activeLanguage || languages[0]?.value || "";
 
   // Typing must keep the value tagged with its current language - only the language <select>
   // below changes which language a value is tagged with.

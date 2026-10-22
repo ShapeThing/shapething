@@ -67,8 +67,22 @@ test("children() builds distinct elements for a different focus node or ancestor
 
 test("a different widget registry yields its own elements, each carrying that registry", async () => {
   const { shapesGraph, dataGraph } = await setup();
-  const withDefault = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("alice"), undefined, defaultWidgets);
-  const withNone = childrenForShape(shapesGraph, dataGraph, ex("Person"), ex("alice"), undefined, NO_WIDGETS);
+  const withDefault = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Person"),
+    ex("alice"),
+    undefined,
+    defaultWidgets,
+  );
+  const withNone = childrenForShape(
+    shapesGraph,
+    dataGraph,
+    ex("Person"),
+    ex("alice"),
+    undefined,
+    NO_WIDGETS,
+  );
 
   expect(withNone).not.toBe(withDefault);
   expect(withNone.every((element) => element.widgetRegistry === NO_WIDGETS)).toBe(true);
@@ -83,7 +97,12 @@ test("memoized elements still read dataGraph live", async () => {
 
   const nameAfterWrite = byPath(node().children(), ex("name"));
   expect(nameAfterWrite).toBe(name);
-  expect(nameAfterWrite.getObjects().map((term) => term.value).sort()).toEqual(["Ali", "Alice"]);
+  expect(
+    nameAfterWrite
+      .getObjects()
+      .map((term) => term.value)
+      .sort(),
+  ).toEqual(["Ali", "Alice"]);
 });
 
 test("groupChildren() returns the same group tree for the same children array", async () => {
@@ -91,13 +110,17 @@ test("groupChildren() returns the same group tree for the same children array", 
   const children = node().children();
   const grouped = groupChildren(children, shapesGraph, dataGraph, ex("alice"), defaultWidgets);
 
-  expect(groupChildren(node().children(), shapesGraph, dataGraph, ex("alice"), defaultWidgets)).toBe(grouped);
+  expect(
+    groupChildren(node().children(), shapesGraph, dataGraph, ex("alice"), defaultWidgets),
+  ).toBe(grouped);
   expect(grouped.some((child) => child.kind === "group")).toBe(true);
 });
 
 test("ChoiceElement.children() returns the same branch arrays on every call", async () => {
   const { node } = await setup();
-  const choice = node().children().find((element): element is ChoiceElement => element.kind === "choice")!;
+  const choice = node()
+    .children()
+    .find((element): element is ChoiceElement => element.kind === "choice")!;
 
   expect(choice.children()).toBe(choice.children());
   expect(choice.children()[0][0]).toBe(choice.children()[0][0]);
@@ -144,7 +167,9 @@ test("widgetShapeSource() builds the merged shape once, including nested blank-n
   const [datatypeQuad] = merged.getQuads(shapeNode, sh("datatype"));
   // The list's own cells came along with the merged node, not just its head.
   const firstCell = merged.getQuads(datatypeQuad.object as Quad_Subject, rdf("first"));
-  expect(firstCell.map((quad) => quad.object.value)).toEqual(["http://www.w3.org/2001/XMLSchema#string"]);
+  expect(firstCell.map((quad) => quad.object.value)).toEqual([
+    "http://www.w3.org/2001/XMLSchema#string",
+  ]);
   const [rest] = merged.getQuads(datatypeQuad.object as Quad_Subject, rdf("rest"));
   expect(merged.getQuads(rest.object as Quad_Subject, rdf("first"))[0]?.object.value).toBe(
     rdf("langString").value,

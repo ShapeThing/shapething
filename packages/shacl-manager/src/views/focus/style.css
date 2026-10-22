@@ -1,0 +1,188 @@
+.st-manager-focus {
+  display: grid;
+  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  gap: var(--size-4);
+  align-items: start;
+}
+
+.st-manager-focus--panel {
+  grid-template-columns: minmax(14rem, 18rem) minmax(12rem, 20rem) minmax(0, 1.6fr);
+}
+
+@media (max-width: 900px) {
+  .st-manager-focus,
+  .st-manager-focus--panel {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.st-manager-trail {
+  position: sticky;
+  top: 0;
+}
+
+.st-manager-back {
+  text-decoration: none;
+  color: var(--st-primary-color) !important;
+}
+
+.st-manager-focus__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--size-3);
+  padding-bottom: var(--size-2);
+  border-bottom: 1px solid var(--st-color-border);
+}
+
+.st-manager-focus__header p {
+  margin: var(--size-1) 0 0;
+}
+
+.st-manager-property {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(8rem, 1.2fr) minmax(8rem, 1fr) 4rem minmax(6rem, 0.8fr);
+  gap: var(--size-2);
+  align-items: center;
+  padding: var(--size-1) var(--size-2);
+  border-radius: var(--radius-2);
+  text-decoration: none;
+}
+
+.st-manager-properties--compact .st-manager-property {
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+}
+
+.st-manager-property:hover {
+  background: var(--gray-1);
+}
+
+.st-manager-property--active {
+  background: var(--indigo-0);
+  font-weight: 600;
+}
+
+.st-manager-property__path,
+.st-manager-property__type,
+.st-manager-property__cardinality {
+  color: var(--st-color-text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.st-manager-kind {
+  text-align: center;
+  font-weight: 700;
+}
+
+.st-manager-kind--merged {
+  color: var(--green-7);
+}
+
+.st-manager-kind--split {
+  color: var(--orange-7);
+}
+
+.st-manager-kind--shape {
+  color: var(--st-primary-color);
+}
+
+.st-manager-kind--ontology {
+  color: var(--gray-6);
+}
+
+.st-manager-panel {
+  border-left: 1px solid var(--st-color-border);
+  padding-left: var(--size-4);
+  display: grid;
+  gap: var(--size-3);
+  min-width: 0;
+}
+
+.st-manager-panel__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.st-manager-panel__header .st-manager-heading {
+  margin: 0;
+  font-size: var(--font-size-2);
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--st-color-text);
+}
+
+.st-manager-facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: var(--size-1) var(--size-3);
+  margin: 0;
+}
+
+.st-manager-facts__row {
+  display: contents;
+}
+
+.st-manager-facts dt {
+  color: var(--st-color-text-muted);
+}
+
+.st-manager-facts dd {
+  margin: 0;
+  display: flex;
+  gap: var(--size-2);
+  align-items: center;
+}
+
+.st-manager-forms {
+  display: grid;
+  gap: var(--size-3);
+}
+
+.st-manager-card {
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+}
+
+.st-manager-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--size-2) var(--size-3);
+  border-bottom: 1px solid var(--st-color-border);
+  background: var(--gray-1);
+  font-weight: 600;
+}
+
+.st-manager-card__body {
+  padding: var(--size-3);
+}
+
+/* The focus columns are narrow: long shape names and IRIs wrap instead of overflowing. */
+.st-manager-trail .st-manager-chip {
+  white-space: normal;
+  max-width: 100%;
+}
+
+.st-manager-group-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--size-2);
+}
+
+.st-manager-group-heading__iri {
+  overflow-wrap: anywhere;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: normal;
+}
+
+.st-manager-group-heading a {
+  margin-left: auto;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--st-primary-color) !important;
+}

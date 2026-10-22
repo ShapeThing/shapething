@@ -1,5 +1,5 @@
-import type { BlankNode, Literal, NamedNode } from '@rdfjs/types'
+import type { BlankNode, Literal, NamedNode } from "@rdfjs/types";
 
 interface QueryResult {
-  o: NamedNode | BlankNode | Literal
+  o: NamedNode | BlankNode | Literal;
 }

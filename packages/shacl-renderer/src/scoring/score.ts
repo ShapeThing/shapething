@@ -1,12 +1,7 @@
 import type { NamedNode, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { shui } from "@/helpers/namespaces.ts";
-import {
-  allValid,
-  hasType,
-  objects,
-  orderedWidgetScores,
-} from "@/scoring/helpers.ts";
+import { allValid, hasType, objects, orderedWidgetScores } from "@/scoring/helpers.ts";
 
 type BaseProps = {
   // The node to validate in the instance data. Omit to score based on the shape alone.
@@ -31,12 +26,9 @@ type PublicInterfaceProps = BaseProps & {
 /**
  * Selects the best widget.
  */
-export async function select(
-  props: PublicInterfaceProps,
-): Promise<NamedNode | undefined> {
+export async function select(props: PublicInterfaceProps): Promise<NamedNode | undefined> {
   const { shapeNode, shapesGraph, widgetPredicate, scoringGraph } = props;
-  const hardWiredWidget = shapesGraph.getQuads(shapeNode, widgetPredicate)[0]
-    ?.object;
+  const hardWiredWidget = shapesGraph.getQuads(shapeNode, widgetPredicate)[0]?.object;
 
   if (hardWiredWidget) {
     const isAccepted = await accept({ ...props, widgetIRI: hardWiredWidget });
@@ -45,9 +37,7 @@ export async function select(
     }
   }
 
-  for (
-    const widgetScore of orderedWidgetScores(scoringGraph, widgetPredicate)
-  ) {
+  for (const widgetScore of orderedWidgetScores(scoringGraph, widgetPredicate)) {
     if (await applies(props, widgetScore)) {
       return widgetScore.widget as NamedNode;
     }
@@ -63,16 +53,12 @@ export type WidgetScoreResult = {
 /**
  *  Returns all applicable widgets scored.
  */
-export async function score(
-  props: PublicInterfaceProps,
-): Promise<Array<WidgetScoreResult>> {
+export async function score(props: PublicInterfaceProps): Promise<Array<WidgetScoreResult>> {
   const { scoringGraph, widgetPredicate } = props;
 
   const results: Array<WidgetScoreResult> = [];
 
-  for (
-    const widgetScore of orderedWidgetScores(scoringGraph, widgetPredicate)
-  ) {
+  for (const widgetScore of orderedWidgetScores(scoringGraph, widgetPredicate)) {
     if (await applies(props, widgetScore)) results.push(widgetScore);
   }
 
@@ -86,8 +72,10 @@ async function applies(
   props: PublicInterfaceProps,
   widgetScore: WidgetScoreResult,
 ): Promise<boolean> {
-  return await match({ ...props, matcherNode: widgetScore.widgetScore }) &&
-    await accept({ ...props, widgetIRI: widgetScore.widget });
+  return (
+    (await match({ ...props, matcherNode: widgetScore.widgetScore })) &&
+    (await accept({ ...props, widgetIRI: widgetScore.widget }))
+  );
 }
 
 type matchProps = BaseProps & {
@@ -103,22 +91,11 @@ async function match({
   scoringGraph,
   matcherNode,
 }: matchProps): Promise<boolean> {
-  const matcherDataGraphShapes = objects(
-    scoringGraph,
-    matcherNode,
-    shui("dataGraphShape"),
-  );
-  const matcherShapeGraphShapes = objects(
-    scoringGraph,
-    matcherNode,
-    shui("shapesGraphShape"),
-  );
+  const matcherDataGraphShapes = objects(scoringGraph, matcherNode, shui("dataGraphShape"));
+  const matcherShapeGraphShapes = objects(scoringGraph, matcherNode, shui("shapesGraphShape"));
 
   // Nothing to validate here.
-  if (
-    !focusNode && matcherDataGraphShapes.length &&
-    matcherShapeGraphShapes.length === 0
-  ) {
+  if (!focusNode && matcherDataGraphShapes.length && matcherShapeGraphShapes.length === 0) {
     return false;
   }
 
@@ -149,9 +126,7 @@ export async function accept(props: AcceptProps): Promise<boolean> {
   const { scoringGraph, widgetPredicate, widgetIRI } = props;
   const matcherQuad = scoringGraph
     .getQuads(null, widgetPredicate, widgetIRI)
-    .find((quad) =>
-      hasType(scoringGraph, quad.subject, shui("WidgetAcceptMatcher"))
-    );
+    .find((quad) => hasType(scoringGraph, quad.subject, shui("WidgetAcceptMatcher")));
 
   if (!matcherQuad) return true;
 

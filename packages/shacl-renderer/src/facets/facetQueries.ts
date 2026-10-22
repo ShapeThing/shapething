@@ -1,5 +1,9 @@
 import type { Bindings, Term } from "@rdfjs/types";
-import { COLOR_BUCKET_ORDER, sparqlFilterForBucket, type ColorBucket } from "@/helpers/colorBuckets.ts";
+import {
+  COLOR_BUCKET_ORDER,
+  sparqlFilterForBucket,
+  type ColorBucket,
+} from "@/helpers/colorBuckets.ts";
 import { queryPrefixes, st } from "@/helpers/namespaces.ts";
 import { selectBindings, type QueryOptions, type QuerySource } from "@/helpers/queryEngine.ts";
 import { termKey } from "@/helpers/termKey.ts";
@@ -147,7 +151,10 @@ export function parseKeyedCounts(bindings: Bindings[]): Map<string, number> {
 
 export type FacetQueryRunner = (query: string) => Promise<Bindings[]>;
 
-export function facetQueryRunner(source: QuerySource, options: QueryOptions = {}): FacetQueryRunner {
+export function facetQueryRunner(
+  source: QuerySource,
+  options: QueryOptions = {},
+): FacetQueryRunner {
   return (query) => {
     logFacetQuery(query);
     return selectBindings(query, source, options);
@@ -159,7 +166,9 @@ export function facetQueryRunner(source: QuerySource, options: QueryOptions = {}
 function logFacetQuery(query: string): void {
   const page = import.meta.env?.SPARQL_COPY_PAGE;
   if (!page) return;
-  console.info(`Facet query, click to copy: ${new URL(page, location.origin)}#${encodeURIComponent(query)}`);
+  console.info(
+    `Facet query, click to copy: ${new URL(page, location.origin)}#${encodeURIComponent(query)}`,
+  );
 }
 
 function countOf(term: Term | undefined): number {
@@ -227,6 +236,8 @@ export async function instancesMatchingFilterShape(
   if (filter === "") return candidates;
   const query = matchingInstancesQuery({ targets: "", filter }, candidates);
   logFacetQuery(query);
-  const matching = new Set(parseInstances(await selectBindings(query, source, queryOptions)).map(termKey));
+  const matching = new Set(
+    parseInstances(await selectBindings(query, source, queryOptions)).map(termKey),
+  );
   return candidates.filter((candidate) => matching.has(termKey(candidate)));
 }

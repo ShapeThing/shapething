@@ -6,7 +6,8 @@ import { minimalEnvironment } from "@/environment.ts";
 type Story = StoryObj<ShaclRendererProps>;
 
 export default {
-  title: "Specifications/SHACL UI 1.2/10. Built-in Widgets/10.2 Viewers/10.2.8 shui:LangStringViewer",
+  title:
+    "Specifications/SHACL UI 1.2/10. Built-in Widgets/10.2 Viewers/10.2.8 shui:LangStringViewer",
   component: ShaclRenderer,
   args: minimalEnvironment,
 };

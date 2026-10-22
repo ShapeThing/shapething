@@ -5,10 +5,12 @@ const MODES = ["edit", "view", "facet", "report"] as const;
 const LANGUAGE_MODES = ["switcher", "individual"] as const;
 const BCP47_PATTERN = /^[a-z]{2,3}(-[A-Z][a-z]{3})?(-([A-Z]{2}|\d{3}))?$/;
 
-const isNamedNode = (value: unknown): boolean =>
+const hasTermType = (value: unknown, ...termTypes: string[]): boolean =>
   typeof value === "object" &&
   value !== null &&
-  (value as { termType?: unknown }).termType === "NamedNode";
+  termTypes.includes((value as { termType?: unknown }).termType as string);
+
+const isNamedNode = (value: unknown): boolean => hasTermType(value, "NamedNode");
 
 // The last, non-removable step of runPreprocessors: whatever a custom chain did, this is the
 // actual guard that the result is usable, and the only place a RawEnvironment is asserted into
@@ -35,8 +37,10 @@ export const assertValidEnvironment = (environment: RawEnvironment): Environment
       errors.push("validationReport must resolve to an RdfStore in report mode");
     }
   } else if (environment.mode !== "facet") {
-    if (!isNamedNode(environment.focusNode)) {
-      errors.push(`focusNode must be a NamedNode, got ${JSON.stringify(environment.focusNode)}`);
+    if (!hasTermType(environment.focusNode, "NamedNode", "BlankNode")) {
+      errors.push(
+        `focusNode must be a NamedNode or BlankNode, got ${JSON.stringify(environment.focusNode)}`,
+      );
     }
 
     if (

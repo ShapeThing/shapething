@@ -22,15 +22,11 @@ export type ToSparqlOptions = {
  * so every `PropertyPath` has a valid, exact translation - nothing here
  * needs to throw.
  */
-export function toSparql(
-  path: PropertyPath,
-  options?: ToSparqlOptions,
-): string {
+export function toSparql(path: PropertyPath, options?: ToSparqlOptions): string {
   switch (path.type) {
     case "predicate":
       return options?.prefixed
-        ? prefixedIri(path.predicate, options.sourcePrefixes) ??
-          `<${path.predicate.value}>`
+        ? (prefixedIri(path.predicate, options.sourcePrefixes) ?? `<${path.predicate.value}>`)
         : `<${path.predicate.value}>`;
 
     case "sequence":

@@ -24,7 +24,7 @@ test("no segment to query", () => {
         }
         ?node_0 ?predicate_1 ?node_1.
         OPTIONAL { ?node_1 ?predicate_2 ?node_2. }
-    }}}`)
+    }}}`),
   );
 });
 
@@ -42,7 +42,7 @@ test("single path segment to query", () => {
         }
         ?node_0 ?predicate_1 ?node_1.
         OPTIONAL { ?node_1 ?predicate_2 ?node_2. }
-    }}}`)
+    }}}`),
   );
 });
 
@@ -62,7 +62,7 @@ test("single sequence path segment to query", () => {
         ?node_0 ?predicate_1 ?node_1.
         ?node_1 ?predicate_2 ?node_2.
         OPTIONAL { ?node_2 ?predicate_3 ?node_3. }
-    }}}`)
+    }}}`),
   );
 });
 
@@ -92,7 +92,7 @@ test("two unions query", () => {
         }
         ?node_0 ?predicate_1 ?node_1.
         OPTIONAL { ?node_1 ?predicate_2 ?node_2. }
-    }}}`)
+    }}}`),
   );
 });
 
@@ -136,7 +136,7 @@ test("oneOrMore query", () => {
         ?node_1 ?predicate_2 ?node_2.
         ?node_2 ?predicate_3 ?node_3.
         OPTIONAL { ?node_3 ?predicate_4 ?node_4. }
-    }}}`)
+    }}}`),
   );
 });
 
@@ -172,7 +172,7 @@ test("zeroOrOne path segment with isList toQueryPatterns", () => {
     }
   }
 }
-`)
+`),
   );
 });
 
@@ -200,17 +200,20 @@ test("zeroOrOne path segment with isList and other predicates before toQueryPatt
     }
   }
 }
-`)
+`),
   );
 });
 
 test("custom graph parameter", () => {
-  const query = generateQuery([
-    {
-      node_0: rf("resource"),
-      predicate_1: rf("predicateA"),
-    },
-  ], "http://example.org/custom-graph");
+  const query = generateQuery(
+    [
+      {
+        node_0: rf("resource"),
+        predicate_1: rf("predicateA"),
+      },
+    ],
+    "http://example.org/custom-graph",
+  );
   expect(normalize(query)).toEqual(
     normalize(`SELECT * WHERE { GRAPH <http://example.org/custom-graph> {{
         VALUES (?node_0 ?predicate_1) {
@@ -218,6 +221,6 @@ test("custom graph parameter", () => {
         }
         ?node_0 ?predicate_1 ?node_1.
         OPTIONAL { ?node_1 ?predicate_2 ?node_2. }
-    }}}`)
+    }}}`),
   );
 });

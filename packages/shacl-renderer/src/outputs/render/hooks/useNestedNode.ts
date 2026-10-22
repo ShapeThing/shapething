@@ -53,7 +53,10 @@ export function useNestedNode(
   const { nodeShapes, nested, dataGraph } = options;
   const focusKey = focusNode ? termKey(focusNode) : undefined;
   return useMemo(
-    () => (focusNode ? nestedNodeElement(shape, focusNode, { nodeShapes, nested, dataGraph }) : undefined),
+    () =>
+      focusNode
+        ? nestedNodeElement(shape, focusNode, { nodeShapes, nested, dataGraph })
+        : undefined,
     // focusNode is keyed by termKey: a parent re-render may hand over an equal-but-new term object.
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [shape, focusKey, nodeShapes, nested, dataGraph],

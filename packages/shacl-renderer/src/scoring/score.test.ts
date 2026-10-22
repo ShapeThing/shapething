@@ -873,7 +873,10 @@ async function selectBundledEditor(propertyShapeTurtle: string, valueTurtle: str
     ex:property ${propertyShapeTurtle} .`,
     "text/turtle",
   );
-  const dataGraph = await parseRdf(`${queryPrefixes}\nex:Alice ex:value ${valueTurtle} .`, "text/turtle");
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\nex:Alice ex:value ${valueTurtle} .`,
+    "text/turtle",
+  );
   const [valueQuad] = dataGraph.getQuads(ex("Alice"), ex("value"));
   return select({
     focusNode: valueQuad.object,
@@ -894,7 +897,10 @@ test("select() picks TextAreaEditor over TextFieldEditor (both 30) for a sh:sing
 });
 
 test("select() still picks TextFieldEditor for a plain string with no sh:singleLine false", async () => {
-  const result = await selectBundledEditor(`sh:path ex:value ; sh:datatype xsd:string`, `"Some text"`);
+  const result = await selectBundledEditor(
+    `sh:path ex:value ; sh:datatype xsd:string`,
+    `"Some text"`,
+  );
   expect(result?.value).toBe(shui("TextFieldEditor").value);
 });
 

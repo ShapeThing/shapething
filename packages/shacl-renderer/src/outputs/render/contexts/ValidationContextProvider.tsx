@@ -145,7 +145,5 @@ export default function ValidationContextProvider({ children, latestResultsRef }
     };
   }, [shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl, store]);
 
-  return (
-    <validationContext.Provider value={store}>{children}</validationContext.Provider>
-  );
+  return <validationContext.Provider value={store}>{children}</validationContext.Provider>;
 }

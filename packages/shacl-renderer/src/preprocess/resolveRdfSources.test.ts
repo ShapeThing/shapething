@@ -278,49 +278,41 @@ test("the same import reached from multiple sources is only fetched once", async
   expect(fetchCalls.filter((href) => href === "http://example.org/shared.ttl").length).toBe(1);
 });
 
-test(
-  "a 404 owl:imports URL is remembered in localStorage and skipped on a later resolve",
-  async () => {
-    stubLocalStorage();
-    fixtures["http://example.org/a.ttl"] = `
+test("a 404 owl:imports URL is remembered in localStorage and skipped on a later resolve", async () => {
+  stubLocalStorage();
+  fixtures["http://example.org/a.ttl"] = `
       @prefix owl: <http://www.w3.org/2002/07/owl#> .
       @prefix ex: <http://example.org/> .
       ex:a owl:imports <http://example.org/dead-404.ttl> .
       ex:a ex:name "A" .
     `;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (url: URL) => {
-        fetchCalls.push(url.href);
-        const text = fixtures[url.href];
-        if (text !== undefined) return new Response(text, { status: 200 });
-        return new Response("Not Found", { status: 404, statusText: "Not Found" });
-      }),
-    );
-    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async (url: URL) => {
+      fetchCalls.push(url.href);
+      const text = fixtures[url.href];
+      if (text !== undefined) return new Response(text, { status: 200 });
+      return new Response("Not Found", { status: 404, statusText: "Not Found" });
+    }),
+  );
+  const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-    await resolveRdfSources(
-      rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }),
-    );
+  await resolveRdfSources(rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }));
 
-    expect(isKnownNotFound("http://example.org/dead-404.ttl")).toBe(true);
-    const fetchesAfterFirstResolve = fetchCalls.filter(
-      (href) => href === "http://example.org/dead-404.ttl",
-    ).length;
-    expect(fetchesAfterFirstResolve).toBeGreaterThan(0);
+  expect(isKnownNotFound("http://example.org/dead-404.ttl")).toBe(true);
+  const fetchesAfterFirstResolve = fetchCalls.filter(
+    (href) => href === "http://example.org/dead-404.ttl",
+  ).length;
+  expect(fetchesAfterFirstResolve).toBeGreaterThan(0);
 
-    await resolveRdfSources(
-      rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }),
-    );
+  await resolveRdfSources(rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }));
 
-    expect(
-      fetchCalls.filter((href) => href === "http://example.org/dead-404.ttl").length,
-    ).toBe(fetchesAfterFirstResolve);
+  expect(fetchCalls.filter((href) => href === "http://example.org/dead-404.ttl").length).toBe(
+    fetchesAfterFirstResolve,
+  );
 
-    warnSpy.mockRestore();
-  },
-  10000,
-);
+  warnSpy.mockRestore();
+}, 10000);
 
 test("a cross-origin owl:imports URL with a proxy configured skips the direct attempt entirely", async () => {
   vi.stubGlobal("location", { origin: "http://example.org" });
@@ -434,9 +426,7 @@ test("a non-404 fetch failure is not remembered as a 404", async () => {
   // beforeEach fetch stub throws a plain network error for it, not an HTTP 404 response.
   const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
 
-  await resolveRdfSources(
-    rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }),
-  );
+  await resolveRdfSources(rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl") }));
 
   expect(isKnownNotFound("http://example.org/dead.ttl")).toBe(false);
 
