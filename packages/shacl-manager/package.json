@@ -18,7 +18,7 @@
     "test": "vp test",
     "check": "vp check",
     "prepublishOnly": "vp run build",
-    "storybook": "storybook dev -p 6008",
+    "storybook": "node .storybook/dev.mjs",
     "build-storybook": "storybook build"
   },
   "dependencies": {

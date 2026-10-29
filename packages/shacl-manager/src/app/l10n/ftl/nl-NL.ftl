@@ -15,6 +15,8 @@ shacl-manager-imported = import
 ## Focus view
 shacl-manager-overview = Overzicht
 shacl-manager-hierarchy = Hiërarchie
+shacl-manager-resize-sidebar = Zijbalk vergroten of verkleinen
+shacl-manager-resize-panel = Paneel vergroten of verkleinen
 shacl-manager-subclasses = Subklassen
 shacl-manager-via-node = Ook via sh:node
 shacl-manager-edit = Bewerken

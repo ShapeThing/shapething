@@ -1,5 +1,6 @@
 import { Link, Navigate, useNavigate, useSearch } from "@tanstack/react-router";
 import type { NamedNode } from "@rdfjs/types";
+import type { CSSProperties } from "react";
 import { useT } from "@/app/useT.ts";
 import type { FocusSearch } from "@/app/router.tsx";
 import { useDataModel } from "@/data-model/useDataModel.ts";
@@ -14,6 +15,8 @@ import { useAlignedProperties } from "@/alignment/useAlignedProperties.ts";
 import AncestorTrail from "./AncestorTrail.tsx";
 import PropertyPanel from "./PropertyPanel.tsx";
 import PropertyTable from "./PropertyTable.tsx";
+import ColumnResizer from "./ColumnResizer.tsx";
+import { PANEL_BOUNDS, SIDEBAR_BOUNDS, useResizableWidth } from "./useResizableWidth.ts";
 import "./style.css";
 
 export default function FocusView({
@@ -30,6 +33,8 @@ export default function FocusView({
   const shapes = useShapes();
   const search = useSearch({ strict: false }) as FocusSearch;
   const navigate = useNavigate();
+  const [sidebarWidth, resizeSidebar] = useResizableWidth("sidebar", SIDEBAR_BOUNDS);
+  const [panelWidth, resizePanel] = useResizableWidth("panel", PANEL_BOUNDS);
 
   const shape = kind === "shape" ? shapes.nodeShapes.get(focusKey) : undefined;
   const owlClass = kind === "class" ? classes.get(focusKey)?.term : undefined;
@@ -91,12 +96,29 @@ export default function FocusView({
       | undefined);
 
   return (
-    <div className={`st-manager-focus${panelOpen ? " st-manager-focus--panel" : ""}`}>
-      <AncestorTrail
-        focusClasses={focusClasses}
-        shapeSelection={{ hidden, toggle: toggleShape }}
-        nodeShapes={shape ? (shapes.nodeReferences.get(shape.key) ?? []) : []}
-      />
+    <div
+      className={`st-manager-focus${panelOpen ? " st-manager-focus--panel" : ""}`}
+      style={
+        {
+          "--st-manager-sidebar-width": `${sidebarWidth}px`,
+          "--st-manager-panel-width": `${panelWidth}px`,
+        } as CSSProperties
+      }
+    >
+      <div className="st-manager-sidebar">
+        <AncestorTrail
+          focusClasses={focusClasses}
+          shapeSelection={{ hidden, toggle: toggleShape }}
+          nodeShapes={shape ? (shapes.nodeReferences.get(shape.key) ?? []) : []}
+        />
+        <ColumnResizer
+          width={sidebarWidth}
+          resize={resizeSidebar}
+          bounds={SIDEBAR_BOUNDS}
+          edge="right"
+          label={t("shacl-manager-resize-sidebar", null, "Resize sidebar")}
+        />
+      </div>
 
       <section className="st-manager-focus__main">
         <header className="st-manager-focus__header">
@@ -148,18 +170,29 @@ export default function FocusView({
         <PropertyTable rows={rows} selected={selected?.key} compact={panelOpen} />
       </section>
 
-      {editShape && (
-        <aside className="st-manager-panel">
-          <NodeShapeForm key={termKey(editShape)} shape={editShape} />
-        </aside>
-      )}
-      {editClass && (
-        <aside className="st-manager-panel">
-          <ClassForm key={editClass.value} owlClass={editClass} />
-        </aside>
-      )}
-      {!editShape && !editClass && selected && (
-        <PropertyPanel row={selected} focusShape={addTarget} />
+      {panelOpen && (
+        <div className="st-manager-panel-column">
+          <ColumnResizer
+            width={panelWidth}
+            resize={resizePanel}
+            bounds={PANEL_BOUNDS}
+            edge="left"
+            label={t("shacl-manager-resize-panel", null, "Resize panel")}
+          />
+          {editShape && (
+            <aside className="st-manager-panel">
+              <NodeShapeForm key={termKey(editShape)} shape={editShape} />
+            </aside>
+          )}
+          {editClass && (
+            <aside className="st-manager-panel">
+              <ClassForm key={editClass.value} owlClass={editClass} />
+            </aside>
+          )}
+          {!editShape && !editClass && selected && (
+            <PropertyPanel row={selected} focusShape={addTarget} />
+          )}
+        </div>
       )}
     </div>
   );

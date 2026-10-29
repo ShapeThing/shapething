@@ -19,7 +19,9 @@ import {
 } from "@/structure/paths/parsePropertyPath.ts";
 import { clearPropertyPath, writePropertyPath } from "@/structure/paths/writePropertyPath.ts";
 import { transact } from "@/helpers/reactiveRdfStore.ts";
-import { PrefixedIri } from "@/helpers/prefixedIri.tsx";
+import { PrefixedIri, prefixedIri } from "@/helpers/prefixedIri.tsx";
+import { localName } from "@/helpers/localName.ts";
+import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { factory } from "@/helpers/factory.ts";
 import {
   canSwitchTo,
@@ -357,9 +359,22 @@ function PredicatePath(props: PathProps<Extract<PropertyPath, { type: "predicate
   const { path } = props;
   const handles = useNodeHandles(props);
   const dropTarget = useDropTarget(props.location);
+  const { sourcePrefixes } = useEnvironment();
+  // Without a known prefix for its namespace, the local name (full IRI on hover) rather than an
+  // empty chip.
   return (
-    <div className="st-predicate-path st-path-segment" tabIndex={0} {...handles} {...dropTarget}>
-      <PrefixedIri term={path.predicate} />
+    <div
+      className="st-predicate-path st-path-segment"
+      tabIndex={0}
+      title={path.predicate.value}
+      {...handles}
+      {...dropTarget}
+    >
+      {prefixedIri(path.predicate, sourcePrefixes) ? (
+        <PrefixedIri term={path.predicate} sourcePrefixes={sourcePrefixes} />
+      ) : (
+        localName(path.predicate) || path.predicate.value
+      )}
     </div>
   );
 }

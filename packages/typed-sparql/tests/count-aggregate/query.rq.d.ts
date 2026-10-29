@@ -1,5 +1,5 @@
-import type { Literal } from "@rdfjs/types";
+import type { Literal } from '@rdfjs/types'
 
 interface QueryResult {
-  n: Literal;
+  n: Literal
 }

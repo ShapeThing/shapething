@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { BlankNode, Literal, NamedNode } from "@rdfjs/types";
-import type { Prettify, TypedQuery } from "@shapething/typed-sparql";
+import type { BlankNode, Literal, NamedNode } from '@rdfjs/types'
+import type { Prettify, TypedQuery } from '@shapething/typed-sparql'
 
 interface QueryResult {
-  importedGraph: NamedNode | BlankNode | Literal;
+  importedGraph: NamedNode | BlankNode | Literal
 }
 
-declare const _default: TypedQuery<Prettify<QueryResult>>;
-export default _default;
+declare const _default: TypedQuery<Prettify<QueryResult>>
+export default _default

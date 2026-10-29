@@ -1,12 +1,14 @@
 .st-manager-focus {
   display: grid;
-  grid-template-columns: minmax(14rem, 18rem) minmax(0, 1fr);
+  grid-template-columns: var(--st-manager-sidebar-width, 16rem) minmax(0, 1fr);
   gap: var(--size-4);
   align-items: start;
 }
 
 .st-manager-focus--panel {
-  grid-template-columns: minmax(14rem, 18rem) minmax(12rem, 20rem) minmax(0, 1.6fr);
+  grid-template-columns:
+    var(--st-manager-sidebar-width, 16rem) minmax(12rem, 1fr)
+    var(--st-manager-panel-width, 35rem);
 }
 
 @media (max-width: 900px) {
@@ -14,11 +16,64 @@
   .st-manager-focus--panel {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .st-manager-resizer {
+    display: none;
+  }
 }
 
-.st-manager-trail {
+.st-manager-sidebar,
+.st-manager-panel-column {
   position: sticky;
   top: 0;
+  min-width: 0;
+  min-height: 100vh;
+}
+
+/* Clip the content rather than the columns themselves, so the resizers in the gaps stay visible. */
+.st-manager-trail,
+.st-manager-panel {
+  overflow: hidden;
+}
+
+/* Sits in the grid gap next to its column; the line shows on hover, drag and focus. */
+.st-manager-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 9px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.st-manager-resizer--right {
+  right: calc(var(--size-4) / -2 - 4px);
+}
+
+.st-manager-resizer--left {
+  left: calc(var(--size-4) / -2 - 4px);
+}
+
+.st-manager-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 1px;
+  background: transparent;
+  transition: background 0.15s;
+}
+
+.st-manager-resizer:hover::after,
+.st-manager-resizer:active::after,
+.st-manager-resizer:focus-visible::after {
+  background: var(--st-primary-color);
+  width: 2px;
+}
+
+.st-manager-resizer:focus-visible {
+  outline: none;
 }
 
 .st-manager-back {
