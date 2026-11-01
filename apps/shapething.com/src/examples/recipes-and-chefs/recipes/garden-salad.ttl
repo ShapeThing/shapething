@@ -1,0 +1,34 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+<> a schema:Recipe ;
+  schema:name "Chez Panisse Garden Salad"@en, "Chez Panisse tuinsalade"@nl ;
+  ex:cuisine ex:CalifornianFarmToTable ;
+  schema:description "Alice Waters' simple, seasonal salad of just-picked young lettuces dressed with a light shallot vinaigrette."@en, "Alice Waters' eenvoudige, seizoensgebonden salade van vers geplukte jonge slasoorten met een lichte sjalotvinaigrette."@nl ;
+  schema:author <../chefs/alice-waters> ;
+  schema:recipeCategory ex:Starter ;
+  schema:prepTime "PT15M"^^xsd:duration ;
+  schema:cookTime "PT0M"^^xsd:duration ;
+  schema:recipeYield 4 ;
+  schema:recipeIngredient ([
+    schema:name "Mixed young lettuces"@en, "Gemengde jonge slasoorten"@nl
+  ] [
+    schema:name "Edible flowers"@en, "Eetbare bloemen"@nl
+  ] [
+    schema:name "Shallot, finely minced"@en, "Sjalot, fijngesneden"@nl ;
+    schema:value 1
+  ] [
+    schema:name "Red wine vinegar"@en, "Rodewijnazijn"@nl ;
+    schema:value 1 ;
+    schema:unitCode unit:TBSP
+  ] [
+    schema:name "Extra virgin olive oil"@en, "Extra vergine olijfolie"@nl ;
+    schema:value 3 ;
+    schema:unitCode unit:TBSP
+  ] [
+    schema:name "Salt and pepper, to taste"@en, "Zout en peper, naar smaak"@nl
+  ]) ;
+  schema:recipeInstructions "Wash and dry the lettuces gently, keeping the leaves whole. Whisk the minced shallot with red wine vinegar, then slowly whisk in the olive oil to make a simple vinaigrette. Season the leaves lightly with salt, dress them just before serving, and scatter with edible flowers."@en, "Was en droog de slasoorten voorzichtig en houd de blaadjes heel. Klop de fijngesneden sjalot met de rodewijnazijn en klop er geleidelijk de olijfolie doorheen tot een eenvoudige vinaigrette. Breng de blaadjes licht op smaak met zout, dresseer ze vlak voor het serveren en bestrooi met eetbare bloemen."@nl .

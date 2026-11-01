@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { BlankNode, Literal, NamedNode } from '@rdfjs/types'
+import type { NamedNode } from '@rdfjs/types'
 import type { Prettify, TypedQuery } from '@shapething/typed-sparql'
 
 interface QueryResult {
-  property: NamedNode | BlankNode
+  property: NamedNode
   type: NamedNode
-  domain?: NamedNode | BlankNode | Literal
-  range?: NamedNode | BlankNode | Literal
+  domain?: NamedNode
+  range?: NamedNode
 }
 
 declare const _default: TypedQuery<Prettify<QueryResult>>

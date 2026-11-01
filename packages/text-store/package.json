@@ -1,6 +1,6 @@
 {
   "name": "@shapething/textstore",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -32,7 +32,8 @@
     "@rdfjs/data-model": "^2.1.0",
     "@rdfjs/namespace": "^2.0.1",
     "flexsearch": "^0.8.158",
-    "n3": "^1.26.0"
+    "n3": "^2.13.12",
+    "readable-stream": "^4.7.0"
   },
   "devDependencies": {
     "@comunica/query-sparql": "^5.4.1",

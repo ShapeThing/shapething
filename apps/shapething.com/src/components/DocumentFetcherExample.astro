@@ -1,0 +1,97 @@
+---
+type Props = {
+    /** Turtle with the shape to fetch with, it is shown above the document. */
+    shape?: string
+    /** The IRI of the node shape in the Turtle. */
+    shapeIri?: string
+    /** Only list resources of this type. */
+    type?: string
+}
+
+const { shape, shapeIri, type } = Astro.props
+---
+
+<div class="document-fetcher-example" data-shape={shape} data-shape-iri={shapeIri} data-type={type}>
+    <label class="renderer-example__picker">
+        <span data-part="select-label">Resource</span>
+        <select data-part="select"></select>
+    </label>
+    <div class="pane">
+        {
+            shape && (
+                <>
+                    <span class="pane-label">shape</span>
+                    <div data-part="shape" />
+                </>
+            )
+        }
+        <span class="pane-label" data-part="document-label">document</span>
+        <div data-part="document"></div>
+        <details>
+            <summary class="pane-label" data-part="queries-label">queries</summary>
+            <div data-part="queries"></div>
+        </details>
+    </div>
+</div>
+
+<script>
+    for (const example of document.querySelectorAll<HTMLElement>('.document-fetcher-example')) {
+        const part = (name: string) => example.querySelector<HTMLElement>(`[data-part="${name}"]`)!
+        const { shape, shapeIri, type } = example.dataset
+
+        const observer = new IntersectionObserver(
+            async (entries) => {
+                if (!entries.some((entry) => entry.isIntersecting)) return
+                observer.disconnect()
+                const { mountDocumentFetcher } = await import('../examples/documentFetcher')
+                mountDocumentFetcher(
+                    {
+                        select: part('select') as HTMLSelectElement,
+                        selectLabel: part('select-label'),
+                        document: part('document'),
+                        documentLabel: part('document-label'),
+                        queries: part('queries'),
+                        queriesLabel: part('queries-label'),
+                        shape: example.querySelector<HTMLElement>('[data-part="shape"]') ?? undefined
+                    },
+                    {
+                        ...(shape && shapeIri ? { shape: { turtle: shape, iri: shapeIri } } : {}),
+                        ...(type ? { type } : {})
+                    }
+                )
+            },
+            { rootMargin: '400px' }
+        )
+
+        observer.observe(example)
+    }
+</script>
+
+<style>
+    .document-fetcher-example {
+        font-size: 15px;
+    }
+
+    .pane {
+        min-width: 0;
+        border: 1px solid var(--blue-lightest);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    .pane-label {
+        display: block;
+        padding: 0.3em 0.8em;
+        background: var(--blue-lightest);
+        font-family: monospace;
+        font-size: 13px;
+    }
+
+    summary.pane-label {
+        cursor: pointer;
+    }
+
+    [data-part='document'] {
+        min-height: 16em;
+    }
+</style>

@@ -99,7 +99,8 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 //  - sh:datatype present -> a literal of that datatype (or the matching alternative, if sh:datatype
 //    is a SHACL 1.2 list of alternatives).
 //  - otherwise, a string value is a NamedNode (IRI reference) when the shape is resource-shaped
-//    (sh:class or sh:node present); anything else falls back to a plain xsd:string literal.
+//    (sh:class, sh:node or sh:rootClass present, or sh:nodeKind sh:IRI); anything else falls back
+//    to a plain xsd:string literal.
 function jsValueToPropertyTerm(
   property: PropertyUIElement,
   value: unknown,
@@ -143,7 +144,9 @@ function jsValueToPropertyTerm(
   if (typeof value === "string") {
     const isResourceValued =
       (property.get(sh("class")) as Term[]).length > 0 ||
-      (property.get(sh("node")) as Term[]).length > 0;
+      (property.get(sh("node")) as Term[]).length > 0 ||
+      (property.get(sh("rootClass")) as Term[]).length > 0 ||
+      (property.get(sh("nodeKind")) as Term[]).some((nodeKind) => nodeKind.equals(sh("IRI")));
     if (isResourceValued) return factory.namedNode(value);
   }
 

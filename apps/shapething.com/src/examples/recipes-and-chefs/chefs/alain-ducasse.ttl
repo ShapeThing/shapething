@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Alain Ducasse"@en, "Alain Ducasse"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/e/e3/Alain_Ducasse.jpg> ;
+  schema:nationality "French"@en, "Frans"@nl ;
+  ex:cuisine ex:French ;
+  ex:michelinStars 3 ;
+  schema:worksFor "Alain Ducasse au Plaza Athénée, Paris"@en, "Alain Ducasse au Plaza Athénée, Parijs"@nl ;
+  schema:description "French chef and restaurateur presiding over a global empire of Michelin-starred restaurants, known for a refined, ingredient-focused style he calls \"naturalité\"."@en, "Franse chef-kok en restaurateur aan het hoofd van een wereldwijd imperium van Michelinsterrenrestaurants, bekend om zijn verfijnde, ingrediëntgerichte stijl die hij 'naturalité' noemt."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Alain_Ducasse> .

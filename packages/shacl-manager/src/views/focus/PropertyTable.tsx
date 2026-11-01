@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import type { Term } from "@rdfjs/types";
 import { useT } from "@/app/useT.ts";
+import { useDataModel } from "@/data-model/useDataModel.ts";
 import { useLabels } from "@/data-model/useLabels.ts";
 import { compactIri, termKey } from "@/helpers/iri.ts";
 import {
@@ -114,13 +115,9 @@ export default function PropertyTable({
                   </span>
                   <span className="st-manager-property__label">{label(row)}</span>
                   {!compact && (
-                    <>
-                      <code className="st-manager-property__path">
-                        {row.path?.text ?? compactIri(row.owlProperties[0]?.iri ?? "")}
-                      </code>
-                      <span className="st-manager-property__cardinality">{cardinality(row)}</span>
-                      <span className="st-manager-property__type">{valueType(row)}</span>
-                    </>
+                    <code className="st-manager-property__path">
+                      {row.path?.text ?? compactIri(row.owlProperties[0]?.iri ?? "")}
+                    </code>
                   )}
                 </Link>
               </li>
@@ -132,24 +129,11 @@ export default function PropertyTable({
   );
 }
 
-function cardinality(row: AlignedProperty) {
-  if (!row.propertyShape) return "";
-  const { minCount, maxCount } = row.propertyShape;
-  return `${minCount ?? 0}..${maxCount ?? "*"}`;
-}
-
-function valueType(row: AlignedProperty) {
-  const shape = row.propertyShape;
-  if (shape?.datatype) return compactIri(shape.datatype.value);
-  if (shape?.class) return `→ ${compactIri(shape.class.value)}`;
-  const range = row.owlProperties[0]?.ranges.values().next().value;
-  return range ? compactIri(range) : "";
-}
-
 // Several shapes on one class often share a label (e.g. DCAT-AP EU and NL "Dataset"), so a shape's
 // group shows its IRI, plus a way to open that shape's form.
 function ShapeHeadingActions({ shape }: { shape: Term }) {
   const t = useT();
+  const { isEditable } = useDataModel();
   return (
     <>
       <code className="st-manager-group-heading__iri">{shape.value}</code>
@@ -161,7 +145,9 @@ function ShapeHeadingActions({ shape }: { shape: Term }) {
           edit: termKey(shape),
         })}
       >
-        {t("shacl-manager-edit", null, "Edit")} ✎
+        {isEditable(shape)
+          ? `${t("shacl-manager-edit", null, "Edit")} ✎`
+          : t("shacl-manager-view", null, "View")}
       </Link>
     </>
   );

@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Dominique Crenn"@en, "Dominique Crenn"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/5/51/Dominique_Crenn_2013.jpg> ;
+  schema:nationality "French-American"@en, "Frans-Amerikaans"@nl ;
+  ex:cuisine ex:ModernAmerican ;
+  ex:michelinStars 3 ;
+  schema:worksFor "Atelier Crenn, San Francisco"@en, "Atelier Crenn, San Francisco"@nl ;
+  schema:description "French-born chef and owner of Atelier Crenn in San Francisco, the first woman in the United States to lead a restaurant to three Michelin stars, known for her poetic, garden-inspired menus."@en, "In Frankrijk geboren chef-kok en eigenaar van Atelier Crenn in San Francisco, de eerste vrouw in de Verenigde Staten die een restaurant naar drie Michelinsterren leidde, bekend om haar poëtische, door de tuin geïnspireerde menu's."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Dominique_Crenn> .

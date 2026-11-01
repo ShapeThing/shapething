@@ -1,0 +1,9 @@
+@prefix schema: <http://schema.org/> .
+@prefix : <https://example.org/> .
+
+:recipe schema:name "Sticky Toffee Pudding" ;
+  schema:recipeIngredient (
+    [ schema:name "Dates" ; schema:value 200 ]
+    [ schema:name "Butter" ; schema:value 50 ]
+    [ schema:name "Eggs" ; schema:value 2 ]
+  ) .

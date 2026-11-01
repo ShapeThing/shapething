@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Alice Waters"@en, "Alice Waters"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Alice_Waters_2014_%28cropped%29.jpg/960px-Alice_Waters_2014_%28cropped%29.jpg> ;
+  schema:nationality "American"@en, "Amerikaans"@nl ;
+  ex:cuisine ex:CalifornianFarmToTable ;
+  schema:worksFor "Chez Panisse, Berkeley"@en, "Chez Panisse, Berkeley"@nl ;
+  schema:description "American chef and founder of Chez Panisse in Berkeley, California, credited with pioneering the farm-to-table movement."@en, "Amerikaanse chef-kok en oprichter van Chez Panisse in Berkeley, Californië, geldt als pionier van de farm-to-table-beweging."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Alice_Waters> .

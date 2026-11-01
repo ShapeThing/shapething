@@ -1,0 +1,90 @@
+/* Adapted from packages/shacl-renderer/src/stories/showcases/recipes-and-chefs.css, scoped to the example. */
+.recipes-render {
+  --st-primary-color: var(--blue-dark);
+  --st-secondary-color: #eef4ff;
+  margin-top: 3rem;
+}
+
+.recipes-render.st-view-mode,
+.recipes-render.st-edit-mode {
+  display: grid;
+  gap: 0 2rem;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+    "main"
+    "meta"
+    "actions";
+}
+
+@media (min-width: 900px) {
+  .recipes-render.st-view-mode,
+  .recipes-render.st-edit-mode {
+    grid-template-columns: 1fr 300px;
+    grid-template-areas:
+      "main meta"
+      "actions meta";
+  }
+}
+
+.recipes-render .st-header {
+  grid-area: ui;
+  flex-direction: column;
+  background-color: var(--st-secondary-color);
+  border-radius: var(--radius-2);
+  padding: 1rem;
+
+  & > * {
+    flex: 0 0 auto !important;
+  }
+}
+
+.recipes-render .st-property-group__legend {
+  display: none;
+}
+
+.recipes-render [data-iri="http://example.org/mainGroup"] {
+  grid-area: main;
+}
+
+.recipes-render [data-iri="http://example.org/metaGroup"] {
+  margin-bottom: auto;
+  grid-area: meta;
+  background-color: var(--st-secondary-color);
+  border-radius: var(--radius-2);
+
+  .react-duration-control-fieldset,
+  .st-button {
+    background-color: white;
+  }
+}
+
+.recipes-render .st-edit-mode--actions {
+  grid-area: actions;
+}
+
+.recipes-render [data-iri="http://example.org/mainGroup"] {
+  & > .st-property-group__body {
+    padding: 0;
+    border-left: none;
+  }
+}
+
+.recipes-render [data-iri="http://example.org/metaGroup"] {
+  & > .st-property-group__body {
+    padding: 1rem;
+    border-left: none;
+  }
+}
+
+.recipes-render .st-iri-editor__preview-image {
+  max-height: 200px;
+}
+
+/* Chef photos in the viewing example stay small, keeping their aspect ratio. */
+.chef-render img {
+  max-width: 100px;
+  max-height: 100px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+}

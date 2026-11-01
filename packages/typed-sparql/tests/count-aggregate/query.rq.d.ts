@@ -1,5 +1,6 @@
-import type { Literal } from '@rdfjs/types'
+import type { Literal, NamedNode } from '@rdfjs/types'
+import type { LiteralWithDatatype } from '@shapething/typed-sparql'
 
 interface QueryResult {
-  n: Literal
+  n: LiteralWithDatatype<'xsd:integer'>
 }

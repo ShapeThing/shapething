@@ -1,0 +1,22 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX schema: <http://schema.org/>
+
+SELECT ?recipe ?name ?chefName ?servings ?description (COUNT(?ingredient) AS ?ingredients) WHERE {
+  ?recipe a schema:Recipe ;
+    schema:name ?name ;
+    schema:recipeIngredient/rdf:rest*/rdf:first ?ingredient .
+  FILTER(LANG(?name) = "en")
+  OPTIONAL {
+    ?recipe schema:author/schema:name ?chefName .
+    FILTER("EN" = lang(?chefName))
+  }
+  OPTIONAL {
+    ?recipe schema:recipeYield ?servings .
+    FILTER(isNumeric(?servings))
+  }
+  OPTIONAL {
+    ?recipe schema:description ?description .
+    FILTER(langMatches(LANG(?description), "en"))
+  }
+}
+GROUP BY ?recipe ?name ?chefName ?servings ?description

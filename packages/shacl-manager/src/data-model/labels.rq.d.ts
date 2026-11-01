@@ -5,7 +5,7 @@ import type { Prettify, TypedQuery } from '@shapething/typed-sparql'
 interface QueryResult {
   subject: NamedNode | BlankNode
   predicate: NamedNode | BlankNode | Literal
-  label: NamedNode | BlankNode | Literal
+  label: Literal
 }
 
 declare const _default: TypedQuery<Prettify<QueryResult>>

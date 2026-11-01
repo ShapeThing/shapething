@@ -1,0 +1,12 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Gaggan Anand"@en, "Gaggan Anand"@nl ;
+  schema:nationality "Indian"@en, "Indiaas"@nl ;
+  ex:cuisine ex:Indian ;
+  ex:michelinStars 2 ;
+  schema:worksFor "Gaggan, Bangkok"@en, "Gaggan, Bangkok"@nl ;
+  schema:description "Indian chef and owner of Gaggan in Bangkok, known for a playful, boundary-pushing progressive Indian cuisine served as a surprise tasting menu."@en, "Indiase chef-kok en eigenaar van Gaggan in Bangkok, bekend om zijn speelse, grensverleggende progressieve Indiase keuken, geserveerd als verrassingsmenu."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Gaggan_Anand> .

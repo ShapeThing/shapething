@@ -375,3 +375,29 @@ test("jsToRdf - round-trips through rdfToJs for a nested-object shape", async ()
 
   expect(result).toEqual(data);
 });
+
+test("jsToRdf - writes a string as an IRI for sh:nodeKind sh:IRI and sh:rootClass", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+
+        ex:Chef a sh:NodeShape ;
+            sh:property [ sh:path ex:image ; sh:nodeKind sh:IRI ; sh:maxCount 1 ] ;
+            sh:property [ sh:path ex:cuisine ; sh:rootClass ex:Cuisine ; sh:maxCount 1 ] .
+    `,
+    "text/turtle",
+  );
+
+  const dataGraph = jsToRdf({
+    shapesGraph,
+    focusNode: ex("chef1"),
+    nodeShapes: [ex("Chef")],
+    data: { image: "https://example.org/chef.jpg", cuisine: ex("French").value },
+  });
+
+  const [image] = dataGraph.getQuads(ex("chef1"), ex("image"));
+  const [cuisine] = dataGraph.getQuads(ex("chef1"), ex("cuisine"));
+  expect(image.object.termType).toEqual("NamedNode");
+  expect(cuisine.object).toEqual(ex("French"));
+});

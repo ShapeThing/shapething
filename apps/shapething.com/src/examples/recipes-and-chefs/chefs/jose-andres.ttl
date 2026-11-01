@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "José Andrés"@en, "José Andrés"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/b/b4/Jose_Andres_Puerta_2012_Shankbone.JPG> ;
+  schema:nationality "Spanish-American"@en, "Spaans-Amerikaans"@nl ;
+  ex:cuisine ex:Spanish ;
+  schema:worksFor "Jaleo, Washington D.C."@en, "Jaleo, Washington D.C."@nl ;
+  schema:description "Spanish-American chef and founder of Jaleo, credited with popularising Spanish tapas in the United States and widely recognised for his disaster-relief cooking through World Central Kitchen."@en, "Spaans-Amerikaanse chef-kok en oprichter van Jaleo, die de Spaanse tapas populair maakte in de Verenigde Staten en breed erkend wordt voor zijn rampenhulp via World Central Kitchen."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Jos%C3%A9_Andr%C3%A9s> .

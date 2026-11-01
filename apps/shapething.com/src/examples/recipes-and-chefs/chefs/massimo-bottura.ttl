@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Massimo Bottura"@en, "Massimo Bottura"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Massimo_Bottura_Rimini.jpg/960px-Massimo_Bottura_Rimini.jpg> ;
+  schema:nationality "Italian"@en, "Italiaans"@nl ;
+  ex:cuisine ex:ModernItalian ;
+  ex:michelinStars 3 ;
+  schema:worksFor "Osteria Francescana, Modena"@en, "Osteria Francescana, Modena"@nl ;
+  schema:description "Italian chef and owner of Osteria Francescana in Modena, celebrated for reinterpreting traditional Italian dishes with a contemporary, artistic approach."@en, "Italiaanse chef-kok en eigenaar van Osteria Francescana in Modena, geroemd om zijn eigentijdse, artistieke herinterpretatie van traditionele Italiaanse gerechten."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Massimo_Bottura> .

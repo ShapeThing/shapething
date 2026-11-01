@@ -4,8 +4,8 @@ import type * as RDF from "@rdfjs/types";
 import { Index } from "flexsearch";
 import type { IndexOptions } from "flexsearch";
 import { Store } from "n3";
-import type { BaseQuad, Quad, Term } from "n3";
-import { PublicStore } from "./PublicStore";
+/** @ts-expect-error readable-stream ships no type declarations */
+import { Readable } from "readable-stream";
 
 const tsst: NamespaceBuilder<string> = namespace("https://textstore.shapething.com/");
 /**
@@ -14,75 +14,112 @@ const tsst: NamespaceBuilder<string> = namespace("https://textstore.shapething.c
 export const defaultSearchTerm: RDF.NamedNode = tsst("search");
 
 type TextStoreOptions = {
-  storeOptions?: ConstructorParameters<typeof Store>[0];
+  /**
+   * The store to wrap, for example an N3 Store or a LocalStore. Defaults to an empty N3 Store.
+   */
+  store?: RDF.Source;
   indexOptions?: IndexOptions;
   searchTerm?: RDF.NamedNode;
 };
 
+const streamToArray = <T>(stream: RDF.Stream<T & RDF.Quad>): Promise<RDF.Quad[]> =>
+  new Promise((resolve, reject) => {
+    const quads: RDF.Quad[] = [];
+    stream.on("data", (quad: RDF.Quad) => quads.push(quad));
+    stream.on("end", () => resolve(quads));
+    stream.on("error", reject);
+  });
+
+const literalKey = (literal: RDF.Literal) =>
+  `${literal.value}\u0000${literal.language}\u0000${literal.datatype.value}`;
+
+type QuadPattern = [
+  subject?: RDF.Term | null,
+  predicate?: RDF.Term | null,
+  object?: RDF.Term | null,
+  graph?: RDF.Term | null,
+];
+
 /**
- * A TextStore, an N3 store with fuzzy search capabilities
+ * Optional capabilities of the wrapped store, such as the N3 Store has.
  */
-export class TextStore<
-  Q_RDF extends RDF.BaseQuad = RDF.Quad,
-  Q_N3 extends BaseQuad = Quad,
-  OutQuad extends RDF.BaseQuad = RDF.Quad,
-  InQuad extends RDF.BaseQuad = RDF.Quad,
-> extends PublicStore<Q_RDF, Q_N3, OutQuad, InQuad> {
-  #textIndex: Index;
+type StoreCapabilities = {
+  add?: (quad: RDF.Quad) => unknown;
+  delete?: (quad: RDF.Quad) => unknown;
+  countQuads?: (...pattern: QuadPattern) => number;
+};
+
+/**
+ * Wraps another store and adds fuzzy text search over its literals.
+ * Matching with the search term as predicate and the search text as object returns the quads that have a matching literal as object.
+ */
+export class TextStore implements RDF.Source {
+  #store: RDF.Source & StoreCapabilities;
   #searchTerm: RDF.NamedNode;
+  #indexOptions: IndexOptions;
+  #textIndex!: Index;
+  #literals = new Map<number, RDF.Literal>();
+  #literalIds = new Map<string, number>();
+  #nextLiteralId = 0;
+  #indexing?: Promise<void>;
 
   constructor(options: TextStoreOptions = {}) {
-    super(options.storeOptions as Q_RDF[] | undefined);
-
+    // The N3 typings are stricter than RDF/JS, but the N3 Store is a valid RDF/JS store.
+    this.#store = options.store ?? (new Store() as unknown as RDF.Source & StoreCapabilities);
     this.#searchTerm = options.searchTerm ?? defaultSearchTerm;
-
-    this.#textIndex = new Index({
-      tokenize: "full",
-      ...options.indexOptions,
-    });
-
-    if (options.storeOptions) {
-      const quads = [...options.storeOptions] as InQuad[];
-      for (const quad of quads) this.add(quad);
-    }
+    this.#indexOptions = { tokenize: "full", ...options.indexOptions };
+    this.#resetIndex();
   }
 
-  features = {
-    quotedTripleFiltering: true,
-  };
-
-  add(quad: InQuad): this {
-    const result = super.add(quad);
-    if (quad.object.termType === "Literal") {
-      const id = this._termToNumericId(quad.object);
-      this.#textIndex.add(id, quad.object.value);
-    }
-
-    return result;
+  /**
+   * (Re)builds the text index from all literals in the wrapped store.
+   * Call this when the wrapped store was changed without going through this TextStore.
+   */
+  reindex(): Promise<void> {
+    this.#indexing = (async () => {
+      const quads = await streamToArray(this.#store.match());
+      this.#resetIndex();
+      for (const quad of quads) this.#indexLiteral(quad.object);
+    })();
+    return this.#indexing;
   }
 
-  delete(quad: InQuad): this {
-    const result = super.delete(quad);
-    if (quad.object.termType === "Literal") {
-      const otherQuads = result.getQuads(null, null, quad.object, null);
-      if (!otherQuads.length) {
-        const id = this._termToNumericId(quad.object);
+  /**
+   * Adds a quad to the wrapped store, only possible when the wrapped store supports it.
+   */
+  add(quad: RDF.Quad): this {
+    if (!this.#store.add) throw new Error("The wrapped store does not support adding quads");
+    this.#store.add(quad);
+    this.#indexLiteral(quad.object);
+    return this;
+  }
+
+  /**
+   * Deletes a quad from the wrapped store, only possible when the wrapped store supports it.
+   */
+  delete(quad: RDF.Quad): this {
+    if (!this.#store.delete) throw new Error("The wrapped store does not support deleting quads");
+    this.#store.delete(quad);
+    // Without countQuads we can not tell if the literal is still used, keeping it in the index is harmless.
+    if (
+      quad.object.termType === "Literal" &&
+      this.#store.countQuads?.(null, null, quad.object, null) === 0
+    ) {
+      const key = literalKey(quad.object);
+      const id = this.#literalIds.get(key);
+      if (id !== undefined) {
         this.#textIndex.remove(id);
+        this.#literals.delete(id);
+        this.#literalIds.delete(key);
       }
     }
-
-    return result;
+    return this;
   }
 
-  countQuads(
-    subject: RDF.Term,
-    predicate: RDF.Term,
-    object: RDF.Term,
-    graph: RDF.Term | null,
-  ): number {
-    const isTextSearch = this.#searchTerm.equals(predicate);
-    if (!isTextSearch) return super.countQuads(subject, predicate, object, graph);
-    return this.size; // A somewhat reasonable number.
+  countQuads(...pattern: QuadPattern): number {
+    const predicate = pattern[1];
+    if (predicate && this.#searchTerm.equals(predicate)) return this.#literals.size || 1;
+    return this.#store.countQuads?.(...pattern) ?? 1;
   }
 
   match(
@@ -90,27 +127,46 @@ export class TextStore<
     predicate?: RDF.Term | null,
     object?: RDF.Term | null,
     graph?: RDF.Term | null,
-  ): RDF.Stream<Q_RDF> & RDF.Dataset<OutQuad, InQuad> {
-    const isTextSearch = predicate?.equals(this.#searchTerm);
-    const search = isTextSearch ? object?.value : undefined;
+  ): RDF.Stream<RDF.Quad> {
+    const search = predicate?.equals(this.#searchTerm) ? object?.value : undefined;
+    if (!search) return this.#store.match(subject, predicate, object, graph);
 
-    if (!isTextSearch || !search)
-      return super.match(subject as Term, predicate as Term, object as Term, graph as Term);
+    const stream = new Readable({ objectMode: true, read() {} });
 
-    object = null;
-    predicate = null;
+    (async () => {
+      try {
+        if (!this.#indexing) await this.reindex();
+        await this.#indexing;
 
-    const objectIds = this.#textIndex.search(search) as number[];
-    const results = new Store();
+        const literalIds = this.#textIndex.search(search) as number[];
+        for (const literalId of literalIds) {
+          const literal = this.#literals.get(literalId);
+          if (!literal) continue;
+          const quads = await streamToArray(this.#store.match(subject, null, literal, graph));
+          for (const quad of quads) stream.push(quad);
+        }
+        stream.push(null);
+      } catch (error) {
+        stream.destroy(error);
+      }
+    })();
 
-    for (const objectId of objectIds) {
-      /** @ts-expect-error This is a private object from Store */
-      const id = this._entities[objectId];
-      object = this._termFromId(id);
-      const subStream = [...super.match(subject as Term, null, object as Term, graph as Term)];
-      results.addQuads([...subStream] as RDF.Quad[]);
-    }
+    return stream;
+  }
 
-    return results.match() as RDF.Stream<Q_RDF> & RDF.Dataset<OutQuad, InQuad>;
+  #resetIndex() {
+    this.#textIndex = new Index(this.#indexOptions);
+    this.#literals.clear();
+    this.#literalIds.clear();
+  }
+
+  #indexLiteral(term: RDF.Term) {
+    if (term.termType !== "Literal") return;
+    const key = literalKey(term);
+    if (this.#literalIds.has(key)) return;
+    const id = this.#nextLiteralId++;
+    this.#literalIds.set(key, id);
+    this.#literals.set(id, term);
+    this.#textIndex.add(id, term.value);
   }
 }

@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Marco Pierre White"@en, "Marco Pierre White"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/0/0d/MarcoPierreWhite.jpg> ;
+  schema:nationality "British"@en, "Brits"@nl ;
+  ex:cuisine ex:British ;
+  schema:worksFor "Mr White's, London"@en, "Mr White's, Londen"@nl ;
+  schema:description "British chef and one of the first celebrity chefs of his generation, known for his fiery kitchen reputation and mentoring a wave of later Michelin-starred cooks."@en, "Britse chef-kok en een van de eerste sterchefs van zijn generatie, bekend om zijn vurige reputatie in de keuken en het begeleiden van een latere generatie Michelinsterrenkoks."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Marco_Pierre_White> .

@@ -1,0 +1,40 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+<> a schema:Recipe ;
+  schema:name "Roasted Cauliflower with Tahini and Pomegranate"@en, "Geroosterde bloemkool met tahin en granaatappel"@nl ;
+  ex:cuisine ex:MiddleEasternMediterranean ;
+  schema:description "Whole roasted cauliflower florets with a lemony tahini sauce, pomegranate seeds and parsley."@en, "Hele geroosterde bloemkoolroosjes met een citroenachtige tahinsaus, granaatappelpitjes en peterselie."@nl ;
+  schema:author <../chefs/yotam-ottolenghi> ;
+  schema:recipeCategory ex:SideDish ;
+  schema:prepTime "PT15M"^^xsd:duration ;
+  schema:cookTime "PT35M"^^xsd:duration ;
+  schema:recipeYield 4 ;
+  schema:recipeIngredient ([
+    schema:name "Large cauliflower, cut into florets"@en, "Grote bloemkool, in roosjes verdeeld"@nl ;
+    schema:value 1
+  ] [
+    schema:name "Olive oil"@en, "Olijfolie"@nl ;
+    schema:value 3 ;
+    schema:unitCode unit:TBSP
+  ] [
+    schema:name "Tahini"@en, "Tahin"@nl ;
+    schema:value 3 ;
+    schema:unitCode unit:TBSP
+  ] [
+    schema:name "Lemon juice"@en, "Citroensap"@nl ;
+    schema:value 1 ;
+    schema:unitCode unit:TBSP
+  ] [
+    schema:name "Garlic, crushed"@en, "Knoflook, geplet"@nl ;
+    schema:value 1 ;
+    schema:unitCode unit:COUNT
+  ] [
+    schema:name "Pomegranate seeds, to garnish"@en, "Granaatappelpitjes, om te garneren"@nl
+  ] [
+    schema:name "Chopped parsley, to garnish"@en, "Gehakte peterselie, om te garneren"@nl
+  ]) ;
+  schema:recipeInstructions "Toss the cauliflower florets in olive oil and roast at high heat until golden and tender. Whisk the tahini with lemon juice, garlic and a little water into a smooth, pourable sauce. Arrange the roasted cauliflower on a platter, drizzle generously with the tahini sauce, and scatter over pomegranate seeds and parsley."@en, "Meng de bloemkoolroosjes met olijfolie en rooster ze op hoog vuur tot ze goudbruin en gaar zijn. Klop de tahin met citroensap, knoflook en een beetje water tot een gladde, gietbare saus. Schik de geroosterde bloemkool op een schaal, besprenkel rijkelijk met de tahinsaus en bestrooi met granaatappelpitjes en peterselie."@nl .

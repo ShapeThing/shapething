@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Emeril Lagasse"@en, "Emeril Lagasse"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/6/6e/Emeril_Lagasse_book_signing.jpg> ;
+  schema:nationality "American"@en, "Amerikaans"@nl ;
+  ex:cuisine ex:SouthernAmerican ;
+  schema:worksFor "Emeril's, New Orleans"@en, "Emeril's, New Orleans"@nl ;
+  schema:description "American chef and restaurateur who brought Louisiana Creole and Cajun cooking to a national television audience with his catchphrase-driven, high-energy style."@en, "Amerikaanse chef-kok en restaurateur die de Creoolse en Cajun-keuken van Louisiana bij een landelijk tv-publiek bracht met zijn energieke stijl vol kenmerkende uitroepen."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Emeril_Lagasse> .

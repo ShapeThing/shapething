@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { BlankNode, NamedNode, Term } from '@rdfjs/types'
+import type { BlankNode, Literal, NamedNode } from '@rdfjs/types'
 import type { Prettify, TypedQuery } from '@shapething/typed-sparql'
 
 interface QueryResult {
   shape: NamedNode | BlankNode
-  targetKind: Term
+  targetKind: Literal
   target: NamedNode
 }
 

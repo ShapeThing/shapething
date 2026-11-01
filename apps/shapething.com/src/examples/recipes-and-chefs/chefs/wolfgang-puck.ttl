@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Wolfgang Puck"@en, "Wolfgang Puck"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/1/16/Wolfgang_Puck_2012.jpg> ;
+  schema:nationality "Austrian-American"@en, "Oostenrijks-Amerikaans"@nl ;
+  ex:cuisine ex:CalifornianFarmToTable ;
+  schema:worksFor "Spago, Beverly Hills"@en, "Spago, Beverly Hills"@nl ;
+  schema:description "Austrian-born American chef and restaurateur who helped define modern California cuisine at Spago, blending French technique with fresh, local ingredients."@en, "In Oostenrijk geboren Amerikaanse chef-kok en restaurateur die met Spago de moderne Californische keuken mede vormgaf, met Franse techniek en verse, lokale ingrediënten."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Wolfgang_Puck> .

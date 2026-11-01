@@ -1,42 +1,50 @@
 import { QueryEngine } from "@comunica/query-sparql";
-import { DataFactory } from "n3";
+import type * as RDF from "@rdfjs/types";
+import { DataFactory, Store } from "n3";
 import { expect, test } from "vitest";
 import { TextStore, defaultSearchTerm } from "./TextStore";
 const { namedNode, literal, quad } = DataFactory;
 
+const names = [
+  quad(namedNode("a"), namedNode("https://schema.org/name"), literal("John Doe")),
+  quad(namedNode("b"), namedNode("https://schema.org/name"), literal("Johanna Doe")),
+  quad(namedNode("c"), namedNode("https://schema.org/name"), literal("Frank Doe")),
+];
+
 const createStore = () => {
   const store = new TextStore();
-
-  store.add(quad(namedNode("a"), namedNode("https://schema.org/name"), literal("John Doe")));
-  store.add(quad(namedNode("b"), namedNode("https://schema.org/name"), literal("Johanna Doe")));
-  store.add(quad(namedNode("c"), namedNode("https://schema.org/name"), literal("Frank Doe")));
-
+  for (const name of names) store.add(name);
   return store;
 };
 
-test("match, check additions and deletions", () => {
-  const store = createStore();
-  const result = [...store.match(null, defaultSearchTerm, literal("Jo"))];
-  expect(result[0].object.value).toBe("John Doe");
-  expect(result[1].object.value).toBe("Johanna Doe");
-  expect(result.length).toBe(2);
+const toArray = (stream: RDF.Stream<RDF.Quad>): Promise<RDF.Quad[]> =>
+  new Promise((resolve, reject) => {
+    const quads: RDF.Quad[] = [];
+    stream.on("data", (quad: RDF.Quad) => quads.push(quad));
+    stream.on("end", () => resolve(quads));
+    stream.on("error", reject);
+  });
 
-  const result2 = [...store.match(null, defaultSearchTerm, literal("Peter"))];
-  expect(result2.length).toBe(0);
+const search = (store: TextStore, text: string) =>
+  toArray(store.match(null, defaultSearchTerm, literal(text)));
+
+test("match, check additions and deletions", async () => {
+  const store = createStore();
+  const result = await search(store, "Jo");
+  expect(result.map((quad) => quad.object.value)).toEqual(["John Doe", "Johanna Doe"]);
+
+  expect((await search(store, "Peter")).length).toBe(0);
   store.add(quad(namedNode("c"), namedNode("https://schema.org/name"), literal("Peter Peterson")));
   store.add(quad(namedNode("c"), namedNode("https://schema.org/name"), literal("Peter Jackson")));
-  const result3 = [...store.match(null, defaultSearchTerm, literal("Peter"))];
-  expect(result3.length).toBe(2);
+  expect((await search(store, "Peter")).length).toBe(2);
   store.delete(
     quad(namedNode("c"), namedNode("https://schema.org/name"), literal("Peter Peterson")),
   );
-  const result4 = [...store.match(null, defaultSearchTerm, literal("Peter"))];
-  expect(result4.length).toBe(1);
+  expect((await search(store, "Peter")).length).toBe(1);
   store.delete(
     quad(namedNode("c"), namedNode("https://schema.org/name"), literal("Peter Jackson")),
   );
-  const result5 = [...store.match(null, defaultSearchTerm, literal("Peter"))];
-  expect(result5.length).toBe(0);
+  expect((await search(store, "Peter")).length).toBe(0);
 });
 
 test("query", async () => {
@@ -44,7 +52,7 @@ test("query", async () => {
 
   const engine = new QueryEngine();
   const response = await engine.queryBindings(
-    `select * where { 
+    `select * where {
       ?s <https://textstore.shapething.com/search> "Fr" .
       ?s ?p ?o
     }`,
@@ -59,11 +67,31 @@ test("query", async () => {
   expect(bindings.length).toBe(1);
 });
 
-test("initialization with quads", () => {
-  const store = new TextStore({
-    storeOptions: [quad(namedNode("a"), namedNode("https://schema.org/name"), literal("John Doe"))],
-  });
-  const result = [...store.match(null, defaultSearchTerm, literal("Jo"))];
-  expect(result[0].object.value).toBe("John Doe");
-  expect(result.length).toBe(1);
+test("wraps an existing store", async () => {
+  const store = new TextStore({ store: new Store(names) });
+  const result = await search(store, "Jo");
+  expect(result.map((quad) => quad.subject.value)).toEqual(["a", "b"]);
+});
+
+test("passes other patterns through to the wrapped store", async () => {
+  const store = new TextStore({ store: new Store(names) });
+  const result = await toArray(store.match(namedNode("c")));
+  expect(result.map((quad) => quad.object.value)).toEqual(["Frank Doe"]);
+});
+
+test("reindex picks up changes made directly to the wrapped store", async () => {
+  const inner = new Store(names);
+  const store = new TextStore({ store: inner });
+  expect((await search(store, "Peter")).length).toBe(0);
+
+  inner.add(quad(namedNode("d"), namedNode("https://schema.org/name"), literal("Peter Jackson")));
+  await store.reindex();
+  expect((await search(store, "Peter")).length).toBe(1);
+});
+
+test("adding to a read only store fails", () => {
+  const inner = new Store(names);
+  const readOnly: RDF.Source = { match: inner.match.bind(inner) as RDF.Source["match"] };
+  const store = new TextStore({ store: readOnly });
+  expect(() => store.add(names[0])).toThrow();
 });

@@ -1,0 +1,44 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+<> a schema:Recipe ;
+  schema:name "Sticky Toffee Pudding"@en, "Sticky Toffee Pudding"@nl ;
+  ex:cuisine ex:British ;
+  schema:description "A warm, date-based sponge pudding served drenched in butterscotch sauce."@en, "Een warme cake op basis van dadels, overgoten met een romige toffeesaus."@nl ;
+  schema:author <../chefs/gordon-ramsay> ;
+  schema:recipeCategory ex:Dessert ;
+  schema:prepTime "PT20M"^^xsd:duration ;
+  schema:cookTime "PT30M"^^xsd:duration ;
+  schema:recipeYield 6 ;
+  schema:recipeIngredient ([
+    schema:name "Pitted dates, chopped"@en, "Ontpitte dadels, gehakt"@nl ;
+    schema:value 200 ;
+    schema:unitCode unit:GM
+  ] [
+    schema:name "Bicarbonate of soda"@en, "Zuiveringszout"@nl ;
+    schema:value 1 ;
+    schema:unitCode unit:TSP
+  ] [
+    schema:name "Butter"@en, "Boter"@nl ;
+    schema:value 50 ;
+    schema:unitCode unit:GM
+  ] [
+    schema:name "Soft brown sugar"@en, "Bruine basterdsuiker"@nl ;
+    schema:value 150 ;
+    schema:unitCode unit:GM
+  ] [
+    schema:name "Eggs"@en, "Eieren"@nl ;
+    schema:value 2
+  ] [
+    schema:name "Self-raising flour"@en, "Zelfrijzend bakmeel"@nl ;
+    schema:value 175 ;
+    schema:unitCode unit:GM
+  ] [
+    schema:name "Double cream, for the toffee sauce"@en, "Slagroom, voor de toffeesaus"@nl ;
+    schema:value 300 ;
+    schema:unitCode unit:MilliL
+  ]) ;
+  schema:recipeInstructions "Soak the chopped dates in boiling water with the bicarbonate of soda for 10 minutes, then blend to a puree. Cream the butter and sugar, beat in the eggs, then fold in the flour and the date puree. Bake in individual moulds until risen and springy. Serve warm, soaked in a butterscotch sauce made from cream and brown sugar."@en, "Week de gehakte dadels met de baking soda 10 minuten in kokend water en pureer ze. Klop de boter en suiker romig, klop de eieren erdoor en spatel er de bloem en het datelmengsel doorheen. Bak in kleine vormpjes tot ze gerezen en veerkrachtig zijn. Serveer warm, overgoten met een botersaus van room en bruine suiker."@nl .

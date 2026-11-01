@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Anthony Bourdain"@en, "Anthony Bourdain"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/a/a5/Anthony_Bourdain_Peabody_2014b.jpg> ;
+  schema:nationality "American"@en, "Amerikaans"@nl ;
+  ex:cuisine ex:American ;
+  schema:worksFor "Brasserie Les Halles, New York"@en, "Brasserie Les Halles, New York"@nl ;
+  schema:description "American chef, author and television host best known for exploring world cuisines and cultures through travelogue series such as No Reservations and Parts Unknown."@en, "Amerikaanse chef-kok, auteur en tv-presentator, vooral bekend van het verkennen van wereldkeukens en culturen in reisprogramma's als No Reservations en Parts Unknown."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Anthony_Bourdain> .

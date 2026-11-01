@@ -123,7 +123,11 @@ export class Branch {
   createChildBranchesByMemberShape() {
     if (!this.#isList || !this.#propertyPointer) return;
 
-    const listProperties = allShapeSubShapes(this.#propertyPointer.out(sh("memberShape")))
+    // The properties of the members can be on the member shape itself or on the node shapes it refers to with sh:node.
+    const memberShapes = this.#propertyPointer.out(sh("memberShape"));
+    const listProperties = allShapeSubShapes(
+      memberShapes.node([...memberShapes.terms, ...memberShapes.out(sh("node")).terms]),
+    )
       .out(sh("property"))
       .hasOut(sh("path"));
 

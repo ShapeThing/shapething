@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Daniel Boulud"@en, "Daniel Boulud"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/d/dc/DanielBoulud.jpg> ;
+  schema:nationality "French-American"@en, "Frans-Amerikaans"@nl ;
+  ex:cuisine ex:French ;
+  ex:michelinStars 2 ;
+  schema:worksFor "Restaurant Daniel, New York"@en, "Restaurant Daniel, New York"@nl ;
+  schema:description "French-American chef and founder of the Daniel Boulud restaurant group, known for elevating classic French technique for a New York audience."@en, "Frans-Amerikaanse chef-kok en oprichter van de Daniel Boulud-restaurantgroep, bekend om het verheffen van de klassieke Franse techniek voor een New Yorks publiek."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Daniel_Boulud> .

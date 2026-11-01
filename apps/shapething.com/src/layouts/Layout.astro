@@ -6,9 +6,10 @@ import SiteHeader from '../components/SiteHeader.astro'
 
 type Props = {
   class?: string
+  title?: string
 }
 
-const a = ''
+const title = Astro.props.title ? `${Astro.props.title} | ShapeThing` : 'ShapeThing: TypeScript tools for linked data'
 ---
 
 <!doctype html>
@@ -17,8 +18,11 @@ const a = ''
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, user-scalable=no" />
-    <title>ShapeThing</title>
+    <title>{title}</title>
+    <meta name="description" content="TypeScript libraries for building web apps on RDF: typed SPARQL, document fetching, fuzzy search, and forms, types and test data from SHACL shapes." />
+    <meta property="og:title" content="ShapeThing" />
+    <meta property="og:description" content="TypeScript libraries for building web apps on RDF: typed SPARQL, document fetching, fuzzy search, and forms, types and test data from SHACL shapes." />
+    <meta property="og:type" content="website" />
   </head>
   <body class={Astro.props.class}>
     <SiteHeader />
@@ -44,8 +48,12 @@ const a = ''
     color: var(--blue-dark);
   }
 
+  html {
+    overflow-x: hidden;
+  }
+
   :root {
-    --max-width: 1080px;
+    --max-width: 1480px;
     --blue-dark: #0044aa;
     --blue-light: #2a7fff;
     --blue-lightest: #c3dbff;
@@ -71,6 +79,7 @@ const a = ''
   .site-main {
     max-width: var(--max-width);
     width: 100%;
+    flex: 1 1 auto;
   }
 
   * {

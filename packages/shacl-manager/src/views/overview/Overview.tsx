@@ -89,13 +89,7 @@ export default function Overview() {
         <h2 className="st-manager-heading">
           {t("shacl-manager-class-hierarchy", null, "Class hierarchy")}
         </h2>
-        <ClassTree
-          forest={forest}
-          shapesByClass={shapes.shapesByClass}
-          propertyShapes={shapes.propertyShapes}
-          open={(_node, depth) => Boolean(query) || depth < 1}
-          showShape={showShape}
-        />
+        <ClassTree forest={forest} open={(_node, depth) => Boolean(query) || depth < 1} />
       </section>
 
       <section>

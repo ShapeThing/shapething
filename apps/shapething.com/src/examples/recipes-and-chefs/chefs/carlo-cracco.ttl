@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Carlo Cracco"@en, "Carlo Cracco"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/3/33/Carlo_Cracco.JPG> ;
+  schema:nationality "Italian"@en, "Italiaans"@nl ;
+  ex:cuisine ex:ModernItalian ;
+  ex:michelinStars 2 ;
+  schema:worksFor "Ristorante Cracco, Milan"@en, "Ristorante Cracco, Milaan"@nl ;
+  schema:description "Italian chef and television personality known for a rigorous, technique-driven reinterpretation of Italian regional classics at his Milan restaurant."@en, "Italiaanse chef-kok en tv-persoonlijkheid, bekend om zijn rigoureuze, techniekgedreven herinterpretatie van Italiaanse regionale klassiekers in zijn restaurant in Milaan."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Carlo_Cracco> .

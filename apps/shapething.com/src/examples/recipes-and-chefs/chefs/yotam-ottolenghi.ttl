@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Yotam Ottolenghi"@en, "Yotam Ottolenghi"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/7/76/Yotam_Ottolenghi.jpg/960px-Yotam_Ottolenghi.jpg> ;
+  schema:nationality "Israeli-British"@en, "Israëlisch-Brits"@nl ;
+  ex:cuisine ex:MiddleEasternMediterranean ;
+  schema:worksFor "Ottolenghi & NOPI, London"@en, "Ottolenghi & NOPI, Londen"@nl ;
+  schema:description "Israeli-British chef, restaurateur and food writer known for his vegetable-forward Mediterranean and Middle Eastern cooking."@en, "Israëlisch-Britse chef-kok, restaurateur en foodschrijver, bekend om zijn groentegerichte mediterrane en Midden-Oosterse keuken."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Yotam_Ottolenghi> .

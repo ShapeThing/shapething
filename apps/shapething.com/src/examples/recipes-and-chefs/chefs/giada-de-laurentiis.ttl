@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Giada De Laurentiis"@en, "Giada De Laurentiis"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/e/e1/Giada_De_Laurentiis_2010.jpg> ;
+  schema:nationality "Italian-American"@en, "Italiaans-Amerikaans"@nl ;
+  ex:cuisine ex:Italian ;
+  schema:worksFor "Giada, Las Vegas"@en, "Giada, Las Vegas"@nl ;
+  schema:description "Italian-American chef and television host known for bringing approachable, family-style Italian cooking into American homes through her cookbooks and shows."@en, "Italiaans-Amerikaanse chef-kok en tv-presentator, bekend om het toegankelijk maken van huiselijke Italiaanse keuken voor Amerikaanse huishoudens via haar kookboeken en programma's."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Giada_De_Laurentiis> .

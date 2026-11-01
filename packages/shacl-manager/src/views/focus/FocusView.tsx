@@ -14,6 +14,7 @@ import { useShapes } from "@/shapes/useShapes.ts";
 import { useAlignedProperties } from "@/alignment/useAlignedProperties.ts";
 import AncestorTrail from "./AncestorTrail.tsx";
 import PropertyPanel from "./PropertyPanel.tsx";
+import PanelHeader from "./PanelHeader.tsx";
 import PropertyTable from "./PropertyTable.tsx";
 import ColumnResizer from "./ColumnResizer.tsx";
 import { PANEL_BOUNDS, SIDEBAR_BOUNDS, useResizableWidth } from "./useResizableWidth.ts";
@@ -152,7 +153,9 @@ export default function FocusView({
               })}
               className="st-button"
             >
-              {t("shacl-manager-edit", null, "Edit")} ✎
+              {isEditable(subject)
+                ? `${t("shacl-manager-edit", null, "Edit")} ✎`
+                : t("shacl-manager-view", null, "View")}
             </Link>
           )}
         </header>
@@ -181,11 +184,13 @@ export default function FocusView({
           />
           {editShape && (
             <aside className="st-manager-panel">
+              <PanelHeader param="edit">◆ {labels.display(editShape)}</PanelHeader>
               <NodeShapeForm key={termKey(editShape)} shape={editShape} />
             </aside>
           )}
           {editClass && (
             <aside className="st-manager-panel">
+              <PanelHeader param="edit">{labels.display(editClass)}</PanelHeader>
               <ClassForm key={editClass.value} owlClass={editClass} />
             </aside>
           )}

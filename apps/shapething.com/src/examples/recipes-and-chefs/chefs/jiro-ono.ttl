@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Jiro Ono"@en, "Jiro Ono"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/5/54/Jiro_behind_the_counter_%2819137550458%29.jpg> ;
+  schema:nationality "Japanese"@en, "Japans"@nl ;
+  ex:cuisine ex:Japanese ;
+  ex:michelinStars 3 ;
+  schema:worksFor "Sukiyabashi Jiro, Tokyo"@en, "Sukiyabashi Jiro, Tokio"@nl ;
+  schema:description "Japanese sushi chef and owner of the ten-seat Sukiyabashi Jiro in Tokyo, whose lifelong pursuit of perfection was chronicled in the documentary Jiro Dreams of Sushi."@en, "Japanse sushichef en eigenaar van het tien zitplaatsen tellende Sukiyabashi Jiro in Tokio, wiens levenslange streven naar perfectie werd vastgelegd in de documentaire Jiro Dreams of Sushi."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Jiro_Ono_(chef)> .

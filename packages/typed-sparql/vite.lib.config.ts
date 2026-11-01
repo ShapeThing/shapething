@@ -8,6 +8,7 @@ export default defineConfig({
     lib: {
       entry: {
         index: "index.ts",
+        generate: "generate.ts",
       },
       formats: ["es"],
       fileName: (_format, entryName) => `${entryName}.js`,

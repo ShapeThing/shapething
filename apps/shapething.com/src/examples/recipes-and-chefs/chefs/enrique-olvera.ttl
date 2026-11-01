@@ -1,0 +1,10 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Enrique Olvera"@en, "Enrique Olvera"@nl ;
+  schema:nationality "Mexican"@en, "Mexicaans"@nl ;
+  ex:cuisine ex:Mexican ;
+  schema:worksFor "Pujol, Mexico City"@en, "Pujol, Mexico-Stad"@nl ;
+  schema:description "Mexican chef and owner of Pujol in Mexico City, widely credited with elevating Mexican cuisine's international standing through a deeply research-driven, ingredient-led approach."@en, "Mexicaanse chef-kok en eigenaar van Pujol in Mexico-Stad, algemeen erkend voor het internationaal op de kaart zetten van de Mexicaanse keuken via een grondig onderzoekende, ingrediëntgerichte aanpak."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Enrique_Olvera> .

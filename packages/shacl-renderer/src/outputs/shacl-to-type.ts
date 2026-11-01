@@ -91,7 +91,9 @@ function childrenType(children: (PropertyUIElement | ChoiceElement)[]): string {
 
 function objectType(propertyLines: string[]): string {
   if (propertyLines.length === 0) return "{}";
-  return `{\n  ${propertyLines.join("\n  ")}\n}`;
+  // A property line can hold a nested object type of several lines, those are indented with it.
+  const indented = propertyLines.map((line) => line.split("\n").join("\n  "));
+  return `{\n  ${indented.join("\n  ")}\n}`;
 }
 
 function propertyUIElement(property: PropertyUIElement): string {

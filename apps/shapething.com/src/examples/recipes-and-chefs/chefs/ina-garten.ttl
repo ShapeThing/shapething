@@ -1,0 +1,10 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Ina Garten"@en, "Ina Garten"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/d/d4/MFF24_Ina_Garten_Grabowsky_TTL_3492_%2854135420705%29_%28cropped%29.jpg> ;
+  schema:nationality "American"@en, "Amerikaans"@nl ;
+  ex:cuisine ex:ModernAmerican ;
+  schema:description "American author and television cook known as the Barefoot Contessa, celebrated for effortless entertaining and reliably simple, ingredient-forward recipes."@en, "Amerikaanse auteur en tv-kok, bekend als de Barefoot Contessa, geroemd om moeiteloos gastheerschap en betrouwbaar eenvoudige, ingrediëntgerichte recepten."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Ina_Garten> .

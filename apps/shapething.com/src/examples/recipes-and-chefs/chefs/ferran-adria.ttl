@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Ferran Adrià"@en, "Ferran Adrià"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/3/3b/Ferran_Adri%C3%A0_en_la_presentaci%C3%B3n_de_%27Un_proyecte_per_compartir%27.jpg> ;
+  schema:nationality "Spanish"@en, "Spaans"@nl ;
+  ex:cuisine ex:Spanish ;
+  ex:michelinStars 3 ;
+  schema:worksFor "El Bulli, Roses"@en, "El Bulli, Roses"@nl ;
+  schema:description "Spanish chef who led El Bulli near Roses to worldwide fame, pioneering molecular gastronomy techniques such as foams and spherification."@en, "Spaanse chef-kok die El Bulli bij Roses wereldwijde faam bracht en baanbrekende technieken uit de moleculaire keuken introduceerde, zoals foams en sferificatie."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Ferran_Adri%C3%A0> .

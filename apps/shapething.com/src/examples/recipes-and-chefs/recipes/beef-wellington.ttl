@@ -1,0 +1,42 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+<> a schema:Recipe ;
+  schema:name "Beef Wellington"@en, "Beef Wellington"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Beef_Wellington_2019.jpg/960px-Beef_Wellington_2019.jpg> ;
+  ex:cuisine ex:British ;
+  schema:description "Gordon Ramsay's take on the classic fillet of beef wrapped in mushroom duxelles, Parma ham and puff pastry."@en, "Gordon Ramsays versie van het klassieke stuk rundvlees, gewikkeld in een duxelles van paddenstoelen, Parmaham en bladerdeeg."@nl ;
+  schema:author <../chefs/gordon-ramsay> ;
+  schema:recipeCategory ex:MainCourse ;
+  schema:prepTime "PT45M"^^xsd:duration ;
+  schema:cookTime "PT40M"^^xsd:duration ;
+  schema:recipeYield 4 ;
+  schema:recipeIngredient ([
+    schema:name "Beef fillet"@en, "Runderhaas"@nl ;
+    schema:value 1 ;
+    schema:unitCode unit:KiloGM
+  ] [
+    schema:name "English mustard"@en, "Engelse mosterd"@nl ;
+    schema:value 2 ;
+    schema:unitCode unit:TBSP
+  ] [
+    schema:name "Mushrooms, finely chopped"@en, "Paddenstoelen, fijngehakt"@nl ;
+    schema:value 500 ;
+    schema:unitCode unit:GM
+  ] [
+    schema:name "Parma ham"@en, "Parmaham"@nl ;
+    schema:value 8 ;
+    schema:unitCode unit:COUNT
+  ] [
+    schema:name "Puff pastry"@en, "Bladerdeeg"@nl ;
+    schema:value 500 ;
+    schema:unitCode unit:GM
+  ] [
+    schema:name "Egg yolks, beaten"@en, "Eidooiers, losgeklopt"@nl ;
+    schema:value 2 ;
+    schema:unitCode unit:COUNT
+  ]) ;
+  schema:recipeInstructions "Sear the beef fillet until browned on all sides, then brush with English mustard and leave to cool. Cook the chopped mushrooms in a dry pan until all the moisture has evaporated to make a duxelles. Lay out the Parma ham, spread the duxelles over it, and wrap it tightly around the beef. Chill, then wrap the whole thing in puff pastry, brush with egg yolk, and bake until the pastry is golden and the beef reaches the desired doneness."@en, "Schroei de runderhaas rondom bruin dicht, bestrijk hem daarna met Engelse mosterd en laat afkoelen. Bak de fijngehakte paddenstoelen in een droge pan tot al het vocht is verdampt, zodat een duxelles ontstaat. Leg de Parmaham neer, verdeel de duxelles erover en wikkel het geheel strak om het vlees. Laat afkoelen, wikkel het daarna in bladerdeeg, bestrijk met eidooier en bak tot het deeg goudbruin is en het vlees de gewenste gaarheid heeft."@nl .

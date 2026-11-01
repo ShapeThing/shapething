@@ -1,11 +1,13 @@
 // @ts-check
 import { buildOntology } from "@shapething/shacl-renderer/tools";
+import react from "@astrojs/react";
 import { defineConfig } from "astro/config";
 import { writeFile } from "node:fs/promises";
 
 // https://astro.build/config
 export default defineConfig({
   integrations: [
+    react(),
     {
       // The ShapeThing ontology (http://shapething.com/) is built from @shapething/shacl-renderer
       // and served at /index.ttl - functions/_middleware.ts serves it to RDF clients requesting any

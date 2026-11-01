@@ -1,0 +1,10 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Nigella Lawson"@en, "Nigella Lawson"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/1/1c/Nigella_Lawson_4_in_2020.jpg> ;
+  schema:nationality "British"@en, "Brits"@nl ;
+  ex:cuisine ex:British ;
+  schema:description "British food writer and television cook whose warm, unfussy style and bestselling books helped popularise home cooking for a broad domestic audience."@en, "Britse foodschrijver en tv-kok wier warme, ongecompliceerde stijl en bestsellende boeken het thuiskoken populair maakten bij een breed publiek."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Nigella_Lawson> .

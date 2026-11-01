@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Jamie Oliver"@en, "Jamie Oliver"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/3/38/Jamie_Oliver_%28cropped%29.jpg> ;
+  schema:nationality "British"@en, "Brits"@nl ;
+  ex:cuisine ex:British ;
+  schema:worksFor "Jamie's Italian"@en, "Jamie's Italian"@nl ;
+  schema:description "British chef, restaurateur and campaigner who rose to fame as The Naked Chef and has since championed school-meal reform and healthier home cooking."@en, "Britse chef-kok, restaurateur en pleitbezorger die beroemd werd als The Naked Chef en zich sindsdien inzet voor betere schoolmaaltijden en gezonder thuiskoken."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Jamie_Oliver> .

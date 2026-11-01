@@ -1,0 +1,26 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+<> a schema:Recipe ;
+  schema:name "Oops! I Dropped the Lemon Tart"@en, "Oeps! De Citroentaart Is Gevallen"@nl ;
+  ex:cuisine ex:ModernItalian ;
+  schema:description "Massimo Bottura's signature deconstructed dessert at Osteria Francescana, born from a real kitchen accident and rebuilt as a deliberately \"broken\" plate."@en, "Massimo Bottura's iconische gedeconstrueerde dessert van Osteria Francescana, ontstaan uit een echt ongelukje in de keuken en herbouwd tot een bewust 'gebroken' bord."@nl ;
+  schema:author <../chefs/massimo-bottura> ;
+  schema:recipeCategory ex:Dessert ;
+  schema:prepTime "PT1H"^^xsd:duration ;
+  schema:cookTime "PT20M"^^xsd:duration ;
+  schema:recipeYield 4 ;
+  schema:recipeIngredient ([
+    schema:name "Sablé pastry crumbs"@en, "Kruimels van zanddeeg"@nl
+  ] [
+    schema:name "Lemon cream (lemon juice, sugar, eggs, butter)"@en, "Citroencrème (citroensap, suiker, eieren, boter)"@nl
+  ] [
+    schema:name "Meringue shards"@en, "Schilfers meringue"@nl
+  ] [
+    schema:name "Lime zest"@en, "Limoenrasp"@nl
+  ] [
+    schema:name "Basil-infused olive oil, to drizzle"@en, "Basilicumolie, om te besprenkelen"@nl
+  ]) ;
+  schema:recipeInstructions "Bake a sablé pastry disc and shatter it. Prepare a smooth lemon cream and pipe it in irregular smears across the plate as though the tart had been dropped. Scatter the shattered pastry, meringue shards and lime zest over and around the cream, finishing with a drizzle of basil-infused olive oil."@en, "Bak een schijf zanddeeg en verbrijzel deze. Maak een gladde citroencrème en spuit deze in onregelmatige vegen over het bord, alsof de taart is gevallen. Verdeel de verbrijzelde taartbodem, schilfers meringue en limoenrasp erover en eromheen, en werk af met een scheutje basilicumolie."@nl .

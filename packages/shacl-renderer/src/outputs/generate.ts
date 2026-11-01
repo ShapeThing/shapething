@@ -5,12 +5,13 @@ import { castDataTypeTermToJs } from "@/helpers/castDataTypeTermToJs.ts";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
 import { factory } from "@/helpers/factory.ts";
 import { getCodeIdentifier } from "@/helpers/getCodeIdentifier.ts";
-import { faker, sh, shui, xsd } from "@/helpers/namespaces.ts";
+import { faker, rdf, sh, shui, xsd } from "@/helpers/namespaces.ts";
 import { termToJsValue } from "@/helpers/termToJsValue.ts";
 import { jsToRdf } from "@/outputs/js-to-rdf.ts";
 import { runFederatedQuery, substituteSearchParameters } from "@/outputs/render/hooks/query.ts";
 import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import { ChoiceElement } from "@/structure/ChoiceElement.ts";
+import { collectClassAndSubClasses } from "@/structure/classHierarchy.ts";
 import { childrenForShape } from "@/structure/childrenForShape.ts";
 import { choiceBranchShapes } from "@/structure/choiceBranches.ts";
 import { logicalBranches, withBranch } from "@/structure/logicalBranches.ts";
@@ -85,7 +86,7 @@ export async function generate(options: GenerateOptions): Promise<RdfStore> {
     contentLanguage,
   });
 
-  return jsToRdf({
+  const dataGraph = jsToRdf({
     shapesGraph: options.shapesGraph,
     dataGraph: existingDataGraph,
     focusNode: options.focusNode,
@@ -93,6 +94,16 @@ export async function generate(options: GenerateOptions): Promise<RdfStore> {
     data,
     contentLanguage,
   });
+
+  // The generated resource is an instance of the classes its shapes target, so those shapes (and
+  // anything querying by class) find it the same way they find real data.
+  for (const nodeShape of options.nodeShapes) {
+    for (const quad of options.shapesGraph.getQuads(nodeShape, sh("targetClass"), null)) {
+      dataGraph.addQuad(factory.quad(options.focusNode, rdf("type"), quad.object as NamedNode));
+    }
+  }
+
+  return dataGraph;
 }
 
 type FakerValue = string | number | boolean | Date;
@@ -155,10 +166,16 @@ async function generateProperty(
 
   const minCount = effective.get(sh("minCount")) ?? 0;
   const maxCount = effective.get(sh("maxCount"));
-  const count = fakerLibrary.number.int({
+  let count = fakerLibrary.number.int({
     min: minCount,
     max: maxCount ?? Math.max(minCount, DEFAULT_MAX_COUNT),
   });
+  // Every generated value is written in the one content language, so a second value would break
+  // sh:uniqueLang - a shape asking for one value per language gets just the content language's.
+  const datatype = effective.get(sh("datatype"));
+  if (effective.get(sh("uniqueLang")) && datatype?.equals(rdf("langString"))) {
+    count = Math.min(count, 1);
+  }
   if (count === 0) return undefined;
 
   const values: unknown[] = [];
@@ -176,11 +193,13 @@ async function generateMemberShapeValues(
   memberShapeNodes: Term[],
   context: GenerationContext,
 ): Promise<unknown[]> {
-  const minCount = property.get(sh("minCount")) ?? 0;
-  const maxCount = property.get(sh("maxCount"));
+  // The length of a sh:memberShape list is constrained by sh:minListLength/sh:maxListLength,
+  // sh:minCount/sh:maxCount are about the number of lists.
+  const minLength = property.get(sh("minListLength")) ?? property.get(sh("minCount")) ?? 0;
+  const maxLength = property.get(sh("maxListLength")) ?? property.get(sh("maxCount"));
   const count = fakerLibrary.number.int({
-    min: minCount,
-    max: maxCount ?? Math.max(minCount, DEFAULT_MAX_COUNT),
+    min: minLength,
+    max: maxLength ?? Math.max(minLength, DEFAULT_MAX_COUNT),
   });
 
   const memberElement = new PropertyUIElement({
@@ -233,6 +252,9 @@ async function generateValue(
 
   const annotated = generateFromFakerAnnotation(property, context.fakerSettings);
   if (annotated !== undefined) return annotated;
+
+  const subClass = generateSubClass(property);
+  if (subClass !== undefined) return subClass;
 
   const matchedResource = await generateMatchingResource(property, context);
   if (matchedResource !== undefined) return matchedResource;
@@ -371,6 +393,17 @@ async function generateMatchingResource(
   return undefined;
 }
 
+// sh:rootClass asks for the root class or one of its subclasses (via rdfs:subClassOf in the shapes
+// graph, the same hierarchy shui:SubClassEditor offers) - a subclass when there is one, since a
+// root like ex:Cuisine is usually the category itself rather than a meaningful value.
+function generateSubClass(property: PropertyUIElement): string | undefined {
+  const [rootClass] = property.get(sh("rootClass")) as Term[];
+  if (rootClass?.termType !== "NamedNode") return undefined;
+  const classes = [...collectClassAndSubClasses(property.shapesGraph, rootClass)];
+  const subClasses = classes.filter((iri) => iri !== rootClass.value);
+  return pickRandom(subClasses.length > 0 ? subClasses : classes);
+}
+
 // No faker:generator declared at all - fall back to sh:datatype (defaulting to a string, same as
 // jsToRdf's own untyped-property fallback) plus, for strings, a keyword guess. A pure resource
 // reference (sh:class with neither sh:node, sh:in nor sh:hasValue) that generateMatchingResource
@@ -382,6 +415,14 @@ function generateDefaultValue(
 ): unknown {
   const datatype = property.get(sh("datatype"));
   if (!datatype && (property.get(sh("class")) as Term[]).length > 0) return undefined;
+
+  // An IRI-valued property without a class, e.g. a link or an image - jsToRdf writes it as an IRI.
+  const isIri = (property.get(sh("nodeKind")) as Term[]).some((nodeKind) =>
+    nodeKind.equals(sh("IRI")),
+  );
+  if (!datatype && isIri) return generateUrl(property);
+
+  if (datatype?.equals(xsd("duration"))) return generateDuration();
 
   const jsType = datatype ? castDataTypeTermToJs(datatype) : "string";
 
@@ -415,4 +456,18 @@ function generateString(property: PropertyUIElement): string {
   const codeIdentifier = getCodeIdentifier(property.shapesGraph, property.propertyShapes[0]);
   const generator = STRING_GENERATORS.find(([pattern]) => pattern.test(codeIdentifier))?.[1];
   return generator ? generator() : fakerLibrary.lorem.words({ min: 1, max: 3 });
+}
+
+function generateUrl(property: PropertyUIElement): string {
+  const codeIdentifier = getCodeIdentifier(property.shapesGraph, property.propertyShapes[0]);
+  return /(image|photo|picture|logo|depiction)/i.test(codeIdentifier)
+    ? fakerLibrary.image.url()
+    : fakerLibrary.internet.url();
+}
+
+// A valid xsd:duration of up to a few hours, written as hours and minutes - e.g. "PT1H25M".
+function generateDuration(): string {
+  const hours = fakerLibrary.number.int({ min: 0, max: 3 });
+  const minutes = fakerLibrary.number.int({ min: hours ? 0 : 5, max: 59 });
+  return `PT${hours ? `${hours}H` : ""}${minutes ? `${minutes}M` : ""}`;
 }

@@ -1,0 +1,271 @@
+@prefix ex: <http://example.org/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix faker: <https://fakerjs.dev/>.
+@prefix unit: <http://qudt.org/vocab/unit/>.
+
+### Copied from packages/shacl-renderer/src/stories/showcases/recipes-and-chefs.ttl, the vocabulary
+### (cuisines, categories and units) lives in recipes-and-chefs/vocabulary.ttl.
+### Unlike the original, the amount and unit of an ingredient are optional, as its comment intends:
+### "Eggs" or "a pinch of salt" have no unit. The faker:generator annotations and the bounds on
+### servings and amounts make generated recipes and chefs look like the real ones.
+
+### Chef Shape
+ex:ChefShape a sh:NodeShape ;
+    sh:targetClass ex:Chef ;
+    sh:property [
+        sh:path schema:name ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:minCount 2 ;
+        sh:order 0 ;
+        sh:name "Name"@en, "Naam"@nl ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:image ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:order 1 ;
+        sh:name "Photo"@en, "Foto"@nl ;
+        shui:viewer shui:ImageViewer ;
+        shui:propertyRole shui:DepictionRole ;
+    ] ;
+    sh:property [
+        sh:path schema:nationality ;
+        faker:generator faker:location.country ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:minCount 2 ;
+        sh:order 2 ;
+        sh:name "Nationality"@en, "Nationaliteit"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:cuisine ;
+        sh:rootClass ex:Cuisine ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        shui:editor shui:SubClassEditor ;
+        sh:order 3 ;
+        shui:propertyRole shui:ClassificationRole ;
+        sh:name "Signature cuisine"@en, "Signatuurkeuken"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:michelinStars ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 0 ;
+        sh:maxInclusive 3 ;
+        sh:maxCount 1 ;
+        sh:order 4 ;
+        sh:name "Michelin stars"@en, "Michelinsterren"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:worksFor ;
+        faker:generator ( faker:company.name ", " faker:location.city ) ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:order 5 ;
+        sh:name "Restaurant"@en, "Restaurant"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:description ;
+        faker:generator ( "Chef and restaurateur, known for " faker:food.ethnicCategory " cooking." ) ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:singleLine false ;
+        sh:order 6 ;
+        sh:name "Biography"@en, "Biografie"@nl ;
+        shui:propertyRole shui:DescriptionRole ;
+    ] ;
+    sh:property [
+        sh:path schema:sameAs ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:order 7 ;
+        sh:name "Wikipedia"@en, "Wikipedia"@nl ;
+    ] ;
+    .
+
+ex:IngredientShape a sh:NodeShape ;
+    sh:property [
+        sh:path schema:name ;
+        faker:generator faker:food.ingredient ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:minCount 2 ;
+        sh:order 0 ;
+        sh:name "Ingredient"@en, "Ingrediënt"@nl ;
+        shui:propertyRole shui:LabelRole ;
+        sh:group ex:ingredientFieldsGroup ;
+    ] ;
+    sh:property [
+        sh:path schema:value ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 2000 ;
+        sh:datatype xsd:integer ;
+        sh:maxCount 1 ;
+        sh:order 1 ;
+        sh:name "Amount"@en, "Hoeveelheid"@nl ;
+        sh:group ex:ingredientFieldsGroup ;
+    ] ;
+    sh:property [
+        sh:path schema:unitCode ;
+        sh:class ex:Unit ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        shui:editor shui:EnumSelectEditor ;
+        sh:order 2 ;
+        sh:name "Unit"@en, "Eenheid"@nl ;
+        sh:group ex:ingredientFieldsGroup ;
+    ] ;
+    .
+
+ex:ingredientFieldsGroup a sh:PropertyGroup, st:HorizontalPropertyGroup ;
+    .
+ex:mainGroup 
+    a sh:PropertyGroup ;
+    sh:name "Main content"@en, "Hoofdinhoud"@nl ;
+    sh:order -99 ;
+    .
+
+ex:metaGroup 
+    a sh:PropertyGroup ;
+    sh:name "Metadata"@en, "Metadata"@nl ;
+    sh:order -98 ;
+    .
+
+
+### Recipe Shape
+ex:RecipeShape a sh:NodeShape ;
+    sh:targetClass schema:Recipe ;
+    sh:property [
+        sh:path schema:name ;
+        faker:generator faker:food.dish ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:minCount 2 ;
+        sh:group ex:mainGroup ;
+        sh:order -6 ;
+        sh:name "Recipe name"@en, "Naam van het recept"@nl ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path schema:image ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+        sh:group ex:mainGroup ;
+        sh:order 10 ;
+        sh:name "Photo"@en, "Foto"@nl ;
+        shui:viewer shui:ImageViewer ;
+    ] ;
+    sh:property [
+        sh:path schema:author ;
+        sh:class ex:Chef ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:group ex:metaGroup ;
+        sh:order 2 ;
+        sh:name "Chef"@en, "Chef-kok"@nl ;
+    ] ;
+    sh:property [
+        sh:path ex:cuisine ;
+        sh:rootClass ex:Cuisine ;
+        sh:nodeKind sh:IRI ;
+        sh:minCount 1 ;
+        shui:editor shui:SubClassEditor ;
+        sh:order 3 ;
+        sh:group ex:metaGroup ;
+        sh:name "Cuisine"@en, "Keuken"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeCategory ;
+        sh:class ex:RecipeCategory ;
+        sh:nodeKind sh:IRI ;
+        sh:in ( ex:Starter ex:MainCourse ex:Dessert ex:SideDish ) ;
+        sh:maxCount 1 ;
+        sh:group ex:metaGroup ;
+        sh:order 4 ;
+        sh:name "Category"@en, "Categorie"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:prepTime ;
+        sh:datatype xsd:duration ;
+        shui:editor st:DurationEditor ;
+        st:durationPattern "{hh}{mm}" ;
+        sh:group ex:metaGroup ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:order 5 ;
+        sh:name "Prep time"@en, "Bereidingstijd"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:cookTime ;
+        sh:datatype xsd:duration ;
+        shui:editor st:DurationEditor ;
+        st:durationPattern "{hh}{mm}" ;
+        sh:minCount 1 ;
+        sh:group ex:metaGroup ;
+        sh:maxCount 1 ;
+        sh:order 6 ;
+        sh:name "Cook time"@en, "Kooktijd"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeYield ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 12 ;
+        sh:datatype xsd:integer ;
+        sh:group ex:metaGroup ;
+        sh:maxCount 1 ;
+        sh:minCount 1 ;
+        sh:order 7 ;
+        sh:name "Servings"@en, "Porties"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeIngredient ;
+        sh:memberShape [
+            sh:node ex:IngredientShape ;
+            shui:editor shui:DetailsEditor ;
+            shui:viewer shui:DetailsViewer ;
+        ] ;
+        sh:minListLength 1 ;
+        sh:group ex:mainGroup ;
+        sh:order 8 ;
+        sh:name "" ;
+    ] ;
+    sh:property [
+        sh:path schema:recipeInstructions ;
+        faker:generator ( "Prepare the " faker:food.ingredient ", then cook it slowly with the " faker:food.ingredient "." ) ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:singleLine false ;
+        sh:group ex:mainGroup ;
+        sh:minCount 2 ;
+        sh:order -2 ;
+        sh:name "Instructions"@en, "Bereidingswijze"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:description ;
+        faker:generator faker:food.description ;
+        sh:datatype rdf:langString ;
+        sh:languageIn ( "en" "nl" ) ;
+        sh:uniqueLang true ;
+        sh:singleLine false ;
+        sh:minCount 2 ;
+        sh:group ex:mainGroup ;
+        sh:order -3 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+    ] ;
+    .

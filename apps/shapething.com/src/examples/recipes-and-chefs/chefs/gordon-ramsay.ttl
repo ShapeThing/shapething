@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Gordon Ramsay"@en, "Gordon Ramsay"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/9/96/Gordon_Ramsay_%28cropped%29.jpg> ;
+  schema:nationality "British"@en, "Brits"@nl ;
+  ex:cuisine ex:ModernEuropean ;
+  ex:michelinStars 3 ;
+  schema:worksFor "Restaurant Gordon Ramsay, London"@en, "Restaurant Gordon Ramsay, Londen"@nl ;
+  schema:description "Scottish-born chef and restaurateur known for his Michelin-starred restaurants and television programmes such as Hell's Kitchen and MasterChef."@en, "Schotse chef-kok en restaurateur, bekend van zijn Michelinsterrenrestaurants en tv-programma's als Hell's Kitchen en MasterChef."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Gordon_Ramsay> .

@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Thomas Keller"@en, "Thomas Keller"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/9/93/Thomas_Keller.jpg> ;
+  schema:nationality "American"@en, "Amerikaans"@nl ;
+  ex:cuisine ex:ModernAmerican ;
+  ex:michelinStars 3 ;
+  schema:worksFor "The French Laundry, Yountville"@en, "The French Laundry, Yountville"@nl ;
+  schema:description "American chef and owner of The French Laundry in Napa Valley, renowned for his exacting technique and refined tasting menus rooted in classic French method."@en, "Amerikaanse chef-kok en eigenaar van The French Laundry in Napa Valley, geroemd om zijn nauwkeurige techniek en verfijnde degustatiemenu's, geworteld in de klassieke Franse keuken."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Thomas_Keller> .

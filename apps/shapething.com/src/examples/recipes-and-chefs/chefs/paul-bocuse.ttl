@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Paul Bocuse"@en, "Paul Bocuse"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/f/f1/Paul_Bocuse2.jpg> ;
+  schema:nationality "French"@en, "Frans"@nl ;
+  ex:cuisine ex:French ;
+  ex:michelinStars 3 ;
+  schema:worksFor "Auberge du Pont de Collonges, Lyon"@en, "Auberge du Pont de Collonges, Lyon"@nl ;
+  schema:description "French chef and figurehead of nouvelle cuisine, who ran his eponymous restaurant near Lyon for over five decades and lent his name to the Bocuse d'Or cooking competition."@en, "Franse chef-kok en boegbeeld van de nouvelle cuisine, die zijn gelijknamige restaurant bij Lyon meer dan vijf decennia leidde en zijn naam gaf aan de kookwedstrijd Bocuse d'Or."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Paul_Bocuse> .

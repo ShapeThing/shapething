@@ -1,0 +1,12 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Cristina Bowerman"@en, "Cristina Bowerman"@nl ;
+  schema:nationality "Italian"@en, "Italiaans"@nl ;
+  ex:cuisine ex:ModernItalian ;
+  ex:michelinStars 1 ;
+  schema:worksFor "Glass Hostaria, Rome"@en, "Glass Hostaria, Rome"@nl ;
+  schema:description "Italian chef and owner of Glass Hostaria in Rome, known for a creative, internationally inflected take on Italian cooking honed partly during years spent in the United States."@en, "Italiaanse chef-kok en eigenaar van Glass Hostaria in Rome, bekend om haar creatieve, internationaal beïnvloede benadering van de Italiaanse keuken, deels ontwikkeld tijdens jaren in de Verenigde Staten."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Cristina_Bowerman> .

@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Grant Achatz"@en, "Grant Achatz"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/5/54/JOH_0416_%286079731832%29.jpg> ;
+  schema:nationality "American"@en, "Amerikaans"@nl ;
+  ex:cuisine ex:ModernAmerican ;
+  ex:michelinStars 3 ;
+  schema:worksFor "Alinea, Chicago"@en, "Alinea, Chicago"@nl ;
+  schema:description "American chef and co-owner of Alinea in Chicago, known for avant-garde, multi-sensory tasting menus that push the boundaries of modernist cuisine."@en, "Amerikaanse chef-kok en medeeigenaar van Alinea in Chicago, bekend om avant-gardistische, multisensorische degustatiemenu's die de grenzen van de modernistische keuken verleggen."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Grant_Achatz> .

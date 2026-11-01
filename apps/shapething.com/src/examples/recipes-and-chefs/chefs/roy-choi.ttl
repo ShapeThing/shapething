@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Roy Choi"@en, "Roy Choi"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/3/38/Roy_Choi_from_Koji_BBQ_%28cropped%29.jpg> ;
+  schema:nationality "American"@en, "Amerikaans"@nl ;
+  ex:cuisine ex:AsianFusion ;
+  schema:worksFor "Kogi BBQ, Los Angeles"@en, "Kogi BBQ, Los Angeles"@nl ;
+  schema:description "Korean-American chef credited with launching the modern food-truck movement through Kogi BBQ, serving Korean-Mexican fusion tacos across Los Angeles."@en, "Koreaans-Amerikaanse chef-kok die met Kogi BBQ aan de basis stond van de moderne foodtruckbeweging, met Koreaans-Mexicaanse fusietaco's door heel Los Angeles."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Roy_Choi> .

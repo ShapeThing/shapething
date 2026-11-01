@@ -9,7 +9,7 @@ import type { Origin, ResolvedPropertyShape } from "@/shapes/resolveProperties.t
  * - merged: sh:path is a plain IRI that is an OWL/RDF property. One thing, two sides, one form.
  * - split: a complex sh:path that contains OWL/RDF properties. Shown as separate forms.
  * - shape: no ontology property involved.
- * - ontology: an OWL/RDF property in scope (rdfs:domain) that no shape talks about.
+ * - ontology: an OWL/RDF property in scope (rdfs:domain) that no shape at all talks about.
  */
 export type AlignmentKind = "merged" | "split" | "shape" | "ontology";
 
@@ -48,20 +48,24 @@ export function alignPropertyShape(
 /**
  * The full property list for a focus: every resolved property shape aligned with the ontology,
  * followed by ontology-only properties whose rdfs:domain is one of `scopeClasses` (the focus class
- * first, then its ancestors). An OWL property already covered by a merged or split row is not
- * listed again.
+ * first, then its ancestors) that no shape mentions at all. `shapedProperties` holds the IRIs of
+ * every property any shape's sh:path mentions, hidden or out of scope ones included.
  */
 export function alignProperties(
   resolved: (Omit<ResolvedPropertyShape, "origin"> & { origin: AlignedOrigin })[],
   scopeClasses: NamedNode[],
   properties: PropertyIndex,
   describe: (path: Term) => PathInfo,
+  shapedProperties: ReadonlySet<string> = new Set(),
 ): AlignedProperty[] {
   const aligned = resolved.map(({ propertyShape, origin }) =>
     alignPropertyShape(propertyShape, origin, properties, describe),
   );
 
-  const covered = new Set(aligned.flatMap((row) => row.owlProperties.map((p) => p.iri)));
+  const covered = new Set([
+    ...shapedProperties,
+    ...aligned.flatMap((row) => row.owlProperties.map((p) => p.iri)),
+  ]);
 
   for (const owlClass of scopeClasses) {
     for (const property of properties.values()) {

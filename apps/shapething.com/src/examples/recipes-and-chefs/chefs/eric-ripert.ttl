@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Eric Ripert"@en, "Eric Ripert"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/a/a0/Eric_ripert_5213048.jpg> ;
+  schema:nationality "French-American"@en, "Frans-Amerikaans"@nl ;
+  ex:cuisine ex:French ;
+  ex:michelinStars 3 ;
+  schema:worksFor "Le Bernardin, New York"@en, "Le Bernardin, New York"@nl ;
+  schema:description "French-American chef and co-owner of Le Bernardin in New York, celebrated for his precise, restrained treatment of fish and seafood."@en, "Frans-Amerikaanse chef-kok en medeeigenaar van Le Bernardin in New York, geroemd om zijn precieze, ingetogen bereiding van vis en schaal- en schelpdieren."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Eric_Ripert> .

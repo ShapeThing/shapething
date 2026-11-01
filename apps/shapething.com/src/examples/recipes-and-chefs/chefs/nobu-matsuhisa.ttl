@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Nobu Matsuhisa"@en, "Nobu Matsuhisa"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/d/dd/Nobu_Matsuhisa_with_sushi.png> ;
+  schema:nationality "Japanese"@en, "Japans"@nl ;
+  ex:cuisine ex:Japanese ;
+  schema:worksFor "Nobu, worldwide"@en, "Nobu, wereldwijd"@nl ;
+  schema:description "Japanese chef and founder of the Nobu restaurant group, known for fusing traditional Japanese technique with Peruvian influences picked up early in his career."@en, "Japanse chef-kok en oprichter van de Nobu-restaurantgroep, bekend om het combineren van traditionele Japanse technieken met Peruaanse invloeden uit het begin van zijn carrière."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Nobu_Matsuhisa> .

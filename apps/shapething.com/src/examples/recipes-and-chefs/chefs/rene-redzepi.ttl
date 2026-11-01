@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "René Redzepi"@en, "René Redzepi"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/b/b8/Ren%C3%A9_Redzepi_en_la_cena_de_las_14_estrellas_Michel%C3%ADn_del_restaurante_Zaldiar%C3%A1n.jpg> ;
+  schema:nationality "Danish"@en, "Deens"@nl ;
+  ex:cuisine ex:Nordic ;
+  ex:michelinStars 2 ;
+  schema:worksFor "Noma, Copenhagen"@en, "Noma, Kopenhagen"@nl ;
+  schema:description "Danish chef and co-founder of Noma in Copenhagen, a driving force behind the New Nordic movement's focus on foraging, fermentation and hyper-local ingredients."@en, "Deense chef-kok en medeoprichter van Noma in Kopenhagen, een drijvende kracht achter de New Nordic-beweging met haar focus op wildplukken, fermentatie en hyperlokale ingrediënten."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Ren%C3%A9_Redzepi> .

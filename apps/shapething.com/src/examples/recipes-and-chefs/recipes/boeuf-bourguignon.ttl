@@ -1,0 +1,47 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+<> a schema:Recipe ;
+  schema:name "Boeuf Bourguignon"@en, "Boeuf Bourguignon"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Beef_bourguignon_NYT.jpg/960px-Beef_bourguignon_NYT.jpg> ;
+  ex:cuisine ex:French ;
+  schema:description "Julia Child's version of the Burgundian classic: beef slowly braised in red wine with bacon, mushrooms and pearl onions."@en, "Julia Childs versie van de Bourgondische klassieker: rundvlees langzaam gestoofd in rode wijn met spek, paddenstoelen en zilveruitjes."@nl ;
+  schema:author <../chefs/julia-child> ;
+  schema:recipeCategory ex:MainCourse ;
+  schema:prepTime "PT30M"^^xsd:duration ;
+  schema:cookTime "PT3H"^^xsd:duration ;
+  schema:recipeYield 6 ;
+  schema:recipeIngredient ([
+    schema:name "Beef chuck, cubed"@en, "Runderschouder, in blokjes"@nl ;
+    schema:value 1500 ;
+    schema:unitCode unit:GM
+  ] [
+    schema:name "Bacon lardons"@en, "Spekblokjes"@nl ;
+    schema:value 200 ;
+    schema:unitCode unit:GM
+  ] [
+    schema:name "Red Burgundy wine"@en, "Rode bourgognewijn"@nl ;
+    schema:value 1 ;
+    schema:unitCode unit:COUNT
+  ] [
+    schema:name "Beef stock"@en, "Runderbouillon"@nl ;
+    schema:value 500 ;
+    schema:unitCode unit:MilliL
+  ] [
+    schema:name "Pearl onions"@en, "Zilveruitjes"@nl ;
+    schema:value 12
+  ] [
+    schema:name "Button mushrooms"@en, "Champignons"@nl ;
+    schema:value 250 ;
+    schema:unitCode unit:GM
+  ] [
+    schema:name "Carrots, sliced"@en, "Wortels, in plakjes"@nl ;
+    schema:value 3
+  ] [
+    schema:name "Bouquet garni"@en, "Bouquet garni"@nl ;
+    schema:value 1
+  ]) ;
+  schema:recipeInstructions "Brown the bacon lardons, then sear the beef cubes in the rendered fat until deeply coloured. Add the carrots and onion, then the wine and enough stock to cover, along with the bouquet garni. Cover and braise slowly until the beef is fork-tender. In a separate pan, glaze the pearl onions and sauté the mushrooms, then fold both into the stew just before serving."@en, "Bak de spekblokjes uit en schroei daarna het rundvlees rondom bruin in het vrijgekomen vet. Voeg de wortel en ui toe, gevolgd door de wijn en genoeg bouillon om het vlees te bedekken, samen met het bouquet garni. Laat afgedekt langzaam sudderen tot het vlees mals is. Karameliseer in een aparte pan de zilveruitjes en bak de paddenstoelen, en schep beide er vlak voor het serveren doorheen."@nl .

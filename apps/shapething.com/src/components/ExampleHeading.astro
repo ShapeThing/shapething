@@ -1,0 +1,162 @@
+---
+// The heading of an example, with a "Code" button that shows the code behind the example.
+import { Code } from 'astro:components'
+import { codeSamples } from '../data/codeSamples'
+import { examples } from '../data/examples'
+
+type Props = {
+  id: (typeof examples)[number]['id']
+}
+
+const { id } = Astro.props
+const example = examples.find((example) => example.id === id)
+if (!example) throw new Error(`Unknown example: ${id}`)
+const samples = codeSamples[id]
+const panelId = `${id}-code`
+---
+
+<h2 class="example-heading">
+  <span>{example.title}</span>
+  <button type="button" class="example-heading__code-button" aria-expanded="false" aria-controls={panelId}>
+    <svg aria-hidden="true" viewBox="0 0 24 24" width="16" height="16"
+      ><path
+        d="M8 6 2 12l6 6M16 6l6 6-6 6"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2.2"
+        stroke-linecap="round"
+        stroke-linejoin="round"></path></svg
+    >
+    <span class="example-heading__code-label">Code</span>
+  </button>
+</h2>
+
+<div class="example-code" id={panelId} role="region" aria-label={`Code for ${example.title}`} hidden>
+  {
+    samples.map(({ file, language, code }) => (
+      <figure class="example-code__file">
+        <figcaption>{file}</figcaption>
+        <Code code={code.trim()} lang={language} theme="github-light" />
+      </figure>
+    ))
+  }
+</div>
+
+<script>
+  for (const button of document.querySelectorAll<HTMLButtonElement>('.example-heading__code-button')) {
+    const panel = document.getElementById(button.getAttribute('aria-controls')!)!
+    const label = button.querySelector('.example-heading__code-label')!
+    const example = button.closest('.example-panel')
+
+    button.addEventListener('click', () => {
+      const open = button.getAttribute('aria-expanded') !== 'true'
+      button.setAttribute('aria-expanded', String(open))
+      label.textContent = open ? 'Hide code' : 'Code'
+      panel.hidden = !open
+      // The code takes the place of the example, a class keeps the example as it was (tabs, inputs) for when it comes back.
+      example?.classList.toggle('example-panel--showing-code', open)
+    })
+  }
+</script>
+
+<style>
+  /* The heading of the open example stays in view while scrolling through it.
+     On small screens it sits under the sticky row of tabs. */
+  .example-heading {
+    position: sticky;
+    top: 46px;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1em;
+    margin-top: 0;
+    padding-block: 0.4em;
+    background: white;
+    border-bottom: 1px solid var(--blue-lightest);
+  }
+
+  @media (min-width: 900px) {
+    .example-heading {
+      top: 0;
+    }
+  }
+
+  .example-heading__code-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4em;
+    flex: 0 0 auto;
+    padding: 0.35em 0.8em;
+    border: 1px solid var(--blue-light);
+    border-radius: 6px;
+    background: white;
+    color: var(--blue-dark);
+    font-family: 'Roboto Variable', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: normal;
+    cursor: pointer;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+
+  .example-heading__code-button:hover {
+    border-color: var(--purple);
+    color: var(--purple);
+  }
+
+  .example-heading__code-button[aria-expanded='true'] {
+    border-color: var(--blue-dark);
+    background: var(--blue-dark);
+    color: white;
+  }
+
+  .example-heading__code-button[aria-expanded='true']:hover {
+    border-color: var(--purple);
+    background: var(--purple);
+  }
+
+  .example-heading__code-button:focus-visible {
+    outline: 2px solid var(--blue-light);
+    outline-offset: 2px;
+  }
+
+  :global(.example-panel--showing-code) > :global(:not(.example-heading, .example-code)) {
+    display: none !important;
+  }
+
+  .example-code {
+    display: flex;
+    flex-direction: column;
+    gap: 1em;
+    margin-block: 1em 1.5em;
+  }
+
+  .example-code[hidden] {
+    display: none;
+  }
+
+  .example-code__file {
+    margin: 0;
+    min-width: 0;
+    border: 1px solid var(--blue-lightest);
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .example-code__file figcaption {
+    padding: 0.3em 0.8em;
+    background: var(--blue-lightest);
+    font-family: monospace;
+    font-size: 13px;
+  }
+
+  .example-code__file :global(pre) {
+    margin: 0;
+    padding: 0.8em 1em;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+</style>

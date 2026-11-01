@@ -1,0 +1,10 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Julia Child"@en, "Julia Child"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/3/3a/Julia_Child_portrait_by_%C2%A9Lynn_Gilbert%2C_1978.jpg> ;
+  schema:nationality "American"@en, "Amerikaans"@nl ;
+  ex:cuisine ex:French ;
+  schema:description "American chef, author and television personality who introduced French cuisine to American home cooks through Mastering the Art of French Cooking and her show The French Chef."@en, "Amerikaanse chef-kok, auteur en tv-persoonlijkheid die de Franse keuken introduceerde bij Amerikaanse thuiskoks via Mastering the Art of French Cooking en haar programma The French Chef."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Julia_Child> .

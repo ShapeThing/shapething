@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Paula Deen"@en, "Paula Deen"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/5/53/Fleet_Week_New_York_City_2009_090521-N-DG679-144_%28cropped%29.jpg> ;
+  schema:nationality "American"@en, "Amerikaans"@nl ;
+  ex:cuisine ex:SouthernAmerican ;
+  schema:worksFor "The Lady & Sons, Savannah"@en, "The Lady & Sons, Savannah"@nl ;
+  schema:description "American chef and television personality known for popularising rich, buttery Southern comfort food from her restaurant in Savannah, Georgia."@en, "Amerikaanse chef-kok en tv-persoonlijkheid, bekend om het populair maken van rijke, boterrijke Zuidelijke comfortfood vanuit haar restaurant in Savannah, Georgia."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Paula_Deen> .

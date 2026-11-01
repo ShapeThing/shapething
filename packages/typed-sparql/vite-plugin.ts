@@ -2,49 +2,10 @@ import { Parser } from "@traqula/parser-sparql-1-2";
 import fs from "node:fs";
 import path from "node:path";
 import type { Plugin } from "vite";
+import type { SparqlTypesOptions } from "./generate.ts";
 import { findRqFiles, processRqFile } from "./index.ts";
 
-/**
- * Options for the `sparqlTypes` Vite plugin, allowing users to customize the TypeScript types generated for SPARQL queries based on function return types and predicate-object patterns. This enables more precise typings for query results, improving type safety and developer experience when working with SPARQL queries in a TypeScript codebase.
- */
-export interface SparqlTypesOptions {
-  /**
-   * Map from function IRI or prefixed name to its TypeScript return type string.
-   *
-   * Keys can be:
-   *   - A prefixed name:  `"sta:label"`
-   *   - A full IRI:       `"http://example.org/ns/label"`
-   *
-   * Values are TypeScript type expressions inserted verbatim, e.g.
-   *   `"Literal"`, `"NamedNode"`, `"NamedNode | Literal"`.
-   *
-   * When a function is not listed, `Term` is used as the fallback type.
-   *
-   * @example
-   * sparqlTypes({
-   *   functions: {
-   *     'sta:label': 'Literal',
-   *     'sta:icon':  'Literal',
-   *   },
-   * })
-   */
-  functions?: Record<string, string>;
-  /**
-   * Additional predicate → object TypeScript type rules, merged on top of the
-   * built-in SHACL/RDF rules.
-   *
-   * Keys can be prefixed names or full IRIs (same format as `functions`).
-   * Values are TypeScript type expressions inserted verbatim.
-   *
-   * @example
-   * sparqlTypes({
-   *   predicateObjectTypes: {
-   *     'owl:sameAs': 'NamedNode',
-   *   },
-   * })
-   */
-  predicateObjectTypes?: Record<string, string>;
-}
+export type { SparqlTypesOptions };
 
 /**
  * A Vite plugin that processes SPARQL query files (.rq) and generates corresponding TypeScript types.

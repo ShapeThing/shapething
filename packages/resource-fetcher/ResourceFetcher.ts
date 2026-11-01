@@ -1,4 +1,4 @@
-import type { Bindings, DatasetCore, NamedNode, Quad, Quad_Subject } from "@rdfjs/types";
+import type { Bindings, DatasetCore, NamedNode, Quad, Quad_Subject, Term } from "@rdfjs/types";
 import type { QuerySourceUnidentified } from "@comunica/types";
 import { allShapeSubShapes } from "./helpers/allShapeSubShapes.ts";
 import { createShapesPointer } from "./helpers/createShapesPointer.ts";
@@ -44,6 +44,24 @@ function snapshotToString(snapshot: BranchSnapshot, indent = ""): string {
 
 export type QueryBindings = (query: string) => Promise<Bindings[]>;
 
+const termKey = (term: Term): string =>
+  term.termType === "Literal"
+    ? `${term.termType}:${term.value}@${term.language}^${term.datatype.value}`
+    : `${term.termType}:${term.value}`;
+
+/**
+ * Branch results overlap, for example every rdf:rest step of a list returns the rest of the list as well.
+ * Keeps the first quad of every duplicate so that isLeaf and isReverse survive.
+ */
+const uniqueQuads = (quads: OurQuad[]): OurQuad[] => {
+  const unique = new Map<string, OurQuad>();
+  for (const quad of quads) {
+    const key = [quad.subject, quad.predicate, quad.object, quad.graph].map(termKey).join(" ");
+    if (!unique.has(key)) unique.set(key, quad);
+  }
+  return [...unique.values()];
+};
+
 /**
  * ResourceFetcher class to fetch RDF resources with recursive branching.
  */
@@ -58,6 +76,8 @@ export class ResourceFetcher {
   #maxNodeShapeDepth: number;
   #accumulatedDataset: DatasetCore<OurQuad>;
   #graph?: string;
+  // The graph the caller asked for, as opposed to a detected one. Only this one is passed on to nested fetches.
+  #explicitGraph?: string;
   #pendingNestedFetches: Array<{ resourceIri: Quad_Subject; nodeShapePointer: Grapoi }> = [];
   #fetchedNestedIris: Set<string> = new Set();
   #nestedResults: OurQuad[] = [];
@@ -126,6 +146,7 @@ export class ResourceFetcher {
     }
     this.#maxNodeShapeDepth = maxNodeShapeDepth;
     this.#graph = graph;
+    this.#explicitGraph = graph;
   }
 
   registerNestedFetch(resourceIri: Quad_Subject, nodeShapePointer: Grapoi) {
@@ -170,7 +191,7 @@ export class ResourceFetcher {
     steps: number;
   }> {
     // If no graph is specified, detect if the resource is in a single graph
-    if (this.#graph !== undefined) {
+    if (this.#graph === undefined) {
       await this.#detectGraph();
     }
 
@@ -199,10 +220,10 @@ export class ResourceFetcher {
     await this.#runPendingNestedFetches();
 
     return {
-      results: [
+      results: uniqueQuads([
         ...this.#rootBranches.flatMap((branch) => branch.getResults([this.#resourceIri])),
         ...this.#nestedResults,
-      ],
+      ]),
       steps: step + this.#nestedSteps,
     };
   }
@@ -237,7 +258,8 @@ export class ResourceFetcher {
             queryBindings: this.#queryBindings,
             sources: this.#sources,
             shapesPointer: nodeShapePointer,
-            graph: this.#graph,
+            // A linked resource is its own document, it may live in another graph than the one detected for this resource.
+            graph: this.#explicitGraph,
             maxNodeShapeDepth: this.#maxNodeShapeDepth,
             debug: (event) => nestedEvents.push(event),
           });

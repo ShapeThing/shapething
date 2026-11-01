@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Heston Blumenthal"@en, "Heston Blumenthal"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/9/97/Hestonregentspark.jpg> ;
+  schema:nationality "British"@en, "Brits"@nl ;
+  ex:cuisine ex:ModernEuropean ;
+  ex:michelinStars 3 ;
+  schema:worksFor "The Fat Duck, Bray"@en, "The Fat Duck, Bray"@nl ;
+  schema:description "British chef and owner of The Fat Duck in Bray, celebrated for applying scientific method to cooking and for playful, multi-sensory dishes like snail porridge."@en, "Britse chef-kok en eigenaar van The Fat Duck in Bray, geroemd om zijn wetenschappelijke benadering van koken en om speelse, multisensorische gerechten zoals slakkenpap."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Heston_Blumenthal> .

@@ -1,4 +1,3 @@
-import { Link } from "@tanstack/react-router";
 import type { NamedNode } from "@rdfjs/types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useT } from "@/app/useT.ts";
@@ -7,6 +6,7 @@ import { compactIri } from "@/helpers/iri.ts";
 import type { AlignedProperty } from "@/alignment/model.ts";
 import PropertyForms from "@/alignment/PropertyForms.tsx";
 import { createPropertyShape } from "@/alignment/createPropertyShape.ts";
+import PanelHeader from "./PanelHeader.tsx";
 import { kindIcon, usePropertyLabel } from "./PropertyTable.tsx";
 
 export default function PropertyPanel({
@@ -31,22 +31,10 @@ export default function PropertyPanel({
 
   return (
     <aside className="st-manager-panel" aria-label={label(row)}>
-      <header className="st-manager-panel__header">
-        <h2 className="st-manager-heading">
-          <span className={`st-manager-kind st-manager-kind--${row.kind}`}>
-            {kindIcon[row.kind]}
-          </span>{" "}
-          {label(row)}
-        </h2>
-        <Link
-          to="."
-          search={(prev: Record<string, unknown>) => ({ ...prev, property: undefined })}
-          className="st-icon-button"
-          aria-label={t("shacl-manager-close", null, "Close")}
-        >
-          ✕
-        </Link>
-      </header>
+      <PanelHeader param="property">
+        <span className={`st-manager-kind st-manager-kind--${row.kind}`}>{kindIcon[row.kind]}</span>{" "}
+        {label(row)}
+      </PanelHeader>
       <dl className="st-manager-facts">
         {row.propertyShape && (
           <>

@@ -1,0 +1,21 @@
+---
+import ShapeThingExamples from '../components/ShapeThingExamples.astro'
+import Layout from '../layouts/Layout.astro'
+---
+
+<Layout class="examples" title="Examples">
+    <h1 class="examples-title">Examples</h1>
+    <p class="examples-intro">Everything below runs in your browser, on a small dataset of chefs and recipes. The examples share one store, so a change in one tab shows up in the others.</p>
+    <ShapeThingExamples />
+</Layout>
+
+<style>
+    .examples-title {
+        margin-block: 0.4em 0.2em;
+    }
+
+    .examples-intro {
+        font-size: 16px;
+        font-style: italic;
+    }
+</style>

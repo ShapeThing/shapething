@@ -1,0 +1,23 @@
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix schema: <http://schema.org/> .
+@prefix : <https://example.org/> .
+
+# The properties of the list members are on a node shape referred to with sh:node.
+:RecipeShape a sh:NodeShape ;
+  sh:property [
+    sh:path schema:name ;
+  ] ;
+  sh:property [
+    sh:path schema:recipeIngredient ;
+    sh:memberShape [
+      sh:node :IngredientShape ;
+    ] ;
+  ] .
+
+:IngredientShape a sh:NodeShape ;
+  sh:property [
+    sh:path schema:name ;
+  ] ;
+  sh:property [
+    sh:path schema:value ;
+  ] .

@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "Rick Stein"@en, "Rick Stein"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/e/e1/Rick_Stein_at_Tastes_of_the_Sea_cooking_demonstration_-_01.jpg> ;
+  schema:nationality "British"@en, "Brits"@nl ;
+  ex:cuisine ex:British ;
+  schema:worksFor "The Seafood Restaurant, Padstow"@en, "The Seafood Restaurant, Padstow"@nl ;
+  schema:description "British chef and restaurateur whose Padstow restaurants and television travelogues have long championed simply prepared, sustainably sourced seafood."@en, "Britse chef-kok en restaurateur wiens restaurants in Padstow en tv-reisprogramma's al jarenlang pleiten voor eenvoudig bereide, duurzaam gevangen zeevis."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Rick_Stein> .

@@ -98,7 +98,16 @@ export function useAlignedProperties(
       (row) => !seen.has(row.propertyShape.key) && seen.add(row.propertyShape.key),
     );
 
-    return alignProperties(unique, scope, properties, (path: Term) => describePath(store, path));
+    const describe = (path: Term) => describePath(store, path);
+    const shapedProperties = new Set(
+      [...shapes.propertyShapes.values()]
+        .flat()
+        .flatMap((propertyShape) =>
+          propertyShape.path ? describe(propertyShape.path).iris.map((iri) => iri.value) : [],
+        ),
+    );
+
+    return alignProperties(unique, scope, properties, describe, shapedProperties);
     // hiddenKey stands in for hiddenShapes, which is a fresh Set on every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focus.shape, focus.owlClass, classes, properties, shapes, store, hiddenKey]);

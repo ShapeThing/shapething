@@ -1,0 +1,73 @@
+---
+import Layout from '../layouts/Layout.astro'
+import { glossary } from '../data/glossary'
+
+const entries = Object.entries(glossary).sort(([, a], [, b]) => a.term.localeCompare(b.term))
+---
+
+<Layout class="glossary" title="Glossary">
+  <h1>Glossary</h1>
+  <p class="glossary__intro">The linked data terms used on this site, explained in plain words.</p>
+
+  <dl class="glossary__list">
+    {
+      entries.map(([id, entry]) => (
+        <div class="glossary__entry" id={id}>
+          <dt>{entry.term}</dt>
+          <dd>
+            <p>{entry.description}</p>
+            {'link' in entry && entry.link && (
+              <p class="glossary__more">
+                Read more: <a href={entry.link.href}>{entry.link.label}</a>
+              </p>
+            )}
+          </dd>
+        </div>
+      ))
+    }
+  </dl>
+</Layout>
+
+<style>
+  .glossary__intro {
+    font-size: 16px;
+  }
+
+  .glossary__list {
+    max-width: 52em;
+    margin-block: 1.5em 3em;
+  }
+
+  .glossary__entry {
+    padding: 0.8em 1em;
+    border-left: 3px solid transparent;
+    scroll-margin-top: 1em;
+  }
+
+  .glossary__entry:target {
+    border-left-color: var(--purple);
+    background: color-mix(in srgb, var(--blue-lightest) 35%, white);
+  }
+
+  .glossary__entry dt {
+    font-weight: 700;
+    font-size: 1.1em;
+  }
+
+  .glossary__entry dd {
+    margin: 0.2em 0 0;
+    line-height: 1.5;
+  }
+
+  .glossary__entry p {
+    margin: 0.2em 0;
+  }
+
+  .glossary__more {
+    font-size: 15px;
+  }
+
+  .glossary__more a {
+    color: var(--blue-light);
+  }
+</style>

@@ -1,0 +1,96 @@
+<div class="typed-sparql-example">
+    <div class="pane">
+        <span class="pane-label">query.rq</span>
+        <div id="typed-sparql-query"></div>
+    </div>
+    <div class="pane">
+        <span class="pane-label">query.rq.d.ts</span>
+        <div id="typed-sparql-type"></div>
+    </div>
+    <div class="pane">
+        <span class="pane-label" id="typed-sparql-results-label">results</span>
+        <div id="typed-sparql-results"></div>
+    </div>
+</div>
+
+<script>
+    // CodeMirror and the SPARQL parser are large, only load them once the example is in view.
+    const queryElement = document.querySelector<HTMLElement>('#typed-sparql-query')!
+    const typeElement = document.querySelector<HTMLElement>('#typed-sparql-type')!
+    const resultsElement = document.querySelector<HTMLElement>('#typed-sparql-results')!
+    const resultsLabelElement = document.querySelector<HTMLElement>('#typed-sparql-results-label')!
+
+    const observer = new IntersectionObserver(
+        async (entries) => {
+            if (!entries.some((entry) => entry.isIntersecting)) return
+            observer.disconnect()
+            const { mountTypedSparqlEditor } = await import('../examples/typedSparqlEditor')
+            mountTypedSparqlEditor(queryElement, typeElement, resultsElement, resultsLabelElement)
+        },
+        { rootMargin: '400px' }
+    )
+
+    observer.observe(queryElement)
+</script>
+
+<style>
+    .typed-sparql-example {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 1em;
+        font-size: 15px;
+    }
+
+    .typed-sparql-example > .pane:first-child {
+        grid-column: 1 / -1;
+    }
+
+    @media (max-width: 700px) {
+        .typed-sparql-example {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    .pane {
+        min-width: 0;
+        border: 1px solid var(--blue-lightest);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    #typed-sparql-query,
+    #typed-sparql-type,
+    #typed-sparql-results {
+        min-height: 16em;
+    }
+
+    #typed-sparql-results {
+        overflow-x: auto;
+    }
+
+    #typed-sparql-results :global(table) {
+        border-collapse: collapse;
+        width: 100%;
+    }
+
+    #typed-sparql-results :global(th),
+    #typed-sparql-results :global(td) {
+        padding: 0.3em 0.6em;
+        text-align: left;
+        border-bottom: 1px solid var(--blue-lightest);
+        white-space: nowrap;
+    }
+
+    #typed-sparql-results :global(.error) {
+        margin: 0.6em 0.8em;
+        color: var(--purple);
+    }
+
+    .pane-label {
+        display: block;
+        padding: 0.3em 0.8em;
+        background: var(--blue-lightest);
+        font-family: monospace;
+        font-size: 13px;
+    }
+</style>

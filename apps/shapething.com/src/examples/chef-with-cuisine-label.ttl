@@ -1,0 +1,13 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+# Everything about the chef is fetched anyway, the shape only adds
+# what lies beyond it: the label of the cuisine the chef links to.
+ex:ChefWithCuisineLabelShape a sh:NodeShape ;
+    sh:property [
+        sh:path ex:cuisine ;
+        sh:node [
+            sh:path rdfs:label ;
+        ] ;
+    ] .

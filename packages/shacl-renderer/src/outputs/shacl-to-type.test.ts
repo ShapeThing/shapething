@@ -468,7 +468,7 @@ test("renders a sh:memberShape object list (via sh:node) as an array of its own 
 
   const recipe = types.get("Recipe") as string;
   expect(recipe).toBe(
-    "export type Recipe = {\n  steps?: {\n  instruction?: string;\n  duration?: number;\n}[];\n}" +
+    "export type Recipe = {\n  steps?: {\n    instruction?: string;\n    duration?: number;\n  }[];\n}" +
       ";\n",
   );
 });

@@ -1,0 +1,523 @@
+---
+import ExampleHeading from './ExampleHeading.astro'
+import DocumentFetcherExample from './DocumentFetcherExample.astro'
+import FuzzySearchExample from './FuzzySearchExample.astro'
+import Term from './Term.astro'
+import TypedSparqlExample from './TypedSparqlExample.astro'
+import { examples } from '../data/examples'
+import chefWithCuisineLabel from '../examples/chef-with-cuisine-label.ttl?raw'
+import { ChefExample, RecipeExample } from './RecipesAndChefsRenderer'
+import { GenerateExample, TypesExample } from './ShaclToolsExamples'
+---
+
+<div class="examples-layout">
+<nav id="example-navigation">
+    <div role="tablist" aria-label="Examples">
+        {
+            examples.map(({ id, title, description }, index) => (
+                <a role="tab" id={`tab-${id}`} href={`#${id}`} aria-controls={id}>
+                    <span class="example-tab__number" aria-hidden="true">{index + 1}</span>
+                    <span class="example-tab__text">
+                        <span class="example-tab__title">{title}</span>
+                        <span class="example-tab__description">{description}</span>
+                    </span>
+                </a>
+            ))
+        }
+    </div>
+</nav>
+
+<div class="example-panels">
+
+<section id="loading-data" class="example-panel" role="tabpanel" aria-labelledby="tab-loading-data">
+<ExampleHeading id="loading-data" />
+<p>Linked data usually lives in a <Term id="triplestore">triplestore</Term>, a database made for it. LocalStore lets you use a folder on your computer instead. It is slower than a real database and only works in Chrome-based browsers, but it is a good fit for small datasets.</p>
+<p>Picking a folder is optional. Without one, the examples use an in-memory store with the same recipes and chefs.</p>
+<p id="pick-folder-container" class="pick-folder" hidden>
+    <button id="pick-folder" type="button">Pick a folder</button>
+    <span id="pick-folder-status" role="status"></span>
+</p>
+
+<script>
+    import { LocalStore } from '@shapething/localstore'
+    import { baseUri, recipesAndChefs, setLocalStore } from '../examples/exampleStore'
+
+    const container = document.querySelector<HTMLElement>('#pick-folder-container')!
+    const button = document.querySelector<HTMLButtonElement>('#pick-folder')!
+    const status = document.querySelector<HTMLElement>('#pick-folder-status')!
+
+    // The File System Access API is only available in Chrome based browsers.
+    if ('showDirectoryPicker' in window) container.hidden = false
+
+    button.addEventListener('click', async () => {
+        const store = new LocalStore({ baseUri })
+        await store.mount()
+        const folderName = store.getFolderName()
+        if (!folderName) return
+
+        button.disabled = true
+        status.textContent = `Filling ${folderName}…`
+
+        try {
+            // Replacing instead of merging, blank nodes can not be matched between two versions of a file,
+            // merging would add the ingredients again every time the same folder is picked.
+            for (const { graph, quads, prefixes } of recipesAndChefs) {
+                await store.replaceGraph(graph, quads, prefixes)
+            }
+            setLocalStore(store)
+            button.hidden = true
+            status.textContent = `Added ${recipesAndChefs.length} files with recipes and chefs to ${folderName}.`
+        } catch (error) {
+            console.error(error)
+            status.textContent = `Could not write to ${folderName}.`
+            button.disabled = false
+        }
+    })
+</script>
+
+</section>
+
+<section id="fetching-a-list" class="example-panel" role="tabpanel" aria-labelledby="tab-fetching-a-list">
+<ExampleHeading id="fetching-a-list" />
+<p><Term id="sparql">SPARQL</Term> is the query language for linked data, comparable to SQL. TypedSparql is a Vite plugin that generates TypeScript types for the results of your queries, so a change to a query shows up in your code right away. Try changing the query below: the type next to it updates as you type.</p>
+<TypedSparqlExample />
+
+</section>
+
+<section id="fuzzy-search" class="example-panel" role="tabpanel" aria-labelledby="tab-fuzzy-search">
+<ExampleHeading id="fuzzy-search" />
+<p>Triplestores often support fuzzy search, but stores that run in memory in the browser usually do not. TextStore wraps another store and adds fuzzy search to it.</p>
+<p>Below, TextStore wraps the store from <a href="#loading-data">Loading data</a>: the folder you picked, or the in-memory store. Searching is a normal SPARQL query with <code>tsst:search</code> as the <Term id="triple">predicate</Term>, and typos are allowed.</p>
+<FuzzySearchExample />
+
+</section>
+
+<section id="fetching-a-document" class="example-panel" role="tabpanel" aria-labelledby="tab-fetching-a-document">
+<ExampleHeading id="fetching-a-document" />
+<p>In linked data, a <Term id="resource">resource</Term> such as a recipe is not stored as one document but as many small pieces, called <Term id="triple">triples</Term>. That makes a simple question harder to answer: what belongs to this recipe? ResourceFetcher fetches one complete document, and lets you decide what belongs in it.</p>
+<div class="sub-tabs">
+    <div role="tablist" aria-label="Fetching a document">
+        <button type="button" role="tab" id="tab-fetching-a-document-basic" aria-controls="fetching-a-document-basic" aria-selected="true">Basic</button>
+        <button type="button" role="tab" id="tab-fetching-a-document-advanced" aria-controls="fetching-a-document-advanced" aria-selected="false" tabindex="-1">Advanced</button>
+    </div>
+    <div id="fetching-a-document-basic" role="tabpanel" aria-labelledby="tab-fetching-a-document-basic">
+        <p>Below, ResourceFetcher runs on the store from <a href="#loading-data">Loading data</a>. Click a resource to fetch it. Without a shape it takes everything about the resource, including its nested parts, called <Term id="blank-node">blank nodes</Term>, such as the ingredients of a recipe, each with a name, an amount and a unit. Links to other resources, such as the chef of a recipe, are not followed.</p>
+        <DocumentFetcherExample />
+    </div>
+    <div id="fetching-a-document-advanced" role="tabpanel" aria-labelledby="tab-fetching-a-document-advanced" hidden>
+        <p>Sometimes a document needs a bit more than its own data. A chef links to a cuisine, and to show the chef you want the name of that cuisine, not just its <Term id="iri">IRI</Term>. A <Term id="shape">shape</Term> tells ResourceFetcher what to follow: the shape below says to fetch the cuisine with its <code>rdfs:label</code>. Everything about the chef itself is still fetched without being listed in the shape. The cuisines are stored in a different file than the chefs, so the cuisine is fetched as its own document by a nested fetch. Its queries are listed after the ones for the chef.</p>
+        <DocumentFetcherExample shape={chefWithCuisineLabel} shapeIri="http://example.org/ChefWithCuisineLabelShape" type="http://example.org/Chef" />
+    </div>
+</div>
+
+<script>
+    // Tabs inside a panel, only one example shows at a time.
+    for (const tablist of document.querySelectorAll<HTMLElement>('.sub-tabs > [role="tablist"]')) {
+        const tabs = [...tablist.querySelectorAll<HTMLElement>('[role="tab"]')]
+        const panels = tabs.map((tab) => document.getElementById(tab.getAttribute('aria-controls')!)!)
+
+        const select = (index: number, focus = false) => {
+            tabs.forEach((tab, tabIndex) => {
+                const selected = tabIndex === index
+                tab.setAttribute('aria-selected', String(selected))
+                tab.tabIndex = selected ? 0 : -1
+                panels[tabIndex].hidden = !selected
+            })
+            if (focus) tabs[index].focus()
+        }
+
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('click', () => select(index))
+            tab.addEventListener('keydown', (event) => {
+                const next = ({ ArrowRight: index + 1, ArrowLeft: index - 1, Home: 0, End: tabs.length - 1 } as Record<string, number>)[event.key]
+                if (next === undefined) return
+                event.preventDefault()
+                select((next + tabs.length) % tabs.length, true)
+            })
+        })
+    }
+</script>
+
+</section>
+
+<section id="viewing-and-editing" class="example-panel" role="tabpanel" aria-labelledby="tab-viewing-and-editing">
+<ExampleHeading id="viewing-and-editing" />
+<p>The <Term id="shacl">SHACL</Term> renderer is a React component that turns a <Term id="shape">shape</Term> into a view or a form.</p>
+<div class="sub-tabs">
+    <div role="tablist" aria-label="Viewing and editing">
+        <button type="button" role="tab" id="tab-viewing-and-editing-viewing" aria-controls="viewing-and-editing-viewing" aria-selected="true">Viewing</button>
+        <button type="button" role="tab" id="tab-viewing-and-editing-editing" aria-controls="viewing-and-editing-editing" aria-selected="false" tabindex="-1">Editing</button>
+    </div>
+    <div id="viewing-and-editing-viewing" role="tabpanel" aria-labelledby="tab-viewing-and-editing-viewing">
+        <p>The shapes below describe a chef and a recipe. ResourceFetcher uses them to fetch exactly what is needed: a recipe with all its ingredients comes back in one query. The SHACL renderer then shows a chef:</p>
+        <ChefExample client:only="react" />
+    </div>
+    <div id="viewing-and-editing-editing" role="tabpanel" aria-labelledby="tab-viewing-and-editing-editing" hidden>
+        <p>The SHACL renderer can also make a form to edit a recipe. Saving writes the recipe back to its own file in the store from <a href="#loading-data">Loading data</a>, and the other tabs update with it.</p>
+        <RecipeExample client:only="react" />
+    </div>
+</div>
+
+</section>
+
+<section id="converting-and-generating" class="example-panel" role="tabpanel" aria-labelledby="tab-converting-and-generating">
+<ExampleHeading id="converting-and-generating" />
+<div class="sub-tabs">
+    <div role="tablist" aria-label="Converting and generating">
+        <button type="button" role="tab" id="tab-converting-and-generating-converting" aria-controls="converting-and-generating-converting" aria-selected="true">Converting</button>
+        <button type="button" role="tab" id="tab-converting-and-generating-generating" aria-controls="converting-and-generating-generating" aria-selected="false" tabindex="-1">Generating</button>
+    </div>
+    <div id="converting-and-generating-converting" role="tabpanel" aria-labelledby="tab-converting-and-generating-converting">
+        <p>A <Term id="shape">shape</Term> can become a TypeScript type, and <Term id="rdf">RDF</Term> data can be read into a plain JavaScript object of that type. Pick a resource: on the left the type generated from its shape, on the right the resource as an object, with English property names.</p>
+        <TypesExample client:only="react" />
+    </div>
+    <div id="converting-and-generating-generating" role="tabpanel" aria-labelledby="tab-converting-and-generating-generating" hidden>
+        <p>A shape describes what the data looks like, so it can also make data. ShapeThing generates a chef or a recipe from its shape, with fake values that follow the rules of the shape: the right datatypes, a cuisine from the list, an existing chef for a recipe. The <code>faker:generator</code> annotations in the shape make the values look like food. Add one to the store and it shows up in the other tabs.</p>
+        <GenerateExample client:only="react" />
+    </div>
+</div>
+</section>
+</div>
+</div>
+
+<script is:inline>
+    // Runs before the page is painted, so only the active tab shows from the start.
+    {
+        const tabs = [...document.querySelectorAll('#example-navigation [role="tab"]')]
+        const panels = tabs.map((tab) => document.getElementById(tab.getAttribute('aria-controls')))
+
+        const select = (index, { focus = false } = {}) => {
+            tabs.forEach((tab, tabIndex) => {
+                const selected = tabIndex === index
+                tab.setAttribute('aria-selected', String(selected))
+                tab.tabIndex = selected ? 0 : -1
+                panels[tabIndex].hidden = !selected
+            })
+            if (focus) tabs[index].focus()
+            // On small screens the tab list scrolls sideways, keep the selected tab in view.
+            const tablist = tabs[index].parentElement
+            tablist.scrollLeft = Math.max(0, tabs[index].offsetLeft - (tablist.clientWidth - tabs[index].offsetWidth) / 2)
+        }
+
+        const indexOfHash = () => Math.max(0, panels.findIndex((panel) => '#' + panel.id === location.hash))
+
+        tabs.forEach((tab, index) => {
+            tab.addEventListener('click', (event) => {
+                event.preventDefault()
+                select(index)
+                // Keeps the tab in the URL without jumping to it.
+                history.replaceState(null, '', '#' + panels[index].id)
+            })
+            tab.addEventListener('keydown', (event) => {
+                const next = { ArrowRight: index + 1, ArrowDown: index + 1, ArrowLeft: index - 1, ArrowUp: index - 1, Home: 0, End: tabs.length - 1 }[event.key]
+                if (next === undefined) return
+                event.preventDefault()
+                const wrapped = (next + tabs.length) % tabs.length
+                select(wrapped, { focus: true })
+                history.replaceState(null, '', '#' + panels[wrapped].id)
+            })
+        })
+
+        // The tab list is a sidebar on wide screens and a row of tabs on small screens.
+        const tablist = tabs[0].parentElement
+        const wide = matchMedia('(min-width: 900px)')
+        const setOrientation = () => tablist.setAttribute('aria-orientation', wide.matches ? 'vertical' : 'horizontal')
+        wide.addEventListener('change', setOrientation)
+        setOrientation()
+
+        addEventListener('hashchange', () => select(indexOfHash()))
+        select(indexOfHash())
+    }
+</script>
+
+<style>
+    #example-navigation {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        margin-block: 1em 1.5em;
+        background: white;
+        border-bottom: 1px solid var(--blue-lightest);
+    }
+
+    /* Scrolls sideways on small screens instead of wrapping onto several lines. */
+    [role='tablist'] {
+        display: flex;
+        gap: 0.2em;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    [role='tab'] {
+        flex: 0 0 auto;
+        padding: 0.6em 0.9em;
+        border-bottom: 3px solid transparent;
+        color: var(--blue-light);
+        font-size: 16px;
+        font-weight: 600;
+        text-decoration: none;
+        white-space: nowrap;
+    }
+
+    [role='tab']:hover {
+        color: var(--blue-dark);
+    }
+
+    [role='tab'][aria-selected='true'] {
+        color: var(--blue-dark);
+        border-bottom-color: var(--purple);
+    }
+
+    [role='tab']:focus-visible {
+        outline: 2px solid var(--blue-light);
+        outline-offset: -2px;
+    }
+
+    .pick-folder {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6em 1em;
+        margin-block: 1.5em;
+    }
+
+    .pick-folder[hidden] {
+        display: none;
+    }
+
+    #pick-folder {
+        padding: 0.6em 1.2em;
+        border: none;
+        border-radius: 6px;
+        background: var(--blue-dark);
+        color: white;
+        font: inherit;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.15s;
+    }
+
+    #pick-folder:hover {
+        background: var(--purple);
+    }
+
+    #pick-folder:focus-visible {
+        outline: 2px solid var(--blue-light);
+        outline-offset: 2px;
+    }
+
+    #pick-folder:disabled {
+        background: var(--blue-light);
+        cursor: progress;
+        opacity: 0.7;
+    }
+
+    #pick-folder-status {
+        color: var(--purple);
+        font-size: 16px;
+    }
+
+    .example-tab__number {
+        display: none;
+    }
+
+    .example-tab__description {
+        display: none;
+    }
+
+    @media (min-width: 900px) {
+        .examples-layout {
+            display: grid;
+            grid-template-columns: 16em minmax(0, 1fr);
+            gap: 2.5em;
+            align-items: start;
+        }
+
+        #example-navigation {
+            top: 1em;
+            margin-block: 0;
+            border-bottom: none;
+            background: none;
+        }
+
+        #example-navigation [role='tablist'] {
+            flex-direction: column;
+            gap: 0.3em;
+            overflow: visible;
+        }
+
+        #example-navigation [role='tab'] {
+            display: flex;
+            gap: 0.7em;
+            align-items: flex-start;
+            padding: 0.7em 0.8em;
+            border-bottom: none;
+            border-left: 3px solid transparent;
+            border-radius: 0 6px 6px 0;
+            white-space: normal;
+        }
+
+        #example-navigation [role='tab']:hover {
+            background: color-mix(in srgb, var(--blue-lightest) 30%, white);
+        }
+
+        #example-navigation [role='tab'][aria-selected='true'] {
+            border-left-color: var(--purple);
+            background: color-mix(in srgb, var(--blue-lightest) 45%, white);
+        }
+
+        .example-tab__number {
+            display: grid;
+            place-items: center;
+            flex: 0 0 auto;
+            width: 1.6em;
+            height: 1.6em;
+            border-radius: 50%;
+            background: var(--blue-lightest);
+            color: var(--blue-dark);
+            font-size: 13px;
+            font-weight: 700;
+        }
+
+        [aria-selected='true'] .example-tab__number {
+            background: var(--blue-dark);
+            color: white;
+        }
+
+        .example-tab__text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.15em;
+        }
+
+        .example-tab__description {
+            display: block;
+            color: var(--blue-dark);
+            font-size: 13px;
+            font-weight: 400;
+            line-height: 1.35;
+        }
+
+        /* No sticky tab row above the panels on wide screens. */
+        .example-panels .example-panel {
+            scroll-margin-top: 1em;
+        }
+    }
+
+    .sub-tabs > [role='tablist'] {
+        margin-block: 1.5em 0.5em;
+        border-bottom: 1px solid var(--blue-lightest);
+    }
+
+    .sub-tabs [role='tab'] {
+        border: none;
+        border-bottom: 3px solid transparent;
+        background: none;
+        font-family: inherit;
+        font-size: 15px;
+        cursor: pointer;
+    }
+
+    .sub-tabs [role='tab'][aria-selected='true'] {
+        border-bottom-color: var(--purple);
+    }
+
+    /* A link to a tab scrolls to its panel, keep the heading out from under the sticky tab list. */
+    .example-panel {
+        scroll-margin-top: 4.5em;
+    }
+
+    :global(.renderer-example) {
+        margin-block: 1em 2em;
+        font-size: 16px;
+    }
+
+    :global(.renderer-example__picker) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6em;
+        margin-bottom: 1em;
+        font-weight: 600;
+    }
+
+    :global(.renderer-example__picker select) {
+        font: inherit;
+        font-weight: 400;
+        padding: 0.3em 0.6em;
+        border: 1px solid var(--blue-light);
+        border-radius: 6px;
+        color: inherit;
+        background: white;
+    }
+
+    :global(.tools-example) {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+        margin-block: 1em 2em;
+        font-size: 15px;
+    }
+
+    :global(.tools-example__bar) {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.6em 1em;
+        font-weight: 600;
+    }
+
+    :global(.tools-example__bar select),
+    :global(.tools-example__bar button) {
+        font: inherit;
+        font-weight: 400;
+        padding: 0.3em 0.7em;
+        border: 1px solid var(--blue-light);
+        border-radius: 6px;
+        color: inherit;
+        background: white;
+        cursor: pointer;
+    }
+
+    :global(.tools-example__bar button:disabled) {
+        cursor: default;
+        opacity: 0.5;
+    }
+
+    :global(.tools-example__bar [role='status']) {
+        font-weight: 400;
+        color: var(--purple);
+    }
+
+    :global(.tools-example__panes) {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr));
+        gap: 1em;
+        align-items: start;
+    }
+
+    :global(.code-block) {
+        min-width: 0;
+        border: 1px solid var(--blue-lightest);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+
+    :global(.code-block__label) {
+        display: block;
+        padding: 0.3em 0.8em;
+        background: var(--blue-lightest);
+        font-family: monospace;
+        font-size: 13px;
+    }
+
+    :global(.code-block .cm-editor) {
+        max-height: 32em;
+    }
+
+    :global(.renderer-example__picker [role='status']) {
+        font-weight: 400;
+        color: var(--purple);
+    }
+</style>

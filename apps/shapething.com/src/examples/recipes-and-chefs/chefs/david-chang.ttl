@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+
+<> a ex:Chef ;
+  schema:name "David Chang"@en, "David Chang"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/1/10/David_Chang_David_Shankbone_2010_%283x4_cropped%29.jpg> ;
+  schema:nationality "American"@en, "Amerikaans"@nl ;
+  ex:cuisine ex:AsianFusion ;
+  schema:worksFor "Momofuku Noodle Bar, New York"@en, "Momofuku Noodle Bar, New York"@nl ;
+  schema:description "American chef and founder of the Momofuku restaurant group, known for blending Korean flavors with American diner sensibilities, starting with ramen and pork buns."@en, "Amerikaanse chef-kok en oprichter van de Momofuku-restaurantgroep, bekend om het combineren van Koreaanse smaken met Amerikaanse dinergevoeligheden, beginnend met ramen en pork buns."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/David_Chang_(chef)> .

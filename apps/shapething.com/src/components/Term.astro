@@ -1,0 +1,77 @@
+---
+// A jargon term: hovering or focusing shows its description, clicking goes to the glossary.
+import { glossary, type GlossaryId } from '../data/glossary'
+
+type Props = {
+  id: GlossaryId
+}
+
+const { id } = Astro.props
+const entry = glossary[id]
+if (!entry) throw new Error(`Unknown glossary term: ${id}`)
+
+// A term can be used several times on one page, each tooltip needs its own id.
+const tooltipId = `term-${id}-${Math.random().toString(36).slice(2, 8)}`
+
+// The markup comes after the styles: whitespace after it would end up as a space in the text around the term.
+---
+
+<style>
+  .term {
+    position: relative;
+  }
+
+  .term__link {
+    color: inherit;
+    text-decoration: underline dotted;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 0.2em;
+    cursor: help;
+  }
+
+  .term__link:hover,
+  .term__link:focus-visible {
+    text-decoration-color: var(--purple);
+  }
+
+  .term__tooltip {
+    position: absolute;
+    z-index: 20;
+    top: calc(100% + 0.4em);
+    left: 0;
+    width: max-content;
+    max-width: min(22rem, 80vw);
+    padding: 0.6em 0.8em;
+    border-radius: 6px;
+    background: var(--blue-dark);
+    color: white;
+    font-family: 'Roboto Variable', sans-serif;
+    font-size: 14px;
+    font-weight: 400;
+    font-style: normal;
+    letter-spacing: normal;
+    line-height: 1.4;
+    text-align: left;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.15s;
+  }
+
+  .term:hover .term__tooltip,
+  .term__link:focus-visible + .term__tooltip {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  @media (hover: none) {
+    .term__tooltip {
+      display: none;
+    }
+  }
+</style>
+
+<span class="term"><a class="term__link" href={`/glossary#${id}`} aria-describedby={tooltipId}><slot /></a><span
+    class="term__tooltip"
+    role="tooltip"
+    id={tooltipId}><strong>{entry.term}</strong> {entry.description}</span></span>

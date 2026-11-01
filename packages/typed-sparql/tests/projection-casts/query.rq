@@ -1,0 +1,16 @@
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX schema: <https://schema.org/>
+
+SELECT
+  (str(?_name) as ?name)
+  (xsd:integer(?_age) as ?age)
+  (iri(?_url) as ?url)
+  (lcase(?_name) as ?lower)
+  (strlen(?_name) as ?length)
+  (bound(?_url) as ?hasUrl)
+  (coalesce(?_name, "unknown") as ?label)
+WHERE {
+  ?person schema:name ?_name ;
+    schema:age ?_age .
+  OPTIONAL { ?person schema:url ?_url }
+}

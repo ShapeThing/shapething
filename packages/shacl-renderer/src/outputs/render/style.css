@@ -13,4 +13,12 @@
   > * {
     flex: 200px 0 1;
   }
+
+  /* Both language switchers render nothing when there is nothing to switch, for example with a
+     single interface language and a single content language. Whether the content language
+     switcher shows is only known after the widgets register themselves, so the header can't be
+     left out up front; it hides itself instead, without leaving its margin behind. */
+  &:empty {
+    display: none;
+  }
 }

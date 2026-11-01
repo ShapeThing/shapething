@@ -1,0 +1,13 @@
+@prefix schema: <http://schema.org/> .
+@prefix ex: <http://example.org/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<> a ex:Chef ;
+  schema:name "Joël Robuchon"@en, "Joël Robuchon"@nl ;
+  schema:image <https://upload.wikimedia.org/wikipedia/commons/3/3a/Jo%C3%ABl_Robuchon.jpg> ;
+  schema:nationality "French"@en, "Frans"@nl ;
+  ex:cuisine ex:French ;
+  ex:michelinStars 3 ;
+  schema:worksFor "L'Atelier de Joël Robuchon, Paris"@en, "L'Atelier de Joël Robuchon, Parijs"@nl ;
+  schema:description "French chef widely regarded as one of the most influential cooks of the twentieth century, famed for his silky mashed potatoes and precise, produce-led classicism."@en, "Franse chef-kok die geldt als een van de invloedrijkste kok van de twintigste eeuw, bekend om zijn zijdezachte aardappelpuree en precieze, ingrediëntgedreven klassieke keuken."@nl ;
+  schema:sameAs <https://en.wikipedia.org/wiki/Jo%C3%ABl_Robuchon> .

@@ -1,0 +1,90 @@
+@prefix ex: <http://example.org/> .
+@prefix unit: <http://qudt.org/vocab/unit/> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+ex:Cuisine a rdfs:Class ;
+  rdfs:label "Cuisine"@en, "Keuken"@nl .
+
+ex:European rdfs:label "European"@en, "Europees"@nl ;
+  rdfs:subClassOf ex:Cuisine .
+
+ex:ModernEuropean rdfs:label "Modern European"@en, "Modern Europees"@nl ;
+  rdfs:subClassOf ex:European .
+
+ex:British rdfs:label "British"@en, "Brits"@nl ;
+  rdfs:subClassOf ex:European .
+
+ex:French rdfs:label "French"@en, "Frans"@nl ;
+  rdfs:subClassOf ex:European .
+
+ex:ModernItalian rdfs:label "Modern Italian"@en, "Modern Italiaans"@nl ;
+  rdfs:subClassOf ex:European .
+
+ex:MiddleEasternMediterranean rdfs:label "Middle Eastern & Mediterranean"@en, "Midden-Oosters & mediterraan"@nl ;
+  rdfs:subClassOf ex:Cuisine .
+
+ex:American rdfs:label "American"@en, "Amerikaans"@nl ;
+  rdfs:subClassOf ex:Cuisine .
+
+ex:CalifornianFarmToTable rdfs:label "Californian / Farm-to-table"@en, "Californisch / Farm-to-table"@nl ;
+  rdfs:subClassOf ex:American .
+
+ex:SouthernAmerican rdfs:label "Southern American"@en, "Zuidelijk Amerikaans"@nl ;
+  rdfs:subClassOf ex:American .
+
+ex:ModernAmerican rdfs:label "Modern American"@en, "Modern Amerikaans"@nl ;
+  rdfs:subClassOf ex:American .
+
+ex:Italian rdfs:label "Italian"@en, "Italiaans"@nl ;
+  rdfs:subClassOf ex:European .
+
+ex:Spanish rdfs:label "Spanish"@en, "Spaans"@nl ;
+  rdfs:subClassOf ex:European .
+
+ex:Nordic rdfs:label "Nordic"@en, "Scandinavisch"@nl ;
+  rdfs:subClassOf ex:European .
+
+ex:Asian rdfs:label "Asian"@en, "Aziatisch"@nl ;
+  rdfs:subClassOf ex:Cuisine .
+
+ex:Japanese rdfs:label "Japanese"@en, "Japans"@nl ;
+  rdfs:subClassOf ex:Asian .
+
+ex:Indian rdfs:label "Indian"@en, "Indiaas"@nl ;
+  rdfs:subClassOf ex:Asian .
+
+ex:AsianFusion rdfs:label "Asian fusion"@en, "Aziatische fusion"@nl ;
+  rdfs:subClassOf ex:Asian .
+
+ex:Mexican rdfs:label "Mexican"@en, "Mexicaans"@nl ;
+  rdfs:subClassOf ex:Cuisine .
+
+ex:Starter a ex:RecipeCategory ;
+  rdfs:label "Starter"@en, "Voorgerecht"@nl .
+
+ex:MainCourse a ex:RecipeCategory ;
+  rdfs:label "Main course"@en, "Hoofdgerecht"@nl .
+
+ex:Dessert a ex:RecipeCategory ;
+  rdfs:label "Dessert"@en, "Dessert"@nl .
+
+ex:SideDish a ex:RecipeCategory ;
+  rdfs:label "Side dish"@en, "Bijgerecht"@nl .
+
+unit:KiloGM a ex:Unit ;
+  rdfs:label "Kilogram"@en, "Kilogram"@nl .
+
+unit:GM a ex:Unit ;
+  rdfs:label "Gram"@en, "Gram"@nl .
+
+unit:MilliL a ex:Unit ;
+  rdfs:label "Milliliter"@en, "Milliliter"@nl .
+
+unit:TBSP a ex:Unit ;
+  rdfs:label "Tablespoon"@en, "Eetlepel"@nl .
+
+unit:TSP a ex:Unit ;
+  rdfs:label "Teaspoon"@en, "Theelepel"@nl .
+
+unit:COUNT a ex:Unit ;
+  rdfs:label "Count"@en, "Stuks"@nl .

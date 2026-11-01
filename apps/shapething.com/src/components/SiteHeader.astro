@@ -1,15 +1,34 @@
 ---
+const links = [
+  { href: '/examples', label: 'Examples' },
+  { href: '/glossary', label: 'Glossary' },
+  { href: 'https://github.com/ShapeThing/shapething', label: 'GitHub' },
+]
 
+// Astro may serve pages with a trailing slash, /examples/ is the same page as /examples.
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/'
 ---
 
 <header class="site-header">
   <a class="site-link" href="/">
-    <img class="site-logo" src="/logo.svg" />
+    <img class="site-logo" src="/logo.svg" alt="ShapeThing" />
   </a>
+  <nav class="menu">
+    {
+      links.map(({ href, label }) => (
+        <a class="menu-link" href={href} aria-current={href === currentPath ? 'page' : undefined}>
+          {label}
+        </a>
+      ))
+    }
+  </nav>
 </header>
 
 <style>
   .site-header {
+    position: relative;
+    isolation: isolate;
+    margin-bottom: 1.5em;
     padding-block: 1em;
     width: 100%;
     max-width: var(--max-width);
@@ -17,6 +36,21 @@
     display: flex;
     align-items: center;
     gap: 1em;
+  }
+
+  /* A tinted band across the full width of the window, the header content stays within the max width. */
+  .site-header::before {
+    content: '';
+    position: absolute;
+    z-index: -1;
+    top: 0;
+    left: 50%;
+    width: 100vw;
+    height: 100%;
+    transform: translateX(-50%);
+    background: color-mix(in srgb, var(--blue-lightest) 30%, white);
+    border-bottom: 1px solid var(--blue-lightest);
+    box-shadow: 0 2px 8px rgb(0 68 170 / 0.06);
   }
 
   .site-logo {
@@ -35,6 +69,28 @@
     font-weight: 500;
     padding: 0.5em 1em;
     border-radius: 0.5em;
+  }
+
+  .menu-link[aria-current='page'] {
+    background: var(--blue-dark);
+    color: white;
+  }
+
+  .menu-link:hover,
+  .menu-link:focus-visible {
+    background: white;
+    color: var(--purple);
+  }
+
+  .menu-link[aria-current='page']:hover,
+  .menu-link[aria-current='page']:focus-visible {
+    background: var(--purple);
+    color: white;
+  }
+
+  .menu-link:focus-visible {
+    outline: 2px solid var(--blue-light);
+    outline-offset: 2px;
   }
 
   .menu-link.app {

@@ -410,3 +410,125 @@ test("generate - resolves a plain resource reference via shui:searchQuery, not j
   const [author] = result.getQuads(ex("recipe1"), ex("author"));
   expect(author.object.value).toEqual(ex("alice").value);
 });
+
+test("generate - writes IRIs, subclasses of a sh:rootClass and valid durations", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+        @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+        ex:Recipe a sh:NodeShape ;
+            sh:property [ sh:path ex:image ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+            sh:property [ sh:path ex:cuisine ; sh:rootClass ex:Cuisine ; sh:nodeKind sh:IRI ; sh:minCount 1 ; sh:maxCount 1 ] ;
+            sh:property [ sh:path ex:cookTime ; sh:datatype xsd:duration ; sh:minCount 1 ; sh:maxCount 1 ] .
+
+        ex:European rdfs:subClassOf ex:Cuisine .
+        ex:French rdfs:subClassOf ex:European .
+    `,
+    "text/turtle",
+  );
+
+  for (const seed of [1, 2, 3]) {
+    const dataGraph = await generate({
+      shapesGraph,
+      focusNode: ex("recipe1"),
+      nodeShapes: [ex("Recipe")],
+      seed,
+    });
+
+    const [image] = dataGraph.getQuads(ex("recipe1"), ex("image"));
+    const [cuisine] = dataGraph.getQuads(ex("recipe1"), ex("cuisine"));
+    const [cookTime] = dataGraph.getQuads(ex("recipe1"), ex("cookTime"));
+    expect(image.object.termType).toEqual("NamedNode");
+    expect([ex("European").value, ex("French").value]).toContain(cuisine.object.value);
+    expect(cookTime.object.value).toMatch(/^PT(\d+H)?(\d+M)?$/);
+  }
+});
+
+test("generate - writes one value for a language-tagged property with sh:uniqueLang", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+
+        ex:Recipe a sh:NodeShape ;
+            sh:property [ sh:path ex:name ; sh:datatype rdf:langString ; sh:uniqueLang true ; sh:minCount 2 ] .
+    `,
+    "text/turtle",
+  );
+
+  const dataGraph = await generate({
+    shapesGraph,
+    focusNode: ex("recipe1"),
+    nodeShapes: [ex("Recipe")],
+    contentLanguage: "nl",
+    seed: 1,
+  });
+
+  const names = dataGraph.getQuads(ex("recipe1"), ex("name"));
+  expect(names).toHaveLength(1);
+  expect((names[0].object as { language: string }).language).toEqual("nl");
+});
+
+test("generate - respects sh:minListLength and sh:maxListLength for a sh:memberShape list", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+        ex:Recipe a sh:NodeShape ;
+            sh:property [
+                sh:path ex:ingredients ;
+                sh:memberShape [ sh:datatype xsd:string ] ;
+                sh:minListLength 2 ;
+                sh:maxListLength 4 ;
+            ] .
+    `,
+    "text/turtle",
+  );
+
+  for (const seed of [1, 2, 3, 4, 5]) {
+    const dataGraph = await generate({
+      shapesGraph,
+      focusNode: ex("recipe1"),
+      nodeShapes: [ex("Recipe")],
+      seed,
+    });
+
+    const [headQuad] = dataGraph.getQuads(ex("recipe1"), ex("ingredients"));
+    let length = 0;
+    for (let current = headQuad.object; !current.equals(rdf("nil")); length++) {
+      current = dataGraph.getQuads(current, rdf("rest"))[0].object;
+    }
+    expect(length).toBeGreaterThanOrEqual(2);
+    expect(length).toBeLessThanOrEqual(4);
+  }
+});
+
+test("generate - types the resource with the sh:targetClass of its node shapes", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+        ex:RecipeShape a sh:NodeShape ;
+            sh:targetClass ex:Recipe ;
+            sh:property [ sh:path ex:title ; sh:datatype xsd:string ; sh:minCount 1 ; sh:maxCount 1 ] .
+    `,
+    "text/turtle",
+  );
+
+  const dataGraph = await generate({
+    shapesGraph,
+    focusNode: ex("recipe1"),
+    nodeShapes: [ex("RecipeShape")],
+    seed: 1,
+  });
+
+  expect(dataGraph.getQuads(ex("recipe1"), rdf("type"), ex("Recipe"))).toHaveLength(1);
+});
