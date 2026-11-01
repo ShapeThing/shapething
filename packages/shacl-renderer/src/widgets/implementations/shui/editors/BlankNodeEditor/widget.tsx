@@ -26,13 +26,7 @@ function retarget(dataGraph: RdfStore, from: Quad_Subject, to: Quad_Subject): vo
   }
 }
 
-export default function BlankNodeEditor({
-  shape,
-  term,
-  setTerm,
-  labelledBy,
-  autoFocus,
-}: WidgetProps) {
+export default function BlankNodeEditor({ shape, term, setTerm, autoFocus }: WidgetProps) {
   // Every identity change - the initial "assign an identifier" click as well as any later edit of
   // that identifier's IRI - has to carry the node's own fields along with it, so this always goes
   // through retarget() rather than a plain setTerm().

@@ -310,6 +310,7 @@ export function resolveReport(
       ].map((r) => severityRank(localName(r.severity) ?? "")),
     );
   const sortedFocusNodes = [...focusNodes.values()]
+    // eslint-disable-next-line no-unused-vars -- dropping propertyShapes from the rest object
     .map(({ propertyShapes: _, ...focusNode }) => ({
       ...focusNode,
       nodeResults: sortBySeverity(focusNode.nodeResults),

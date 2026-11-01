@@ -10,7 +10,7 @@ self.addEventListener("fetch", async function (event) {
   ) {
     if (event.request.method === "POST") {
       return event.respondWith(
-        new Promise(async (resolve) => {
+        (async () => {
           const data = await event.request.formData();
           const files = data.getAll("files");
           const cleanedFiles = [];
@@ -20,35 +20,33 @@ self.addEventListener("fetch", async function (event) {
             cleanedFiles.push(cleanedFile);
           }
 
-          resolve(new Response(JSON.stringify(cleanedFiles)));
-        }),
+          return new Response(JSON.stringify(cleanedFiles));
+        })(),
       );
     }
 
     if (event.request.method === "GET") {
       return event.respondWith(
-        new Promise(async (resolve, reject) => {
+        (async () => {
           const file = await localforage.getItem(event.request.url);
 
-          if (!file) reject("File not found inside cache");
+          if (!file) throw "File not found inside cache";
 
-          resolve(
-            new Response(file, {
-              headers: {
-                ContentType: file.type,
-              },
-            }),
-          );
-        }),
+          return new Response(file, {
+            headers: {
+              ContentType: file.type,
+            },
+          });
+        })(),
       );
     }
 
     if (event.request.method === "DELETE") {
       return event.respondWith(
-        new Promise(async (resolve, reject) => {
+        (async () => {
           await localforage.removeItem(event.request.url);
-          resolve(new Response(JSON.stringify({ success: true })));
-        }),
+          return new Response(JSON.stringify({ success: true }));
+        })(),
       );
     }
   }

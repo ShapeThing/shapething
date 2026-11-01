@@ -24,7 +24,9 @@ export function textDiff(before: string, after: string): TextDiffSegment[] {
   }
 
   // lcs[i][j]: length of the longest common subsequence of a[i..] and b[j..].
-  const lcs = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
+  const lcs = Array.from({ length: a.length + 1 }, () =>
+    Array.from<number>({ length: b.length + 1 }).fill(0),
+  );
   for (let i = a.length - 1; i >= 0; i--) {
     for (let j = b.length - 1; j >= 0; j--) {
       lcs[i][j] = a[i] === b[j] ? lcs[i + 1][j + 1] + 1 : Math.max(lcs[i + 1][j], lcs[i][j + 1]);

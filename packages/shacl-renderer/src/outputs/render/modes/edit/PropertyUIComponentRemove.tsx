@@ -56,7 +56,7 @@ export default function PropertyUIComponentRemove({
   const removeValue = () => {
     transact(propertyUIElement.dataGraph, () => {
       if (clearAll) {
-        for (const existing of [...propertyUIElement.getObjects()]) {
+        for (const existing of propertyUIElement.getObjects()) {
           propertyUIElement.removeObject(existing);
         }
       } else {

@@ -126,6 +126,8 @@ export function insertValuesClause(query: string, variable: string, values: Name
   return query.slice(0, braceIndex + 1) + valuesClause + query.slice(braceIndex + 1);
 }
 
+// SPARQL IRIREF excludes the control characters \x00-\x20 by spec.
+// eslint-disable-next-line no-control-regex
 const IRI_REF = /<[^<>"{}|^`\\\x00-\x20]*>/y;
 
 // Index of every `{`/`}` in `query` that is actual SPARQL syntax - i.e. not inside a string

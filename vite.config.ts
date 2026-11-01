@@ -31,6 +31,12 @@ export default defineConfig({
         files: ["packages/shacl-renderer/**"],
         plugins: ["jsx-a11y"],
       },
+      {
+        // Code samples shown verbatim on the website: they declare values to show the API's
+        // return types, not to use them.
+        files: ["apps/shapething.com/src/examples/code/**/*.sample.{ts,tsx}"],
+        rules: { "no-unused-vars": "off" },
+      },
     ],
   },
   fmt: {
