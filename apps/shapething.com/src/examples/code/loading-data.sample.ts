@@ -4,7 +4,8 @@ import { DataFactory, Parser } from "n3";
 
 const store = new LocalStore({ baseUri: new URL("https://example.org/") });
 
-// Opens the folder picker of the browser. Chrome based browsers only.
+// Opens the folder picker of the browser. Chrome based browsers only:
+// Firefox and Safari do not implement the File System Access API.
 await store.mount();
 
 // Every Turtle file in the folder is a graph, named after its path:

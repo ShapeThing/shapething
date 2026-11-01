@@ -31,8 +31,12 @@ import { GenerateExample, TypesExample } from './ShaclToolsExamples'
 
 <section id="loading-data" class="example-panel" role="tabpanel" aria-labelledby="tab-loading-data">
 <ExampleHeading id="loading-data" />
-<p>Linked data usually lives in a <Term id="triplestore">triplestore</Term>, a database made for it. LocalStore lets you use a folder on your computer instead. It is slower than a real database and only works in Chrome-based browsers, but it is a good fit for small datasets.</p>
+<p>Linked data usually lives in a <Term id="triplestore">triplestore</Term>, a database made for it. LocalStore lets you use a folder on your computer instead. It is slower than a real database, but it is a good fit for small datasets.</p>
 <p>Picking a folder is optional. Without one, the examples use an in-memory store with the same recipes and chefs.</p>
+<div id="pick-folder-unsupported" class="browser-notice" role="note" hidden>
+    <p><strong>Your browser can not pick a folder, and that is fine.</strong> All the other examples still work: they use the in-memory store, and changes you make stay there until you reload the page.</p>
+    <p>LocalStore reads and writes files with <code>showDirectoryPicker()</code> from the <a href="https://developer.mozilla.org/en-US/docs/Web/API/Window/showDirectoryPicker">File System Access API</a>. Only Chrome-based browsers, such as Chrome, Edge, Brave and Opera, have it. Firefox and Safari chose not to add it, because letting a website write to a folder on your computer is a security risk they did not want to take on. Open this page in a Chrome-based browser to try LocalStore with a real folder.</p>
+</div>
 <p id="pick-folder-container" class="pick-folder" hidden>
     <button id="pick-folder" type="button">Pick a folder</button>
     <span id="pick-folder-status" role="status"></span>
@@ -46,8 +50,10 @@ import { GenerateExample, TypesExample } from './ShaclToolsExamples'
     const button = document.querySelector<HTMLButtonElement>('#pick-folder')!
     const status = document.querySelector<HTMLElement>('#pick-folder-status')!
 
-    // The File System Access API is only available in Chrome based browsers.
+    // The File System Access API is only available in Chrome based browsers,
+    // Firefox and Safari get an explanation instead of the button.
     if ('showDirectoryPicker' in window) container.hidden = false
+    else document.querySelector<HTMLElement>('#pick-folder-unsupported')!.hidden = false
 
     button.addEventListener('click', async () => {
         const store = new LocalStore({ baseUri })
@@ -281,6 +287,24 @@ import { GenerateExample, TypesExample } from './ShaclToolsExamples'
         margin-block: 1.5em;
     }
 
+    .browser-notice {
+        margin-block: 1.5em;
+        padding: 0.9em 1.2em;
+        border-left: 3px solid var(--purple);
+        border-radius: 0 6px 6px 0;
+        background: color-mix(in srgb, var(--blue-lightest) 35%, white);
+        font-size: 16px;
+    }
+
+    .browser-notice p {
+        margin-block: 0;
+    }
+
+    .browser-notice p + p {
+        margin-top: 0.6em;
+    }
+
+    .browser-notice[hidden],
     .pick-folder[hidden] {
         display: none;
     }

@@ -1,5 +1,6 @@
 {
   "name": "@shapething/shacl-manager",
+  "license": "GPL-3.0-only",
   "files": [
     "dist"
   ],

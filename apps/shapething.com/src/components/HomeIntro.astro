@@ -32,9 +32,14 @@ import Term from './Term.astro'
       </div>
     </div>
 
+    <div class="intro__aside">
     <div class="intro__packages">
-      <h2>The packages</h2>
+      <h2>Packages</h2>
       <ul>
+        <li>
+          <code>@shapething/shacl-renderer</code>
+          <span>React forms and views made from <Term id="shacl">SHACL</Term> shapes, plus TypeScript types and test data.</span>
+        </li>
         <li>
           <code>@shapething/typed-sparql</code>
           <span>A Vite plugin that generates TypeScript types for the results of your <Term id="sparql">SPARQL</Term> queries.</span>
@@ -42,10 +47,6 @@ import Term from './Term.astro'
         <li>
           <code>@shapething/resource-fetcher</code>
           <span>Fetches one complete <Term id="resource">resource</Term> from a store or a SPARQL endpoint, optionally guided by a shape.</span>
-        </li>
-        <li>
-          <code>@shapething/shacl-renderer</code>
-          <span>React forms and views made from <Term id="shacl">SHACL</Term> shapes, plus TypeScript types and test data.</span>
         </li>
         <li>
           <code>@shapething/textstore</code>
@@ -56,6 +57,22 @@ import Term from './Term.astro'
           <span>Use a folder on your computer as a <Term id="triplestore">triplestore</Term>. Chrome only.</span>
         </li>
       </ul>
+    </div>
+
+    <aside class="intro__funding">
+      <h2>Funding</h2>
+      <p>
+        The development of <code>@shapething/shacl-renderer</code> is funded through the
+        <a href="https://nlnet.nl/commonsfund">NGI0 Commons Fund</a>, a fund established by
+        <a href="https://nlnet.nl">NLnet</a> with financial support from the European Commission's
+        <a href="https://ngi.eu">Next Generation Internet</a> program. The other packages are not part of this grant.
+        Learn more at the <a href="https://nlnet.nl/project/ShapeThing">NLnet project page</a>.
+      </p>
+      <div class="intro__funding-logos">
+        <a href="https://nlnet.nl"><img src="https://nlnet.nl/logo/banner.png" alt="NLnet foundation logo" /></a>
+        <a href="https://nlnet.nl/commonsfund"><img src="https://nlnet.nl/image/logos/NGI0_tag.svg" alt="NGI Zero logo" /></a>
+      </div>
+    </aside>
     </div>
   </div>
 </section>
@@ -99,6 +116,41 @@ import Term from './Term.astro'
     padding: 1.2em 1.4em 0.6em;
     border: 1px solid var(--blue-lightest);
     border-radius: 6px;
+  }
+
+  .intro__aside {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5em;
+  }
+
+  .intro__funding {
+    padding: 1.6em 1.8em;
+    border: 1px solid var(--blue-lightest);
+    border-radius: 6px;
+    font-size: 16px;
+    line-height: 1.45;
+  }
+
+  .intro__funding h2 {
+    font-size: 1.3em;
+  }
+
+  .intro__funding p {
+    margin-block: 0 1.4em;
+  }
+
+  .intro__funding-logos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5em;
+  }
+
+  .intro__funding-logos img {
+    display: block;
+    height: 28px;
+    width: auto;
   }
 
   .intro ul {

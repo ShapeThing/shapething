@@ -1,0 +1,85 @@
+---
+import Layout from '../layouts/Layout.astro'
+import { exampleHref, packages } from '../data/packages'
+
+const repo = 'https://github.com/ShapeThing/shapething/tree/main/packages'
+---
+
+<Layout class="packages" title="Packages">
+  <h1>Packages</h1>
+  <p class="packages__intro">Each package can be used on its own. Install only what you need.</p>
+
+  <ul class="packages__list">
+    {
+      packages.map((pkg) => {
+        const { name, directory, summary, description } = pkg
+        return (
+        <li class="packages__item" id={directory}>
+          <code>{name}</code>
+          <p class="packages__summary">{summary}</p>
+          <p>{description}</p>
+          <p class="packages__links">
+            <a href={exampleHref(pkg)}>Example</a>
+            <a href={`https://www.npmjs.com/package/${name}`}>npm</a>
+            <a href={`${repo}/${directory}`}>Source on GitHub</a>
+          </p>
+        </li>
+        )
+      })
+    }
+  </ul>
+</Layout>
+
+<style>
+  .packages__intro {
+    font-size: 16px;
+  }
+
+  .packages__list {
+    list-style: none;
+    max-width: 52em;
+    margin-block: 1.5em 3em;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2em;
+  }
+
+  .packages__item {
+    padding: 1.2em 1.4em;
+    border: 1px solid var(--blue-lightest);
+    border-radius: 6px;
+    line-height: 1.5;
+    scroll-margin-top: 1em;
+  }
+
+  .packages__item:target {
+    border-color: var(--purple);
+  }
+
+  .packages__item code {
+    font-weight: 600;
+    font-size: 1.1em;
+    color: var(--purple);
+    overflow-wrap: anywhere;
+  }
+
+  .packages__item p {
+    margin: 0.3em 0;
+  }
+
+  .packages__summary {
+    font-weight: 600;
+  }
+
+  .packages__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4em 1.2em;
+    font-size: 15px;
+  }
+
+  .packages__links a {
+    color: var(--blue-light);
+  }
+</style>

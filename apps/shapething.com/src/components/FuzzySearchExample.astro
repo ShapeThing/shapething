@@ -1,13 +1,6 @@
 <div class="fuzzy-search-example">
     <div class="search-bar">
         <input id="fuzzy-search-input" type="search" placeholder="Search recipes and chefs…" autocomplete="off" />
-        <span class="suggestions">
-            Try:
-            <button type="button" data-search="otolenghi">otolenghi</button>
-            <button type="button" data-search="welington">welington</button>
-            <button type="button" data-search="burgundi">burgundi</button>
-            <button type="button" data-search="tahin">tahin</button>
-        </span>
     </div>
     <div class="panes">
         <div class="pane">
@@ -121,29 +114,6 @@
         border-radius: 6px;
         color: inherit;
     }
-
-    .suggestions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 0.4em;
-    }
-
-    .suggestions button {
-        font: inherit;
-        font-family: monospace;
-        padding: 0.15em 0.6em;
-        border: 1px solid var(--blue-lightest);
-        border-radius: 999px;
-        background: none;
-        color: var(--blue-dark);
-        cursor: pointer;
-    }
-
-    .suggestions button:hover {
-        border-color: var(--blue-light);
-    }
-
     .panes {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));

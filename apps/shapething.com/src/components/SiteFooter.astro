@@ -4,6 +4,12 @@
 
 <footer class="footer">
   <div class="container">
+    <p class="footer__license">
+      ShapeThing is open source, licensed under the <a href="https://www.gnu.org/licenses/gpl-3.0.html">GPL-3.0</a>.
+    </p>
+    <p class="footer__author">
+      Made by <a href="https://www.linkedin.com/in/danielbeeke/">Daniel Beeke</a>.
+    </p>
   </div>
 </footer>
 
@@ -27,5 +33,21 @@
     content: '';
     z-index: -1;
     top: 0;
+  }
+
+  .footer__license,
+  .footer__author {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .footer__license + .footer__author {
+    margin-top: 0.4em;
+  }
+
+  .footer__license a,
+  .footer__author a {
+    color: var(--blue-light);
   }
 </style>
