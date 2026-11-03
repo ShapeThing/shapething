@@ -56,6 +56,7 @@ const webComponentProps = {
   enableMissingPropertyNameDereferencing: "boolean",
   enableFacetTextSearchMerging: "boolean",
   enableFacetSearchForAutocomplete: "boolean",
+  enableImageResizing: "boolean",
 } as const;
 
 type AttributeProps = {
@@ -145,6 +146,7 @@ function Wrapper(props: WrapperProps) {
     enableMissingPropertyNameDereferencing: attributes.enableMissingPropertyNameDereferencing,
     enableFacetTextSearchMerging: attributes.enableFacetTextSearchMerging,
     enableFacetSearchForAutocomplete: attributes.enableFacetSearchForAutocomplete,
+    enableImageResizing: attributes.enableImageResizing,
     onSubmit,
   };
 

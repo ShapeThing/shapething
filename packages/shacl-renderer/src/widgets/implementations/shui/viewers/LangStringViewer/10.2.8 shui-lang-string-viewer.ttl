@@ -20,5 +20,5 @@
 <#data>
     a schema:Person ;
     schema:givenName "Hendrik" ;
-    ex:description "Loves hiking"@en ;
+    ex:description "Loves hiking"@en, "Houdt van wandelen"@nl ;
     .

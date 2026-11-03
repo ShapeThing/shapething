@@ -30,84 +30,75 @@ const englishOnly = {
   enableFullLanguageRemoval: false,
 } satisfies Partial<ComponentProps<typeof ShaclRenderer>>;
 
-const usePicker = (type: string, defaultIri: string, version: number) => {
-  const [options, setOptions] = useState<Option[]>([]);
+const shapes = {
+  Chef: { nodeShape: ex("ChefShape"), type: "http://example.org/Chef" },
+  Recipe: { nodeShape: ex("RecipeShape"), type: "http://schema.org/Recipe" },
+};
+type ShapeName = keyof typeof shapes;
+
+/**
+ * A select with all chefs and recipes in the store, grouped by type.
+ */
+const usePicker = (defaultIri: string, version: number) => {
+  const [options, setOptions] = useState<(Option & { shape: ShapeName })[]>([]);
   const [selected, setSelected] = useState(defaultIri);
   useEffect(() => {
-    listResources(type).then(setOptions);
-  }, [type, version]);
+    Promise.all(
+      (Object.keys(shapes) as ShapeName[]).map(async (name) =>
+        (await listResources(shapes[name].type)).map((option) => ({ ...option, shape: name })),
+      ),
+    ).then((lists) => setOptions(lists.flat()));
+  }, [version]);
+
+  const shape = options.find(({ iri }) => iri === selected)?.shape;
 
   const picker = (
     <select value={selected} onChange={(event) => setSelected(event.target.value)}>
-      {options.map(({ iri, name }) => (
-        <option key={iri} value={iri}>
-          {name}
-        </option>
+      {(Object.keys(shapes) as ShapeName[]).map((name) => (
+        <optgroup key={name} label={name}>
+          {options
+            .filter((option) => option.shape === name)
+            .map(({ iri, name }) => (
+              <option key={iri} value={iri}>
+                {name}
+              </option>
+            ))}
+        </optgroup>
       ))}
     </select>
   );
 
-  return { selected, picker };
+  return { selected, shape, picker };
 };
 
-function ChefViewer({ version }: { version: number }) {
-  const { selected, picker } = usePicker(
-    "http://example.org/Chef",
-    new URL("chefs/gordon-ramsay", baseUri).toString(),
-    version,
-  );
-  const [dataGraph, setDataGraph] = useState<Quad[]>();
-
-  useEffect(() => {
-    setDataGraph(undefined);
-    fetchDocument(DataFactory.namedNode(selected), { shape: ex("ChefShape") }).then(({ quads }) =>
-      setDataGraph([...quads, ...vocabulary]),
-    );
-  }, [selected, version]);
-
-  return (
-    <section className="renderer-example chef-render">
-      <label className="renderer-example__picker">Chef {picker}</label>
-      {dataGraph ? (
-        <ShaclRenderer
-          key={`${selected} ${version}`}
-          mode="view"
-          shapesGraph={shapesGraph}
-          dataGraph={dataGraph}
-          viewModeLabelLayout="inline"
-          focusNode={DataFactory.namedNode(selected)}
-          nodeShapes={[ex("ChefShape")]}
-          enableShPathInLabelTitle={false}
-          {...englishOnly}
-        />
-      ) : (
-        <p>Fetching…</p>
-      )}
-    </section>
-  );
-}
-
-function RecipeEditor({ version }: { version: number }) {
-  const { selected, picker } = usePicker(
-    "http://schema.org/Recipe",
-    new URL("recipes/beef-wellington", baseUri).toString(),
-    version,
-  );
+function ResourceRenderer({
+  mode,
+  defaultIri,
+  version,
+}: {
+  mode: "view" | "edit";
+  defaultIri: string;
+  version: number;
+}) {
+  const { selected, shape, picker } = usePicker(defaultIri, version);
   const [dataGraph, setDataGraph] = useState<Quad[]>();
   const [status, setStatus] = useState("");
 
   useEffect(() => {
     setDataGraph(undefined);
+    setStatus("");
+    if (!shape) return;
+    // All chefs, so the chef of a recipe can be shown and picked with its name.
     Promise.all([
-      fetchDocument(DataFactory.namedNode(selected), { shape: ex("RecipeShape") }),
-      fetchChefs(),
+      fetchDocument(DataFactory.namedNode(selected), { shape: shapes[shape].nodeShape }),
+      shape === "Recipe" ? fetchChefs() : [],
     ]).then(([{ quads }, chefs]) => setDataGraph([...quads, ...chefs, ...vocabulary]));
-  }, [selected, version]);
+  }, [selected, shape, version]);
 
   const onSubmit = async (result: SubmitResult) => {
-    const recipe = DataFactory.namedNode(selected);
+    const resource = DataFactory.namedNode(selected);
     try {
-      await saveDocument(recipe, conciseBoundedDescription(result.dataGraph, recipe));
+      await saveDocument(resource, conciseBoundedDescription(result.dataGraph, resource));
       const { label } = getExampleStore();
       setStatus(label === "in memory" ? "Saved in memory." : `Saved to the folder ${label}.`);
     } catch (error) {
@@ -117,26 +108,31 @@ function RecipeEditor({ version }: { version: number }) {
   };
 
   return (
-    <section className="renderer-example">
+    <section className={`renderer-example${shape === "Chef" ? " chef-render" : ""}`}>
       <label className="renderer-example__picker">
-        Recipe {picker}
+        Resource {picker}
         <span role="status">{status}</span>
       </label>
-      {dataGraph ? (
+      {shape && dataGraph ? (
         <ShaclRenderer
           key={`${selected} ${version}`}
-          mode="edit"
-          className="recipes-render"
+          mode={mode}
+          className={shape === "Recipe" ? "recipes-render" : undefined}
           shapesGraph={shapesGraph}
           dataGraph={dataGraph}
+          viewModeLabelLayout={shape === "Chef" ? "inline" : undefined}
           focusNode={DataFactory.namedNode(selected)}
-          nodeShapes={[ex("RecipeShape")]}
+          nodeShapes={[shapes[shape].nodeShape]}
           enableShPathInLabelTitle={false}
           {...englishOnly}
-          enableWidgetSwitching={false}
-          enableLogicalBranchSwitching={false}
-          enableLinksToResources={false}
-          onSubmit={onSubmit}
+          {...(mode === "edit"
+            ? {
+                enableWidgetSwitching: false,
+                enableLogicalBranchSwitching: false,
+                enableLinksToResources: false,
+                onSubmit,
+              }
+            : {})}
         />
       ) : (
         <p>Fetching…</p>
@@ -146,9 +142,21 @@ function RecipeEditor({ version }: { version: number }) {
 }
 
 export function ChefExample() {
-  return <ChefViewer version={useStoreVersion()} />;
+  return (
+    <ResourceRenderer
+      mode="view"
+      defaultIri={new URL("chefs/gordon-ramsay", baseUri).toString()}
+      version={useStoreVersion()}
+    />
+  );
 }
 
 export function RecipeExample() {
-  return <RecipeEditor version={useStoreVersion()} />;
+  return (
+    <ResourceRenderer
+      mode="edit"
+      defaultIri={new URL("recipes/beef-wellington", baseUri).toString()}
+      version={useStoreVersion()}
+    />
+  );
 }

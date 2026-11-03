@@ -29,8 +29,8 @@ import { GenerateExample, TypesExample } from './ShaclToolsExamples'
 
 <div class="example-panels">
 
-<section id="loading-data" class="example-panel" role="tabpanel" aria-labelledby="tab-loading-data">
-<ExampleHeading id="loading-data" />
+<section id="data-storage" class="example-panel" role="tabpanel" aria-labelledby="tab-data-storage">
+<ExampleHeading id="data-storage" />
 <p>Linked data usually lives in a <Term id="triplestore">triplestore</Term>, a database made for it. LocalStore lets you use a folder on your computer instead. It is slower than a real database, but it is a good fit for small datasets.</p>
 <p>Picking a folder is optional. Without one, the examples use an in-memory store with the same recipes and chefs.</p>
 <div id="pick-folder-unsupported" class="browser-notice" role="note" hidden>
@@ -93,7 +93,7 @@ import { GenerateExample, TypesExample } from './ShaclToolsExamples'
 <section id="fuzzy-search" class="example-panel" role="tabpanel" aria-labelledby="tab-fuzzy-search">
 <ExampleHeading id="fuzzy-search" />
 <p>Triplestores often support fuzzy search, but stores that run in memory in the browser usually do not. TextStore wraps another store and adds fuzzy search to it.</p>
-<p>Below, TextStore wraps the store from <a href="#loading-data">Loading data</a>: the folder you picked, or the in-memory store. Searching is a normal SPARQL query with <code>tsst:search</code> as the <Term id="triple">predicate</Term>, and typos are allowed.</p>
+<p>Below, TextStore wraps the store from <a href="#data-storage">Data storage</a>: the folder you picked, or the in-memory store. Searching is a normal SPARQL query with <code>tsst:search</code> as the <Term id="triple">predicate</Term>, and typos are allowed.</p>
 <FuzzySearchExample />
 
 </section>
@@ -107,7 +107,7 @@ import { GenerateExample, TypesExample } from './ShaclToolsExamples'
         <button type="button" role="tab" id="tab-fetching-a-document-advanced" aria-controls="fetching-a-document-advanced" aria-selected="false" tabindex="-1">Advanced</button>
     </div>
     <div id="fetching-a-document-basic" role="tabpanel" aria-labelledby="tab-fetching-a-document-basic">
-        <p>Below, ResourceFetcher runs on the store from <a href="#loading-data">Loading data</a>. Click a resource to fetch it. Without a shape it takes everything about the resource, including its nested parts, called <Term id="blank-node">blank nodes</Term>, such as the ingredients of a recipe, each with a name, an amount and a unit. Links to other resources, such as the chef of a recipe, are not followed.</p>
+        <p>Below, ResourceFetcher runs on the store from <a href="#data-storage">Data storage</a>. Click a resource to fetch it. Without a shape it takes everything about the resource, including its nested parts, called <Term id="blank-node">blank nodes</Term>, such as the ingredients of a recipe, each with a name, an amount and a unit. Links to other resources, such as the chef of a recipe, are not followed.</p>
         <DocumentFetcherExample />
     </div>
     <div id="fetching-a-document-advanced" role="tabpanel" aria-labelledby="tab-fetching-a-document-advanced" hidden>
@@ -155,11 +155,11 @@ import { GenerateExample, TypesExample } from './ShaclToolsExamples'
         <button type="button" role="tab" id="tab-viewing-and-editing-editing" aria-controls="viewing-and-editing-editing" aria-selected="false" tabindex="-1">Editing</button>
     </div>
     <div id="viewing-and-editing-viewing" role="tabpanel" aria-labelledby="tab-viewing-and-editing-viewing">
-        <p>The shapes below describe a chef and a recipe. ResourceFetcher uses them to fetch exactly what is needed: a recipe with all its ingredients comes back in one query. The SHACL renderer then shows a chef:</p>
+        <p>The shapes below describe a chef and a recipe. ResourceFetcher uses them to fetch exactly what is needed: a recipe with all its ingredients comes back in one query. The SHACL renderer then shows the chef or recipe you pick:</p>
         <ChefExample client:only="react" />
     </div>
     <div id="viewing-and-editing-editing" role="tabpanel" aria-labelledby="tab-viewing-and-editing-editing" hidden>
-        <p>The SHACL renderer can also make a form to edit a recipe. Saving writes the recipe back to its own file in the store from <a href="#loading-data">Loading data</a>, and the other tabs update with it.</p>
+        <p>The SHACL renderer can also make a form to edit a chef or a recipe. Saving writes it back to its own file in the store from <a href="#data-storage">Data storage</a>, and the other tabs update with it.</p>
         <RecipeExample client:only="react" />
     </div>
 </div>

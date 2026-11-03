@@ -24,6 +24,13 @@
   margin-block-end: var(--size-2);
 }
 
+/* The tall label above matches the height of the inputs and buttons in edit mode. View mode has
+   no inputs next to the label, so the rows would only be spaced apart by it. */
+.st-view-mode .st-form-element__label {
+  min-height: 0;
+  line-height: 1.5;
+}
+
 /* The truncation - and the ::first-letter rule below - live on this inner span rather than
    .st-form-element__label itself: first-letter can't target a flex container, only a block
    container/list-item/table-cell, and the label above has to stay display:flex. As one of the

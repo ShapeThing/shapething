@@ -19,7 +19,7 @@ export type CodeSample = {
 };
 
 export const codeSamples: Record<(typeof examples)[number]["id"], CodeSample[]> = {
-  "loading-data": [{ file: "store.ts", language: "ts", code: loadingData }],
+  "data-storage": [{ file: "store.ts", language: "ts", code: loadingData }],
   "fetching-a-list": [
     { file: "vite.config.ts", language: "ts", code: viteConfig },
     { file: "recipes.rq", language: "sparql", code: recipesQuery },

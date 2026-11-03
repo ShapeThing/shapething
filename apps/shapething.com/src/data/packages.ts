@@ -47,7 +47,7 @@ export const packages: Package[] = [
   {
     name: "@shapething/localstore",
     directory: "local-store",
-    example: "loading-data",
+    example: "data-storage",
     summary: "A folder on your computer as a triplestore.",
     description:
       "An RDF/JS store that reads Turtle files from a folder and writes changes back to them, so you can query and update them with a SPARQL engine such as Comunica. Runs in Chrome.",

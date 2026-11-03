@@ -7,7 +7,7 @@ import { write } from "@jeswr/pretty-turtle";
 import type { NamedNode } from "@rdfjs/types";
 import { minimalSetup } from "codemirror";
 import { DataFactory, Parser, Store } from "n3";
-import { baseUri, getExampleStore, onStoreChange } from "./exampleStore";
+import { baseUri, onStoreChange } from "./exampleStore";
 import { fetchDocument, queryBindings } from "./fetchDocument";
 import { highlighting } from "./highlighting";
 
@@ -38,7 +38,6 @@ const setDoc = (view: EditorView, doc: string) =>
 
 type Elements = {
   select: HTMLSelectElement;
-  selectLabel: HTMLElement;
   document: HTMLElement;
   documentLabel: HTMLElement;
   queries: HTMLElement;
@@ -106,9 +105,6 @@ export const mountDocumentFetcher = (elements: Elements, { shape, type }: Option
   };
 
   const renderList = async () => {
-    const { label } = getExampleStore();
-    elements.selectLabel.textContent = `Resource (${label})`;
-
     const bindings = await queryBindings(`PREFIX schema: <http://schema.org/>
 SELECT ?resource ?type ?name WHERE {
   ?resource a ?type ;

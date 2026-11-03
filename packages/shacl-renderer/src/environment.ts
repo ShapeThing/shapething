@@ -283,6 +283,11 @@ export type Environment = {
   // search icon always just opens the ordinary inline typeahead, same as before this option
   // existed.
   enableFacetSearchForAutocomplete?: boolean;
+  // shui:ImageViewer loads remote images through https://wsrv.nl, resized to about the size they
+  // are shown at, instead of downloading the full original. Images wsrv.nl can not reach (data and
+  // blob URLs, local hosts) and SVGs are always loaded directly - see helpers/resizedImageUrl.ts.
+  // On in defaultEnvironment; turn it off to never send image URLs to wsrv.nl.
+  enableImageResizing?: boolean;
   // MapLibre GL style URL used by every map-based st: widget (GeoEditor, MapViewer, MapFacet) -
   // a single shared setting rather than a per-widget one, since they're always meant to look the
   // same within one embedder. Defaults to a public OpenFreeMap style; override to point at a
@@ -356,6 +361,7 @@ export const defaultEnvironment: Environment = {
   enableMissingPropertyNameDereferencing: false,
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
+  enableImageResizing: true,
   mapStyleUrl: "https://tiles.openfreemap.org/styles/bright",
 };
 
@@ -394,6 +400,7 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableMissingPropertyNameDereferencing: false,
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
+  enableImageResizing: false,
   mapStyleUrl: "https://tiles.openfreemap.org/styles/bright",
 };
 
@@ -438,4 +445,5 @@ export const testingEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableMissingPropertyNameDereferencing: false,
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
+  enableImageResizing: false,
 };

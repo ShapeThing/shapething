@@ -13,7 +13,7 @@ const { shape, shapeIri, type } = Astro.props
 
 <div class="document-fetcher-example" data-shape={shape} data-shape-iri={shapeIri} data-type={type}>
     <label class="renderer-example__picker">
-        <span data-part="select-label">Resource</span>
+        Resource
         <select data-part="select"></select>
     </label>
     <div class="pane">
@@ -47,7 +47,6 @@ const { shape, shapeIri, type } = Astro.props
                 mountDocumentFetcher(
                     {
                         select: part('select') as HTMLSelectElement,
-                        selectLabel: part('select-label'),
                         document: part('document'),
                         documentLabel: part('document-label'),
                         queries: part('queries'),

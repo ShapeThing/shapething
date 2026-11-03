@@ -1,8 +1,8 @@
 // The interactive examples on /examples, also listed on the homepage. The id is the hash of its tab.
 export const examples = [
   {
-    id: "loading-data",
-    title: "Loading data",
+    id: "data-storage",
+    title: "Data storage",
     description: "Use a folder on your computer as a database.",
   },
   {
