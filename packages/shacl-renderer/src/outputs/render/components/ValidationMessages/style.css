@@ -37,12 +37,35 @@
   padding: var(--size-2) var(--size-2);
 }
 
-/* Edit mode shows both property-wide (PropertyUIComponent.tsx) and per-value
-   (PropertyUIComponentObject.tsx) messages above the widgets - a little breathing room keeps them
-   from touching the label above and the field below. */
-.st-edit-mode .st-validation-messages--property,
-.st-edit-mode .st-validation-messages--value {
+/* Property-wide messages (PropertyUIComponent.tsx) sit above the widgets - a little breathing
+   room keeps them from touching the label above and the field below. */
+.st-edit-mode .st-validation-messages--property {
   margin-block: var(--size-1) var(--size-2);
+}
+
+/* Per-value messages (PropertyUIComponentObject.tsx) sit directly on top of their own input like
+   a tab - no gap below, the corner touching the input squared off - with the breathing room moved
+   above instead, so in a multi-value field a message can't be read as belonging to the value
+   above it. */
+.st-property-object-wrapper:has(> .st-validation-messages--value) {
+  gap: 0;
+}
+
+.st-edit-mode .st-validation-messages--value {
+  margin-block: var(--size-2) 0;
+}
+
+.st-validation-messages--value .st-validation-message:last-child,
+.st-validation-messages--value .st-validation-message:last-child .st-validation-message-icon {
+  border-bottom-left-radius: 0;
+}
+
+/* ...and the input's own top-left corner squared to meet it, so the two join without a notch.
+   The widget-switcher's/logical-constraint-switcher's own nested selects keep their corners. */
+.st-property-object-wrapper:has(> .st-validation-messages--value)
+  > .st-property-object
+  :is(.st-input, .st-select):not(:is(.st-widget-switcher, .st-logical-constraint-switcher) *) {
+  border-top-left-radius: 0;
 }
 
 .st-validation-message-icon svg {

@@ -67,10 +67,11 @@ export default function PropertyUIComponentObject({
 
   return (
     <div className="st-property-object-wrapper">
+      {/* Above the whole row rather than inside .st-property-object-main, so the remove button
+          stays level with the input instead of with the message. */}
+      <ResultMessages className="st-validation-messages--value" results={valueResults} />
       <div className="st-property-object" data-severity={severity}>
         <div className="st-property-object-main">
-          <ResultMessages className="st-validation-messages--value" results={valueResults} />
-
           <WidgetSlot
             propertyUIElement={propertyUIElement}
             object={object}
