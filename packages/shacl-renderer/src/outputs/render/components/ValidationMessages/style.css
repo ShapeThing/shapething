@@ -37,6 +37,14 @@
   padding: var(--size-2) var(--size-2);
 }
 
+/* Edit mode shows both property-wide (PropertyUIComponent.tsx) and per-value
+   (PropertyUIComponentObject.tsx) messages above the widgets - a little breathing room keeps them
+   from touching the label above and the field below. */
+.st-edit-mode .st-validation-messages--property,
+.st-edit-mode .st-validation-messages--value {
+  margin-block: var(--size-1) var(--size-2);
+}
+
 .st-validation-message-icon svg {
   width: var(--size-3);
   height: var(--size-3);

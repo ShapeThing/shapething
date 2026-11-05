@@ -1,7 +1,7 @@
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import PropertyShapeSources from "@/outputs/render/components/PropertyShapeSources/index.tsx";
 import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
-import ValidationMessages from "@/outputs/render/components/ValidationMessages/index.tsx";
+import ResultMessages from "@/outputs/render/components/ValidationMessages/ResultMessages.tsx";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useRegisterContentLanguageSwitcherWidget } from "@/outputs/render/hooks/useRegisterContentLanguageSwitcherWidget.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
@@ -10,11 +10,9 @@ import { usePropertyValidationResults } from "@/outputs/render/hooks/useProperty
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import MemberShapeList from "@/outputs/render/modes/edit/MemberShapeList.tsx";
 import PropertyUIComponentValues from "@/outputs/render/modes/edit/PropertyUIComponentValues.tsx";
-import { localName } from "@/helpers/localName.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
 import { Globe } from "@/helpers/icons.tsx";
 import { extractServiceEndpoints } from "@/outputs/render/hooks/query.ts";
-import language, { configuredLanguages } from "@/resolution/language.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
 import "./style.css";
@@ -79,11 +77,6 @@ export default function PropertyUIComponent({
   // property-wide ones (e.g. sh:minCount, no `value`): per-value ones (e.g. sh:pattern tied to one
   // specific value) are shown by PropertyUIComponentObject instead, to avoid reporting them twice.
   const propertyWideResults = usePropertyValidationResults(propertyUIElement, "property-wide");
-  // sh:message is chrome (like sh:name/sh:description), so it's resolved the same way - one
-  // best-matching language-tagged literal, not every language variant concatenated together.
-  const messageLanguages = configuredLanguages(propertyUIElement.shapesGraph, [
-    activeInterfaceLanguage,
-  ]);
 
   return (
     <FormElement
@@ -137,13 +130,7 @@ export default function PropertyUIComponent({
       description={description}
       required={minCount > 0}
     >
-      <ValidationMessages
-        className="st-validation-messages--property"
-        messages={propertyWideResults.map((result) => ({
-          severity: localName(result.severity) ?? "Violation",
-          message: result.message.length ? language(result.message, messageLanguages).value : "",
-        }))}
-      />
+      <ResultMessages className="st-validation-messages--property" results={propertyWideResults} />
       {memberShapeNodes.length > 0 ? (
         <MemberShapeList
           propertyUIElement={propertyUIElement}

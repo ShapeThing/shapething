@@ -30,6 +30,10 @@ function flattenResults(results: ValidateResult[]): ValidationResult[] {
     value: result.value?.term,
     severity: result.severity,
     message: result.message,
+    // Lets ResultMessages describe the result from the shape's own parameters ("Must be at least
+    // 20") instead of the engine's technical default message.
+    constraintComponent: result.constraintComponent,
+    constraintShape: result.shape.ptr.term,
   }));
 }
 

@@ -1,16 +1,13 @@
 import { useSlotResolution } from "@/outputs/render/hooks/useSlotResolution.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
-import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { usePropertyValidationResults } from "@/outputs/render/hooks/usePropertyValidationResults.tsx";
 import PropertyUIComponentRemove from "@/outputs/render/modes/edit/PropertyUIComponentRemove.tsx";
 import WidgetSlot from "@/outputs/render/modes/edit/WidgetSlot.tsx";
-import ValidationMessages from "@/outputs/render/components/ValidationMessages/index.tsx";
-import language, { configuredLanguages } from "@/resolution/language.ts";
+import ResultMessages from "@/outputs/render/components/ValidationMessages/ResultMessages.tsx";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { Term } from "@rdfjs/types";
 import { useCallback } from "react";
 import "./style.css";
-import { localName } from "@/helpers/localName.ts";
 import { shui } from "@/helpers/namespaces.ts";
 import { worstSeverity } from "@/helpers/worstSeverity.ts";
 
@@ -51,13 +48,6 @@ export default function PropertyUIComponentObject({
   const { readOnlyGraph } = useEnvironment();
   const isReadOnly = readOnlyGraph ? propertyUIElement.isReadOnly(object, readOnlyGraph) : false;
 
-  const { activeInterfaceLanguage } = useInterfaceLanguage();
-  // sh:message is chrome (like sh:name/sh:description), so it's resolved the same way - one
-  // best-matching language-tagged literal, not every language variant concatenated together.
-  const messageLanguages = configuredLanguages(propertyUIElement.shapesGraph, [
-    activeInterfaceLanguage,
-  ]);
-
   // Same (propertyUIElement, object) resolution WidgetSlot itself runs below (same arguments, so
   // the same react-query key - one real resolution, not two), just for the meta this component
   // needs for PropertyUIComponentRemove's clearAll. WidgetSlot only diverges from this key while a
@@ -79,21 +69,14 @@ export default function PropertyUIComponentObject({
     <div className="st-property-object-wrapper">
       <div className="st-property-object" data-severity={severity}>
         <div className="st-property-object-main">
+          <ResultMessages className="st-validation-messages--value" results={valueResults} />
+
           <WidgetSlot
             propertyUIElement={propertyUIElement}
             object={object}
             labelledBy={labelledBy}
             setTerm={setTerm}
             autoFocus={autoFocus}
-          />
-
-          <ValidationMessages
-            messages={valueResults.map((result) => ({
-              severity: localName(result.severity) ?? "Violation",
-              message: result.message.length
-                ? language(result.message, messageLanguages).value
-                : "",
-            }))}
           />
         </div>
         {!meta?.hideRemoveButton && (

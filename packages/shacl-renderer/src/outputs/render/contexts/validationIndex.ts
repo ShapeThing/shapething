@@ -26,6 +26,7 @@ function signature(result: ValidationResult): string {
     result.sourceShape ? termKey(result.sourceShape) : "",
     result.value ? termKey(result.value) : "",
     termKey(result.severity),
+    result.constraintComponent ? termKey(result.constraintComponent) : "",
     ...result.message.map(termKey),
   ].join("\n");
 }
