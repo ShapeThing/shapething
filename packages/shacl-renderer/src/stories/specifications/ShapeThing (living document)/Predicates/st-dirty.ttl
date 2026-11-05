@@ -1,0 +1,24 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+# st:dirty false: this property shape conforms only while the data is still what the form was
+# opened with, so nothing shows on load. Change the name and the (sh:Info, so non-blocking) message
+# appears; change it back (or Ctrl+Z) and it goes away again, since the data is then the original.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:path schema:name ;
+        sh:name "Identifier"@en ;
+        st:dirty false ;
+        sh:severity sh:Info ;
+        sh:message "This change will be reviewed by an administrator"@en ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:name "Ada Lovelace" ;
+    .

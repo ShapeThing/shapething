@@ -19,6 +19,7 @@ import {
   type ValidationResult,
   type ValidationStore,
 } from "@/outputs/render/contexts/validationContext.tsx";
+import { dirtyConstraints, type IsDirty } from "@/validation/dirtyConstraint.ts";
 
 const VALIDATION_DEBOUNCE_MS = 200;
 
@@ -40,6 +41,10 @@ type Props = {
   // child, so re-rendering *it* on every validation pass would remount every widget mid-edit (see
   // EditModeWrapper's own comment on why hasAttemptedSubmit is kept out of validationContext).
   latestResultsRef?: RefObject<ValidationResult[]>;
+  // Backs the st:dirty constraint (see validation/dirtyConstraint.ts): whether the data graph
+  // differs from the one this edit session started with. Without it, st:dirty treats the data as
+  // never changed. Read once, when the engine below is built - pass a stable function.
+  isDirty?: IsDirty;
 };
 
 /**
@@ -51,7 +56,7 @@ type Props = {
  * (see usePropertyValidationResults), never this provider or the whole tree. shacl-engine validates nested sh:property/sh:node shapes as part of validating their
  * parent node shape, so scoping to just `nodeShapes` here still covers the whole edited subtree.
  */
-export default function ValidationContextProvider({ children, latestResultsRef }: Props) {
+export default function ValidationContextProvider({ children, latestResultsRef, isDirty }: Props) {
   const { shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl } = useEnvironment();
   const storeRef = useRef<ValidationStore | null>(null);
   storeRef.current ??= createValidationStore();
@@ -68,7 +73,7 @@ export default function ValidationContextProvider({ children, latestResultsRef }
   engineRef.current ??= new ShaclEngine(shapesGraphWithoutDynamicIn(shapesGraph).asDataset(), {
     factory,
     functions: sparqlFunctions,
-    constraints: sparqlConstraints,
+    constraints: [...sparqlConstraints, ...dirtyConstraints(isDirty ?? (() => false))],
   });
 
   // Federated dynamic sh:in results, reused across revalidations - see validateDynamicInProperties.

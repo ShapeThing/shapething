@@ -6,6 +6,7 @@ import type { NamedNode, Quad } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { diffQuads } from "@/helpers/diffQuads.ts";
+import { snapshotStore } from "@/helpers/snapshotStore.ts";
 import { rebuildRdfList } from "@/helpers/rdfList.ts";
 import { getHistory, transact, untracked } from "@/helpers/reactiveRdfStore.ts";
 import { renameInQuads } from "@/helpers/renameTerm.ts";
@@ -31,6 +32,7 @@ import {
   type UndoRedoScope,
 } from "@/outputs/render/contexts/undoRedoScopeContext.tsx";
 import { worstSeverity } from "@/helpers/worstSeverity.ts";
+import { isDirtyComparedTo } from "@/validation/dirtyConstraint.ts";
 
 type Props = ModeProps & {
   children?: React.ReactNode;
@@ -78,8 +80,12 @@ export default function EditModeWrapper({ children, className }: Props) {
   // dataGraph's identity is stable for the life of this edit session (EnvironmentContextProvider
   // builds the Environment once and never rebuilds it), so this lazy initializer only ever runs on
   // this component's very first render - before any widget has had a chance to mutate dataGraph.
-  const originalQuadsRef = useRef<Quad[] | null>(null);
-  originalQuadsRef.current ??= dataGraph.getQuads();
+  // Held as a snapshotStore sharing dataGraph's term dictionary, so the copy costs id tuples only.
+  const [originalStore] = useState(() => snapshotStore(dataGraph));
+  // st:dirty (see validation/dirtyConstraint.ts) compares against this same snapshot, so "dirty"
+  // means exactly "submitting now would report a non-empty additions/deletions diff" - including
+  // any sh:defaultValue seeded into a new resource below.
+  const [isDirty] = useState(() => isDirtyComparedTo(originalStore));
   // The title's Create/Edit pick, fixed at mount (unlike the submit button's live hasTriples) so
   // "Create Person" doesn't turn into "Edit A" as soon as the user starts typing a name.
   const [isNew] = useState(() => dataGraph.getQuads(focusNode, null, null).length === 0);
@@ -163,7 +169,7 @@ export default function EditModeWrapper({ children, className }: Props) {
       }
     });
 
-    const originalQuads = originalQuadsRef.current!;
+    const originalQuads = originalStore.getQuads();
     const finalQuads =
       !renamedFocusNode || renamedFocusNode.equals(focusNode)
         ? dataGraph.getQuads()
@@ -253,7 +259,7 @@ export default function EditModeWrapper({ children, className }: Props) {
   return (
     <undoRedoScopeContext.Provider value={undoRedoScope}>
       <submitAttemptContext.Provider value={{ hasAttemptedSubmit, markSubmitAttempted }}>
-        <ValidationContextProvider latestResultsRef={latestValidationResultsRef}>
+        <ValidationContextProvider latestResultsRef={latestValidationResultsRef} isDirty={isDirty}>
           <form
             onSubmit={handleSubmit}
             onFocusCapture={claimUndo}

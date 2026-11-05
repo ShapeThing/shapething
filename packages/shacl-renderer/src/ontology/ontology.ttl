@@ -87,6 +87,20 @@ st:mergeAlternatives
     rdfs:domain sh:PropertyShape ;
     rdfs:range xsd:boolean .
 
+# Shapes (node and property)
+
+st:dirty
+    a rdf:Property ;
+    rdfs:label "dirty"@en ;
+    rdfs:comment "A constraint for edit mode. When true, the shape conforms only while the data graph differs from the data the form was opened with. When false, it conforms only while the data is unchanged. Use it to block submitting an unchanged form. Undoing every change makes the data unchanged again."@en ;
+    rdfs:domain sh:Shape ;
+    rdfs:range xsd:boolean .
+
+st:DirtyConstraintComponent
+    a sh:ConstraintComponent ;
+    rdfs:label "dirty constraint component"@en ;
+    rdfs:comment "The constraint component of validation results produced by st:dirty."@en .
+
 # Node shapes and property groups
 
 st:cssImport
