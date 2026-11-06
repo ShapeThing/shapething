@@ -236,13 +236,19 @@
 }
 
 // The side and the main group are rendered by one renderer, the properties by another: the elements
-// of the renderers make way, so these three are the items of the modal's grid (below).
+// of the renderers make way, so these three are the items of the modal's grid (below). A renderer
+// with a settle gate (it holds the first paint until the data has loaded) has its two elements
+// between its own and the view mode: they make way as well.
 .entity-modal__display,
-.entity-modal__display > .st-view-mode {
+.entity-modal__display > .st-settle-gate,
+.entity-modal__display > .st-settle-gate > .st-settle-gate__content,
+.entity-modal__display > .st-view-mode,
+.entity-modal__display > .st-settle-gate > .st-settle-gate__content > .st-view-mode {
   display: contents;
 }
 
-.entity-modal__display > .st-view-mode > .st-header {
+.entity-modal__display > .st-view-mode > .st-header,
+.entity-modal__display > .st-settle-gate > .st-settle-gate__content > .st-view-mode > .st-header {
   display: none;
 }
 
