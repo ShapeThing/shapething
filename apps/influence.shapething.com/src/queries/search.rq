@@ -43,6 +43,8 @@ SELECT ?person ?name ?mulName ?description ?image ?birthDate ?deathDate (xsd:int
         BIND(IRI(CONCAT(STR(wd:), ?title)) AS ?person)
       }
       ?person wdt:P31 wd:Q5 .
+      # Always true (both searches give items), but it types ?person as an IRI.
+      FILTER(isIRI(?person))
       # Only people who influenced someone: the people the app can show chains of.
       ?influenced wdt:P737 ?person .
       # The full-text search also matches descriptions ("van go" would find Tagore): the search

@@ -1,4 +1,5 @@
 import type PhotoSwipe from "photoswipe";
+import type { Bounds } from "photoswipe";
 // Wikimedia Commons "Special:FilePath" URLs (wdt:P18, wdt:P41) point at the full original, which
 // can be tens of megabytes. Commons serves a thumbnail of 1920px wide from its cache instead (or the
 // original, when that is smaller).
@@ -13,12 +14,56 @@ const largeImageUrl = (url: string) => {
   return parsed.href;
 };
 
+type Item = { src: string; msrc: string; alt: string; width: number; height: number };
+
+/** The item for one image, with its size estimated from the thumbnail (corrected once it loads). */
+const itemFor = (anchor: HTMLAnchorElement, thumbnail: HTMLImageElement): Item => {
+  const ratio =
+    thumbnail.naturalWidth && thumbnail.naturalHeight
+      ? thumbnail.naturalHeight / thumbnail.naturalWidth
+      : 1;
+  return {
+    src: largeImageUrl(anchor.href),
+    msrc: thumbnail.currentSrc || thumbnail.src,
+    alt: thumbnail.alt,
+    width: largeWidth,
+    height: Math.round(largeWidth * ratio),
+  };
+};
+
+/**
+ * All the images on the screen that open in the lightbox (see widget.tsx), in the order of the
+ * page. When the clicked image is in a modal (a <dialog>, in the top layer), that is the screen,
+ * otherwise the page outside of modals. Hidden images (display: none) are left out.
+ */
+const imagesOnScreen = (anchor: HTMLAnchorElement) => {
+  const dialog = anchor.closest("dialog[open]");
+  const anchors = (dialog ?? document).querySelectorAll<HTMLAnchorElement>(
+    ".lightbox-image-viewer a.image-viewer__link",
+  );
+  const images = [...anchors].flatMap((link) => {
+    const thumbnail = link.querySelector("img");
+    if (!thumbnail || link.closest("dialog[open]") !== dialog) return [];
+    if (link !== anchor && !thumbnail.getClientRects().length) return [];
+    return [{ anchor: link, thumbnail }];
+  });
+  return {
+    dialog,
+    images,
+    index: Math.max(
+      0,
+      images.findIndex((image) => image.anchor === anchor),
+    ),
+  };
+};
+
 /**
  * Opens the big version of an image in PhotoSwipe, zooming from its thumbnail (and back when it is
- * closed). `anchor` is the link to the original around it (see widget.tsx).
+ * closed), as a gallery of all the images on the screen, starting at this one. `anchor` is the
+ * link to the original around it (see widget.tsx).
  *
- * The images are in a modal: a native <dialog>, in the top layer, so PhotoSwipe is put inside the
- * dialog to be shown on top of it, and Escape only closes PhotoSwipe, not the dialog as well.
+ * The images can be in a modal: a native <dialog>, in the top layer, so PhotoSwipe is put inside
+ * the dialog to be shown on top of it, and Escape only closes PhotoSwipe, not the dialog as well.
  */
 export const openLightbox = async (anchor: HTMLAnchorElement, thumbnail: HTMLImageElement) => {
   const [{ default: PhotoSwipe }] = await Promise.all([
@@ -27,56 +72,60 @@ export const openLightbox = async (anchor: HTMLAnchorElement, thumbnail: HTMLIma
     import("./lightbox.scss"),
   ]);
 
-  // PhotoSwipe needs the size of the image before it is loaded, so the big version is loaded first.
-  // When that takes long, the lightbox opens anyway, with the size estimated from the thumbnail
-  // (shown until the big version is there), and the size is corrected once it has loaded.
-  const ratio =
-    thumbnail.naturalWidth && thumbnail.naturalHeight
-      ? thumbnail.naturalHeight / thumbnail.naturalWidth
-      : 1;
-  const item = {
-    src: largeImageUrl(anchor.href),
-    msrc: thumbnail.currentSrc || thumbnail.src,
-    alt: thumbnail.alt,
-    width: largeWidth,
-    height: Math.round(largeWidth * ratio),
-  };
+  const { dialog, images, index } = imagesOnScreen(anchor);
+  if (!images.length) images.push({ anchor, thumbnail });
+  const items = images.map((image) => itemFor(image.anchor, image.thumbnail));
 
+  // PhotoSwipe needs the size of the image before it is loaded, so the big version of the clicked
+  // image is loaded first. When that takes long, the lightbox opens anyway, with the size estimated
+  // from the thumbnail (shown until the big version is there). The other images get that estimate
+  // too; every size is corrected once PhotoSwipe has loaded the big version (see below).
+  const first = items[index];
   const large = new Image();
   const loaded = new Promise<boolean>((resolve) => {
     large.onload = () => resolve(large.naturalWidth > 0);
     large.onerror = () => resolve(false);
   });
-  large.src = item.src;
+  large.src = first.src;
   const loadedInTime = await Promise.race([
     loaded,
     new Promise<false>((resolve) => setTimeout(resolve, 400, false)),
   ]);
-  if (loadedInTime) Object.assign(item, { width: large.naturalWidth, height: large.naturalHeight });
+  if (loadedInTime)
+    Object.assign(first, { width: large.naturalWidth, height: large.naturalHeight });
 
-  const dialog = anchor.closest("dialog[open]");
   const keepDialogOpen = (event: Event) => event.preventDefault();
   dialog?.addEventListener("cancel", keepDialogOpen);
 
   const pswp = new PhotoSwipe({
-    dataSource: [item],
+    dataSource: items,
+    index,
     appendToEl: dialog instanceof HTMLElement ? dialog : document.body,
     bgOpacity: 0.9,
     showHideAnimationType: "zoom",
   });
-  pswp.addFilter("thumbBounds", () => renderedImageBounds(thumbnail, item.width, item.height));
+  pswp.addFilter("thumbBounds", (bounds, _data, i) => {
+    const image = images[i];
+    // PhotoSwipe types the result as Bounds, but handles undefined (no thumbnail: it fades).
+    if (!image?.thumbnail.isConnected) return bounds as Bounds;
+    return renderedImageBounds(image.thumbnail, items[i].width, items[i].height);
+  });
   pswp.on("destroy", () => dialog?.removeEventListener("cancel", keepDialogOpen));
   keepCornersRound(pswp);
-  pswp.init();
-  if (loadedInTime) return;
 
-  // Refreshing the slide while it zooms in would cut the animation short, so it waits for the end.
+  // Refreshing a slide while it zooms in would cut the animation short, so it waits for the end.
   const opened = new Promise<void>((resolve) => pswp.on("openingAnimationEnd", () => resolve()));
-  const [isLoaded] = await Promise.all([loaded, opened]);
-  if (!isLoaded || pswp.isDestroying) return;
-  if (large.naturalWidth === item.width && large.naturalHeight === item.height) return;
-  Object.assign(item, { width: large.naturalWidth, height: large.naturalHeight });
-  pswp.refreshSlideContent(0);
+  pswp.on("loadComplete", ({ content, isError }) => {
+    const img = content.element;
+    if (isError || !(img instanceof HTMLImageElement) || !img.naturalWidth) return;
+    const item = items[content.index];
+    if (!item || (img.naturalWidth === item.width && img.naturalHeight === item.height)) return;
+    Object.assign(item, { width: img.naturalWidth, height: img.naturalHeight });
+    void opened.then(() => {
+      if (!pswp.isDestroying) pswp.refreshSlideContent(content.index);
+    });
+  });
+  pswp.init();
 };
 
 // The radius of the corners of the image, on the screen (lightbox.scss has the same).
