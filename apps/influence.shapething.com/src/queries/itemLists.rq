@@ -14,6 +14,9 @@ SELECT ?kind ?item ?name ?publicationDate WHERE {
   {
     ?item wdt:P50 $subject .
     FILTER(isIRI(?item))
+    # Editions and translations (P629 edition or translation of) are items of their own with the
+    # same author and usually the same title: leave them out when their work is listed already.
+    FILTER NOT EXISTS { ?item wdt:P629 ?work . ?work wdt:P50 $subject }
     BIND("works" AS ?kind)
     OPTIONAL { ?item wdt:P577 ?publicationDate . FILTER(isLiteral(?publicationDate)) }
   }

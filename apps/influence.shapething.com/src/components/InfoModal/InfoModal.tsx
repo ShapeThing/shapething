@@ -23,6 +23,21 @@ export default function InfoModal({ onClose }: { onClose: () => void }) {
           </a>
           .
         </p>
+        <p>
+          This application uses{" "}
+          <a href="https://github.com/ShapeThing/shapething/tree/main/packages/shacl-renderer">
+            SHACL renderer
+          </a>{" "}
+          and{" "}
+          <a href="https://github.com/ShapeThing/shapething/tree/main/packages/typed-sparql">
+            Typed SPARQL
+          </a>
+          , two packages from{" "}
+          <a href="https://shapething.com" target="_blank" rel="noreferrer">
+            ShapeThing
+          </a>
+          .
+        </p>
       </div>
     </Modal>
   );

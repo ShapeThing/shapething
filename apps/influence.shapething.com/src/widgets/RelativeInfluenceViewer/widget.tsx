@@ -3,7 +3,9 @@ import { relativeInfluence, useInfluenceScale } from "../../influence/influenceS
 import "./style.scss";
 
 const describe = (count: number) =>
-  count === 1 ? "Influenced 1 person" : `Influenced ${count.toLocaleString("en")} people`;
+  count === 1
+    ? "Influenced 1 philosopher"
+    : `Influenced ${count.toLocaleString("en")} philosophers`;
 
 /**
  * inf:RelativeInfluenceViewer: an influence count (inf:influenceCount) as a bar, filled by how the

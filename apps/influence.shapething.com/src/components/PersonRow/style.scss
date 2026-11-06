@@ -11,6 +11,31 @@
   transition:
     opacity 0.3s ease-in-out,
     visibility 0.3s;
+
+  // A highlight behind the portrait row while it is hovered. Translucent, so it shows on a white
+  // column and on the tinted selected column alike.
+  &::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    right: -8px;
+    left: -6px;
+    height: calc(var(--portrait-size) + 12px);
+    border-radius: calc(var(--portrait-size) / 2 + 6px) 10px 10px
+      calc(var(--portrait-size) / 2 + 6px);
+    background: rgb(99 59 163 / 0.08);
+    opacity: 0;
+    transform: scale(0.98);
+    transition:
+      opacity 0.2s ease-in-out,
+      transform 0.2s ease-in-out;
+    pointer-events: none;
+  }
+}
+
+.person:has(.person__link:hover, .person__link:focus-visible)::before {
+  opacity: 1;
+  transform: none;
 }
 
 .person__display {
@@ -246,8 +271,8 @@
     top: 50%;
     left: 50%;
     width: 80%;
-    height: 3px;
-    border-radius: 4px;
+    height: 2px;
+    border-radius: 2px;
     background: black;
     transform: translate(-50%, -50%);
     transition: transform 0.3s ease-in-out;
