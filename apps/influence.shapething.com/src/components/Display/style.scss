@@ -1,0 +1,57 @@
+// What every display shares: the renderer laid out as content, not as a form. The layout of each
+// display shape is in the stylesheet of the component that shows it, through the hooks the renderer
+// gives: [data-widget] on every value and [data-iri] on every property group.
+
+.display {
+  min-width: 0;
+
+  // The renderer prepares its environment asynchronously, in a few milliseconds. The components
+  // around it show their own loading state for the data, so its loading message would only flash.
+  .st-environment-context-provider__loading {
+    display: none;
+  }
+
+  // Without language switchers the header of the renderer is empty.
+  .st-header {
+    display: none;
+  }
+
+  .st-view-mode {
+    font-family: var(--font-family);
+  }
+
+  .st-form-element {
+    padding-block-end: 0;
+    min-width: 0;
+  }
+
+  // The groups of the display shapes only bring properties together for the layout: no border.
+  .st-property-group {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .st-property-group__body {
+    border-left: 0;
+    padding-left: 0;
+  }
+
+  // A value beside its label takes the rest of the line (the influence bar needs the width).
+  .st-form-element > .st-property-items {
+    flex: 1 1 auto;
+  }
+
+  .st-property-items,
+  .st-property-object-wrapper,
+  .st-property-object,
+  .st-property-object-main,
+  .st-property-object__widget {
+    min-width: 0;
+  }
+
+  .image-viewer {
+    display: block;
+  }
+}

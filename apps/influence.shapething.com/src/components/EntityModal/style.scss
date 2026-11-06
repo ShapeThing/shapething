@@ -1,0 +1,95 @@
+// An entity in the modal (inf:ModalShape): the image, the facts with their labels beside them, then
+// the description, the introduction and the link to Wikipedia.
+
+.entity-modal__display {
+  .st-view-mode {
+    display: flow-root;
+  }
+
+  .st-view-mode > .st-form-element:has([data-widget="ImageViewer"]) {
+    margin-bottom: 15px;
+
+    .st-form-element__header {
+      display: none;
+    }
+  }
+
+  .image-viewer {
+    width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    object-position: left top;
+    border-radius: 0;
+  }
+
+  [data-iri$="#facts"] {
+    margin-bottom: 15px;
+    font-size: 15px;
+    line-height: 26px;
+
+    .st-form-element__label {
+      min-height: 0;
+      line-height: 26px;
+    }
+
+    .st-icon-button--help {
+      display: none;
+    }
+
+    .relative-influence {
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .relative-influence__track {
+      flex: 0 0 120px;
+      height: 4px;
+    }
+
+    .relative-influence__count {
+      font-size: 15px;
+      color: inherit;
+    }
+  }
+
+  [data-iri$="#text"] {
+    .st-form-element:has([data-widget="LiteralViewer"]) .st-form-element__header {
+      display: none;
+    }
+
+    .st-form-element + .st-form-element {
+      margin-top: 15px;
+    }
+
+    // The paragraphs of the introduction are separated by an empty line.
+    .st-literal-viewer {
+      white-space: pre-line;
+    }
+
+    .st-form-element:has([data-widget="HyperlinkViewer"]) {
+      font-size: 15px;
+    }
+  }
+}
+
+@media screen and (min-width: 720px) {
+  .entity-modal__display {
+    .st-view-mode > .st-form-element:has([data-widget="ImageViewer"]) {
+      float: left;
+      width: 200px;
+      margin: 6px 30px 10px 0;
+    }
+  }
+}
+
+.entity-modal__loading {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}
+
+.entity-modal__start {
+  color: var(--color-accent);
+  font-weight: bold;
+}

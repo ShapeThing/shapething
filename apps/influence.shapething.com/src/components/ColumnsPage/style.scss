@@ -1,0 +1,28 @@
+.columns-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-padding-inline: 30px;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.columns {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: max-content;
+  min-width: 100%;
+}
+
+@media screen and (min-width: 500px) {
+  .columns {
+    justify-content: safe center;
+  }
+}

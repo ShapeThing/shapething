@@ -1,0 +1,8 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# The names of the entities in $entity (given as a list, see parameterize.ts), for the bookmarks.
+SELECT ?entity ?name ?mulName WHERE {
+  FILTER(isIRI($entity))
+  OPTIONAL { $entity rdfs:label ?name . FILTER(LANG(?name) = "en") }
+  OPTIONAL { $entity rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
+}

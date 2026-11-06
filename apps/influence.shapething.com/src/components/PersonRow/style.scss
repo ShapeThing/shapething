@@ -1,0 +1,215 @@
+// One person in a column (inf:ColumnShape): the portrait on the left, the years, the name and the
+// influence bar beside it, and for an opened person the works, interests and ideas below.
+
+.person {
+  position: relative;
+  min-height: var(--portrait-size);
+  margin-bottom: 15px;
+  transition:
+    opacity 0.3s ease-in-out,
+    visibility 0.3s;
+}
+
+.person__avatar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--portrait-size);
+  height: var(--portrait-size);
+}
+
+.person__display {
+  position: relative;
+
+  .st-view-mode {
+    display: grid;
+    grid-template-columns: var(--portrait-size) minmax(0, 1fr);
+    column-gap: 15px;
+    row-gap: 2px;
+    align-content: center;
+    min-height: var(--portrait-size);
+    padding-right: 25px;
+  }
+
+  // Everything is beside the portrait...
+  .st-view-mode > * {
+    grid-column: 2;
+  }
+
+  // ...except the portrait itself.
+  .st-view-mode > .st-form-element:has([data-widget="ImageViewer"]) {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: start;
+  }
+
+  .image-viewer {
+    width: var(--portrait-size);
+    height: var(--portrait-size);
+    max-height: none;
+    border-radius: 50%;
+    object-fit: cover;
+    // Faces are mostly in the upper part of a portrait.
+    object-position: 50% 25%;
+    background: var(--color-background);
+  }
+
+  // The labels are only shown for the lists, the rest speaks for itself.
+  .st-view-mode > .st-form-element > .st-form-element__header,
+  [data-iri$="#lifespan"] .st-form-element__header {
+    display: none;
+  }
+
+  [data-iri$="#lifespan"] .st-property-group__body {
+    display: flex;
+    flex-direction: row;
+    font-size: 10px;
+    color: var(--color-muted);
+
+    > .st-form-element {
+      gap: 0;
+    }
+
+    > .st-form-element + .st-form-element::before {
+      content: "–";
+      padding-inline: 4px;
+    }
+  }
+
+  [data-widget="LiteralViewer"] {
+    font-size: 14px;
+    font-weight: bold;
+    line-height: 18px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    display: block;
+  }
+
+  [data-widget="RelativeInfluenceViewer"] {
+    margin-top: 5px;
+  }
+
+  // The count is in the accessible text of the bar, and in the modal.
+  .relative-influence__count {
+    display: none;
+  }
+
+  // The works, interests and ideas of an opened person.
+  .st-view-mode > [data-iri$="#itemLists"] {
+    grid-column: 1 / -1;
+    margin-top: 20px;
+    padding-right: 0;
+    max-height: calc(100dvh - 300px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    font-size: 12px;
+    line-height: 18px;
+
+    .st-property-group__body {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .st-form-element {
+      display: block;
+    }
+
+    .st-form-element__header {
+      display: block;
+      margin-bottom: 6px;
+    }
+
+    .st-form-element__label {
+      min-height: 0;
+      line-height: 18px;
+      font-size: 13px;
+    }
+
+    .st-property-items {
+      gap: 4px;
+    }
+
+    .st-label-viewer {
+      color: rgb(49 49 49);
+    }
+  }
+}
+
+// The row is a link (open or close the person), the portrait a link of its own (the modal). They
+// cover the top of the row only, the lists of an opened person below have links of their own.
+.person__link,
+.person__portrait-link {
+  position: absolute;
+  top: 0;
+  height: var(--portrait-size);
+  z-index: 1;
+}
+
+.person__link {
+  left: calc(var(--portrait-size) + 5px);
+  right: 0;
+  border-radius: 6px;
+}
+
+.person__portrait-link {
+  left: 0;
+  width: var(--portrait-size);
+  border-radius: 50%;
+}
+
+.person__link:focus-visible,
+.person__portrait-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+// A plus that turns into a cross when the person is opened.
+.person__action {
+  position: absolute;
+  top: calc(var(--portrait-size) / 2);
+  right: 0;
+  width: 20px;
+  height: 20px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 80%;
+    height: 3px;
+    border-radius: 4px;
+    background: black;
+    transform: translate(-50%, -50%);
+    transition: transform 0.3s ease-in-out;
+  }
+
+  &::after {
+    transform: translate(-50%, -50%) rotate(90deg);
+  }
+}
+
+.person:has(.person__link:hover, .person__link:focus-visible) .person__action {
+  opacity: 1;
+}
+
+.person[data-active] .person__action {
+  opacity: 0.5;
+
+  &::before {
+    width: 100%;
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  &::after {
+    width: 100%;
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+}

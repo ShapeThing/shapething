@@ -1,0 +1,47 @@
+.bookmarks {
+  width: 100%;
+  margin-top: 80px;
+}
+
+.bookmarks__title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 19px;
+
+  img {
+    width: 24px;
+    height: 24px;
+  }
+}
+
+.bookmarks__list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bookmarks__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.bookmarks__link {
+  color: var(--color-text);
+}
+
+.bookmarks__remove {
+  display: flex;
+  padding: 4px;
+  border: 0;
+  background: none;
+  cursor: pointer;
+
+  img {
+    width: 24px;
+    height: 24px;
+  }
+}

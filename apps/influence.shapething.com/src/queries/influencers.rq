@@ -1,0 +1,27 @@
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# The people that influenced $subject (wdt:P737 is "influenced by"), the most influential first. The
+# count is computed first, in a sub query: grouping the outer query would have to aggregate the
+# optional values too, and an aggregate of an unbound value can not be typed as optional.
+SELECT ?person ?name ?mulName ?image ?birthDate ?deathDate (xsd:integer(?count) AS ?influence) WHERE {
+  {
+    SELECT ?person (COUNT(DISTINCT ?influenced) AS ?count) WHERE {
+      $subject wdt:P737 ?person .
+      FILTER(isIRI(?person))
+      OPTIONAL { ?influenced wdt:P737 ?person }
+    }
+    GROUP BY ?person
+    ORDER BY DESC(?count)
+    LIMIT 1000
+  }
+  # Since Wikidata has "mul" (default for all languages) labels, many people have no English one.
+  OPTIONAL { ?person rdfs:label ?name . FILTER(LANG(?name) = "en") }
+  OPTIONAL { ?person rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
+  OPTIONAL { ?person wdt:P18 ?image . FILTER(isIRI(?image)) }
+  # An unknown date is a blank node (skolemized to an IRI), not a literal.
+  OPTIONAL { ?person wdt:P569 ?birthDate . FILTER(isLiteral(?birthDate)) }
+  OPTIONAL { ?person wdt:P570 ?deathDate . FILTER(isLiteral(?deathDate)) }
+}
+ORDER BY DESC(?count)

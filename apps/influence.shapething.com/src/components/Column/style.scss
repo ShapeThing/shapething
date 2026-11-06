@@ -1,0 +1,198 @@
+@mixin scroll-shadows($background) {
+  // Shadows at the top and bottom that only show when there is more to scroll to.
+  background:
+    linear-gradient($background 30%, rgb(255 255 255 / 0)),
+    linear-gradient(rgb(255 255 255 / 0), $background 70%) 0 100%,
+    radial-gradient(farthest-side at 50% 0, rgb(0 0 0 / 0.2), rgb(0 0 0 / 0)),
+    radial-gradient(farthest-side at 50% 100%, rgb(0 0 0 / 0.2), rgb(0 0 0 / 0)) 0 100%;
+  background-repeat: no-repeat;
+  background-color: $background;
+  background-size:
+    100% 20px,
+    100% 20px,
+    100% 10px,
+    100% 10px;
+  background-attachment: local, local, scroll, scroll;
+}
+
+.column {
+  --column-background: var(--color-background);
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 var(--column-width);
+  max-width: var(--column-width);
+  background: var(--column-background);
+  overflow: hidden;
+  scroll-snap-align: start end;
+  animation: create-column 0.4s ease-in-out 0.2s 1 both;
+
+  &:not(:first-child) {
+    border-left: 1px dashed var(--color-border);
+  }
+
+  &:first-child {
+    border-left: 30px solid var(--color-background);
+    box-sizing: content-box;
+  }
+
+  &:last-child {
+    border-right: 30px solid var(--color-background);
+    box-sizing: content-box;
+  }
+}
+
+.column--selected {
+  --column-background: var(--color-selected);
+
+  z-index: 1;
+}
+
+.column__header {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 58px;
+  padding-inline: 20px;
+  border-bottom: 1px dashed var(--color-border);
+  background: var(--column-background);
+}
+
+.column__title {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  overflow: hidden;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--color-muted);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.column__filter {
+  flex: 0 0 auto;
+  width: 0;
+  padding: 0;
+  border: 0;
+  opacity: 0;
+  font: inherit;
+  font-size: 13px;
+  transition:
+    width 0.3s ease-in-out,
+    opacity 0.3s ease-in-out;
+}
+
+.column__header--filtering {
+  .column__title {
+    flex-basis: 0;
+  }
+
+  .column__filter {
+    width: 180px;
+    padding: 6px;
+    border: 1px solid var(--color-border);
+    opacity: 1;
+  }
+}
+
+.column__filter-open,
+.column__filter-close {
+  position: relative;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 0;
+  background: transparent no-repeat center / 20px;
+  cursor: pointer;
+}
+
+.column__filter-open {
+  background-image: url("/zoom.svg");
+}
+
+.column__filter-close {
+  &::before,
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 2px;
+    background: black;
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+
+  &::after {
+    transform: translate(-50%, -50%) rotate(-45deg);
+  }
+}
+
+.column__inner {
+  position: relative;
+  flex: 1 1 auto;
+  padding: 20px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  @include scroll-shadows(white);
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.column--selected .column__inner {
+  @include scroll-shadows(rgb(243 243 255));
+}
+
+.column__spinner {
+  display: flex;
+  margin: 20px auto;
+}
+
+.column__message {
+  margin: 0 0 15px;
+  font-size: 13px;
+  color: var(--color-muted);
+}
+
+.column__scroll-room {
+  height: 0;
+  transition: height 0.8s 0.2s ease-in-out;
+}
+
+// An opened column: only its opened person, scrolled to the top, which the column keeps.
+.column--active {
+  .column__inner {
+    overflow: hidden;
+    background: var(--column-background);
+  }
+
+  .column__scroll-room {
+    height: 100%;
+    transition: none;
+  }
+
+  .person:not([data-active]) {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+}
+
+@keyframes create-column {
+  from {
+    opacity: 0;
+    max-width: 0;
+  }
+
+  to {
+    opacity: 1;
+    max-width: var(--column-width);
+  }
+}

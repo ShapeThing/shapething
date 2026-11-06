@@ -1,0 +1,249 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix st: <http://shapething.com/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+### The display shapes of the app. They render the data graphs of src/data/graphs.ts: Wikidata
+### triples with Wikidata's own predicates, plus inf:influenceCount and schema:abstract.
+###
+### Every property declares its shui:viewer, so no widget scoring is needed. The two custom
+### viewers are registered in src/widgets/index.ts.
+
+inf:influenceCount
+    a rdf:Property ;
+    rdfs:label "Influence"@en ;
+    rdfs:comment "How many people this person influenced, according to Wikidata (P737, influenced by)."@en ;
+    rdfs:range xsd:integer .
+
+inf:RelativeInfluenceViewer
+    a shui:Widget ;
+    rdfs:label "Relative influence"@en ;
+    rdfs:comment "A bar showing an influence count relative to the people shown in the app at the moment."@en .
+
+inf:YearViewer
+    a shui:Widget ;
+    rdfs:label "Year"@en ;
+    rdfs:comment "The year of a Wikidata date, with BCE for the years before the common era."@en .
+
+### Groups. They have no label, they bring together what is laid out together (see src/styles).
+
+inf:lifespan a sh:PropertyGroup ; sh:order 1 .
+inf:itemLists a sh:PropertyGroup ; sh:order 10 .
+inf:facts a sh:PropertyGroup ; sh:order 2 .
+inf:text a sh:PropertyGroup ; sh:order 3 .
+
+### One person in a column: the portrait, the years, the name and the relative influence. The
+### works, interests and ideas are only in the data graph of the person that is opened.
+
+inf:ColumnShape
+    a sh:NodeShape ;
+    rdfs:label "Person in a column"@en ;
+    sh:property [
+        sh:path wdt:P18 ;
+        sh:name "Portrait"@en ;
+        sh:order 0 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        shui:viewer shui:ImageViewer ;
+        shui:propertyRole shui:DepictionRole ;
+    ] ;
+    sh:property [
+        sh:path wdt:P569 ;
+        sh:name "Born"@en ;
+        sh:order 1 ;
+        sh:maxCount 1 ;
+        sh:group inf:lifespan ;
+        shui:viewer inf:YearViewer ;
+    ] ;
+    sh:property [
+        sh:path wdt:P570 ;
+        sh:name "Died"@en ;
+        sh:order 2 ;
+        sh:maxCount 1 ;
+        sh:group inf:lifespan ;
+        shui:viewer inf:YearViewer ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:name "Name"@en ;
+        sh:order 3 ;
+        sh:maxCount 1 ;
+        shui:viewer shui:LiteralViewer ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path inf:influenceCount ;
+        sh:name "Influence"@en ;
+        sh:order 4 ;
+        sh:maxCount 1 ;
+        shui:viewer inf:RelativeInfluenceViewer ;
+    ] ;
+    sh:property [
+        sh:path [ sh:inversePath wdt:P50 ] ;
+        sh:name "Works"@en ;
+        sh:order 5 ;
+        sh:group inf:itemLists ;
+        sh:node inf:ItemShape ;
+        st:orderBy wdt:P577 ;
+        shui:viewer shui:LabelViewer ;
+    ] ;
+    sh:property [
+        sh:path wdt:P101 ;
+        sh:name "Interests"@en ;
+        sh:order 6 ;
+        sh:group inf:itemLists ;
+        sh:node inf:ItemShape ;
+        shui:viewer shui:LabelViewer ;
+    ] ;
+    sh:property [
+        sh:path wdt:P800 ;
+        sh:name "Ideas"@en ;
+        sh:order 7 ;
+        sh:group inf:itemLists ;
+        sh:node inf:ItemShape ;
+        shui:viewer shui:LabelViewer ;
+    ] .
+
+### A work, interest or idea in the lists of a person: its label is shown as a link.
+
+inf:ItemShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:name "Name"@en ;
+        shui:propertyRole shui:LabelRole ;
+    ] .
+
+### A search result: the portrait, the name, the years, the description and the relative
+### influence among the results.
+
+inf:TeaserShape
+    a sh:NodeShape ;
+    rdfs:label "Person teaser"@en ;
+    sh:property [
+        sh:path wdt:P18 ;
+        sh:name "Portrait"@en ;
+        sh:order 0 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        shui:viewer shui:ImageViewer ;
+        shui:propertyRole shui:DepictionRole ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:name "Name"@en ;
+        # Before inf:lifespan, which has sh:order 1.
+        sh:order 0.5 ;
+        sh:maxCount 1 ;
+        shui:viewer shui:LiteralViewer ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:path wdt:P569 ;
+        sh:name "Born"@en ;
+        sh:order 2 ;
+        sh:maxCount 1 ;
+        sh:group inf:lifespan ;
+        shui:viewer inf:YearViewer ;
+    ] ;
+    sh:property [
+        sh:path wdt:P570 ;
+        sh:name "Died"@en ;
+        sh:order 3 ;
+        sh:maxCount 1 ;
+        sh:group inf:lifespan ;
+        shui:viewer inf:YearViewer ;
+    ] ;
+    sh:property [
+        sh:path schema:description ;
+        sh:name "Description"@en ;
+        sh:order 4 ;
+        sh:maxCount 1 ;
+        shui:viewer shui:LiteralViewer ;
+        shui:propertyRole shui:DescriptionRole ;
+    ] ;
+    sh:property [
+        sh:path inf:influenceCount ;
+        sh:name "Influence"@en ;
+        sh:order 5 ;
+        sh:maxCount 1 ;
+        shui:viewer inf:RelativeInfluenceViewer ;
+    ] .
+
+### The modal: everything about a person, or about a work, interest or idea. The name is the
+### title of the modal itself.
+
+inf:ModalShape
+    a sh:NodeShape ;
+    rdfs:label "Details"@en ;
+    sh:property [
+        sh:path wdt:P18 ;
+        sh:name "Image"@en ;
+        sh:order 0 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        shui:viewer shui:ImageViewer ;
+        shui:propertyRole shui:DepictionRole ;
+    ] ;
+    sh:property [
+        sh:path wdt:P569 ;
+        sh:name "Born"@en ;
+        sh:order 1 ;
+        sh:maxCount 1 ;
+        sh:group inf:facts ;
+        shui:viewer inf:YearViewer ;
+    ] ;
+    sh:property [
+        sh:path wdt:P570 ;
+        sh:name "Died"@en ;
+        sh:order 2 ;
+        sh:maxCount 1 ;
+        sh:group inf:facts ;
+        shui:viewer inf:YearViewer ;
+    ] ;
+    sh:property [
+        sh:path wdt:P577 ;
+        sh:name "Published"@en ;
+        sh:order 3 ;
+        sh:maxCount 1 ;
+        sh:group inf:facts ;
+        shui:viewer inf:YearViewer ;
+    ] ;
+    sh:property [
+        sh:path inf:influenceCount ;
+        sh:name "Influence"@en ;
+        sh:order 4 ;
+        sh:maxCount 1 ;
+        sh:group inf:facts ;
+        shui:viewer inf:RelativeInfluenceViewer ;
+    ] ;
+    sh:property [
+        sh:path schema:description ;
+        sh:name "Description"@en ;
+        sh:order 5 ;
+        sh:maxCount 1 ;
+        sh:group inf:text ;
+        shui:viewer shui:LiteralViewer ;
+        shui:propertyRole shui:DescriptionRole ;
+    ] ;
+    sh:property [
+        sh:path schema:abstract ;
+        sh:name "Introduction"@en ;
+        sh:order 6 ;
+        sh:maxCount 1 ;
+        sh:group inf:text ;
+        shui:viewer shui:LiteralViewer ;
+    ] ;
+    sh:property [
+        sh:path [ sh:inversePath schema:about ] ;
+        sh:name "Wikipedia"@en ;
+        sh:order 7 ;
+        sh:maxCount 1 ;
+        sh:group inf:text ;
+        shui:viewer shui:HyperlinkViewer ;
+    ] .
