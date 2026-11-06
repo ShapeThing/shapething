@@ -130,7 +130,10 @@
 }
 
 /* Values without text (an image, a map) align to the top of the row instead of a baseline. */
-.st-form-element[data-label-layout="columns"]:has([data-widget="ImageViewer"], [data-widget="MapViewer"]) {
+.st-form-element[data-label-layout="columns"]:has(
+    [data-widget="ImageViewer"],
+    [data-widget="MapViewer"]
+  ) {
   align-items: start;
 }
 
