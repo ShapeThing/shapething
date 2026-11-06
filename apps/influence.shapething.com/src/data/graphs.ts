@@ -10,6 +10,10 @@ import type { EntityDetails, ItemLists, PersonSummary } from "./person.ts";
  *
  * Images (wdt:P18) are Wikidata's own links to the full Commons original; the display shapes'
  * st:imageWidth makes the renderer load a thumbnail instead.
+ *
+ * The links of the app are in the data too, for the display shapes' st:href: where a person leads
+ * (inf:openHref, starting a chain with them) and where more about them is (inf:aboutHref, the
+ * modal). A column points the first one at its own path instead (see PersonRow).
  */
 
 const quad = (subject: NamedNode, predicate: NamedNode, object: Quad_Object | undefined): Quad[] =>
@@ -17,6 +21,8 @@ const quad = (subject: NamedNode, predicate: NamedNode, object: Quad_Object | un
 
 export const summaryQuads = (person: PersonSummary): Quad[] => [
   ...quad(person.iri, rdfs("label"), person.label),
+  ...quad(person.iri, inf("openHref"), factory.literal(`/${person.id}`)),
+  ...quad(person.iri, inf("aboutHref"), factory.literal(`#${person.id}`)),
   ...quad(person.iri, schema("description"), person.description),
   ...quad(person.iri, wdt("P18"), person.image),
   ...quad(person.iri, wdt("P569"), person.birthDate),

@@ -62,7 +62,7 @@ export default function TabbedPropertyGroup({ group }: GroupWidgetProps) {
       )}
       {isActiveTab && (
         <div
-          className="st-property-group"
+          className={clsx("st-property-group", group.cssClass())}
           role="tabpanel"
           id={tabbedGroupPanelId(group.node)}
           aria-labelledby={tabbedGroupTabId(group.node)}

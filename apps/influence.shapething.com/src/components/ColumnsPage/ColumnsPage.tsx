@@ -91,8 +91,6 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
   }, [ids.length, loadedColumns]);
 
   const closeModal = () => navigate(withoutModal());
-  // The person or item open in the modal stands out in the columns behind it.
-  const focusedId = isEntityId(modal) ? modal : undefined;
   const path = pathForIds(ids);
 
   // Closing a person first spins its cross and folds away the columns after it; the URL changes
@@ -113,7 +111,6 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
               isLoading={column.isLoading}
               isError={column.isError}
               isSelected={column.position === 0}
-              focusedId={focusedId}
               activeId={column.position >= 0 ? ids[column.position] : undefined}
               isClosing={closingNow?.position === column.position}
               isRemoving={closingNow !== undefined && column.position > closingNow.position}
@@ -150,12 +147,6 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
         </main>
         <FixedMenu key={path} path={path} />
       </div>
-
-      {/* The links to the item in the modal (works, interests, ideas) are rendered by the display,
-          so they are found by their href. focusedId is a checked Wikidata identifier. */}
-      {focusedId && (
-        <style>{`.columns a[href$="/entity/${focusedId}"] { color: var(--color-accent); }`}</style>
-      )}
 
       {modal === "info" ? (
         <InfoModal onClose={closeModal} />

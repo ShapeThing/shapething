@@ -123,3 +123,12 @@
   color: var(--st-diff-added-text);
   border-radius: var(--radius-2);
 }
+
+/* An st:href link around a value (PropertyUIComponentObject): the only child of its
+   .st-property-object-main, so the value inside it is laid out as without one. */
+.st-href {
+  display: block;
+  min-width: 0;
+  color: inherit;
+  text-decoration: inherit;
+}

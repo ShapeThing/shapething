@@ -1,7 +1,9 @@
-// An entity in the modal. A side column with the image and the facts, their labels beside them
-// (inf:PersonModalShape, inf:WorkModalShape, inf:ConceptModalShape), and a main column with the
-// description, the introduction and the link to Wikipedia (inf:ModalTextShape), and below them every
-// property. On a narrow screen the side column is above the main one.
+// An entity in the modal (inf:PersonModalShape, inf:WorkModalShape, inf:ConceptModalShape): a side
+// column with the image, the short description and the facts, their labels beside them, and a main
+// column with the introduction and the link to Wikipedia, and below them every property (a second
+// renderer). On a narrow screen the side column is above the main one. Laid out by the classes the
+// shapes give (st:cssClass): the groups .entity-modal__side, .entity-modal__main, .summary, .facts
+// and .text, and the properties in them.
 
 // A list of facts, each with its label beside it: the facts in the side column and every property
 // in the main one.
@@ -32,25 +34,34 @@
 .entity-modal__side {
   margin-bottom: 15px;
 
-  // The full name, below the image, above the facts.
-  .st-view-mode > .st-form-element:has([data-widget="LiteralViewer"]) {
+  // The full name, below the image, above the facts. A long name is wrapped into lines of about
+  // the same length.
+  .full-name {
     margin-bottom: 10px;
     font-size: 17px;
     line-height: 24px;
     font-weight: bold;
+    text-wrap: balance;
   }
 
-  .st-view-mode > .st-form-element:has([data-widget="ImageViewer"]) {
+  .image {
     margin-bottom: 15px;
   }
 
-  // The image is a link to the original (it opens in PhotoSwipe, see useImageLightbox.ts): as wide
-  // as the column.
-  .image-viewer__link {
+  // The short description ("country in South America"), below the name, above the facts.
+  .summary {
+    margin-bottom: 15px;
+    font-size: 15px;
+    line-height: 22px;
+  }
+
+  // The image is a link to the original (it opens in PhotoSwipe, see widgets/LightboxImageViewer):
+  // as wide as the column.
+  .image .image-viewer__link {
     display: block;
   }
 
-  .image-viewer {
+  .image .image-viewer {
     width: 100%;
     max-height: 400px;
     object-fit: contain;
@@ -58,11 +69,11 @@
     border-radius: 8px;
   }
 
-  [data-iri$="#facts"] {
+  .facts {
     @include facts;
 
     // Room between the last country and the place of birth below it.
-    .st-form-element:has(> .st-property-items [data-widget="DetailsViewer"]) {
+    .citizenship {
       margin-bottom: 10px;
     }
 
@@ -80,11 +91,11 @@
       display: block;
     }
 
-    .st-details-viewer .image-viewer__link {
+    .flag .image-viewer__link {
       display: block;
     }
 
-    .st-details-viewer .image-viewer {
+    .flag .image-viewer {
       width: auto;
       height: 16px;
       max-height: none;
@@ -95,7 +106,7 @@
     // The occupations, below their label: one list, separated by commas, with room above it (the
     // map of the place of birth). (The attribute selector outweighs the renderer's rules for its
     // block layout.)
-    .st-form-element[data-label-layout]:has([data-widget="LabelViewer"]) {
+    .occupations[data-label-layout] {
       margin-top: 12px;
 
       > .st-property-items {
@@ -111,14 +122,19 @@
         gap: 0;
       }
 
-      .st-property-object-wrapper:not(:last-child)::after {
+      // Only after a value that has rendered and is followed by one that has: while the data loads a
+      // value's viewer is still being resolved and its wrapper is empty, which would otherwise
+      // show stray commas.
+      .st-property-object-wrapper:has(.st-property-object__widget):has(
+          ~ .st-property-object-wrapper .st-property-object__widget
+        )::after {
         content: ",";
         margin-right: 0.35em;
       }
     }
 
     // The place of birth: a map below its label, the width of the column.
-    .st-form-element:has([data-widget="MapViewer"]) {
+    .birth-place {
       display: block;
       margin-top: 6px;
 
@@ -151,7 +167,7 @@
     }
 
     // The influence comes first, below the name: room between it and the years below it.
-    .st-form-element:has([data-widget="RelativeInfluenceViewer"]) {
+    .influence {
       margin-bottom: 16px;
     }
 
@@ -171,41 +187,96 @@
   }
 }
 
-.entity-modal__display {
-  [data-iri$="#text"] {
-    .st-form-element + .st-form-element {
-      margin-top: 15px;
-    }
+.entity-modal__main {
+  .text .st-form-element + .st-form-element {
+    margin-top: 15px;
+  }
 
-    // The paragraphs of the introduction are separated by an empty line.
-    .st-literal-viewer {
-      white-space: pre-line;
-    }
+  // The paragraphs of the introduction are separated by an empty line.
+  .abstract .st-literal-viewer {
+    white-space: pre-line;
+  }
 
-    .st-form-element:has([data-widget="HyperlinkViewer"]) {
-      font-size: 15px;
-    }
+  .wikipedia {
+    font-size: 15px;
   }
 }
 
-// On a wide screen the side column is beside the text and the properties. It stays at the top of
-// the modal while they scroll: sticky within its grid area, which is as tall as they are.
+// The one action of the modal, in the footer: a purple button on the right.
+.entity-modal__start {
+  display: block;
+  width: fit-content;
+  margin-left: auto;
+  padding: 8px 20px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: white;
+  font-weight: bold;
+  text-decoration: none;
+  transition:
+    background-color 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out,
+    transform 0.2s ease-in-out;
+
+  &:hover {
+    background: rgb(80 45 136);
+    box-shadow: 0 4px 12px rgb(99 59 163 / 35%);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    box-shadow: none;
+    transform: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+}
+
+// The side and the main group are rendered by one renderer, the properties by another: the elements
+// of the renderers make way, so these three are the items of the modal's grid (below).
+.entity-modal__display,
+.entity-modal__display > .st-view-mode {
+  display: contents;
+}
+
+.entity-modal__display > .st-view-mode > .st-header {
+  display: none;
+}
+
+// The modal of an entity is wider than the other modals (Modal/style.scss) where the screen has the
+// room: beside the side column, the text and the two columns of the properties.
+.modal:has(.entity-modal) {
+  max-width: 1100px;
+}
+
+// On a wide screen the side column is beside the text and the properties. It stays in view while
+// they scroll: sticky within its grid area, which spans both rows, as tall as they are. The second
+// row takes what the side column needs beyond the text, so the properties follow the text right
+// away. --side-sticky-top (EntityModal.tsx) lets a side column taller than the modal scroll until
+// its end is in view. A concept without an image or a description has no side column.
 @media screen and (min-width: 720px) {
-  .entity-modal--with-side {
+  .entity-modal:has(.entity-modal__side) {
     display: grid;
     grid-template-columns: 200px minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
     column-gap: 30px;
     align-items: start;
   }
 
-  // The image scrolls away with the text, the rest stays: the side column sticks the height of the
-  // image (--side-image-offset, measured in EntityModal.tsx) above the top, so the full name sticks
-  // right below the fade. (A sticky offset counts from inside the padding of the scrolling body,
-  // which is the fade.)
   .entity-modal__side {
+    grid-column: 1;
+    grid-row: 1 / span 2;
     position: sticky;
-    top: calc(-1 * var(--side-image-offset, 0px));
+    top: var(--side-sticky-top, 0px);
     margin: 0;
+  }
+
+  .entity-modal__main,
+  .entity-modal__all-properties {
+    grid-column: 2;
   }
 }
 
@@ -265,14 +336,14 @@
     margin-bottom: 0;
   }
 
-  // Several values, and values of a long label, stay beside the label too (the renderer puts them
-  // below it), separated by commas, so every property is one line like the facts. The attribute
-  // selectors outweigh the renderer's own rules for its block layout.
-  .st-form-element[data-label-layout] {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: baseline;
-    column-gap: 0.4em;
+  // On a wide screen every property is a row of two columns, the renderer's "columns" layout (see
+  // EntityModal): the label in a column of a fixed width (a long label wraps inside it), the values
+  // in the column beside it, separated by commas. Below 520px the renderer is given the "block"
+  // layout instead, the label above its values.
+  --st-label-column-width: 13em;
+
+  .st-form-element[data-label-layout="columns"] {
+    column-gap: 1em;
   }
 
   .st-form-element[data-label-layout] > .st-form-element__header {
@@ -280,11 +351,29 @@
     margin: 0;
   }
 
+  // A long label wraps onto more lines in its column, rather than being cut off with an ellipsis.
+  .st-form-element[data-label-layout]
+    > .st-form-element__header
+    :is(.st-form-element__label, .st-form-element__label-text) {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+    overflow-wrap: anywhere;
+  }
+
+  // The label flows as text, so its colon follows the last word instead of standing apart.
+  .st-form-element[data-label-layout] > .st-form-element__header .st-form-element__label {
+    display: block;
+
+    &::after {
+      display: inline;
+    }
+  }
+
   .st-form-element[data-label-layout] > .st-property-items {
-    flex: 1 1 0;
     flex-flow: row wrap;
     width: auto;
-    min-width: 12em;
+    min-width: 0;
     gap: 0;
   }
 
@@ -294,16 +383,21 @@
     gap: 0;
   }
 
-  .st-property-object-wrapper:not(:last-child)::after {
+  // Only after a value that has rendered and is followed by one that has: while the data loads a
+  // value's viewer is still being resolved and its wrapper is empty, which would otherwise show
+  // stray commas.
+  .st-property-object-wrapper:has(.st-property-object__widget):has(
+      ~ .st-property-object-wrapper .st-property-object__widget
+    )::after {
     content: ",";
     margin-right: 0.35em;
   }
 
-  // Pictures (image, signature, grave, …) in the column of the values, beside their label, at the
-  // top of the line, rounded like the image at the top of the modal. Several pictures stand side by
-  // side, without commas.
-  .st-form-element:has([data-widget="ImageViewer"]) {
-    align-items: flex-start;
+  // Pictures (image, signature, grave, …) and maps (a coordinate location, picked by the widget
+  // scoring, see data/resource.ts) in the column of the values, at the top of the row, a little
+  // apart from the rows around them. Several pictures stand side by side, without commas.
+  :is(.pictures, .map)[data-label-layout] {
+    align-items: start;
     margin-block: 6px;
 
     .st-property-items {
@@ -313,6 +407,25 @@
     .st-property-object-wrapper::after {
       content: none;
     }
+  }
+
+  // A map takes the width of the column of the values. Unlike the small map of the place of birth
+  // in the side column, it keeps its buttons and attribution and reacts to the mouse.
+  .map[data-label-layout] {
+    .st-property-items,
+    .st-property-object-wrapper,
+    .st-property-object {
+      display: block;
+      width: 100%;
+    }
+  }
+
+  .st-map-viewer {
+    width: 100%;
+    max-width: 400px;
+    height: auto;
+    aspect-ratio: 3 / 2;
+    border-radius: 8px;
   }
 
   .image-viewer {
@@ -334,37 +447,4 @@
   display: flex;
   justify-content: center;
   padding: 40px;
-}
-
-// The one action of the modal, in the footer: a purple button on the right.
-.entity-modal__start {
-  display: block;
-  width: fit-content;
-  margin-left: auto;
-  padding: 8px 20px;
-  border-radius: 999px;
-  background: var(--color-accent);
-  color: white;
-  font-weight: bold;
-  text-decoration: none;
-  transition:
-    background-color 0.2s ease-in-out,
-    box-shadow 0.2s ease-in-out,
-    transform 0.2s ease-in-out;
-
-  &:hover {
-    background: rgb(80 45 136);
-    box-shadow: 0 4px 12px rgb(99 59 163 / 35%);
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    box-shadow: none;
-    transform: none;
-  }
-
-  &:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 3px;
-  }
 }

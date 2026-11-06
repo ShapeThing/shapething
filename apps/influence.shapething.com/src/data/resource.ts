@@ -12,6 +12,8 @@ export type ResourceLabelRow = {
   mulName?: Literal;
   // Only the rows of properties have one, which typed-sparql cannot tell from the UNION.
   propertyType?: Term;
+  /** The formatter URL (P1630) of an external identifier property, with $1 for the identifier. */
+  formatter?: Literal;
 };
 
 /**
@@ -36,6 +38,7 @@ const ENTITY = "http://www.wikidata.org/entity/";
 const GENID = "http://www.wikidata.org/.well-known/genid/";
 const EXTERNAL_ID = "http://wikiba.se/ontology#ExternalId";
 const TIME = "http://wikiba.se/ontology#Time";
+const WKT_LITERAL = "http://www.opengis.net/ont/geosparql#wktLiteral";
 const COMMONS_MEDIA = "http://wikiba.se/ontology#CommonsMedia";
 // Commons media can be sound, video or a document too: only pictures are shown as an image.
 const PICTURE = /\.(jpe?g|png|gif|svg|tiff?|webp)$/i;
@@ -48,7 +51,9 @@ const nameOf = (row: ResourceLabelRow | undefined) => row?.name ?? row?.mulName;
  * each property the entity has, named after the property and sorted by that name, the external
  * identifiers in a group of their own. The viewer follows from the values: items are shown by
  * their name as a link (which opens them in the modal), pictures from Commons as an image, other
- * IRIs as a link and dates as a year.
+ * IRIs as a link, external identifiers as a link made with their formatter URL (in a new tab) and
+ * dates as a year. The other literals are left to the widget scoring, which shows coordinates on
+ * a map.
  */
 export const allPropertiesGraphs = (
   iri: NamedNode,
@@ -105,15 +110,24 @@ export const allPropertiesGraphs = (
       add(shapes, property, shui("viewer"), shui("ImageViewer"));
       // Shown at 100px at most (EntityModal/style.scss), a Commons thumbnail at twice that.
       add(shapes, property, st("imageWidth"), factory.literal("200", xsd("integer")));
+      add(shapes, property, st("cssClass"), factory.literal("pictures"));
     } else if (terms.every(isItem)) {
       add(shapes, property, shui("viewer"), shui("LabelViewer"));
       add(shapes, property, sh("node"), inf("ItemShape"));
+    } else if (row?.propertyType?.value === EXTERNAL_ID && row.formatter) {
+      add(shapes, property, shui("viewer"), inf("ExternalIdViewer"));
+      add(shapes, property, inf("formatterUrl"), factory.literal(row.formatter.value));
     } else if (terms.every((term) => term.termType === "NamedNode")) {
       add(shapes, property, shui("viewer"), shui("HyperlinkViewer"));
     } else if (row?.propertyType?.value === TIME) {
       add(shapes, property, shui("viewer"), inf("YearViewer"));
-    } else {
-      add(shapes, property, shui("viewer"), shui("LiteralViewer"));
+    }
+    // Any other literal gets no viewer, so the renderer's widget scoring picks one from the values:
+    // a coordinate location (a geo:wktLiteral) is shown on a map, plain text by the LiteralViewer.
+    // A map of a single point zooms in only as far as the map of the place of birth (shapes.ttl).
+    if (terms.some((term) => term.termType === "Literal" && term.datatype.value === WKT_LITERAL)) {
+      add(shapes, property, st("mapMaxZoom"), factory.literal("5", xsd("integer")));
+      add(shapes, property, st("cssClass"), factory.literal("map"));
     }
 
     for (const term of terms) {
@@ -139,7 +153,9 @@ export const allPropertiesGraphs = (
  * The predicates the given node shapes show of their focus node: the first step of each property's
  * sh:path, a predicate or the first of a sequence path (wdt:P27 of ( wdt:P27 wdt:P41 )). An inverse
  * or alternative path is not a statement of the focus node, so it is not counted. The list of all
- * properties leaves these out, so nothing in the side column or the text is shown twice.
+ * properties leaves these out, so nothing in the side column or the text is shown twice. The
+ * predicates of the node shapes' sh:ignoredProperties lists are counted too: those are left out on
+ * purpose (inf:AllPropertiesShape).
  */
 export const shownPredicates = (
   shapesGraph: RdfStore,
@@ -153,6 +169,15 @@ export const shownPredicates = (
       else if (path?.termType === "BlankNode") {
         const first = shapesGraph.getQuads(path, rdf("first"))[0]?.object;
         if (first?.termType === "NamedNode") shown.add(first.value);
+      }
+    }
+    for (const { object: list } of shapesGraph.getQuads(nodeShape, sh("ignoredProperties"))) {
+      for (let node = list; node.termType === "BlankNode";) {
+        const first = shapesGraph.getQuads(node, rdf("first"))[0]?.object;
+        if (first?.termType === "NamedNode") shown.add(first.value);
+        const rest = shapesGraph.getQuads(node, rdf("rest"))[0]?.object;
+        if (!rest) break;
+        node = rest;
       }
     }
   }

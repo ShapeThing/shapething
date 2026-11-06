@@ -108,6 +108,8 @@ export type OccupationRow = {
 export type EntityDetails = PersonSummary & {
   /** The name in the entity's own language (P1559), often the full name of a person. */
   fullName?: Literal;
+  /** The page banner (P948): a wide Commons image, across the top of the modal. */
+  banner?: NamedNode;
   publicationDate?: Literal;
   birthPlace?: BirthPlace;
   citizenships: Citizenship[];
@@ -119,6 +121,7 @@ export type EntityDetails = PersonSummary & {
 
 export type EntityRow = SummaryRow & {
   fullName?: Literal;
+  banner?: NamedNode;
   publicationDate?: Literal;
   birthPlace?: NamedNode;
   birthPlaceName?: Literal;
@@ -164,6 +167,7 @@ export const entityFromRows = (
   return {
     ...summarize(iri, rows),
     fullName: rows.find((row) => row.fullName)?.fullName,
+    banner: rows.find((row) => row.banner)?.banner,
     publicationDate,
     citizenships: [...citizenships.values()],
     occupations: [...occupations.values()],

@@ -94,6 +94,18 @@ st:mapMaxZoom
     rdfs:domain sh:PropertyShape ;
     rdfs:range xsd:nonNegativeInteger .
 
+st:href
+    a rdf:Property ;
+    rdfs:label "href"@en ;
+    rdfs:comment "On a property shape, in view mode: a property path (the syntax of sh:path), walked from the focus node to the href the property's values link to. Each value is rendered inside a link to the first value found, an IRI or a literal (a relative URL works too), and links of the viewer's own are left out there, as a link can not hold another one. For example st:href ex:homepage on the rdfs:label property makes a person's name a link to their homepage. ShaclRenderer's resolveLink applies to it like to every other link."@en ;
+    rdfs:domain sh:PropertyShape .
+
+st:cssClass
+    a rdf:Property ;
+    rdfs:label "CSS class"@en ;
+    rdfs:comment "On a property shape or a property group: one or more class names, separated by spaces, put on the element of the property (its form element) or of the group. A stylesheet can then lay out a shape by names of its own, rather than by the structure the renderer happens to produce."@en ;
+    rdfs:range xsd:string .
+
 st:mergeAlternatives
     a rdf:Property ;
     rdfs:label "merge alternatives"@en ;

@@ -60,3 +60,15 @@ export const inlineLayout: Story = {
     expect(formElement.getAttribute("data-label-layout")).toBe("inline");
   },
 };
+
+export const columnsLayout: Story = {
+  name: '"columns": label in a column of a fixed width, the value in the column beside it',
+  args: { ...baseArgs, viewModeLabelLayout: "columns" } as ShaclRendererProps,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const value = await canvas.findByText("Hendrik", {}, { timeout: 5000 });
+    const formElement = value.closest("[data-label-layout]");
+    if (!formElement) throw new Error("Could not find the property's FormElement");
+    expect(formElement.getAttribute("data-label-layout")).toBe("columns");
+  },
+};

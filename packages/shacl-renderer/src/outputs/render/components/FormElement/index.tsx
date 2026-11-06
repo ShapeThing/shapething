@@ -32,9 +32,10 @@ type Props = {
   required?: boolean;
   size?: "small" | "medium";
   // "block" (default) stacks the label above children, same as always. "inline" instead places
-  // the label beside children on one line - view mode only, driven by
+  // the label beside children on one line. "columns" puts the label in a column of a fixed width
+  // and children in the column beside it. View mode only, driven by
   // Environment.viewModeLabelLayout (see view mode's PropertyUIComponent).
-  labelLayout?: "block" | "inline";
+  labelLayout?: "block" | "inline" | "columns";
 };
 
 export default function FormElement({

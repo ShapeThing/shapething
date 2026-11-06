@@ -13,10 +13,7 @@ export const TeaserShape = inf("TeaserShape");
 /** Every property of an entity, the second renderer of the modal (see data/resource.ts). */
 export const AllPropertiesShape = inf("AllPropertiesShape");
 
-/** The text of the modal, the same for every kind of entity (see EntityModal). */
-export const ModalTextShape = inf("ModalTextShape");
-
-/** The side column of the modal: the image and the facts, by the kind of entity it shows. */
+/** The modal, by the kind of entity it shows: its side column and its text (see EntityModal). */
 export const ModalShapes = {
   person: inf("PersonModalShape"),
   work: inf("WorkModalShape"),

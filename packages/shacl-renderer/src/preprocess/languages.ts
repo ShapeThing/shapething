@@ -4,18 +4,25 @@ import type { BCP47 } from "@/types/BCP47.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import { mergeLocaleLoaders } from "@/l10n/locales.ts";
 import { primarySubtag } from "@/helpers/bestByLanguage.ts";
-import { literalLanguage } from "@/helpers/parseBCP47.ts";
+import { canonicalizeBCP47 } from "@/helpers/parseBCP47.ts";
 
 // Every distinct rdf:langString language tag actually used in `store`, in first-seen order.
 // With `predicates`, only quads whose predicate is in that set are considered - used to restrict
 // the scan to just sh:name/sh:description (label languages) rather than every literal.
+// A tag outside the subset BCP47 models (a variant like Wikidata's "be-tarask", a private-use
+// tag) is left out: the derived list has to pass validateEnvironment like a configured one, and
+// would otherwise reject the whole environment over one literal. The literal itself still shows.
 function usedLanguages(store: RdfStore, predicates?: Set<string>): BCP47[] {
   const seen = new Set<string>();
   const languages: BCP47[] = [];
 
   for (const quad of store.getQuads()) {
     if (predicates && !predicates.has(quad.predicate.value)) continue;
-    const language = literalLanguage(quad.object);
+    const { object } = quad;
+    const language =
+      object.termType === "Literal" && object.language
+        ? canonicalizeBCP47(object.language)
+        : undefined;
     if (language) {
       const key = language.toLowerCase();
       if (!seen.has(key)) {

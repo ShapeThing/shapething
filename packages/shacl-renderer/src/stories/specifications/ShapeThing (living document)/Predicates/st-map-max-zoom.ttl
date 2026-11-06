@@ -1,0 +1,29 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix schema: <https://schema.org/>.
+@prefix geosparql: <http://www.opengis.net/ont/geosparql#>.
+
+# A single point: without st:mapMaxZoom the map fits it at the closest zoom it has, a street.
+# st:mapMaxZoom 5 shows the place with its region around it instead.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Place ;
+    sh:property [
+        sh:path schema:name ;
+        sh:name "Name"@en ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path schema:geo ;
+        sh:name "Location"@en ;
+        shui:viewer st:MapViewer ;
+        st:mapMaxZoom 5 ;
+    ] ;
+    .
+
+<#data>
+    a schema:Place ;
+    schema:name "Amsterdam" ;
+    schema:geo "POINT(4.9041 52.3676)"^^geosparql:wktLiteral ;
+    .

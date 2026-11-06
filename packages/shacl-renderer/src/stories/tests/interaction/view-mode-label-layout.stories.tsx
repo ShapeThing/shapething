@@ -47,3 +47,14 @@ export const inlinePlacesTheLabelBesideItsValue: Story = {
     expect(propertyFormElement(canvasElement).dataset.labelLayout).toBe("inline");
   },
 };
+
+export const columnsPutsTheLabelInItsOwnColumn: Story = {
+  name: 'viewModeLabelLayout: "columns" puts the label in a column beside its value',
+  args: { ...baseArgs, viewModeLabelLayout: "columns" },
+  play: async ({ canvasElement }) => {
+    await within(canvasElement).findByText("Hendrik", {}, { timeout: 5000 });
+    const formElement = propertyFormElement(canvasElement);
+    expect(formElement.dataset.labelLayout).toBe("columns");
+    expect(getComputedStyle(formElement).display).toBe("grid");
+  },
+};

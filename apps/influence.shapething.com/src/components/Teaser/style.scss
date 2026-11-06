@@ -1,29 +1,45 @@
 // A search result (inf:TeaserShape): the portrait, then the name, the years, the description and
-// the influence bar beside it.
+// the influence bar beside it. Laid out by the classes the shape gives (st:cssClass): .portrait,
+// .name, .lifespan, .description, .influence.
 
 .teaser {
   --teaser-portrait: 48px;
 
   position: relative;
-  display: block;
   padding-block: 10px;
   border-bottom: 1px solid rgb(212 212 212);
-  color: inherit;
-  text-decoration: none;
 
-  &:hover .st-literal-viewer,
-  &:focus-visible .st-literal-viewer {
-    text-decoration: underline;
+  // The name is a link (st:href) that starts with the person: it covers the whole result.
+  .name .st-href {
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      // Above the values of the result, some of which are positioned themselves.
+      z-index: 1;
+    }
+
+    &:hover,
+    &:focus-visible {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: none;
+
+      &::after {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+    }
   }
 
-  &:focus-visible {
-    outline: 2px solid var(--color-accent);
-    outline-offset: 2px;
+  // A portrait opens in the lightbox: above the link of the name. (Initials are no link: the
+  // result's link goes on under them.)
+  .portrait:has(.image-viewer__link) {
+    position: relative;
+    z-index: 2;
   }
-}
-
-.teaser__display {
-  position: relative;
 
   .st-view-mode {
     display: grid;
@@ -38,7 +54,7 @@
     grid-column: 2;
   }
 
-  .st-view-mode > .st-form-element:has([data-widget="PortraitViewer"]) {
+  .portrait {
     grid-column: 1;
     grid-row: 1 / span 4;
     align-self: start;
@@ -59,13 +75,14 @@
     background: var(--color-background);
   }
 
-  // The name: the first plain text of the shape.
-  .st-view-mode > .st-form-element:has([data-widget="LiteralViewer"]) {
+  // The name, wrapped into lines of about the same length.
+  .name {
     font-size: 17px;
     font-weight: bold;
+    text-wrap: balance;
   }
 
-  [data-iri$="#lifespan"] .st-property-group__body {
+  .lifespan .st-property-group__body {
     display: flex;
     flex-direction: row;
     font-size: 12px;
@@ -81,15 +98,13 @@
     }
   }
 
-  .st-view-mode
-    > .st-form-element:has([data-widget="LiteralViewer"])
-    ~ .st-form-element:has([data-widget="LiteralViewer"]) {
+  .description {
     font-size: 13px;
     font-weight: normal;
     color: rgb(70 70 70);
   }
 
-  [data-widget="RelativeInfluenceViewer"] {
+  .influence {
     margin-top: 4px;
   }
 }

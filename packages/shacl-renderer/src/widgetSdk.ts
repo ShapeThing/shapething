@@ -64,6 +64,14 @@ export {
   useCreateInPlace,
 } from "@/outputs/render/hooks/useCreateInPlace.ts";
 
+// The link every bundled viewer renders with, so ShaclRenderer's resolveLink applies to a custom
+// viewer's links too.
+export {
+  default as Link,
+  type LinkAttributes,
+  type ResolveLink,
+} from "@/outputs/render/components/Link/index.tsx";
+
 // Rendering a nested form (e.g. from useNestedNode/useCreateInPlace) inside a widget.
 export { default as EditNodeUIElementChildren } from "@/outputs/render/modes/edit/NodeUIElementChildren.tsx";
 export { default as ViewNodeUIElementChildren } from "@/outputs/render/modes/view/NodeUIElementChildren.tsx";

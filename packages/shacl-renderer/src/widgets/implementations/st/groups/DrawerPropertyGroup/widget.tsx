@@ -1,3 +1,4 @@
+import { clsx } from "clsx";
 import { useId } from "react";
 import { Localized, useLocalization } from "@fluent/react";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
@@ -63,7 +64,10 @@ export default function DrawerPropertyGroup({ group }: GroupWidgetProps) {
   };
 
   return (
-    <div className="st-property-group st-property-group--drawer" data-iri={group.node.value}>
+    <div
+      className={clsx("st-property-group st-property-group--drawer", group.cssClass())}
+      data-iri={group.node.value}
+    >
       {label && (
         <div className="st-property-group__legend">
           <span className="st-property-group__title">{label}</span>

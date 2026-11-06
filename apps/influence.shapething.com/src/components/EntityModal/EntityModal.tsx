@@ -1,65 +1,67 @@
 import { useCallback, useMemo, useRef } from "react";
-import { clsx } from "../../clsx.ts";
 import { entityIri } from "../../data/entities.ts";
 import { entityQuads } from "../../data/graphs.ts";
 import { useAbstract, useAllProperties, useEntity } from "../../data/queries.ts";
 import { allPropertiesGraphs, shownPredicates } from "../../data/resource.ts";
-import { wdt } from "../../rdf/namespaces.ts";
-import {
-  AllPropertiesShape,
-  ModalShapes,
-  ModalTextShape,
-  shapesGraph,
-} from "../../shapes/shapes.ts";
+import { AllPropertiesShape, ModalShapes, shapesGraph } from "../../shapes/shapes.ts";
 import Display from "../Display/Display.tsx";
 import Modal from "../Modal/Modal.tsx";
 import Spinner from "../Spinner/Spinner.tsx";
+import { useMediaQuery } from "../../useMediaQuery.ts";
 import "./style.scss";
 
 /**
  * An entity in the modal: a person, but also a work, interest or idea from the lists of a person.
  * Each kind of entity has its own shape (shapes.ttl), so a work never shows a lifespan or an
- * influence. A person can be made the start of a new chain from here.
+ * influence. A person can be made the start of a new chain from here (the footer).
  *
- * Below it a second renderer lists every property Wikidata states about the entity (see
- * data/resource.ts). It loads on its own, so the rest is not kept waiting for it.
- *
- * The image and the facts (the years, the influence) are a side column: on a wide screen beside
- * the rest. The image scrolls away with it, the facts stay in view (see useSideImageOffset). A
- * concept without an image has no facts either, so no side column.
+ * The shape has two groups: the side column (inf:side: the image, the short description and the
+ * facts) and the main one (inf:main: the text). Below the text a second renderer lists every
+ * property Wikidata states about the entity (see data/resource.ts). It loads on its own, so the rest
+ * is not kept waiting for it. On a wide screen the side column is beside the text and the
+ * properties, sticky while they scroll (style.scss, useSideStickyTop). A concept without an image or
+ * a description has no facts either: its side group is empty, so the renderer leaves it out.
  */
 /**
- * Measures how far the image of the side column reaches: from its top to the next field (the full
- * name). That is set as --side-image-offset on the modal, and the side column sticks that far above
- * the top (style.scss): the image scrolls away with the text, the rest of the side column stays.
- * Measured again whenever the side column changes size, as when the image has loaded.
+ * The side column sticks to the top of the modal while the text and the properties scroll. A side
+ * column taller than the modal would then never show its end, so it scrolls along until its end is
+ * in view, and sticks there: --side-sticky-top is how far above the top that is (0 when it fits).
+ * Measured again whenever the side column or the modal changes size, as when the image has loaded.
+ * The side column is rendered after the modal (the renderer loads), so it is looked up each time.
  */
-const useSideImageOffset = () => {
+const useSideStickyTop = () => {
   const observer = useRef<ResizeObserver | null>(null);
   return useCallback((modal: HTMLDivElement | null) => {
     observer.current?.disconnect();
     observer.current = null;
-    const side = modal?.querySelector<HTMLElement>(".entity-modal__side");
-    if (!modal || !side) return;
+    const scroller = modal?.closest<HTMLElement>(".modal__body");
+    if (!modal || !scroller) return;
 
+    let side: HTMLElement | null = null;
     const update = () => {
-      const image = side
-        .querySelector('[data-widget="ImageViewer"]')
-        ?.closest<HTMLElement>(".st-view-mode > .st-form-element");
-      const next = image?.nextElementSibling;
-      const offset =
-        image && next ? next.getBoundingClientRect().top - image.getBoundingClientRect().top : 0;
-      modal.style.setProperty("--side-image-offset", `${offset}px`);
+      const current = modal.querySelector<HTMLElement>(".entity-modal__side");
+      if (current !== side) {
+        side = current;
+        if (side) observer.current?.observe(side);
+      }
+      if (!side) return;
+      // A sticky offset counts from inside the padding of the scrolling element.
+      const style = getComputedStyle(scroller);
+      const room =
+        scroller.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+      modal.style.setProperty("--side-sticky-top", `${Math.min(0, room - side.offsetHeight)}px`);
     };
     observer.current = new ResizeObserver(update);
-    observer.current.observe(side);
+    observer.current.observe(modal);
+    observer.current.observe(scroller);
     update();
   }, []);
 };
 
 export default function EntityModal({ id, onClose }: { id: string; onClose: () => void }) {
   const entity = useEntity(id);
-  const sideImageOffset = useSideImageOffset();
+  const sideStickyTop = useSideStickyTop();
+  const isNarrow = useMediaQuery("(max-width: 519.98px)");
   const allProperties = useAllProperties(id);
   const article = entity.data?.article;
   const abstract = useAbstract(article);
@@ -68,13 +70,12 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
 
   const kind = entity.data?.kind;
 
-  // Every property, but those the side column and the text already show. The full name
-  // (inf:fullName) is the name in native language (P1559), so that one is left out too.
+  // Every property, but those the side column and the text already show and those
+  // inf:AllPropertiesShape lists under sh:ignoredProperties.
   const allPropertiesGraph = useMemo(() => {
     if (!allProperties.data || !kind) return undefined;
     const { iri, resource, labelRows } = allProperties.data;
-    const shown = shownPredicates(shapesGraph, [ModalShapes[kind], ModalTextShape]);
-    shown.add(wdt("P1559").value);
+    const shown = shownPredicates(shapesGraph, [ModalShapes[kind], AllPropertiesShape]);
     return allPropertiesGraphs(iri, resource, labelRows, shown);
   }, [allProperties.data, kind]);
 
@@ -83,8 +84,8 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
     [allPropertiesGraph],
   );
 
-  const hasSide =
-    entity.data !== undefined && (entity.data.kind !== "concept" || !!entity.data.image);
+  // A Commons thumbnail wide enough for the widest modal on a high density screen, not the original.
+  const banner = entity.data?.banner && `${entity.data.banner.value}?width=1600`;
 
   const quads = useMemo(
     () =>
@@ -96,6 +97,7 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
     <Modal
       title={entity.data?.name ?? (entity.isError ? "Not available" : "Loading…")}
       onClose={onClose}
+      banner={banner}
       footer={
         entity.data?.kind === "person" && (
           <a className="entity-modal__start" href={`/${id}`}>
@@ -107,42 +109,32 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
       {entity.isError ? (
         <p>Unfortunately the data source is unavailable. Please come back later.</p>
       ) : quads && entity.data ? (
-        <div
-          ref={hasSide ? sideImageOffset : undefined}
-          className={clsx("entity-modal", hasSide && "entity-modal--with-side")}
-        >
-          {hasSide && (
-            <Display
-              className="entity-modal__side"
-              shape={ModalShapes[entity.data.kind]}
-              focusNode={entityIri(id)}
-              dataGraph={quads}
-            />
-          )}
-          <div className="entity-modal__main">
-            <Display
-              className="entity-modal__display"
-              shape={ModalTextShape}
-              focusNode={entityIri(id)}
-              dataGraph={quads}
-            />
-            <section className="entity-modal__all-properties" aria-label="All properties">
-              {allPropertiesGraph && allPropertiesShapes ? (
-                <Display
-                  shape={AllPropertiesShape}
-                  focusNode={entityIri(id)}
-                  dataGraph={allPropertiesGraph.data}
-                  shapes={allPropertiesShapes}
-                />
-              ) : allProperties.isError ? (
-                <p>The other properties are not available at the moment.</p>
-              ) : (
-                <div className="entity-modal__loading">
-                  <Spinner />
-                </div>
-              )}
-            </section>
-          </div>
+        <div ref={sideStickyTop} className="entity-modal">
+          <Display
+            className="entity-modal__display"
+            shape={ModalShapes[entity.data.kind]}
+            focusNode={entityIri(id)}
+            dataGraph={quads}
+          />
+          <section className="entity-modal__all-properties" aria-label="All properties">
+            {allPropertiesGraph && allPropertiesShapes ? (
+              <Display
+                shape={AllPropertiesShape}
+                focusNode={entityIri(id)}
+                dataGraph={allPropertiesGraph.data}
+                shapes={allPropertiesShapes}
+                // Two columns, the labels beside the values; a narrow screen has no room for
+                // that, so each label stands above its values.
+                labelLayout={isNarrow ? "block" : "columns"}
+              />
+            ) : allProperties.isError ? (
+              <p>The other properties are not available at the moment.</p>
+            ) : (
+              <div className="entity-modal__loading">
+                <Spinner />
+              </div>
+            )}
+          </section>
         </div>
       ) : (
         <div className="entity-modal__loading">

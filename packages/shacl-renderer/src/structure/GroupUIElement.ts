@@ -8,6 +8,7 @@ import { groupDescription, groupLabel } from "@/resolution/label.ts";
 import { getGroupWidget } from "@/widgets/lookup.ts";
 import type { GroupWidgetRegistryEntry, Widgets } from "@/widgets/types.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
+import { cssClasses } from "@/structure/href.ts";
 
 export type GroupUIElementOptions = {
   shapesGraph: RdfStore;
@@ -65,6 +66,13 @@ export class GroupUIElement {
    */
   widget(): GroupWidgetRegistryEntry | undefined {
     return getGroupWidget(this.node, this.shapesGraph, this.widgetRegistry);
+  }
+
+  /** This group's st:cssClass values as class names, if declared - see structure/href.ts. */
+  cssClass(): string | undefined {
+    return cssClasses(
+      this.shapesGraph.getQuads(this.node, st("cssClass"), null).map((q) => q.object),
+    );
   }
 
   /**

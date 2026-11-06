@@ -1,5 +1,6 @@
 // One person in a column (inf:ColumnShape): the portrait on the left, the years, the name and the
-// influence bar beside it, and for an opened person the works, interests and ideas below.
+// influence bar beside it, and for an opened person the works, interests and ideas below. Laid out
+// by the classes the shape gives (st:cssClass): .portrait, .lifespan, .name, .influence, .item-lists.
 
 .person {
   position: relative;
@@ -33,7 +34,7 @@
   }
 }
 
-.person:has(.person__link:hover, .person__link:focus-visible)::before {
+.person:has(.name .st-href:hover, .name .st-href:focus-visible)::before {
   opacity: 1;
   transform: none;
 }
@@ -58,13 +59,13 @@
 
   // The years, the name and the bar sit tight together, centred beside the portrait.
   .st-view-mode > .st-form-element,
-  [data-iri$="#lifespan"] .st-form-element {
+  .lifespan .st-form-element {
     gap: 0;
     padding: 0;
   }
 
   // ...except the portrait itself.
-  .st-view-mode > .st-form-element:has([data-widget="PortraitViewer"]) {
+  .portrait {
     grid-column: 1;
     grid-row: 1 / span 3;
     align-self: start;
@@ -86,7 +87,7 @@
     background: var(--color-background);
   }
 
-  [data-iri$="#lifespan"] .st-property-group__body {
+  .lifespan .st-property-group__body {
     display: flex;
     flex-direction: row;
     font-size: 10px;
@@ -99,7 +100,7 @@
     }
   }
 
-  [data-widget="LiteralViewer"] {
+  .name .st-property-object__widget {
     font-size: 14px;
     font-weight: bold;
     line-height: 18px;
@@ -109,7 +110,7 @@
     display: block;
   }
 
-  [data-widget="RelativeInfluenceViewer"] {
+  .influence {
     width: calc(100% - 20px);
     margin-top: 7px;
   }
@@ -126,7 +127,7 @@
   margin: 29px auto 0;
 }
 
-.person__display .st-view-mode > [data-iri$="#itemLists"] {
+.person__display .st-view-mode > .item-lists {
   grid-column: 1 / -1;
   // The full width of the row: the grid keeps room on the right for the cross of the portrait row.
   margin-right: -25px;
@@ -175,27 +176,46 @@
   .st-label-viewer {
     color: rgb(49 49 49);
   }
+
+  // The work, interest or idea open in the modal stands out in the list behind it (Display marks
+  // the link to it as the current one).
+  .st-label-viewer[aria-current] {
+    color: var(--color-accent);
+  }
 }
 
-// The row is a link (open or close the person), the portrait a link of its own (the modal). They
-// cover the top of the row only, the lists of an opened person below have links of their own.
-.person__link,
-.person__portrait-link {
-  position: absolute;
-  top: 0;
-  height: var(--portrait-size);
-  z-index: 1;
+// The name is a link (open or close the person) that covers the rest of the portrait row, the
+// portrait a link of its own (the modal): both st:href links of the shape. They cover the top of the
+// row only, the lists of an opened person below have links of their own. (The cover is placed
+// within .person__display, the nearest positioned element.)
+.person .name .st-href {
+  &::after {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: calc(var(--portrait-size) + 5px);
+    right: 0;
+    height: var(--portrait-size);
+    z-index: 1;
+    border-radius: 6px;
+  }
+
+  &:focus-visible {
+    outline: none;
+
+    &::after {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+  }
 }
 
-.person__link {
-  left: calc(var(--portrait-size) + 5px);
-  right: 0;
-  border-radius: 6px;
-}
-
-.person__portrait-link {
-  left: 0;
+.person .portrait .st-href {
+  position: relative;
+  z-index: 2;
+  display: block;
   width: var(--portrait-size);
+  height: var(--portrait-size);
   border-radius: 50%;
   transition: box-shadow 0.2s ease-in-out;
 
@@ -237,6 +257,11 @@
     }
   }
 
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
   // No hover on touch screens: the badge is always there.
   @media (hover: none) {
     &::after {
@@ -244,87 +269,66 @@
       transform: none;
     }
   }
-}
 
-// The person open in the modal: the hover ring of the portrait, in purple.
-.person[data-focused] .person__portrait-link {
-  box-shadow:
-    0 0 0 3px var(--color-background),
-    0 0 0 5px var(--color-accent);
+  // The person open in the modal (Display marks the link to it as the current one): the hover ring
+  // of the portrait, in purple.
+  &[aria-current] {
+    box-shadow:
+      0 0 0 3px var(--color-background),
+      0 0 0 5px var(--color-accent);
 
-  &::after {
-    background: var(--color-accent);
-    opacity: 1;
-    transform: none;
+    &::after {
+      background: var(--color-accent);
+      opacity: 1;
+      transform: none;
+    }
   }
 }
 
-.person__link:focus-visible,
-.person__portrait-link:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-// A plus that turns into a cross when the person is opened.
-.person__action {
+// A plus at the end of the name's link that turns into a cross when the person is opened: two bars,
+// drawn as backgrounds. The cross is the plus turned a quarter, its bars longer.
+.person .name .st-href::before {
+  content: "";
   position: absolute;
   top: calc(var(--portrait-size) / 2);
   right: 0;
   width: 20px;
   height: 20px;
+  background:
+    linear-gradient(black, black) center / 80% 2px no-repeat,
+    linear-gradient(black, black) center / 2px 80% no-repeat;
   transform: translateY(-50%);
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.3s ease-in-out;
-
-  &::before,
-  &::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 80%;
-    height: 2px;
-    border-radius: 2px;
-    background: black;
-    transform: translate(-50%, -50%);
-    transition: transform 0.3s ease-in-out;
-  }
-
-  &::after {
-    transform: translate(-50%, -50%) rotate(90deg);
-  }
+  transition:
+    opacity 0.3s ease-in-out,
+    transform 0.3s ease-in-out,
+    background-size 0.3s ease-in-out;
 }
 
-.person:has(.person__link:hover, .person__link:focus-visible) .person__action {
+.person .name .st-href:is(:hover, :focus-visible)::before {
   opacity: 1;
 }
 
-.person[data-active] .person__action {
+.person[data-active] .name .st-href::before {
   opacity: 0.5;
-
-  &::before {
-    width: 100%;
-    transform: translate(-50%, -50%) rotate(45deg);
-  }
-
-  &::after {
-    width: 100%;
-    transform: translate(-50%, -50%) rotate(-45deg);
-  }
+  background-size:
+    100% 2px,
+    2px 100%;
+  transform: translateY(-50%) rotate(45deg);
 }
 
 // The cross spins while the columns after the person fold away.
-.person[data-closing] .person__action {
+.person[data-closing] .name .st-href::before {
   animation: person-closing 2.5s;
 }
 
 @keyframes person-closing {
   from {
-    transform: translateY(-50%) rotate(0);
+    transform: translateY(-50%) rotate(45deg);
   }
 
   to {
-    transform: translateY(-50%) rotate(-360deg);
+    transform: translateY(-50%) rotate(-315deg);
   }
 }

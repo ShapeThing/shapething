@@ -137,7 +137,7 @@ const iriArgsAsStrings: ArgsEnhancer = (context) => {
 const ENUM_ARG_OPTIONS: Record<string, readonly string[]> = {
   mode: ["edit", "view", "facet"],
   languageMode: ["switcher", "individual"],
-  viewModeLabelLayout: ["block", "inline"],
+  viewModeLabelLayout: ["block", "inline", "columns"],
   facetChangeMode: ["live", "submit"],
 };
 

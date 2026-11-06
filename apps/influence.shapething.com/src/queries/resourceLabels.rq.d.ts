@@ -7,6 +7,7 @@ interface QueryResult {
   name?: LiteralWithLanguage<'en'>
   mulName?: LiteralWithLanguage<'mul'>
   propertyType: NamedNode | BlankNode | Literal
+  formatter?: Literal
 }
 
 declare const _default: TypedQuery<Prettify<QueryResult>>

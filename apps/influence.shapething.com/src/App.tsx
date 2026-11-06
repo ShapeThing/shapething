@@ -6,12 +6,10 @@ import Spinner from "./components/Spinner/Spinner.tsx";
 import { isEntityId } from "./data/entities.ts";
 import { resolveTitleIds } from "./data/wikipedia.ts";
 import { navigate, pathForIds, useAppLocation } from "./routing.ts";
-import { useImageLightbox } from "./useImageLightbox.ts";
 import { useLinkHandling } from "./useLinkHandling.ts";
 
 export default function App() {
   useLinkHandling();
-  useImageLightbox();
   const { ids } = useAppLocation();
 
   // Older URLs and bookmarks have Wikipedia titles instead of Wikidata identifiers.

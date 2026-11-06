@@ -1,8 +1,4 @@
-import { useEffect } from "react";
-
-const isPlainClick = (event: MouseEvent) =>
-  event.button === 0 && !event.metaKey && !event.ctrlKey && !event.shiftKey && !event.altKey;
-
+import type PhotoSwipe from "photoswipe";
 // Wikimedia Commons "Special:FilePath" URLs (wdt:P18, wdt:P41) point at the full original, which
 // can be tens of megabytes. Commons serves a thumbnail of 1920px wide from its cache instead (or the
 // original, when that is smaller).
@@ -18,37 +14,17 @@ const largeImageUrl = (url: string) => {
 };
 
 /**
- * Opens the big version of an image in PhotoSwipe when it is clicked. The shui:ImageViewer wraps
- * each image in a link to the original (a.image-viewer__link); a plain click on it opens the
- * lightbox instead of a new tab, also when the image is inside another link (a search result).
- * Clicks with a modifier key still open the link as usual. The image zooms from the thumbnail into
- * the lightbox, and back when it is closed.
+ * Opens the big version of an image in PhotoSwipe, zooming from its thumbnail (and back when it is
+ * closed). `anchor` is the link to the original around it (see widget.tsx).
  *
  * The images are in a modal: a native <dialog>, in the top layer, so PhotoSwipe is put inside the
  * dialog to be shown on top of it, and Escape only closes PhotoSwipe, not the dialog as well.
  */
-export const useImageLightbox = () => {
-  useEffect(() => {
-    const onClick = (event: MouseEvent) => {
-      if (event.defaultPrevented || !isPlainClick(event)) return;
-      const anchor = (event.target as Element | null)?.closest?.("a.image-viewer__link");
-      if (!(anchor instanceof HTMLAnchorElement)) return;
-      const thumbnail = anchor.querySelector("img");
-      if (!thumbnail) return;
-
-      event.preventDefault();
-      void openLightbox(anchor, thumbnail);
-    };
-
-    document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
-  }, []);
-};
-
-const openLightbox = async (anchor: HTMLAnchorElement, thumbnail: HTMLImageElement) => {
+export const openLightbox = async (anchor: HTMLAnchorElement, thumbnail: HTMLImageElement) => {
   const [{ default: PhotoSwipe }] = await Promise.all([
     import("photoswipe"),
     import("photoswipe/style.css"),
+    import("./lightbox.scss"),
   ]);
 
   // PhotoSwipe needs the size of the image before it is loaded, so the big version is loaded first.
@@ -90,6 +66,7 @@ const openLightbox = async (anchor: HTMLAnchorElement, thumbnail: HTMLImageEleme
   });
   pswp.addFilter("thumbBounds", () => renderedImageBounds(thumbnail, item.width, item.height));
   pswp.on("destroy", () => dialog?.removeEventListener("cancel", keepDialogOpen));
+  keepCornersRound(pswp);
   pswp.init();
   if (loadedInTime) return;
 
@@ -100,6 +77,28 @@ const openLightbox = async (anchor: HTMLAnchorElement, thumbnail: HTMLImageEleme
   if (large.naturalWidth === item.width && large.naturalHeight === item.height) return;
   Object.assign(item, { width: large.naturalWidth, height: large.naturalHeight });
   pswp.refreshSlideContent(0);
+};
+
+// The radius of the corners of the image, on the screen (lightbox.scss has the same).
+const cornerRadius = 16;
+
+/**
+ * Keeps the corners of the image in the lightbox at the same radius on the screen. PhotoSwipe
+ * scales the image with a transform: while it zooms from the thumbnail and back, when zoomed in,
+ * and the placeholder (the thumbnail, at its own small size) is scaled up to the size of the big
+ * version. A border-radius is scaled along, so the corners would grow and shrink. While the
+ * lightbox is open, the radius is set every frame to what gives cornerRadius on the screen.
+ */
+const keepCornersRound = (pswp: PhotoSwipe) => {
+  let frame = requestAnimationFrame(function update() {
+    for (const img of pswp.element?.querySelectorAll<HTMLElement>(".pswp__img") ?? []) {
+      const onScreen = img.getBoundingClientRect().width;
+      if (!onScreen || !img.offsetWidth) continue;
+      img.style.borderRadius = `${(cornerRadius * img.offsetWidth) / onScreen}px`;
+    }
+    frame = requestAnimationFrame(update);
+  });
+  pswp.on("destroy", () => cancelAnimationFrame(frame));
 };
 
 /** One value of object-position (a percentage or a length) as an offset in pixels. */

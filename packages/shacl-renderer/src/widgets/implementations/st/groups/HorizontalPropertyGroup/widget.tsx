@@ -1,3 +1,4 @@
+import { clsx } from "clsx";
 import { useContext } from "react";
 import EditPropertyUIComponent from "@/outputs/render/modes/edit/PropertyUIComponent.tsx";
 import EditUIElementChildren from "@/outputs/render/modes/edit/UIElementChildren.tsx";
@@ -26,7 +27,7 @@ export default function HorizontalPropertyGroup({ group }: GroupWidgetProps) {
 
   return (
     <fieldset
-      className="st-property-group st-property-group--horizontal"
+      className={clsx("st-property-group st-property-group--horizontal", group.cssClass())}
       data-iri={group.node.value}
     >
       {label && !hideLabels && (

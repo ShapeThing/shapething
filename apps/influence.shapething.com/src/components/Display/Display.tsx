@@ -1,7 +1,15 @@
 import type { NamedNode, Quad } from "@rdfjs/types";
-import { minimalEnvironment, ShaclRenderer, type RdfSource } from "@shapething/shacl-renderer";
+import {
+  minimalEnvironment,
+  ShaclRenderer,
+  type RdfSource,
+  type ResolveLink,
+} from "@shapething/shacl-renderer";
 import type { RdfStore } from "rdf-stores";
+import { useCallback } from "react";
 import { clsx } from "../../clsx.ts";
+import { entityId, isEntityId } from "../../data/entities.ts";
+import { useAppLocation } from "../../routing.ts";
 import { shapesGraph } from "../../shapes/shapes.ts";
 import { widgets } from "../../widgets/index.ts";
 import "./style.scss";
@@ -17,6 +25,31 @@ type Props = {
   className?: string;
   /** The shapes of shapes/shapes.ttl, unless shapes are made for the data (see data/resource.ts). */
   shapes?: RdfSource;
+  /** Links of this display's own, put over those of every display (see useAppLinks). */
+  resolveLink?: ResolveLink;
+  /** How a label stands to its values; "inline" (beside a single value) unless given. */
+  labelLayout?: "block" | "inline" | "columns";
+};
+
+/**
+ * The links of every display. A link to a Wikidata item (the works, interests and ideas, the
+ * occupations, a country) opens that item in the modal instead of on Wikidata. A link to the entity
+ * open in the modal, there or in the modal (a portrait's inf:aboutHref), is the current one: it
+ * stands out in the columns behind the modal.
+ */
+const useAppLinks = (): ResolveLink => {
+  const { modal } = useAppLocation();
+  const focusedId = isEntityId(modal) ? modal : undefined;
+  return useCallback(
+    (href) => {
+      const itemId = entityId(href);
+      const id = itemId ?? (href.startsWith("#") ? href.slice(1) : undefined);
+      const current = id !== undefined && id === focusedId ? "true" : undefined;
+      if (itemId) return { href: `#${itemId}`, target: undefined, "aria-current": current };
+      return current ? { "aria-current": current } : undefined;
+    },
+    [focusedId],
+  );
 };
 
 /**
@@ -30,7 +63,19 @@ export default function Display({
   dataGraph,
   className,
   shapes = shapesGraph,
+  resolveLink,
+  labelLayout = "inline",
 }: Props) {
+  const appLinks = useAppLinks();
+  const resolve = useCallback<ResolveLink>(
+    (href) => {
+      const own = resolveLink?.(href);
+      const app = appLinks(href);
+      return own || app ? { ...app, ...own } : undefined;
+    },
+    [appLinks, resolveLink],
+  );
+
   return (
     <div className={clsx("display", className)}>
       <ShaclRenderer
@@ -44,13 +89,14 @@ export default function Display({
         mode="view"
         languageMode="individual"
         contentLanguage="en"
-        viewModeLabelLayout="inline"
+        viewModeLabelLayout={labelLayout}
         shapesGraph={shapes}
         widgets={widgets}
         nodeShapes={[shape]}
         focusNode={focusNode}
         dataGraph={dataGraph}
         loadingIndicator={null}
+        resolveLink={resolve}
       />
     </div>
   );

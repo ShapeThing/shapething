@@ -23,6 +23,17 @@ test("distillLanguages - collects language tags from the data graph", () => {
   expect(result.contentLanguages).toEqual(["en", "nl"]);
 });
 
+test("distillLanguages - leaves out a tag outside the BCP47 subset (a variant, as Wikidata's be-tarask), so the environment stays valid", () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Brazil", "en")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Бразілія", "be-tarask")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Brasil", "mul")));
+
+  const result = distillLanguages(rawEnvironment({ dataGraph }));
+
+  expect(result.contentLanguages).toEqual(["en", "mul"]);
+});
+
 test("distillLanguages - ignores language tags found in the shapes graph (those are interface/chrome languages, not content)", () => {
   const shapesGraph = RdfStore.createDefault();
   shapesGraph.addQuad(factory.quad(ex("aShape"), sh("name"), factory.literal("Naam", "fy")));

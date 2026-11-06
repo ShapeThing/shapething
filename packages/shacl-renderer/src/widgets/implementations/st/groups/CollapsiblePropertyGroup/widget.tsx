@@ -1,3 +1,4 @@
+import { clsx } from "clsx";
 import EditUIElementChildren from "@/outputs/render/modes/edit/UIElementChildren.tsx";
 import ViewUIElementChildren from "@/outputs/render/modes/view/UIElementChildren.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
@@ -18,7 +19,7 @@ export default function CollapsiblePropertyGroup({ group }: GroupWidgetProps) {
 
   return (
     <details
-      className="st-property-group st-collapsible-property-group"
+      className={clsx("st-property-group st-collapsible-property-group", group.cssClass())}
       // Open unless the group says st:collapsed true. Only the start: the viewer opens and closes it.
       open={!group.collapsed()}
       data-iri={group.node.value}

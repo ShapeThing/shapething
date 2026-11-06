@@ -1,3 +1,4 @@
+import type { Term } from "@rdfjs/types";
 import FormElement from "@/outputs/render/components/FormElement/index.tsx";
 import PropertyShapeSources from "@/outputs/render/components/PropertyShapeSources/index.tsx";
 import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
@@ -10,11 +11,12 @@ import { usePropertyValidationResults } from "@/outputs/render/hooks/useProperty
 import { useWidget } from "@/outputs/render/hooks/useWidget.tsx";
 import MemberShapeList from "@/outputs/render/modes/edit/MemberShapeList.tsx";
 import PropertyUIComponentValues from "@/outputs/render/modes/edit/PropertyUIComponentValues.tsx";
-import { rdf, sh, shui } from "@/helpers/namespaces.ts";
+import { rdf, sh, shui, st } from "@/helpers/namespaces.ts";
 import { Globe } from "@/helpers/icons.tsx";
 import { extractServiceEndpoints } from "@/outputs/render/hooks/query.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { searchQueryFor } from "@/widgets/implementations/shui/editors/AutoCompleteEditor/searchQuery.ts";
+import { cssClasses } from "@/structure/href.ts";
 import "./style.css";
 import { useId } from "react";
 import { Localized } from "@fluent/react";
@@ -80,6 +82,7 @@ export default function PropertyUIComponent({
 
   return (
     <FormElement
+      className={cssClasses(propertyUIElement.get(st("cssClass")) as unknown as Term[])}
       label={label}
       dataId={propertyUIElement.dataId()}
       labelSuffix={

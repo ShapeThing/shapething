@@ -1,0 +1,6 @@
+// The image in PhotoSwipe, rounded like the modal. The placeholder (the thumbnail, shown until the
+// big version has loaded) too. While the lightbox is open, useImageLightbox.ts (keepCornersRound)
+// corrects the radius for the scaling of the image, so it is this on the screen.
+.pswp__img {
+  border-radius: 16px;
+}

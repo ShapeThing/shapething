@@ -78,7 +78,7 @@ export default function VerticalTabbedPropertyGroup({ group }: GroupWidgetProps)
   const activeTab = tabs.find((tab) => tab.node.equals(activeTabIri)) ?? tabs[0];
 
   return (
-    <div className="st-vertical-tabbed-group" data-iri={group.node.value}>
+    <div className={clsx("st-vertical-tabbed-group", group.cssClass())} data-iri={group.node.value}>
       <div className="st-vertical-tabbed-group-nav" role="tablist" aria-orientation="vertical">
         {tabs.map((tab) => {
           const active = tab.node.equals(activeTab.node);

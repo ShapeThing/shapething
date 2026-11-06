@@ -1,14 +1,17 @@
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX wikibase: <http://wikiba.se/ontology#>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 
 # The names the list of all properties of $entity needs (see data/resource.ts): of each property
 # (a wdt: predicate, by the property it is the direct claim of) with its type, and of each item
-# that is a value.
-SELECT DISTINCT ?term ?name ?mulName ?propertyType WHERE {
+# that is a value. An external identifier property also comes with its formatter URL (P1630), which
+# turns an identifier into a link to the page it identifies.
+SELECT DISTINCT ?term ?name ?mulName ?propertyType ?formatter WHERE {
   {
     $entity ?term [] .
     ?property wikibase:directClaim ?term ;
       wikibase:propertyType ?propertyType .
+    OPTIONAL { ?property wdt:P1630 ?formatter . FILTER(isLiteral(?formatter)) }
   }
   UNION
   {

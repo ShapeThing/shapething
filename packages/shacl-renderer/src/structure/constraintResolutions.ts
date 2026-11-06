@@ -292,6 +292,10 @@ export const resolutions = new Map<string, ResolutionFunction<any>>([
   [st("imageWidth").value, keepHighestInteger],
   // How far st:MapViewer zooms in to fit its values: the closest one asked for.
   [st("mapMaxZoom").value, keepHighestInteger],
+  // A property path (like sh:path), read by structure/href.ts - one per property.
+  [st("href").value, keepFirst],
+  // Class names for the property's element - every grouped shape's.
+  [st("cssClass").value, keepAll],
   [sh("rootClass").value, keepMostSpecificClasses],
   [sh("uniqueValuesFor").value, keepAllListItems],
   [sh("severity").value, keepMostSevere],

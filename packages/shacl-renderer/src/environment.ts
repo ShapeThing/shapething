@@ -126,11 +126,15 @@ export type Environment = {
   // How a property's label is positioned relative to its value in VIEW MODE ONLY (edit mode
   // always stacks the label above the value, unaffected by this): "block" (the default) stacks
   // the label above the value, same as edit mode; "inline" places it beside the value on the same
-  // line instead. A single global setting for now - not read from shapes - though a preprocessor
-  // could later derive it per-property/per-shape and fold it in here before render, the same way
-  // scoresGraph etc. get resolved. See FormElement's own labelLayout prop, applied in view mode's
-  // PropertyUIComponent.
-  viewModeLabelLayout: "block" | "inline";
+  // line instead; "columns" lays every property out as a row of two columns - the label in a
+  // column of a fixed width (--st-label-column-width, a long label wraps inside it), the value(s)
+  // in the column beside it, so the values of all properties line up. "columns" is opt-in: it
+  // suits a short label beside short values, and a wide widget (a table) or a very long label
+  // can read worse in it. A single global setting for now - not read from shapes - though a
+  // preprocessor could later derive it per-property/per-shape and fold it in here before render,
+  // the same way scoresGraph etc. get resolved. See FormElement's own labelLayout prop, applied in
+  // view mode's PropertyUIComponent.
+  viewModeLabelLayout: "block" | "inline" | "columns";
   // When multiple widgets are available for a property, allow switching between them. If false, the first widget will be used and no switching will be possible.
   enableWidgetSwitching?: boolean;
   // When a property has sh:or/sh:xone branches, allow switching between them. If false, the first matching branch will be used and no switching will be possible.

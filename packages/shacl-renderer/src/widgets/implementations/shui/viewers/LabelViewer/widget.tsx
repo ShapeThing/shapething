@@ -9,6 +9,7 @@ import NodeUIElementChildren from "@/outputs/render/modes/view/NodeUIElementChil
 import { shapesTargetingNode } from "@/resolution/targets.ts";
 import { useNestedNode } from "@/outputs/render/hooks/useNestedNode.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
+import Link from "@/outputs/render/components/Link/index.tsx";
 import "./style.css";
 
 /**
@@ -100,7 +101,7 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
 
   return (
     <>
-      <a
+      <Link
         className="st-label-viewer"
         href={term.value}
         target={canViewInPlace ? undefined : "_blank"}
@@ -128,7 +129,7 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
       >
         {imageElement}
         {label}
-      </a>
+      </Link>
       {classificationChip}
       {canViewInPlace && (
         <Modal open={open} onClose={() => setOpen(false)} title={label}>

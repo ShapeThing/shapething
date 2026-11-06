@@ -1,6 +1,6 @@
 // What every display shares: the renderer laid out as content, not as a form. The layout of each
-// display shape is in the stylesheet of the component that shows it, through the hooks the renderer
-// gives: [data-widget] on every value and [data-iri] on every property group.
+// display shape is in the stylesheet of the component that shows it, by the class names the shape
+// gives its properties and groups (st:cssClass in shapes/shapes.ttl).
 
 .display {
   min-width: 0;

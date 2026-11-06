@@ -17,10 +17,11 @@ import MemberShapeList from "@/outputs/render/modes/view/MemberShapeList.tsx";
 import PropertyUIComponentObject from "@/outputs/render/modes/view/PropertyUIComponentObject.tsx";
 import { diffForValues } from "@/outputs/render/modes/view/propertyDiff.ts";
 import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
-import { rdf, sh, shui } from "@/helpers/namespaces.ts";
+import { rdf, sh, shui, st } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { orderByPath, sortByOrderPath } from "@/structure/orderByValues.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
+import { cssClasses } from "@/structure/href.ts";
 import "./style.css";
 
 type PropertyUIComponentProps = {
@@ -117,8 +118,18 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   // a singleUnifiedWidget like ValueTableViewer, inherently block-level) instead drops to its own
   // line below the label, same as "block", regardless of the global viewModeLabelLayout setting.
   // A report is always inline instead - the label beside the value(s), the results on the next line.
+  // "columns" keeps a list in the column of the values, stacked there - only a singleUnifiedWidget
+  // (a table, wanting the full width) still drops to block.
   const isList = memberShapeNodes.length > 0 || isSingleUnifiedWidget || objects.length > 1;
-  const labelLayout = isReport ? "inline" : isList ? "block" : viewModeLabelLayout;
+  const labelLayout = isReport
+    ? "inline"
+    : viewModeLabelLayout === "columns"
+      ? isSingleUnifiedWidget
+        ? "block"
+        : "columns"
+      : isList
+        ? "block"
+        : viewModeLabelLayout;
 
   const renderValues = (rowObjects: Term[], labelledBy: string) =>
     rowObjects.length === 0 ? (
@@ -159,6 +170,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   ) => (
     <FormElement
       key={key}
+      className={cssClasses(propertyUIElement.get(st("cssClass")) as unknown as Term[])}
       label={label}
       showColon={true}
       labelTitle={

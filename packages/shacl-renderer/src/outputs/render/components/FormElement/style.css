@@ -94,6 +94,58 @@
   width: auto;
 }
 
+/* Environment.viewModeLabelLayout "columns": a row of two columns, the label in one of a fixed
+   width, everything else (description, values) in the one beside it - so the values of
+   consecutive properties line up. Override --st-label-column-width to change the label column. */
+.st-form-element[data-label-layout="columns"] {
+  display: grid;
+  grid-template-columns: var(--st-label-column-width, 13em) minmax(0, 1fr);
+  column-gap: var(--size-3);
+  align-items: baseline;
+  padding-block-end: var(--size-1);
+}
+
+.st-form-element[data-label-layout="columns"] > .st-form-element__header {
+  grid-column: 1;
+  width: auto;
+  min-width: 0;
+}
+
+.st-form-element[data-label-layout="columns"] > :not(.st-form-element__header) {
+  grid-column: 2;
+  min-width: 0;
+}
+
+/* A long label wraps onto more lines inside its column instead of being cut off with an
+   ellipsis, and flows as text so its colon follows the last word. */
+.st-form-element[data-label-layout="columns"] .st-form-element__label {
+  display: block;
+}
+
+.st-form-element[data-label-layout="columns"] .st-form-element__label-text {
+  display: inline;
+  overflow: visible;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+}
+
+/* Values without text (an image, a map) align to the top of the row instead of a baseline. */
+.st-form-element[data-label-layout="columns"]:has([data-widget="ImageViewer"], [data-widget="MapViewer"]) {
+  align-items: start;
+}
+
+/* A narrow screen has no room for two columns: the label stacks above its value again. */
+@media (max-width: 519.98px) {
+  .st-form-element[data-label-layout="columns"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .st-form-element[data-label-layout="columns"] > .st-form-element__header,
+  .st-form-element[data-label-layout="columns"] > :not(.st-form-element__header) {
+    grid-column: 1;
+  }
+}
+
 .st-form-element__description {
   margin-inline: 0;
   margin-block-start: 0;

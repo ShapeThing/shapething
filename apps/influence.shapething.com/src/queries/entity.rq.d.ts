@@ -8,6 +8,7 @@ interface QueryResult {
   fullName?: Literal
   description?: LiteralWithLanguage<'en'>
   image?: NamedNode
+  banner?: NamedNode
   birthDate?: Literal
   deathDate?: Literal
   birthPlace?: NamedNode

@@ -4,6 +4,7 @@ import { resizedImageUrl } from "@/helpers/resizedImageUrl.ts";
 import { st } from "@/helpers/namespaces.ts";
 import { valueNodeLabel } from "@/resolution/label.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
+import Link from "@/outputs/render/components/Link/index.tsx";
 import "./style.css";
 
 // Twice the max-height in style.css, so the image stays sharp on high density screens.
@@ -24,7 +25,7 @@ export default function ImageViewer({ shape, term }: WidgetProps) {
   // The image opens in a new tab when clicked: the value itself, at full size, not the resized one.
   // Its label is shown when hovered, too (a flag says which country it is).
   return (
-    <a
+    <Link
       className="image-viewer__link"
       href={term.value}
       title={alt}
@@ -32,6 +33,6 @@ export default function ImageViewer({ shape, term }: WidgetProps) {
       rel="noopener noreferrer"
     >
       <img className="image-viewer" src={src} alt={alt} />
-    </a>
+    </Link>
   );
 }

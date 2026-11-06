@@ -3,6 +3,7 @@ import ViewUIElementChildren from "@/outputs/render/modes/view/UIElementChildren
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import type { GroupWidgetProps } from "@/widgets/types.ts";
+import { clsx } from "clsx";
 import "./style.css";
 
 export default function PropertyGroup({ group }: GroupWidgetProps) {
@@ -16,7 +17,7 @@ export default function PropertyGroup({ group }: GroupWidgetProps) {
   const UIElementChildren = mode === "view" ? ViewUIElementChildren : EditUIElementChildren;
 
   return (
-    <fieldset className="st-property-group" data-iri={group.node.value}>
+    <fieldset className={clsx("st-property-group", group.cssClass())} data-iri={group.node.value}>
       {label && (
         <legend className="st-property-group__legend">
           <span className="st-property-group__title">{label}</span>

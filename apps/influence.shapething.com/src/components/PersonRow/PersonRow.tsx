@@ -1,6 +1,6 @@
-import { makeReactive, untracked } from "@shapething/shacl-renderer";
+import { makeReactive, type ResolveLink, untracked } from "@shapething/shacl-renderer";
 import { RdfStore } from "rdf-stores";
-import { type RefObject, useEffect, useMemo } from "react";
+import { type RefObject, useCallback, useEffect, useMemo } from "react";
 import { itemListQuads, summaryQuads } from "../../data/graphs.ts";
 import type { PersonSummary } from "../../data/person.ts";
 import { useItemLists } from "../../data/queries.ts";
@@ -14,8 +14,6 @@ type Props = {
   person: PersonSummary;
   /** Opened: the next column shows who this person influenced. */
   isActive: boolean;
-  /** Open in the modal: highlighted in the column behind it. */
-  isFocused?: boolean;
   /** Where clicking the person goes: opening it, closing it, or starting over with it. */
   href: string;
   linkLabel: string;
@@ -27,17 +25,16 @@ type Props = {
 };
 
 /**
- * One person in a column, rendered with inf:ColumnShape. The display itself is read only, the two
- * links on top of it make it interactive: the portrait opens the modal, the rest of the row opens
- * or closes the person. An opened person also shows their works, interests and ideas. They arrive
- * later, so the data graph is a live store: the lists are added to it when they arrive and removed
- * when the person is closed, and the renderer shows them in place without loading the portrait
- * again.
+ * One person in a column, rendered with inf:ColumnShape. Its st:href links make it interactive: the
+ * portrait opens the modal (inf:aboutHref), the name opens or closes the person (inf:openHref, here
+ * pointed at the path of this column, see resolveLink) and covers the rest of the row (style.scss).
+ * An opened person also shows their works, interests and ideas. They arrive later, so the data graph
+ * is a live store: the lists are added to it when they arrive and removed when the person is
+ * closed, and the renderer shows them in place without loading the portrait again.
  */
 export default function PersonRow({
   person,
   isActive,
-  isFocused = false,
   href,
   linkLabel,
   isClosing = false,
@@ -63,28 +60,18 @@ export default function PersonRow({
 
   const [ref, isInView] = useInView<HTMLElement>(scrollRoot, isActive);
 
-  return (
-    <article
-      ref={ref}
-      className="person"
-      data-id={person.id}
-      data-active={isActive || undefined}
-      data-focused={isFocused || undefined}
-      data-closing={isClosing || undefined}
-    >
-      {isInView && (
-        <Display
-          className="person__display"
-          shape={ColumnShape}
-          focusNode={person.iri}
-          dataGraph={dataGraph}
-        />
-      )}
-      {isActive && itemLists.isPending && <Spinner className="person__lists-spinner" />}
-      <a
-        className="person__link"
-        href={href}
-        onClick={(event) => {
+  // The data links the name to starting a chain with the person: in a column it opens or closes
+  // them instead, or (the opened person being closed) first lets the columns after it fold away.
+  const resolveLink = useCallback<ResolveLink>(
+    (link) => {
+      if (link === `#${person.id}`) {
+        return { title: `About ${person.name}`, "aria-label": `About ${person.name}` };
+      }
+      if (link !== `/${person.id}`) return undefined;
+      return {
+        href,
+        "aria-label": linkLabel,
+        onClick: (event) => {
           // A plain click only, a modifier key still opens the link in a new tab or window.
           if (
             !onClose ||
@@ -97,14 +84,30 @@ export default function PersonRow({
             return;
           event.preventDefault();
           onClose(href);
-        }}
-      >
-        <span className="visually-hidden">{linkLabel}</span>
-      </a>
-      <a className="person__portrait-link" href={`#${person.id}`} title={`About ${person.name}`}>
-        <span className="visually-hidden">About {person.name}</span>
-      </a>
-      <span className="person__action" aria-hidden="true" />
+        },
+      };
+    },
+    [person, href, linkLabel, onClose],
+  );
+
+  return (
+    <article
+      ref={ref}
+      className="person"
+      data-id={person.id}
+      data-active={isActive || undefined}
+      data-closing={isClosing || undefined}
+    >
+      {isInView && (
+        <Display
+          className="person__display"
+          shape={ColumnShape}
+          focusNode={person.iri}
+          dataGraph={dataGraph}
+          resolveLink={resolveLink}
+        />
+      )}
+      {isActive && itemLists.isPending && <Spinner className="person__lists-spinner" />}
     </article>
   );
 }

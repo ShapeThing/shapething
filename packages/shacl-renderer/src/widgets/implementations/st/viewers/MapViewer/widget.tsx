@@ -61,7 +61,9 @@ export default function MapViewer({ shape }: WidgetProps) {
   // st:mapMaxZoom: how far fitting the values may zoom in, so a single point is shown with its
   // surroundings. keepHighestInteger (constraintResolutions.ts) resolves it to a number, as
   // st:imageWidth for ImageViewer.
-  const mapMaxZoom = shape.get(st("mapMaxZoom")) as unknown as number | undefined;
+  // A value that is no integer (parseInt gives NaN) is left out, so the map zooms as far as it can.
+  const resolvedMaxZoom = shape.get(st("mapMaxZoom")) as unknown as number | undefined;
+  const mapMaxZoom = Number.isFinite(resolvedMaxZoom) ? resolvedMaxZoom : undefined;
 
   const collection = useMemo<FeatureCollection>(() => {
     const features = rows

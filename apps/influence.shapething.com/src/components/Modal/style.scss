@@ -24,6 +24,16 @@
   max-height: inherit;
 }
 
+// A page banner (Wikivoyage's are 7:1) across the full width, cut to that shape if it is not.
+.modal__banner {
+  display: block;
+  flex: 0 0 auto;
+  width: 100%;
+  aspect-ratio: 7;
+  object-fit: cover;
+  background: var(--color-border);
+}
+
 .modal__header {
   display: flex;
   align-items: flex-start;
@@ -33,10 +43,12 @@
   padding: 20px 20px 8px;
 }
 
+// A long title (the name of the entity) is wrapped into lines of about the same length.
 .modal__title {
   margin: 0;
   font-size: 28px;
   line-height: 1.2;
+  text-wrap: balance;
 }
 
 .modal__close {

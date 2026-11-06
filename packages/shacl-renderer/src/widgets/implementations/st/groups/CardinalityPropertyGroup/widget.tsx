@@ -1,3 +1,4 @@
+import { clsx } from "clsx";
 import { useId, useState } from "react";
 import { Localized } from "@fluent/react";
 import type { NamedNode } from "@rdfjs/types";
@@ -78,7 +79,7 @@ export default function CardinalityPropertyGroup({ group }: GroupWidgetProps) {
     return (
       <FormElement
         label={label}
-        className="st-cardinality-property-group"
+        className={clsx("st-cardinality-property-group", group.cssClass())}
         dataId={group.node.value}
       >
         <ViewUIElementChildren elements={group.children} />
@@ -122,7 +123,7 @@ export default function CardinalityPropertyGroup({ group }: GroupWidgetProps) {
       label={label}
       labelId={labelId}
       description={description}
-      className="st-cardinality-property-group"
+      className={clsx("st-cardinality-property-group", group.cssClass())}
       dataId={group.node.value}
     >
       <fieldset className="st-cardinality-property-group__control" aria-labelledby={labelId}>

@@ -1,4 +1,5 @@
 import type { StoryObj } from "@storybook/react-vite";
+import { expect, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
 import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import { minimalEnvironment } from "@/environment.ts";
@@ -20,6 +21,11 @@ export const stImageWidthLoadsASmallerImage: Story = {
     mode: "view",
     enableImageResizing: true,
   } as ShaclRendererProps,
+  // 240 asked for: Commons is asked for its nearest standard thumbnail width at least that wide.
+  play: async ({ canvasElement }) => {
+    const image = await within(canvasElement).findByRole("img");
+    await expect(image.getAttribute("src")).toMatch(/[?&]width=250$/);
+  },
   decorators: [
     (Story) => (
       <>

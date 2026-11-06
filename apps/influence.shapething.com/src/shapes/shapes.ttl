@@ -11,13 +11,27 @@
 ### The display shapes of the app. They render the data graphs of src/data/graphs.ts: Wikidata
 ### triples with Wikidata's own predicates, plus inf:influenceCount and schema:abstract.
 ###
-### Every property declares its shui:viewer, so no widget scoring is needed. The three custom
-### viewers are registered in src/widgets/index.ts.
+### Every property declares its shui:viewer, so no widget scoring is needed. The custom viewers
+### are registered in src/widgets/index.ts.
+###
+### The stylesheets lay the shapes out by the names st:cssClass gives a property or a group, not by
+### the structure the renderer produces. The links of the app are in the data (src/data/graphs.ts):
+### st:href makes a name a link to inf:openHref, a portrait one to inf:aboutHref.
 ###
 ### Most values speak for themselves and have no label: an empty sh:name leaves the header of the
 ### field empty, and the view mode hides an empty header. Only the item lists and the facts of the
 ### modal (and the Wikipedia link) have a label. An empty sh:description keeps the help icon of
 ### inf:influenceCount's rdfs:comment out of a header that has no label.
+
+inf:openHref
+    a rdf:Property ;
+    rdfs:label "Open"@en ;
+    rdfs:comment "Where a person leads: the path of the app that starts a chain with them."@en .
+
+inf:aboutHref
+    a rdf:Property ;
+    rdfs:label "About"@en ;
+    rdfs:comment "Where more about an entity is: the hash of the app that opens it in the modal."@en .
 
 inf:fullName
     a rdf:Property ;
@@ -56,12 +70,24 @@ inf:EntityLinkViewer
     rdfs:label "Link to the entity"@en ;
     rdfs:comment "A name as a link to the resource it belongs to, which opens it in the modal."@en .
 
-### Groups. They have no label, they bring together what is laid out together (see src/styles).
+inf:ExternalIdViewer
+    a shui:Widget ;
+    rdfs:label "External identifier"@en ;
+    rdfs:comment "An external identifier as a link, in a new tab, to the page it identifies: the inf:formatterUrl of the property shape with the identifier for its $1."@en .
 
-inf:lifespan a sh:PropertyGroup ; sh:order 1 .
-inf:itemLists a sh:PropertyGroup ; sh:order 10 .
-inf:facts a sh:PropertyGroup ; sh:order 2 .
-inf:text a sh:PropertyGroup ; sh:order 3 .
+### Groups. They have no label, they bring together what is laid out together.
+
+inf:lifespan a sh:PropertyGroup ; sh:order 1 ; st:cssClass "lifespan" .
+inf:itemLists a sh:PropertyGroup ; sh:order 10 ; st:cssClass "item-lists" .
+
+# The two columns of the modal: the side column (the image and the facts) and the main one (the
+# text). Within them, nested groups.
+inf:side a sh:PropertyGroup ; sh:order 0 ; st:cssClass "entity-modal__side" .
+inf:main a sh:PropertyGroup ; sh:order 1 ; st:cssClass "entity-modal__main" .
+# The short description in the side column, between the name and the facts.
+inf:summary a sh:PropertyGroup ; sh:group inf:side ; sh:order 1.5 ; st:cssClass "summary" .
+inf:facts a sh:PropertyGroup ; sh:group inf:side ; sh:order 2 ; st:cssClass "facts" .
+inf:text a sh:PropertyGroup ; sh:group inf:main ; sh:order 3 ; st:cssClass "text" .
 
 ### One person in a column: the portrait, the years, the name and the relative influence, and
 ### for the person that is opened their works, interests and ideas below. Those arrive later: they
@@ -81,6 +107,9 @@ inf:ColumnShape
         sh:defaultValue inf:Initials ;
         st:imageWidth 112 ; # shown at 56px (--portrait-size)
         shui:propertyRole shui:DepictionRole ;
+        # The portrait opens the modal.
+        st:href inf:aboutHref ;
+        st:cssClass "portrait" ;
     ] ;
     sh:property [
         sh:path wdt:P569 ;
@@ -105,6 +134,9 @@ inf:ColumnShape
         sh:maxCount 1 ;
         shui:viewer shui:LiteralViewer ;
         shui:propertyRole shui:LabelRole ;
+        # The name opens the person in the next column (the whole row is the link, see PersonRow).
+        st:href inf:openHref ;
+        st:cssClass "name" ;
     ] ;
     sh:property [
         sh:path inf:influenceCount ;
@@ -113,6 +145,7 @@ inf:ColumnShape
         sh:order 4 ;
         sh:maxCount 1 ;
         shui:viewer inf:RelativeInfluenceViewer ;
+        st:cssClass "influence" ;
     ] ;
     sh:property [
         sh:path [ sh:inversePath wdt:P50 ] ;
@@ -166,6 +199,7 @@ inf:TeaserShape
         sh:defaultValue inf:Initials ;
         st:imageWidth 96 ; # shown at 48px (--teaser-portrait)
         shui:propertyRole shui:DepictionRole ;
+        st:cssClass "portrait" ;
     ] ;
     sh:property [
         sh:path rdfs:label ;
@@ -175,6 +209,9 @@ inf:TeaserShape
         sh:maxCount 1 ;
         shui:viewer shui:LiteralViewer ;
         shui:propertyRole shui:LabelRole ;
+        # The name starts a chain with the person (the whole result is the link, see Teaser).
+        st:href inf:openHref ;
+        st:cssClass "name" ;
     ] ;
     sh:property [
         sh:path wdt:P569 ;
@@ -199,6 +236,7 @@ inf:TeaserShape
         sh:maxCount 1 ;
         shui:viewer shui:LiteralViewer ;
         shui:propertyRole shui:DescriptionRole ;
+        st:cssClass "description" ;
     ] ;
     sh:property [
         sh:path inf:influenceCount ;
@@ -207,28 +245,32 @@ inf:TeaserShape
         sh:order 5 ;
         sh:maxCount 1 ;
         shui:viewer inf:RelativeInfluenceViewer ;
+        st:cssClass "influence" ;
     ] .
 
 ### The modal: everything about a person, a work, or a concept (an interest or an idea). The kind is
 ### judged from the entity itself (src/data/person.ts). The name is the title of the modal itself,
 ### not a property.
 ###
-### The modal has two columns (src/components/EntityModal). The side column, which stays in view
-### while the rest scrolls, has the image and the facts: each kind has its own shape for it, as
-### only a person has a lifespan and an influence, only a work a publication date. The main column
-### has the text, which is the same for every kind (inf:ModalTextShape), and below it every property.
+### The modal has two columns, the groups inf:side and inf:main (laid out by
+### src/components/EntityModal). The side column, which stays in view while the rest scrolls, has
+### the image, the short description and the facts: each kind has its own shape, as only a person
+### has a lifespan and an influence, only a work a publication date. The main column has the text,
+### the same for every kind, and below it (a second renderer) every property.
 
 inf:PersonModalShape
     a sh:NodeShape ;
     rdfs:label "Person"@en ;
-    sh:property inf:ModalImage ;
+    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia ;
     sh:property [
         sh:path inf:fullName ;
         sh:name "" ;
         sh:description "" ;
         sh:order 0.5 ;
         sh:maxCount 1 ;
+        sh:group inf:side ;
         shui:viewer shui:LiteralViewer ;
+        st:cssClass "full-name" ;
     ] ;
     sh:property [
         sh:path wdt:P569 ;
@@ -254,6 +296,7 @@ inf:PersonModalShape
         sh:maxCount 1 ;
         sh:group inf:facts ;
         shui:viewer inf:RelativeInfluenceViewer ;
+        st:cssClass "influence" ;
     ] ;
     # The countries of citizenship, each with its flag and name (inf:CountryShape).
     sh:property [
@@ -263,6 +306,7 @@ inf:PersonModalShape
         sh:group inf:facts ;
         sh:node inf:CountryShape ;
         shui:viewer shui:DetailsViewer ;
+        st:cssClass "citizenship" ;
     ] ;
     # The occupations: their names as links, which open them in the modal.
     sh:property [
@@ -273,6 +317,7 @@ inf:PersonModalShape
         sh:group inf:facts ;
         sh:node inf:ItemShape ;
         shui:viewer shui:LabelViewer ;
+        st:cssClass "occupations" ;
     ] ;
     # The place itself, not its coordinates: st:MapViewer walks one hop into it (inf:PlaceShape)
     # for the coordinates and for the name it shows when the marker is hovered.
@@ -285,6 +330,7 @@ inf:PersonModalShape
         sh:node inf:PlaceShape ;
         shui:viewer st:MapViewer ;
         st:mapMaxZoom 5 ;
+        st:cssClass "birth-place" ;
     ] .
 
 ### A country of citizenship: its flag (P41), then its name, as a link to the country.
@@ -298,6 +344,7 @@ inf:CountryShape
         sh:maxCount 1 ;
         shui:viewer shui:ImageViewer ;
         st:imageWidth 64 ; # shown 16px high (EntityModal/style.scss)
+        st:cssClass "flag" ;
     ] ;
     sh:property [
         sh:path rdfs:label ;
@@ -325,7 +372,7 @@ inf:PlaceShape
 inf:WorkModalShape
     a sh:NodeShape ;
     rdfs:label "Work"@en ;
-    sh:property inf:ModalImage ;
+    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia ;
     sh:property [
         sh:path wdt:P577 ;
         sh:name "Published"@en ;
@@ -338,12 +385,7 @@ inf:WorkModalShape
 inf:ConceptModalShape
     a sh:NodeShape ;
     rdfs:label "Concept"@en ;
-    sh:property inf:ModalImage .
-
-inf:ModalTextShape
-    a sh:NodeShape ;
-    rdfs:label "Text"@en ;
-    sh:property inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia .
+    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia .
 
 inf:ModalImage
     a sh:PropertyShape ;
@@ -354,17 +396,22 @@ inf:ModalImage
     sh:nodeKind sh:IRI ;
     shui:viewer shui:ImageViewer ;
     st:imageWidth 500 ;
-    shui:propertyRole shui:DepictionRole .
+    shui:propertyRole shui:DepictionRole ;
+    sh:group inf:side ;
+    st:cssClass "image" .
 
+# The short description ("country in South America"): in the side column, below the image and the
+# name, not above the text, which it would only repeat in brief.
 inf:ModalDescription
     a sh:PropertyShape ;
     sh:path schema:description ;
     sh:name "" ;
-    sh:order 5 ;
+    sh:order 0 ;
     sh:maxCount 1 ;
-    sh:group inf:text ;
+    sh:group inf:summary ;
     shui:viewer shui:LiteralViewer ;
     shui:propertyRole shui:DescriptionRole .
+
 
 inf:ModalAbstract
     a sh:PropertyShape ;
@@ -373,7 +420,8 @@ inf:ModalAbstract
     sh:order 6 ;
     sh:maxCount 1 ;
     sh:group inf:text ;
-    shui:viewer shui:LiteralViewer .
+    shui:viewer shui:LiteralViewer ;
+    st:cssClass "abstract" .
 
 inf:ModalWikipedia
     a sh:PropertyShape ;
@@ -382,7 +430,8 @@ inf:ModalWikipedia
     sh:order 7 ;
     sh:maxCount 1 ;
     sh:group inf:text ;
-    shui:viewer shui:HyperlinkViewer .
+    shui:viewer shui:HyperlinkViewer ;
+    st:cssClass "wikipedia" .
 
 ### Every property of the entity in the modal, below the rest: a second renderer. The property
 ### shapes are made for each entity from what Wikidata states about it (src/data/resource.ts),
@@ -390,7 +439,23 @@ inf:ModalWikipedia
 
 inf:AllPropertiesShape
     a sh:NodeShape ;
-    rdfs:label "All properties"@en .
+    rdfs:label "All properties"@en ;
+    # Left out of the list (src/data/resource.ts's shownPredicates): the full name (P1559) is
+    # already the name in native language (inf:fullName), the page banner (P948) is the banner of
+    # the modal (src/components/Modal), and the coordinates beside the
+    # coordinate location (P625) - the extreme points, the geographic center, the place depicted,
+    # the sandbox - would each be one more map.
+    sh:ignoredProperties (
+        wdt:P1559 # name in native language
+        wdt:P948 # page banner
+        wdt:P1332 # coordinates of northernmost point
+        wdt:P1333 # coordinates of southernmost point
+        wdt:P1334 # coordinates of easternmost point
+        wdt:P1335 # coordinates of westernmost point
+        wdt:P5140 # coordinates of geographic center
+        wdt:P9149 # coordinates of depicted place
+        wdt:P626 # Sandbox-Geographic coordinates
+    ) .
 
 inf:statements a sh:PropertyGroup ; rdfs:label "Information"@en ; sh:order 20 .
 # The external identifiers are many (hundreds for a well-known person) and rarely read: a group
