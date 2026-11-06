@@ -85,12 +85,29 @@ export const useAllProperties = (id: string) =>
     },
   });
 
+/** The words of a search text, in lower case: the other characters are search syntax. */
+const searchWords = (text: string) =>
+  text
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter(Boolean);
+
+/** The parameters of search.rq for a search text (see there). */
+export const searchParameters = (text: string) => {
+  const words = searchWords(text);
+  return {
+    search: factory.literal(text),
+    fullText: factory.literal(`${words.join(" ")} haswbstatement:P31=Q5`),
+    // Every word starts a word of the name, in any order (Java regular expressions).
+    namePattern: factory.literal(words.map((word) => `(?=.*(^|[^\\p{L}\\p{N}])${word})`).join("")),
+  };
+};
+
 export const useSearch = (text: string) => {
   const searchText = text.trim();
   return useQuery({
     queryKey: ["search", searchText],
-    queryFn: async () =>
-      summariesFromRows(await select(searchQuery, { search: factory.literal(searchText) })),
+    queryFn: async () => summariesFromRows(await select(searchQuery, searchParameters(searchText))),
     enabled: searchText.length >= MINIMUM_SEARCH_LENGTH,
   });
 };

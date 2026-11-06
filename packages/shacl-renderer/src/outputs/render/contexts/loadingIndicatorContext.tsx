@@ -1,4 +1,4 @@
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useLayoutEffect } from "react";
 import { Loading } from "@/helpers/icons.tsx";
 
 /**
@@ -10,11 +10,27 @@ import { Loading } from "@/helpers/icons.tsx";
 export const loadingIndicatorContext = createContext<React.ReactNode | undefined>(undefined);
 
 /**
+ * Lets every Suspense fallback below a SettleGate (via LoadingFallback) report that it is showing,
+ * so the gate knows a lazy widget or suspending query is still pending - react-query's
+ * useIsFetching only sees queries, not React.lazy chunks.
+ */
+export const settleGateContext = createContext<{ register: () => () => void } | undefined>(
+  undefined,
+);
+
+/** Registers the calling fallback as pending with the nearest SettleGate while it is mounted. */
+export function useRegisterPending() {
+  const gate = useContext(settleGateContext);
+  useLayoutEffect(() => gate?.register(), [gate]);
+}
+
+/**
  * A Suspense fallback honoring ShaclRenderer's `loadingIndicator` prop. `children` is the built-in
  * fallback, shown when no indicator was given; it defaults to the spinner icon.
  */
 export function LoadingFallback({ children }: { children?: React.ReactNode }) {
   const indicator = useContext(loadingIndicatorContext);
+  useRegisterPending();
   if (indicator !== undefined) return <>{indicator}</>;
   return <>{children ?? <Loading />}</>;
 }

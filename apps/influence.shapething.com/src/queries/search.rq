@@ -6,26 +6,55 @@ PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 PREFIX wikibase: <http://wikiba.se/ontology#>
 PREFIX bd: <http://www.bigdata.com/rdf#>
 PREFIX mwapi: <https://www.mediawiki.org/ontology#API/>
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX hint: <http://www.bigdata.com/queryHints#>
 
-# Humans matching $search, the most influential first.
+# The people matching the search text who influenced someone, the most influential first. Made
+# in data/queries.ts: $search is the text as typed, $fullText the words of it for the full-text
+# search, and $namePattern a pattern of a name in which every word of it starts a word.
 SELECT ?person ?name ?mulName ?description ?image ?birthDate ?deathDate (xsd:integer(?count) AS ?influence) WHERE {
   {
-    SELECT ?person (MIN(?ordinal) AS ?rank) (COUNT(DISTINCT ?influenced) AS ?count) WHERE {
-      SERVICE wikibase:mwapi {
-        bd:serviceParam wikibase:api "EntitySearch" .
-        bd:serviceParam wikibase:endpoint "www.wikidata.org" .
-        bd:serviceParam mwapi:search $search .
-        bd:serviceParam mwapi:language "en" .
-        bd:serviceParam wikibase:limit 100 .
-        ?person wikibase:apiOutputItem mwapi:item .
-        ?ordinal wikibase:apiOrdinal true .
+    SELECT ?person (COUNT(DISTINCT ?influenced) AS ?count) WHERE {
+      # The searches first, then the people they found: the other way around Blazegraph starts
+      # with every influence on Wikidata and takes half a minute.
+      hint:Query hint:optimizer "None" .
+      {
+        # The name search: a name as it is being typed ("kier" finds Kierkegaard). It gives no
+        # more than 50 people, by how well the name matches.
+        SERVICE wikibase:mwapi {
+          bd:serviceParam wikibase:api "EntitySearch" .
+          bd:serviceParam wikibase:endpoint "www.wikidata.org" .
+          bd:serviceParam mwapi:search $search .
+          bd:serviceParam mwapi:language "en" .
+          bd:serviceParam wikibase:limit 50 .
+          ?person wikibase:apiOutputItem mwapi:item .
+        }
+      } UNION {
+        # The full-text search: the best known people for whole words ("john" finds John Locke,
+        # who is not among the first 50 Johns of the name search).
+        SERVICE wikibase:mwapi {
+          bd:serviceParam wikibase:api "Search" .
+          bd:serviceParam wikibase:endpoint "www.wikidata.org" .
+          bd:serviceParam mwapi:srsearch $fullText .
+          bd:serviceParam mwapi:srnamespace "0" .
+          bd:serviceParam wikibase:limit 200 .
+          ?title wikibase:apiOutput mwapi:title .
+        }
+        BIND(IRI(CONCAT(STR(wd:), ?title)) AS ?person)
       }
-      FILTER(isIRI(?person))
       ?person wdt:P31 wd:Q5 .
-      OPTIONAL { ?influenced wdt:P737 ?person }
+      # Only people who influenced someone: the people the app can show chains of.
+      ?influenced wdt:P737 ?person .
+      # The full-text search also matches descriptions ("van go" would find Tagore): the search
+      # text has to match a name.
+      FILTER EXISTS {
+        ?person rdfs:label|skos:altLabel ?label .
+        FILTER(LANG(?label) IN ("en", "mul"))
+        FILTER(REGEX(LCASE(STR(?label)), $namePattern))
+      }
     }
     GROUP BY ?person
-    ORDER BY DESC(?count) ASC(?rank)
+    ORDER BY DESC(?count)
     LIMIT 20
   }
   OPTIONAL { ?person rdfs:label ?name . FILTER(LANG(?name) = "en") }
@@ -35,4 +64,4 @@ SELECT ?person ?name ?mulName ?description ?image ?birthDate ?deathDate (xsd:int
   OPTIONAL { ?person wdt:P569 ?birthDate . FILTER(isLiteral(?birthDate)) }
   OPTIONAL { ?person wdt:P570 ?deathDate . FILTER(isLiteral(?deathDate)) }
 }
-ORDER BY DESC(?count) ASC(?rank)
+ORDER BY DESC(?count)

@@ -22,3 +22,12 @@
     display: none;
   }
 }
+
+/* The SettleGate's loading indicator, over the still-invisible form while it loads - see
+   contexts/settleGate.tsx. */
+.st-settle-gate__indicator {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  z-index: 1;
+}

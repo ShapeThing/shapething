@@ -181,7 +181,42 @@ void registerServiceWorker();
 // shows up moments later. An explicit `{ timeout }` on a call still overrides this.
 configure({ asyncUtilTimeout: 5000 });
 
+// A ShaclRenderer holds its first paint until the form has settled (see
+// src/outputs/render/contexts/settleGate.tsx), but the hidden form is already in the DOM - so a
+// findBy* could resolve on text nobody can see yet, and a getByRole or click right after it would
+// race the reveal. Every async testing-library call (findBy*, waitFor, userEvent) therefore also
+// waits for every form on the page to be revealed before it returns.
+const waitForSettledForms = async () => {
+  const deadline = Date.now() + 5000;
+  while (document.querySelector('.st-settle-gate[aria-busy="true"]') && Date.now() < deadline) {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+  }
+};
+
+const settledMarker = Symbol("waitsForSettledForms");
+
+// Storybook's React renderer installs its own asyncWrapper (for act()) at runtime, after this module
+// ran - so this wraps whichever one is current once per story, in beforeEach, rather than
+// configuring one up front that would just be replaced.
+const wrapAsyncWithSettledForms = () =>
+  configure((config) => {
+    const inner = config.asyncWrapper as ((cb: () => Promise<unknown>) => Promise<unknown>) & {
+      [settledMarker]?: true;
+    };
+    if (inner[settledMarker]) return {};
+    const asyncWrapper = Object.assign(
+      async (callback: () => Promise<unknown>) => {
+        const result = await inner(callback);
+        await waitForSettledForms();
+        return result;
+      },
+      { [settledMarker]: true as const },
+    );
+    return { asyncWrapper };
+  });
+
 const preview: Preview = {
+  beforeEach: wrapAsyncWithSettledForms,
   decorators: [withArgsKeyRemount, withGraphInspector, withSubmitPreview, withMaxWidth],
   argTypesEnhancers: [friendlyArgDisplay, selectControlsForEnumArgs],
   argsEnhancers: [iriArgsAsStrings],

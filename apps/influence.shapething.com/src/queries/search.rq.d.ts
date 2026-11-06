@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { Literal, NamedNode } from '@rdfjs/types'
+import type { BlankNode, Literal, NamedNode } from '@rdfjs/types'
 import type { LiteralWithDatatype, LiteralWithLanguage, Prettify, TypedQuery } from '@shapething/typed-sparql'
 
 interface QueryResult {
-  person: NamedNode
+  person: NamedNode | BlankNode
   name?: LiteralWithLanguage<'en'>
   mulName?: LiteralWithLanguage<'mul'>
   description?: LiteralWithLanguage<'en'>

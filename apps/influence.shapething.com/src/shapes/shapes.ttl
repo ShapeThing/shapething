@@ -197,7 +197,7 @@ inf:TeaserShape
         sh:nodeKind sh:IRI ;
         shui:viewer inf:PortraitViewer ;
         sh:defaultValue inf:Initials ;
-        st:imageWidth 96 ; # shown at 48px (--teaser-portrait)
+        st:imageWidth 72 ; # shown at 36px (--teaser-portrait)
         shui:propertyRole shui:DepictionRole ;
         st:cssClass "portrait" ;
     ] ;
@@ -237,15 +237,6 @@ inf:TeaserShape
         shui:viewer shui:LiteralViewer ;
         shui:propertyRole shui:DescriptionRole ;
         st:cssClass "description" ;
-    ] ;
-    sh:property [
-        sh:path inf:influenceCount ;
-        sh:name "" ;
-        sh:description "" ;
-        sh:order 5 ;
-        sh:maxCount 1 ;
-        shui:viewer inf:RelativeInfluenceViewer ;
-        st:cssClass "influence" ;
     ] .
 
 ### The modal: everything about a person, a work, or a concept (an interest or an idea). The kind is

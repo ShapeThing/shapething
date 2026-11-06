@@ -3,12 +3,25 @@ import { defaultEnvironment } from "@/environment.ts";
 import { type Preprocessor } from "@/preprocess/index.ts";
 import EnvironmentContextProvider from "@/outputs/render/contexts/EnvironmentContextProvider.tsx";
 import L10nProvider from "@/outputs/render/contexts/L10nProvider.tsx";
-import { loadingIndicatorContext } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
+import {
+  LoadingFallback,
+  loadingIndicatorContext,
+} from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
+import { SettleGate } from "@/outputs/render/contexts/settleGate.tsx";
 import { type ResolveLink, resolveLinkContext } from "@/outputs/render/components/Link/index.tsx";
 import InterfaceLanguageProvider from "@/outputs/render/contexts/InterfaceLanguageProvider.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { identityKey, pickLiveProps } from "@/outputs/render/environmentProps.ts";
-import { lazy, useCallback, useContext, useId, useLayoutEffect, useMemo, useRef } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useContext,
+  useId,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { ErrorBoundary, getErrorMessage } from "react-error-boundary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import "@/theme/index.css";
@@ -27,6 +40,12 @@ export type ShaclRendererProps = Partial<RawEnvironment> & {
   // changing it never rebuilds the form. Spinners inside a widget's own UI (e.g. an autocomplete
   // searching) are the widget's business and stay.
   loadingIndicator?: React.ReactNode;
+  // At most how many ms the first paint of the form is held back while it loads (widgets
+  // resolving, lazy widgets, label lookups, ...), so it appears at once instead of labels first
+  // and values popping in afterwards - see contexts/settleGate.tsx. Defaults to 3000; 0 shows
+  // every part as soon as it is ready. Only the initial load is held, and it is not part of the
+  // Environment either.
+  settleTimeout?: number;
   // Rewrites the links the viewers render (shui:LabelViewer, shui:IRIViewer, shui:HyperlinkViewer,
   // shui:ImageViewer, st:href links, and every custom viewer built on the exported Link): given the
   // href a link would have, the attributes to put over it - see components/Link's ResolveLink. E.g.
@@ -45,8 +64,14 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
   // Identity props rebuild the Environment (a new key remounts the preprocessed subtree, and a new
   // instanceId gives it a fresh preprocess query); live props are merged in on every render - see
   // environmentProps.ts.
-  const { preprocessors, className, loadingIndicator, resolveLink, ...environmentProps } =
-    inputProps;
+  const {
+    preprocessors,
+    className,
+    loadingIndicator,
+    resolveLink,
+    settleTimeout = 3000,
+    ...environmentProps
+  } = inputProps;
   // A renderer nested inside another one (a widget's own) keeps the outer one's links, unless given
   // its own.
   const outerResolveLink = useContext(resolveLinkContext);
@@ -95,7 +120,9 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
                   liveProps={stableLiveProps}
                   instanceId={instanceId}
                 >
-                  <ShaclRendererInner className={className} />
+                  <SettleGate timeout={settleTimeout}>
+                    <ShaclRendererInner className={className} />
+                  </SettleGate>
                 </EnvironmentContextProvider>
               </L10nProvider>
             </InterfaceLanguageProvider>
@@ -116,5 +143,10 @@ const modesComponents: Record<Environment["mode"], React.ComponentType<ModeProps
 function ShaclRendererInner({ className }: ModeProps) {
   const { mode } = useEnvironment();
   const ModeComponent = modesComponents[mode];
-  return <ModeComponent className={className} />;
+  // Its own boundary inside the SettleGate, so the mode's chunk loading counts as pending there.
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ModeComponent className={className} />
+    </Suspense>
+  );
 }

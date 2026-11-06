@@ -10,6 +10,7 @@
   "ignore": [
     "@shapething/docs",
     "@shapething/shacl-renderer-playground",
-    "@shapething/resource-fetcher-website"
+    "@shapething/resource-fetcher-website",
+    "@shapething/shacl-manager"
   ]
 }
