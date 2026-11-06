@@ -5,9 +5,10 @@ PREFIX schema: <http://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 # Everything shown about one entity: a person, but also a work, an interest or an idea.
-SELECT ?name ?mulName ?description ?image ?birthDate ?deathDate ?publicationDate ?article ?isHuman (xsd:integer(?count) AS ?influence) WHERE {
+SELECT ?name ?mulName ?description ?image ?birthDate ?deathDate ?publicationDate ?article ?isHuman ?hasAuthor (xsd:integer(?count) AS ?influence) WHERE {
   { SELECT (COUNT(DISTINCT ?influenced) AS ?count) WHERE { ?influenced wdt:P737 $entity } }
   BIND(EXISTS { $entity wdt:P31 wd:Q5 } AS ?isHuman)
+  BIND(EXISTS { $entity wdt:P50 [] } AS ?hasAuthor)
   OPTIONAL { $entity rdfs:label ?name . FILTER(LANG(?name) = "en") }
   OPTIONAL { $entity rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
   OPTIONAL { $entity schema:description ?description . FILTER(LANG(?description) = "en") }

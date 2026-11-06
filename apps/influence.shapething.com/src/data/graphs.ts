@@ -1,6 +1,5 @@
 import type { Literal, NamedNode, Quad, Quad_Object } from "@rdfjs/types";
-import { factory, inf, rdfs, schema, wd, wdt, xsd } from "../rdf/namespaces.ts";
-import { commonsThumbnail } from "./images.ts";
+import { factory, inf, rdfs, schema, wdt, xsd } from "../rdf/namespaces.ts";
 import type { EntityDetails, ItemLists, PersonSummary } from "./person.ts";
 
 /**
@@ -9,21 +8,17 @@ import type { EntityDetails, ItemLists, PersonSummary } from "./person.ts";
  * the number of people someone influenced (inf:influenceCount) and the introduction of the
  * Wikipedia article (schema:abstract).
  *
- * Images are the Commons thumbnail of the size they are shown at (see images.ts), not the full
- * original Wikidata links to.
+ * Images (wdt:P18) are Wikidata's own links to the full Commons original; the display shapes'
+ * st:imageWidth makes the renderer load a thumbnail instead.
  */
 
 const quad = (subject: NamedNode, predicate: NamedNode, object: Quad_Object | undefined): Quad[] =>
   object ? [factory.quad(subject, predicate, object)] : [];
 
-export const summaryQuads = (person: PersonSummary, imageWidth: number): Quad[] => [
+export const summaryQuads = (person: PersonSummary): Quad[] => [
   ...quad(person.iri, rdfs("label"), person.label),
   ...quad(person.iri, schema("description"), person.description),
-  ...quad(
-    person.iri,
-    wdt("P18"),
-    person.image && factory.namedNode(commonsThumbnail(person.image.value, imageWidth)),
-  ),
+  ...quad(person.iri, wdt("P18"), person.image),
   ...quad(person.iri, wdt("P569"), person.birthDate),
   ...quad(person.iri, wdt("P570"), person.deathDate),
   ...quad(
@@ -50,17 +45,9 @@ export const itemListQuads = (person: NamedNode, lists: ItemLists): Quad[] => [
   ]),
 ];
 
-export const entityQuads = (
-  entity: EntityDetails,
-  abstract: Literal | undefined,
-  imageWidth: number,
-): Quad[] => [
-  // "Influenced 0 people" says nothing about a work or an idea.
-  ...summaryQuads(entity, imageWidth).filter(
-    (quad) =>
-      entity.isHuman || entity.influence > 0 || !quad.predicate.equals(inf("influenceCount")),
-  ),
-  ...(entity.isHuman ? quad(entity.iri, wdt("P31"), wd("Q5")) : []),
+export const entityQuads = (entity: EntityDetails, abstract: Literal | undefined): Quad[] => [
+  // Which of these the modal shows is up to the shape of the entity's kind (EntityModal.tsx).
+  ...summaryQuads(entity),
   ...quad(entity.iri, wdt("P577"), entity.publicationDate),
   ...(entity.article ? quad(entity.article, schema("about"), entity.iri) : []),
   ...quad(entity.iri, schema("abstract"), abstract),

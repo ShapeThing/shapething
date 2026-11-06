@@ -1,7 +1,8 @@
 import type { Term } from "@rdfjs/types";
 import { Localized } from "@fluent/react";
 import { Suspense } from "react";
-import { Loading, Minus } from "@/helpers/icons.tsx";
+import { Minus } from "@/helpers/icons.tsx";
+import { LoadingFallback } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
 import SortableRow from "@/outputs/render/modes/edit/SortableRow.tsx";
 import WidgetSlot from "@/outputs/render/modes/edit/WidgetSlot.tsx";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -32,7 +33,7 @@ export default function MemberShapeListItem({
   return (
     <SortableRow id={id} as="li" className="st-member-shape-list__item">
       <div className="st-member-shape-list__item-widget">
-        <Suspense fallback={<Loading />}>
+        <Suspense fallback={<LoadingFallback />}>
           <WidgetSlot
             propertyUIElement={memberElement}
             object={value}

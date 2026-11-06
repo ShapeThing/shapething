@@ -70,7 +70,11 @@
   gap: 0 var(--size-2);
   flex-wrap: wrap;
   padding-block-end: 0;
-  align-items: center;
+  /* The label lines up with the first line of the value, not with the middle of it: a value that
+     wraps onto several lines (a long literal, a list) would otherwise pull its label down. Values
+     without text (an image) fall back to their bottom edge - view mode aligns ImageViewer's
+     header to the start instead (see modes/view/style.css). */
+  align-items: first baseline;
 }
 
 .st-form-element[data-label-layout="inline"] .st-form-element__header {

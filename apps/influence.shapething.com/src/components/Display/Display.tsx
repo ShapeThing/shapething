@@ -1,5 +1,6 @@
 import type { NamedNode, Quad } from "@rdfjs/types";
 import { minimalEnvironment, ShaclRenderer } from "@shapething/shacl-renderer";
+import type { RdfStore } from "rdf-stores";
 import { clsx } from "../../clsx.ts";
 import { shapesGraph } from "../../shapes/shapes.ts";
 import { widgets } from "../../widgets/index.ts";
@@ -9,9 +10,10 @@ type Props = {
   /** One of the display shapes of shapes/shapes.ttl. */
   shape: NamedNode;
   focusNode: NamedNode;
-  /** The data graph (see data/graphs.ts). Keep it the same array while it does not change: a new
-   * one starts the renderer again. */
-  quads: Quad[];
+  /** The data graph (see data/graphs.ts). Quads are compared by content: an equal array keeps the
+   * renderer, a different one starts it again. A live store (makeReactive) is kept as it is, and
+   * what is added to it later shows up in place (see PersonRow). */
+  dataGraph: Quad[] | RdfStore;
   className?: string;
 };
 
@@ -20,11 +22,17 @@ type Props = {
  * default for all languages), so every value is shown whatever its language ("individual"), and
  * the interface has no language switchers.
  */
-export default function Display({ shape, focusNode, quads, className }: Props) {
+export default function Display({ shape, focusNode, dataGraph, className }: Props) {
   return (
     <div className={clsx("display", className)}>
       <ShaclRenderer
         {...minimalEnvironment}
+        // Wikidata images are Commons originals; the display shapes' st:imageWidth loads Commons
+        // thumbnails instead.
+        enableImageResizing
+        // The portraits' sh:defaultValue inf:Initials: people without a portrait get their
+        // initials (see widgets/PortraitViewer).
+        enableDefaultValuesInViewMode
         mode="view"
         languageMode="individual"
         contentLanguage="en"
@@ -33,7 +41,8 @@ export default function Display({ shape, focusNode, quads, className }: Props) {
         widgets={widgets}
         nodeShapes={[shape]}
         focusNode={focusNode}
-        dataGraph={quads}
+        dataGraph={dataGraph}
+        loadingIndicator={null}
       />
     </div>
   );

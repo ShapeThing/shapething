@@ -56,6 +56,10 @@ export default function FormElement({
   labelLayout = "block",
 }: Props) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
+  // Nothing to put in the header (e.g. an empty sh:name with no description, for a value that
+  // speaks for itself): no header at all, rather than an empty one that still takes a gap and
+  // needs every stylesheet around it to hide it again.
+  const hasHeader = Boolean(label || tooltip || actions);
 
   return (
     <div
@@ -64,60 +68,62 @@ export default function FormElement({
       data-label-layout={labelLayout}
       data-id={dataId}
     >
-      <header className="st-form-element__header">
-        {label && (
-          <label
-            className="st-form-element__label"
-            data-show-colon={showColon || undefined}
-            id={labelId}
-            htmlFor={htmlFor}
-            lang={activeInterfaceLanguage}
-          >
-            {labelTitle ? (
-              <Tooltip bare enabled tip={labelTitle} placement={tooltipPlacement}>
+      {hasHeader && (
+        <header className="st-form-element__header">
+          {label && (
+            <label
+              className="st-form-element__label"
+              data-show-colon={showColon || undefined}
+              id={labelId}
+              htmlFor={htmlFor}
+              lang={activeInterfaceLanguage}
+            >
+              {labelTitle ? (
+                <Tooltip bare enabled tip={labelTitle} placement={tooltipPlacement}>
+                  <span className="st-form-element__label-text">{label}</span>
+                </Tooltip>
+              ) : (
                 <span className="st-form-element__label-text">{label}</span>
-              </Tooltip>
-            ) : (
-              <span className="st-form-element__label-text">{label}</span>
-            )}
-            {labelSuffix}
-            {required && (
-              <Tooltip
-                bare
-                enabled
-                tip={<Localized id="form-element-required-tooltip" />}
-                placement={tooltipPlacement}
-              >
-                <Localized id="form-element-required" attrs={{ "aria-label": true }}>
-                  <span className="st-form-element__required" aria-label="Required">
-                    *
-                  </span>
-                </Localized>
-              </Tooltip>
-            )}
-          </label>
-        )}
-        {/* Right after the <label> rather than inside it - inside, the label's own colon
+              )}
+              {labelSuffix}
+              {required && (
+                <Tooltip
+                  bare
+                  enabled
+                  tip={<Localized id="form-element-required-tooltip" />}
+                  placement={tooltipPlacement}
+                >
+                  <Localized id="form-element-required" attrs={{ "aria-label": true }}>
+                    <span className="st-form-element__required" aria-label="Required">
+                      *
+                    </span>
+                  </Localized>
+                </Tooltip>
+              )}
+            </label>
+          )}
+          {/* Right after the <label> rather than inside it - inside, the label's own colon
             (generated after the whole <label>, see style.css) would land after the icon. */}
-        {tooltip && (
-          <Tooltip bare enabled tip={tooltip} placement={tooltipPlacement}>
-            <Localized id="form-element-help" attrs={{ "aria-label": true }}>
-              {/* Sits before the field itself in the DOM, so a normal tab stop here would
+          {tooltip && (
+            <Tooltip bare enabled tip={tooltip} placement={tooltipPlacement}>
+              <Localized id="form-element-help" attrs={{ "aria-label": true }}>
+                {/* Sits before the field itself in the DOM, so a normal tab stop here would
                   interrupt Tab from the label reaching the field - it's still reachable by
                   mouse/touch, and by keyboard once the field itself is focused. */}
-              <button
-                type="button"
-                className="st-icon-button st-icon-button--help"
-                aria-label="Help"
-                tabIndex={-1}
-              >
-                <Help />
-              </button>
-            </Localized>
-          </Tooltip>
-        )}
-        {actions && <div className="st-form-element__actions">{actions}</div>}
-      </header>
+                <button
+                  type="button"
+                  className="st-icon-button st-icon-button--help"
+                  aria-label="Help"
+                  tabIndex={-1}
+                >
+                  <Help />
+                </button>
+              </Localized>
+            </Tooltip>
+          )}
+          {actions && <div className="st-form-element__actions">{actions}</div>}
+        </header>
+      )}
       {description && <p className="st-form-element__description">{description}</p>}
       {children}
     </div>

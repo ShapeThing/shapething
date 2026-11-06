@@ -16,6 +16,14 @@ type Props = {
   isSelected?: boolean;
   hrefFor: (person: PersonSummary) => string;
   linkLabelFor: (person: PersonSummary) => string;
+  /** The opened person of this column is being closed: its cross spins. */
+  isClosing?: boolean;
+  /** A person before this column is being closed: the column folds away. */
+  isRemoving?: boolean;
+  /** Called when the column has folded away. */
+  onRemoved?: () => void;
+  /** Closing the opened person, instead of following the link right away. */
+  onClose?: (href: string) => void;
 };
 
 /**
@@ -31,12 +39,16 @@ export default function Column({
   isSelected = false,
   hrefFor,
   linkLabelFor,
+  isClosing = false,
+  isRemoving = false,
+  onRemoved,
+  onClose,
 }: Props) {
   const innerRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLInputElement>(null);
   const [isFiltering, setIsFiltering] = useState(false);
   const [filter, setFilter] = useState("");
-  const hasScrolled = useRef(false);
+  const previousActiveId = useRef(activeId);
 
   const isActive = activeId !== undefined && people.some((person) => person.id === activeId);
   const normalizedFilter = filter.trim().toLocaleLowerCase();
@@ -45,8 +57,11 @@ export default function Column({
       ? people.filter((person) => person.name.toLocaleLowerCase().includes(normalizedFilter))
       : people;
 
-  // Scrolls the opened person to the top of the column: right away the first time, smoothly after.
+  // Scrolls the opened person to the top of the column: smoothly when someone is opened, right away
+  // when the column comes with an opened person (the people arrive after the column is made).
   useLayoutEffect(() => {
+    const isNewlyOpened = previousActiveId.current !== activeId;
+    previousActiveId.current = activeId;
     const inner = innerRef.current;
     const row = activeId
       ? inner?.querySelector<HTMLElement>(`.person[data-id="${activeId}"]`)
@@ -54,9 +69,8 @@ export default function Column({
     if (!inner || !row) return;
     inner.scrollTo({
       top: row.offsetTop - 20,
-      behavior: hasScrolled.current ? "smooth" : "instant",
+      behavior: isNewlyOpened ? "smooth" : "instant",
     });
-    hasScrolled.current = true;
   }, [activeId, people.length]);
 
   const stopFiltering = () => {
@@ -66,8 +80,18 @@ export default function Column({
 
   return (
     <section
-      className={clsx("column", isSelected && "column--selected", isActive && "column--active")}
+      className={clsx(
+        "column",
+        isSelected && "column--selected",
+        isActive && "column--active",
+        isRemoving && "column--removing",
+      )}
       aria-label={title}
+      onAnimationEnd={(event) => {
+        if (event.target === event.currentTarget && event.animationName === "remove-column") {
+          onRemoved?.();
+        }
+      }}
     >
       <header className={clsx("column__header", isFiltering && "column__header--filtering")}>
         <h2 className="column__title">{title}</h2>
@@ -128,6 +152,8 @@ export default function Column({
             key={person.id}
             person={person}
             isActive={person.id === activeId}
+            isClosing={isClosing && person.id === activeId}
+            onClose={person.id === activeId ? onClose : undefined}
             href={hrefFor(person)}
             linkLabel={linkLabelFor(person)}
             scrollRoot={innerRef}

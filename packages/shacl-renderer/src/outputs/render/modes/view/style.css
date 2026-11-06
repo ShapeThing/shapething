@@ -29,10 +29,6 @@
 .st-view-mode .st-form-element__header {
   width: auto;
   justify-content: flex-start;
-
-  &:empty {
-    display: none;
-  }
 }
 
 .st-property-items {

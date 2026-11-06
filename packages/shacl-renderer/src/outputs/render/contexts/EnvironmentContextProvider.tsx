@@ -1,6 +1,7 @@
 import React, { Suspense, startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { RdfStore } from "rdf-stores";
 import { Loading } from "@/helpers/icons.tsx";
+import { LoadingFallback } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import type { Environment, RawEnvironment } from "@/environment.ts";
 import { defaultEnvironment } from "@/environment.ts";
@@ -43,7 +44,16 @@ export default function EnvironmentContextProvider({
     [],
   );
 
-  const run = (keepDataGraph?: RdfStore): Promise<Environment> =>
+  // A reactive dataGraph (made with makeReactive() by the caller) is the caller's live store: used
+  // as-is from the first preprocessing pass on, never copied (see RawEnvironment.dataGraph). It is
+  // the same object on every render, so it never changes the identity key either - writes to it
+  // reach the mounted form through its own subscriptions (useReactiveRead and friends).
+  const liveDataGraph =
+    initialEnvironment.dataGraph instanceof RdfStore && getReactivity(initialEnvironment.dataGraph)
+      ? initialEnvironment.dataGraph
+      : undefined;
+
+  const run = (keepDataGraph: RdfStore | undefined = liveDataGraph): Promise<Environment> =>
     keepDataGraph
       ? runPreprocessors(initialEnvironment, steps, { keepDataGraph })
       : runPreprocessorsDeduped(initialEnvironment, steps);
@@ -51,10 +61,12 @@ export default function EnvironmentContextProvider({
   return (
     <Suspense
       fallback={
-        <div className="st-environment-context-provider__loading">
-          <Localized id="loading" />
-          <Loading />
-        </div>
+        <LoadingFallback>
+          <div className="st-environment-context-provider__loading">
+            <Localized id="loading" />
+            <Loading />
+          </div>
+        </LoadingFallback>
       }
     >
       <PreprocessedEnvironmentProvider

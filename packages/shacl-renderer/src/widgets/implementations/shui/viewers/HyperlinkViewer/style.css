@@ -1,0 +1,6 @@
+/* A URL has no spaces to wrap at: a long one would run out of its container otherwise. `anywhere`
+   (not `break-word`) also lowers the link's min-content width, so a flex or grid parent can shrink
+   it. */
+.st-hyperlink-viewer {
+  overflow-wrap: anywhere;
+}

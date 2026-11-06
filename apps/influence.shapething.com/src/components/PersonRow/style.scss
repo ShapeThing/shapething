@@ -3,19 +3,14 @@
 
 .person {
   position: relative;
+  // Keeps the margins of what is inside (the lists, their spinner) inside the row, so the row does
+  // not move down before its portrait row is rendered (the column scrolls to where the row is).
+  display: flow-root;
   min-height: var(--portrait-size);
   margin-bottom: 15px;
   transition:
     opacity 0.3s ease-in-out,
     visibility 0.3s;
-}
-
-.person__avatar {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: var(--portrait-size);
-  height: var(--portrait-size);
 }
 
 .person__display {
@@ -25,7 +20,7 @@
     display: grid;
     grid-template-columns: var(--portrait-size) minmax(0, 1fr);
     column-gap: 15px;
-    row-gap: 2px;
+    row-gap: 0;
     align-content: center;
     min-height: var(--portrait-size);
     padding-right: 25px;
@@ -36,11 +31,23 @@
     grid-column: 2;
   }
 
+  // The years, the name and the bar sit tight together, centred beside the portrait.
+  .st-view-mode > .st-form-element,
+  [data-iri$="#lifespan"] .st-form-element {
+    gap: 0;
+    padding: 0;
+  }
+
   // ...except the portrait itself.
-  .st-view-mode > .st-form-element:has([data-widget="ImageViewer"]) {
+  .st-view-mode > .st-form-element:has([data-widget="PortraitViewer"]) {
     grid-column: 1;
     grid-row: 1 / span 3;
     align-self: start;
+  }
+
+  .avatar {
+    width: var(--portrait-size);
+    height: var(--portrait-size);
   }
 
   .image-viewer {
@@ -54,25 +61,16 @@
     background: var(--color-background);
   }
 
-  // The labels are only shown for the lists, the rest speaks for itself.
-  .st-view-mode > .st-form-element > .st-form-element__header,
-  [data-iri$="#lifespan"] .st-form-element__header {
-    display: none;
-  }
-
   [data-iri$="#lifespan"] .st-property-group__body {
     display: flex;
     flex-direction: row;
     font-size: 10px;
+    font-weight: bold;
     color: var(--color-muted);
 
-    > .st-form-element {
-      gap: 0;
-    }
-
     > .st-form-element + .st-form-element::before {
-      content: "–";
-      padding-inline: 4px;
+      content: " / ";
+      white-space: pre;
     }
   }
 
@@ -87,53 +85,70 @@
   }
 
   [data-widget="RelativeInfluenceViewer"] {
-    margin-top: 5px;
+    width: calc(100% - 20px);
+    margin-top: 7px;
   }
 
   // The count is in the accessible text of the bar, and in the modal.
   .relative-influence__count {
     display: none;
   }
+}
 
-  // The works, interests and ideas of an opened person.
-  .st-view-mode > [data-iri$="#itemLists"] {
-    grid-column: 1 / -1;
-    margin-top: 20px;
-    padding-right: 0;
-    max-height: calc(100dvh - 300px);
-    overflow-y: auto;
-    scrollbar-width: thin;
-    font-size: 12px;
+// The works, interests and ideas of an opened person, below the portrait row.
+.person__lists-spinner {
+  display: flex;
+  margin: 29px auto 0;
+}
+
+.person__display .st-view-mode > [data-iri$="#itemLists"] {
+  grid-column: 1 / -1;
+  // The full width of the row: the grid keeps room on the right for the cross of the portrait row.
+  margin-right: -25px;
+  margin-top: 29px;
+  // The opened person is scrolled to the top of the column (a size container), the lists fill the
+  // rest of it: the column minus the portrait row, the margin above and the padding below.
+  max-height: calc(100cqh - var(--portrait-size) - 31px);
+  overflow-y: auto;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  font-size: 12px;
+  line-height: 18px;
+
+  .st-property-group__body {
+    display: flex;
+    flex-direction: column;
+    gap: 26px;
+  }
+
+  .st-form-element {
+    display: block;
+    padding: 0;
+  }
+
+  .st-form-element__header {
+    display: block;
+    margin-bottom: 6px;
+  }
+
+  .st-form-element__label {
+    min-height: 0;
     line-height: 18px;
+    font-size: 14.04px;
+    font-weight: bold;
+    color: black;
+  }
 
-    .st-property-group__body {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
+  .st-property-items,
+  .st-property-object-wrapper {
+    gap: 0;
+  }
 
-    .st-form-element {
-      display: block;
-    }
-
-    .st-form-element__header {
-      display: block;
-      margin-bottom: 6px;
-    }
-
-    .st-form-element__label {
-      min-height: 0;
-      line-height: 18px;
-      font-size: 13px;
-    }
-
-    .st-property-items {
-      gap: 4px;
-    }
-
-    .st-label-viewer {
-      color: rgb(49 49 49);
-    }
+  .st-label-viewer {
+    color: rgb(49 49 49);
   }
 }
 
@@ -157,6 +172,49 @@
   left: 0;
   width: var(--portrait-size);
   border-radius: 50%;
+  transition: box-shadow 0.2s ease-in-out;
+
+  // An info badge on the portrait: it opens something else than the row (the modal, not the next
+  // column), so it gets a sign of its own.
+  &::after {
+    content: "i";
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 2px solid var(--color-background);
+    background: black;
+    color: white;
+    font: italic bold 11px/1 Georgia, serif;
+    opacity: 0;
+    transform: scale(0.6);
+    transition:
+      opacity 0.2s ease-in-out,
+      transform 0.2s ease-in-out;
+  }
+
+  &:hover,
+  &:focus-visible {
+    box-shadow: 0 0 0 3px var(--color-background), 0 0 0 5px black;
+
+    &::after {
+      opacity: 1;
+      transform: none;
+    }
+  }
+
+  // No hover on touch screens: the badge is always there.
+  @media (hover: none) {
+    &::after {
+      opacity: 1;
+      transform: none;
+    }
+  }
 }
 
 .person__link:focus-visible,
@@ -211,5 +269,20 @@
   &::after {
     width: 100%;
     transform: translate(-50%, -50%) rotate(-45deg);
+  }
+}
+
+// The cross spins while the columns after the person fold away.
+.person[data-closing] .person__action {
+  animation: person-closing 2.5s;
+}
+
+@keyframes person-closing {
+  from {
+    transform: translateY(-50%) rotate(0);
+  }
+
+  to {
+    transform: translateY(-50%) rotate(-360deg);
   }
 }

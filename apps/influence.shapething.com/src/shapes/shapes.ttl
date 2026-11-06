@@ -11,8 +11,13 @@
 ### The display shapes of the app. They render the data graphs of src/data/graphs.ts: Wikidata
 ### triples with Wikidata's own predicates, plus inf:influenceCount and schema:abstract.
 ###
-### Every property declares its shui:viewer, so no widget scoring is needed. The two custom
+### Every property declares its shui:viewer, so no widget scoring is needed. The three custom
 ### viewers are registered in src/widgets/index.ts.
+###
+### Most values speak for themselves and have no label: an empty sh:name leaves the header of the
+### field empty, and the view mode hides an empty header. Only the item lists and the facts of the
+### modal (and the Wikipedia link) have a label. An empty sh:description keeps the help icon of
+### inf:influenceCount's rdfs:comment out of a header that has no label.
 
 inf:influenceCount
     a rdf:Property ;
@@ -24,6 +29,17 @@ inf:RelativeInfluenceViewer
     a shui:Widget ;
     rdfs:label "Relative influence"@en ;
     rdfs:comment "A bar showing an influence count relative to the people shown in the app at the moment."@en .
+
+inf:PortraitViewer
+    a shui:Widget ;
+    rdfs:label "Portrait"@en ;
+    rdfs:comment "The portrait of a person, or their initials (the sh:defaultValue inf:Initials) when there is none."@en .
+
+### Not a real image: the default portrait, which inf:PortraitViewer shows as the person's
+### initials. The display shapes are only rendered in view mode, so it is never written to data.
+inf:Initials
+    a rdfs:Resource ;
+    rdfs:label "Initials"@en .
 
 inf:YearViewer
     a shui:Widget ;
@@ -37,24 +53,28 @@ inf:itemLists a sh:PropertyGroup ; sh:order 10 .
 inf:facts a sh:PropertyGroup ; sh:order 2 .
 inf:text a sh:PropertyGroup ; sh:order 3 .
 
-### One person in a column: the portrait, the years, the name and the relative influence. The
-### works, interests and ideas are only in the data graph of the person that is opened.
+### One person in a column: the portrait, the years, the name and the relative influence, and
+### for the person that is opened their works, interests and ideas below. Those arrive later: they
+### are added to the person's live data graph (src/components/PersonRow), so the rest stays as it
+### is and the portrait is loaded once.
 
 inf:ColumnShape
     a sh:NodeShape ;
     rdfs:label "Person in a column"@en ;
     sh:property [
         sh:path wdt:P18 ;
-        sh:name "Portrait"@en ;
+        sh:name "" ;
         sh:order 0 ;
         sh:maxCount 1 ;
         sh:nodeKind sh:IRI ;
-        shui:viewer shui:ImageViewer ;
+        shui:viewer inf:PortraitViewer ;
+        sh:defaultValue inf:Initials ;
+        st:imageWidth 112 ; # shown at 56px (--portrait-size)
         shui:propertyRole shui:DepictionRole ;
     ] ;
     sh:property [
         sh:path wdt:P569 ;
-        sh:name "Born"@en ;
+        sh:name "" ;
         sh:order 1 ;
         sh:maxCount 1 ;
         sh:group inf:lifespan ;
@@ -62,7 +82,7 @@ inf:ColumnShape
     ] ;
     sh:property [
         sh:path wdt:P570 ;
-        sh:name "Died"@en ;
+        sh:name "" ;
         sh:order 2 ;
         sh:maxCount 1 ;
         sh:group inf:lifespan ;
@@ -70,7 +90,7 @@ inf:ColumnShape
     ] ;
     sh:property [
         sh:path rdfs:label ;
-        sh:name "Name"@en ;
+        sh:name "" ;
         sh:order 3 ;
         sh:maxCount 1 ;
         shui:viewer shui:LiteralViewer ;
@@ -78,7 +98,8 @@ inf:ColumnShape
     ] ;
     sh:property [
         sh:path inf:influenceCount ;
-        sh:name "Influence"@en ;
+        sh:name "" ;
+        sh:description "" ;
         sh:order 4 ;
         sh:maxCount 1 ;
         shui:viewer inf:RelativeInfluenceViewer ;
@@ -127,16 +148,18 @@ inf:TeaserShape
     rdfs:label "Person teaser"@en ;
     sh:property [
         sh:path wdt:P18 ;
-        sh:name "Portrait"@en ;
+        sh:name "" ;
         sh:order 0 ;
         sh:maxCount 1 ;
         sh:nodeKind sh:IRI ;
-        shui:viewer shui:ImageViewer ;
+        shui:viewer inf:PortraitViewer ;
+        sh:defaultValue inf:Initials ;
+        st:imageWidth 96 ; # shown at 48px (--teaser-portrait)
         shui:propertyRole shui:DepictionRole ;
     ] ;
     sh:property [
         sh:path rdfs:label ;
-        sh:name "Name"@en ;
+        sh:name "" ;
         # Before inf:lifespan, which has sh:order 1.
         sh:order 0.5 ;
         sh:maxCount 1 ;
@@ -145,7 +168,7 @@ inf:TeaserShape
     ] ;
     sh:property [
         sh:path wdt:P569 ;
-        sh:name "Born"@en ;
+        sh:name "" ;
         sh:order 2 ;
         sh:maxCount 1 ;
         sh:group inf:lifespan ;
@@ -153,7 +176,7 @@ inf:TeaserShape
     ] ;
     sh:property [
         sh:path wdt:P570 ;
-        sh:name "Died"@en ;
+        sh:name "" ;
         sh:order 3 ;
         sh:maxCount 1 ;
         sh:group inf:lifespan ;
@@ -161,7 +184,7 @@ inf:TeaserShape
     ] ;
     sh:property [
         sh:path schema:description ;
-        sh:name "Description"@en ;
+        sh:name "" ;
         sh:order 4 ;
         sh:maxCount 1 ;
         shui:viewer shui:LiteralViewer ;
@@ -169,27 +192,25 @@ inf:TeaserShape
     ] ;
     sh:property [
         sh:path inf:influenceCount ;
-        sh:name "Influence"@en ;
+        sh:name "" ;
+        sh:description "" ;
         sh:order 5 ;
         sh:maxCount 1 ;
         shui:viewer inf:RelativeInfluenceViewer ;
     ] .
 
-### The modal: everything about a person, or about a work, interest or idea. The name is the
-### title of the modal itself.
+### The modal: everything about a person, a work, or a concept (an interest or an idea), each
+### with its own shape. The kind is judged from the entity itself (src/data/person.ts). The name
+### is the title of the modal itself, not a property.
+###
+### The image and the text are the same for every kind, so they are named property shapes the
+### three node shapes share. The facts differ: only a person has a lifespan and an influence, only
+### a work a publication date.
 
-inf:ModalShape
+inf:PersonModalShape
     a sh:NodeShape ;
-    rdfs:label "Details"@en ;
-    sh:property [
-        sh:path wdt:P18 ;
-        sh:name "Image"@en ;
-        sh:order 0 ;
-        sh:maxCount 1 ;
-        sh:nodeKind sh:IRI ;
-        shui:viewer shui:ImageViewer ;
-        shui:propertyRole shui:DepictionRole ;
-    ] ;
+    rdfs:label "Person"@en ;
+    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia ;
     sh:property [
         sh:path wdt:P569 ;
         sh:name "Born"@en ;
@@ -207,43 +228,67 @@ inf:ModalShape
         shui:viewer inf:YearViewer ;
     ] ;
     sh:property [
-        sh:path wdt:P577 ;
-        sh:name "Published"@en ;
+        sh:path inf:influenceCount ;
+        sh:name "Influence"@en ;
         sh:order 3 ;
         sh:maxCount 1 ;
         sh:group inf:facts ;
-        shui:viewer inf:YearViewer ;
-    ] ;
+        shui:viewer inf:RelativeInfluenceViewer ;
+    ] .
+
+inf:WorkModalShape
+    a sh:NodeShape ;
+    rdfs:label "Work"@en ;
+    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia ;
     sh:property [
-        sh:path inf:influenceCount ;
-        sh:name "Influence"@en ;
-        sh:order 4 ;
+        sh:path wdt:P577 ;
+        sh:name "Published"@en ;
+        sh:order 1 ;
         sh:maxCount 1 ;
         sh:group inf:facts ;
-        shui:viewer inf:RelativeInfluenceViewer ;
-    ] ;
-    sh:property [
-        sh:path schema:description ;
-        sh:name "Description"@en ;
-        sh:order 5 ;
-        sh:maxCount 1 ;
-        sh:group inf:text ;
-        shui:viewer shui:LiteralViewer ;
-        shui:propertyRole shui:DescriptionRole ;
-    ] ;
-    sh:property [
-        sh:path schema:abstract ;
-        sh:name "Introduction"@en ;
-        sh:order 6 ;
-        sh:maxCount 1 ;
-        sh:group inf:text ;
-        shui:viewer shui:LiteralViewer ;
-    ] ;
-    sh:property [
-        sh:path [ sh:inversePath schema:about ] ;
-        sh:name "Wikipedia"@en ;
-        sh:order 7 ;
-        sh:maxCount 1 ;
-        sh:group inf:text ;
-        shui:viewer shui:HyperlinkViewer ;
+        shui:viewer inf:YearViewer ;
     ] .
+
+inf:ConceptModalShape
+    a sh:NodeShape ;
+    rdfs:label "Concept"@en ;
+    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia .
+
+inf:ModalImage
+    a sh:PropertyShape ;
+    sh:path wdt:P18 ;
+    sh:name "" ;
+    sh:order 0 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    shui:viewer shui:ImageViewer ;
+    st:imageWidth 500 ;
+    shui:propertyRole shui:DepictionRole .
+
+inf:ModalDescription
+    a sh:PropertyShape ;
+    sh:path schema:description ;
+    sh:name "" ;
+    sh:order 5 ;
+    sh:maxCount 1 ;
+    sh:group inf:text ;
+    shui:viewer shui:LiteralViewer ;
+    shui:propertyRole shui:DescriptionRole .
+
+inf:ModalAbstract
+    a sh:PropertyShape ;
+    sh:path schema:abstract ;
+    sh:name "" ;
+    sh:order 6 ;
+    sh:maxCount 1 ;
+    sh:group inf:text ;
+    shui:viewer shui:LiteralViewer .
+
+inf:ModalWikipedia
+    a sh:PropertyShape ;
+    sh:path [ sh:inversePath schema:about ] ;
+    sh:name "Wikipedia"@en ;
+    sh:order 7 ;
+    sh:maxCount 1 ;
+    sh:group inf:text ;
+    shui:viewer shui:HyperlinkViewer .

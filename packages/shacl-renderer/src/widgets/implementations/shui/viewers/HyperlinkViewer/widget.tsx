@@ -1,4 +1,5 @@
 import type { WidgetProps } from "@/widgets/types.ts";
+import "./style.css";
 
 export default function HyperlinkViewer({ term }: WidgetProps) {
   return (

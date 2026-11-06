@@ -18,10 +18,13 @@ export default function PropertyUIComponentObject({
   labelledBy,
   diffStatus,
   changedFrom,
+  isDefault = false,
 }: {
   propertyUIElement: PropertyUIElement;
   object: Term;
   labelledBy: string;
+  /** A sh:defaultValue shown in place of a missing value (Environment.enableDefaultValuesInViewMode). */
+  isDefault?: boolean;
   diffStatus?: DiffStatus;
   changedFrom?: Literal;
 }) {
@@ -32,6 +35,7 @@ export default function PropertyUIComponentObject({
     <Wrapper
       className={clsx("st-property-object-wrapper", status && ["st-diff", `st-diff--${status}`])}
       data-diff={status}
+      data-default={isDefault || undefined}
     >
       {status && (
         <Localized id={`diff-${status}`}>

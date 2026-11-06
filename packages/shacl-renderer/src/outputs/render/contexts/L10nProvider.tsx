@@ -1,7 +1,7 @@
 import React, { Suspense, useMemo } from "react";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { LocalizationProvider, ReactLocalization } from "@fluent/react";
-import { Loading } from "@/helpers/icons.tsx";
+import { LoadingFallback } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
 import type { BCP47 } from "@/types/BCP47.ts";
 import { loadBundles } from "@/l10n/loadBundles.ts";
 import type { LocaleLoaderOverrides } from "@/l10n/locales.ts";
@@ -24,7 +24,7 @@ type Props = {
 export default function L10nProvider({ children, interfaceLocales }: Props) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={<LoadingFallback />}>
       <NegotiatedLocalizationProvider
         interfaceLanguage={activeInterfaceLanguage}
         interfaceLocales={interfaceLocales}

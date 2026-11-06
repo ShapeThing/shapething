@@ -1,5 +1,6 @@
-// An entity in the modal (inf:ModalShape): the image, the facts with their labels beside them, then
-// the description, the introduction and the link to Wikipedia.
+// An entity in the modal (inf:PersonModalShape, inf:WorkModalShape, inf:ConceptModalShape): the
+// image, the facts with their labels beside them, then the description, the introduction and the
+// link to Wikipedia.
 
 .entity-modal__display {
   .st-view-mode {
@@ -8,10 +9,6 @@
 
   .st-view-mode > .st-form-element:has([data-widget="ImageViewer"]) {
     margin-bottom: 15px;
-
-    .st-form-element__header {
-      display: none;
-    }
   }
 
   .image-viewer {
@@ -37,27 +34,22 @@
     }
 
     .relative-influence {
-      flex-direction: row;
-      align-items: center;
-      gap: 10px;
+      align-items: flex-start;
+      gap: 6px;
     }
 
     .relative-influence__track {
-      flex: 0 0 120px;
+      width: 120px;
       height: 4px;
     }
 
     .relative-influence__count {
-      font-size: 15px;
-      color: inherit;
+      font-size: 13px;
+      color: var(--influence-muted, rgb(110 110 110));
     }
   }
 
   [data-iri$="#text"] {
-    .st-form-element:has([data-widget="LiteralViewer"]) .st-form-element__header {
-      display: none;
-    }
-
     .st-form-element + .st-form-element {
       margin-top: 15px;
     }

@@ -1,16 +1,18 @@
 import { defaultWidgets, type Widgets } from "@shapething/shacl-renderer";
 import { inf } from "../rdf/namespaces.ts";
+import PortraitViewer from "./PortraitViewer/widget.tsx";
 import RelativeInfluenceViewer from "./RelativeInfluenceViewer/widget.tsx";
 import YearViewer from "./YearViewer/widget.tsx";
 
 /**
  * The bundled widgets plus the app's own viewers. A module constant: the renderer caches its
- * widget scoring per widgets object, and a new object would also rebuild every renderer.
+ * widget scoring per widgets object (by identity), so every renderer shares one scoring graph.
  */
 export const widgets: Widgets = {
   ...defaultWidgets,
   viewers: {
     ...defaultWidgets.viewers,
+    PortraitViewer: { widget: inf("PortraitViewer"), Component: PortraitViewer },
     RelativeInfluenceViewer: {
       widget: inf("RelativeInfluenceViewer"),
       Component: RelativeInfluenceViewer,

@@ -287,6 +287,9 @@ export const resolutions = new Map<string, ResolutionFunction<any>>([
   [st("suggestedValues").value, keepAllListItems],
   // A property path (like sh:path), read by structure/orderByValues.ts - one per property.
   [st("orderBy").value, keepFirst],
+  // The width shui:ImageViewer loads its image at: the widest one, so it is sharp in every
+  // grouped shape's layout.
+  [st("imageWidth").value, keepHighestInteger],
   [sh("rootClass").value, keepMostSpecificClasses],
   [sh("uniqueValuesFor").value, keepAllListItems],
   [sh("severity").value, keepMostSevere],

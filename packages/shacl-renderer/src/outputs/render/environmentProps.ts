@@ -39,6 +39,7 @@ export const LIVE_PROPS = [
   "enableFacetOptionCounts",
   "enableFacetSearchForAutocomplete",
   "enableImageResizing",
+  "enableDefaultValuesInViewMode",
   "mapStyleUrl",
 ] as const satisfies readonly (keyof RawEnvironment)[];
 

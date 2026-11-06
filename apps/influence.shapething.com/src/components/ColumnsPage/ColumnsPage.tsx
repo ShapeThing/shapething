@@ -1,5 +1,5 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { isEntityId } from "../../data/entities.ts";
 import { entityOptions, influenceOptions } from "../../data/queries.ts";
 import type { PersonSummary } from "../../data/person.ts";
@@ -93,6 +93,12 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
   const closeModal = () => navigate(withoutModal());
   const path = pathForIds(ids);
 
+  // Closing a person first spins its cross and folds away the columns after it; the URL changes
+  // when they are gone. Kept with the path it was started on, so it ends with any navigation.
+  const [closing, setClosing] = useState<{ path: string; position: number; href: string }>();
+  const closingNow = closing?.path === path ? closing : undefined;
+  const lastPosition = columns[columns.length - 1].position;
+
   return (
     <InfluenceScaleContext.Provider value={scale}>
       <div className="columns-page" ref={scrollerRef}>
@@ -106,6 +112,22 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
               isError={column.isError}
               isSelected={column.position === 0}
               activeId={column.position >= 0 ? ids[column.position] : undefined}
+              isClosing={closingNow?.position === column.position}
+              isRemoving={closingNow !== undefined && column.position > closingNow.position}
+              onRemoved={
+                closingNow && column.position === lastPosition
+                  ? () => {
+                      setClosing(undefined);
+                      navigate(closingNow.href);
+                    }
+                  : undefined
+              }
+              onClose={
+                // The starting person closes right away, there are no columns to fold away.
+                column.position > 0
+                  ? (href) => setClosing({ path, position: column.position, href })
+                  : undefined
+              }
               hrefFor={(person) =>
                 column.position < 0
                   ? pathForIds([person.id])

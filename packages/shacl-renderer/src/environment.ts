@@ -288,6 +288,12 @@ export type Environment = {
   // blob URLs, local hosts) and SVGs are always loaded directly - see helpers/resizedImageUrl.ts.
   // On in defaultEnvironment; turn it off to never send image URLs to wsrv.nl.
   enableImageResizing?: boolean;
+  // View mode shows a property's sh:defaultValue values when the data states none, instead of
+  // leaving the property out. They are only shown, never written to the data graph, and are marked
+  // with data-default="true". Not in report mode, where a missing value is what's being reported.
+  // Off by default: a default is where a new value starts (see structure/defaultValues.ts), and
+  // reading it as a claim about data that doesn't state the property is the embedder's choice.
+  enableDefaultValuesInViewMode?: boolean;
   // MapLibre GL style URL used by every map-based st: widget (GeoEditor, MapViewer, MapFacet) -
   // a single shared setting rather than a per-widget one, since they're always meant to look the
   // same within one embedder. Defaults to a public OpenFreeMap style; override to point at a
@@ -317,6 +323,12 @@ export type RawEnvironment = Omit<
   | "validationReport"
 > & {
   shapesGraph: RdfSource;
+  // Any other source (a store too) is copied: the caller never sees the renderer's edits, and new
+  // data means a new source, which rebuilds the form. A store made reactive with makeReactive() is
+  // instead used as-is, live: the caller writes to it (e.g. data that arrives later) and the form
+  // follows in place - only the properties reading what changed re-render, nothing remounts - and
+  // the renderer's own edits land in it. Being the same store, it never rebuilds the form. Wrap
+  // writes that set up data rather than edit it in untracked(), or they become undo steps.
   dataGraph: RdfSource;
   scoresGraph: RdfSource;
   readOnlyGraph?: RdfSource;
@@ -362,6 +374,7 @@ export const defaultEnvironment: Environment = {
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
   enableImageResizing: true,
+  enableDefaultValuesInViewMode: false,
   mapStyleUrl: "https://tiles.openfreemap.org/styles/bright",
 };
 
@@ -401,6 +414,7 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
   enableImageResizing: false,
+  enableDefaultValuesInViewMode: false,
   mapStyleUrl: "https://tiles.openfreemap.org/styles/bright",
 };
 
@@ -446,4 +460,5 @@ export const testingEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
   enableImageResizing: false,
+  enableDefaultValuesInViewMode: false,
 };

@@ -1,0 +1,25 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+# st:imageWidth 240: the portrait is shown at 120px wide (see the story's CSS), so it loads a 240px
+# wide image instead of the default 1200 by 600. Being a Wikimedia Commons image, it is asked from
+# Commons at its nearest standard thumbnail width, 250px.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Portrait"@en ;
+        sh:path schema:image ;
+        sh:nodeKind sh:IRI ;
+        shui:viewer shui:ImageViewer ;
+        st:imageWidth 240 ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:name "Ada Lovelace" ;
+    schema:image <http://commons.wikimedia.org/wiki/Special:FilePath/Ada%20Lovelace%20portrait.jpg> ;
+    .

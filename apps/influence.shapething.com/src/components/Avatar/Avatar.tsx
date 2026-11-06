@@ -18,8 +18,8 @@ const initialsOf = (name: string) =>
     .join("");
 
 /**
- * The initials of a name on a color of its own. Shown where a portrait goes, behind it: people
- * without a portrait on Wikidata get this instead.
+ * The initials of a name on a color of its own: the portrait of people without one on Wikidata
+ * (see widgets/PortraitViewer).
  */
 export default function Avatar({ name }: { name: string }) {
   const hue = Math.abs(hashCode(name)) % 360;

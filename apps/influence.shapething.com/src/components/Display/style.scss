@@ -5,17 +5,6 @@
 .display {
   min-width: 0;
 
-  // The renderer prepares its environment asynchronously, in a few milliseconds. The components
-  // around it show their own loading state for the data, so its loading message would only flash.
-  .st-environment-context-provider__loading {
-    display: none;
-  }
-
-  // Without language switchers the header of the renderer is empty.
-  .st-header {
-    display: none;
-  }
-
   .st-view-mode {
     font-family: var(--font-family);
   }

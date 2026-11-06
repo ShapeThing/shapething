@@ -22,14 +22,6 @@
   }
 }
 
-.teaser__avatar {
-  position: absolute;
-  top: 10px;
-  left: 0;
-  width: var(--teaser-portrait);
-  height: var(--teaser-portrait);
-}
-
 .teaser__display {
   position: relative;
 
@@ -46,14 +38,15 @@
     grid-column: 2;
   }
 
-  .st-view-mode > .st-form-element:has([data-widget="ImageViewer"]) {
+  .st-view-mode > .st-form-element:has([data-widget="PortraitViewer"]) {
     grid-column: 1;
     grid-row: 1 / span 4;
     align-self: start;
   }
 
-  .st-form-element__header {
-    display: none;
+  .avatar {
+    width: var(--teaser-portrait);
+    height: var(--teaser-portrait);
   }
 
   .image-viewer {

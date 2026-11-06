@@ -12,6 +12,7 @@ interface QueryResult {
   publicationDate?: Literal
   article?: NamedNode
   isHuman: LiteralWithDatatype<'xsd:boolean'>
+  hasAuthor: LiteralWithDatatype<'xsd:boolean'>
   influence: LiteralWithDatatype<'xsd:integer'>
 }
 

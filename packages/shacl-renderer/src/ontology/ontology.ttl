@@ -80,6 +80,13 @@ st:uploadUrl
     rdfs:domain sh:PropertyShape ;
     rdfs:range xsd:string .
 
+st:imageWidth
+    a rdf:Property ;
+    rdfs:label "image width"@en ;
+    rdfs:comment "On a shui:ImageViewer property shape: the width in pixels of the image to load when Environment.enableImageResizing is on, instead of the default of 1200 by 600. Set it to about twice the width the image is shown at, so it stays sharp on high density screens. It does not change the size the image is shown at; that is up to CSS. Wikimedia Commons images are loaded at the nearest standard Commons thumbnail width that is at least this wide."@en ;
+    rdfs:domain sh:PropertyShape ;
+    rdfs:range xsd:positiveInteger .
+
 st:mergeAlternatives
     a rdf:Property ;
     rdfs:label "merge alternatives"@en ;

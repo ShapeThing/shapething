@@ -1,7 +1,7 @@
 import type { Term } from "@rdfjs/types";
 import { Suspense } from "react";
 import { sh, shui } from "@/helpers/namespaces.ts";
-import { Loading } from "@/helpers/icons.tsx";
+import { LoadingFallback } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
 import { localName } from "@/helpers/localName.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { useSlotResolution } from "@/outputs/render/hooks/useSlotResolution.tsx";
@@ -41,7 +41,7 @@ export default function WidgetSlot({
     <>
       <div className="st-property-object__widget" data-widget={localName(iri)}>
         <WidgetErrorBoundary resetKeys={[termKey(object), iri?.value]} widget={iri?.value}>
-          <Suspense fallback={<Loading />}>
+          <Suspense fallback={<LoadingFallback />}>
             <Widget
               shape={effectiveProperty}
               term={object}

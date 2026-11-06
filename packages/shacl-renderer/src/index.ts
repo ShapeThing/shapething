@@ -28,6 +28,10 @@ export { localName } from "@/helpers/localName.ts";
 
 export { dereferenceUrl, resolveRdfSource };
 
+// A live store: passed as dataGraph (or shapesGraph) the renderer uses it in place and follows
+// every write to it, instead of copying it - see RawEnvironment.dataGraph.
+export { makeReactive, transact, untracked } from "@/helpers/reactiveRdfStore.ts";
+
 // Public types/values an embedder needs to configure ShaclRenderer, type an onSubmit handler, or
 // write their own preprocessor / custom widget.
 export {

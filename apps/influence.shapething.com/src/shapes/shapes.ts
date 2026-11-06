@@ -10,4 +10,10 @@ export const shapesGraph = await resolveRdfSource(shapesTurtle, new Map(), undef
 
 export const ColumnShape = inf("ColumnShape");
 export const TeaserShape = inf("TeaserShape");
-export const ModalShape = inf("ModalShape");
+
+/** The shape of the modal, by the kind of entity it shows. */
+export const ModalShapes = {
+  person: inf("PersonModalShape"),
+  work: inf("WorkModalShape"),
+  concept: inf("ConceptModalShape"),
+} as const;

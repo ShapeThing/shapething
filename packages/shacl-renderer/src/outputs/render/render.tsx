@@ -3,6 +3,7 @@ import { defaultEnvironment } from "@/environment.ts";
 import { type Preprocessor } from "@/preprocess/index.ts";
 import EnvironmentContextProvider from "@/outputs/render/contexts/EnvironmentContextProvider.tsx";
 import L10nProvider from "@/outputs/render/contexts/L10nProvider.tsx";
+import { loadingIndicatorContext } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
 import InterfaceLanguageProvider from "@/outputs/render/contexts/InterfaceLanguageProvider.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { identityKey, pickLiveProps } from "@/outputs/render/environmentProps.ts";
@@ -18,6 +19,13 @@ export type ShaclRendererProps = Partial<RawEnvironment> & {
   // to scope an embedder's own styles. Not part of the Environment, so changing it never rebuilds
   // the form.
   className?: string;
+  // What the renderer shows while something loads (the Environment, interface strings, a lazily
+  // loaded widget, ...). Omitted, a spinner; `null` shows nothing (e.g. when the embedder has its
+  // own loading state, or the data is local and loads too fast for a spinner to be more than a
+  // flash); any other node replaces the spinner everywhere. Not part of the Environment either, so
+  // changing it never rebuilds the form. Spinners inside a widget's own UI (e.g. an autocomplete
+  // searching) are the widget's business and stay.
+  loadingIndicator?: React.ReactNode;
 };
 
 export type ModeProps = {
@@ -30,7 +38,7 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
   // Identity props rebuild the Environment (a new key remounts the preprocessed subtree, and a new
   // instanceId gives it a fresh preprocess query); live props are merged in on every render - see
   // environmentProps.ts.
-  const { preprocessors, className, ...environmentProps } = inputProps;
+  const { preprocessors, className, loadingIndicator, ...environmentProps } = inputProps;
   const identity = identityKey({ ...environmentProps, preprocessors });
   const instanceId = `${baseId}:${identity}`;
 
@@ -64,20 +72,22 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
       )}
     >
       <QueryClientProvider client={queryClient}>
-        <InterfaceLanguageProvider interfaceLanguage={interfaceLanguage}>
-          <L10nProvider interfaceLocales={interfaceLocales}>
-            <EnvironmentContextProvider
-              key={identity}
-              {...environmentProps}
-              preprocessors={preprocessors}
-              onSubmit={onSubmit}
-              liveProps={stableLiveProps}
-              instanceId={instanceId}
-            >
-              <ShaclRendererInner className={className} />
-            </EnvironmentContextProvider>
-          </L10nProvider>
-        </InterfaceLanguageProvider>
+        <loadingIndicatorContext.Provider value={loadingIndicator}>
+          <InterfaceLanguageProvider interfaceLanguage={interfaceLanguage}>
+            <L10nProvider interfaceLocales={interfaceLocales}>
+              <EnvironmentContextProvider
+                key={identity}
+                {...environmentProps}
+                preprocessors={preprocessors}
+                onSubmit={onSubmit}
+                liveProps={stableLiveProps}
+                instanceId={instanceId}
+              >
+                <ShaclRendererInner className={className} />
+              </EnvironmentContextProvider>
+            </L10nProvider>
+          </InterfaceLanguageProvider>
+        </loadingIndicatorContext.Provider>
       </QueryClientProvider>
     </ErrorBoundary>
   );

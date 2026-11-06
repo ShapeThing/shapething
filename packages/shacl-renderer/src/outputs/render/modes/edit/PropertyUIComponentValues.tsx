@@ -36,7 +36,7 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Loading } from "@/helpers/icons.tsx";
+import { LoadingFallback } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import SortableRow from "@/outputs/render/modes/edit/SortableRow.tsx";
 import PropertyUIComponentValuesHeader from "@/outputs/render/modes/edit/PropertyUIComponentValuesHeader.tsx";
@@ -262,7 +262,7 @@ export default function PropertyUIComponentValues({
   const items = objects.map((object, index) => {
     const sortableId = sortableIds[index];
     const content = (
-      <Suspense fallback={<Loading />}>
+      <Suspense fallback={<LoadingFallback />}>
         <PropertyUIComponentObject
           propertyUIElement={propertyUIElement}
           object={object}

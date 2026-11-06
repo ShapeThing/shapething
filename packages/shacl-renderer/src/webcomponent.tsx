@@ -57,6 +57,7 @@ const webComponentProps = {
   enableFacetTextSearchMerging: "boolean",
   enableFacetSearchForAutocomplete: "boolean",
   enableImageResizing: "boolean",
+  enableDefaultValuesInViewMode: "boolean",
 } as const;
 
 type AttributeProps = {
@@ -147,6 +148,7 @@ function Wrapper(props: WrapperProps) {
     enableFacetTextSearchMerging: attributes.enableFacetTextSearchMerging,
     enableFacetSearchForAutocomplete: attributes.enableFacetSearchForAutocomplete,
     enableImageResizing: attributes.enableImageResizing,
+    enableDefaultValuesInViewMode: attributes.enableDefaultValuesInViewMode,
     onSubmit,
   };
 

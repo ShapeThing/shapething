@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { Literal, NamedNode } from '@rdfjs/types'
-import type { LiteralWithLanguage, Prettify, TypedQuery } from '@shapething/typed-sparql'
+import type { BlankNode, Literal, NamedNode } from '@rdfjs/types'
+import type { Prettify, TypedQuery } from '@shapething/typed-sparql'
 
 interface QueryResult {
   kind: Literal
   item: NamedNode
-  name?: LiteralWithLanguage<'en'>
-  mulName?: LiteralWithLanguage<'mul'>
+  name: NamedNode | BlankNode | Literal
   publicationDate?: Literal
 }
 

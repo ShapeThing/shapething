@@ -33,7 +33,14 @@ type PropertyUIComponentProps = {
  * values to show renders nothing at all rather than an empty field waiting to be filled in.
  */
 export default function PropertyUIComponent({ propertyUIElement }: PropertyUIComponentProps) {
-  const { languageMode, viewModeLabelLayout, sourcePrefixes, diffGraphs } = useEnvironment();
+  const {
+    languageMode,
+    viewModeLabelLayout,
+    sourcePrefixes,
+    diffGraphs,
+    enableShPathInLabelTitle,
+    enableDefaultValuesInViewMode,
+  } = useEnvironment();
   const { activeLanguage } = useContentLanguage();
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   const isRdfLangString = propertyUIElement.get(sh("datatype"))?.equals(rdf("langString"));
@@ -82,12 +89,24 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   const shownObjects = diff?.changedText
     ? languageFilteredObjects.filter((object) => !object.equals(diff.changedText!.removed))
     : languageFilteredObjects;
-  const objects = isSingleUnifiedWidget ? shownObjects.slice(0, 1) : shownObjects;
+  const dataObjects = isSingleUnifiedWidget ? shownObjects.slice(0, 1) : shownObjects;
 
   // Report mode (see modes/report/): every result about this property, listed below its label and
   // value(s).
   const isReport = useIsReport();
   const reportResults = useReportResults(propertyUIElement);
+
+  // Environment.enableDefaultValuesInViewMode: a property the data states no value for shows its
+  // sh:defaultValue values instead - only shown, never written. Not in a report (a missing value is
+  // what it reports), not for a sh:memberShape list (no list to walk) and not for a
+  // singleUnifiedWidget (it reads the data's values itself, so it would never see a default).
+  const isDefault =
+    Boolean(enableDefaultValuesInViewMode) &&
+    dataObjects.length === 0 &&
+    !isReport &&
+    memberShapeNodes.length === 0 &&
+    !isSingleUnifiedWidget;
+  const objects = isDefault ? (propertyUIElement.get(sh("defaultValue")) as Term[]) : dataObjects;
 
   // Nothing to view: unlike edit mode, there's no empty widget to fall back to - except a report's
   // result about the missing values themselves. Also gates the sh:memberShape branch below - a
@@ -122,7 +141,8 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
             propertyUIElement={propertyUIElement}
             object={object}
             labelledBy={labelledBy}
-            diffStatus={diff?.status(object)}
+            isDefault={isDefault}
+            diffStatus={isDefault ? undefined : diff?.status(object)}
             changedFrom={
               diff?.changedText?.added.equals(object) ? diff.changedText.removed : undefined
             }
@@ -141,7 +161,11 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
       key={key}
       label={label}
       showColon={true}
-      labelTitle={propertyUIElement.pathAsSparql({ prefixed: true, sourcePrefixes })}
+      labelTitle={
+        enableShPathInLabelTitle
+          ? propertyUIElement.pathAsSparql({ prefixed: true, sourcePrefixes })
+          : undefined
+      }
       labelSuffix={<PropertyShapeSources propertyUIElement={propertyUIElement} />}
       labelId={rowLabelId}
       dataId={propertyUIElement.dataId()}

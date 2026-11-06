@@ -1,4 +1,4 @@
-import type { Literal, NamedNode } from "@rdfjs/types";
+import type { Literal, NamedNode, Term } from "@rdfjs/types";
 import { entityId } from "./entities.ts";
 
 /**
@@ -70,25 +70,44 @@ export const summariesFromRows = (
 };
 
 /** Everything shown in the modal: a person, but also a work, an interest or an idea. */
+/**
+ * What an entity is, judged by what Wikidata says about the entity itself, not by the list it was
+ * opened from (one item can be the work of one person and the idea of another):
+ * - a person is an instance of human (P31 Q5),
+ * - a work has an author (P50) or a publication date (P577),
+ * - a concept is anything else: the interests and the ideas that are not works.
+ */
+export type EntityKind = "person" | "work" | "concept";
+
 export type EntityDetails = PersonSummary & {
   publicationDate?: Literal;
   /** The English Wikipedia article about the entity. */
   article?: NamedNode;
-  isHuman: boolean;
+  kind: EntityKind;
 };
 
 export type EntityRow = SummaryRow & {
   publicationDate?: Literal;
   article?: NamedNode;
   isHuman: Literal;
+  hasAuthor: Literal;
 };
 
-export const entityFromRows = (iri: NamedNode, rows: readonly EntityRow[]): EntityDetails => ({
-  ...summarize(iri, rows),
-  publicationDate: rows.find((row) => row.publicationDate)?.publicationDate,
-  article: rows.find((row) => row.article)?.article,
-  isHuman: rows.some((row) => row.isHuman.value === "true"),
-});
+const isTrue = (literal: Literal) => literal.value === "true";
+
+export const entityFromRows = (iri: NamedNode, rows: readonly EntityRow[]): EntityDetails => {
+  const publicationDate = rows.find((row) => row.publicationDate)?.publicationDate;
+  return {
+    ...summarize(iri, rows),
+    publicationDate,
+    article: rows.find((row) => row.article)?.article,
+    kind: rows.some((row) => isTrue(row.isHuman))
+      ? "person"
+      : publicationDate || rows.some((row) => isTrue(row.hasAuthor))
+        ? "work"
+        : "concept",
+  };
+};
 
 export type ItemKind = "works" | "interests" | "ideas";
 
@@ -103,8 +122,8 @@ export type ItemLists = Record<ItemKind, ListItem[]>;
 export type ItemListRow = {
   kind: Literal;
   item: NamedNode;
-  name?: Literal;
-  mulName?: Literal;
+  /** From the label service: an English or "mul" label, else the identifier without a language. */
+  name: Term;
   publicationDate?: Literal;
 };
 
@@ -119,7 +138,8 @@ export const itemListsFromRows = (rows: readonly ItemListRow[]): ItemLists => {
     const kind = row.kind.value;
     if (!isItemKind(kind)) continue;
     // Without an English or "mul" label there is nothing readable to list.
-    if (!row.name && !row.mulName) continue;
+    const label = row.name.termType === "Literal" && row.name.language ? row.name : undefined;
+    if (!label) continue;
 
     const key = `${kind} ${row.item.value}`;
     let item = seen.get(key);
@@ -128,9 +148,7 @@ export const itemListsFromRows = (rows: readonly ItemListRow[]): ItemLists => {
       seen.set(key, item);
       lists[kind].push(item);
     }
-    // An English label wins over a "mul" one, from whichever row it comes.
-    if (row.name) item.label = row.name;
-    else item.label ??= row.mulName;
+    item.label ??= label;
     item.publicationDate ??= row.publicationDate;
   }
 
