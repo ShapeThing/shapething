@@ -5,15 +5,15 @@
 ### Minor Changes
 
 - **Notable changes in behaviour and types**
-  
+
   - `Environment.focusNode` and `SubmitResult.focusNode` are widened to `NamedNode | BlankNode`. Blank focus nodes (for example an inline `sh:property [ ... ]`) are now supported, and the focus node editor is hidden for them. TypeScript code that assumes a `NamedNode` needs a type guard.
   - The first paint is now held for up to 3 s until the form settles. A new `settleTimeout` prop controls this; `0` disables it.
   - Edit mode shows validation errors straight away for existing (not new) resources.
   - `enableImageResizing` now defaults to `true`, so `shui:ImageViewer` loads remote images resized through wsrv.nl, or as Wikimedia Commons thumbnails.
   - `@comunica/query-sparql` moved from 4 to 5. Federated queries now go to the endpoint as one request instead of a `SERVICE` block.
-  
+
   **Features**
-  
+
   - New `ShaclRenderer` props:
     - `className` for the mode root.
     - `loadingIndicator`: a custom node, or `null` to hide the spinner.
@@ -33,9 +33,9 @@
   - `shui:IconRole` is supported in LabelViewer, AutoCompleteOption and Teaser.
   - A value can have several `shui:ClassificationRole` chips; extra ones collapse into a "+N" chip.
   - The web component gains the attributes `enablePropertyShapeSources`, `enableImageResizing` and `enableDefaultValuesInViewMode`.
-  
+
   **Fixes**
-  
+
   - `sh:class` and `sh:node` violations are no longer reported for federated (`SERVICE`) values that have no local triples.
   - An `rdf:langString` datatype now creates a language-tagged empty literal.
   - `jsToRdf` treats `sh:rootClass` and `sh:nodeKind sh:IRI` as resource-valued.

@@ -5,12 +5,12 @@
 ### Minor Changes
 
 - **Breaking (generated types)**
-  
+
   - `MIN`, `MAX` and `SAMPLE` now take the type of their input instead of always `Literal`.
   - Generated `.rq.d.ts` files write datatypes in compact form (`LiteralWithDatatype<'xsd:boolean'>`) and import `LiteralWithLanguage` and `NumericLiteral`. Regenerate your type files after upgrading.
-  
+
   **Features**
-  
+
   - New browser-safe entry point `@shapething/typed-sparql/generate`, exporting `generateDts` and `SparqlTypesOptions`.
   - New type exports: `LiteralWithLanguage`, `NumericLiteral`, `NumericDatatype`, `ExpandDatatype` and `DatatypePrefixes`. `LiteralWithDatatype` accepts `xsd:` and `rdf:` prefixed names.
   - FILTER narrowing: `LANG(?x) = "en"`, `isNumeric`, `isIRI`/`isURI`, `isBlank`, `isLiteral` and `langMatches` narrow the binding types.
