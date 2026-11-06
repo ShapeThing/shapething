@@ -2,7 +2,7 @@ import type { NamedNode, Quad } from "@rdfjs/types";
 import {
   minimalEnvironment,
   ShaclRenderer,
-  type RdfSource,
+  type Preprocessor,
   type ResolveLink,
 } from "@shapething/shacl-renderer";
 import type { RdfStore } from "rdf-stores";
@@ -24,8 +24,11 @@ type Props = {
    * what is added to it later shows up in place (see PersonRow). */
   dataGraph: Quad[] | RdfStore;
   className?: string;
-  /** The shapes of shapes/shapes.ttl, unless shapes are made for the data (see data/resource.ts). */
-  shapes?: RdfSource;
+  /** Gives the shape a property for every predicate of the data it does not cover or ignore. */
+  enableMissingShapesGeneration?: boolean;
+  /** The renderer's preprocessing, when it needs a step of the app's own (see EntityModal). Keep
+   * the array the same between renders: a new one starts the renderer again. */
+  preprocessors?: readonly Preprocessor[];
   /** Links of this display's own, put over those of every display (see useAppLinks). */
   resolveLink?: ResolveLink;
   /** How a label stands to its values; "inline" (beside a single value) unless given. */
@@ -63,7 +66,8 @@ export default function Display({
   focusNode,
   dataGraph,
   className,
-  shapes = shapesGraph,
+  enableMissingShapesGeneration,
+  preprocessors,
   resolveLink,
   labelLayout = "inline",
 }: Props) {
@@ -91,7 +95,9 @@ export default function Display({
         languageMode="individual"
         contentLanguage="en"
         viewModeLabelLayout={labelLayout}
-        shapesGraph={shapes}
+        shapesGraph={shapesGraph}
+        enableMissingShapesGeneration={enableMissingShapesGeneration}
+        preprocessors={preprocessors}
         widgets={widgets}
         nodeShapes={[shape]}
         focusNode={focusNode}

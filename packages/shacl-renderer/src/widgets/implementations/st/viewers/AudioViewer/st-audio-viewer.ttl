@@ -1,0 +1,19 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+# No shui:viewer: st:AudioViewer is picked by the value's file extension (see score.ttl).
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Recording ;
+
+    sh:property [
+        sh:name "Recording"@en, "Opname"@nl ;
+        sh:path schema:audio ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+    .
+
+<#data>
+    a schema:Recording ;
+    schema:audio <https://upload.wikimedia.org/wikipedia/commons/c/c8/Example.ogg> ;
+    .

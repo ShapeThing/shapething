@@ -63,6 +63,7 @@ export const entityQuads = (entity: EntityDetails, abstract: Literal | undefined
     ...quad(entity.iri, wdt("P27"), citizenship.iri),
     ...quad(citizenship.iri, rdfs("label"), citizenship.name),
     ...quad(citizenship.iri, wdt("P41"), citizenship.flag),
+    ...quad(citizenship.iri, wdt("P1549"), citizenship.demonym),
     ...quad(citizenship.flag, rdfs("label"), citizenship.name),
   ]),
   // The occupations with their names, shown as links (inf:ItemShape).

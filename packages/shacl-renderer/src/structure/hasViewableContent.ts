@@ -23,6 +23,10 @@ export function hasViewableContent(
 ): boolean {
   switch (element.kind) {
     case "property": {
+      // st:mergeAlternatives: view mode shows the one composed value instead (see
+      // PropertyUIComponent), which is language-less.
+      if (element.mergesAlternatives())
+        return element.composedObject([activeLanguage]) !== undefined;
       const objects = element.getObjects();
       return languageMode === "individual"
         ? objects.length > 0

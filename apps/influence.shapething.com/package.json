@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@shapething/resource-fetcher": "workspace:*",
     "@shapething/shacl-renderer": "workspace:*",
     "@tanstack/react-query": "^5.103.2",
     "photoswipe": "^5.4.4",

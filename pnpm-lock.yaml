@@ -452,9 +452,6 @@ importers:
 
   apps/influence.shapething.com:
     dependencies:
-      '@shapething/resource-fetcher':
-        specifier: workspace:*
-        version: link:../../packages/resource-fetcher
       '@shapething/shacl-renderer':
         specifier: workspace:*
         version: link:../../packages/shacl-renderer

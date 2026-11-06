@@ -10,7 +10,7 @@ export const shapesGraph = await resolveRdfSource(shapesTurtle, new Map(), undef
 
 export const ColumnShape = inf("ColumnShape");
 export const TeaserShape = inf("TeaserShape");
-/** Every property of an entity, the second renderer of the modal (see data/resource.ts). */
+/** Every property of an entity, the second renderer of the modal (see queries/allProperties.rq). */
 export const AllPropertiesShape = inf("AllPropertiesShape");
 
 /** The modal, by the kind of entity it shows: its side column and its text (see EntityModal). */

@@ -150,12 +150,21 @@
     ] ;
 
     sh:property [
+        sh:name "st:AudioViewer" ;
+        sh:description "http://shapething.com/AudioViewer" ;
+        sh:path ex:audioViewer ;
+        shui:viewer st:AudioViewer ;
+        sh:group <#stGroup> ;
+        sh:order 12 ;
+    ] ;
+
+    sh:property [
         sh:name "st:ColorViewer" ;
         sh:description "http://shapething.com/ColorViewer" ;
         sh:path ex:colorViewer ;
         shui:viewer st:ColorViewer ;
         sh:group <#stGroup> ;
-        sh:order 12 ;
+        sh:order 13 ;
     ] ;
 
     sh:property [
@@ -166,7 +175,7 @@
         sh:maxCount 1 ;
         shui:viewer st:DurationViewer ;
         sh:group <#stGroup> ;
-        sh:order 13 ;
+        sh:order 14 ;
     ] ;
 
     sh:property [
@@ -176,7 +185,7 @@
         sh:datatype <https://iconify.design> ;
         shui:viewer st:IconifyViewer ;
         sh:group <#stGroup> ;
-        sh:order 14 ;
+        sh:order 15 ;
     ] ;
 
     sh:property [
@@ -186,7 +195,16 @@
         shui:viewer st:MapViewer ;
         sh:node <#landmarkShape> ;
         sh:group <#stGroup> ;
-        sh:order 15 ;
+        sh:order 16 ;
+    ] ;
+
+    sh:property [
+        sh:name "st:VideoViewer" ;
+        sh:description "http://shapething.com/VideoViewer" ;
+        sh:path ex:videoViewer ;
+        shui:viewer st:VideoViewer ;
+        sh:group <#stGroup> ;
+        sh:order 17 ;
     ] ;
     .
 
@@ -269,6 +287,7 @@ ex:rijksmuseum
         schema:postalCode "3811 BH" ;
         schema:addressCountry "Netherlands" ;
     ] ;
+    ex:audioViewer <https://upload.wikimedia.org/wikipedia/commons/c/c8/Example.ogg> ;
     # #3b82f6 as HSL (see st-color-viewer.ttl).
     ex:colorViewer [
         st:hue "217.2192513368984"^^xsd:decimal ;
@@ -280,4 +299,5 @@ ex:rijksmuseum
     ex:mapViewer
         "POINT (4.9041 52.3676)"^^geosparql:wktLiteral,
         ex:rijksmuseum ;
+    ex:videoViewer <https://upload.wikimedia.org/wikipedia/commons/2/22/Volcano_Lava_Sample.webm> ;
     .

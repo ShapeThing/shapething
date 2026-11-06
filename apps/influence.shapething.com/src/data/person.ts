@@ -91,6 +91,8 @@ export type Citizenship = {
   iri: NamedNode;
   name?: Literal;
   flag: NamedNode;
+  /** The English demonym (P1549) as an adjective, "Danish": for the summary of a person. */
+  demonym?: Literal;
 };
 
 /** An occupation (P106) with its name. */
@@ -129,12 +131,34 @@ export type EntityRow = SummaryRow & {
   citizenship?: NamedNode;
   citizenshipName?: Literal;
   flag?: NamedNode;
+  demonym?: Literal;
+  demonymIsAdjective?: Literal;
   article?: NamedNode;
   isHuman: Literal;
   hasAuthor: Literal;
 };
 
 const isTrue = (literal: Literal) => literal.value === "true";
+
+/**
+ * The demonym of a country as an adjective, the same on every load: the one qualified as the
+ * adjective (the first in alphabetical order, should there be several), else the only one there
+ * is. A country with only nouns and adjectives that are not told apart ("British", "Briton") has
+ * none.
+ */
+const demonymOf = (rows: readonly EntityRow[]): Literal | undefined => {
+  const byValue = (demonyms: Literal[]) =>
+    [...new Map(demonyms.map((demonym) => [demonym.value, demonym])).values()].sort((a, b) =>
+      a.value.localeCompare(b.value),
+    );
+  const all = byValue(rows.flatMap((row) => (row.demonym ? [row.demonym] : [])));
+  const adjectives = byValue(
+    rows.flatMap((row) =>
+      row.demonym && row.demonymIsAdjective && isTrue(row.demonymIsAdjective) ? [row.demonym] : [],
+    ),
+  );
+  return adjectives[0] ?? (all.length === 1 ? all[0] : undefined);
+};
 
 export const entityFromRows = (
   iri: NamedNode,
@@ -163,6 +187,9 @@ export const entityFromRows = (
     };
     citizenship.name ??= row.citizenshipName;
     citizenships.set(row.citizenship.value, citizenship);
+  }
+  for (const citizenship of citizenships.values()) {
+    citizenship.demonym = demonymOf(rows.filter((row) => row.citizenship?.equals(citizenship.iri)));
   }
   return {
     ...summarize(iri, rows),

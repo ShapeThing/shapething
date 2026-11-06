@@ -1,0 +1,19 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+
+# No shui:viewer: st:VideoViewer is picked by the value's file extension (see score.ttl).
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Clip ;
+
+    sh:property [
+        sh:name "Video"@en, "Video"@nl ;
+        sh:path schema:video ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+    .
+
+<#data>
+    a schema:Clip ;
+    schema:video <https://upload.wikimedia.org/wikipedia/commons/2/22/Volcano_Lava_Sample.webm> ;
+    .

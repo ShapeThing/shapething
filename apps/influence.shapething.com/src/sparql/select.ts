@@ -1,4 +1,4 @@
-import type { Bindings, Term } from "@rdfjs/types";
+import type { Quad, Quad_Object, Quad_Predicate, Quad_Subject, Term } from "@rdfjs/types";
 import type { TypedQuery } from "@shapething/typed-sparql";
 import { factory } from "../rdf/namespaces.ts";
 import { fetchJson } from "./fetchJson.ts";
@@ -39,7 +39,10 @@ const toTerm = (term: SparqlJsonTerm): Term => {
   }
 };
 
-/** Runs a SPARQL SELECT query on the Wikidata query service: a row of terms by variable each. */
+/**
+ * Runs a SPARQL query on the Wikidata query service: a row of terms by variable each. The query
+ * service answers a CONSTRUCT in the same JSON, a row with a subject, predicate and object each.
+ */
 const run = async (queryString: string): Promise<Array<Record<string, Term>>> => {
   const url = `${ENDPOINT}?${new URLSearchParams({ query: queryString })}`;
   const json = await fetchJson(
@@ -66,17 +69,14 @@ export const select = async <Row extends object>(
 ): Promise<Row[]> => (await run(parameterize(query, parameters))) as Row[];
 
 /**
- * Runs a query of the resource fetcher (see data/resource.ts). It reads the rows as RDF/JS
- * Bindings, but only by their variables (keys) and terms (get), so that is all a row gives.
+ * Runs a CONSTRUCT query (a .rq file imported with ?raw: typed-sparql only types SELECT queries) on
+ * the Wikidata query service: its triples.
  */
-export const queryBindings = async (queryString: string): Promise<Bindings[]> =>
-  (await run(queryString)).map((row) => {
-    const variables = Object.keys(row).map((variable) => factory.variable(variable));
-    return {
-      type: "bindings",
-      get: (key: string | { value: string }) => row[typeof key === "string" ? key : key.value],
-      has: (key: string | { value: string }) => (typeof key === "string" ? key : key.value) in row,
-      keys: () => variables[Symbol.iterator](),
-      size: variables.length,
-    } as unknown as Bindings;
-  });
+export const construct = async (query: string, parameters?: Parameters): Promise<Quad[]> =>
+  (await run(parameterize(query, parameters))).map((row) =>
+    factory.quad(
+      row.subject as Quad_Subject,
+      row.predicate as Quad_Predicate,
+      row.object as Quad_Object,
+    ),
+  );

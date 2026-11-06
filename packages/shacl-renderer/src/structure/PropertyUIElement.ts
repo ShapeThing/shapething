@@ -1,9 +1,9 @@
-import type { NamedNode, Quad_Subject, Term } from "@rdfjs/types";
+import type { Literal, NamedNode, Quad_Subject, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
 import { hashString } from "@/helpers/hashString.ts";
-import { shui } from "@/helpers/namespaces.ts";
+import { shui, st } from "@/helpers/namespaces.ts";
 import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
 import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
@@ -22,7 +22,7 @@ import type { Widgets } from "@/widgets/types.ts";
 import { toSparql, type ToSparqlOptions } from "@/structure/paths/toSparql.ts";
 import { resolutions } from "@/structure/constraintResolutions.ts";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
-import { propertyDescription, propertyLabel } from "@/resolution/label.ts";
+import { composedValue, propertyDescription, propertyLabel } from "@/resolution/label.ts";
 import { EMPTY_SCORES_GRAPH } from "@/structure/memo.ts";
 import { orderedValues } from "@/structure/orderedValues.ts";
 
@@ -153,6 +153,28 @@ export class PropertyUIElement {
     const path = this.propertyPath();
     if (!path) return [];
     return walkPropertyPath(path, this.focusNode, this.dataGraph);
+  }
+
+  /**
+   * st:mergeAlternatives on this property itself: the one literal composed from every branch of
+   * its sh:alternativePath (see composedValue in resolution/label.ts), which view mode shows in
+   * place of getObjects(). Undefined when this property isn't opted in or nothing composes. Edit
+   * mode, validation and writes keep using getObjects() - the alternation is still the data there.
+   */
+  composedObject(languages?: BCP47[], locale?: string): Literal | undefined {
+    return composedValue({ propertyShape: this, languages, locale });
+  }
+
+  /** Whether view mode shows composedObject() in place of this property's values. */
+  mergesAlternatives(): boolean {
+    return (
+      this.propertyPath()?.type === "alternative" &&
+      this.propertyShapes.some((shape) =>
+        this.shapesGraph
+          .getQuads(shape as Quad_Subject, st("mergeAlternatives"))
+          .some((quad) => quad.object.value === "true"),
+      )
+    );
   }
 
   /**

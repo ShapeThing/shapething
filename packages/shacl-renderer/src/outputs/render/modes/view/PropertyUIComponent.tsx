@@ -17,6 +17,7 @@ import MemberShapeList from "@/outputs/render/modes/view/MemberShapeList.tsx";
 import PropertyUIComponentObject from "@/outputs/render/modes/view/PropertyUIComponentObject.tsx";
 import { diffForValues } from "@/outputs/render/modes/view/propertyDiff.ts";
 import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
+import { primarySubtag } from "@/helpers/bestByLanguage.ts";
 import { rdf, sh, shui, st } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { orderByPath, sortByOrderPath } from "@/structure/orderByValues.ts";
@@ -56,7 +57,26 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   const label = propertyUIElement.label([activeInterfaceLanguage]);
   const description = propertyUIElement.description([activeInterfaceLanguage]);
 
-  const existingObjects = useDataGraphObjects(propertyUIElement);
+  const dataGraphObjects = useDataGraphObjects(propertyUIElement);
+  // st:mergeAlternatives: one value composed from every branch of the sh:alternativePath, in place
+  // of the values of those branches. A branch's values are joined as a list in the content
+  // language, or in the interface language when that is a regional form of it - content in "en"
+  // under an "en-GB" interface reads "a, b and c", under "en-US" "a, b, and c".
+  const mergesAlternatives = propertyUIElement.mergesAlternatives();
+  const listLocale =
+    primarySubtag(activeInterfaceLanguage) === primarySubtag(activeLanguage)
+      ? activeInterfaceLanguage
+      : activeLanguage;
+  const composedObjects = useReactiveRead(
+    propertyUIElement.dataGraph,
+    `composed@${propertyUIElement.focusNode.value}@${activeLanguage}@${listLocale}@${mergesAlternatives}`,
+    (): Term[] => {
+      if (!mergesAlternatives) return [];
+      const composed = propertyUIElement.composedObject([activeLanguage], listLocale);
+      return composed ? [composed] : [];
+    },
+  );
+  const existingObjects = mergesAlternatives ? composedObjects : dataGraphObjects;
   const unorderedLanguageFilteredObjects =
     languageMode === "individual"
       ? existingObjects

@@ -109,9 +109,16 @@ st:cssClass
 st:mergeAlternatives
     a rdf:Property ;
     rdfs:label "merge alternatives"@en ;
-    rdfs:comment "On a shui:LabelRole property shape whose sh:path is an sh:alternativePath: when true, the label joins the values of every alternative instead of using the first alternative that has a value."@en ;
+    rdfs:comment "On a property shape whose sh:path is an sh:alternativePath: when true, the values of every alternative are composed into one text. On a shui:LabelRole property shape that text is the label of the value node, instead of the first alternative that has a value. On any other property shape, view mode shows that text as the property's one value, instead of the values of every alternative (edit mode and validation keep the alternatives themselves). Every value of an alternative counts: its literals in the best language and its resources by their label, several values joined as a list in the content language, or in the interface language when that is a regional form of it (\"theologian, philosopher and poet\" for en-GB). Without st:mergeTemplate the alternatives that have a value are joined with a space."@en ;
     rdfs:domain sh:PropertyShape ;
     rdfs:range xsd:boolean .
+
+st:mergeTemplate
+    a rdf:Property ;
+    rdfs:label "merge template"@en ;
+    rdfs:comment "On a property shape with st:mergeAlternatives true: how the alternatives are composed into one text. {n} is the text of alternative n of the sh:alternativePath list, counting from 0; {n:year} the same with xsd date literals as their year (1813, 384 BCE). [ ... ] is an optional section, left out unless a placeholder inside it has text. Runs of whitespace collapse to one space and the text is trimmed. For example \"{0} {1}[ ({2:year}–{3:year})]\" over ( ( wdt:P27 wdt:P1549 ) wdt:P106 wdt:P569 wdt:P570 ) composes \"Danish theologian, philosopher and poet (1813–1855)\". May be given in several languages; the one in the best content language is used."@en ;
+    rdfs:domain sh:PropertyShape ;
+    rdfs:range xsd:string .
 
 # Shapes (node and property)
 

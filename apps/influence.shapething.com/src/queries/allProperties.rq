@@ -1,0 +1,37 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX wikibase: <http://wikiba.se/ontology#>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+
+# The data of the list of all properties of $entity (inf:AllPropertiesShape), and nothing more, so
+# little goes over the wire. Asked for twice: once for the external identifiers ($identifiers
+# true), once for every other property ($identifiers false). Which query a predicate came with is
+# what puts it in its group (see shapes/groupProperties.ts), so the type of a property itself is
+# only looked into here, not returned.
+# - its truthy statements: each wdt: predicate, found by the property it is the direct claim of.
+#   Of the rest of the entity, the full statements (p:), the normalized values (wdtn:) and the
+#   labels in every language would each be one more property. "Unknown value" (a genid) has
+#   nothing to show,
+# - an rdf:type for each instance of (P31): what the renderer gives the entity a shape by,
+# - the English name (or else the "mul" one) of each property and of each value that has one, as
+#   its rdfs:label. The property itself (wd:P…) is only looked into, it is not returned.
+CONSTRUCT {
+  $entity ?direct ?value .
+  $entity rdf:type ?class .
+  ?direct rdfs:label ?propertyName .
+  ?value rdfs:label ?valueName .
+}
+WHERE {
+  $entity ?direct ?value .
+  ?property wikibase:directClaim ?direct ;
+    wikibase:propertyType ?type .
+  FILTER((?type = wikibase:ExternalId) = $identifiers)
+  FILTER(!STRSTARTS(STR(?value), "http://www.wikidata.org/.well-known/genid/"))
+  OPTIONAL { ?property rdfs:label ?propertyEn . FILTER(LANG(?propertyEn) = "en") }
+  OPTIONAL { ?property rdfs:label ?propertyMul . FILTER(LANG(?propertyMul) = "mul") }
+  BIND(COALESCE(?propertyEn, ?propertyMul) AS ?propertyName)
+  OPTIONAL { ?value rdfs:label ?valueEn . FILTER(LANG(?valueEn) = "en") }
+  OPTIONAL { ?value rdfs:label ?valueMul . FILTER(LANG(?valueMul) = "mul") }
+  BIND(COALESCE(?valueEn, ?valueMul) AS ?valueName)
+  BIND(IF(?direct = wdt:P31, ?value, ?unbound) AS ?class)
+}

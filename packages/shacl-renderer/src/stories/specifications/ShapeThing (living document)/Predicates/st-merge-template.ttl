@@ -1,0 +1,54 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+# st:mergeAlternatives on a property shape itself (not on a shui:LabelRole): view mode shows one
+# value composed from every branch of its sh:alternativePath, walked from the focus node, instead
+# of the values of those branches. st:mergeTemplate places each branch: {n} is branch n, {n:year}
+# its dates as years, and [ … ] a section left out when it has no values. A branch with several
+# values (the occupations) is joined as a list in the content language.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:path schema:name ;
+        sh:name "Name"@en ;
+        sh:order 0 ;
+    ] ;
+    sh:property [
+        sh:path [ sh:alternativePath (
+            ( schema:nationality ex:demonym )
+            schema:hasOccupation
+            schema:birthDate
+            schema:deathDate
+        ) ] ;
+        sh:name "Summary"@en ;
+        sh:order 1 ;
+        st:mergeAlternatives true ;
+        st:mergeTemplate "{0} {1}[ ({2:year}–{3:year})]" ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:name "Søren Kierkegaard" ;
+    schema:nationality ex:Denmark ;
+    schema:hasOccupation ex:theologian, ex:philosopher, ex:poet ;
+    schema:birthDate "1813-05-05"^^xsd:date ;
+    schema:deathDate "1855-11-11"^^xsd:date .
+
+ex:Denmark rdfs:label "Denmark"@en ; ex:demonym "Danish"@en .
+ex:theologian rdfs:label "theologian"@en .
+ex:philosopher rdfs:label "philosopher"@en .
+ex:poet rdfs:label "poet"@en .
+
+# Still alive: the death year is empty, the section stays for the birth year.
+<#living>
+    a schema:Person ;
+    schema:name "Jane Doe" ;
+    schema:hasOccupation ex:poet ;
+    schema:birthDate "1950"^^xsd:gYear .

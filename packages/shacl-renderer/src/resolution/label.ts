@@ -8,6 +8,7 @@ import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { rdf, rdfs, sh, shui, st, xsd } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import language, { configuredLanguages, effectiveLanguages } from "@/resolution/language.ts";
+import { composeAlternatives } from "@/resolution/composeAlternatives.ts";
 import { getLabelPreference } from "@/resolution/globalConfiguration.ts";
 import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
@@ -444,13 +445,18 @@ export function labelRolePropertyPaths(propertyShape: PropertyUIElement): Proper
   return propertyPathsByRole(propertyShape, shui("LabelRole"));
 }
 
-type LabelRolePath = { path: PropertyPath; mergeAlternatives: boolean };
+type LabelRolePath = {
+  path: PropertyPath;
+  mergeAlternatives: boolean;
+  // st:mergeTemplate, in every language it is given in.
+  mergeTemplates: Term[];
+};
 
 /**
  * Same match as labelRolePropertyPaths, but paired with each property shape's own
  * st:mergeAlternatives flag - a ShapeThing-original, non-spec escape hatch that opts one
  * sh:alternativePath-typed LabelRole path into "combine every branch" behavior (see
- * resolveLabelRolePathParts) instead of sh:alternativePath's real SHACL meaning (the first branch
+ * composeAlternatives), shaped by an optional st:mergeTemplate, instead of sh:alternativePath's real SHACL meaning (the first branch
  * with a value wins). Kept as a plain sibling triple on the property shape rather than folded into
  * the sh:path expression itself, so sh:path stays a spec-legal path expression shacl-engine can
  * still validate the property against.
@@ -468,10 +474,13 @@ function labelRolePathEntries(propertyShape: PropertyUIElement): LabelRolePath[]
       .flatMap(({ object: property }) => {
         const path = parsePropertyPath(property, shapesGraph);
         if (!path) return [];
-        const mergeAlternatives = shapesGraph
-          .getQuads(property, st("mergeAlternatives"))
-          .some((quad) => quad.object.value === "true");
-        return [{ path, mergeAlternatives }];
+        return [
+          {
+            path,
+            mergeAlternatives: hasMergeAlternatives(property, shapesGraph),
+            mergeTemplates: mergeTemplates(property, shapesGraph),
+          },
+        ];
       }),
   );
 }
@@ -580,7 +589,7 @@ function resolveValueNodeLabel(
   // branches normally follow real SHACL "OR" semantics: the first branch with a value wins. A
   // property shape opted into st:mergeAlternatives instead resolves every branch independently and
   // combines them into one composed label (e.g. a quantity/unit/name triple describing one
-  // ingredient becomes "1.0 Kilogram Beef fillet") - see resolveLabelRolePathParts. A branch that
+  // ingredient becomes "1.0 Kilogram Beef fillet") - see composeAlternatives. A branch that
   // resolves to a resource rather than a literal (e.g. schema:unitCode, an IRI) recurses through
   // this same function - e.g. resolving to the unit's own rdfs:label - instead of being silently
   // dropped by a literal-only filter.
@@ -589,16 +598,30 @@ function resolveValueNodeLabel(
   if (!visiting.has(key)) {
     visiting.add(key);
     try {
-      roleLabelParts = labelRolePathEntries(propertyShape).flatMap(({ path, mergeAlternatives }) =>
-        resolveLabelRolePathParts(
-          path,
-          term,
-          propertyShape,
-          effLanguages,
-          languages,
-          mergeAlternatives,
-          visiting,
-        ),
+      roleLabelParts = labelRolePathEntries(propertyShape).flatMap(
+        ({ path, mergeAlternatives, mergeTemplates }) => {
+          if (mergeAlternatives && path.type === "alternative") {
+            const composed = composeAlternatives({
+              branches: path.items,
+              term,
+              dataGraph,
+              languages: effLanguages,
+              locale: compositionLocale(languages, effLanguages),
+              template: bestTemplate(mergeTemplates, effLanguages),
+              labelOf: (resource) =>
+                resolveValueNodeLabel({ term: resource, propertyShape, languages }, visiting).value,
+            });
+            return composed ? [composed] : [];
+          }
+          return resolveLabelRolePathParts(
+            path,
+            term,
+            propertyShape,
+            effLanguages,
+            languages,
+            visiting,
+          );
+        },
       );
     } finally {
       visiting.delete(key);
@@ -638,16 +661,13 @@ function resolveValueNodeLabel(
 }
 
 /**
- * One shui:LabelRole path's own contribution to valueNodeLabel's combined text. An
- * sh:alternativePath decomposes into its branches: with `mergeAlternatives` (st:mergeAlternatives),
- * every branch is resolved independently and all of them combine - the empty branches this filters
- * out are what let e.g. an ingredient with no schema:unitCode still combine cleanly into "1.0 Beef
- * fillet" instead of leaving a stray gap. Without it, branches follow real SHACL alternation: the
- * first one with a value wins (early exit), matching the federated SPARQL role lookup's own
- * sample()-based pick-one behavior (see outputs/render/hooks/query.ts's buildRoleLookupQuery). Any
- * other path type walks straight to its value(s): a literal picks the best-language match among
- * them, a resource recurses through valueNodeLabel itself (e.g. schema:unitCode's own rdfs:label)
- * rather than being dropped.
+ * One shui:LabelRole path's own contribution to valueNodeLabel's combined text, for a path not
+ * opted into st:mergeAlternatives (that one is composed by composeAlternatives instead). An
+ * sh:alternativePath follows real SHACL alternation: the first branch with a value wins (early
+ * exit), matching the federated SPARQL role lookup's own sample()-based pick-one behavior (see
+ * outputs/render/hooks/query.ts's buildRoleLookupQuery). Any other path type walks straight to its
+ * value(s): a literal picks the best-language match among them, a resource recurses through
+ * valueNodeLabel itself (e.g. schema:unitCode's own rdfs:label) rather than being dropped.
  */
 function resolveLabelRolePathParts(
   path: PropertyPath,
@@ -655,24 +675,9 @@ function resolveLabelRolePathParts(
   propertyShape: PropertyUIElement,
   effLanguages: LanguageRange[],
   languages: BCP47[] | undefined,
-  mergeAlternatives: boolean,
   visiting: Set<string>,
 ): string[] {
   if (path.type === "alternative") {
-    if (mergeAlternatives) {
-      return path.items.flatMap((item) =>
-        resolveLabelRolePathParts(
-          item,
-          term,
-          propertyShape,
-          effLanguages,
-          languages,
-          mergeAlternatives,
-          visiting,
-        ),
-      );
-    }
-
     for (const item of path.items) {
       const parts = resolveLabelRolePathParts(
         item,
@@ -680,7 +685,6 @@ function resolveLabelRolePathParts(
         propertyShape,
         effLanguages,
         languages,
-        mergeAlternatives,
         visiting,
       );
       if (parts.length > 0) return parts;
@@ -699,6 +703,74 @@ function resolveLabelRolePathParts(
   return resource
     ? [resolveValueNodeLabel({ term: resource, propertyShape, languages }, visiting).value]
     : [];
+}
+
+/** Whether a property shape is opted into st:mergeAlternatives. */
+function hasMergeAlternatives(property: Term, shapesGraph: RdfStore): boolean {
+  return shapesGraph
+    .getQuads(property as Quad_Subject, st("mergeAlternatives"))
+    .some((quad) => quad.object.value === "true");
+}
+
+/** A property shape's st:mergeTemplate, in every language it is given in. */
+function mergeTemplates(property: Term, shapesGraph: RdfStore): Term[] {
+  return shapesGraph
+    .getQuads(property as Quad_Subject, st("mergeTemplate"))
+    .map((quad) => quad.object)
+    .filter((object) => object.termType === "Literal");
+}
+
+function bestTemplate(templates: Term[], languages: LanguageRange[]): string | undefined {
+  return templates.length > 0 ? language(templates, languages).value : undefined;
+}
+
+/**
+ * The locale a composed text joins a branch's several values in: the caller's own language, else
+ * the first concrete language among the effective ones - see composeAlternatives.
+ */
+function compositionLocale(
+  languages: BCP47[] | undefined,
+  effLanguages: LanguageRange[],
+): string | undefined {
+  return [...(languages ?? []), ...effLanguages].find((range) => range !== "" && range !== "*");
+}
+
+/**
+ * st:mergeAlternatives on the property itself, rather than on a shui:LabelRole of its values: the
+ * one text composed from every branch of the property's sh:alternativePath, walked from its focus
+ * node (see composeAlternatives). Undefined when the property isn't opted in, its sh:path isn't an
+ * sh:alternativePath, or nothing composes. View mode shows it in place of the property's values.
+ */
+export function composedValue({
+  propertyShape,
+  languages,
+  locale,
+}: {
+  propertyShape: PropertyUIElement;
+  languages?: BCP47[];
+  // The locale to join a branch's values in, when not the first of `languages`.
+  locale?: string;
+}): Literal | undefined {
+  const path = propertyShape.propertyPath();
+  if (path?.type !== "alternative") return undefined;
+  const { shapesGraph, dataGraph, focusNode } = propertyShape;
+  const shapes = propertyShape.propertyShapes;
+  if (!shapes.some((shape) => hasMergeAlternatives(shape, shapesGraph))) return undefined;
+
+  const effLanguages = effectiveLanguages(propertyShape, languages ?? []);
+  const composed = composeAlternatives({
+    branches: path.items,
+    term: focusNode,
+    dataGraph,
+    languages: effLanguages,
+    locale: locale ?? compositionLocale(languages, effLanguages),
+    template: bestTemplate(
+      shapes.flatMap((shape) => mergeTemplates(shape, shapesGraph)),
+      effLanguages,
+    ),
+    labelOf: (resource) => valueNodeLabel({ term: resource, propertyShape, languages }).value,
+  });
+  return composed ? factory.literal(composed) : undefined;
 }
 
 type ValueNodeClassificationOptions = {

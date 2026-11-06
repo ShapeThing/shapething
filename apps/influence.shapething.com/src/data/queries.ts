@@ -1,18 +1,17 @@
 import type { NamedNode } from "@rdfjs/types";
 import { queryOptions, useQuery } from "@tanstack/react-query";
+import allPropertiesQuery from "../queries/allProperties.rq?raw";
 import entityQuery from "../queries/entity.rq";
 import influencedQuery from "../queries/influenced.rq";
 import influencersQuery from "../queries/influencers.rq";
 import itemListsQuery from "../queries/itemLists.rq";
 import labelsQuery from "../queries/labels.rq";
 import occupationsQuery from "../queries/occupations.rq";
-import resourceLabelsQuery from "../queries/resourceLabels.rq";
 import searchQuery from "../queries/search.rq";
-import { factory } from "../rdf/namespaces.ts";
-import { select } from "../sparql/select.ts";
+import { factory, xsd } from "../rdf/namespaces.ts";
+import { construct, select } from "../sparql/select.ts";
 import { entityId, entityIri } from "./entities.ts";
 import { entityFromRows, itemListsFromRows, summariesFromRows } from "./person.ts";
-import { fetchResource } from "./resource.ts";
 import { getWikipediaAbstract } from "./wikipedia.ts";
 
 /** The shortest search text that is sent to Wikidata. */
@@ -68,20 +67,25 @@ export const useAbstract = (article: NamedNode | undefined) =>
   });
 
 /**
- * Every property of an entity with its values, for the second renderer of the modal: the resource
- * itself from the resource fetcher, the names of its properties and items from one more query.
+ * Every property of an entity with its values, and the names of its properties and items, for the
+ * second renderer of the modal (queries/allProperties.rq): the external identifiers and the other
+ * statements each from a query of their own, so which group a property belongs in comes with it
+ * (see shapes/groupProperties.ts) without the type of each property going over the wire.
  */
 export const useAllProperties = (id: string) =>
   useQuery({
     queryKey: ["allProperties", id],
     queryFn: async () => {
-      const iri = entityIri(id);
-      const [resource, labelRows] = await Promise.all([
-        fetchResource(iri),
-        select(resourceLabelsQuery, { entity: iri }),
-      ]);
-      // The graphs are made in the modal, which knows what it shows elsewhere (see EntityModal).
-      return { iri, resource, labelRows };
+      const entity = entityIri(id);
+      const [statements, identifiers] = await Promise.all(
+        [false, true].map((isIdentifier) =>
+          construct(allPropertiesQuery, {
+            entity,
+            identifiers: factory.literal(String(isIdentifier), xsd("boolean")),
+          }),
+        ),
+      );
+      return { statements, identifiers };
     },
   });
 

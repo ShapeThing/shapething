@@ -5,6 +5,7 @@
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
 @prefix st: <http://shapething.com/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
@@ -69,11 +70,6 @@ inf:EntityLinkViewer
     a shui:Widget ;
     rdfs:label "Link to the entity"@en ;
     rdfs:comment "A name as a link to the resource it belongs to, which opens it in the modal."@en .
-
-inf:ExternalIdViewer
-    a shui:Widget ;
-    rdfs:label "External identifier"@en ;
-    rdfs:comment "An external identifier as a link, in a new tab, to the page it identifies: the inf:formatterUrl of the property shape with the identifier for its $1."@en .
 
 ### Groups. They have no label, they bring together what is laid out together.
 
@@ -252,33 +248,8 @@ inf:TeaserShape
 inf:PersonModalShape
     a sh:NodeShape ;
     rdfs:label "Person"@en ;
-    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia ;
-    sh:property [
-        sh:path inf:fullName ;
-        sh:name "" ;
-        sh:description "" ;
-        sh:order 0.5 ;
-        sh:maxCount 1 ;
-        sh:group inf:side ;
-        shui:viewer shui:LiteralViewer ;
-        st:cssClass "full-name" ;
-    ] ;
-    sh:property [
-        sh:path wdt:P569 ;
-        sh:name "Born"@en ;
-        sh:order 1 ;
-        sh:maxCount 1 ;
-        sh:group inf:facts ;
-        shui:viewer inf:YearViewer ;
-    ] ;
-    sh:property [
-        sh:path wdt:P570 ;
-        sh:name "Died"@en ;
-        sh:order 2 ;
-        sh:maxCount 1 ;
-        sh:group inf:facts ;
-        shui:viewer inf:YearViewer ;
-    ] ;
+    sh:property inf:ModalImage, inf:ModalSummary, inf:ModalAbstract, inf:ModalWikipedia ;
+
     sh:property [
         sh:path inf:influenceCount ;
         sh:name "Influence"@en ;
@@ -289,41 +260,7 @@ inf:PersonModalShape
         shui:viewer inf:RelativeInfluenceViewer ;
         st:cssClass "influence" ;
     ] ;
-    # The countries of citizenship, each with its flag and name (inf:CountryShape).
-    sh:property [
-        sh:path wdt:P27 ;
-        sh:name "Citizenship"@en ;
-        sh:order 2.5 ;
-        sh:group inf:facts ;
-        sh:node inf:CountryShape ;
-        shui:viewer shui:DetailsViewer ;
-        st:cssClass "citizenship" ;
-    ] ;
-    # The occupations: their names as links, which open them in the modal.
-    sh:property [
-        sh:path wdt:P106 ;
-        sh:name "Occupation"@en ;
-        # Below the map of the place of birth.
-        sh:order 5 ;
-        sh:group inf:facts ;
-        sh:node inf:ItemShape ;
-        shui:viewer shui:LabelViewer ;
-        st:cssClass "occupations" ;
-    ] ;
-    # The place itself, not its coordinates: st:MapViewer walks one hop into it (inf:PlaceShape)
-    # for the coordinates and for the name it shows when the marker is hovered.
-    sh:property [
-        sh:path wdt:P19 ;
-        sh:name "Place of birth"@en ;
-        sh:order 4 ;
-        sh:maxCount 1 ;
-        sh:group inf:facts ;
-        sh:node inf:PlaceShape ;
-        shui:viewer st:MapViewer ;
-        st:mapMaxZoom 5 ;
-        st:cssClass "birth-place" ;
-    ] .
-
+.
 ### A country of citizenship: its flag (P41), then its name, as a link to the country.
 
 inf:CountryShape
@@ -403,6 +340,30 @@ inf:ModalDescription
     shui:viewer shui:LiteralViewer ;
     shui:propertyRole shui:DescriptionRole .
 
+# A person's short description, composed from the data rather than taken from Wikidata's
+# hand-written schema:description, so every person reads the same way: "Danish theologian,
+# philosopher, poet and social critic (1813–1855)". st:mergeAlternatives shows one value composed
+# from every branch: the demonyms of the countries of citizenship, the occupations (by their
+# names), and the years of birth and death. The years are left out, brackets and all, when
+# neither is known; the demonym is only there when src/data/person.ts could tell which one is the
+# adjective.
+inf:ModalSummary
+    a sh:PropertyShape ;
+    sh:path [ sh:alternativePath (
+        ( wdt:P27 wdt:P1549 ) # {0} demonym, "Danish"
+        wdt:P106 # {1} occupations
+        wdt:P569 # {2} date of birth
+        wdt:P570 # {3} date of death
+    ) ] ;
+    st:mergeAlternatives true ;
+    st:mergeTemplate "{0} {1}[ ({2:year}–{3:year})]" ;
+    sh:name "" ;
+    sh:order 0 ;
+    sh:maxCount 1 ;
+    sh:group inf:summary ;
+    shui:viewer shui:LiteralViewer ;
+    shui:propertyRole shui:DescriptionRole .
+
 
 inf:ModalAbstract
     a sh:PropertyShape ;
@@ -424,19 +385,39 @@ inf:ModalWikipedia
     shui:viewer shui:HyperlinkViewer ;
     st:cssClass "wikipedia" .
 
-### Every property of the entity in the modal, below the rest: a second renderer. The property
-### shapes are made for each entity from what Wikidata states about it (src/data/resource.ts),
-### the external identifiers in a group of their own. Unlike the groups above, these have a label.
+### Every property of a person in the modal, below the rest: a second renderer. Its data is what
+### Wikidata states about the person, with an rdf:type for each instance of (P31) (see
+### src/queries/allProperties.rq). This shape targets the people (wd:Q5, human), and the renderer's
+### enableMissingShapesGeneration gives it a property for every predicate of theirs that it does
+### not ignore. The app puts each of those in a group (src/shapes/groupProperties.ts): the external
+### identifiers in one of their own. Unlike the groups above, these have a label.
+
+inf:statements a sh:PropertyGroup ; rdfs:label "Information"@en ; sh:order 20 .
+# The external identifiers are many (hundreds for a well-known person) and rarely read: a group
+# that starts closed.
+inf:identifiers
+    a sh:PropertyGroup, st:CollapsiblePropertyGroup ;
+    rdfs:label "Identifiers"@en ;
+    sh:order 21 ;
+    st:collapsed true .
 
 inf:AllPropertiesShape
     a sh:NodeShape ;
     rdfs:label "All properties"@en ;
-    # Left out of the list (src/data/resource.ts's shownPredicates): the full name (P1559) is
-    # already the name in native language (inf:fullName), the page banner (P948) is the banner of
-    # the modal (src/components/Modal), and the coordinates beside the
-    # coordinate location (P625) - the extreme points, the geographic center, the place depicted,
-    # the sandbox - would each be one more map.
+    sh:targetClass wd:Q5 ;
+    # What inf:PersonModalShape already shows, so nothing is shown twice. Also the type itself,
+    # the full name (P1559, already inf:fullName), the page banner (P948, the banner of the
+    # modal, see src/components/Modal), and the coordinates beside the coordinate location (P625)
+    # - the extreme points, the geographic center, the place depicted, the sandbox - which would
+    # each be one more map.
     sh:ignoredProperties (
+        rdf:type
+        wdt:P18 # image
+        wdt:P569 # date of birth
+        wdt:P570 # date of death
+        wdt:P27 # country of citizenship
+        wdt:P106 # occupation
+        wdt:P19 # place of birth
         wdt:P1559 # name in native language
         wdt:P948 # page banner
         wdt:P1332 # coordinates of northernmost point
@@ -447,12 +428,3 @@ inf:AllPropertiesShape
         wdt:P9149 # coordinates of depicted place
         wdt:P626 # Sandbox-Geographic coordinates
     ) .
-
-inf:statements a sh:PropertyGroup ; rdfs:label "Information"@en ; sh:order 20 .
-# The external identifiers are many (hundreds for a well-known person) and rarely read: a group
-# that starts closed.
-inf:identifiers
-    a sh:PropertyGroup, st:CollapsiblePropertyGroup ;
-    rdfs:label "Identifiers"@en ;
-    sh:order 21 ;
-    st:collapsed true .

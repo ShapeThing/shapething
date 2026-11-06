@@ -275,8 +275,7 @@
 // On a wide screen the side column is beside the text and the properties. It stays in view while
 // they scroll: sticky within its grid area, which spans both rows, as tall as they are. The second
 // row takes what the side column needs beyond the text, so the properties follow the text right
-// away. --side-sticky-top (EntityModal.tsx) lets a side column taller than the modal scroll until
-// its end is in view. A concept without an image or a description has no side column.
+// away. A concept without an image or a description has no side column.
 @media screen and (min-width: 720px) {
   .entity-modal:has(.entity-modal__side):not(
       :has(> .entity-modal__display > .st-settle-gate[aria-busy])
@@ -284,7 +283,7 @@
     display: grid;
     grid-template-columns: 200px minmax(0, 1fr);
     grid-template-rows: auto 1fr;
-    column-gap: 30px;
+    column-gap: 48px;
     align-items: start;
   }
 
@@ -292,7 +291,7 @@
     grid-column: 1;
     grid-row: 1 / span 2;
     position: sticky;
-    top: var(--side-sticky-top, 0px);
+    top: 0;
     margin: 0;
   }
 
@@ -335,7 +334,7 @@
   }
 
   .st-property-group__title {
-    font-size: 17px;
+    font-size: 24px;
     font-weight: bold;
     color: black;
   }
@@ -358,14 +357,22 @@
     margin-bottom: 0;
   }
 
-  // On a wide screen every property is a row of two columns, the renderer's "columns" layout (see
-  // EntityModal): the label in a column of a fixed width (a long label wraps inside it), the values
-  // in the column beside it, separated by commas. Below 520px the renderer is given the "block"
-  // layout instead, the label above its values.
+  // Every property is a row of two columns, the renderer's "columns" layout (see EntityModal): the
+  // label in a column of a fixed width (a long label wraps inside it), the values in the column
+  // beside it, separated by commas. A narrow screen has no room for that: one column, the label
+  // above its values.
   --st-label-column-width: 13em;
 
   .st-form-element[data-label-layout="columns"] {
     column-gap: 1em;
+
+    @media (max-width: 519.98px) {
+      grid-template-columns: minmax(0, 1fr);
+
+      > * {
+        grid-column: 1;
+      }
+    }
   }
 
   .st-form-element[data-label-layout] > .st-form-element__header {
@@ -415,10 +422,10 @@
     margin-right: 0.35em;
   }
 
-  // Pictures (image, signature, grave, …) and maps (a coordinate location, picked by the widget
-  // scoring, see data/resource.ts) in the column of the values, at the top of the row, a little
-  // apart from the rows around them. Several pictures stand side by side, without commas.
-  :is(.pictures, .map)[data-label-layout] {
+  // Pictures (image, signature, grave, …) and maps (a coordinate location), as the widget scoring
+  // picks their viewers, in the column of the values, at the top of the row, a little apart from
+  // the rows around them. Several pictures stand side by side, without commas.
+  [data-label-layout]:has([data-widget="ImageViewer"], [data-widget="MapViewer"]) {
     align-items: start;
     margin-block: 6px;
 
@@ -433,7 +440,7 @@
 
   // A map takes the width of the column of the values. Unlike the small map of the place of birth
   // in the side column, it keeps its buttons and attribution and reacts to the mouse.
-  .map[data-label-layout] {
+  [data-label-layout]:has([data-widget="MapViewer"]) {
     .st-property-items,
     .st-property-object-wrapper,
     .st-property-object {

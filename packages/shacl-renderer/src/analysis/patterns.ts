@@ -25,8 +25,9 @@ export const PATTERN_LABELS: Record<PatternId, string> = {
  * Every property shape whose sh:node has a shui:LabelRole property opted into st:mergeAlternatives
  * - the idiom for a label composed from several sh:alternativePath branches (e.g. quantity, unit,
  * name for one recipe ingredient) instead of plain SHACL alternation (first branch with a value
- * wins). See resolution/label.ts's resolveLabelRolePathParts, which is what actually renders these
- * branches into one combined label string.
+ * wins) - and every other property shape opted into it itself, whose view mode shows one composed
+ * value. See resolution/composeAlternatives.ts, which is what actually composes these branches into
+ * one text.
  */
 function findComposedLabelViaAlternativePathSubjects(shapesGraph: RdfStore): Quad_Subject[] {
   const subjects: Quad_Subject[] = [];
@@ -47,7 +48,16 @@ function findComposedLabelViaAlternativePathSubjects(shapesGraph: RdfStore): Qua
     if (hasMergedLabelRole) subjects.push(subject);
   }
 
-  return subjects;
+  for (const { subject: property, object } of shapesGraph.getQuads(null, st("mergeAlternatives"))) {
+    if (object.value !== "true") continue;
+    if (shapesGraph.getQuads(property, shui("propertyRole"), shui("LabelRole")).length > 0)
+      continue;
+    subjects.push(property);
+  }
+
+  return subjects.filter(
+    (subject, index) => subjects.findIndex((other) => other.equals(subject)) === index,
+  );
 }
 
 /**
@@ -58,8 +68,8 @@ function findComposedLabelViaAlternativePathSubjects(shapesGraph: RdfStore): Qua
  *   author-supplied enumeration (see EnumSelectEditor/AutoCompleteEditor's federated-search
  *   stories, and shapesGraphWithoutDynamicIn.ts/selectQueryFor.ts, which this shares its
  *   definition of "dynamic" with via findDynamicInSubjects()).
- * - "Composed label via alternative path" - an sh:node's shui:LabelRole property opted into
- *   st:mergeAlternatives, combining its sh:alternativePath's branches into one composed label (see
+ * - "Composed label via alternative path" - a property, or an sh:node's shui:LabelRole property,
+ *   opted into st:mergeAlternatives, combining its sh:alternativePath's branches into one composed label (see
  *   findComposedLabelViaAlternativePathSubjects above).
  */
 export function detectPatterns(shapesGraph: RdfStore): DetectedPattern[] {
@@ -83,7 +93,7 @@ export function detectPatterns(shapesGraph: RdfStore): DetectedPattern[] {
       pattern: "composed-label-via-alternative-path",
       label: PATTERN_LABELS["composed-label-via-alternative-path"],
       description:
-        "sh:node's shui:LabelRole property is opted into st:mergeAlternatives, combining several sh:alternativePath fields (e.g. quantity, unit, name) into one composed label.",
+        "A property (or its sh:node's shui:LabelRole property) is opted into st:mergeAlternatives, composing several sh:alternativePath fields (e.g. quantity, unit, name) into one text, optionally shaped by st:mergeTemplate.",
       subjects: composedLabelSubjects.map((subject) => subject.value),
       count: composedLabelSubjects.length,
     });

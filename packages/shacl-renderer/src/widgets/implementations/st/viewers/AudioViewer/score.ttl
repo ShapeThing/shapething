@@ -1,0 +1,29 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+st:AudioViewer rdfs:label "Audio"@en, "Audio"@nl .
+
+# Same score as shui:ImageViewer's file extension rule: a value ending in an audio file extension
+# beats the generic IRI/literal viewers.
+st:audioViewerScore20
+    a shui:WidgetScore ;
+    shui:viewer st:AudioViewer ;
+    shui:score 20 ;
+    shui:dataGraphShape st:hasAudioFileExtension ;
+.
+
+st:hasAudioFileExtension
+    a sh:NodeShape ;
+    sh:or (
+        [
+            sh:nodeKind sh:IRI
+        ]
+        [
+            sh:nodeKind sh:Literal
+        ]
+    ) ;
+    sh:pattern "\\.(mp3|wav|ogg|oga|opus|m4a|aac|flac|weba)$" ;
+    sh:flags "i" ;
+.

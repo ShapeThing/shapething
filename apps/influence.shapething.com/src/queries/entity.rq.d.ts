@@ -17,6 +17,8 @@ interface QueryResult {
   citizenship?: NamedNode
   citizenshipName?: LiteralWithLanguage<'en'>
   flag?: NamedNode
+  demonym?: LiteralWithLanguage<'en'>
+  demonymIsAdjective?: LiteralWithDatatype<'xsd:boolean'>
   publicationDate?: Literal
   article?: NamedNode
   isHuman: LiteralWithDatatype<'xsd:boolean'>

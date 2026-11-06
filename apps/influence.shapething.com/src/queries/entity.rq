@@ -1,11 +1,15 @@
 PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX p: <http://www.wikidata.org/prop/>
+PREFIX ps: <http://www.wikidata.org/prop/statement/>
+PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
+PREFIX wikibase: <http://wikiba.se/ontology#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX schema: <http://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 # Everything shown about one entity: a person, but also a work, an interest or an idea.
-SELECT ?name ?mulName ?fullName ?description ?image ?banner ?birthDate ?deathDate ?birthPlace ?birthPlaceName ?birthPlaceLocation ?citizenship ?citizenshipName ?flag ?publicationDate ?article ?isHuman ?hasAuthor (xsd:integer(?count) AS ?influence) WHERE {
+SELECT ?name ?mulName ?fullName ?description ?image ?banner ?birthDate ?deathDate ?birthPlace ?birthPlaceName ?birthPlaceLocation ?citizenship ?citizenshipName ?flag ?demonym ?demonymIsAdjective ?publicationDate ?article ?isHuman ?hasAuthor (xsd:integer(?count) AS ?influence) WHERE {
   { SELECT (COUNT(DISTINCT ?influenced) AS ?count) WHERE { ?influenced wdt:P737 $entity } }
   BIND(EXISTS { $entity wdt:P31 wd:Q5 } AS ?isHuman)
   BIND(EXISTS { $entity wdt:P50 [] } AS ?hasAuthor)
@@ -32,6 +36,16 @@ SELECT ?name ?mulName ?fullName ?description ?image ?banner ?birthDate ?deathDat
     ?citizenship wdt:P41 ?flag .
     FILTER(isIRI(?citizenship) && isIRI(?flag))
     OPTIONAL { ?citizenship rdfs:label ?citizenshipName . FILTER(LANG(?citizenshipName) = "en") }
+    # The English demonyms (P1549) of the country, for the summary of a person ("Danish"). A
+    # country often has a noun too ("Dane"): the adjective is qualified "applies to part"
+    # (P518) adjective (Q34698).
+    OPTIONAL {
+      ?citizenship p:P1549 ?demonymStatement .
+      ?demonymStatement ps:P1549 ?demonym .
+      FILTER(LANG(?demonym) = "en")
+      FILTER NOT EXISTS { ?demonymStatement wikibase:rank wikibase:DeprecatedRank }
+      BIND(EXISTS { ?demonymStatement pq:P518 wd:Q34698 } AS ?demonymIsAdjective)
+    }
   }
   OPTIONAL { $entity wdt:P577 ?publicationDate . FILTER(isLiteral(?publicationDate)) }
   OPTIONAL {

@@ -124,3 +124,17 @@ test("detectPatterns() counts multiple sh:node shapes using the st:mergeAlternat
   expect(patterns).toHaveLength(1);
   expect(patterns[0].count).toBe(2);
 });
+
+test("detectPatterns() finds 'Composed label via alternative path' for a property opted into st:mergeAlternatives itself", async () => {
+  const shapesGraph = await parseShapes(`
+    ex:summary sh:path [ sh:alternativePath ( ex:occupation ex:born ) ] ;
+      st:mergeAlternatives true ;
+      st:mergeTemplate "{0}[ ({1:year})]" .
+  `);
+
+  const patterns = detectPatterns(shapesGraph);
+
+  expect(patterns).toHaveLength(1);
+  expect(patterns[0]).toMatchObject({ pattern: "composed-label-via-alternative-path", count: 1 });
+  expect(patterns[0].subjects).toEqual([ex("summary").value]);
+});
