@@ -1,12 +1,7 @@
 @mixin scroll-fade {
   // Fade the content out under the top and bottom padding, so it never collides
   // hard with the column edges while scrolling. Works over the page pattern.
-  mask-image: linear-gradient(
-    transparent,
-    black 20px,
-    black calc(100% - 20px),
-    transparent
-  );
+  mask-image: linear-gradient(transparent, black 20px, black calc(100% - 20px), transparent);
 }
 
 .column {
