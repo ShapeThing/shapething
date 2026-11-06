@@ -246,6 +246,19 @@
   }
 }
 
+// The person open in the modal: the hover ring of the portrait, in purple.
+.person[data-focused] .person__portrait-link {
+  box-shadow:
+    0 0 0 3px var(--color-background),
+    0 0 0 5px var(--color-accent);
+
+  &::after {
+    background: var(--color-accent);
+    opacity: 1;
+    transform: none;
+  }
+}
+
 .person__link:focus-visible,
 .person__portrait-link:focus-visible {
   outline: 2px solid var(--color-accent);

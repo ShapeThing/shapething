@@ -22,4 +22,4 @@ SELECT ?name ?mulName ?description ?image ?birthDate ?deathDate ?publicationDate
     FILTER(isIRI(?article))
   }
 }
-LIMIT 100
+LIMIT 1000

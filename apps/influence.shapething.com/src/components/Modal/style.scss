@@ -46,8 +46,19 @@
   margin-top: 2px;
   padding: 0;
   border: 0;
+  border-radius: 50%;
   background: none;
   cursor: pointer;
+  transition:
+    background-color 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+
+  // A circle behind the cross while hovered: the spread makes it larger than the button, so the
+  // cross fits inside it without moving the layout.
+  &:hover {
+    background-color: rgb(99 59 163 / 0.12);
+    box-shadow: 0 0 0 15px rgb(99 59 163 / 0.12);
+  }
 
   &::before,
   &::after {

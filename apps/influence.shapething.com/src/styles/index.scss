@@ -41,7 +41,8 @@ body {
 body {
   font-family: var(--font-family);
   color: var(--color-text);
-  background: var(--color-background);
+  background: url("/graph-background.svg") repeat 0 0 / 640px 640px
+    var(--color-background);
   overflow: hidden;
 }
 

@@ -14,6 +14,8 @@ type Props = {
   person: PersonSummary;
   /** Opened: the next column shows who this person influenced. */
   isActive: boolean;
+  /** Open in the modal: highlighted in the column behind it. */
+  isFocused?: boolean;
   /** Where clicking the person goes: opening it, closing it, or starting over with it. */
   href: string;
   linkLabel: string;
@@ -35,6 +37,7 @@ type Props = {
 export default function PersonRow({
   person,
   isActive,
+  isFocused = false,
   href,
   linkLabel,
   isClosing = false,
@@ -66,6 +69,7 @@ export default function PersonRow({
       className="person"
       data-id={person.id}
       data-active={isActive || undefined}
+      data-focused={isFocused || undefined}
       data-closing={isClosing || undefined}
     >
       {isInView && (

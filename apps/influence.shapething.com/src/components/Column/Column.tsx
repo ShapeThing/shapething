@@ -14,6 +14,8 @@ type Props = {
   activeId: string | undefined;
   /** The column of the person the chain starts with. */
   isSelected?: boolean;
+  /** The entity open in the modal. */
+  focusedId?: string;
   hrefFor: (person: PersonSummary) => string;
   linkLabelFor: (person: PersonSummary) => string;
   /** The opened person of this column is being closed: its cross spins. */
@@ -37,6 +39,7 @@ export default function Column({
   isError,
   activeId,
   isSelected = false,
+  focusedId,
   hrefFor,
   linkLabelFor,
   isClosing = false,
@@ -152,6 +155,7 @@ export default function Column({
             key={person.id}
             person={person}
             isActive={person.id === activeId}
+            isFocused={person.id === focusedId}
             isClosing={isClosing && person.id === activeId}
             onClose={person.id === activeId ? onClose : undefined}
             href={hrefFor(person)}

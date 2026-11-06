@@ -1,22 +1,16 @@
-@mixin scroll-shadows($background) {
-  // Shadows at the top and bottom that only show when there is more to scroll to.
-  background:
-    linear-gradient($background 30%, rgb(255 255 255 / 0)),
-    linear-gradient(rgb(255 255 255 / 0), $background 70%) 0 100%,
-    radial-gradient(farthest-side at 50% 0, rgb(0 0 0 / 0.2), rgb(0 0 0 / 0)),
-    radial-gradient(farthest-side at 50% 100%, rgb(0 0 0 / 0.2), rgb(0 0 0 / 0)) 0 100%;
-  background-repeat: no-repeat;
-  background-color: $background;
-  background-size:
-    100% 20px,
-    100% 20px,
-    100% 10px,
-    100% 10px;
-  background-attachment: local, local, scroll, scroll;
+@mixin scroll-fade {
+  // Fade the content out under the top and bottom padding, so it never collides
+  // hard with the column edges while scrolling. Works over the page pattern.
+  mask-image: linear-gradient(
+    transparent,
+    black 20px,
+    black calc(100% - 20px),
+    transparent
+  );
 }
 
 .column {
-  --column-background: var(--color-background);
+  --column-background: transparent;
 
   position: relative;
   display: flex;
@@ -33,12 +27,12 @@
   }
 
   &:first-child {
-    border-left: 30px solid var(--color-background);
+    border-left: 30px solid transparent;
     box-sizing: content-box;
   }
 
   &:last-child {
-    border-right: 30px solid var(--color-background);
+    border-right: 30px solid transparent;
     box-sizing: content-box;
   }
 }
@@ -141,15 +135,11 @@
   // The lists of an opened person fill the column to the bottom (cqh units).
   container-type: size;
   scrollbar-width: none;
-  @include scroll-shadows(white);
+  @include scroll-fade;
 
   &::-webkit-scrollbar {
     display: none;
   }
-}
-
-.column--selected .column__inner {
-  @include scroll-shadows(rgb(243 243 255));
 }
 
 .column__spinner {
