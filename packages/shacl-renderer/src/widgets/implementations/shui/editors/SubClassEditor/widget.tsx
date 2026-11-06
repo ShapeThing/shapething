@@ -7,6 +7,7 @@ import { rdf, sh } from "@/helpers/namespaces.ts";
 import { valueNodeLabel } from "@/resolution/label.ts";
 import ClassHierarchyTree from "@/outputs/render/components/ClassHierarchyTree/index.tsx";
 import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
+import { useSettled } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import {
@@ -67,12 +68,18 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
     setActiveIndex(-1);
   }
 
-  // An empty required field opens ready to type, same as ever - mount-only, so removing the last
-  // chip later (backspace or a chip's own x) doesn't reopen a panel the user just closed.
+  // An empty required field opens ready to type, same as ever - once only, so removing the last
+  // chip later (backspace or a chip's own x) doesn't reopen a panel the user just closed. "Once" is
+  // the moment the SettleGate opens rather than mount: until then the form is inert and focus()
+  // would be a no-op (see useSettled).
+  const settled = useSettled();
+  const didInitialFocus = useRef(false);
   useEffect(() => {
+    if (!settled || didInitialFocus.current) return;
+    didInitialFocus.current = true;
     if (chips.length === 0) searchRef.current?.focus();
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only, see above
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once only, see above
+  }, [settled]);
 
   // Jumps the (possibly long) tree to whatever's currently highlighted - including the property's
   // existing value the moment the tree opens (see openPanel), so a value nested deep in the

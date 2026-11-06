@@ -44,7 +44,10 @@ export default defineConfig({
     // that output), so the formatter must leave them alone.
     ignorePatterns: [...ignorePatterns, "pnpm-lock.yaml", "**/*.rq.d.ts"],
   },
+  // Runs sequentially (see .vite-hooks/pre-commit): first format every staged file (JSON, Markdown,
+  // CSS, YAML, ... included; ignored or unsupported files are skipped), then lint-fix JS/TS.
   staged: {
+    "*": "vp fmt --no-error-on-unmatched-pattern",
     "*.{js,mjs,cjs,ts,mts,cts,jsx,tsx}": "vp check --fix",
   },
 });

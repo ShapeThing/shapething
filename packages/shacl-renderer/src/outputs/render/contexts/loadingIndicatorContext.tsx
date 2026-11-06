@@ -18,6 +18,16 @@ export const settleGateContext = createContext<{ register: () => () => void } | 
   undefined,
 );
 
+/**
+ * Whether the nearest SettleGate has opened (always true outside one). While it hasn't, the form is
+ * `inert` and invisible, so anything focusing an element on mount (an empty SubClassEditor opening
+ * its tree, a widget's autoFocus) has to wait for this to turn true - focus() on an inert element
+ * silently does nothing.
+ */
+export function useSettled() {
+  return useContext(settleGateContext) === undefined;
+}
+
 /** Registers the calling fallback as pending with the nearest SettleGate while it is mounted. */
 export function useRegisterPending() {
   const gate = useContext(settleGateContext);

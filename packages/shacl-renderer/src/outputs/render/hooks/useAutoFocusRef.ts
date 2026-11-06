@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import { useSettled } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
 
 /**
  * Focuses the returned ref's element once, on mount, when `autoFocus` is true at that point -
@@ -10,8 +11,11 @@ import { useEffect, useRef } from "react";
  */
 export function useAutoFocusRef<T extends HTMLElement>(autoFocus?: boolean) {
   const ref = useRef<T>(null);
+  // Mounted behind a still-closed SettleGate, the element is inert and focus() is a no-op - so
+  // "on mount" really means "once the gate has opened" (see useSettled).
+  const settled = useSettled();
   useEffect(() => {
-    if (autoFocus) ref.current?.focus();
-  }, [autoFocus]);
+    if (autoFocus && settled) ref.current?.focus();
+  }, [autoFocus, settled]);
   return ref;
 }
