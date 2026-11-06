@@ -31,6 +31,7 @@ export default function WidgetErrorBoundary({
         <div
           className="st-widget-error"
           role="alert"
+          // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex -- focusable so WidgetSlot's focus-within fly-out (the way out of a broken widget) stays reachable
           tabIndex={0}
           title={getErrorMessage(error) ?? undefined}
         >

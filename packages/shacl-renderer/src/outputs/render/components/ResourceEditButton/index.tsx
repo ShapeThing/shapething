@@ -138,6 +138,7 @@ export default function ResourceEditButton({ term, label, resourceEditor, classN
           <button> is invalid HTML - a role="button" span gets the same semantics/keyboard support
           without that. */}
         <span
+          // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- a nested <button> would be invalid HTML here (see above)
           role="button"
           tabIndex={0}
           className={`st-autocomplete-option__edit${className ? ` ${className}` : ""}`}
@@ -167,6 +168,7 @@ export default function ResourceEditButton({ term, label, resourceEditor, classN
         // node, not which React tree it bubbles events through, so a click inside it would still
         // reach that outer trigger's own onClick unless stopped here too.
         createPortal(
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- only stops portaled events from bubbling to the outer trigger through the React tree
           <span
             onMouseDown={(event) => event.stopPropagation()}
             onClick={(event) => event.stopPropagation()}

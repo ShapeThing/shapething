@@ -109,11 +109,15 @@ export default function PropertyUIComponentValues({
       ? existingObjects
       : filterByContentLanguage(existingObjects, activeLanguage);
   // See reconcileOrder() above - keeps this property's values from reshuffling on every edit.
+  // Deliberately a ref, not state: a non-reactive cache from the previous render that
+  // replaceInOrder() patches in place, without needing a re-render of its own.
   const orderRef = useRef<string[]>([]);
   const { order, objects: reconciledObjects } = reconcileOrder(
+    // eslint-disable-next-line react/refs -- see above
     orderRef.current,
     unorderedLanguageFilteredObjects,
   );
+  // eslint-disable-next-line react/refs -- see above
   orderRef.current = order;
   // st:orderBy (see structure/orderByValues.ts) overrides that order with each value's own
   // position - read reactively, so editing a value's position (e.g. a nested sh:order field)
@@ -153,9 +157,12 @@ export default function PropertyUIComponentValues({
   // value does, so there's always something to type a translation into. Deliberately keyed on
   // activeLanguage alone (not languageFilteredObjects) - this should only fire on a language
   // switch, not on every data write that happens to change the filtered set for other reasons.
-  useEffect(() => {
+  // A render-phase state adjustment rather than an effect, so it applies without an extra commit.
+  const [previousActiveLanguage, setPreviousActiveLanguage] = useState(activeLanguage);
+  if (previousActiveLanguage !== activeLanguage) {
+    setPreviousActiveLanguage(activeLanguage);
     setShowEmptyWidget(languageFilteredObjects.length === 0);
-  }, [activeLanguage]);
+  }
 
   // The existing value count can also change without going through this property's own widget
   // callbacks at all - e.g. ContentLanguageSwitcher bulk-deleting every literal in a language
@@ -217,6 +224,7 @@ export default function PropertyUIComponentValues({
   // Which rendered index (if any) should receive focus this render - the newly-appended
   // placeholder from an actual "+" click takes priority over autoFocusFirst, though in practice
   // the two never fire on the same render (see the autoFocusFirst prop doc above).
+  // eslint-disable-next-line react/refs -- one-shot flag, deliberately non-reactive (reset after every render)
   const targetFocusIndex = justClickedAddRef.current ? objects.length - 1 : autoFocusFirst ? 0 : -1;
 
   // Only existing values get a drag handle - never the trailing empty widget, which has no
@@ -273,6 +281,7 @@ export default function PropertyUIComponentValues({
           // its "-" no longer hidden either) with none left and no other way back to an
           // editable widget - re-show the empty one whenever that happens, for any field.
           onRemove={syncShowEmptyWidget}
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- only the value the user just added
           autoFocus={index === targetFocusIndex}
           // In table mode every row shows its "-" (disabled where it can't remove anything, e.g.
           // the trailing empty row) - a row without one would be one button narrower than the

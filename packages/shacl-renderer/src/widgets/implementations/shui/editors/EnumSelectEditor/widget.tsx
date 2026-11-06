@@ -186,6 +186,7 @@ export default function EnumSelectEditor({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
+        // eslint-disable-next-line jsx-a11y/role-supports-aria-props -- focus stays on the trigger while arrow keys move the highlighted option
         aria-activedescendant={
           open && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
         }
@@ -251,6 +252,7 @@ export default function EnumSelectEditor({
           ref={dropdownRef}
           id={listboxId}
           className="st-enum-select__results st-combo-results"
+          // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom-styled ARIA listbox; a native <select> can't render rich options
           role="listbox"
         >
           {selectError ? (
@@ -264,6 +266,7 @@ export default function EnumSelectEditor({
             </div>
           ) : null}
           {resolved.map((option, index) => (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- ARIA option: keyboard is handled on the trigger via aria-activedescendant
             <div
               key={option.term.value}
               id={`${listboxId}-option-${index}`}
@@ -271,6 +274,7 @@ export default function EnumSelectEditor({
                 optionRefs.current[index] = el;
               }}
               className={`st-enum-select__result st-combo-result ${index === activeIndex ? "st-enum-select__result--active st-combo-result--active" : ""}`}
+              // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- native <option> only works inside <select>
               role="option"
               aria-selected={option.term.value === term.value}
               // Keeps focus on the trigger during the click so onBlur above never fires for it -

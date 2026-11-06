@@ -23,6 +23,8 @@ import { useDropdownEscapeModal } from "@/outputs/render/hooks/useDropdownEscape
 import "@/theme/comboBox.css";
 import "./style.css";
 
+const NO_RESULTS: SearchResult[] = [];
+
 export default function AutoCompleteEditor({
   shape,
   term,
@@ -106,10 +108,16 @@ export default function AutoCompleteEditor({
     if (mode === "edit") inputRef.current?.focus();
   }, [mode]);
 
-  // A fresh set of results invalidates whatever the previous list had highlighted.
-  useEffect(() => {
+  // A fresh set of results invalidates whatever the previous list had highlighted (adjusted during
+  // render rather than in an effect, so the stale highlight is never painted).
+  // useInstanceSearch hands back a fresh `[]` on every render while a query is pending, so all
+  // empty lists share one key - otherwise this would reset (and re-render) forever.
+  const resultsKey = results?.length === 0 ? NO_RESULTS : results;
+  const [highlightedResultsKey, setHighlightedResultsKey] = useState(resultsKey);
+  if (highlightedResultsKey !== resultsKey) {
+    setHighlightedResultsKey(resultsKey);
     setActiveIndex(-1);
-  }, [results]);
+  }
 
   useEffect(() => {
     if (activeIndex >= 0) optionRefs.current[activeIndex]?.scrollIntoView({ block: "nearest" });
@@ -225,8 +233,8 @@ export default function AutoCompleteEditor({
       <div
         className={`st-autocomplete ${term.value ? "st-autocomplete--filled" : "st-autocomplete--empty"}`}
       >
+        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- mouse shortcut on the empty placeholder; the edit button next to it is the keyboard path */}
         <span
-          tabIndex={0}
           className="st-autocomplete__label st-combo-surface"
           onClick={() => !term.value && openSearch()}
         >
@@ -344,6 +352,7 @@ export default function AutoCompleteEditor({
           ref={dropdownRef}
           id={listboxId}
           className="st-autocomplete__results st-combo-results"
+          // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom-styled ARIA listbox; a native <select> can't render rich options
           role="listbox"
         >
           {error && !showSuggestions ? (
@@ -357,6 +366,7 @@ export default function AutoCompleteEditor({
             </div>
           ) : options.length > 0 ? (
             options.map((result, index) => (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- ARIA option: keyboard is handled on the input via aria-activedescendant
               <div
                 key={result.iri.value}
                 id={`${listboxId}-option-${index}`}
@@ -364,6 +374,7 @@ export default function AutoCompleteEditor({
                   optionRefs.current[index] = el;
                 }}
                 className={`st-autocomplete__result st-combo-result ${index === activeIndex ? "st-autocomplete__result--active st-combo-result--active" : ""}`}
+                // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- native <option> only works inside <select>
                 role="option"
                 aria-selected={result.iri.value === term.value}
                 // Keeps focus on the input during the click so onBlur above never fires for it -
@@ -390,6 +401,7 @@ export default function AutoCompleteEditor({
           {createChoices.map((choice, choiceIndex) => {
             const index = options.length + choiceIndex;
             return (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- ARIA option: keyboard is handled on the input via aria-activedescendant
               <div
                 key={`create-${choice.key}`}
                 id={`${listboxId}-option-${index}`}
@@ -397,6 +409,7 @@ export default function AutoCompleteEditor({
                   optionRefs.current[index] = el;
                 }}
                 className={`st-autocomplete__result st-autocomplete__result--create st-combo-result ${index === activeIndex ? "st-autocomplete__result--active st-combo-result--active" : ""}`}
+                // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- native <option> only works inside <select>
                 role="option"
                 aria-selected={false}
                 // Keeps focus on the input during the click, same as every result row above - onClick

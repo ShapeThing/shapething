@@ -1,4 +1,4 @@
-import { useEffect, useRef, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, type CSSProperties, type KeyboardEvent } from "react";
 import { Localized } from "@fluent/react";
 import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import PathTypeIcon from "./PathTypeIcon.tsx";
@@ -57,7 +57,9 @@ export default function PathTypeMenu({
   const menuRef = useRef<HTMLDivElement>(null);
   // The root hands a fresh onClose every render; the effect below must still only run once.
   const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
+  useLayoutEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     const menu = menuRef.current;
@@ -99,6 +101,8 @@ export default function PathTypeMenu({
       ref={menuRef}
       popover="manual"
       role="menu"
+      // Focus goes to its items; -1 keeps the menu itself out of the tab order.
+      tabIndex={-1}
       className="st-path-type-menu"
       style={{ left: x, top: y }}
       onBlur={(event) => {
@@ -121,7 +125,7 @@ export default function PathTypeMenu({
           <Localized id={TYPE_LABEL[type]}>{type}</Localized>
         </button>
       ))}
-      <div role="separator" className="st-path-type-menu-separator" />
+      <hr className="st-path-type-menu-separator" />
       <button
         type="button"
         role="menuitem"

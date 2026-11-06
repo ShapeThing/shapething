@@ -122,9 +122,11 @@ export default function AddressEditor({
   }, [mode]);
 
   // A fresh set of results invalidates whatever the previous list had highlighted.
-  useEffect(() => {
+  const [highlightedResults, setHighlightedResults] = useState(results);
+  if (results !== highlightedResults) {
+    setHighlightedResults(results);
     setActiveIndex(-1);
-  }, [results]);
+  }
 
   useEffect(() => {
     if (activeIndex >= 0) optionRefs.current[activeIndex]?.scrollIntoView({ block: "nearest" });
@@ -153,8 +155,9 @@ export default function AddressEditor({
   if (mode === "view") {
     return (
       <div className="st-address-editor">
-        <span tabIndex={0} className="st-address-editor__label st-combo-surface">
+        <span className="st-address-editor__label st-combo-surface">
           {isEmpty ? (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a mouse shortcut; the Edit button next to it is the keyboard route
             <span className="st-address-editor__empty" onClick={() => setMode("edit")}>
               <Localized id="select-an-option">- Select an option -</Localized>
             </span>
@@ -242,6 +245,9 @@ export default function AddressEditor({
           ref={dropdownRef}
           id={listboxId}
           className="st-address-editor__results st-combo-results"
+          // A combobox popup: focus stays on the input, which tracks the active option through
+          // aria-activedescendant, so a native <select> can't stand in here.
+          // eslint-disable-next-line jsx-a11y/prefer-tag-over-role
           role="listbox"
         >
           {error ? (
@@ -255,6 +261,7 @@ export default function AddressEditor({
             </div>
           ) : options.length > 0 ? (
             options.map((result, index) => (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- the input handles keys and keeps focus (aria-activedescendant)
               <div
                 key={result.place_id}
                 id={`${listboxId}-option-${index}`}
@@ -262,6 +269,7 @@ export default function AddressEditor({
                   optionRefs.current[index] = el;
                 }}
                 className={`st-address-editor__result st-combo-result ${index === activeIndex ? "st-address-editor__result--active st-combo-result--active" : ""}`}
+                // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- see the listbox above
                 role="option"
                 aria-selected={false}
                 // Keeps focus on the input during the click so onBlur above never fires for it -

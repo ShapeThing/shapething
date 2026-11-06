@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Quad_Subject } from "@rdfjs/types";
 import { hexToHsl, hslToHex } from "@/helpers/colorBuckets.ts";
 import { factory } from "@/helpers/factory.ts";
@@ -53,9 +53,11 @@ export default function ColorEditor({ shape, term, setTerm, labelledBy, autoFocu
   // never touches shape.dataGraph, so this can never clobber an in-progress edit mid-keystroke
   // (same reasoning as useDeferredInput's own sync effect).
   const [localValue, setLocalValue] = useState(storedHex);
-  useEffect(() => {
+  const [syncedHex, setSyncedHex] = useState(storedHex);
+  if (syncedHex !== storedHex) {
+    setSyncedHex(storedHex);
     setLocalValue(storedHex);
-  }, [storedHex]);
+  }
 
   const ref = useAutoFocusRef<HTMLInputElement>(autoFocus);
   const swatchValue = HEX_COLOR_PATTERN.test(localValue) ? localValue : FALLBACK_SWATCH_COLOR;

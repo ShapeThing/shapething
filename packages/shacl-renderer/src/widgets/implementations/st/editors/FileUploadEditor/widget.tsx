@@ -82,6 +82,7 @@ export default function FileUploadEditor({ shape, labelledBy }: WidgetProps) {
         </ul>
       )}
       {uploadUrl ? (
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- drag-and-drop target; the wrapped file input stays keyboard-operable
         <label
           className="st-file-upload-editor__dropzone"
           aria-labelledby={labelledBy}

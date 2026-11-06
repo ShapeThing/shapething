@@ -168,6 +168,7 @@ export default function MapFacet({ getConstraint, setConstraint, labelledBy }: F
   }, [collection]);
 
   return (
+    // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- MapLibre mounts its canvas into this container; a <fieldset>'s native box would interfere
     <div ref={containerRef} className="st-map-facet" role="group" aria-labelledby={labelledBy} />
   );
 }

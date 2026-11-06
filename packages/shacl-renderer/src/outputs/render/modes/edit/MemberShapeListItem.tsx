@@ -39,6 +39,7 @@ export default function MemberShapeListItem({
             object={value}
             labelledBy={labelledBy}
             setTerm={onChange}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- widget prop, only set for a value the user just added
             autoFocus={autoFocus}
           />
         </Suspense>

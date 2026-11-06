@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Quad_Subject, Term } from "@rdfjs/types";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { RdfStore } from "rdf-stores";
@@ -86,21 +86,19 @@ export function useTargetWhereFragments(
   // identical (order-independent) to the last one returned - `data` is a freshly built array on
   // every resolved revision even when nothing actually changed, and callers (NodeUIComponent) feed
   // it straight into a useMemo dependency array that rebuilds the whole node's element tree on any
-  // reference change. Computed inline during render (not in the effect below, which runs after the
-  // commit that would otherwise already have used a fresh reference) - idempotent for a given
-  // `data`, so safe under StrictMode's double-invocation.
-  const stableFragmentsRef = useRef<{ signature: string; value: Quad_Subject[] }>({
-    signature: "",
-    value: [],
-  });
-  const fragments = useMemo(() => {
-    const resolved = data ?? [];
-    const signature = resolved.map(termKey).sort().join("|");
-    if (signature !== stableFragmentsRef.current.signature) {
-      stableFragmentsRef.current = { signature, value: resolved };
-    }
-    return stableFragmentsRef.current.value;
-  }, [data]);
+  // reference change. Adjusted during render (not in the effect below, which runs after the commit
+  // that would otherwise already have used a fresh reference).
+  const resolved = useMemo(() => data ?? [], [data]);
+  const signature = useMemo(() => resolved.map(termKey).sort().join("|"), [resolved]);
+  const [stableFragments, setStableFragments] = useState<{
+    signature: string;
+    value: Quad_Subject[];
+  }>({ signature: "", value: [] });
+  let fragments = stableFragments.value;
+  if (signature !== stableFragments.signature) {
+    setStableFragments({ signature, value: resolved });
+    fragments = resolved;
+  }
 
   // Logs whenever a sh:targetWhere fragment starts or stops matching focusNode, so a form change
   // driven purely by data no longer conforming to a where-target (rather than an explicit widget

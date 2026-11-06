@@ -72,11 +72,15 @@ export default function WidgetSlot({
       pinnedBranchKey,
     });
 
-  useEffect(() => {
-    if (!isPlaceholderData && detectedBranch && detectedBranch.shape.value !== pinnedBranchKey) {
-      setPinnedBranchKey(undefined);
-    }
-  }, [detectedBranch, pinnedBranchKey, isPlaceholderData]);
+  // A render-phase state adjustment rather than an effect, so the stale pin never commits.
+  if (
+    pinnedBranchKey !== undefined &&
+    !isPlaceholderData &&
+    detectedBranch &&
+    detectedBranch.shape.value !== pinnedBranchKey
+  ) {
+    setPinnedBranchKey(undefined);
+  }
 
   // Same "pinned until real data resolves" idea as pinnedBranchKey above, for an
   // sh:alternativePath's own branches (see structure/paths/alternativePathBranches.ts) instead of
@@ -95,6 +99,8 @@ export default function WidgetSlot({
     if (!actual.equals(pinnedAlternativeBranch)) {
       propertyUIElement.setAlternativePathBranch(object, pinnedAlternativeBranch);
     }
+    // Must follow the dataGraph write above, which is a side effect and so can't run during render.
+    // eslint-disable-next-line react/set-state-in-effect -- clears the pin once it has been applied
     setPinnedAlternativeBranch(undefined);
   }, [propertyUIElement, object, pinnedAlternativeBranch]);
 
@@ -104,9 +110,17 @@ export default function WidgetSlot({
   // put rather than unmounting on every keystroke. A resolution that yields no widget at all (or
   // errors) keeps whatever last rendered, as the effect-based version did.
   const resolutionKey = `${activeBranch?.shape.value ?? ""}|${iri?.value ?? ""}`;
-  const lastResolvedRef = useRef<ResolvedWidget | undefined>(undefined);
-  if (Widget && iri) lastResolvedRef.current = { Widget, iri, resolutionKey };
-  const natural = lastResolvedRef.current;
+  const [lastResolved, setLastResolved] = useState<ResolvedWidget | undefined>(undefined);
+  const current = Widget && iri ? { Widget, iri, resolutionKey } : undefined;
+  if (
+    current &&
+    (lastResolved?.Widget !== current.Widget ||
+      !lastResolved.iri.equals(current.iri) ||
+      lastResolved.resolutionKey !== current.resolutionKey)
+  ) {
+    setLastResolved(current);
+  }
+  const natural = current ?? lastResolved;
 
   // A manual WidgetSwitcher pick, remembered alongside the natural resolution it was made on top
   // of: it applies only for as long as that natural resolution is still the current one, so it
@@ -200,6 +214,7 @@ export default function WidgetSlot({
               term={object}
               setTerm={isReadOnly ? noop : setTerm}
               labelledBy={labelledBy}
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- widget prop, only set for a value the user just added
               autoFocus={autoFocus}
             />
           </WidgetErrorBoundary>

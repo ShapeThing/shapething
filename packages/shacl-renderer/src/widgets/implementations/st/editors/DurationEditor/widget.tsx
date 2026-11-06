@@ -68,10 +68,15 @@ export default function DurationEditor({ shape, term, setTerm, labelledBy }: Wid
   // read the value the user just typed.
   const millisecondsRef = useRef(milliseconds);
 
+  // An external change to `term` resets the shown value - adjusted during render, while the ref
+  // (which must not be written during render) follows in an effect.
+  const [syncedTerm, setSyncedTerm] = useState(term);
+  if (syncedTerm !== term) {
+    setSyncedTerm(term);
+    setMilliseconds(millisecondsFromTerm(term));
+  }
   useEffect(() => {
-    const next = millisecondsFromTerm(term);
-    millisecondsRef.current = next;
-    setMilliseconds(next);
+    millisecondsRef.current = millisecondsFromTerm(term);
   }, [term]);
 
   return (

@@ -5,6 +5,7 @@ import {
   Fragment,
   useContext,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -87,6 +88,8 @@ function slotUpdate(at: Location, insert: Insert, item: PropertyPath) {
 function useNodeHandles({ path, location }: PathProps) {
   const { requestTypeMenu, setDragging, setDropTarget } = useContext(EditorContext);
   return {
+    // Every handle is reachable by keyboard, where the context menu key opens the type menu.
+    tabIndex: 0,
     onContextMenu: (event: MouseEvent<HTMLElement>) => {
       event.preventDefault();
       let { clientX: x, clientY: y } = event;
@@ -180,7 +183,9 @@ export default function PropertyPathEditor({ shape, term, setTerm }: WidgetProps
   // Read through refs, as commit also runs from the modal and menu callbacks, created on an
   // earlier render.
   const latest = useRef({ path, term });
-  latest.current = { path, term };
+  useLayoutEffect(() => {
+    latest.current = { path, term };
+  });
 
   // A `null` result goes back to the empty state: a fresh blank node without path triples.
   function commit(update: (root: PropertyPath | null) => PropertyPath | null) {
@@ -206,10 +211,8 @@ export default function PropertyPathEditor({ shape, term, setTerm }: WidgetProps
   useEffect(() => {
     const anchor = typeMenu?.anchor;
     if (!anchor) return;
-    anchor.dataset.typeMenuOpen = "";
-    return () => {
-      delete anchor.dataset.typeMenuOpen;
-    };
+    anchor.setAttribute("data-type-menu-open", "");
+    return () => anchor.removeAttribute("data-type-menu-open");
   }, [typeMenu]);
 
   const editor: Editor = {
@@ -365,7 +368,6 @@ function PredicatePath(props: PathProps<Extract<PropertyPath, { type: "predicate
   return (
     <div
       className="st-predicate-path st-path-segment"
-      tabIndex={0}
       title={path.predicate.value}
       {...handles}
       {...dropTarget}
@@ -391,7 +393,7 @@ function SequencePath(props: PathProps<Extract<PropertyPath, { type: "sequence" 
       withItemInserted(sequence as typeof path, index, item);
   return (
     <div className="st-sequence-path st-path-segment" {...dropTarget}>
-      <div className="st-sequence-path-prefix" tabIndex={0} {...handles}>
+      <div className="st-sequence-path-prefix" {...handles}>
         <PathTypeIcon type="sequence" />
       </div>
       <AddButton at={location} insert={insertAt(0)} />
@@ -401,7 +403,7 @@ function SequencePath(props: PathProps<Extract<PropertyPath, { type: "sequence" 
           <AddButton at={location} insert={insertAt(index + 1)} />
         </Fragment>
       ))}
-      <div className="st-sequence-path-suffix" tabIndex={0} {...handles}></div>
+      <div className="st-sequence-path-suffix" {...handles}></div>
     </div>
   );
 }
@@ -414,7 +416,7 @@ function AlternativePath(props: PathProps<Extract<PropertyPath, { type: "alterna
   const dropTarget = useDropTarget(props.location);
   return (
     <div className="st-alternative-path st-path-segment" {...dropTarget}>
-      <div className="st-alternative-path-prefix" tabIndex={0} {...handles}>
+      <div className="st-alternative-path-prefix" {...handles}>
         <PathTypeIcon type="alternative" />
       </div>
 
@@ -443,7 +445,7 @@ function AlternativePath(props: PathProps<Extract<PropertyPath, { type: "alterna
           return withItemInserted(alternative as typeof path, items.length, item);
         }}
       />
-      <div className="st-alternative-path-suffix" tabIndex={0} {...handles}></div>
+      <div className="st-alternative-path-suffix" {...handles}></div>
     </div>
   );
 }
@@ -469,11 +471,11 @@ function InversePath(props: PathProps<Extract<PropertyPath, { type: "inverse" }>
   const dropTarget = useDropTarget(props.location);
   return (
     <div className="st-inverse-path st-path-segment" {...dropTarget}>
-      <div className="st-inverse-path-prefix" tabIndex={0} {...handles}>
+      <div className="st-inverse-path-prefix" {...handles}>
         <PathTypeIcon type="inverse" />
       </div>
       <WrappedInner {...props} />
-      <div className="st-inverse-path-suffix" tabIndex={0} {...handles}></div>
+      <div className="st-inverse-path-suffix" {...handles}></div>
     </div>
   );
 }
@@ -483,11 +485,11 @@ function ZeroOrMorePath(props: PathProps<Extract<PropertyPath, { type: "zeroOrMo
   const dropTarget = useDropTarget(props.location);
   return (
     <div className="st-zero-or-more-path st-path-segment" {...dropTarget}>
-      <div className="st-zero-or-more-path-prefix" tabIndex={0} {...handles}>
+      <div className="st-zero-or-more-path-prefix" {...handles}>
         <PathTypeIcon type="zeroOrMore" />
       </div>
       <WrappedInner {...props} />
-      <div className="st-zero-or-more-path-suffix" tabIndex={0} {...handles}></div>
+      <div className="st-zero-or-more-path-suffix" {...handles}></div>
     </div>
   );
 }
@@ -497,11 +499,11 @@ function OneOrMorePath(props: PathProps<Extract<PropertyPath, { type: "oneOrMore
   const dropTarget = useDropTarget(props.location);
   return (
     <div className="st-one-or-more-path st-path-segment" {...dropTarget}>
-      <div className="st-one-or-more-path-prefix" tabIndex={0} {...handles}>
+      <div className="st-one-or-more-path-prefix" {...handles}>
         <PathTypeIcon type="oneOrMore" />
       </div>
       <WrappedInner {...props} />
-      <div className="st-one-or-more-path-suffix" tabIndex={0} {...handles}></div>
+      <div className="st-one-or-more-path-suffix" {...handles}></div>
     </div>
   );
 }
@@ -511,11 +513,11 @@ function ZeroOrOnePath(props: PathProps<Extract<PropertyPath, { type: "zeroOrOne
   const dropTarget = useDropTarget(props.location);
   return (
     <div className="st-zero-or-one-path st-path-segment" {...dropTarget}>
-      <div className="st-zero-or-one-path-prefix" tabIndex={0} {...handles}>
+      <div className="st-zero-or-one-path-prefix" {...handles}>
         <PathTypeIcon type="zeroOrOne" />
       </div>
       <WrappedInner {...props} />
-      <div className="st-zero-or-one-path-suffix" tabIndex={0} {...handles}></div>
+      <div className="st-zero-or-one-path-suffix" {...handles}></div>
     </div>
   );
 }

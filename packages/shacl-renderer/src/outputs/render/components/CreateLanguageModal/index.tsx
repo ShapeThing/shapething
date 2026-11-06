@@ -87,6 +87,7 @@ export default function CreateLanguageModal({ open, onClose, languages, onAdd }:
             id={inputId}
             className="st-input"
             type="text"
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- the user just opened this modal to type a language tag
             autoFocus
             autoComplete="off"
             placeholder="en-GB"

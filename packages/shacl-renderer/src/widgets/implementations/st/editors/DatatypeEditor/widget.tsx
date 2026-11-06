@@ -121,6 +121,7 @@ export default function DatatypeEditor({ term, setTerm, labelledBy, autoFocus }:
     <SelectListbox
       wrapperClassName="st-datatype-editor"
       ariaLabelledby={labelledBy}
+      // eslint-disable-next-line jsx-a11y/no-autofocus -- forwards the widget's own autoFocus prop (set when the user just added this value)
       autoFocus={autoFocus}
       value={term.value}
       options={options}

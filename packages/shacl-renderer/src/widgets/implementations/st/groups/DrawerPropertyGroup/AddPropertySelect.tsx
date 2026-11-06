@@ -102,13 +102,16 @@ export default function AddPropertySelect({
       />
       <span className="st-select-arrow" aria-hidden="true" />
       {open && filtered.length > 0 && (
+        // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- ARIA combobox listbox; a native <select> can't host this custom filtered list
         <div ref={dropdownRef} id={listboxId} role="listbox" className="st-listbox__listbox">
           {filtered.map((property, index) => (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- ARIA combobox: focus stays on the input, which handles the keyboard
             <div
               key={property.pathAsSparql() ?? index}
               ref={(element) => {
                 optionRefs.current[index] = element;
               }}
+              // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- ARIA combobox option; a native <option> can't be styled or live outside a <select>
               role="option"
               aria-selected={index === activeIndex}
               className={

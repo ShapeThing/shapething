@@ -1,5 +1,5 @@
 import type { Term } from "@rdfjs/types";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 
 export function useDeferredInput(
   term: Term,
@@ -13,10 +13,13 @@ export function useDeferredInput(
     [afterCallback],
   );
 
-  // Keep local state in sync if term changes from outside
-  useEffect(() => {
+  // Keep local state in sync if term changes from outside (adjusted during render rather than in
+  // an effect, so the stale value is never painted).
+  const [syncedValue, setSyncedValue] = useState(term.value);
+  if (syncedValue !== term.value) {
+    setSyncedValue(term.value);
     setLocalValue(term.value);
-  }, [term.value, setLocalValue]);
+  }
 
   const onChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

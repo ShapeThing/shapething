@@ -43,7 +43,7 @@ export default function ReportModeWrapper({ className }: ModeProps) {
         <InterfaceLanguageSwitcher />
         <ContentLanguageSwitcher />
       </header>
-      <p className="st-report-mode__summary" role="status">
+      <output className="st-report-mode__summary">
         {all.length === 0 ? (
           <Localized id={report.conforms === false ? "report-does-not-conform" : "report-conforms"}>
             <span className="st-report-mode__count" data-severity="None" />
@@ -61,7 +61,7 @@ export default function ReportModeWrapper({ className }: ModeProps) {
               </Localized>
             ))
         )}
-      </p>
+      </output>
       <reportResultsContext.Provider value={index}>
         {report.focusNodes.map((focusNode) => (
           <ReportNodeComponent key={termKey(focusNode.focusNode)} reportFocusNode={focusNode} />

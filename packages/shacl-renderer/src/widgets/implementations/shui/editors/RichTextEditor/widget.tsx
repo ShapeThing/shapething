@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, type ReactNode } from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import type { Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -54,7 +54,9 @@ function Toolbar({ editor }: { editor: Editor }) {
 
 export default function RichTextEditor({ term, setTerm, labelledBy, autoFocus }: WidgetProps) {
   const setTermRef = useRef(setTerm);
-  setTermRef.current = setTerm;
+  useLayoutEffect(() => {
+    setTermRef.current = setTerm;
+  });
 
   // Track the last HTML we emitted so external updates don't fight the editor.
   const lastEmitted = useRef(term.value);

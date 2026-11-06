@@ -1,4 +1,4 @@
-import { useEffect, useRef, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Engine as ShaclEngine, type ValidateResult } from "shacl-engine";
 import {
   constraints as sparqlConstraints,
@@ -62,9 +62,7 @@ type Props = {
  */
 export default function ValidationContextProvider({ children, latestResultsRef, isDirty }: Props) {
   const { shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl } = useEnvironment();
-  const storeRef = useRef<ValidationStore | null>(null);
-  storeRef.current ??= createValidationStore();
-  const store = storeRef.current;
+  const [store] = useState<ValidationStore>(createValidationStore);
 
   // shapesGraph is read-only for the lifetime of an Environment (see preprocess/index.ts), so a
   // single Validator compiled from it up front stays valid for every subsequent revalidation -
@@ -152,7 +150,7 @@ export default function ValidationContextProvider({ children, latestResultsRef, 
       clearTimeout(timeout);
       unsubscribe?.();
     };
-  }, [shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl, store]);
+  }, [shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl, store, latestResultsRef]);
 
   return <validationContext.Provider value={store}>{children}</validationContext.Provider>;
 }

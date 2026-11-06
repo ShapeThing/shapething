@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { Localized, useLocalization } from "@fluent/react";
 import type { NamedNode, Quad_Subject } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
@@ -42,7 +42,12 @@ export default function FocusNodeEditor({
   const id = useId();
   const { l10n } = useLocalization();
   const [localValue, setLocalValue] = useState(value.value);
-  useEffect(() => setLocalValue(value.value), [value.value]);
+  // Follows an external change of `value`, adjusted during render rather than in an effect.
+  const [syncedValue, setSyncedValue] = useState(value.value);
+  if (syncedValue !== value.value) {
+    setSyncedValue(value.value);
+    setLocalValue(value.value);
+  }
   const problem = focusNodeIriProblem(localValue.trim(), {
     current,
     dataGraph,

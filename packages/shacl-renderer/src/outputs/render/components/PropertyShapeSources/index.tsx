@@ -60,6 +60,7 @@ export default function PropertyShapeSources({ propertyUIElement }: Props) {
       <span
         className="st-property-shape-sources"
         data-merged={count > 1 || undefined}
+        // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- an icon plus a count badge, labelled as one image; not representable as an <img>
         role="img"
         aria-label={`${count} property shape${count === 1 ? "" : "s"}`}
       >

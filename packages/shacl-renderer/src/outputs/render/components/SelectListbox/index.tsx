@@ -96,6 +96,7 @@ export default function SelectListbox<T extends any>({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-controls={listboxId}
+        // eslint-disable-next-line jsx-a11y/role-supports-aria-props -- focus stays on the trigger while arrow keys move the highlighted option
         aria-activedescendant={
           open && activeIndex >= 0 ? `${listboxId}-option-${activeIndex}` : undefined
         }
@@ -142,14 +143,17 @@ export default function SelectListbox<T extends any>({
       <span className="st-select-arrow" aria-hidden="true" />
 
       {open && (
+        // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom-styled ARIA listbox; a native <select> can't render rich options
         <div ref={dropdownRef} id={listboxId} role="listbox" className={`${classPrefix}__listbox`}>
           {options.map((option, index) => (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- ARIA option: keyboard is handled on the trigger via aria-activedescendant
             <div
               key={option + ""}
               id={`${listboxId}-option-${index}`}
               ref={(el) => {
                 optionRefs.current[index] = el;
               }}
+              // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- native <option> only works inside <select>
               role="option"
               data-value={option}
               aria-selected={option === value}
@@ -167,12 +171,14 @@ export default function SelectListbox<T extends any>({
           {extraRows.map((row, extraIndex) => {
             const index = options.length + extraIndex;
             return (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- ARIA option: keyboard is handled on the trigger via aria-activedescendant
               <div
                 key={`extra-${row.key}`}
                 id={`${listboxId}-option-${index}`}
                 ref={(el) => {
                   optionRefs.current[index] = el;
                 }}
+                // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- native <option> only works inside <select>
                 role="option"
                 aria-selected={false}
                 className={

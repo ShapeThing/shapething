@@ -33,6 +33,7 @@ export function useDropdownEscapeModal<T extends HTMLElement>(
 
     const place = () => {
       const rect = anchor.getBoundingClientRect();
+      // eslint-disable-next-line react/immutability -- `panel` is a DOM node held in state only to re-run this effect on attach; positioning it imperatively is the point
       panel.style.position = "fixed";
       panel.style.left = `${rect.left}px`;
       panel.style.setProperty(sizing, `${rect.width}px`);

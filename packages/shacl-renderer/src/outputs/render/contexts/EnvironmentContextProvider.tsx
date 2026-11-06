@@ -39,9 +39,8 @@ export default function EnvironmentContextProvider({
   ...props
 }: Props) {
   const steps = preprocessors ?? defaultPreprocessors;
-  const initialEnvironment = useMemo<RawEnvironment>(
+  const [initialEnvironment] = useState<RawEnvironment>(
     () => ({ ...defaultEnvironment, ...props }) as RawEnvironment,
-    [],
   );
 
   // A reactive dataGraph (made with makeReactive() by the caller) is the caller's live store: used

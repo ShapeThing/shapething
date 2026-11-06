@@ -60,8 +60,17 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
   const maxLength = shape.get(sh("maxLength"));
 
   const [localValue, setLocalValue] = useState(term.value);
-  // Keep local state in sync if term changes from outside.
-  useEffect(() => setLocalValue(term.value), [term.value]);
+  // Reset once the committed value moves on - a broken image at one IRI shouldn't suppress the
+  // preview forever once the user points this property at a different one.
+  const [previewFailed, setPreviewFailed] = useState(false);
+  // Keep local state in sync if term changes from outside (adjusted during render rather than in
+  // an effect, so there's no extra render with stale values).
+  const [syncedTermValue, setSyncedTermValue] = useState(term.value);
+  if (syncedTermValue !== term.value) {
+    setSyncedTermValue(term.value);
+    setLocalValue(term.value);
+    setPreviewFailed(false);
+  }
 
   const [suggestionsOpen, setSuggestionsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(-1);
@@ -130,11 +139,6 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
       ref.current?.focus();
     }
   }, [isEditing, ref]);
-
-  // Reset once the committed value moves on - a broken image at one IRI shouldn't suppress the
-  // preview forever once the user points this property at a different one.
-  const [previewFailed, setPreviewFailed] = useState(false);
-  useEffect(() => setPreviewFailed(false), [term.value]);
 
   const showPreview =
     term.value.length > 0 && !previewFailed && IMAGE_EXTENSION_PATTERN.test(term.value);
@@ -263,6 +267,7 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
                 aria-labelledby={labelledBy}
               />
               {dropdownOpen && (
+                // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom-styled ARIA listbox; a native <select> can't render rich options
                 <div ref={dropdownRef} id={listboxId} className="st-combo-results" role="listbox">
                   {suggestions.map((suggestion, index) => {
                     const isFirstOfGroup =
@@ -283,8 +288,10 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
                             )}
                           </div>
                         )}
+                        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- ARIA option: keyboard is handled on the input via aria-activedescendant */}
                         <div
                           id={`${listboxId}-option-${index}`}
+                          // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- native <option> only works inside <select>
                           role="option"
                           data-group={suggestion.kind}
                           aria-selected={display.iri === trimmedValue}

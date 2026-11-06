@@ -1,6 +1,6 @@
 import { clsx } from "clsx";
 import type { ModeProps } from "@/outputs/render/render.tsx";
-import { useEffect, useRef, type FormEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type FormEvent } from "react";
 import { Localized } from "@fluent/react";
 import { RdfStore } from "rdf-stores";
 import { diffQuads } from "@/helpers/diffQuads.ts";
@@ -36,23 +36,22 @@ export default function FacetModeWrapper({ children, className }: Props) {
   // (facet mode has no single focus node to render, so a real caller normally wouldn't - the
   // default placeholder value is the tell) - otherwise createFilterShape mints a fresh urn:uuid:,
   // so the returned shape always has a stable IRI rather than an anonymous blank node.
-  const filterShapeRef = useRef<FilterShape | null>(null);
-  filterShapeRef.current ??= createFilterShape(
-    focusNode.termType === "NamedNode" && !focusNode.equals(ex("focusNode"))
-      ? focusNode
-      : undefined,
+  const [filterShape] = useState<FilterShape>(() =>
+    createFilterShape(
+      focusNode.termType === "NamedNode" && !focusNode.equals(ex("focusNode"))
+        ? focusNode
+        : undefined,
+    ),
   );
-  const filterShape = filterShapeRef.current;
 
   // Captured once, right after the filter shape is created (createFilterShape seeds it with its
   // own root NodeShape triple) - the baseline every later diffQuads call compares against, so that
   // initial triple never shows up as a spurious "addition".
-  const originalQuadsRef = useRef<ReturnType<RdfStore["getQuads"]> | null>(null);
-  originalQuadsRef.current ??= filterShape.store.getQuads();
+  const [originalQuads] = useState(() => filterShape.store.getQuads());
 
   const fire = () => {
     const finalQuads = filterShape.store.getQuads();
-    const { additions, deletions } = diffQuads(originalQuadsRef.current!, finalQuads);
+    const { additions, deletions } = diffQuads(originalQuads, finalQuads);
 
     const store = RdfStore.createDefault();
     for (const quad of finalQuads) store.addQuad(quad);
@@ -65,7 +64,9 @@ export default function FacetModeWrapper({ children, className }: Props) {
   // closing over `fire` directly, keeps every firing using this render's latest onSubmit prop
   // instead of whichever one happened to be current when the subscription was first set up.
   const fireRef = useRef(fire);
-  fireRef.current = fire;
+  useLayoutEffect(() => {
+    fireRef.current = fire;
+  });
 
   useEffect(() => {
     if (facetChangeMode !== "live") return;

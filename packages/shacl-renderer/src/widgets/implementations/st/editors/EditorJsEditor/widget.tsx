@@ -108,6 +108,7 @@ export default function EditorJsEditor({
     <div
       ref={holderRef}
       className="st-editor-js-editor"
+      // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- Editor.js mounts its own DOM into this holder; a <fieldset>'s native box would interfere
       role="group"
       aria-labelledby={labelledBy}
     />

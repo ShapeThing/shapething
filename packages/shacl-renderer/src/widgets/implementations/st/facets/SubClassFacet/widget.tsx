@@ -81,10 +81,13 @@ export default function SubClassFacet({
   );
   const activeTerm = visibleItems[activeIndex]?.term.value;
 
-  // A fresh set of matches invalidates whatever the previous search had highlighted.
-  useEffect(() => {
+  // A fresh set of matches invalidates whatever the previous search had highlighted (adjusted
+  // during render rather than in an effect).
+  const [highlightedItems, setHighlightedItems] = useState(visibleItems);
+  if (highlightedItems !== visibleItems) {
+    setHighlightedItems(visibleItems);
     setActiveIndex(-1);
-  }, [visibleItems]);
+  }
 
   // Jumps the (possibly long) tree to whatever's currently highlighted - including the property's
   // existing constraint the moment the tree opens (see openPanel), so a value nested deep in the

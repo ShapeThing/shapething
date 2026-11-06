@@ -69,6 +69,7 @@ export default function Modal({
   }, [undoRedoScope, dataGraph, open, enableUndoRedo]);
 
   return (
+    // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- backdrop click-to-close; Escape is handled natively by <dialog>
     <dialog
       ref={dialogRef}
       className={`st-modal${size === "large" ? " st-modal--large" : ""} ${className ?? ""}`}

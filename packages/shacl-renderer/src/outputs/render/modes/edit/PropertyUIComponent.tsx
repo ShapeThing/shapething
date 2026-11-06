@@ -107,6 +107,7 @@ export default function PropertyUIComponent({
                   <Localized id="property-federated-search-label" attrs={{ "aria-label": true }}>
                     <span
                       className="st-property-search-icon"
+                      // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- wraps an inline SVG component, which an <img> can't
                       role="img"
                       aria-label="Federated search"
                       tabIndex={-1}

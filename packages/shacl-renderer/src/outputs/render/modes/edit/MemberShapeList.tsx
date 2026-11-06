@@ -119,6 +119,7 @@ export default function MemberShapeList({
   useEffect(() => {
     justClickedAddRef.current = false;
   });
+  // eslint-disable-next-line react/refs -- one-shot flag, deliberately non-reactive (reset after every render)
   const targetFocusIndex = justClickedAddRef.current ? cells.length - 1 : -1;
   // autoFocusFirst only ever arrives for a freshly-created, still-empty list (see the doc above) -
   // nothing in `cells` to focus yet, so the "Add item" button itself is the closest stand-in.
@@ -170,6 +171,7 @@ export default function MemberShapeList({
       canRemove={canRemove}
       onChange={(newValue) => commit(cells.map((c, i) => (i === index ? newValue : c.value)))}
       onRemove={() => commit(cells.filter((_, i) => i !== index).map((c) => c.value))}
+      // eslint-disable-next-line jsx-a11y/no-autofocus -- only the item the user just added
       autoFocus={index === targetFocusIndex}
     />
   ));

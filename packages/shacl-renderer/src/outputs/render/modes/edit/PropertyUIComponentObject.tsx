@@ -77,6 +77,7 @@ export default function PropertyUIComponentObject({
             object={object}
             labelledBy={labelledBy}
             setTerm={setTerm}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- widget prop, only set for a value the user just added
             autoFocus={autoFocus}
           />
         </div>

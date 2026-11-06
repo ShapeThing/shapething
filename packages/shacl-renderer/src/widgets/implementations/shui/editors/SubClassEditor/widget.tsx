@@ -59,15 +59,19 @@ export default function SubClassEditor({ shape, term, setTerm, labelledBy }: Wid
   );
   const activeTerm = visibleItems[activeIndex]?.term.value;
 
-  // A fresh set of matches invalidates whatever the previous search had highlighted.
-  useEffect(() => {
+  // A fresh set of matches invalidates whatever the previous search had highlighted (adjusted
+  // during render rather than in an effect).
+  const [highlightedItems, setHighlightedItems] = useState(visibleItems);
+  if (highlightedItems !== visibleItems) {
+    setHighlightedItems(visibleItems);
     setActiveIndex(-1);
-  }, [visibleItems]);
+  }
 
   // An empty required field opens ready to type, same as ever - mount-only, so removing the last
   // chip later (backspace or a chip's own x) doesn't reopen a panel the user just closed.
   useEffect(() => {
     if (chips.length === 0) searchRef.current?.focus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only, see above
   }, []);
 
   // Jumps the (possibly long) tree to whatever's currently highlighted - including the property's

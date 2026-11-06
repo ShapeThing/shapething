@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import type { StoryObj } from "@storybook/react-vite";
 import { expect, userEvent, waitFor, within } from "storybook/test";
 import { RdfStore } from "rdf-stores";
@@ -68,20 +68,14 @@ const addEditorsToDataGraph: Preprocessor = (environment) => {
 function TheShapeIsTheApp() {
   const [shapesGraph, setShapesGraph] = useState<RdfStore>();
 
-  const liveDataRef = useRef<RdfStore>(undefined);
-
   const shapePreprocessors = useMemo(
     () => [...defaultPreprocessors, addEditorsToDataGraph, exposeDataGraph(setShapesGraph)],
     [],
   );
 
   const appPreprocessors = useMemo(
-    () => [
-      ...defaultPreprocessors,
-      exposeDataGraph((data) => {
-        liveDataRef.current = data;
-      }),
-    ],
+    // Only for the reactive dataGraph exposeDataGraph sets up; nothing reads it back here.
+    () => [...defaultPreprocessors, exposeDataGraph(() => {})],
     [],
   );
 

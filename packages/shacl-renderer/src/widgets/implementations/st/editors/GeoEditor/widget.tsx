@@ -95,6 +95,7 @@ export default function GeoEditor({ shape }: WidgetProps) {
       clearInterval(pollId);
       map.remove();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- create the map once; the editor then owns the geometry and syncs it back into `shape`
   }, []);
 
   return <div ref={containerRef} className="st-geo-editor" />;

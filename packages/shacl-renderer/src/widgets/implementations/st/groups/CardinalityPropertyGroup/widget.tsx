@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react";
+import { useId, useState } from "react";
 import { Localized } from "@fluent/react";
 import type { NamedNode } from "@rdfjs/types";
 import { factory } from "@/helpers/factory.ts";
@@ -66,10 +66,13 @@ export default function CardinalityPropertyGroup({ group }: GroupWidgetProps) {
   const hasAdvancedValues = !isPlain(min) || !isPlain(max);
   const [advancedOpen, setAdvancedOpen] = useState(hasAdvancedValues);
   // Also opens when such a value arrives from elsewhere - typed into the advanced fields' own
-  // widgets is covered by the section already being open, but an undo isn't.
-  useEffect(() => {
+  // widgets is covered by the section already being open, but an undo isn't. Adjusted during
+  // render rather than in an effect.
+  const [hadAdvancedValues, setHadAdvancedValues] = useState(hasAdvancedValues);
+  if (hadAdvancedValues !== hasAdvancedValues) {
+    setHadAdvancedValues(hasAdvancedValues);
     if (hasAdvancedValues) setAdvancedOpen(true);
-  }, [hasAdvancedValues]);
+  }
 
   if (mode === "view") {
     return (
@@ -122,11 +125,7 @@ export default function CardinalityPropertyGroup({ group }: GroupWidgetProps) {
       className="st-cardinality-property-group"
       dataId={group.node.value}
     >
-      <div
-        className="st-cardinality-property-group__control"
-        role="group"
-        aria-labelledby={labelId}
-      >
+      <fieldset className="st-cardinality-property-group__control" aria-labelledby={labelId}>
         <div className="st-cardinality-property-group__checkboxes">
           {minProperty && (
             <label className="st-option">
@@ -164,7 +163,7 @@ export default function CardinalityPropertyGroup({ group }: GroupWidgetProps) {
             <EditUIElementChildren elements={group.children} />
           </div>
         </details>
-      </div>
+      </fieldset>
     </FormElement>
   );
 }

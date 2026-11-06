@@ -82,6 +82,7 @@ export default function MapViewer({ shape }: WidgetProps) {
       map.remove();
       mapRef.current = null;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- create the map once (see above); recreating it would reset pan/zoom and drop the applied data
   }, []);
 
   useEffect(() => {

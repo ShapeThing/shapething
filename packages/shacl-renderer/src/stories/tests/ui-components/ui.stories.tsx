@@ -52,6 +52,7 @@ export function Buttons() {
             term={term}
             setTerm={setTerm}
             labelledBy={labelledBy}
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- forwards the story's autoFocus arg to the widget
             autoFocus={autoFocus}
           />
         </L10nProvider>

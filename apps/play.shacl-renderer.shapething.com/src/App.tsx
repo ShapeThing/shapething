@@ -175,6 +175,7 @@ export default function App() {
         // ignore errors
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: load a shared state from the URL hash once
   }, []);
 
   const url =

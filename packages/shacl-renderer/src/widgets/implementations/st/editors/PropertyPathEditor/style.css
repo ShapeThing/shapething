@@ -289,8 +289,9 @@ div[class^="st-"][class*="-suffix"] {
 }
 
 .st-path-type-menu-separator {
+  border: none;
   height: 1px;
-  margin-block: var(--size-1);
+  margin: var(--size-1) 0;
   background-color: var(--gray-4);
 }
 

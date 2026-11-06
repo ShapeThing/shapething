@@ -97,6 +97,7 @@ export function Turtle({ onChange, value }: { onChange: (value: string) => void;
         ),
       ],
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only: the editor is created once and owns the document afterwards
   }, []);
 
   useEffect(() => {

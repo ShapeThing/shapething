@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import type { NamedNode, Quad_Subject } from "@rdfjs/types";
 import { Localized } from "@fluent/react";
 import { rdf, sh } from "@/helpers/namespaces.ts";
@@ -37,6 +37,15 @@ type Props = {
   createChoices: CreateInPlaceChoice[];
 };
 
+// The results here aren't driven by a combobox input, so each option is its own tab stop and
+// activates with Enter/Space like a button.
+function activateOnKey(event: KeyboardEvent, activate: () => void) {
+  if (event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    activate();
+  }
+}
+
 /**
  * The modal AutoCompleteEditor's search icon opens instead of its own inline typeahead when
  * Environment.enableFacetSearchForAutocomplete is on and the property has a known value node shape
@@ -65,18 +74,18 @@ export default function FacetSearchModal({
   const fieldLabel = shape.label([activeInterfaceLanguage]);
   const [filterShape, setFilterShape] = useState<FilterShape>();
 
-  const [matchingInstances, setMatchingInstances] = useState<NamedNode[]>(candidateInstances);
+  // Until the user has set a filter, every candidate matches. Once one is set, the previous
+  // result stays shown while the next query runs.
+  const [filteredInstances, setFilteredInstances] = useState<NamedNode[]>();
+  const matchingInstances = (filterShape && filteredInstances) || candidateInstances;
   useEffect(() => {
-    if (!filterShape) {
-      setMatchingInstances(candidateInstances);
-      return;
-    }
+    if (!filterShape) return;
     let cancelled = false;
     instancesMatchingFilterShape(filterShape, candidateInstances, {
       source: { kind: "local", store: shape.dataGraph },
       shapesGraph: shape.shapesGraph,
     }).then((matching) => {
-      if (!cancelled) setMatchingInstances(matching as NamedNode[]);
+      if (!cancelled) setFilteredInstances(matching as NamedNode[]);
     });
     return () => {
       cancelled = true;
@@ -130,6 +139,7 @@ export default function FacetSearchModal({
             }}
           />
         </div>
+        {/* eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- custom-styled ARIA listbox; a native <select> can't render rich options */}
         <div className="st-autocomplete__facet-search-results" role="listbox">
           {matchingInstances.length === 0 ? (
             <div className="st-autocomplete__empty st-combo-empty">
@@ -141,10 +151,13 @@ export default function FacetSearchModal({
               return (
                 <div
                   key={iri.value}
+                  // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- native <option> only works inside <select>
                   role="option"
                   aria-selected={false}
+                  tabIndex={0}
                   className="st-autocomplete__result"
                   onClick={() => onSelect(result)}
+                  onKeyDown={(event) => activateOnKey(event, () => onSelect(result))}
                 >
                   <Teaser
                     term={result.iri}
@@ -161,10 +174,13 @@ export default function FacetSearchModal({
           {createChoices.map((choice) => (
             <div
               key={`create-${choice.key}`}
+              // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- native <option> only works inside <select>
               role="option"
               aria-selected={false}
+              tabIndex={0}
               className="st-autocomplete__result st-autocomplete__result--create"
               onClick={choice.start}
+              onKeyDown={(event) => activateOnKey(event, choice.start)}
             >
               <CreateOptionLabel label={choice.label} />
             </div>

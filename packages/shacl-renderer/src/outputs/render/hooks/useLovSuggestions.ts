@@ -58,14 +58,15 @@ export function useLovSuggestions(
   const { sourcePrefixes } = useEnvironment();
   const [debounced, setDebounced] = useState<string>();
 
+  // Cleared during render (not in the effect) the moment the search goes inactive.
+  const active = enabled && !!query;
+  if (!active && debounced !== undefined) setDebounced(undefined);
+
   useEffect(() => {
-    if (!enabled || !query) {
-      setDebounced(undefined);
-      return;
-    }
+    if (!active) return;
     const timeout = setTimeout(() => setDebounced(query), LOV_SEARCH_DEBOUNCE_MS);
     return () => clearTimeout(timeout);
-  }, [query, enabled]);
+  }, [query, active]);
 
   // Only a query naming a vocabulary prefix can be answered at all (see lovTermSearch.ts) - an
   // unprefixed one is left disabled here rather than fired and answered empty, so the dropdown

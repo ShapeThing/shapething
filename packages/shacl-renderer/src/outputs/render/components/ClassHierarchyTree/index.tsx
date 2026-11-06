@@ -41,6 +41,7 @@ function ClassHierarchyTreeNode({
   return (
     <div className="st-class-tree__node">
       {matches && (
+        // eslint-disable-next-line jsx-a11y/no-noninteractive-element-interactions -- mousedown only keeps focus on the search input; keyboard nav is driven by that input
         <label
           ref={(el) => {
             if (el) rowRefs.current.set(node.term.value, el);

@@ -39,9 +39,11 @@ export default function IconifyEditor({
   }, [mode]);
 
   // A fresh set of results invalidates whatever the previous list had highlighted.
-  useEffect(() => {
+  const [highlightedResults, setHighlightedResults] = useState(results);
+  if (results !== highlightedResults) {
+    setHighlightedResults(results);
     setActiveIndex(-1);
-  }, [results]);
+  }
 
   useEffect(() => {
     if (activeIndex >= 0) optionRefs.current[activeIndex]?.scrollIntoView({ block: "nearest" });
@@ -64,13 +66,14 @@ export default function IconifyEditor({
   if (mode === "view") {
     return (
       <div className="st-iconify-editor">
-        <span tabIndex={0} className="st-iconify-editor__label st-combo-surface">
+        <span className="st-iconify-editor__label st-combo-surface">
           {term.value ? (
             <span className="st-iconify-editor__value">
               <Icon icon={term.value} className="st-iconify-editor__icon" />
               <span className="st-iconify-editor__name">{term.value}</span>
             </span>
           ) : (
+            // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions -- a mouse shortcut; the Edit button next to it is the keyboard route
             <span className="st-iconify-editor__empty" onClick={() => setMode("edit")}>
               <Localized id="select-an-option">- Select an option -</Localized>
             </span>
@@ -146,6 +149,9 @@ export default function IconifyEditor({
           ref={dropdownRef}
           id={listboxId}
           className="st-iconify-editor__results st-combo-results"
+          // A combobox popup: focus stays on the input, which tracks the active option through
+          // aria-activedescendant, so a native <select> can't stand in here.
+          // eslint-disable-next-line jsx-a11y/prefer-tag-over-role
           role="listbox"
         >
           {error ? (
@@ -159,6 +165,7 @@ export default function IconifyEditor({
             </div>
           ) : options.length > 0 ? (
             options.map((icon, index) => (
+              // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/interactive-supports-focus -- the input handles keys and keeps focus (aria-activedescendant)
               <div
                 key={icon}
                 id={`${listboxId}-option-${index}`}
@@ -167,6 +174,7 @@ export default function IconifyEditor({
                 }}
                 title={icon}
                 className={`st-iconify-editor__result ${index === activeIndex ? "st-iconify-editor__result--active" : ""}`}
+                // eslint-disable-next-line jsx-a11y/prefer-tag-over-role -- see the listbox above
                 role="option"
                 aria-selected={icon === term.value}
                 // Keeps focus on the input during the click so onBlur above never fires for it -
