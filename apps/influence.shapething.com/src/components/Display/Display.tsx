@@ -12,6 +12,7 @@ import { entityId, isEntityId } from "../../data/entities.ts";
 import { useAppLocation } from "../../routing.ts";
 import { shapesGraph } from "../../shapes/shapes.ts";
 import { widgets } from "../../widgets/index.ts";
+import Spinner from "../Spinner/Spinner.tsx";
 import "./style.scss";
 
 type Props = {
@@ -95,7 +96,10 @@ export default function Display({
         nodeShapes={[shape]}
         focusNode={focusNode}
         dataGraph={dataGraph}
+        // No spinner for each value that loads, but one while the renderer holds back the first
+        // paint until the whole display has loaded (style.scss).
         loadingIndicator={null}
+        settleIndicator={<Spinner />}
         resolveLink={resolve}
       />
     </div>

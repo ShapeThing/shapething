@@ -44,3 +44,11 @@
     display: block;
   }
 }
+
+// The spinner while the renderer holds back the first paint (Display.tsx), over the still
+// invisible display, in the middle.
+.display .st-settle-gate__indicator {
+  display: flex;
+  justify-content: center;
+  padding: 40px;
+}

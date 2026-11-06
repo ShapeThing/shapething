@@ -1,9 +1,20 @@
 import { useIsFetching } from "@tanstack/react-query";
 import React, { useEffect, useMemo, useState } from "react";
+import { Loading } from "@/helpers/icons.tsx";
 import {
-  LoadingFallback,
   settleGateContext,
+  useRegisterPending,
 } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
+
+/**
+ * The indicator of a closed gate. Unlike a LoadingFallback it ignores the `loadingIndicator` prop
+ * when that is `null`: the form is invisible, so the indicator is all there is to see. It is outside
+ * its own gate's provider, so it registers with an outer gate (a nested renderer) as pending.
+ */
+function SettleIndicator({ children }: { children: React.ReactNode }) {
+  useRegisterPending();
+  return <>{children ?? <Loading />}</>;
+}
 
 // How long nothing may be fetching or suspended before the gate opens. A resolved query often
 // mounts a child whose own query only starts in the next commit, so "nothing pending" has to hold
@@ -21,7 +32,16 @@ const QUIET_WINDOW = 50;
  * changed, a branch switched) behave as they always did. A nested renderer has its own gate; its
  * loading indicator is a LoadingFallback outside its own provider, so the outer gate waits for it.
  */
-export function SettleGate({ timeout, children }: { timeout: number; children: React.ReactNode }) {
+export function SettleGate({
+  timeout,
+  indicator,
+  children,
+}: {
+  timeout: number;
+  /** What shows while the gate is closed; undefined (or null) for the built-in spinner. */
+  indicator: React.ReactNode;
+  children: React.ReactNode;
+}) {
   const [open, setOpen] = useState(timeout <= 0);
   const [pending, setPending] = useState(0);
   const fetching = useIsFetching();
@@ -58,7 +78,7 @@ export function SettleGate({ timeout, children }: { timeout: number; children: R
     >
       {!open && (
         <div className="st-settle-gate__indicator">
-          <LoadingFallback />
+          <SettleIndicator>{indicator}</SettleIndicator>
         </div>
       )}
       <div

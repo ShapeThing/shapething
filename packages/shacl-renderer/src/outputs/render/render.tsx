@@ -46,6 +46,10 @@ export type ShaclRendererProps = Partial<RawEnvironment> & {
   // every part as soon as it is ready. Only the initial load is held, and it is not part of the
   // Environment either.
   settleTimeout?: number;
+  // What shows while the first paint is held back (settleTimeout), in place of the still-invisible
+  // form. Omitted, `loadingIndicator`, or the built-in spinner when that is `null` or omitted: the
+  // form is hidden, so without an indicator there would be nothing to see at all.
+  settleIndicator?: React.ReactNode;
   // Rewrites the links the viewers render (shui:LabelViewer, shui:IRIViewer, shui:HyperlinkViewer,
   // shui:ImageViewer, st:href links, and every custom viewer built on the exported Link): given the
   // href a link would have, the attributes to put over it - see components/Link's ResolveLink. E.g.
@@ -70,6 +74,7 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
     loadingIndicator,
     resolveLink,
     settleTimeout = 3000,
+    settleIndicator,
     ...environmentProps
   } = inputProps;
   // A renderer nested inside another one (a widget's own) keeps the outer one's links, unless given
@@ -108,26 +113,30 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
       )}
     >
       <QueryClientProvider client={queryClient}>
-        <loadingIndicatorContext.Provider value={loadingIndicator}>
-          <resolveLinkContext.Provider value={resolveLink ?? outerResolveLink}>
-            <InterfaceLanguageProvider interfaceLanguage={interfaceLanguage}>
-              <L10nProvider interfaceLocales={interfaceLocales}>
-                <EnvironmentContextProvider
-                  key={identity}
-                  {...environmentProps}
-                  preprocessors={preprocessors}
-                  onSubmit={onSubmit}
-                  liveProps={stableLiveProps}
-                  instanceId={instanceId}
-                >
-                  <SettleGate timeout={settleTimeout}>
+        {/* Above the interface strings and the Environment, so their loading is held back too. */}
+        <SettleGate
+          timeout={settleTimeout}
+          indicator={settleIndicator ?? loadingIndicator ?? undefined}
+        >
+          <loadingIndicatorContext.Provider value={loadingIndicator}>
+            <resolveLinkContext.Provider value={resolveLink ?? outerResolveLink}>
+              <InterfaceLanguageProvider interfaceLanguage={interfaceLanguage}>
+                <L10nProvider interfaceLocales={interfaceLocales}>
+                  <EnvironmentContextProvider
+                    key={identity}
+                    {...environmentProps}
+                    preprocessors={preprocessors}
+                    onSubmit={onSubmit}
+                    liveProps={stableLiveProps}
+                    instanceId={instanceId}
+                  >
                     <ShaclRendererInner className={className} />
-                  </SettleGate>
-                </EnvironmentContextProvider>
-              </L10nProvider>
-            </InterfaceLanguageProvider>
-          </resolveLinkContext.Provider>
-        </loadingIndicatorContext.Provider>
+                  </EnvironmentContextProvider>
+                </L10nProvider>
+              </InterfaceLanguageProvider>
+            </resolveLinkContext.Provider>
+          </loadingIndicatorContext.Provider>
+        </SettleGate>
       </QueryClientProvider>
     </ErrorBoundary>
   );

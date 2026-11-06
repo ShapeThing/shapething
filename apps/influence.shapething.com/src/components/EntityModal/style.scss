@@ -236,18 +236,32 @@
 }
 
 // The side and the main group are rendered by one renderer, the properties by another: the elements
-// of the renderers make way, so these three are the items of the modal's grid (below). A renderer
-// with a settle gate (it holds the first paint until the data has loaded) has its two elements
-// between its own and the view mode: they make way as well.
+// of the renderers make way, so these three are the items of the modal's grid (below). Between the
+// renderer's element and its view mode are the two elements of its settle gate: it holds the first
+// paint until the data has loaded, and shows a spinner over the invisible text meanwhile. Once open
+// they make way as well; until then the gate keeps its box, for the spinner (Display/style.scss).
 .entity-modal__display,
-.entity-modal__display > .st-settle-gate,
-.entity-modal__display > .st-settle-gate > .st-settle-gate__content,
+.entity-modal__display > .st-settle-gate:not([aria-busy]),
+.entity-modal__display > .st-settle-gate:not([aria-busy]) > .st-settle-gate__content,
 .entity-modal__display > .st-view-mode,
 .entity-modal__display > .st-settle-gate > .st-settle-gate__content > .st-view-mode {
   display: contents;
 }
 
 .entity-modal__display > .st-view-mode > .st-header,
+// While the gate is closed the modal is only its spinner, where the spinner of EntityModal was
+// before: the invisible text takes no room below it, and the properties wait for it.
+.entity-modal:has(> .entity-modal__display > .st-settle-gate[aria-busy]) {
+  > .entity-modal__display > .st-settle-gate {
+    height: 128px;
+    overflow: hidden;
+  }
+
+  > .entity-modal__all-properties {
+    display: none;
+  }
+}
+
 .entity-modal__display > .st-settle-gate > .st-settle-gate__content > .st-view-mode > .st-header {
   display: none;
 }
@@ -264,7 +278,9 @@
 // away. --side-sticky-top (EntityModal.tsx) lets a side column taller than the modal scroll until
 // its end is in view. A concept without an image or a description has no side column.
 @media screen and (min-width: 720px) {
-  .entity-modal:has(.entity-modal__side) {
+  .entity-modal:has(.entity-modal__side):not(
+      :has(> .entity-modal__display > .st-settle-gate[aria-busy])
+    ) {
     display: grid;
     grid-template-columns: 200px minmax(0, 1fr);
     grid-template-rows: auto 1fr;
