@@ -1,0 +1,22 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX wikibase: <http://wikiba.se/ontology#>
+
+# The names the list of all properties of $entity needs (see data/resource.ts): of each property
+# (a wdt: predicate, by the property it is the direct claim of) with its type, and of each item
+# that is a value.
+SELECT DISTINCT ?term ?name ?mulName ?propertyType WHERE {
+  {
+    $entity ?term [] .
+    ?property wikibase:directClaim ?term ;
+      wikibase:propertyType ?propertyType .
+  }
+  UNION
+  {
+    $entity ?direct ?term .
+    [] wikibase:directClaim ?direct .
+    FILTER(isIRI(?term))
+    BIND(?term AS ?property)
+  }
+  OPTIONAL { ?property rdfs:label ?name . FILTER(LANG(?name) = "en") }
+  OPTIONAL { ?property rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
+}

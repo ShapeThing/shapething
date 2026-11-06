@@ -224,3 +224,19 @@ test("custom graph parameter", () => {
     }}}`),
   );
 });
+
+test("without named graphs and with blank node overfetch only", () => {
+  const query = generateQuery([{ node_0: rf("resource") }], undefined, {
+    useNamedGraphs: false,
+    overfetch: "blankNodes",
+  });
+  expect(normalize(query)).toEqual(
+    normalize(`SELECT * WHERE {{
+        VALUES ?node_0 {
+            <https://resource-fetcher.shapething.com/#resource>
+        }
+        ?node_0 ?predicate_1 ?node_1.
+        OPTIONAL { ?node_1 ?predicate_2 ?node_2. FILTER(isBlank(?node_1)) }
+    }}`),
+  );
+});

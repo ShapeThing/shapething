@@ -5,11 +5,14 @@ import influencedQuery from "../queries/influenced.rq";
 import influencersQuery from "../queries/influencers.rq";
 import itemListsQuery from "../queries/itemLists.rq";
 import labelsQuery from "../queries/labels.rq";
+import occupationsQuery from "../queries/occupations.rq";
+import resourceLabelsQuery from "../queries/resourceLabels.rq";
 import searchQuery from "../queries/search.rq";
 import { factory } from "../rdf/namespaces.ts";
 import { select } from "../sparql/select.ts";
 import { entityId, entityIri } from "./entities.ts";
 import { entityFromRows, itemListsFromRows, summariesFromRows } from "./person.ts";
+import { fetchResource } from "./resource.ts";
 import { getWikipediaAbstract } from "./wikipedia.ts";
 
 /** The shortest search text that is sent to Wikidata. */
@@ -22,7 +25,13 @@ export const entityOptions = (id: string) =>
     queryKey: ["entity", id],
     queryFn: async () => {
       const iri = entityIri(id);
-      return entityFromRows(iri, await select(entityQuery, { entity: iri }));
+      // The occupations have a query of their own: in the entity query each one would be a row
+      // for every combination of the other values.
+      const [rows, occupationRows] = await Promise.all([
+        select(entityQuery, { entity: iri }),
+        select(occupationsQuery, { entity: iri }),
+      ]);
+      return entityFromRows(iri, rows, occupationRows);
     },
   });
 
@@ -56,6 +65,24 @@ export const useAbstract = (article: NamedNode | undefined) =>
     queryFn: async () =>
       article ? ((await getWikipediaAbstract(article).catch(() => undefined)) ?? null) : null,
     enabled: article !== undefined,
+  });
+
+/**
+ * Every property of an entity with its values, for the second renderer of the modal: the resource
+ * itself from the resource fetcher, the names of its properties and items from one more query.
+ */
+export const useAllProperties = (id: string) =>
+  useQuery({
+    queryKey: ["allProperties", id],
+    queryFn: async () => {
+      const iri = entityIri(id);
+      const [resource, labelRows] = await Promise.all([
+        fetchResource(iri),
+        select(resourceLabelsQuery, { entity: iri }),
+      ]);
+      // The graphs are made in the modal, which knows what it shows elsewhere (see EntityModal).
+      return { iri, resource, labelRows };
+    },
   });
 
 export const useSearch = (text: string) => {

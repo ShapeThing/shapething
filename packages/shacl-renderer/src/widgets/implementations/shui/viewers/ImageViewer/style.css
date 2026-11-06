@@ -1,4 +1,12 @@
+/* The link around the image: as wide as the image, so only the image is clickable. */
+.image-viewer__link {
+  display: inline-block;
+  max-width: 100%;
+  vertical-align: top;
+}
+
 .image-viewer {
+  display: block;
   max-width: 100%;
   max-height: 300px;
   border-radius: var(--radius-2);

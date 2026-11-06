@@ -5,10 +5,17 @@ import type { LiteralWithDatatype, LiteralWithLanguage, Prettify, TypedQuery } f
 interface QueryResult {
   name?: LiteralWithLanguage<'en'>
   mulName?: LiteralWithLanguage<'mul'>
+  fullName?: Literal
   description?: LiteralWithLanguage<'en'>
   image?: NamedNode
   birthDate?: Literal
   deathDate?: Literal
+  birthPlace?: NamedNode
+  birthPlaceName?: LiteralWithLanguage<'en'>
+  birthPlaceLocation?: Literal
+  citizenship?: NamedNode
+  citizenshipName?: LiteralWithLanguage<'en'>
+  flag?: NamedNode
   publicationDate?: Literal
   article?: NamedNode
   isHuman: LiteralWithDatatype<'xsd:boolean'>

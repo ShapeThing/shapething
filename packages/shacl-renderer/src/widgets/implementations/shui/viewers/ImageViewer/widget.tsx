@@ -21,5 +21,17 @@ export default function ImageViewer({ shape, term }: WidgetProps) {
   const size = imageWidth && imageWidth > 0 ? { width: imageWidth } : defaultSize;
   const src = enableImageResizing ? resizedImageUrl(term.value, size) : term.value;
 
-  return <img className="image-viewer" src={src} alt={alt} />;
+  // The image opens in a new tab when clicked: the value itself, at full size, not the resized one.
+  // Its label is shown when hovered, too (a flag says which country it is).
+  return (
+    <a
+      className="image-viewer__link"
+      href={term.value}
+      title={alt}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      <img className="image-viewer" src={src} alt={alt} />
+    </a>
+  );
 }

@@ -5,7 +5,7 @@ import { createShapesPointer } from "./helpers/createShapesPointer.ts";
 import { sh } from "./helpers/namespaces.ts";
 import parsePath, { type Path } from "./core/parsePath.ts";
 import { Branch, type BranchSnapshot, type QueryPattern } from "./core/Branch.ts";
-import { generateQuery } from "./core/generateQuery.ts";
+import { generateQuery, type Overfetch } from "./core/generateQuery.ts";
 import { numberedBindingsToQuads } from "./core/numberedBindingsToQuads.ts";
 import dataFactory from "@rdfjs/data-model";
 import type Grapoi from "./helpers/Grapoi.ts";
@@ -82,6 +82,8 @@ export class ResourceFetcher {
   #fetchedNestedIris: Set<string> = new Set();
   #nestedResults: OurQuad[] = [];
   #nestedSteps: number = 0;
+  #useNamedGraphs: boolean;
+  #overfetch: Overfetch;
 
   constructor({
     resourceIri,
@@ -93,6 +95,8 @@ export class ResourceFetcher {
     debug,
     maxNodeShapeDepth = 2,
     graph,
+    useNamedGraphs = true,
+    overfetch = "all",
   }: {
     resourceIri: Quad_Subject;
     recursionStepMultiplier?: number;
@@ -109,6 +113,11 @@ export class ResourceFetcher {
     debug?: boolean | ((event: DebugEvent) => void);
     maxNodeShapeDepth?: number;
     graph?: string;
+    // False for a store without named graphs, such as the Wikidata query service (Blazegraph in
+    // triples mode, which rejects GRAPH): the graph is not detected and the queries have no GRAPH.
+    useNamedGraphs?: boolean;
+    // See Overfetch in core/generateQuery.ts.
+    overfetch?: Overfetch;
   }) {
     if ((shapesGraph === undefined) !== (shapeIris === undefined)) {
       throw new Error("shapesGraph and shapeIris must be provided together");
@@ -147,6 +156,8 @@ export class ResourceFetcher {
     this.#maxNodeShapeDepth = maxNodeShapeDepth;
     this.#graph = graph;
     this.#explicitGraph = graph;
+    this.#useNamedGraphs = useNamedGraphs;
+    this.#overfetch = overfetch;
   }
 
   registerNestedFetch(resourceIri: Quad_Subject, nodeShapePointer: Grapoi) {
@@ -191,7 +202,7 @@ export class ResourceFetcher {
     steps: number;
   }> {
     // If no graph is specified, detect if the resource is in a single graph
-    if (this.#graph === undefined) {
+    if (this.#graph === undefined && this.#useNamedGraphs) {
       await this.#detectGraph();
     }
 
@@ -261,6 +272,8 @@ export class ResourceFetcher {
             // A linked resource is its own document, it may live in another graph than the one detected for this resource.
             graph: this.#explicitGraph,
             maxNodeShapeDepth: this.#maxNodeShapeDepth,
+            useNamedGraphs: this.#useNamedGraphs,
+            overfetch: this.#overfetch,
             debug: (event) => nestedEvents.push(event),
           });
           const { results, steps } = await nestedFetcher.execute();
@@ -378,12 +391,18 @@ export class ResourceFetcher {
       // If there are shapes, get their patterns too.
       ...this.#rootBranches.flatMap((branch) => branch.toQueryPatterns()),
     ];
-    return generateQuery(queryPatterns, this.#graph);
+    return generateQuery(queryPatterns, this.#graph, {
+      overfetch: this.#overfetch,
+      useNamedGraphs: this.#useNamedGraphs,
+    });
   }
 
   async #nextStep(step: number) {
     const queryPatterns = this.#rootBranches.flatMap((branch) => branch.toQueryPatterns());
-    const query = generateQuery(queryPatterns, this.#graph);
+    const query = generateQuery(queryPatterns, this.#graph, {
+      overfetch: this.#overfetch,
+      useNamedGraphs: this.#useNamedGraphs,
+    });
     this.#emit?.({ type: "query", step, query });
 
     const bindings = await this.#queryBindings(query);

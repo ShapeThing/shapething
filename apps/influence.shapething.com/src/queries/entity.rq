@@ -5,16 +5,32 @@ PREFIX schema: <http://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 # Everything shown about one entity: a person, but also a work, an interest or an idea.
-SELECT ?name ?mulName ?description ?image ?birthDate ?deathDate ?publicationDate ?article ?isHuman ?hasAuthor (xsd:integer(?count) AS ?influence) WHERE {
+SELECT ?name ?mulName ?fullName ?description ?image ?birthDate ?deathDate ?birthPlace ?birthPlaceName ?birthPlaceLocation ?citizenship ?citizenshipName ?flag ?publicationDate ?article ?isHuman ?hasAuthor (xsd:integer(?count) AS ?influence) WHERE {
   { SELECT (COUNT(DISTINCT ?influenced) AS ?count) WHERE { ?influenced wdt:P737 $entity } }
   BIND(EXISTS { $entity wdt:P31 wd:Q5 } AS ?isHuman)
   BIND(EXISTS { $entity wdt:P50 [] } AS ?hasAuthor)
   OPTIONAL { $entity rdfs:label ?name . FILTER(LANG(?name) = "en") }
   OPTIONAL { $entity rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
   OPTIONAL { $entity schema:description ?description . FILTER(LANG(?description) = "en") }
+  # The full name, in the person's own language (P1559, name in native language).
+  OPTIONAL { $entity wdt:P1559 ?fullName . FILTER(isLiteral(?fullName)) }
   OPTIONAL { $entity wdt:P18 ?image . FILTER(isIRI(?image)) }
   OPTIONAL { $entity wdt:P569 ?birthDate . FILTER(isLiteral(?birthDate)) }
   OPTIONAL { $entity wdt:P570 ?deathDate . FILTER(isLiteral(?deathDate)) }
+  # The place of birth, for the map in the modal: only one with coordinates (P625) can be shown.
+  OPTIONAL {
+    $entity wdt:P19 ?birthPlace .
+    ?birthPlace wdt:P625 ?birthPlaceLocation .
+    FILTER(isIRI(?birthPlace) && isLiteral(?birthPlaceLocation))
+    OPTIONAL { ?birthPlace rdfs:label ?birthPlaceName . FILTER(LANG(?birthPlaceName) = "en") }
+  }
+  # The countries of citizenship, for their flags (P41) in the modal.
+  OPTIONAL {
+    $entity wdt:P27 ?citizenship .
+    ?citizenship wdt:P41 ?flag .
+    FILTER(isIRI(?citizenship) && isIRI(?flag))
+    OPTIONAL { ?citizenship rdfs:label ?citizenshipName . FILTER(LANG(?citizenshipName) = "en") }
+  }
   OPTIONAL { $entity wdt:P577 ?publicationDate . FILTER(isLiteral(?publicationDate)) }
   OPTIONAL {
     ?article schema:about $entity ;

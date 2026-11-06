@@ -1,7 +1,16 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix st: <http://shapething.com/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 # A group typed only st:CollapsiblePropertyGroup is a sh:PropertyGroup too - see structure/groupTypes.ts.
 st:CollapsiblePropertyGroup a rdfs:Class ;
     rdfs:subClassOf sh:PropertyGroup .
+
+# st:collapsed true: the group starts closed (it is open by default).
+st:collapsed a rdf:Property ;
+    rdfs:label "collapsed"@en ;
+    rdfs:comment "Whether a st:CollapsiblePropertyGroup starts closed. Open when absent."@en ;
+    rdfs:domain st:CollapsiblePropertyGroup ;
+    rdfs:range xsd:boolean .

@@ -39,3 +39,17 @@ export const stCollapsiblePropertyGroup: Story = {
     expect(await within(addressGroup).findByDisplayValue("Dam 1")).toBeInTheDocument();
   },
 };
+
+export const stCollapsiblePropertyGroupCollapsed: Story = {
+  name: "st:collapsed true: the group starts closed, and opens on its summary",
+  args: argsByTestFile("st-collapsible-property-group-collapsed.ttl", import.meta.url),
+  play: async ({ canvasElement }) => {
+    const summary = await within(canvasElement).findByText("Personal details");
+    const details = summary.closest("details") as HTMLDetailsElement;
+    expect(details).not.toHaveAttribute("open");
+
+    summary.click();
+    expect(details).toHaveAttribute("open");
+    expect(await within(details).findByDisplayValue("Hendrik")).toBeInTheDocument();
+  },
+};

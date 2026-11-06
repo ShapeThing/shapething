@@ -49,6 +49,29 @@ export const entityQuads = (entity: EntityDetails, abstract: Literal | undefined
   // Which of these the modal shows is up to the shape of the entity's kind (EntityModal.tsx).
   ...summaryQuads(entity),
   ...quad(entity.iri, wdt("P577"), entity.publicationDate),
+  // The name in the side column of the modal: the full name, or else the name itself.
+  ...quad(entity.iri, inf("fullName"), entity.fullName ?? entity.label),
+  // The countries of citizenship with their names and flags. The flag is named after its country
+  // too: that is its alternative text.
+  ...entity.citizenships.flatMap((citizenship) => [
+    ...quad(entity.iri, wdt("P27"), citizenship.iri),
+    ...quad(citizenship.iri, rdfs("label"), citizenship.name),
+    ...quad(citizenship.iri, wdt("P41"), citizenship.flag),
+    ...quad(citizenship.flag, rdfs("label"), citizenship.name),
+  ]),
+  // The occupations with their names, shown as links (inf:ItemShape).
+  ...entity.occupations.flatMap((occupation) => [
+    ...quad(entity.iri, wdt("P106"), occupation.iri),
+    ...quad(occupation.iri, rdfs("label"), occupation.name),
+  ]),
+  // The place of birth with its name and coordinates: the map of inf:PersonModalShape.
+  ...(entity.birthPlace
+    ? [
+        ...quad(entity.iri, wdt("P19"), entity.birthPlace.iri),
+        ...quad(entity.birthPlace.iri, rdfs("label"), entity.birthPlace.name),
+        ...quad(entity.birthPlace.iri, wdt("P625"), entity.birthPlace.location),
+      ]
+    : []),
   ...(entity.article ? quad(entity.article, schema("about"), entity.iri) : []),
   ...quad(entity.iri, schema("abstract"), abstract),
 ];

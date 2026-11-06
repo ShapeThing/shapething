@@ -78,6 +78,15 @@ export class GroupUIElement {
   }
 
   /**
+   * Whether this group starts collapsed: st:collapsed true. Only a group widget that can collapse
+   * (st:CollapsiblePropertyGroup) reads it; the viewer can still open the group. ShapeThing-original
+   * group metadata, like icon() and color().
+   */
+  collapsed(): boolean {
+    return this.shapesGraph.getQuads(this.node, st("collapsed"), null)[0]?.object.value === "true";
+  }
+
+  /**
    * This group's own st:color value, if declared - a blank node carrying st:hue/st:saturation/
    * st:lightness sibling triples in shapesGraph (genuine CSS HSL notation, same convention
    * st:ColorEditor/st:ColorViewer use for a property's own value, see helpers/colorBuckets.ts's

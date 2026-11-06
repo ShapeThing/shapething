@@ -10,8 +10,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@shapething/resource-fetcher": "workspace:*",
     "@shapething/shacl-renderer": "workspace:*",
     "@tanstack/react-query": "^5.103.2",
+    "photoswipe": "^5.4.4",
     "rdf-data-factory": "^2.1.0",
     "rdf-stores": "^2.5.1",
     "react": "^19.3.0",

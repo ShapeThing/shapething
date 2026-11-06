@@ -1,5 +1,5 @@
 import type { NamedNode, Quad } from "@rdfjs/types";
-import { minimalEnvironment, ShaclRenderer } from "@shapething/shacl-renderer";
+import { minimalEnvironment, ShaclRenderer, type RdfSource } from "@shapething/shacl-renderer";
 import type { RdfStore } from "rdf-stores";
 import { clsx } from "../../clsx.ts";
 import { shapesGraph } from "../../shapes/shapes.ts";
@@ -15,6 +15,8 @@ type Props = {
    * what is added to it later shows up in place (see PersonRow). */
   dataGraph: Quad[] | RdfStore;
   className?: string;
+  /** The shapes of shapes/shapes.ttl, unless shapes are made for the data (see data/resource.ts). */
+  shapes?: RdfSource;
 };
 
 /**
@@ -22,7 +24,13 @@ type Props = {
  * default for all languages), so every value is shown whatever its language ("individual"), and
  * the interface has no language switchers.
  */
-export default function Display({ shape, focusNode, dataGraph, className }: Props) {
+export default function Display({
+  shape,
+  focusNode,
+  dataGraph,
+  className,
+  shapes = shapesGraph,
+}: Props) {
   return (
     <div className={clsx("display", className)}>
       <ShaclRenderer
@@ -37,7 +45,7 @@ export default function Display({ shape, focusNode, dataGraph, className }: Prop
         languageMode="individual"
         contentLanguage="en"
         viewModeLabelLayout="inline"
-        shapesGraph={shapesGraph}
+        shapesGraph={shapes}
         widgets={widgets}
         nodeShapes={[shape]}
         focusNode={focusNode}

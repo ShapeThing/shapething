@@ -1,0 +1,24 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Given name"@en ;
+        sh:path schema:givenName ;
+        sh:group <#personalDetails> ;
+    ] ;
+    .
+
+<#personalDetails>
+    a sh:PropertyGroup, st:CollapsiblePropertyGroup ;
+    sh:name "Personal details"@en ;
+    st:collapsed true ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:givenName "Hendrik" .

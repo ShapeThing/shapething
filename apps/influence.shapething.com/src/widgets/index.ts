@@ -1,5 +1,6 @@
 import { defaultWidgets, type Widgets } from "@shapething/shacl-renderer";
 import { inf } from "../rdf/namespaces.ts";
+import EntityLinkViewer from "./EntityLinkViewer/widget.tsx";
 import PortraitViewer from "./PortraitViewer/widget.tsx";
 import RelativeInfluenceViewer from "./RelativeInfluenceViewer/widget.tsx";
 import YearViewer from "./YearViewer/widget.tsx";
@@ -12,6 +13,7 @@ export const widgets: Widgets = {
   ...defaultWidgets,
   viewers: {
     ...defaultWidgets.viewers,
+    EntityLinkViewer: { widget: inf("EntityLinkViewer"), Component: EntityLinkViewer },
     PortraitViewer: { widget: inf("PortraitViewer"), Component: PortraitViewer },
     RelativeInfluenceViewer: {
       widget: inf("RelativeInfluenceViewer"),

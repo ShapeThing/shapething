@@ -290,6 +290,8 @@ export const resolutions = new Map<string, ResolutionFunction<any>>([
   // The width shui:ImageViewer loads its image at: the widest one, so it is sharp in every
   // grouped shape's layout.
   [st("imageWidth").value, keepHighestInteger],
+  // How far st:MapViewer zooms in to fit its values: the closest one asked for.
+  [st("mapMaxZoom").value, keepHighestInteger],
   [sh("rootClass").value, keepMostSpecificClasses],
   [sh("uniqueValuesFor").value, keepAllListItems],
   [sh("severity").value, keepMostSevere],

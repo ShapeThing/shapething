@@ -79,15 +79,53 @@ export const summariesFromRows = (
  */
 export type EntityKind = "person" | "work" | "concept";
 
+/** A place of birth with its coordinates (P625, a WKT point), for the map in the modal. */
+export type BirthPlace = {
+  iri: NamedNode;
+  name?: Literal;
+  location: Literal;
+};
+
+/** A country of citizenship with its flag (P41, a Commons image), for the modal. */
+export type Citizenship = {
+  iri: NamedNode;
+  name?: Literal;
+  flag: NamedNode;
+};
+
+/** An occupation (P106) with its name. */
+export type Occupation = {
+  iri: NamedNode;
+  name: Literal;
+};
+
+export type OccupationRow = {
+  occupation: NamedNode;
+  name?: Literal;
+  mulName?: Literal;
+};
+
 export type EntityDetails = PersonSummary & {
+  /** The name in the entity's own language (P1559), often the full name of a person. */
+  fullName?: Literal;
   publicationDate?: Literal;
+  birthPlace?: BirthPlace;
+  citizenships: Citizenship[];
+  occupations: Occupation[];
   /** The English Wikipedia article about the entity. */
   article?: NamedNode;
   kind: EntityKind;
 };
 
 export type EntityRow = SummaryRow & {
+  fullName?: Literal;
   publicationDate?: Literal;
+  birthPlace?: NamedNode;
+  birthPlaceName?: Literal;
+  birthPlaceLocation?: Literal;
+  citizenship?: NamedNode;
+  citizenshipName?: Literal;
+  flag?: NamedNode;
   article?: NamedNode;
   isHuman: Literal;
   hasAuthor: Literal;
@@ -95,11 +133,50 @@ export type EntityRow = SummaryRow & {
 
 const isTrue = (literal: Literal) => literal.value === "true";
 
-export const entityFromRows = (iri: NamedNode, rows: readonly EntityRow[]): EntityDetails => {
+export const entityFromRows = (
+  iri: NamedNode,
+  rows: readonly EntityRow[],
+  occupationRows: readonly OccupationRow[] = [],
+): EntityDetails => {
+  // One per occupation, its English name before a "mul" one.
+  const occupations = new Map<string, Occupation>();
+  for (const row of occupationRows) {
+    const name = row.name ?? row.mulName;
+    const occupation = occupations.get(row.occupation.value);
+    if (!name) continue;
+    if (!occupation) occupations.set(row.occupation.value, { iri: row.occupation, name });
+    else if (row.name) occupation.name = row.name;
+  }
+
   const publicationDate = rows.find((row) => row.publicationDate)?.publicationDate;
+  const birthPlaceRow = rows.find((row) => row.birthPlace && row.birthPlaceLocation);
+  // One flag per country, in the order of the rows; a name from whichever row has one.
+  const citizenships = new Map<string, Citizenship>();
+  for (const row of rows) {
+    if (!row.citizenship || !row.flag) continue;
+    const citizenship = citizenships.get(row.citizenship.value) ?? {
+      iri: row.citizenship,
+      flag: row.flag,
+    };
+    citizenship.name ??= row.citizenshipName;
+    citizenships.set(row.citizenship.value, citizenship);
+  }
   return {
     ...summarize(iri, rows),
+    fullName: rows.find((row) => row.fullName)?.fullName,
     publicationDate,
+    citizenships: [...citizenships.values()],
+    occupations: [...occupations.values()],
+    birthPlace:
+      birthPlaceRow?.birthPlace && birthPlaceRow.birthPlaceLocation
+        ? {
+            iri: birthPlaceRow.birthPlace,
+            name: rows.find(
+              (row) => row.birthPlace?.equals(birthPlaceRow.birthPlace!) && row.birthPlaceName,
+            )?.birthPlaceName,
+            location: birthPlaceRow.birthPlaceLocation,
+          }
+        : undefined,
     article: rows.find((row) => row.article)?.article,
     kind: rows.some((row) => isTrue(row.isHuman))
       ? "person"

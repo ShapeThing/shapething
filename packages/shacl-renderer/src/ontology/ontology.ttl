@@ -87,6 +87,13 @@ st:imageWidth
     rdfs:domain sh:PropertyShape ;
     rdfs:range xsd:positiveInteger .
 
+st:mapMaxZoom
+    a rdf:Property ;
+    rdfs:label "map max zoom"@en ;
+    rdfs:comment "On a st:MapViewer property shape: the closest zoom level the map zooms in to when it fits its values, from 0 (the world) to 18 (a street). Without it the map zooms in as far as it can, which for a single point is a street. A lower level shows a single place with its surroundings, for example 5 for a region."@en ;
+    rdfs:domain sh:PropertyShape ;
+    rdfs:range xsd:nonNegativeInteger .
+
 st:mergeAlternatives
     a rdf:Property ;
     rdfs:label "merge alternatives"@en ;

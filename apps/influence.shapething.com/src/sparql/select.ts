@@ -1,4 +1,4 @@
-import type { Term } from "@rdfjs/types";
+import type { Bindings, Term } from "@rdfjs/types";
 import type { TypedQuery } from "@shapething/typed-sparql";
 import { factory } from "../rdf/namespaces.ts";
 import { fetchJson } from "./fetchJson.ts";
@@ -39,16 +39,9 @@ const toTerm = (term: SparqlJsonTerm): Term => {
   }
 };
 
-/**
- * Runs a typed-sparql SELECT query (an imported .rq file) on the Wikidata query service. The type
- * of a row comes from the .rq.d.ts typed-sparql generated for it: an unbound variable is left out
- * of its row, which the type marks as optional.
- */
-export const select = async <Row extends object>(
-  query: TypedQuery<Row>,
-  parameters?: Parameters,
-): Promise<Row[]> => {
-  const url = `${ENDPOINT}?${new URLSearchParams({ query: parameterize(query, parameters) })}`;
+/** Runs a SPARQL SELECT query on the Wikidata query service: a row of terms by variable each. */
+const run = async (queryString: string): Promise<Array<Record<string, Term>>> => {
+  const url = `${ENDPOINT}?${new URLSearchParams({ query: queryString })}`;
   const json = await fetchJson(
     url,
     { headers: { Accept: "application/sparql-results+json" } },
@@ -57,10 +50,33 @@ export const select = async <Row extends object>(
   if (!isSparqlJsonResults(json))
     throw new Error("The query service did not answer with query results");
 
-  return json.results.bindings.map(
-    (binding) =>
-      Object.fromEntries(
-        Object.entries(binding).map(([variable, term]) => [variable, toTerm(term)]),
-      ) as Row,
+  return json.results.bindings.map((binding) =>
+    Object.fromEntries(Object.entries(binding).map(([variable, term]) => [variable, toTerm(term)])),
   );
 };
+
+/**
+ * Runs a typed-sparql SELECT query (an imported .rq file) on the Wikidata query service. The type
+ * of a row comes from the .rq.d.ts typed-sparql generated for it: an unbound variable is left out
+ * of its row, which the type marks as optional.
+ */
+export const select = async <Row extends object>(
+  query: TypedQuery<Row>,
+  parameters?: Parameters,
+): Promise<Row[]> => (await run(parameterize(query, parameters))) as Row[];
+
+/**
+ * Runs a query of the resource fetcher (see data/resource.ts). It reads the rows as RDF/JS
+ * Bindings, but only by their variables (keys) and terms (get), so that is all a row gives.
+ */
+export const queryBindings = async (queryString: string): Promise<Bindings[]> =>
+  (await run(queryString)).map((row) => {
+    const variables = Object.keys(row).map((variable) => factory.variable(variable));
+    return {
+      type: "bindings",
+      get: (key: string | { value: string }) => row[typeof key === "string" ? key : key.value],
+      has: (key: string | { value: string }) => (typeof key === "string" ? key : key.value) in row,
+      keys: () => variables[Symbol.iterator](),
+      size: variables.length,
+    } as unknown as Bindings;
+  });

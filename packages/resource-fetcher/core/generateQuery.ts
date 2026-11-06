@@ -49,7 +49,22 @@ const generateValuesClause = (patterns: QueryPattern[]): string => {
   return `VALUES (${variables}) {\n        ${rows}\n      }`;
 };
 
-const generateTriplePatterns = (pattern: QueryPattern): string => {
+/**
+ * What the last, optional triple pattern of every query fetches ahead: the triples of every value
+ * ("all", the default), or only those of blank node values ("blankNodes"). Fetching ahead saves a
+ * round trip for blank nodes and lists, and shapes may use the triples of named values too (for
+ * example the labels of an sh:in). On a large knowledge graph the triples of every named value can
+ * be many times the resource itself, there "blankNodes" keeps the queries small.
+ */
+export type Overfetch = "all" | "blankNodes";
+
+export type QueryOptions = {
+  overfetch?: Overfetch;
+  /** False for a store without named graphs (triples mode): the query has no GRAPH clause. */
+  useNamedGraphs?: boolean;
+};
+
+const generateTriplePatterns = (pattern: QueryPattern, overfetch: Overfetch): string => {
   const keys = Object.keys(pattern);
   const triples: string[] = [];
 
@@ -112,12 +127,19 @@ const generateTriplePatterns = (pattern: QueryPattern): string => {
   const overfetchNode = `?node_${isLastNodeList ? "list_" : ""}${nodeCounter}`;
   const overfetchNextNode = `?node_${nodeCounter + 1}`;
   const overfetchPredicate = `?predicate_${nodeCounter + 1}`;
-  triples.push(`${overfetchNode} ${overfetchPredicate} ${overfetchNextNode}.`);
+  triples.push(
+    `${overfetchNode} ${overfetchPredicate} ${overfetchNextNode}.` +
+      (overfetch === "blankNodes" ? ` FILTER(isBlank(${overfetchNode}))` : ""),
+  );
 
   return triples.join("\n      ");
 };
 
-export const generateQuery = (patterns: QueryPattern[], graph?: string): string => {
+export const generateQuery = (
+  patterns: QueryPattern[],
+  graph?: string,
+  { overfetch = "all", useNamedGraphs = true }: QueryOptions = {},
+): string => {
   // Group patterns by their keys
   const groupedPatterns = new Map<string, QueryPattern[]>();
 
@@ -133,7 +155,7 @@ export const generateQuery = (patterns: QueryPattern[], graph?: string): string 
 
   for (const group of groupedPatterns.values()) {
     const valuesClause = generateValuesClause(group);
-    const triplePatterns = generateTriplePatterns(group[0]);
+    const triplePatterns = generateTriplePatterns(group[0], overfetch);
 
     // Split triple patterns into required and optional (overfetch)
     const patternLines = triplePatterns.split("\n      ");
@@ -149,6 +171,12 @@ export const generateQuery = (patterns: QueryPattern[], graph?: string): string 
   }
 
   const whereClause = unions.join("\n    UNION\n");
+  if (!useNamedGraphs) {
+    return `SELECT * WHERE {
+${whereClause}
+}`;
+  }
+
   const graphClause = graph ? `<${graph}>` : "?g";
 
   return `SELECT * WHERE {

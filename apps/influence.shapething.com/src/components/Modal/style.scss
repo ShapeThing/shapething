@@ -29,7 +29,8 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
-  padding: 20px 20px 10px;
+  // A little white below the title before the content fades out (the top padding of the body).
+  padding: 20px 20px 8px;
 }
 
 .modal__title {
@@ -83,11 +84,21 @@
   }
 }
 
+// The content fades out under the top and bottom padding while it scrolls, like the columns.
+// Something sticky sticks below the fade: at --modal-fade from the top.
 .modal__body {
+  --modal-fade: 20px;
+
   flex: 1 1 auto;
   min-height: 0;
-  padding: 0 20px 20px;
+  padding: var(--modal-fade) 20px 20px;
   overflow-y: auto;
+  mask-image: linear-gradient(
+    transparent,
+    black var(--modal-fade),
+    black calc(100% - var(--modal-fade)),
+    transparent
+  );
   font-size: 17px;
   line-height: 30px;
 }
@@ -104,11 +115,11 @@
   }
 
   .modal__header {
-    padding: 40px 40px 20px;
+    padding: 40px 40px 12px;
   }
 
   .modal__body {
-    padding: 0 40px 40px;
+    padding: var(--modal-fade) 40px 40px;
   }
 
   .modal__footer {

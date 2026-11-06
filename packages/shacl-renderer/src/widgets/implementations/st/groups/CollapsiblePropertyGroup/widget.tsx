@@ -19,7 +19,8 @@ export default function CollapsiblePropertyGroup({ group }: GroupWidgetProps) {
   return (
     <details
       className="st-property-group st-collapsible-property-group"
-      open
+      // Open unless the group says st:collapsed true. Only the start: the viewer opens and closes it.
+      open={!group.collapsed()}
       data-iri={group.node.value}
     >
       <summary className="st-property-group__title st-collapsible-property-group__title st-property-group__legend">

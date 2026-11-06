@@ -19,6 +19,11 @@
 ### modal (and the Wikipedia link) have a label. An empty sh:description keeps the help icon of
 ### inf:influenceCount's rdfs:comment out of a header that has no label.
 
+inf:fullName
+    a rdf:Property ;
+    rdfs:label "Full name"@en ;
+    rdfs:comment "The full name of a person: their name in their own language (P1559, name in native language), or else their name."@en .
+
 inf:influenceCount
     a rdf:Property ;
     rdfs:label "Influence"@en ;
@@ -45,6 +50,11 @@ inf:YearViewer
     a shui:Widget ;
     rdfs:label "Year"@en ;
     rdfs:comment "The year of a Wikidata date, with BCE for the years before the common era."@en .
+
+inf:EntityLinkViewer
+    a shui:Widget ;
+    rdfs:label "Link to the entity"@en ;
+    rdfs:comment "A name as a link to the resource it belongs to, which opens it in the modal."@en .
 
 ### Groups. They have no label, they bring together what is laid out together (see src/styles).
 
@@ -199,18 +209,27 @@ inf:TeaserShape
         shui:viewer inf:RelativeInfluenceViewer ;
     ] .
 
-### The modal: everything about a person, a work, or a concept (an interest or an idea), each
-### with its own shape. The kind is judged from the entity itself (src/data/person.ts). The name
-### is the title of the modal itself, not a property.
+### The modal: everything about a person, a work, or a concept (an interest or an idea). The kind is
+### judged from the entity itself (src/data/person.ts). The name is the title of the modal itself,
+### not a property.
 ###
-### The image and the text are the same for every kind, so they are named property shapes the
-### three node shapes share. The facts differ: only a person has a lifespan and an influence, only
-### a work a publication date.
+### The modal has two columns (src/components/EntityModal). The side column, which stays in view
+### while the rest scrolls, has the image and the facts: each kind has its own shape for it, as
+### only a person has a lifespan and an influence, only a work a publication date. The main column
+### has the text, which is the same for every kind (inf:ModalTextShape), and below it every property.
 
 inf:PersonModalShape
     a sh:NodeShape ;
     rdfs:label "Person"@en ;
-    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia ;
+    sh:property inf:ModalImage ;
+    sh:property [
+        sh:path inf:fullName ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:order 0.5 ;
+        sh:maxCount 1 ;
+        shui:viewer shui:LiteralViewer ;
+    ] ;
     sh:property [
         sh:path wdt:P569 ;
         sh:name "Born"@en ;
@@ -230,16 +249,83 @@ inf:PersonModalShape
     sh:property [
         sh:path inf:influenceCount ;
         sh:name "Influence"@en ;
-        sh:order 3 ;
+        # First of the facts, directly below the name.
+        sh:order 0 ;
         sh:maxCount 1 ;
         sh:group inf:facts ;
         shui:viewer inf:RelativeInfluenceViewer ;
+    ] ;
+    # The countries of citizenship, each with its flag and name (inf:CountryShape).
+    sh:property [
+        sh:path wdt:P27 ;
+        sh:name "Citizenship"@en ;
+        sh:order 2.5 ;
+        sh:group inf:facts ;
+        sh:node inf:CountryShape ;
+        shui:viewer shui:DetailsViewer ;
+    ] ;
+    # The occupations: their names as links, which open them in the modal.
+    sh:property [
+        sh:path wdt:P106 ;
+        sh:name "Occupation"@en ;
+        # Below the map of the place of birth.
+        sh:order 5 ;
+        sh:group inf:facts ;
+        sh:node inf:ItemShape ;
+        shui:viewer shui:LabelViewer ;
+    ] ;
+    # The place itself, not its coordinates: st:MapViewer walks one hop into it (inf:PlaceShape)
+    # for the coordinates and for the name it shows when the marker is hovered.
+    sh:property [
+        sh:path wdt:P19 ;
+        sh:name "Place of birth"@en ;
+        sh:order 4 ;
+        sh:maxCount 1 ;
+        sh:group inf:facts ;
+        sh:node inf:PlaceShape ;
+        shui:viewer st:MapViewer ;
+        st:mapMaxZoom 5 ;
+    ] .
+
+### A country of citizenship: its flag (P41), then its name, as a link to the country.
+
+inf:CountryShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path wdt:P41 ;
+        sh:name "" ;
+        sh:order 0 ;
+        sh:maxCount 1 ;
+        shui:viewer shui:ImageViewer ;
+        st:imageWidth 64 ; # shown 16px high (EntityModal/style.scss)
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:name "" ;
+        sh:order 1 ;
+        sh:maxCount 1 ;
+        # A link that opens the country in the modal.
+        shui:viewer inf:EntityLinkViewer ;
+        shui:propertyRole shui:LabelRole ;
+    ] .
+
+### A place on a map: its coordinates (P625, a WKT point) and its name.
+
+inf:PlaceShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path wdt:P625 ;
+        shui:propertyRole st:GeoRole ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
     ] .
 
 inf:WorkModalShape
     a sh:NodeShape ;
     rdfs:label "Work"@en ;
-    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia ;
+    sh:property inf:ModalImage ;
     sh:property [
         sh:path wdt:P577 ;
         sh:name "Published"@en ;
@@ -252,7 +338,12 @@ inf:WorkModalShape
 inf:ConceptModalShape
     a sh:NodeShape ;
     rdfs:label "Concept"@en ;
-    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia .
+    sh:property inf:ModalImage .
+
+inf:ModalTextShape
+    a sh:NodeShape ;
+    rdfs:label "Text"@en ;
+    sh:property inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia .
 
 inf:ModalImage
     a sh:PropertyShape ;
@@ -292,3 +383,20 @@ inf:ModalWikipedia
     sh:maxCount 1 ;
     sh:group inf:text ;
     shui:viewer shui:HyperlinkViewer .
+
+### Every property of the entity in the modal, below the rest: a second renderer. The property
+### shapes are made for each entity from what Wikidata states about it (src/data/resource.ts),
+### the external identifiers in a group of their own. Unlike the groups above, these have a label.
+
+inf:AllPropertiesShape
+    a sh:NodeShape ;
+    rdfs:label "All properties"@en .
+
+inf:statements a sh:PropertyGroup ; rdfs:label "Information"@en ; sh:order 20 .
+# The external identifiers are many (hundreds for a well-known person) and rarely read: a group
+# that starts closed.
+inf:identifiers
+    a sh:PropertyGroup, st:CollapsiblePropertyGroup ;
+    rdfs:label "Identifiers"@en ;
+    sh:order 21 ;
+    st:collapsed true .

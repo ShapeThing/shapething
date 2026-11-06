@@ -55,7 +55,9 @@
   }
 }
 
-[open] .st-property-group__title svg {
+/* Only the group's own <details>: any open ancestor, such as a <dialog open> around the renderer,
+   would turn every chevron otherwise. */
+details[open] > .st-property-group__title svg {
   transform: rotate(90deg);
 }
 

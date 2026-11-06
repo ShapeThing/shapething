@@ -10,6 +10,7 @@ import "@/helpers/configureMaplibreWorker.ts";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { st } from "@/helpers/namespaces.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
 import { featureCollectionBounds, valueToFeature } from "./geometry.ts";
 import "./style.css";
@@ -57,6 +58,10 @@ export default function MapViewer({ shape }: WidgetProps) {
   const { activeLanguage } = useContentLanguage();
   const { mapStyleUrl } = useEnvironment();
   const rows = useDataGraphObjects(shape);
+  // st:mapMaxZoom: how far fitting the values may zoom in, so a single point is shown with its
+  // surroundings. keepHighestInteger (constraintResolutions.ts) resolves it to a number, as
+  // st:imageWidth for ImageViewer.
+  const mapMaxZoom = shape.get(st("mapMaxZoom")) as unknown as number | undefined;
 
   const collection = useMemo<FeatureCollection>(() => {
     const features = rows
@@ -147,12 +152,12 @@ export default function MapViewer({ shape }: WidgetProps) {
       }
 
       const bounds = featureCollectionBounds(collection);
-      if (bounds) map.fitBounds(bounds, { padding: 20, animate: false });
+      if (bounds) map.fitBounds(bounds, { padding: 20, animate: false, maxZoom: mapMaxZoom });
     };
 
     if (map.isStyleLoaded()) applyData();
     else map.once("load", applyData);
-  }, [collection]);
+  }, [collection, mapMaxZoom]);
 
   return <div ref={containerRef} className="st-map-viewer" />;
 }
