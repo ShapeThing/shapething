@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
   "label": "storybook tests",
-  "message": "505 passed",
-  "color": "brightgreen"
+  "message": "506 passed, 1 failed",
+  "color": "red"
 }
