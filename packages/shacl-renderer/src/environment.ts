@@ -250,7 +250,9 @@ export type Environment = {
   // sh:targetClass - with a bare sh:property/sh:path for each predicate actually used by that
   // class's instances, so otherwise-unshaped data still renders as something editable. A class
   // already covered by some shape is left untouched, even if that shape is missing some properties
-  // its instances carry. Off by default: a shapesGraph is normally authored deliberately, and this
+  // its instances carry. A root shape (nodeShapes) that declares no target of its own - a generic
+  // shape - is topped up from the focus node's own predicates instead, as no class leads to it.
+  // Off by default: a shapesGraph is normally authored deliberately, and this
   // is meant as a fallback for exploring/rendering data that has none, not a silent, ongoing
   // overlay on top of an intentionally scoped shape.
   enableMissingShapesGeneration?: boolean;

@@ -39,6 +39,6 @@ export const stMergeTemplateLiving: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.findByText("poet (1950–)")).resolves.toBeVisible();
+    await expect(canvas.findByText("poet (born 1950)")).resolves.toBeVisible();
   },
 };

@@ -222,6 +222,8 @@ export type ItemKind = "works" | "interests" | "ideas";
 export type ListItem = {
   iri: NamedNode;
   label?: Literal;
+  /** When a work was made (P571 inception). */
+  inception?: Literal;
   publicationDate?: Literal;
 };
 
@@ -232,6 +234,7 @@ export type ItemListRow = {
   item: NamedNode;
   /** From the label service: an English or "mul" label, else the identifier without a language. */
   name: Term;
+  inception?: Literal;
   publicationDate?: Literal;
 };
 
@@ -257,6 +260,7 @@ export const itemListsFromRows = (rows: readonly ItemListRow[]): ItemLists => {
       lists[kind].push(item);
     }
     item.label ??= label;
+    item.inception ??= row.inception;
     item.publicationDate ??= row.publicationDate;
   }
 

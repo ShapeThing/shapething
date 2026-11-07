@@ -1,0 +1,19 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix st: <http://shapething.com/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+### A place on a map: its coordinates (P625, a WKT point) and its name.
+
+inf:PlaceShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path wdt:P625 ;
+        shui:propertyRole st:GeoRole ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        shui:propertyRole shui:LabelRole ;
+    ] .

@@ -3,7 +3,7 @@ import { factory, inf, rdfs, schema, wdt, xsd } from "../rdf/namespaces.ts";
 import type { EntityDetails, ItemLists, PersonSummary } from "./person.ts";
 
 /**
- * The data graphs the display shapes (shapes/shapes.ttl) render. They hold the Wikidata triples
+ * The data graphs the display shapes (src/shapes) render. They hold the Wikidata triples
  * the queries matched, with Wikidata's own predicates, plus what Wikidata does not state itself:
  * the number of people someone influenced (inf:influenceCount) and the introduction of the
  * Wikipedia article (schema:abstract).
@@ -39,6 +39,8 @@ export const itemListQuads = (person: NamedNode, lists: ItemLists): Quad[] => [
   ...lists.works.flatMap((work) => [
     ...quad(work.iri, wdt("P50"), person),
     ...quad(work.iri, rdfs("label"), work.label),
+    // The works are listed by the year they were made, or else published (inf:ColumnShape).
+    ...quad(work.iri, wdt("P571"), work.inception),
     ...quad(work.iri, wdt("P577"), work.publicationDate),
   ]),
   ...lists.interests.flatMap((interest) => [

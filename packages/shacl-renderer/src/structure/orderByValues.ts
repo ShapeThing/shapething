@@ -69,6 +69,56 @@ export function sortByOrderPath(objects: Term[], path: PropertyPath, dataGraph: 
 }
 
 /**
+ * View mode's order of a property's values: by their st:orderBy position when the property has
+ * one (values without a position last), and otherwise - as well as between values sharing a
+ * position, or both without one - alphabetically by `labelOf` (the label the viewer shows), as
+ * readers of `locale` sort: "Émile" with the E's, "Book 2" before "Book 10". RDF values have no
+ * order of their own, so without this they would be in whatever order the data happened to give.
+ *
+ * Edit mode keeps sortByOrderPath alone: there, without st:orderBy, values stay in the order they
+ * were added in, and sorting by label would move a value away while it is being typed.
+ */
+export function sortForView(
+  objects: Term[],
+  path: PropertyPath | undefined,
+  dataGraph: RdfStore,
+  labelOf: (term: Term) => string,
+  locale: string,
+): Term[] {
+  const collator = collatorFor(locale);
+  const keys = new Map(
+    objects.map((object) => [
+      object,
+      {
+        position: path ? readPosition(object, path, dataGraph) : undefined,
+        label: labelOf(object),
+      },
+    ]),
+  );
+  return [...objects].sort((a, b) => {
+    const keyA = keys.get(a)!;
+    const keyB = keys.get(b)!;
+    if (keyA.position !== keyB.position) {
+      if (keyA.position === undefined) return 1;
+      if (keyB.position === undefined) return -1;
+      return keyA.position - keyB.position;
+    }
+    return collator.compare(keyA.label, keyB.label);
+  });
+}
+
+// A language tag Intl does not accept (an empty or wildcard content language) sorts as the
+// runtime's default locale does.
+function collatorFor(locale: string): Intl.Collator {
+  const options: Intl.CollatorOptions = { numeric: true, sensitivity: "base" };
+  try {
+    return new Intl.Collator(locale || undefined, options);
+  } catch {
+    return new Intl.Collator(undefined, options);
+  }
+}
+
+/**
  * Renumbers `objects` 1..n in the order given, as one undoable write. Values already holding
  * their new position are left untouched.
  */

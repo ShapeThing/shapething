@@ -42,7 +42,7 @@ function classesUsedInData(dataGraph: RdfStore): NamedNode[] {
 // `sh:alternativePath (dc:title rdfs:label)` shape below) - a predicate already reachable through
 // one branch of an existing alternative doesn't need a redundant bare property of its own. Any other
 // compound path (a sequence, inverse, zeroOrMore, ...) still isn't recognized as covered here,
-// matching predicatesUsedByInstancesOf's own predicate-only granularity - a predicate only reachable
+// matching predicatesUsedBy's own predicate-only granularity - a predicate only reachable
 // that way could still get a redundant bare property minted alongside it. That's acceptable:
 // sh:property entries are conjunctive, not exclusive, so a false "still missing" call just adds a
 // harmless duplicate field rather than breaking anything.
@@ -87,13 +87,19 @@ function predicatesCoveredByShapeNodes(
   return covered;
 }
 
-// Every predicate actually used on dataGraph's own instances of `classIri` - rdf:type itself
-// excluded, since every SHACL instance carries it by definition and the generated shape already
-// covers it implicitly (see addMissingShapes below).
-function predicatesUsedByInstancesOf(classIri: NamedNode, dataGraph: RdfStore): NamedNode[] {
+// Every SHACL instance-by-rdf:type of `classIri` in dataGraph - the nodes whose predicates a shape
+// targeting the class is topped up with (addMissingShapes below).
+function instancesOf(classIri: NamedNode, dataGraph: RdfStore): Quad_Subject[] {
+  return dataGraph.getQuads(null, rdf("type"), classIri).map((quad) => quad.subject);
+}
+
+// Every predicate actually used on `instances` in dataGraph - rdf:type itself excluded, since
+// every SHACL instance carries it by definition and the generated shape already covers it
+// implicitly (see addMissingShapes below).
+function predicatesUsedBy(instances: Quad_Subject[], dataGraph: RdfStore): NamedNode[] {
   const seen = new Set<string>();
   const predicates: NamedNode[] = [];
-  for (const { subject: instance } of dataGraph.getQuads(null, rdf("type"), classIri)) {
+  for (const instance of instances) {
     for (const quad of dataGraph.getQuads(instance)) {
       if (quad.predicate.equals(rdf("type"))) continue;
       if (quad.predicate.termType !== "NamedNode") continue;
@@ -105,21 +111,36 @@ function predicatesUsedByInstancesOf(classIri: NamedNode, dataGraph: RdfStore): 
   return predicates;
 }
 
-// Every object value dataGraph actually holds for `predicate` on any of dataGraph's own instances
-// of `classIri` - the same instance walk predicatesUsedByInstancesOf does, just collecting values
-// for one already-known-missing predicate instead of discovering predicates in the first place.
+// Every object value dataGraph actually holds for `predicate` on any of `instances` - the same
+// walk predicatesUsedBy does, just collecting values for one already-known-missing predicate
+// instead of discovering predicates in the first place.
 function valuesUsedFor(
-  classIri: NamedNode,
+  instances: Quad_Subject[],
   predicate: NamedNode,
   dataGraph: RdfStore,
 ): Quad_Object[] {
-  const values: Quad_Object[] = [];
-  for (const { subject: instance } of dataGraph.getQuads(null, rdf("type"), classIri)) {
-    for (const quad of dataGraph.getQuads(instance, predicate)) {
-      values.push(quad.object);
-    }
-  }
-  return values;
+  return instances.flatMap((instance) =>
+    dataGraph.getQuads(instance, predicate).map((quad) => quad.object),
+  );
+}
+
+// The SHACL Core predicates by which a shape declares a target (3.1.3), sh:targetWhere included.
+const targetPredicates = [
+  "targetNode",
+  "targetClass",
+  "targetSubjectsOf",
+  "targetObjectsOf",
+  "targetWhere",
+] as const;
+
+// Whether `shapeNode` declares a target of its own: one of targetPredicates, or being its own
+// implicit class-shape/sh:ShapeClass (3.1.3.3). sh:shape in the data graph (3.1.3.7) is not
+// counted: that is the data pointing at the shape, not the shape saying what it is for.
+function declaresTarget(shapeNode: Quad_Subject, shapesGraph: RdfStore): boolean {
+  return (
+    targetPredicates.some((name) => shapesGraph.getQuads(shapeNode, sh(name)).length > 0) ||
+    shapesForClass(shapeNode, shapesGraph).some((node) => node.equals(shapeNode))
+  );
 }
 
 // SHACL's three leaf node kinds (7.7.1's compound BlankNodeOrIRI/BlankNodeOrLiteral/IRIOrLiteral
@@ -204,6 +225,11 @@ function inferredConstraints(
  * attached to the first one shapesForClass finds instead, so an existing shape's own
  * identity/groups/etc are left completely untouched - only the properties it's missing are added.
  *
+ * A root shape (Environment.nodeShapes) that declares no target of its own - a generic shape, not
+ * tied to a class - is topped up the same way from the focus node's own predicates: it is applied
+ * to the focus node because it is named, so no class would ever lead to it. Not in facet mode (no
+ * focus node) or report mode (the report names its own focus nodes).
+ *
  * Deliberately minimal beyond that: a generated property shape carries no sh:name/sh:maxCount/
  * etc, so widget scoring falls back to its own generic-value heuristics the same as it would for
  * any other under-specified property shape - this is a fallback for unshaped/under-shaped data,
@@ -235,13 +261,17 @@ export const addMissingShapes: Preprocessor = (environment) => {
     shapesGraph.addQuad(quad);
   }
 
+  // The untargeted root shapes, read before the class loop below can make any of them an implicit
+  // class-shape by minting one under the same IRI.
+  const untargetedRootShapes =
+    environment.mode === "facet" || environment.mode === "report"
+      ? []
+      : environment.nodeShapes.filter((shapeNode) => !declaresTarget(shapeNode, shapesGraph));
+
   for (const classIri of classesUsedInData(dataGraph)) {
     const shapeNodes = shapesForClass(classIri, shapesGraph);
-    const coveredPredicates = predicatesCoveredByShapeNodes(shapeNodes, shapesGraph);
-
-    const predicates = predicatesUsedByInstancesOf(classIri, dataGraph).filter(
-      (predicate) => !coveredPredicates.has(predicate.value),
-    );
+    const instances = instancesOf(classIri, dataGraph);
+    const predicates = missingPredicates(shapeNodes, instances, shapesGraph, dataGraph);
     if (predicates.length === 0) continue;
 
     let targetShapeNode: Quad_Subject | undefined = shapeNodes[0];
@@ -250,26 +280,59 @@ export const addMissingShapes: Preprocessor = (environment) => {
       shapesGraph.addQuad(factory.quad(classIri, rdf("type"), rdfs("Class")));
       targetShapeNode = classIri;
     }
+    addBareProperties(targetShapeNode, predicates, instances, shapesGraph, dataGraph);
+  }
 
-    for (const predicate of predicates) {
-      const propertyNode = factory.blankNode();
-      shapesGraph.addQuad(factory.quad(propertyNode, sh("path"), predicate));
-
-      const {
-        nodeKind,
-        datatype,
-        classIri: valueClass,
-      } = inferredConstraints(valuesUsedFor(classIri, predicate, dataGraph), dataGraph);
-      if (nodeKind) shapesGraph.addQuad(factory.quad(propertyNode, sh("nodeKind"), nodeKind));
-      if (datatype) shapesGraph.addQuad(factory.quad(propertyNode, sh("datatype"), datatype));
-      if (valueClass) shapesGraph.addQuad(factory.quad(propertyNode, sh("class"), valueClass));
-
-      shapesGraph.addQuad(factory.quad(targetShapeNode, sh("property"), propertyNode));
-    }
+  // A root shape without a target of its own (a generic shape, given as Environment.nodeShapes)
+  // is applied to the focus node as it is, so no class leads to it: it is topped up from the
+  // focus node's own predicates instead.
+  for (const shapeNode of untargetedRootShapes) {
+    const instances = [environment.focusNode];
+    const predicates = missingPredicates([shapeNode], instances, shapesGraph, dataGraph);
+    addBareProperties(shapeNode, predicates, instances, shapesGraph, dataGraph);
   }
 
   return { ...environment, shapesGraph };
 };
+
+// The predicates `instances` use that none of `shapeNodes` covers or ignores.
+function missingPredicates(
+  shapeNodes: Quad_Subject[],
+  instances: Quad_Subject[],
+  shapesGraph: RdfStore,
+  dataGraph: RdfStore,
+): NamedNode[] {
+  const covered = predicatesCoveredByShapeNodes(shapeNodes, shapesGraph);
+  return predicatesUsedBy(instances, dataGraph).filter(
+    (predicate) => !covered.has(predicate.value),
+  );
+}
+
+// One bare sh:property/sh:path on `shapeNode` per predicate, narrowed by what the values of
+// `instances` agree on (inferredConstraints).
+function addBareProperties(
+  shapeNode: Quad_Subject,
+  predicates: NamedNode[],
+  instances: Quad_Subject[],
+  shapesGraph: RdfStore,
+  dataGraph: RdfStore,
+): void {
+  for (const predicate of predicates) {
+    const propertyNode = factory.blankNode();
+    shapesGraph.addQuad(factory.quad(propertyNode, sh("path"), predicate));
+
+    const {
+      nodeKind,
+      datatype,
+      classIri: valueClass,
+    } = inferredConstraints(valuesUsedFor(instances, predicate, dataGraph), dataGraph);
+    if (nodeKind) shapesGraph.addQuad(factory.quad(propertyNode, sh("nodeKind"), nodeKind));
+    if (datatype) shapesGraph.addQuad(factory.quad(propertyNode, sh("datatype"), datatype));
+    if (valueClass) shapesGraph.addQuad(factory.quad(propertyNode, sh("class"), valueClass));
+
+    shapesGraph.addQuad(factory.quad(shapeNode, sh("property"), propertyNode));
+  }
+}
 
 // A property shape counts as mergeable when it declares sh:datatype xsd:string or rdf:langString
 // (expandListOrTerm handles SHACL 1.2's "sh:datatype may be a list" form too) and does NOT already

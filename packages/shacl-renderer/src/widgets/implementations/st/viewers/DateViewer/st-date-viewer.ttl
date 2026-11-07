@@ -1,0 +1,37 @@
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix schema: <http://schema.org/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix ex: <http://example.org/>.
+
+# No shui:viewer anywhere: every date property scores st:DateViewer (see score.ttl), the birth date
+# from its sh:datatype and the death date from its value alone.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:closed true ;
+    sh:property [
+        sh:path schema:name ;
+        sh:name "Name"@en, "Naam"@nl ;
+    ] ;
+    sh:property [
+        sh:path schema:birthDate ;
+        sh:name "Date of birth"@en, "Geboortedatum"@nl ;
+        sh:datatype xsd:date ;
+        sh:maxCount 1 ;
+    ] ;
+    sh:property [
+        sh:path schema:deathDate ;
+        sh:name "Date of death"@en, "Overlijdensdatum"@nl ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:name "Søren Kierkegaard" ;
+    schema:birthDate "1813-05-05"^^xsd:date ;
+    # A date stored as a dateTime at midnight, as Wikidata does: shown as a date.
+    schema:deathDate "1855-11-11T00:00:00Z"^^xsd:dateTime ;
+    .

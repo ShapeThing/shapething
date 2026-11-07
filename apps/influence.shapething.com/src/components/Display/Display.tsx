@@ -6,7 +6,7 @@ import {
   type ResolveLink,
 } from "@shapething/shacl-renderer";
 import type { RdfStore } from "rdf-stores";
-import { useCallback } from "react";
+import { type ReactNode, useCallback } from "react";
 import { clsx } from "../../clsx.ts";
 import { entityId, isEntityId } from "../../data/entities.ts";
 import { useAppLocation } from "../../routing.ts";
@@ -16,7 +16,7 @@ import Spinner from "../Spinner/Spinner.tsx";
 import "./style.scss";
 
 type Props = {
-  /** One of the display shapes of shapes/shapes.ttl. */
+  /** One of the display shapes of src/shapes. */
   shape: NamedNode;
   focusNode: NamedNode;
   /** The data graph (see data/graphs.ts). Quads are compared by content: an equal array keeps the
@@ -33,6 +33,8 @@ type Props = {
   resolveLink?: ResolveLink;
   /** How a label stands to its values; "inline" (beside a single value) unless given. */
   labelLayout?: "block" | "inline" | "columns";
+  /** What shows while the renderer holds back the first paint; the spinner unless given. */
+  settleIndicator?: ReactNode;
 };
 
 /**
@@ -70,6 +72,7 @@ export default function Display({
   preprocessors,
   resolveLink,
   labelLayout = "inline",
+  settleIndicator = <Spinner />,
 }: Props) {
   const appLinks = useAppLinks();
   const resolve = useCallback<ResolveLink>(
@@ -105,7 +108,7 @@ export default function Display({
         // No spinner for each value that loads, but one while the renderer holds back the first
         // paint until the whole display has loaded (style.scss).
         loadingIndicator={null}
-        settleIndicator={<Spinner />}
+        settleIndicator={settleIndicator}
         resolveLink={resolve}
       />
     </div>

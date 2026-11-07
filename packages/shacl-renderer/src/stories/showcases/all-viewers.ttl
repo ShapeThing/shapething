@@ -168,6 +168,17 @@
     ] ;
 
     sh:property [
+        sh:name "st:DateViewer" ;
+        sh:description "http://shapething.com/DateViewer" ;
+        sh:path ex:dateViewer ;
+        sh:datatype xsd:date ;
+        sh:maxCount 1 ;
+        shui:viewer st:DateViewer ;
+        sh:group <#stGroup> ;
+        sh:order 14 ;
+    ] ;
+
+    sh:property [
         sh:name "st:DurationViewer" ;
         sh:description "http://shapething.com/DurationViewer" ;
         sh:path ex:durationViewer ;
@@ -175,7 +186,7 @@
         sh:maxCount 1 ;
         shui:viewer st:DurationViewer ;
         sh:group <#stGroup> ;
-        sh:order 14 ;
+        sh:order 15 ;
     ] ;
 
     sh:property [
@@ -185,7 +196,7 @@
         sh:datatype <https://iconify.design> ;
         shui:viewer st:IconifyViewer ;
         sh:group <#stGroup> ;
-        sh:order 15 ;
+        sh:order 16 ;
     ] ;
 
     sh:property [
@@ -195,7 +206,7 @@
         shui:viewer st:MapViewer ;
         sh:node <#landmarkShape> ;
         sh:group <#stGroup> ;
-        sh:order 16 ;
+        sh:order 17 ;
     ] ;
 
     sh:property [
@@ -204,7 +215,7 @@
         sh:path ex:videoViewer ;
         shui:viewer st:VideoViewer ;
         sh:group <#stGroup> ;
-        sh:order 17 ;
+        sh:order 18 ;
     ] ;
     .
 
@@ -294,6 +305,7 @@ ex:rijksmuseum
         st:saturation "91.21951219512198"^^xsd:decimal ;
         st:lightness "59.80392156862745"^^xsd:decimal ;
     ] ;
+    ex:dateViewer "1855-11-11"^^xsd:date ;
     ex:durationViewer "P2Y6M"^^xsd:duration ;
     ex:iconifyViewer "mdi:home"^^<https://iconify.design> ;
     ex:mapViewer

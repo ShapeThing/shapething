@@ -1,18 +1,16 @@
-import { defaultPreprocessors } from "@shapething/shacl-renderer";
 import { useMemo } from "react";
 import { entityIri } from "../../data/entities.ts";
 import { entityQuads } from "../../data/graphs.ts";
 import { useAbstract, useAllProperties, useEntity } from "../../data/queries.ts";
-import { groupProperties } from "../../shapes/groupProperties.ts";
 import { AllPropertiesShape, ModalShapes } from "../../shapes/shapes.ts";
 import Display from "../Display/Display.tsx";
 import Modal from "../Modal/Modal.tsx";
-import Spinner from "../Spinner/Spinner.tsx";
+import Thinking from "../Thinking/Thinking.tsx";
 import "./style.scss";
 
 /**
  * An entity in the modal: a person, but also a work, interest or idea from the lists of a person.
- * Each kind of entity has its own shape (shapes.ttl), so a work never shows a lifespan or an
+ * Each kind of entity has its own shape (src/shapes), so a work never shows a lifespan or an
  * influence. A person can be made the start of a new chain from here (the footer).
  *
  * The shape has two groups: the side column (inf:side: the image, the short description and the
@@ -21,6 +19,9 @@ import "./style.scss";
  * is not kept waiting for it. On a wide screen the side column is beside the text and the
  * properties, sticky while they scroll (style.scss). A concept without an image or
  * a description has no facts either: its side group is empty, so the renderer leaves it out.
+ *
+ * Wikidata can be slow: every place that waits for it shows a spinner, and a thinker when the wait
+ * goes on (components/Thinking).
  */
 export default function EntityModal({ id, onClose }: { id: string; onClose: () => void }) {
   const entity = useEntity(id);
@@ -29,18 +30,6 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
   const abstract = useAbstract(article);
   // The introduction is waited for, so the modal does not change while it is read.
   const isComplete = entity.data !== undefined && (article === undefined || !abstract.isPending);
-
-  // Every property of a person in one graph; which of them are external identifiers is known from
-  // the query they came with, and that puts them in their group (shapes/groupProperties.ts).
-  const allPropertiesDisplay = useMemo(() => {
-    if (!allProperties.data) return undefined;
-    const { statements, identifiers } = allProperties.data;
-    const identifierPredicates = new Set(identifiers.map((quad) => quad.predicate.value));
-    return {
-      dataGraph: [...statements, ...identifiers],
-      preprocessors: [...defaultPreprocessors, groupProperties(identifierPredicates)],
-    };
-  }, [allProperties.data]);
 
   // A Commons thumbnail wide enough for the widest modal on a high density screen, not the original.
   const banner = entity.data?.banner && `${entity.data.banner.value}?width=1600`;
@@ -73,33 +62,31 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
             shape={ModalShapes[entity.data.kind]}
             focusNode={entityIri(id)}
             dataGraph={quads}
+            settleIndicator={<Thinking />}
           />
-          {/* Only people have a shape for all their properties so far (inf:AllPropertiesShape). */}
-          {entity.data.kind === "person" && (
-            <section className="entity-modal__all-properties" aria-label="All properties">
-              {allPropertiesDisplay ? (
-                <Display
-                  shape={AllPropertiesShape}
-                  focusNode={entityIri(id)}
-                  dataGraph={allPropertiesDisplay.dataGraph}
-                  preprocessors={allPropertiesDisplay.preprocessors}
-                  enableMissingShapesGeneration
-                  // Two columns, the labels beside the values; on a narrow screen one (style.scss).
-                  labelLayout="columns"
-                />
-              ) : allProperties.isError ? (
-                <p>The other properties are not available at the moment.</p>
-              ) : (
-                <div className="entity-modal__loading">
-                  <Spinner />
-                </div>
-              )}
-            </section>
-          )}
+          <section className="entity-modal__all-properties" aria-label="All properties">
+            {allProperties.data ? (
+              <Display
+                shape={AllPropertiesShape}
+                focusNode={entityIri(id)}
+                dataGraph={allProperties.data}
+                enableMissingShapesGeneration
+                // Two columns, the labels beside the values; on a narrow screen one (style.scss).
+                labelLayout="columns"
+                settleIndicator={<Thinking caption="Gathering everything Wikidata knows…" />}
+              />
+            ) : allProperties.isError ? (
+              <p>The other properties are not available at the moment.</p>
+            ) : (
+              <div className="entity-modal__loading">
+                <Thinking caption="Gathering everything Wikidata knows…" />
+              </div>
+            )}
+          </section>
         </div>
       ) : (
         <div className="entity-modal__loading">
-          <Spinner />
+          <Thinking />
         </div>
       )}
     </Modal>

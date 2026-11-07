@@ -1,0 +1,34 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix st: <http://shapething.com/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+inf:PersonModalShape
+    a sh:NodeShape ;
+    rdfs:label "Person"@en ;
+    sh:property inf:ModalImage, inf:ModalSummary, inf:ModalAbstract, inf:ModalWikipedia ;
+    sh:property [
+        sh:path inf:influenceCount ;
+        sh:name "Influence"@en ;
+        # First of the facts, directly below the name.
+        sh:order 0 ;
+        sh:maxCount 1 ;
+        sh:group inf:facts ;
+        shui:viewer inf:RelativeInfluenceViewer ;
+        st:cssClass "influence" ;
+    ] ;
+    # The place itself, not its coordinates: st:MapViewer walks one hop into it (inf:PlaceShape)
+    # for the coordinates and for the name it shows when the marker is hovered.
+    sh:property [
+        sh:path wdt:P19 ;
+        sh:name "Place of birth"@en ;
+        sh:order 4 ;
+        sh:maxCount 1 ;
+        sh:group inf:facts ;
+        sh:node inf:PlaceShape ;
+        shui:viewer st:MapViewer ;
+        st:mapMaxZoom 5 ;
+        st:cssClass "birth-place" ;
+    ] .

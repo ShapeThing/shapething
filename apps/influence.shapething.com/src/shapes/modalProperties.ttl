@@ -1,0 +1,86 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix schema: <http://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix st: <http://shapething.com/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+### The modal: everything about a person, a work, or a concept (an interest or an idea). The kind is
+### judged from the entity itself (src/data/person.ts). The name is the title of the modal itself,
+### not a property.
+###
+### The modal has two columns, the groups inf:side and inf:main (laid out by
+### src/components/EntityModal). The side column, which stays in view while the rest scrolls, has
+### the image, the short description and the facts: each kind has its own shape, as only a person
+### has a lifespan and an influence, only a work a publication date. The main column has the text,
+### the same for every kind, and below it (a second renderer) every property.
+
+inf:ModalImage
+    a sh:PropertyShape ;
+    sh:path wdt:P18 ;
+    sh:name "" ;
+    sh:order 0 ;
+    sh:maxCount 1 ;
+    sh:nodeKind sh:IRI ;
+    shui:viewer shui:ImageViewer ;
+    st:imageWidth 500 ;
+    shui:propertyRole shui:DepictionRole ;
+    sh:group inf:side ;
+    st:cssClass "image" .
+
+# The short description ("country in South America"): in the side column, below the image and the
+# name, not above the text, which it would only repeat in brief.
+inf:ModalDescription
+    a sh:PropertyShape ;
+    sh:path schema:description ;
+    sh:name "" ;
+    sh:order 0 ;
+    sh:maxCount 1 ;
+    sh:group inf:summary ;
+    shui:viewer shui:LiteralViewer ;
+    shui:propertyRole shui:DescriptionRole .
+
+# A person's short description, composed from the data rather than taken from Wikidata's
+# hand-written schema:description, so every person reads the same way: "Danish theologian,
+# philosopher, poet and social critic (1813–1855)". st:mergeAlternatives shows one value composed
+# from every branch: the demonyms of the countries of citizenship, the occupations (by their
+# names), and the years of birth and death: "(1813–1855)", "(born 1980)" when only the birth is
+# known, "(died 1855)" when only the death is, and nothing, brackets and all, when neither is. The
+# demonym is only there when src/data/person.ts could tell which one is the
+# adjective.
+inf:ModalSummary
+    a sh:PropertyShape ;
+    sh:path [ sh:alternativePath (
+        ( wdt:P27 wdt:P1549 ) # {0} demonym, "Danish"
+        wdt:P106 # {1} occupations
+        wdt:P569 # {2} date of birth
+        wdt:P570 # {3} date of death
+    ) ] ;
+    st:mergeAlternatives true ;
+    st:mergeTemplate "{0} {1}[ ({2:year}–{3:year})| (born {2:year})| (died {3:year})]" ;
+    sh:name "" ;
+    sh:order 0 ;
+    sh:maxCount 1 ;
+    sh:group inf:summary ;
+    shui:viewer shui:LiteralViewer ;
+    shui:propertyRole shui:DescriptionRole .
+
+inf:ModalAbstract
+    a sh:PropertyShape ;
+    sh:path schema:abstract ;
+    sh:name "" ;
+    sh:order 6 ;
+    sh:maxCount 1 ;
+    sh:group inf:text ;
+    shui:viewer shui:LiteralViewer ;
+    st:cssClass "abstract" .
+
+inf:ModalWikipedia
+    a sh:PropertyShape ;
+    sh:path [ sh:inversePath schema:about ] ;
+    sh:name "Wikipedia"@en ;
+    sh:order 7 ;
+    sh:maxCount 1 ;
+    sh:group inf:text ;
+    shui:viewer shui:HyperlinkViewer ;
+    st:cssClass "wikipedia" .

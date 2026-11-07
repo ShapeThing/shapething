@@ -249,12 +249,22 @@
 }
 
 .entity-modal__display > .st-view-mode > .st-header,
-// While the gate is closed the modal is only its spinner, where the spinner of EntityModal was
-// before: the invisible text takes no room below it, and the properties wait for it.
+// While the gate is closed the modal is only its indicator (the spinner, then the thinker, see
+// components/Thinking), where the indicator of EntityModal was before: the gate is as tall as the
+// indicator, the invisible text is taken out of the flow and takes no room below it, and the
+// properties wait for it.
 .entity-modal:has(> .entity-modal__display > .st-settle-gate[aria-busy]) {
   > .entity-modal__display > .st-settle-gate {
-    height: 128px;
     overflow: hidden;
+
+    > .st-settle-gate__indicator {
+      position: relative;
+    }
+
+    > .st-settle-gate__content {
+      position: absolute;
+      inset: 0 0 auto;
+    }
   }
 
   > .entity-modal__all-properties {

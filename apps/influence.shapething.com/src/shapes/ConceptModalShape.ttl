@@ -1,0 +1,8 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+inf:ConceptModalShape
+    a sh:NodeShape ;
+    rdfs:label "Concept"@en ;
+    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia .

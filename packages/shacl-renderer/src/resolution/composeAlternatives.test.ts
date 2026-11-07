@@ -30,7 +30,7 @@ const summaryShape = `
   ex:summary a sh:PropertyShape ;
     sh:path [ sh:alternativePath ( ( ex:citizenship ex:demonym ) ex:occupation ex:born ex:died ) ] ;
     st:mergeAlternatives true ;
-    st:mergeTemplate "{0} {1}[ ({2:year}–{3:year})]" .
+    st:mergeTemplate "{0} {1}[ ({2:year}–{3:year})| (born {2:year})| (died {3:year})]" .
 `;
 
 const soren = `
@@ -58,11 +58,26 @@ test("renderTemplate: placeholders, optional sections and whitespace", () => {
   const texts: Record<number, string> = { 0: "Danish", 1: "poet", 2: "1813", 3: "" };
   const textOf = (index: number) => texts[index] ?? "";
 
-  expect(renderTemplate("{0} {1}[ ({2}–{3})]", textOf)).toBe("Danish poet (1813–)");
-  // A section without any text is left out, and an empty placeholder leaves no gap.
+  // A section is left out unless every placeholder in it has text.
+  expect(renderTemplate("{0} {1}[ ({2}–{3})]", textOf)).toBe("Danish poet");
+  // An empty placeholder outside a section leaves no gap.
   expect(renderTemplate("{3} {1}[ ({3})]", textOf)).toBe("poet");
   // A placeholder past the last branch is simply empty.
   expect(renderTemplate("{0}[, {9}]", textOf)).toBe("Danish");
+});
+
+test("renderTemplate: a section's variants, the first one complete wins", () => {
+  const dates = "{0}[ ({1}–{2})| (born {1})| (died {2})]";
+  const render = (texts: string[]) => renderTemplate(dates, (index) => texts[index] ?? "");
+
+  expect(render(["poet", "1813", "1855"])).toBe("poet (1813–1855)");
+  expect(render(["poet", "1980", ""])).toBe("poet (born 1980)");
+  expect(render(["poet", "", "1855"])).toBe("poet (died 1855)");
+  expect(render(["poet", "", ""])).toBe("poet");
+  // A variant without placeholders is a default.
+  expect(renderTemplate("{0}[ ({1})| (undated)]", (index) => (index === 0 ? "poet" : ""))).toBe(
+    "poet (undated)",
+  );
 });
 
 test("st:mergeAlternatives on the property itself composes one value from the focus node", async () => {
@@ -92,7 +107,7 @@ test("st:mergeAlternatives drops an optional section with no values and composes
     data: `ex:Soren ex:occupation ex:poet ; ex:born "1950"^^xsd:gYear . ex:poet rdfs:label "poet"@en .`,
     propertyShapes: [ex("summary")],
   });
-  expect(living.composedObject(["en"])?.value).toBe("poet (1950–)");
+  expect(living.composedObject(["en"])?.value).toBe("poet (born 1950)");
 
   const undated = await createShape({
     shapes: summaryShape,

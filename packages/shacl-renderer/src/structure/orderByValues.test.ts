@@ -1,5 +1,10 @@
 import { expect, test } from "vite-plus/test";
-import { isWritablePath, sortByOrderPath, writeOrder } from "@/structure/orderByValues.ts";
+import {
+  isWritablePath,
+  sortByOrderPath,
+  sortForView,
+  writeOrder,
+} from "@/structure/orderByValues.ts";
 import { parsePathNode } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
@@ -70,4 +75,54 @@ test("isWritablePath - only predicate, inverse and sequence paths", async () => 
   expect(isWritablePath(await sequencePath())).toBe(true);
   expect(isWritablePath(pathOf("inverse"))).toBe(true);
   expect(isWritablePath(pathOf("repeat"))).toBe(false);
+});
+
+test("sortForView - without st:orderBy, alphabetically by label, as the locale sorts", async () => {
+  const dataGraph = await parseRdf(prefixes, "text/turtle");
+  const labels = new Map([
+    [ex("a").value, "zebra"],
+    [ex("b").value, "Émile"],
+    [ex("c").value, "Book 10"],
+    [ex("d").value, "Book 2"],
+    [ex("e").value, "apple"],
+  ]);
+  const values = [ex("a"), ex("b"), ex("c"), ex("d"), ex("e")];
+  const sorted = sortForView(values, undefined, dataGraph, (term) => labels.get(term.value)!, "en");
+  expect(sorted.map((term) => labels.get(term.value))).toEqual([
+    "apple",
+    "Book 2",
+    "Book 10",
+    "Émile",
+    "zebra",
+  ]);
+});
+
+test("sortForView - by position first, then alphabetically between equal or missing positions", async () => {
+  const dataGraph = await parseRdf(
+    `${prefixes}
+    ex:late ex:meta [ ex:position 2 ] .
+    ex:earlyB ex:meta [ ex:position 1 ] .
+    ex:earlyA ex:meta [ ex:position 1 ] .
+    `,
+    "text/turtle",
+  );
+  const path = await sequencePath();
+  const label = (term: { value: string }) => term.value.replace(ex("").value, "");
+  const values = [ex("noneB"), ex("late"), ex("earlyB"), ex("noneA"), ex("earlyA")];
+  expect(sortForView(values, path, dataGraph, label, "en").map(label)).toEqual([
+    "earlyA",
+    "earlyB",
+    "late",
+    "noneA",
+    "noneB",
+  ]);
+});
+
+test("sortForView - a content language Intl does not know still sorts", async () => {
+  const dataGraph = await parseRdf(prefixes, "text/turtle");
+  const label = (term: { value: string }) => term.value.replace(ex("").value, "");
+  expect(sortForView([ex("b"), ex("a")], undefined, dataGraph, label, "*").map(label)).toEqual([
+    "a",
+    "b",
+  ]);
 });

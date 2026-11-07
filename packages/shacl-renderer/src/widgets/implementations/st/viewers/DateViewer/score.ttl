@@ -1,0 +1,58 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+PREFIX shui: <http://www.w3.org/ns/shacl-ui/>
+PREFIX st: <http://shapething.com/>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+st:DateViewer rdfs:label "Date"@en, "Datum"@nl .
+
+# A value literal typed as one of the date datatypes - beats LiteralViewer's generic isLiteral rule
+# (score.ttl of that widget), which would otherwise show the lexical form ("1855-11-11T00:00:00Z").
+st:dateViewerScore20
+    a shui:WidgetScore ;
+    shui:viewer st:DateViewer ;
+    shui:score 20 ;
+    shui:dataGraphShape st:isDateViewerDateLiteral ;
+.
+
+# The same signal read off the property shape's own sh:datatype, so a property without a value yet
+# still prefers DateViewer. Both sh:or branches since SHACL 1.2 lets sh:datatype hold a list of
+# datatypes (spec issue #1179); in the list branch every member has to be a date datatype.
+st:dateViewerScore10
+    a shui:WidgetScore ;
+    shui:viewer st:DateViewer ;
+    shui:score 10 ;
+    shui:shapesGraphShape st:hasDateViewerDatatypeConstraint ;
+.
+
+st:isDateViewerDateLiteral
+    a sh:NodeShape ;
+    sh:or (
+        [ sh:datatype xsd:date ]
+        [ sh:datatype xsd:dateTime ]
+        [ sh:datatype xsd:dateTimeStamp ]
+        [ sh:datatype xsd:gYear ]
+        [ sh:datatype xsd:gYearMonth ]
+    ) ;
+.
+
+st:hasDateViewerDatatypeConstraint
+    a sh:NodeShape ;
+    sh:or (
+        [
+            sh:property [
+                sh:path sh:datatype ;
+                sh:minCount 1 ;
+                sh:in ( xsd:date xsd:dateTime xsd:dateTimeStamp xsd:gYear xsd:gYearMonth ) ;
+            ] ;
+        ]
+        [
+            sh:property [
+                sh:path ( sh:datatype [ sh:zeroOrMorePath rdf:rest ] rdf:first ) ;
+                sh:minCount 1 ;
+                sh:in ( xsd:date xsd:dateTime xsd:dateTimeStamp xsd:gYear xsd:gYearMonth ) ;
+            ] ;
+        ]
+    ) ;
+.

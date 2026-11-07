@@ -8,7 +8,7 @@ import itemListsQuery from "../queries/itemLists.rq";
 import labelsQuery from "../queries/labels.rq";
 import occupationsQuery from "../queries/occupations.rq";
 import searchQuery from "../queries/search.rq";
-import { factory, xsd } from "../rdf/namespaces.ts";
+import { factory } from "../rdf/namespaces.ts";
 import { construct, select } from "../sparql/select.ts";
 import { entityId, entityIri } from "./entities.ts";
 import { entityFromRows, itemListsFromRows, summariesFromRows } from "./person.ts";
@@ -67,26 +67,13 @@ export const useAbstract = (article: NamedNode | undefined) =>
   });
 
 /**
- * Every property of an entity with its values, and the names of its properties and items, for the
- * second renderer of the modal (queries/allProperties.rq): the external identifiers and the other
- * statements each from a query of their own, so which group a property belongs in comes with it
- * (see shapes/groupProperties.ts) without the type of each property going over the wire.
+ * Every property of an entity with its values but its external identifiers, and the names of its
+ * properties and items, for the second renderer of the modal (queries/allProperties.rq).
  */
 export const useAllProperties = (id: string) =>
   useQuery({
     queryKey: ["allProperties", id],
-    queryFn: async () => {
-      const entity = entityIri(id);
-      const [statements, identifiers] = await Promise.all(
-        [false, true].map((isIdentifier) =>
-          construct(allPropertiesQuery, {
-            entity,
-            identifiers: factory.literal(String(isIdentifier), xsd("boolean")),
-          }),
-        ),
-      );
-      return { statements, identifiers };
-    },
+    queryFn: () => construct(allPropertiesQuery, { entity: entityIri(id) }),
   });
 
 /** The words of a search text, in lower case: the other characters are search syntax. */

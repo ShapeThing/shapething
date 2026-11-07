@@ -1,0 +1,17 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix st: <http://shapething.com/> .
+
+### Groups. They have no label, they bring together what is laid out together.
+
+inf:lifespan a sh:PropertyGroup ; sh:order 1 ; st:cssClass "lifespan" .
+inf:itemLists a sh:PropertyGroup ; sh:order 10 ; st:cssClass "item-lists" .
+
+# The two columns of the modal: the side column (the image and the facts) and the main one (the
+# text). Within them, nested groups.
+inf:side a sh:PropertyGroup ; sh:order 0 ; st:cssClass "entity-modal__side" .
+inf:main a sh:PropertyGroup ; sh:order 1 ; st:cssClass "entity-modal__main" .
+# The short description in the side column, between the name and the facts.
+inf:summary a sh:PropertyGroup ; sh:group inf:side ; sh:order 1.5 ; st:cssClass "summary" .
+inf:facts a sh:PropertyGroup ; sh:group inf:side ; sh:order 2 ; st:cssClass "facts" .
+inf:text a sh:PropertyGroup ; sh:group inf:main ; sh:order 3 ; st:cssClass "text" .

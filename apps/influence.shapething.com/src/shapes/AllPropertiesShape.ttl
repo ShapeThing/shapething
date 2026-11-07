@@ -1,0 +1,27 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+### Every property of an entity in the modal - a person, a work or a concept - below the rest: a
+### second renderer. Its data is what Wikidata states about the entity (see
+### src/queries/allProperties.rq). The shape has no target: the modal names it for the entity, and
+### the renderer's enableMissingShapesGeneration gives it a property for every predicate of the
+### entity that it does not ignore. The external identifiers are not in the data at all: the query
+### leaves them out.
+
+inf:AllPropertiesShape
+    a sh:NodeShape ;
+    rdfs:label "All properties"@en ;
+    # The full name (P1559, already inf:fullName), the page banner (P948, the banner of the
+    # modal, see src/components/Modal), and the coordinates beside the coordinate location (P625)
+    # - the extreme points, the geographic center, the place depicted, the sandbox - which would
+    # each be one more map.
+    sh:ignoredProperties (
+        wdt:P1332 # coordinates of northernmost point
+        wdt:P1333 # coordinates of southernmost point
+        wdt:P1334 # coordinates of easternmost point
+        wdt:P1335 # coordinates of westernmost point
+        wdt:P5140 # coordinates of geographic center
+        wdt:P626 # Sandbox-Geographic coordinates
+    ) .

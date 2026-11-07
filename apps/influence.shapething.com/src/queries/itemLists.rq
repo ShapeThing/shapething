@@ -10,7 +10,7 @@ PREFIX bd: <http://www.bigdata.com/rdf#>
 # items it found: about 40% faster than an OPTIONAL rdfs:label lookup per language in each branch.
 # It gives the English label, else the "mul" one, else the bare identifier as a plain literal
 # without a language (itemListsFromRows leaves those out).
-SELECT ?kind ?item ?name ?publicationDate WHERE {
+SELECT ?kind ?item ?name ?inception ?publicationDate WHERE {
   {
     ?item wdt:P50 $subject .
     FILTER(isIRI(?item))
@@ -18,6 +18,7 @@ SELECT ?kind ?item ?name ?publicationDate WHERE {
     # same author and usually the same title: leave them out when their work is listed already.
     FILTER NOT EXISTS { ?item wdt:P629 ?work . ?work wdt:P50 $subject }
     BIND("works" AS ?kind)
+    OPTIONAL { ?item wdt:P571 ?inception . FILTER(isLiteral(?inception)) }
     OPTIONAL { ?item wdt:P577 ?publicationDate . FILTER(isLiteral(?publicationDate)) }
   }
   UNION

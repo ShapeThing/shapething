@@ -8,7 +8,8 @@ type Story = StoryObj<ShaclRendererProps>;
 
 // st:orderBy on a property shape lists that property's values by a position read through a
 // property path from each value (see structure/orderByValues.ts) - plain RDF values have no order
-// of their own. In edit mode, dragging a value renumbers every value's position 1..n.
+// of their own. In edit mode, dragging a value renumbers every value's position 1..n. In view mode,
+// values without st:orderBy - and values sharing a position - are listed alphabetically by label.
 export default {
   title: "Specifications/ShapeThing (living document)/Predicates/st:orderBy",
   component: ShaclRenderer,
@@ -59,5 +60,34 @@ export const stOrderByView: Story = {
     const fry = await canvas.findByText("Fry");
     expect(mix.compareDocumentPosition(rest) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     expect(rest.compareDocumentPosition(fry) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  },
+};
+
+const labelArgs = argsByTestFile("st-order-by-labels.ttl", import.meta.url);
+
+const linkTexts = (element: HTMLElement) =>
+  within(element)
+    .getAllByRole("link")
+    .map((link) => link.textContent);
+
+export const stOrderByViewAlphabetical: Story = {
+  name: "View mode - otherwise, and between equal positions, alphabetically by label",
+  args: { ...labelArgs, mode: "view" },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // No st:orderBy: alphabetically, as the content language sorts - "Épopée" among the E's
+    // (before "Essays"), not after "poetry" as its code point would put it.
+    const genres = (await canvas.findByText("Genres")).closest(".st-form-element") as HTMLElement;
+    await waitFor(() => expect(linkTexts(genres)).toEqual(["Épopée", "Essays", "poetry"]));
+    // By year, the two of 1843 alphabetically, the book without a year last.
+    const books = (await canvas.findByText("Books")).closest(".st-form-element") as HTMLElement;
+    await waitFor(() =>
+      expect(linkTexts(books)).toEqual([
+        "First book",
+        "Second book",
+        "Third book",
+        "A book without a year",
+      ]),
+    );
   },
 };

@@ -1,0 +1,39 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+# In view mode, values are listed alphabetically by the label they are shown with: the genres
+# have no st:orderBy, so that is their only order. The books do have one, their year: books of the
+# same year, and the book without a year (listed last), are alphabetical among themselves.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:path schema:knowsAbout ;
+        sh:name "Genres"@en ;
+        shui:viewer shui:LabelViewer ;
+    ] ;
+    sh:property [
+        sh:path [ sh:inversePath schema:author ] ;
+        sh:name "Books"@en ;
+        shui:viewer shui:LabelViewer ;
+        st:orderBy schema:datePublished ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:name "An author"@en ;
+    schema:knowsAbout ex:poetry, ex:essays, ex:epic .
+
+ex:poetry rdfs:label "poetry"@en .
+ex:essays rdfs:label "Essays"@en .
+ex:epic rdfs:label "Épopée"@en .
+
+ex:third rdfs:label "Third book"@en ; schema:author <#data> ; schema:datePublished 1850 .
+ex:second rdfs:label "Second book"@en ; schema:author <#data> ; schema:datePublished 1843 .
+ex:first rdfs:label "First book"@en ; schema:author <#data> ; schema:datePublished 1843 .
+ex:undated rdfs:label "A book without a year"@en ; schema:author <#data> .

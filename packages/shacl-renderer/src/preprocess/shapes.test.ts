@@ -448,6 +448,74 @@ test("addMissingShapes - never generates a property shape for a predicate alread
   expect(paths).toEqual([ex("age").value]);
 });
 
+const pathsOf = (shapesGraph: RdfStore, shapeNode: Quad_Subject): Set<string> =>
+  new Set(
+    shapesGraph
+      .getQuads(shapeNode, sh("property"))
+      .flatMap((quad) => shapesGraph.getQuads(quad.object, sh("path")))
+      .map((quad) => quad.object.value),
+  );
+
+test("addMissingShapes - tops up a root shape without a target from the focus node's own predicates", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("book"), rdf("type"), ex("Book")));
+  dataGraph.addQuad(factory.quad(ex("book"), ex("title"), factory.literal("Dune")));
+  dataGraph.addQuad(factory.quad(ex("book"), ex("pages"), factory.literal("412", xsd("integer"))));
+  dataGraph.addQuad(factory.quad(ex("book"), ex("ignored"), factory.literal("x")));
+  dataGraph.addQuad(factory.quad(ex("other"), ex("unrelated"), factory.literal("y")));
+
+  const shapesGraph = RdfStore.createDefault();
+  shapesGraph.addQuad(factory.quad(ex("Generic"), rdf("type"), sh("NodeShape")));
+  shapesGraph.addQuad(
+    factory.quad(
+      ex("Generic"),
+      sh("ignoredProperties"),
+      rebuildRdfList(rdf("nil"), [ex("ignored")], shapesGraph) as Quad_Object,
+    ),
+  );
+
+  const result = await addMissingShapes(
+    rawEnvironment({
+      dataGraph,
+      shapesGraph,
+      focusNode: ex("book"),
+      nodeShapes: [ex("Generic")],
+      enableMissingShapesGeneration: true,
+    }),
+  );
+  const resultShapes = result.shapesGraph as RdfStore;
+
+  // Only the focus node's own predicates, not another subject's, and not the ignored one.
+  expect(pathsOf(resultShapes, ex("Generic"))).toEqual(
+    new Set([ex("title").value, ex("pages").value]),
+  );
+  const pages = resultShapes
+    .getQuads(ex("Generic"), sh("property"))
+    .find((quad) => resultShapes.getQuads(quad.object, sh("path"), ex("pages")).length > 0)!.object;
+  expect(resultShapes.getQuads(pages, sh("datatype"), xsd("integer"))).toHaveLength(1);
+});
+
+test("addMissingShapes - leaves a targeted root shape to its class, not the focus node", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("book"), ex("title"), factory.literal("Dune")));
+
+  const shapesGraph = RdfStore.createDefault();
+  shapesGraph.addQuad(factory.quad(ex("PersonShape"), rdf("type"), sh("NodeShape")));
+  shapesGraph.addQuad(factory.quad(ex("PersonShape"), sh("targetClass"), ex("Person")));
+
+  const result = await addMissingShapes(
+    rawEnvironment({
+      dataGraph,
+      shapesGraph,
+      focusNode: ex("book"),
+      nodeShapes: [ex("PersonShape")],
+      enableMissingShapesGeneration: true,
+    }),
+  );
+
+  expect(pathsOf(result.shapesGraph as RdfStore, ex("PersonShape")).size).toBe(0);
+});
+
 test("addMissingShapes - does not mutate the caller-supplied shapesGraph in place", () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));

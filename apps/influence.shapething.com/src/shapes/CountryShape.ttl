@@ -1,0 +1,29 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix st: <http://shapething.com/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+### A country of citizenship: its flag (P41), then its name, as a link to the country.
+
+inf:CountryShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path wdt:P41 ;
+        sh:name "" ;
+        sh:order 0 ;
+        sh:maxCount 1 ;
+        shui:viewer shui:ImageViewer ;
+        st:imageWidth 64 ; # shown 16px high (EntityModal/style.scss)
+        st:cssClass "flag" ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:name "" ;
+        sh:order 1 ;
+        sh:maxCount 1 ;
+        # A link that opens the country in the modal.
+        shui:viewer inf:EntityLinkViewer ;
+        shui:propertyRole shui:LabelRole ;
+    ] .

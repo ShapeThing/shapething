@@ -62,9 +62,13 @@ export function composeAlternatives(options: ComposeAlternativesOptions): string
  * Fills in st:mergeTemplate:
  * - `{n}` is the text of branch n (counting from 0),
  * - `{n:year}` the same, with xsd date literals as their year ("1813", "384 BCE"),
- * - `[ … ]` is an optional section, left out unless at least one placeholder inside it has text:
- *   "{0}[ ({1:year}–{2:year})]" gives "Søren Kierkegaard (1813–1855)", "Søren Kierkegaard (1950–)",
- *   or just "Søren Kierkegaard" without any dates.
+ * - `[ … ]` is an optional section, left out unless every placeholder inside it has text,
+ * - `[ a | b | … ]` is a section with fallbacks: the first variant whose placeholders all have
+ *   text is used, and the section is left out when none qualifies. A variant without
+ *   placeholders always qualifies, so it can end the list as a default.
+ *   "{0}[ ({1:year}–{2:year})| (born {1:year})| (died {2:year})]" gives
+ *   "Søren Kierkegaard (1813–1855)", "Søren Kierkegaard (born 1950)",
+ *   "Søren Kierkegaard (died 1855)", or just "Søren Kierkegaard" without any dates.
  *
  * Sections do not nest. Whitespace runs collapse to one space and the result is trimmed, so an
  * empty placeholder leaves no stray gap.
@@ -73,22 +77,25 @@ export function renderTemplate(
   template: string,
   textOf: (index: number, modifier?: string) => string,
 ): string {
-  const fill = (text: string): { text: string; filled: boolean } => {
-    let filled = false;
+  const fill = (text: string): { text: string; complete: boolean } => {
+    let complete = true;
     const result = text.replace(
       /\{(\d+)(?::([\w-]+))?\}/g,
       (_, index: string, modifier?: string) => {
         const value = textOf(Number(index), modifier);
-        if (value) filled = true;
+        if (!value) complete = false;
         return value;
       },
     );
-    return { text: result, filled };
+    return { text: result, complete };
   };
 
   const withSections = template.replace(/\[([^\]]*)\]/g, (_, inner: string) => {
-    const { text, filled } = fill(inner);
-    return filled ? text : "";
+    for (const variant of inner.split("|")) {
+      const { text, complete } = fill(variant);
+      if (complete) return text;
+    }
+    return "";
   });
 
   return fill(withSections).text.replace(/\s+/g, " ").trim();

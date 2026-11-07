@@ -1,0 +1,55 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+### The vocabulary of the app: its own properties, the custom viewers (registered in
+### src/widgets/index.ts), and inf:Initials, the default portrait.
+
+inf:openHref
+    a rdf:Property ;
+    rdfs:label "Open"@en ;
+    rdfs:comment "Where a person leads: the path of the app that starts a chain with them."@en .
+
+inf:aboutHref
+    a rdf:Property ;
+    rdfs:label "About"@en ;
+    rdfs:comment "Where more about an entity is: the hash of the app that opens it in the modal."@en .
+
+inf:fullName
+    a rdf:Property ;
+    rdfs:label "Full name"@en ;
+    rdfs:comment "The full name of a person: their name in their own language (P1559, name in native language), or else their name."@en .
+
+inf:influenceCount
+    a rdf:Property ;
+    rdfs:label "Influence"@en ;
+    rdfs:comment "How many people this person influenced, according to Wikidata (P737, influenced by)."@en ;
+    rdfs:range xsd:integer .
+
+inf:RelativeInfluenceViewer
+    a shui:Widget ;
+    rdfs:label "Relative influence"@en ;
+    rdfs:comment "A bar showing an influence count relative to the people shown in the app at the moment."@en .
+
+inf:PortraitViewer
+    a shui:Widget ;
+    rdfs:label "Portrait"@en ;
+    rdfs:comment "The portrait of a person, or their initials (the sh:defaultValue inf:Initials) when there is none."@en .
+
+### Not a real image: the default portrait, which inf:PortraitViewer shows as the person's
+### initials. The display shapes are only rendered in view mode, so it is never written to data.
+inf:Initials
+    a rdfs:Resource ;
+    rdfs:label "Initials"@en .
+
+inf:YearViewer
+    a shui:Widget ;
+    rdfs:label "Year"@en ;
+    rdfs:comment "The year of a Wikidata date, with BCE for the years before the common era."@en .
+
+inf:EntityLinkViewer
+    a shui:Widget ;
+    rdfs:label "Link to the entity"@en ;
+    rdfs:comment "A name as a link to the resource it belongs to, which opens it in the modal."@en .

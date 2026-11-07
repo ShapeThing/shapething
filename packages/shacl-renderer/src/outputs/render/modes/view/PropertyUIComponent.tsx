@@ -20,7 +20,8 @@ import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
 import { primarySubtag } from "@/helpers/bestByLanguage.ts";
 import { rdf, sh, shui, st } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
-import { orderByPath, sortByOrderPath } from "@/structure/orderByValues.ts";
+import { orderByPath, sortForView } from "@/structure/orderByValues.ts";
+import { valueNodeLabel } from "@/resolution/label.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { cssClasses } from "@/structure/href.ts";
 import "./style.css";
@@ -81,15 +82,22 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
     languageMode === "individual"
       ? existingObjects
       : filterByContentLanguage(existingObjects, activeLanguage);
-  // st:orderBy - same ordering as edit mode (see structure/orderByValues.ts).
+  // By st:orderBy, and otherwise (and between equal positions) alphabetically by the label each
+  // value is shown with - see sortForView, and why edit mode only sorts by st:orderBy.
   const orderPath = useMemo(() => orderByPath(propertyUIElement), [propertyUIElement]);
   const languageFilteredObjects = useReactiveRead(
     propertyUIElement.dataGraph,
-    `order-by@${unorderedLanguageFilteredObjects.map(termKey).join("\n")}`,
+    `order-by@${activeLanguage}@${listLocale}@${unorderedLanguageFilteredObjects.map(termKey).join("\n")}`,
     () =>
-      orderPath
-        ? sortByOrderPath(unorderedLanguageFilteredObjects, orderPath, propertyUIElement.dataGraph)
-        : unorderedLanguageFilteredObjects,
+      sortForView(
+        unorderedLanguageFilteredObjects,
+        orderPath,
+        propertyUIElement.dataGraph,
+        (term) =>
+          valueNodeLabel({ term, propertyShape: propertyUIElement, languages: [activeLanguage] })
+            .value,
+        listLocale,
+      ),
   );
 
   // A singleUnifiedWidget (e.g. ValueTableViewer) renders once for the whole property and reads
