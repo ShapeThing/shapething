@@ -29,8 +29,8 @@ export const reportOnly: Story = {
     expect(await canvas.findByText(/3\W*errors/)).toBeVisible();
     // Without shapes, properties are named after their sh:resultPath (capitalized by CSS)...
     expect(await canvas.findByText("birth Date")).toBeVisible();
-    // ...the reported values come from the report itself...
-    expect(await canvas.findByText("2031-04-01")).toBeVisible();
+    // ...the reported values come from the report itself (an xsd:date, so st:DateViewer shows it)...
+    expect(await canvas.findByText("1 April 2031")).toBeVisible();
     // ...and a message is generic unless the report carries its own.
     expect(canvas.getByText("Is too large")).toBeVisible();
   },

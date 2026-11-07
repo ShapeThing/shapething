@@ -277,9 +277,21 @@
 }
 
 // The modal of an entity is wider than the other modals (Modal/style.scss) where the screen has the
-// room: beside the side column, the text and the two columns of the properties.
-.modal:has(.entity-modal) {
+// room: beside the side column, the text and the two columns of the properties. Already while it
+// loads, so it does not widen when the content comes.
+.modal:has(.entity-modal, .entity-modal__loading) {
   max-width: 1100px;
+}
+
+// While the entity loads (the indicator of EntityModal, then the settle gate of the renderer) the
+// banner and the footer wait too, so the modal changes size once, when the content shows, and not
+// each time a part of it has arrived.
+.modal:has(
+    > .modal__content > .modal__body > .entity-modal__loading,
+    .entity-modal > .entity-modal__display > .st-settle-gate[aria-busy]
+  )
+  :is(.modal__banner, .modal__footer) {
+  display: none;
 }
 
 // On a wide screen the side column is beside the text and the properties. It stays in view while

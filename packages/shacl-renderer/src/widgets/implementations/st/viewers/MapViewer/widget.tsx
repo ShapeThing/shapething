@@ -154,7 +154,20 @@ export default function MapViewer({ shape }: WidgetProps) {
       }
 
       const bounds = featureCollectionBounds(collection);
-      if (bounds) map.fitBounds(bounds, { padding: 20, animate: false, maxZoom: mapMaxZoom });
+      if (!bounds) return;
+      // Fitting needs room for the padding: in a container without size (not laid out yet, or
+      // hidden) MapLibre computes a NaN camera and throws. Fit once it has a size instead -
+      // MapLibre tracks the container and fires "resize" when that changes.
+      const padding = 20;
+      const fit = () => {
+        const container = map.getContainer();
+        if (container.clientWidth <= padding * 2 || container.clientHeight <= padding * 2) {
+          map.once("resize", fit);
+          return;
+        }
+        map.fitBounds(bounds, { padding, animate: false, maxZoom: mapMaxZoom });
+      };
+      fit();
     };
 
     if (map.isStyleLoaded()) applyData();
