@@ -21,6 +21,13 @@
   }
 }
 
+// Room between the side column (its last fact, the map of the place of birth) and the text below
+// it on a narrow screen. The renderer resets the margin of its groups (.display .st-property-group),
+// so this has the same weight, and comes later.
+.entity-modal__display .entity-modal__side {
+  margin-bottom: 15px;
+}
+
 // Links (items, Wikipedia, websites) in dark grey like the lists in the columns, so they don't all
 // look visited; purple when hovered.
 .entity-modal a {
@@ -32,8 +39,6 @@
 }
 
 .entity-modal__side {
-  margin-bottom: 15px;
-
   // The full name, below the image, above the facts. A long name is wrapped into lines of about
   // the same length.
   .full-name {
@@ -67,6 +72,19 @@
     object-fit: contain;
     object-position: left top;
     border-radius: 8px;
+  }
+
+  // On a narrow screen the side column is above the text: the image takes the full width of the
+  // modal, at its own height, instead of being held to the height of the wide layout.
+  @media (max-width: 719.98px) {
+    .image :is(.st-property-items, .st-property-object-wrapper, .st-property-object) {
+      width: 100%;
+    }
+
+    .image .image-viewer {
+      max-height: none;
+      height: auto;
+    }
   }
 
   .facts {
@@ -315,6 +333,9 @@
     grid-row: 1 / span 2;
     position: sticky;
     top: 0;
+  }
+
+  .entity-modal__display .entity-modal__side {
     margin: 0;
   }
 
@@ -383,7 +404,7 @@
   // Every property is a row of two columns, the renderer's "columns" layout (see EntityModal): the
   // label in a column of a fixed width (a long label wraps inside it), the values in the column
   // beside it, separated by commas. A narrow screen has no room for that: one column, the label
-  // above its values.
+  // above its values, and room below the values so each property stands apart from the next label.
   --st-label-column-width: 13em;
 
   .st-form-element[data-label-layout="columns"] {
@@ -391,6 +412,7 @@
 
     @media (max-width: 519.98px) {
       grid-template-columns: minmax(0, 1fr);
+      margin-bottom: 20px;
 
       > * {
         grid-column: 1;
