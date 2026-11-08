@@ -4,6 +4,7 @@ import allPropertiesQuery from "../queries/allProperties.rq?raw";
 import entityQuery from "../queries/entity.rq";
 import influencedQuery from "../queries/influenced.rq";
 import influencersQuery from "../queries/influencers.rq";
+import influentialQuery from "../queries/influential.rq";
 import itemListsQuery from "../queries/itemLists.rq";
 import labelsQuery from "../queries/labels.rq";
 import occupationsQuery from "../queries/occupations.rq";
@@ -44,6 +45,13 @@ export const influenceOptions = (id: string, direction: InfluenceDirection) =>
           subject: entityIri(id),
         }),
       ),
+  });
+
+/** The people who influenced many others (queries/influential.rq): where "Surprise me" starts. */
+export const influentialOptions = () =>
+  queryOptions({
+    queryKey: ["influential"],
+    queryFn: async () => summariesFromRows(await select(influentialQuery)),
   });
 
 export const useEntity = (id: string | undefined) =>

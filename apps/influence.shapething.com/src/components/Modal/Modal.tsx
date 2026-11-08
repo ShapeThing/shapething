@@ -8,13 +8,15 @@ type Props = {
   footer?: ReactNode;
   /** The URL of a wide image across the top of the modal, above the title. */
   banner?: string;
+  /** Shows a back button before the title. */
+  onBack?: () => void;
 };
 
 /**
  * A modal dialog: the native <dialog>, so focus stays inside it and Escape closes it. Clicking the
  * backdrop closes it too. A banner image, when given, runs across the top, above the title.
  */
-export default function Modal({ title, onClose, children, footer, banner }: Props) {
+export default function Modal({ title, onClose, children, footer, banner, onBack }: Props) {
   const ref = useRef<HTMLDialogElement>(null);
   const titleId = useId();
 
@@ -37,6 +39,11 @@ export default function Modal({ title, onClose, children, footer, banner }: Prop
       <div className="modal__content">
         {banner && <img className="modal__banner" src={banner} alt="" />}
         <header className="modal__header">
+          {onBack && (
+            <button type="button" className="modal__back" onClick={onBack}>
+              <span className="visually-hidden">Back</span>
+            </button>
+          )}
           <h1 className="modal__title" id={titleId}>
             {title}
           </h1>

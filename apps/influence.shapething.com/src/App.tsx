@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import ColumnsPage from "./components/ColumnsPage/ColumnsPage.tsx";
 import SearchPage from "./components/SearchPage/SearchPage.tsx";
+import ErrorMessage from "./components/ErrorMessage/ErrorMessage.tsx";
 import Spinner from "./components/Spinner/Spinner.tsx";
 import { isEntityId } from "./data/entities.ts";
 import { resolveTitleIds } from "./data/wikipedia.ts";
@@ -30,7 +31,7 @@ export default function App() {
     return (
       <main className="app-message">
         {resolved.isError ? (
-          <p>Unfortunately the data source is unavailable. Please come back later.</p>
+          <ErrorMessage onRetry={() => void resolved.refetch()} />
         ) : (
           <Spinner label="Opening the link" />
         )}

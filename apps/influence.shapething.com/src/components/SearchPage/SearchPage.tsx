@@ -1,7 +1,10 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { type FocusEvent, type KeyboardEvent, useId, useRef, useState } from "react";
-import { MINIMUM_SEARCH_LENGTH, useSearch } from "../../data/queries.ts";
+import { influentialOptions, MINIMUM_SEARCH_LENGTH, useSearch } from "../../data/queries.ts";
+import { navigate, pathForIds } from "../../routing.ts";
 import { useDebouncedValue } from "../../useDebouncedValue.ts";
 import Bookmarks from "../Bookmarks/Bookmarks.tsx";
+import ErrorMessage from "../ErrorMessage/ErrorMessage.tsx";
 import Spinner from "../Spinner/Spinner.tsx";
 import Teaser from "../Teaser/Teaser.tsx";
 import "./style.scss";
@@ -10,6 +13,47 @@ import "./style.scss";
 const resultLinks = (list: HTMLElement | null) => [
   ...(list?.querySelectorAll<HTMLAnchorElement>(".teaser .name a[href]") ?? []),
 ];
+
+/**
+ * Starts a chain with someone who influenced many others, chosen at random. The list is asked for
+ * as soon as the button is pointed at, so a click mostly does not wait.
+ */
+function SurpriseMe() {
+  const queryClient = useQueryClient();
+  const [state, setState] = useState<"idle" | "loading" | "error">("idle");
+  const prefetch = () => void queryClient.prefetchQuery(influentialOptions());
+
+  return (
+    <button
+      type="button"
+      className="search-page__surprise"
+      disabled={state === "loading"}
+      onPointerEnter={prefetch}
+      onFocus={prefetch}
+      onClick={async () => {
+        setState("loading");
+        try {
+          const people = await queryClient.fetchQuery(influentialOptions());
+          const person = people[Math.floor(Math.random() * people.length)];
+          if (person) navigate(pathForIds([person.id]));
+          else setState("idle");
+        } catch {
+          setState("error");
+        }
+      }}
+    >
+      {/* Inline so it takes the colour of the text. */}
+      <svg className="search-page__surprise-icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" />
+      </svg>
+      {state === "loading"
+        ? "Choosing someone…"
+        : state === "error"
+          ? "Not available, try again"
+          : "Surprise me"}
+    </button>
+  );
+}
 
 export default function SearchPage() {
   const inputId = useId();
@@ -98,9 +142,10 @@ export default function SearchPage() {
 
           <div className="search-dropdown" id={resultsId} hidden={!hasDropdown}>
             {showsError && (
-              <p className="search-dropdown__message">
-                Unfortunately the data source is unavailable. Please come back later.
-              </p>
+              <ErrorMessage
+                className="search-dropdown__message"
+                onRetry={() => void search.refetch()}
+              />
             )}
 
             {!showsError && results?.length === 0 && (
@@ -122,7 +167,10 @@ export default function SearchPage() {
 
       <p className="search-page__hint">
         You can try <a href="/Q6512">Søren Kierkegaard</a>, <a href="/Q859">Plato</a> or{" "}
-        <a href="/Q892">J. R. R. Tolkien</a>
+        <a href="/Q892">J. R. R. Tolkien</a>,
+      </p>
+      <p className="search-page__hint search-page__chance">
+        or let chance decide: <SurpriseMe />
       </p>
 
       <Bookmarks />

@@ -2,8 +2,10 @@ import { useMemo } from "react";
 import { entityIri } from "../../data/entities.ts";
 import { entityQuads } from "../../data/graphs.ts";
 import { useAbstract, useAllProperties, useEntity } from "../../data/queries.ts";
+import { isOpenedFromModal } from "../../routing.ts";
 import { AllPropertiesShape, ModalShapes } from "../../shapes/shapes.ts";
 import Display from "../Display/Display.tsx";
+import ErrorMessage from "../ErrorMessage/ErrorMessage.tsx";
 import Modal from "../Modal/Modal.tsx";
 import Thinking from "../Thinking/Thinking.tsx";
 import "./style.scss";
@@ -44,6 +46,8 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
     <Modal
       title={entity.data?.name ?? (entity.isError ? "Not available" : "Loading…")}
       onClose={onClose}
+      // Opened from a link in the modal (see useLinkHandling): back to the entity before.
+      onBack={isOpenedFromModal() ? () => window.history.back() : undefined}
       banner={banner}
       footer={
         entity.data?.kind === "person" && (
@@ -54,7 +58,7 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
       }
     >
       {entity.isError ? (
-        <p>Unfortunately the data source is unavailable. Please come back later.</p>
+        <ErrorMessage onRetry={() => void entity.refetch()} />
       ) : quads && entity.data ? (
         <div className="entity-modal">
           <Display
@@ -76,7 +80,9 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
                 settleIndicator={<Thinking caption="Gathering everything Wikidata knows…" />}
               />
             ) : allProperties.isError ? (
-              <p>The other properties are not available at the moment.</p>
+              <ErrorMessage onRetry={() => void allProperties.refetch()}>
+                The other properties are not available at the moment.
+              </ErrorMessage>
             ) : (
               <div className="entity-modal__loading">
                 <Thinking caption="Gathering everything Wikidata knows…" />

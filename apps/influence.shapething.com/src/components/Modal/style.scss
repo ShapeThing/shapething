@@ -43,8 +43,10 @@
   padding: 20px 20px 8px;
 }
 
-// A long title (the name of the entity) is wrapped into lines of about the same length.
+// A long title (the name of the entity) is wrapped into lines of about the same length. It takes
+// the room between the back button (when there is one) and the close button.
 .modal__title {
+  flex: 1 1 auto;
   margin: 0;
   font-size: 28px;
   line-height: 1.2;
@@ -88,6 +90,61 @@
 
   &::after {
     transform: translate(-50%, -50%) rotate(-45deg);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+// Back to the entity before (see EntityModal): an arrow to the left, drawn like the cross of the
+// close button, with the same circle behind it while hovered.
+.modal__back {
+  position: relative;
+  flex: 0 0 auto;
+  width: 30px;
+  height: 30px;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease-in-out,
+    box-shadow 0.2s ease-in-out;
+
+  &:hover {
+    background-color: rgb(99 59 163 / 0.12);
+    box-shadow: 0 0 0 15px rgb(99 59 163 / 0.12);
+  }
+
+  // The shaft.
+  &::before {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 4px;
+    border-radius: 8px;
+    background: black;
+    transform: translate(-50%, -50%);
+  }
+
+  // The head: two sides of a square, turned to point left.
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 3px;
+    width: 14px;
+    height: 14px;
+    border-left: 4px solid black;
+    border-bottom: 4px solid black;
+    border-radius: 0 0 0 3px;
+    transform: translateY(-50%) rotate(45deg);
   }
 
   &:focus-visible {

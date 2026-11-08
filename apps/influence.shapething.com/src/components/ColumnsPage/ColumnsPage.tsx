@@ -5,10 +5,12 @@ import { entityOptions, influenceOptions } from "../../data/queries.ts";
 import type { PersonSummary } from "../../data/person.ts";
 import { createInfluenceScale, InfluenceScaleContext } from "../../influence/influenceScale.ts";
 import { navigate, pathForIds, useAppLocation, withoutModal } from "../../routing.ts";
+import type { SortOrder } from "../../sorting.ts";
 import Column from "../Column/Column.tsx";
 import EntityModal from "../EntityModal/EntityModal.tsx";
 import FixedMenu from "../FixedMenu/FixedMenu.tsx";
 import InfoModal from "../InfoModal/InfoModal.tsx";
+import TimelineModal from "../TimelineModal/TimelineModal.tsx";
 import "./style.scss";
 
 type ColumnModel = {
@@ -17,6 +19,10 @@ type ColumnModel = {
   people: readonly PersonSummary[] | undefined;
   isLoading: boolean;
   isError: boolean;
+  onRetry: () => void;
+  /** Where the sort order of the column is kept in the URL (see sorting.ts); the starting person's
+   * column, with one person only, has none. */
+  sortKey?: string;
   /**
    * The position in the path this column chooses: opening someone in it puts them there.
    * -1 is the column of influencers, choosing there starts a new chain.
@@ -29,7 +35,7 @@ type ColumnModel = {
  * in the path the people they influenced.
  */
 export default function ColumnsPage({ ids }: { ids: string[] }) {
-  const { modal } = useAppLocation();
+  const { modal, sorts } = useAppLocation();
   const [start] = ids;
 
   const entities = useQueries({ queries: ids.map((id) => entityOptions(id)) });
@@ -46,6 +52,8 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
       people: influencers.data,
       isLoading: influencers.isPending,
       isError: influencers.isError,
+      onRetry: () => void influencers.refetch(),
+      sortKey: "influencers",
       position: -1,
     },
     {
@@ -54,6 +62,7 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
       people: startEntity.data ? [startEntity.data] : undefined,
       isLoading: startEntity.isPending,
       isError: startEntity.isError,
+      onRetry: () => void startEntity.refetch(),
       position: 0,
     },
     ...ids.map((id, index) => ({
@@ -62,6 +71,8 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
       people: influenced[index].data,
       isLoading: influenced[index].isPending,
       isError: influenced[index].isError,
+      onRetry: () => void influenced[index].refetch(),
+      sortKey: id,
       position: index + 1,
     })),
   ];
@@ -93,6 +104,15 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
   const closeModal = () => navigate(withoutModal());
   const path = pathForIds(ids);
 
+  // A link to another chain keeps the sort orders of the columns that stay: those of the people
+  // still in the chain, and of the influencers.
+  const hrefForIds = (nextIds: readonly string[]) => pathForIds(nextIds, sorts);
+  // Sorting replaces the history entry: going back leaves the chain, not one sort order.
+  const sortColumn = (key: string) => (order: SortOrder) =>
+    navigate(`${pathForIds(ids, new Map([...sorts, [key, order]]))}${window.location.hash}`, {
+      replace: true,
+    });
+
   // Closing a person first spins its cross and folds away the columns after it; the URL changes
   // when they are gone. Kept with the path it was started on, so it ends with any navigation.
   const [closing, setClosing] = useState<{ path: string; position: number; href: string }>();
@@ -110,6 +130,9 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
               people={column.people}
               isLoading={column.isLoading}
               isError={column.isError}
+              onRetry={column.onRetry}
+              sortOrder={column.sortKey ? sorts.get(column.sortKey) : undefined}
+              onSortChange={column.sortKey ? sortColumn(column.sortKey) : undefined}
               isSelected={column.position === 0}
               activeId={column.position >= 0 ? ids[column.position] : undefined}
               isClosing={closingNow?.position === column.position}
@@ -130,10 +153,10 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
               }
               hrefFor={(person) =>
                 column.position < 0
-                  ? pathForIds([person.id])
+                  ? hrefForIds([person.id])
                   : person.id === ids[column.position]
-                    ? pathForIds(ids.slice(0, column.position))
-                    : pathForIds([...ids.slice(0, column.position), person.id])
+                    ? hrefForIds(ids.slice(0, column.position))
+                    : hrefForIds([...ids.slice(0, column.position), person.id])
               }
               linkLabelFor={(person) =>
                 column.position < 0
@@ -150,6 +173,11 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
 
       {modal === "info" ? (
         <InfoModal onClose={closeModal} />
+      ) : modal === "timeline" ? (
+        <TimelineModal
+          people={entities.flatMap((entity) => (entity.data ? [entity.data] : []))}
+          onClose={closeModal}
+        />
       ) : isEntityId(modal) ? (
         <EntityModal key={modal} id={modal} onClose={closeModal} />
       ) : null}

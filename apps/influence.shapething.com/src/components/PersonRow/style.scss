@@ -332,3 +332,15 @@
     transform: translateY(-50%) rotate(-315deg);
   }
 }
+
+// Someone Wikidata knows no influence of: the row is muted, the next column would be empty.
+.person[data-influence="none"]:not([data-active]) {
+  .name .st-property-object__widget {
+    color: var(--color-muted);
+    font-weight: normal;
+  }
+
+  .relative-influence__track {
+    visibility: hidden;
+  }
+}

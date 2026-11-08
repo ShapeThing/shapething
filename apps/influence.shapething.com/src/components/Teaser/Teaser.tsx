@@ -25,6 +25,8 @@ export default function Teaser({ person }: { person: PersonSummary }) {
       focusNode={person.iri}
       dataGraph={quads}
       resolveLink={label}
+      // The search input has its own spinner; a result shows once it has settled.
+      settleIndicator={false}
     />
   );
 }

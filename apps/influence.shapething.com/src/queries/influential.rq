@@ -1,0 +1,22 @@
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX wdt: <http://www.wikidata.org/prop/direct/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+
+# The people who influenced at least twenty others (wdt:P737 is "influenced by"): where "Surprise me"
+# on the search page starts. Only what a person needs to be opened: the rest comes with the chain.
+SELECT ?person ?name ?mulName (xsd:integer(?count) AS ?influence) WHERE {
+  {
+    SELECT ?person (COUNT(DISTINCT ?influenced) AS ?count) WHERE {
+      ?influenced wdt:P737 ?person .
+      FILTER(isIRI(?person))
+    }
+    GROUP BY ?person
+    HAVING (COUNT(DISTINCT ?influenced) >= 20)
+  }
+  # Only humans: works and programming languages are said to influence too. A filter, so it is
+  # checked on the few people the sub query found (a pattern makes Wikidata start from all humans).
+  FILTER EXISTS { ?person wdt:P31 wd:Q5 }
+  OPTIONAL { ?person rdfs:label ?name . FILTER(LANG(?name) = "en") }
+  OPTIONAL { ?person rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
+}

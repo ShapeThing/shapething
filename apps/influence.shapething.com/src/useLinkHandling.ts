@@ -7,7 +7,8 @@ const isPlainClick = (event: MouseEvent) =>
 /**
  * Follows a link to a path of the app without loading the page again. Clicks with a modifier key
  * still open the link in a new tab or window, as usual. (The links of the displays to Wikidata
- * items already point at the modal, see Display.)
+ * items already point at the modal, see Display; one followed from inside the modal is marked in
+ * the history, so the modal can go back, see EntityModal.)
  */
 export const useLinkHandling = () => {
   useEffect(() => {
@@ -23,6 +24,14 @@ export const useLinkHandling = () => {
       if (isAppPath && !isOnlyHashChange) {
         event.preventDefault();
         navigate(`${url.pathname}${url.search}${url.hash}`);
+      } else if (
+        isAppPath &&
+        url.hash !== window.location.hash &&
+        anchor.closest(".entity-modal")
+      ) {
+        // A link from one entity in the modal to another: marked, so the modal shows a back button.
+        event.preventDefault();
+        navigate(url.hash, { state: { fromModal: true } });
       }
     };
 

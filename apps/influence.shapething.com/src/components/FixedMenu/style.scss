@@ -75,6 +75,24 @@
   background-image: url("/info.svg");
 }
 
+.fixed-button--timeline .fixed-button__icon {
+  background-image: url("/timeline.svg");
+}
+
+.fixed-button--share {
+  .fixed-button__icon {
+    background-image: url("/share.svg");
+  }
+
+  &[data-state="copied"],
+  &[data-state="failed"] {
+    .fixed-button__text {
+      max-width: 300px;
+      margin-inline: 6px 10px;
+    }
+  }
+}
+
 .fixed-button--restart .fixed-button__icon {
   background-image: url("/home.svg");
 }

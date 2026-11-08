@@ -133,3 +133,50 @@
     color: var(--color-text);
   }
 }
+
+.search-page__chance {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 0;
+}
+
+// The other way in besides searching: a soft pill under the examples, quieter than the search.
+.search-page__surprise {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px 8px 14px;
+  border: 0;
+  border-radius: 50px;
+  background: var(--color-button);
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 15px;
+  font-style: normal;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+
+  &:hover:not(:disabled) {
+    background: var(--color-button-hover);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: progress;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+}
+
+.search-page__surprise-icon {
+  width: 18px;
+  height: 18px;
+  fill: currentcolor;
+}

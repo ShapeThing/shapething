@@ -97,6 +97,9 @@ export default function PersonRow({
       data-id={person.id}
       data-active={isActive || undefined}
       data-closing={isClosing || undefined}
+      // Wikidata knows no one this person influenced: opening them shows their works, interests
+      // and ideas, but no next column of people (style.scss mutes the row).
+      data-influence={person.influence ? undefined : "none"}
     >
       {isInView && (
         <Display

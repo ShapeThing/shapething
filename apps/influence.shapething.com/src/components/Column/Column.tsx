@@ -1,8 +1,10 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { clsx } from "../../clsx.ts";
 import type { PersonSummary } from "../../data/person.ts";
+import ErrorMessage from "../ErrorMessage/ErrorMessage.tsx";
 import PersonRow from "../PersonRow/PersonRow.tsx";
 import Spinner from "../Spinner/Spinner.tsx";
+import { SORT_LABELS, type SortOrder, sortPeople } from "../../sorting.ts";
 import "./style.scss";
 
 type Props = {
@@ -10,6 +12,12 @@ type Props = {
   people: readonly PersonSummary[] | undefined;
   isLoading: boolean;
   isError: boolean;
+  /** Asks Wikidata again after an error. */
+  onRetry: () => void;
+  /** How the people are sorted (kept in the URL, see sorting.ts). Without a change handler the
+   * column can not be sorted. */
+  sortOrder?: SortOrder;
+  onSortChange?: (order: SortOrder) => void;
   /** The opened person of this column. */
   activeId: string | undefined;
   /** The column of the person the chain starts with. */
@@ -35,6 +43,9 @@ export default function Column({
   people = [],
   isLoading,
   isError,
+  onRetry,
+  sortOrder = "influence",
+  onSortChange,
   activeId,
   isSelected = false,
   hrefFor,
@@ -52,10 +63,11 @@ export default function Column({
 
   const isActive = activeId !== undefined && people.some((person) => person.id === activeId);
   const normalizedFilter = filter.trim().toLocaleLowerCase();
+  const sortedPeople = isActive ? people : sortPeople(people, sortOrder);
   const shownPeople =
     normalizedFilter && !isActive
-      ? people.filter((person) => person.name.toLocaleLowerCase().includes(normalizedFilter))
-      : people;
+      ? sortedPeople.filter((person) => person.name.toLocaleLowerCase().includes(normalizedFilter))
+      : sortedPeople;
 
   // Scrolls the opened person to the top of the column: smoothly when someone is opened, right away
   // when the column comes with an opened person (the people arrive after the column is made).
@@ -97,6 +109,20 @@ export default function Column({
         <h2 className="column__title">{title}</h2>
         {!isActive && people.length > 1 && (
           <>
+            {onSortChange && (
+              <select
+                className="column__sort"
+                aria-label={`Sort: ${title}`}
+                value={sortOrder}
+                onChange={(event) => onSortChange(event.target.value as SortOrder)}
+              >
+                {Object.entries(SORT_LABELS).map(([order, label]) => (
+                  <option key={order} value={order}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            )}
             <input
               ref={filterRef}
               className="column__filter"
@@ -135,11 +161,7 @@ export default function Column({
 
       <div className="column__inner" ref={innerRef}>
         {isLoading && <Spinner className="column__spinner" />}
-        {isError && (
-          <p className="column__message">
-            Unfortunately the data source is unavailable. Please come back later.
-          </p>
-        )}
+        {isError && <ErrorMessage className="column__message" onRetry={onRetry} />}
         {!isLoading && !isError && people.length === 0 && (
           <p className="column__message">No one known.</p>
         )}

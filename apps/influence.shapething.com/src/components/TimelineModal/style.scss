@@ -1,0 +1,65 @@
+// The bars are placed by the years the component gives as custom properties: --min and --max for
+// the whole chain, --from and --to for a person.
+.timeline {
+  --span: calc(var(--max) - var(--min));
+}
+
+.timeline__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline__row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.timeline__name {
+  font-size: 14px;
+  font-weight: bold;
+  color: inherit;
+  text-decoration: none;
+
+  &:hover,
+  &:focus-visible {
+    color: var(--color-accent);
+  }
+}
+
+.timeline__bar {
+  display: block;
+  min-width: 4px;
+  width: calc((var(--to) - var(--from)) / var(--span) * 100%);
+  margin-inline-start: calc((var(--from) - var(--min)) / var(--span) * 100%);
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--color-button);
+  overflow: visible;
+  white-space: nowrap;
+
+  // Still alive, or the end is not known: the bar fades out.
+  &[data-open] {
+    background: linear-gradient(to right, var(--color-button) 60%, transparent);
+  }
+}
+
+.timeline__years,
+.timeline__unknown {
+  font-size: 11px;
+  color: var(--color-muted);
+}
+
+.timeline__axis {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--color-border);
+  font-size: 11px;
+  color: var(--color-muted);
+}

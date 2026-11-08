@@ -16,7 +16,7 @@ const read = (): string => {
   }
 };
 
-const parse = (serialized: string): string[] => {
+export const parse = (serialized: string): string[] => {
   try {
     const value: unknown = JSON.parse(serialized);
     return Array.isArray(value)

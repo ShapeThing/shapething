@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "vite --port 8005",
     "build": "tsc -b && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vp test run",
+    "test:watch": "vp test"
   },
   "dependencies": {
     "@shapething/shacl-renderer": "workspace:*",

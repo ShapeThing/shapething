@@ -38,20 +38,31 @@
   z-index: 1;
 }
 
+// The title with the filter beside it, and the sort order below the title. Aligned to the top, so the
+// titles of all columns are on one line, whether a column has a sort order or not. The first row is
+// as high as the filter button, also in a column without one.
 .column__header {
   position: relative;
   flex: 0 0 auto;
-  display: flex;
+  display: grid;
+  // The title, the filter and its button. The filter has no width until it is opened (see below).
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0fr) auto;
+  grid-template-rows: 24px auto;
+  align-content: start;
   align-items: center;
-  gap: 6px;
-  height: 55px;
-  padding-inline: 20px;
+  // No gap: an empty title column would leave one before the open filter (the button keeps its
+  // own distance, see below).
+  column-gap: 0;
+  // Room for the title row and the sort order below it, with some air around both.
+  height: 70px;
+  padding: 12px 20px 0;
+  transition: grid-template-columns 0.3s ease-in-out;
   border-bottom: 1px dashed var(--color-border);
   background: var(--column-background);
 }
 
 .column__title {
-  flex: 1 1 auto;
+  grid-area: 1 / 1;
   min-width: 0;
   margin: 0;
   overflow: hidden;
@@ -60,29 +71,84 @@
   color: var(--color-muted);
   white-space: nowrap;
   text-overflow: ellipsis;
+  transition: opacity 0.3s ease-in-out;
 }
 
+// Below the title, aligned with it on the left: a quiet pill, muted like the title, that only takes
+// the accent color when pointed at or focused. A sort sign on the left, a caret on the right.
+.column__sort {
+  --sort-color: rgb(110 110 110);
+
+  grid-area: 2 / 1 / auto / -1;
+  justify-self: start;
+  min-width: 0;
+  max-width: 100%;
+  margin-top: 4px;
+  padding: 1px 18px 1px 20px;
+  border: 1px solid rgb(0 0 0 / 0.18);
+  border-radius: 999px;
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 1.5h10M1 5h7M1 8.5h4' fill='none' stroke='rgb(110,110,110)' stroke-width='1.5' stroke-linecap='round'/%3E%3C/svg%3E")
+      no-repeat left 7px center / 9px,
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='rgb(110,110,110)' stroke-width='1.5'/%3E%3C/svg%3E")
+      no-repeat right 6px center / 7px,
+    transparent;
+  font: inherit;
+  font-size: 11px;
+  line-height: 16px;
+  color: var(--sort-color);
+  text-overflow: ellipsis;
+  appearance: none;
+  cursor: pointer;
+  // As wide as the chosen order, not the longest option (where supported; else the usual width).
+  field-sizing: content;
+  transition:
+    color 0.15s ease-in-out,
+    background-color 0.15s ease-in-out,
+    border-color 0.15s ease-in-out;
+
+  &:hover,
+  &:focus-visible {
+    border-color: rgb(99 59 163 / 0.3);
+    background-color: rgb(99 59 163 / 0.06);
+    color: var(--color-accent);
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+}
+
+// As wide as its grid column, which grows from nothing when the filter opens.
 .column__filter {
-  flex: 0 0 auto;
-  width: 0;
+  grid-area: 1 / 2;
+  width: 100%;
+  min-width: 0;
+  height: 24px;
   padding: 0;
   border: 0;
   opacity: 0;
   font: inherit;
   font-size: 13px;
-  transition:
-    width 0.3s ease-in-out,
-    opacity 0.3s ease-in-out;
+  transition: opacity 0.3s ease-in-out;
 }
 
+// An open filter takes the full width of the column, but its close button: the title and the sort
+// order make room for it.
 .column__header--filtering {
+  grid-template-columns: minmax(0, 0fr) minmax(0, 1fr) auto;
+
   .column__title {
-    flex-basis: 0;
+    opacity: 0;
+  }
+
+  .column__sort {
+    display: none;
   }
 
   .column__filter {
-    width: 180px;
-    padding: 6px;
+    padding: 0 6px;
     border: 1px solid var(--color-border);
     opacity: 1;
   }
@@ -91,7 +157,8 @@
 .column__filter-open,
 .column__filter-close {
   position: relative;
-  flex: 0 0 auto;
+  grid-area: 1 / 3;
+  margin-inline-start: 6px;
   width: 24px;
   height: 24px;
   padding: 0;
