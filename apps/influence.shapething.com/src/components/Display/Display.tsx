@@ -8,8 +8,8 @@ import {
 import type { RdfStore } from "rdf-stores";
 import { type ReactNode, useCallback } from "react";
 import { clsx } from "../../clsx.ts";
-import { entityId, isEntityId } from "../../data/entities.ts";
-import { useAppLocation } from "../../routing.ts";
+import { entityId } from "../../data/entities.ts";
+import { entityModalOf, useAppLocation } from "../../routing.ts";
 import { shapesGraph } from "../../shapes/shapes.ts";
 import { widgets } from "../../widgets/index.ts";
 import Spinner from "../Spinner/Spinner.tsx";
@@ -45,7 +45,7 @@ type Props = {
  */
 const useAppLinks = (): ResolveLink => {
   const { modal } = useAppLocation();
-  const focusedId = isEntityId(modal) ? modal : undefined;
+  const focusedId = entityModalOf(modal)?.id;
   return useCallback(
     (href) => {
       const itemId = entityId(href);

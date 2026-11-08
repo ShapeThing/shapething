@@ -1,10 +1,15 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { isEntityId } from "../../data/entities.ts";
 import { entityOptions, influenceOptions } from "../../data/queries.ts";
 import type { PersonSummary } from "../../data/person.ts";
 import { createInfluenceScale, InfluenceScaleContext } from "../../influence/influenceScale.ts";
-import { navigate, pathForIds, useAppLocation, withoutModal } from "../../routing.ts";
+import {
+  entityModalOf,
+  navigate,
+  pathForIds,
+  useAppLocation,
+  withoutModal,
+} from "../../routing.ts";
 import type { SortOrder } from "../../sorting.ts";
 import Column from "../Column/Column.tsx";
 import EntityModal from "../EntityModal/EntityModal.tsx";
@@ -36,6 +41,7 @@ type ColumnModel = {
  */
 export default function ColumnsPage({ ids }: { ids: string[] }) {
   const { modal, sorts } = useAppLocation();
+  const entityModal = entityModalOf(modal);
   const [start] = ids;
 
   const entities = useQueries({ queries: ids.map((id) => entityOptions(id)) });
@@ -178,8 +184,13 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
           people={entities.flatMap((entity) => (entity.data ? [entity.data] : []))}
           onClose={closeModal}
         />
-      ) : isEntityId(modal) ? (
-        <EntityModal key={modal} id={modal} onClose={closeModal} />
+      ) : entityModal ? (
+        <EntityModal
+          key={entityModal.id}
+          id={entityModal.id}
+          tab={entityModal.tab}
+          onClose={closeModal}
+        />
       ) : null}
     </InfluenceScaleContext.Provider>
   );

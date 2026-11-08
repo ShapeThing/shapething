@@ -2,6 +2,7 @@ PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX wikibase: <http://wikiba.se/ontology#>
 PREFIX bd: <http://www.bigdata.com/rdf#>
+PREFIX schema: <http://schema.org/>
 
 # The works (P50 author), interests (P101 field of work) and notable works (P800, shown as ideas) of
 # $subject in one request.
@@ -9,8 +10,10 @@ PREFIX bd: <http://www.bigdata.com/rdf#>
 # The names come from Wikidata's label service, which looks them up after the UNION, only for the
 # items it found: about 40% faster than an OPTIONAL rdfs:label lookup per language in each branch.
 # It gives the English label, else the "mul" one, else the bare identifier as a plain literal
-# without a language (itemListsFromRows leaves those out).
-SELECT ?kind ?item ?name ?inception ?publicationDate WHERE {
+# without a language (itemListsFromRows leaves those out), and the short description.
+#
+# The image and the description are for the tabs of a person's modal (src/shapes/PersonListShapes.ttl).
+SELECT ?kind ?item ?name ?description ?image ?inception ?publicationDate WHERE {
   {
     ?item wdt:P50 $subject .
     FILTER(isIRI(?item))
@@ -33,9 +36,11 @@ SELECT ?kind ?item ?name ?inception ?publicationDate WHERE {
     FILTER(isIRI(?item))
     BIND("ideas" AS ?kind)
   }
+  OPTIONAL { ?item wdt:P18 ?image . FILTER(isIRI(?image)) }
   SERVICE wikibase:label {
     bd:serviceParam wikibase:language "en,mul" .
     ?item rdfs:label ?name .
+    ?item schema:description ?description .
   }
 }
 LIMIT 2000

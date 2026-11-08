@@ -1,11 +1,14 @@
 import { useMemo, useSyncExternalStore } from "react";
+import { isEntityId } from "./data/entities.ts";
 import { parseSegment, segmentsFor, type Sorts, sortsFromSegments } from "./sorting.ts";
 
 /**
  * The URL is the state of the app:
  * - the path is the chain of opened people, as Wikidata identifiers: /Q859,Q868, with the sort
  *   orders of the columns beside the person they belong to: /n:Q859:b,Q868 (see sorting.ts)
- * - the hash is the modal: #Q868 for an entity, #info for the explanation of the app
+ * - the hash is the modal: #Q868 for an entity, #info for the explanation of the app. A tab of the
+ *   entity modal other than the first stands after the identifier: #Q868/works, #Q868/ideas, #Q868/interests (see
+ *   entityModalOf)
  */
 
 const NAVIGATE_EVENT = "influence:navigate";
@@ -85,3 +88,23 @@ export const pathForIds = (ids: readonly string[], sorts: Sorts = new Map()) =>
 
 /** The current URL without the modal. */
 export const withoutModal = () => `${window.location.pathname}${window.location.search}`;
+
+/** The tabs of the entity modal: everything about the entity, and a person's works, ideas and
+ * interests (see EntityModal). */
+export const ENTITY_TABS = ["about", "works", "ideas", "interests"] as const;
+export type EntityTab = (typeof ENTITY_TABS)[number];
+
+/**
+ * The entity modal in the hash (without the "#"): "Q868" is the first tab, "Q868/works" another
+ * one. Undefined when the hash is not an entity (#info, #timeline), or names a tab that does not
+ * exist.
+ */
+export const entityModalOf = (modal: string): { id: string; tab: EntityTab } | undefined => {
+  const [id, tab = "about", ...rest] = modal.split("/");
+  if (!isEntityId(id) || rest.length > 0) return undefined;
+  return ENTITY_TABS.includes(tab as EntityTab) ? { id, tab: tab as EntityTab } : undefined;
+};
+
+/** The hash of an entity modal on a tab: the first tab is the identifier alone. */
+export const entityModalHash = (id: string, tab: EntityTab = "about") =>
+  tab === "about" ? `#${id}` : `#${id}/${tab}`;

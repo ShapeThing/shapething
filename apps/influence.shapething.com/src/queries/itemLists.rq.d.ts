@@ -6,6 +6,8 @@ interface QueryResult {
   kind: Literal
   item: NamedNode
   name: NamedNode | BlankNode | Literal
+  description: NamedNode | BlankNode | Literal
+  image?: NamedNode
   inception?: Literal
   publicationDate?: Literal
 }

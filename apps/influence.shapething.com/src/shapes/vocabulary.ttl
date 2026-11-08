@@ -53,3 +53,13 @@ inf:EntityLinkViewer
     a shui:Widget ;
     rdfs:label "Link to the entity"@en ;
     rdfs:comment "A name as a link to the resource it belongs to, which opens it in the modal."@en .
+
+inf:lifeEvent
+    a rdf:Property ;
+    rdfs:label "Life event"@en ;
+    rdfs:comment "The birth or the death of a person, with its date (P585, point in time): a row of the timeline of their works."@en .
+
+inf:eventLabel
+    a rdf:Property ;
+    rdfs:label "Event"@en ;
+    rdfs:comment "What a life event is: \"Born\" or \"Died\"."@en .

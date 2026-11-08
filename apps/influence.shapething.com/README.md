@@ -16,6 +16,9 @@ Built on the ShapeThing packages:
   - `inf:TeaserShape`: a search result,
   - `inf:PersonModalShape`, `inf:WorkModalShape`, `inf:ConceptModalShape`: everything about a person,
     work, interest or idea in the modal, with `inf:AllPropertiesShape` for every other property.
+  - `inf:PersonWorksShape`, `inf:PersonIdeasShape`, `inf:PersonInterestsShape`: the tabs of a person
+    in the modal, their works on a timeline between their birth and death, their ideas and interests
+    as cards (`src/shapes/PersonListShapes.ttl`).
 
 The app's own viewers, registered in `src/widgets/index.ts`:
 
@@ -35,7 +38,8 @@ The URL is the state of the app (`src/routing.ts`):
   sorts the people they influenced, before the first one their influencers: `/n:Q859:b,Q868`
   (`src/sorting.ts`).
   Without a code a column is sorted by influence, so older URLs still work,
-- the hash is the modal: `#Q868` for an entity, `#info` for the explanation of the app and
+- the hash is the modal: `#Q868` for an entity (`#Q868/works`, `#Q868/ideas` or `#Q868/interests`
+  for a tab of a person), `#info` for the explanation of the app and
   `#timeline` for the lifespans of the people in the chain.
 
 ## Development

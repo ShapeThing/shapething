@@ -1,5 +1,5 @@
 import { expect, test } from "vite-plus/test";
-import { idsFromPath, pathForIds } from "./routing.ts";
+import { entityModalHash, entityModalOf, idsFromPath, pathForIds } from "./routing.ts";
 
 test("the path is the chain of identifiers", () => {
   expect(idsFromPath("/Q859,Q868")).toEqual(["Q859", "Q868"]);
@@ -22,4 +22,20 @@ test("old paths with Wikipedia titles are decoded, a malformed one is kept as it
 test("sort orders in the path are not part of the identifiers", () => {
   expect(idsFromPath("/n:Q6512:b,Q42156:n")).toEqual(["Q6512", "Q42156"]);
   expect(pathForIds(["Q6512", "Q42156"], new Map([["Q6512", "born"]]))).toBe("/Q6512:b,Q42156");
+});
+
+test("the hash of an entity modal has its tab after the identifier, the first tab has none", () => {
+  expect(entityModalOf("Q868")).toEqual({ id: "Q868", tab: "about" });
+  expect(entityModalOf("Q868/works")).toEqual({ id: "Q868", tab: "works" });
+  expect(entityModalOf("Q868/ideas")).toEqual({ id: "Q868", tab: "ideas" });
+  expect(entityModalOf("Q868/interests")).toEqual({ id: "Q868", tab: "interests" });
+  expect(entityModalHash("Q868")).toBe("#Q868");
+  expect(entityModalHash("Q868", "works")).toBe("#Q868/works");
+});
+
+test("a hash that is not an entity, or names an unknown tab, is no entity modal", () => {
+  expect(entityModalOf("info")).toBeUndefined();
+  expect(entityModalOf("timeline")).toBeUndefined();
+  expect(entityModalOf("Q868/nope")).toBeUndefined();
+  expect(entityModalOf("Q868/works/more")).toBeUndefined();
 });

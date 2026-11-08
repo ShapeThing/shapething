@@ -285,10 +285,43 @@
   }
 }
 
-// The properties wait for the text.
+// The properties wait for the text, and so do the tabs and the list of a tab.
 .entity-modal:has(> .entity-modal__display > .st-settle-gate[aria-busy])
-  > .entity-modal__all-properties {
+  > :is(.entity-modal__all-properties, .entity-tabs, .entity-modal__list) {
   display: none;
+}
+
+// Another tab than "About": its list takes the place of the text and the properties (which stay
+// rendered, see EntityModal); the side column stays.
+.entity-modal:not([data-tab="about"]) :is(.entity-modal__main, .entity-modal__all-properties) {
+  display: none;
+}
+
+// On a narrow screen everything is below each other: the side column first, then the tabs, then
+// the text and the properties or the list. The tabs come after the text in the document (the side
+// column and the text are rendered by one renderer), so the order is set here.
+@media (max-width: 719.98px) {
+  .entity-modal:has(> .entity-tabs) {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .entity-modal__side {
+    order: 0;
+  }
+
+  .entity-tabs {
+    order: 1;
+  }
+
+  .entity-modal__main,
+  .entity-modal__list {
+    order: 2;
+  }
+
+  .entity-modal__all-properties {
+    order: 3;
+  }
 }
 
 .entity-modal__display > .st-settle-gate > .st-settle-gate__content > .st-view-mode > .st-header {
@@ -313,26 +346,55 @@
   display: none;
 }
 
-// On a wide screen the side column is beside the text and the properties. It stays in view while
-// they scroll: sticky within its grid area, which spans both rows, as tall as they are. The second
-// row takes what the side column needs beyond the text, so the properties follow the text right
-// away. A concept without an image or a description has no side column.
+// On a wide screen the side column is beside the tabs (a person's), the text and the properties. It
+// stays in view while they scroll: sticky within its grid area, which spans every row, as tall as
+// they are. The last row takes what the side column needs beyond the tabs and the text, so the
+// properties follow the text right away. Another tab (a list) takes the place of the text and the
+// properties, beside the same side column. A concept without an image or a description has no
+// side column.
 @media screen and (min-width: 720px) {
   .entity-modal:has(.entity-modal__side):not(
       :has(> .entity-modal__display > .st-settle-gate[aria-busy])
     ) {
     display: grid;
     grid-template-columns: 200px minmax(0, 1fr);
-    grid-template-rows: auto 1fr;
+    grid-template-rows: auto auto 1fr;
     column-gap: 48px;
     align-items: start;
   }
 
   .entity-modal__side {
     grid-column: 1;
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
     position: sticky;
     top: 0;
+  }
+
+  // The tabs stick at the top while the rest scrolls (see .entity-tabs): a sticky item stays within
+  // its grid area, so theirs spans every row, with a first row of their own height.
+  .entity-modal:has(> .entity-tabs):has(.entity-modal__side):not(
+      :has(> .entity-modal__display > .st-settle-gate[aria-busy])
+    ) {
+    grid-template-rows: var(--entity-tabs-row) auto 1fr;
+  }
+
+  .entity-tabs {
+    grid-column: 2;
+    grid-row: 1 / span 3;
+    align-self: start;
+  }
+
+  .entity-modal__main {
+    grid-row: 2;
+  }
+
+  .entity-modal__all-properties {
+    grid-row: 3;
+  }
+
+  .entity-modal__list {
+    grid-column: 2;
+    grid-row: 2 / span 2;
   }
 
   .entity-modal__display .entity-modal__side {
@@ -521,4 +583,95 @@
   display: flex;
   justify-content: center;
   padding: 40px;
+}
+
+// The tabs of a person (see EntityModal): pills like the buttons of the app, the selected one
+// purple, each list's with its length. A row that scrolls sideways on a narrow screen, rather than
+// wrapping, so it is always one tab high (--entity-tabs-height).
+//
+// They stay at the top while the text, the properties or a list scroll by, like the headings of
+// the properties: the top padding is as high as the fade of the modal (Modal/style.scss), so stuck
+// they cover it and the tabs are where the fade ends; a negative margin of the same height keeps
+// them in their place before that. What scrolls under them fades out below them, as at the edges
+// of the modal and the columns: the fade fills the room below the tabs, so before anything
+// scrolls under them it covers nothing.
+.entity-modal {
+  --entity-tabs-height: 34px;
+  --entity-tabs-fade: 24px;
+  // What the tabs take of the grid of the wide layout: themselves and the fade below them.
+  --entity-tabs-row: calc(var(--entity-tabs-height) + var(--entity-tabs-fade));
+}
+
+.entity-tabs {
+  position: sticky;
+  top: calc(-1 * var(--modal-fade));
+  z-index: 2;
+  margin: calc(-1 * var(--modal-fade)) 0 var(--entity-tabs-fade);
+  padding-top: var(--modal-fade);
+  background: var(--color-background);
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    inset-inline: 0;
+    height: var(--entity-tabs-fade);
+    background: linear-gradient(var(--color-background), transparent);
+    pointer-events: none;
+  }
+}
+
+// The row of tabs, which scrolls sideways on a narrow screen (the fade below can't be inside it: it
+// would be clipped).
+.entity-tabs__list {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+// The headings of the properties stick below the tabs, their top padding (the room the fade of the
+// modal would take) behind the fade of the tabs.
+.entity-modal:has(> .entity-tabs) .entity-modal__all-properties .st-property-group__legend {
+  top: var(--entity-tabs-height);
+  padding-top: var(--entity-tabs-fade);
+}
+
+.entity-tabs__tab {
+  display: inline-flex;
+  box-sizing: border-box;
+  height: var(--entity-tabs-height);
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--color-button);
+  color: var(--color-text);
+  font: inherit;
+  font-size: 15px;
+  line-height: 22px;
+  cursor: pointer;
+  transition: background-color 0.2s ease-in-out;
+
+  &:hover {
+    background: var(--color-button-hover);
+  }
+
+  &[aria-selected="true"] {
+    background: var(--color-accent);
+    color: white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 3px;
+  }
+}
+
+.entity-tabs__count {
+  font-size: 13px;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
 }

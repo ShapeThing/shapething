@@ -1,0 +1,237 @@
+// The tabs of a person's modal beside "About" (shapes/PersonListShapes.ttl), laid out by the classes
+// the shapes give (st:cssClass): the works on a timeline (.timeline), the ideas and the interests
+// as cards (.cards).
+
+.entity-lists {
+  // The column of the years, wide enough for "384 BCE", and where the line runs beside it.
+  --year-width: 5.5em;
+  --line-gap: 28px;
+  --line-x: calc(var(--year-width) + var(--line-gap) / 2);
+
+  font-size: 15px;
+  line-height: 22px;
+
+  .st-view-mode > .st-header,
+  .st-icon-button--help {
+    display: none;
+  }
+
+  // Each row and card is the nested shape of one value (shui:DetailsViewer), taking the full width
+  // of its place.
+  :is(.timeline, .cards) {
+    :is(.st-property-object-wrapper, .st-property-object, .st-details-viewer) {
+      display: block;
+      width: 100%;
+    }
+
+    .st-details-viewer__body {
+      margin: 0;
+    }
+
+    .st-details-viewer__body > .st-form-element {
+      display: block;
+      margin: 0;
+    }
+  }
+
+  // A picture as wide as its place lets it be (cards), or a small one (the timeline).
+  .picture :is(.st-property-items, .st-property-object-wrapper, .st-property-object) {
+    display: block;
+    width: auto;
+  }
+
+  .picture .image-viewer__link {
+    display: block;
+  }
+}
+
+// The timeline: a dashed line with a dot for each row, the year before it. The birth and the death
+// are rows too, in their place by date.
+.entity-lists .timeline[data-label-layout] {
+  display: block;
+
+  > .st-property-items {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  // The line, from the first dot to the last.
+  > .st-property-items::before {
+    content: "";
+    position: absolute;
+    inset-block: 11px;
+    left: var(--line-x);
+    border-left: 1px dashed var(--color-border);
+  }
+
+  .st-details-viewer__body {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--year-width) minmax(0, 1fr);
+    column-gap: var(--line-gap);
+    row-gap: 6px;
+    align-items: baseline;
+
+    // The dot: open for a work.
+    &::before {
+      content: "";
+      position: absolute;
+      top: 7px;
+      left: calc(var(--line-x) - 4px);
+      width: 8px;
+      height: 8px;
+      box-sizing: border-box;
+      border: 2px solid var(--color-accent);
+      border-radius: 50%;
+      background: var(--color-background);
+    }
+  }
+
+  // The year, right-aligned in its column, its digits as wide as each other.
+  .year {
+    grid-row: 1;
+    grid-column: 1;
+    justify-self: end;
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  // The name beside the year, a work's picture below it.
+  :is(.title, .event) {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .picture {
+    grid-row: 2;
+    grid-column: 2;
+  }
+
+  // At most 160px high, in its own shape.
+  .picture .image-viewer {
+    display: block;
+    width: auto;
+    max-width: min(100%, 360px);
+    height: auto;
+    max-height: 160px;
+    border-radius: 6px;
+  }
+
+  // The birth and the death: a filled dot, the year in bold, the name of the event muted, a little
+  // apart from the works.
+  .st-details-viewer__body:has(> .event) {
+    margin-block: 6px;
+
+    &::before {
+      top: 6px;
+      left: calc(var(--line-x) - 5px);
+      width: 10px;
+      height: 10px;
+      background: var(--color-accent);
+    }
+
+    .year {
+      color: var(--color-text);
+      font-weight: bold;
+    }
+
+    .event {
+      color: var(--color-muted);
+    }
+  }
+}
+
+// The cards of the ideas and the interests: as many beside each other as fit, each with its picture
+// on top, its name and its short description. The name is the link, and covers the whole card.
+.entity-lists .cards[data-label-layout] {
+  display: block;
+
+  > .st-property-items {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+  }
+
+  .st-details-viewer {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 12px;
+    background: var(--color-menu);
+    box-shadow: 0 0 0 1px var(--color-selected);
+    transition:
+      box-shadow 0.2s ease-in-out,
+      transform 0.2s ease-in-out;
+
+    &:hover {
+      box-shadow:
+        0 0 0 1px var(--color-button),
+        0 4px 12px rgb(99 59 163 / 20%);
+      transform: translateY(-1px);
+    }
+
+    // Without a picture, a purple band across the top instead.
+    &:not(:has(.picture)) {
+      border-top: 4px solid var(--color-button);
+    }
+  }
+
+  .st-details-viewer__body {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .picture .image-viewer {
+    display: block;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 0;
+  }
+
+  .title {
+    padding: 10px 12px 0;
+    font-weight: bold;
+    line-height: 20px;
+    overflow-wrap: anywhere;
+  }
+
+  .title a {
+    color: var(--color-text);
+    text-decoration: none;
+
+    // The link covers the card, picture and all.
+    &::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+    }
+  }
+
+  .st-details-viewer:hover .title a,
+  .title a[aria-current="true"] {
+    color: var(--color-accent);
+  }
+
+  // A long description is cut off after four lines.
+  .description {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+    line-clamp: 4;
+    overflow: hidden;
+    padding: 4px 12px 0;
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--color-muted);
+  }
+
+  .st-details-viewer__body::after {
+    content: "";
+    padding-bottom: 12px;
+  }
+}

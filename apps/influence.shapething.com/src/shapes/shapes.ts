@@ -39,6 +39,13 @@ export const TeaserShape = inf("TeaserShape");
 /** Every property of an entity, the second renderer of the modal (see queries/allProperties.rq). */
 export const AllPropertiesShape = inf("AllPropertiesShape");
 
+/** The tabs of a person's modal beside "About", by list (see EntityLists). */
+export const PersonListShapes = {
+  works: inf("PersonWorksShape"),
+  ideas: inf("PersonIdeasShape"),
+  interests: inf("PersonInterestsShape"),
+} as const;
+
 /** The modal, by the kind of entity it shows: its side column and its text (see EntityModal). */
 export const ModalShapes = {
   person: inf("PersonModalShape"),

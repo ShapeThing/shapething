@@ -1,10 +1,12 @@
 import { useMemo } from "react";
 import { entityIri } from "../../data/entities.ts";
 import { entityQuads } from "../../data/graphs.ts";
-import { useAbstract, useAllProperties, useEntity } from "../../data/queries.ts";
-import { isOpenedFromModal } from "../../routing.ts";
+import { useAbstract, useAllProperties, useEntity, useItemLists } from "../../data/queries.ts";
+import type { ItemKind } from "../../data/person.ts";
+import { type EntityTab, entityModalHash, isOpenedFromModal, navigate } from "../../routing.ts";
 import { AllPropertiesShape, ModalShapes } from "../../shapes/shapes.ts";
 import Display from "../Display/Display.tsx";
+import EntityLists from "../EntityLists/EntityLists.tsx";
 import ErrorMessage from "../ErrorMessage/ErrorMessage.tsx";
 import Modal from "../Modal/Modal.tsx";
 import Thinking from "../Thinking/Thinking.tsx";
@@ -22,11 +24,44 @@ import "./style.scss";
  * properties, sticky while they scroll (style.scss). A concept without an image or
  * a description has no facts either: its side group is empty, so the renderer leaves it out.
  *
+ * A person has more tabs: their works, ideas and interests (components/EntityLists), each once it
+ * is known they have any. The tabs take the place of the text and the properties; the side column
+ * stays (style.scss). The tab is in the URL (#Q868/works, see routing.ts); switching tabs replaces
+ * the history entry, so going back leaves the modal or returns to the entity before. The text and
+ * the properties stay rendered while another tab shows, so going back to them loads nothing again.
+ *
  * Wikidata can be slow: every place that waits for it shows a spinner, and a thinker when the wait
  * goes on (components/Thinking).
  */
-export default function EntityModal({ id, onClose }: { id: string; onClose: () => void }) {
+const LIST_TABS: ReadonlyArray<{ kind: ItemKind; label: string }> = [
+  { kind: "works", label: "Works" },
+  { kind: "ideas", label: "Ideas" },
+  { kind: "interests", label: "Interests" },
+];
+
+export default function EntityModal({
+  id,
+  tab,
+  onClose,
+}: {
+  id: string;
+  tab: EntityTab;
+  onClose: () => void;
+}) {
   const entity = useEntity(id);
+  const isPerson = entity.data?.kind === "person";
+  const itemLists = useItemLists(id, isPerson);
+  const lists = itemLists.data;
+  // A list's tab once the list is known to have something, so tabs do not come and go; opened on a
+  // tab (from the URL), it shows while the lists load.
+  const listTabs = isPerson
+    ? LIST_TABS.filter(({ kind }) => (lists ? lists[kind].length > 0 : kind === tab))
+    : [];
+  const activeList = listTabs.find(({ kind }) => kind === tab)?.kind;
+  const selectTab = (next: EntityTab) =>
+    // The state is kept: it says whether the modal can go back (isOpenedFromModal).
+    navigate(entityModalHash(id, next), { replace: true, state: window.history.state });
+
   const allProperties = useAllProperties(id);
   const article = entity.data?.article;
   const abstract = useAbstract(article);
@@ -60,7 +95,7 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
       {entity.isError ? (
         <ErrorMessage onRetry={() => void entity.refetch()} />
       ) : quads && entity.data ? (
-        <div className="entity-modal">
+        <div className="entity-modal" data-tab={activeList ?? "about"}>
           <Display
             className="entity-modal__display"
             shape={ModalShapes[entity.data.kind]}
@@ -68,6 +103,30 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
             dataGraph={quads}
             settleIndicator={<Thinking />}
           />
+          {listTabs.length > 0 && (
+            <div className="entity-tabs">
+              <div className="entity-tabs__list" role="tablist" aria-label="Sections">
+                {[{ kind: "about" as const, label: "About" }, ...listTabs].map(
+                  ({ kind, label }) => {
+                    const count = kind !== "about" ? lists?.[kind].length : undefined;
+                    return (
+                      <button
+                        key={kind}
+                        type="button"
+                        role="tab"
+                        className="entity-tabs__tab"
+                        aria-selected={kind === (activeList ?? "about")}
+                        onClick={() => selectTab(kind)}
+                      >
+                        {label}
+                        {count !== undefined && <span className="entity-tabs__count">{count}</span>}
+                      </button>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          )}
           <section className="entity-modal__all-properties" aria-label="All properties">
             {allProperties.data ? (
               <Display
@@ -89,6 +148,19 @@ export default function EntityModal({ id, onClose }: { id: string; onClose: () =
               </div>
             )}
           </section>
+          {activeList && (
+            <section className="entity-modal__list" role="tabpanel">
+              {lists ? (
+                <EntityLists person={entity.data} lists={lists} kind={activeList} />
+              ) : itemLists.isError ? (
+                <ErrorMessage onRetry={() => void itemLists.refetch()} />
+              ) : (
+                <div className="entity-modal__loading">
+                  <Thinking />
+                </div>
+              )}
+            </section>
+          )}
         </div>
       ) : (
         <div className="entity-modal__loading">

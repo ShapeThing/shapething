@@ -1,6 +1,6 @@
 import type { Literal, NamedNode, Quad, Quad_Object } from "@rdfjs/types";
 import { factory, inf, rdfs, schema, wdt, xsd } from "../rdf/namespaces.ts";
-import type { EntityDetails, ItemLists, PersonSummary } from "./person.ts";
+import type { EntityDetails, ItemLists, ListItem, PersonSummary } from "./person.ts";
 
 /**
  * The data graphs the display shapes (src/shapes) render. They hold the Wikidata triples
@@ -34,23 +34,48 @@ export const summaryQuads = (person: PersonSummary): Quad[] => [
   ),
 ];
 
+/**
+ * The birth and the death of a person as events with a date (P585, point in time), so they take
+ * their place among the works on the timeline of the modal (inf:PersonWorksShape): a work published
+ * after the death comes after it.
+ */
+export const lifeEventQuads = (person: PersonSummary): Quad[] =>
+  (
+    [
+      ["born", "Born", person.birthDate],
+      ["died", "Died", person.deathDate],
+    ] as const
+  ).flatMap(([key, label, date]) => {
+    if (!date) return [];
+    const event = inf(`${key}-${person.id}`);
+    return [
+      factory.quad(person.iri, inf("lifeEvent"), event),
+      factory.quad(event, inf("eventLabel"), factory.literal(label, "en")),
+      factory.quad(event, wdt("P585"), date),
+    ];
+  });
+
+/** The image and the short description of an item in the lists: for the cards of the modal. */
+const itemQuads = (item: ListItem): Quad[] => [
+  ...quad(item.iri, rdfs("label"), item.label),
+  ...quad(item.iri, schema("description"), item.description),
+  ...quad(item.iri, wdt("P18"), item.image),
+];
+
 /** The works (P50 author, from the work), interests (P101) and ideas (P800) of a person. */
 export const itemListQuads = (person: NamedNode, lists: ItemLists): Quad[] => [
   ...lists.works.flatMap((work) => [
     ...quad(work.iri, wdt("P50"), person),
-    ...quad(work.iri, rdfs("label"), work.label),
+    ...itemQuads(work),
     // The works are listed by the year they were made, or else published (inf:ColumnShape).
     ...quad(work.iri, wdt("P571"), work.inception),
     ...quad(work.iri, wdt("P577"), work.publicationDate),
   ]),
   ...lists.interests.flatMap((interest) => [
     ...quad(person, wdt("P101"), interest.iri),
-    ...quad(interest.iri, rdfs("label"), interest.label),
+    ...itemQuads(interest),
   ]),
-  ...lists.ideas.flatMap((idea) => [
-    ...quad(person, wdt("P800"), idea.iri),
-    ...quad(idea.iri, rdfs("label"), idea.label),
-  ]),
+  ...lists.ideas.flatMap((idea) => [...quad(person, wdt("P800"), idea.iri), ...itemQuads(idea)]),
 ];
 
 export const entityQuads = (entity: EntityDetails, abstract: Literal | undefined): Quad[] => [
