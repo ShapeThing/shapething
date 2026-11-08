@@ -51,4 +51,9 @@
   display: flex;
   justify-content: center;
   padding: 40px;
+
+  // No indicator (a person in a column, see PersonRow): no room for it either.
+  &:empty {
+    display: none;
+  }
 }

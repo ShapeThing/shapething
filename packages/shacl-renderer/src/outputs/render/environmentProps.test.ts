@@ -1,3 +1,4 @@
+import { lazy } from "react";
 import { expect, test } from "vite-plus/test";
 import { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
@@ -32,6 +33,24 @@ test("identityKey ignores live props and treats every function as equal", () => 
     identityKey({ ...base, interfaceLocales: { "de-DE": () => Promise.resolve("") } }),
   );
   expect(identityKey({ ...base, mode: "edit" })).not.toBe(identityKey({ ...base, mode: "view" }));
+});
+
+test("identityKey does not change when a lazy widget component loads", async () => {
+  const Component = lazy(() => Promise.resolve({ default: () => null }));
+  const widgets = { viewers: { Lazy: { widget: node("Lazy"), Component } } };
+  const before = identityKey({ widgets });
+  // What React does when it first renders a lazy component: start loading, then resolve.
+  const payload = (Component as unknown as { _payload: unknown; _init: (p: unknown) => unknown })
+    ._payload;
+  try {
+    (Component as unknown as { _init: (p: unknown) => unknown })._init(payload);
+  } catch (thenable) {
+    await thenable;
+  }
+  expect(identityKey({ widgets })).toBe(before);
+  expect(
+    identityKey({ widgets: { viewers: { Other: { widget: node("Other"), Component } } } }),
+  ).not.toBe(before);
 });
 
 test("pickLiveProps falls back to defaults for absent props and leaves onSubmit out", () => {

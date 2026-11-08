@@ -105,6 +105,9 @@ export default function PersonRow({
           focusNode={person.iri}
           dataGraph={dataGraph}
           resolveLink={resolveLink}
+          // No spinner per person: the column shows one while its people load. `false`, since
+          // `null` means the renderer's own spinner.
+          settleIndicator={false}
         />
       )}
       {isActive && itemLists.isPending && <Spinner className="person__lists-spinner" />}

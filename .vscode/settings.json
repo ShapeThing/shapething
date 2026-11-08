@@ -1,5 +1,6 @@
 {
   "npm.scriptRunner": "vp",
+  "vitest.configSearchPatternExclude": "{**/node_modules/**,**/.*/**,**/*.d.ts,**/*.sample.*}",
   "typescript.preferences.importModuleSpecifier": "non-relative",
   "editor.defaultFormatter": "oxc.oxc-vscode",
   "[javascript]": {

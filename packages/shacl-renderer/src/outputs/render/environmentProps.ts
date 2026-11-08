@@ -73,12 +73,16 @@ const isTerm = (value: object): value is Term =>
 // Structural where an embedder plausibly rebuilds an equal value every render (terms, arrays of
 // terms/quads, plain objects like a widget registry spread, URLs, strings), by identity for class
 // instances (an RdfStore: a new store *is* new data). Functions all compare equal - an inline
-// locale loader or widget component must not rebuild the whole form on every parent render.
+// locale loader or widget component must not rebuild the whole form on every parent render. So do
+// React's component objects (lazy, memo, forwardRef: plain objects with a $$typeof): a lazy one's
+// payload changes once its chunk has loaded, so serialized structurally the widget registry would
+// change under a mounted form as soon as any renderer first loads one of its lazy widgets.
 function serialize(value: unknown): string {
   if (value === undefined) return "u";
   if (value === null) return "n";
   if (typeof value === "function") return "f";
   if (typeof value !== "object") return JSON.stringify(value);
+  if ("$$typeof" in value) return "f";
   if (value instanceof URL) return `url:${value.href}`;
   if (isTerm(value)) {
     if (value.termType === "Quad") {
