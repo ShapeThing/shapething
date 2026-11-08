@@ -9,7 +9,8 @@ import type { EntityDetails, ItemLists, ListItem, PersonSummary } from "./person
  * Wikipedia article (schema:abstract).
  *
  * Images (wdt:P18) are Wikidata's own links to the full Commons original; the display shapes'
- * st:imageWidth makes the renderer load a thumbnail instead.
+ * st:imageWidth makes the renderer load a thumbnail instead. A work without one has the Open Library
+ * cover there instead, when there is one (see data/openLibrary.ts).
  *
  * The links of the app are in the data too, for the display shapes' st:href: where a person leads
  * (inf:openHref, starting a chain with them) and where more about them is (inf:aboutHref, the
@@ -27,6 +28,9 @@ export const summaryQuads = (person: PersonSummary): Quad[] => [
   ...quad(person.iri, wdt("P18"), person.image),
   ...quad(person.iri, wdt("P569"), person.birthDate),
   ...quad(person.iri, wdt("P570"), person.deathDate),
+  // A band's: when it was formed and when it broke up.
+  ...quad(person.iri, wdt("P571"), person.inception),
+  ...quad(person.iri, wdt("P576"), person.dissolved),
   ...quad(
     person.iri,
     inf("influenceCount"),
@@ -35,7 +39,7 @@ export const summaryQuads = (person: PersonSummary): Quad[] => [
 ];
 
 /**
- * The birth and the death of a person as events with a date (P585, point in time), so they take
+ * The birth and the death of a person (the forming and the breaking up of a band) as events with a date (P585, point in time), so they take
  * their place among the works on the timeline of the modal (inf:PersonWorksShape): a work published
  * after the death comes after it.
  */
@@ -44,6 +48,9 @@ export const lifeEventQuads = (person: PersonSummary): Quad[] =>
     [
       ["born", "Born", person.birthDate],
       ["died", "Died", person.deathDate],
+      // A band's.
+      ["formed", "Formed", person.inception],
+      ["disbanded", "Disbanded", person.dissolved],
     ] as const
   ).flatMap(([key, label, date]) => {
     if (!date) return [];
@@ -62,14 +69,29 @@ const itemQuads = (item: ListItem): Quad[] => [
   ...quad(item.iri, wdt("P18"), item.image),
 ];
 
-/** The works (P50 author, from the work), interests (P101) and ideas (P800) of a person. */
+/**
+ * What a person made: works (P50 author), albums (P175 performer) and artworks (P170 creator), each
+ * from the item; and their interests (P101) and ideas (P800).
+ */
 export const itemListQuads = (person: NamedNode, lists: ItemLists): Quad[] => [
   ...lists.works.flatMap((work) => [
     ...quad(work.iri, wdt("P50"), person),
     ...itemQuads(work),
-    // The works are listed by the year they were made, or else published (inf:ColumnShape).
+    // The works are listed by the year they were made, or else published (inf:PersonWorksShape).
     ...quad(work.iri, wdt("P571"), work.inception),
     ...quad(work.iri, wdt("P577"), work.publicationDate),
+  ]),
+  // The albums, by the date they were released.
+  ...lists.albums.flatMap((album) => [
+    ...quad(album.iri, wdt("P175"), person),
+    ...itemQuads(album),
+    ...quad(album.iri, wdt("P577"), album.publicationDate),
+  ]),
+  // The artworks, by the year they were made.
+  ...lists.artworks.flatMap((artwork) => [
+    ...quad(artwork.iri, wdt("P170"), person),
+    ...itemQuads(artwork),
+    ...quad(artwork.iri, wdt("P571"), artwork.inception),
   ]),
   ...lists.interests.flatMap((interest) => [
     ...quad(person, wdt("P101"), interest.iri),

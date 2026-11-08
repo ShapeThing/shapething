@@ -3,10 +3,12 @@
 // as cards (.cards).
 
 .entity-lists {
-  // The column of the years, wide enough for "384 BCE", and where the line runs beside it.
-  --year-width: 5.5em;
+  // The width of a work on the timeline, its name wrapping within it, and the shape of the
+  // placeholder of a work without a picture: that of a book, 130 x 180.
+  --entry-width: 130px;
+  --entry-picture-ratio: 13 / 18;
+  // The space between the years and the works, the line running down its middle.
   --line-gap: 28px;
-  --line-x: calc(var(--year-width) + var(--line-gap) / 2);
 
   font-size: 15px;
   line-height: 22px;
@@ -45,41 +47,49 @@
   }
 }
 
-// The timeline: a dashed line with a dot for each row, the year before it. The birth and the death
-// are rows too, in their place by date.
+// The timeline: a dashed line with a dot for each year, the year before it (st:groupBy, see
+// shapes/PersonListShapes.ttl). The works and events of one year are a row, side by side, each its
+// picture with its name below it. The birth and the death are in the row of their year too.
 .entity-lists .timeline[data-label-layout] {
   display: block;
 
+  // One grid for all the years, each year a row of it (subgrid): the column of the years is as wide
+  // as the widest year of this person ("1898", or "384 BCE"), so the years line up.
   > .st-property-items {
     position: relative;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
+    display: grid;
+    grid-template-columns: max-content minmax(0, 1fr);
+    gap: 16px var(--line-gap);
   }
 
-  // The line, from the first dot to the last.
+  // The line, from the first dot to the last, in the middle of the gap before the works: placed
+  // by the column of the works (an absolutely placed child of a grid can be).
   > .st-property-items::before {
     content: "";
     position: absolute;
+    grid-column: 2;
     inset-block: 11px;
-    left: var(--line-x);
+    left: calc(var(--line-gap) / -2);
     border-left: 1px dashed var(--color-border);
   }
 
-  .st-details-viewer__body {
+  .st-value-group {
     position: relative;
     display: grid;
-    grid-template-columns: var(--year-width) minmax(0, 1fr);
+    grid-column: 1 / -1;
+    grid-template-columns: subgrid;
+    // The gap of the grid: the renderer gives a group a gap of its own, which a subgrid would use.
     column-gap: var(--line-gap);
-    row-gap: 6px;
-    align-items: baseline;
+    // The year at the top of its row, beside its dot: the row starts with pictures, not text.
+    align-items: start;
 
-    // The dot: open for a work.
+    // The dot: open for a year of works. On the line, placed by the column of the works too.
     &::before {
       content: "";
       position: absolute;
+      grid-column: 2;
       top: 7px;
-      left: calc(var(--line-x) - 4px);
+      left: calc(var(--line-gap) / -2 - 4px);
       width: 8px;
       height: 8px;
       box-sizing: border-box;
@@ -89,62 +99,98 @@
     }
   }
 
-  // The year, right-aligned in its column, its digits as wide as each other.
-  .year {
-    grid-row: 1;
+  // The year at the start of its column, its digits as wide as each other.
+  .st-value-group__label {
     grid-column: 1;
-    justify-self: end;
+    justify-self: start;
+    font-weight: normal;
     color: var(--color-muted);
     font-variant-numeric: tabular-nums;
   }
 
-  // The name beside the year, a work's picture below it.
+  // The works of the year beside each other, as many as fit, the rest on the next line. Without a
+  // year (the works without a date, last) the column of the years stays empty.
+  .st-value-group__items {
+    grid-column: 2;
+    display: flex;
+    flex-flow: row wrap;
+    gap: 12px 24px;
+    align-items: start;
+  }
+
+  // Each entry as wide as an entry is, its picture filling that width.
+  .st-value-group__items > .st-property-object-wrapper {
+    flex: 0 1 auto;
+    width: var(--entry-width);
+    max-width: 100%;
+  }
+
   :is(.title, .event) {
-    grid-row: 1;
-    grid-column: 2;
+    overflow-wrap: anywhere;
   }
 
-  .picture {
-    grid-row: 2;
-    grid-column: 2;
+  .st-details-viewer__body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
 
-  // At most 160px high, in its own shape.
+  // A work without a picture: a very dim book in its place, so the names line up. Not for the
+  // birth and the death.
+  .st-details-viewer__body:not(:has(> .picture, > .event))::before {
+    content: "";
+    aspect-ratio: var(--entry-picture-ratio);
+    border-radius: 6px;
+    background: color-mix(in srgb, var(--color-text) 6%, transparent);
+  }
+
+  // The full width of the entry, in its own shape.
+  .picture :is(.st-property-items, .st-property-object-wrapper, .st-property-object) {
+    width: 100%;
+  }
+
+  // The whole picture in its own shape (a book cover, a square album cover, a landscape), as wide
+  // as the entry: resized, never cropped.
   .picture .image-viewer {
     display: block;
-    width: auto;
-    max-width: min(100%, 360px);
+    width: 100%;
     height: auto;
-    max-height: 160px;
+    max-height: none;
     border-radius: 6px;
   }
 
-  // The birth and the death: a filled dot, the year in bold, the name of the event muted, a little
-  // apart from the works.
-  .st-details-viewer__body:has(> .event) {
+  // The year of a birth or a death: a filled dot, the year in bold, the name of the event muted, a
+  // little apart from the other years.
+  .st-value-group:has(.event) {
     margin-block: 6px;
 
     &::before {
       top: 6px;
-      left: calc(var(--line-x) - 5px);
+      left: calc(var(--line-gap) / -2 - 5px);
       width: 10px;
       height: 10px;
       background: var(--color-accent);
     }
 
-    .year {
+    .st-value-group__label {
       color: var(--color-text);
       font-weight: bold;
     }
+  }
 
-    .event {
-      color: var(--color-muted);
-    }
+  .event {
+    color: var(--color-muted);
   }
 }
 
+// Albums: the place of a missing cover is square, like an album cover.
+.entity-lists .timeline.albums {
+  --entry-picture-ratio: 1;
+}
+
 // The cards of the ideas and the interests: as many beside each other as fit, each with its picture
-// on top, its name and its short description. The name is the link, and covers the whole card.
+// on top, its name and its short description, flat on the page. The name is the link, and covers
+// the whole card.
 .entity-lists .cards[data-label-layout] {
   display: block;
 
@@ -154,33 +200,24 @@
     gap: 16px;
   }
 
+  // Flat: no box, no shadow; on hover only the name takes the accent colour.
   .st-details-viewer {
     position: relative;
     height: 100%;
-    overflow: hidden;
-    border-radius: 12px;
-    background: var(--color-menu);
-    box-shadow: 0 0 0 1px var(--color-selected);
-    transition:
-      box-shadow 0.2s ease-in-out,
-      transform 0.2s ease-in-out;
-
-    &:hover {
-      box-shadow:
-        0 0 0 1px var(--color-button),
-        0 4px 12px rgb(99 59 163 / 20%);
-      transform: translateY(-1px);
-    }
-
-    // Without a picture, a purple band across the top instead.
-    &:not(:has(.picture)) {
-      border-top: 4px solid var(--color-button);
-    }
   }
 
   .st-details-viewer__body {
     display: flex;
     flex-direction: column;
+  }
+
+  // Without a picture, a colour of its own in its place, from the hue the renderer gives each value
+  // (--st-term-hue, derived from its IRI), so the cards line up.
+  .st-details-viewer__body:not(:has(> .picture))::before {
+    content: "";
+    aspect-ratio: 4 / 3;
+    border-radius: 4px;
+    background: hsl(var(--st-term-hue, 250) 60% 85%);
   }
 
   .picture .image-viewer {
@@ -190,11 +227,11 @@
     max-height: none;
     aspect-ratio: 4 / 3;
     object-fit: cover;
-    border-radius: 0;
+    border-radius: 4px;
   }
 
   .title {
-    padding: 10px 12px 0;
+    padding-top: 8px;
     font-weight: bold;
     line-height: 20px;
     overflow-wrap: anywhere;
@@ -224,14 +261,9 @@
     -webkit-line-clamp: 4;
     line-clamp: 4;
     overflow: hidden;
-    padding: 4px 12px 0;
+    padding-top: 2px;
     font-size: 13px;
     line-height: 18px;
     color: var(--color-muted);
-  }
-
-  .st-details-viewer__body::after {
-    content: "";
-    padding-bottom: 12px;
   }
 }

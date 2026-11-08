@@ -14,6 +14,8 @@
   --influence-muted: rgb(110 110 110);
   --column-width: calc(100vw - 60px);
   --portrait-size: 56px;
+  // The width of the fixed menu on wide screens, where it floats over the left edge.
+  --fixed-menu-width: calc(44px + 2 * 10px);
 
   // The renderer's own font follows the app.
   --st-font-family: var(--font-family);

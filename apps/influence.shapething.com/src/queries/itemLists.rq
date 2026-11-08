@@ -1,11 +1,13 @@
+PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX wikibase: <http://wikiba.se/ontology#>
 PREFIX bd: <http://www.bigdata.com/rdf#>
 PREFIX schema: <http://schema.org/>
 
-# The works (P50 author), interests (P101 field of work) and notable works (P800, shown as ideas) of
-# $subject in one request.
+# What $subject made, by the kind of maker: works (P50 author), albums (P175 performer) and
+# artworks (P170 creator), and their interests (P101 field of work) and notable works (P800, shown
+# as ideas), in one request.
 #
 # The names come from Wikidata's label service, which looks them up after the UNION, only for the
 # items it found: about 40% faster than an OPTIONAL rdfs:label lookup per language in each branch.
@@ -13,16 +15,61 @@ PREFIX schema: <http://schema.org/>
 # without a language (itemListsFromRows leaves those out), and the short description.
 #
 # The image and the description are for the tabs of a person's modal (src/shapes/PersonListShapes.ttl).
-SELECT ?kind ?item ?name ?description ?image ?inception ?publicationDate WHERE {
+SELECT ?kind ?item ?name ?description ?image ?inception ?publicationDate ?openLibraryId ?musicBrainzId ?isBook WHERE {
   {
     ?item wdt:P50 $subject .
     FILTER(isIRI(?item))
     # Editions and translations (P629 edition or translation of) are items of their own with the
     # same author and usually the same title: leave them out when their work is listed already.
     FILTER NOT EXISTS { ?item wdt:P629 ?work . ?work wdt:P50 $subject }
+    # Not works of their own: an edition or translation (Q3331189) without P629, or a Wikimedia
+    # list article (Q13406463), e.g. "fictional places in the Narnia series".
+    FILTER NOT EXISTS { VALUES ?notAWork { wd:Q3331189 wd:Q13406463 } ?item wdt:P31 ?notAWork }
+    # A series (any subclass of Q7725310 series of creative works, e.g. The Chronicles of Narnia):
+    # its books are listed one by one.
+    FILTER NOT EXISTS { ?item wdt:P31/wdt:P279* wd:Q7725310 }
     BIND("works" AS ?kind)
     OPTIONAL { ?item wdt:P571 ?inception . FILTER(isLiteral(?inception)) }
     OPTIONAL { ?item wdt:P577 ?publicationDate . FILTER(isLiteral(?publicationDate)) }
+    # A book (data/openLibrary.ts prefers its Open Library cover to its image): one Open Library
+    # knows (P648), or an instance (P31) of a kind of book.
+    BIND((EXISTS { ?item wdt:P648 [] } || EXISTS {
+      VALUES ?bookType { wd:Q571 wd:Q7725634 wd:Q47461344 wd:Q8261 wd:Q5185279 wd:Q35760 wd:Q25379 wd:Q49084 }
+      ?item wdt:P31 ?bookType
+    }) AS ?isBook)
+    # For the cover of a work (data/openLibrary.ts).
+    OPTIONAL { ?item wdt:P648 ?openLibraryId . FILTER(isLiteral(?openLibraryId)) }
+  }
+  UNION
+  {
+    # The albums and EPs (Q482994, Q169930) $subject performed (P175): only those Wikidata says are
+    # a studio, live or soundtrack album (P7937 form of creative work), which leaves out the many
+    # compilations, remixes and box sets, and the releases nobody described.
+    ?item wdt:P175 $subject .
+    FILTER(isIRI(?item))
+    FILTER EXISTS { VALUES ?albumType { wd:Q482994 wd:Q169930 } ?item wdt:P31 ?albumType }
+    FILTER EXISTS { VALUES ?albumForm { wd:Q208569 wd:Q209939 wd:Q4176708 } ?item wdt:P7937 ?albumForm }
+    BIND("albums" AS ?kind)
+    OPTIONAL { ?item wdt:P577 ?publicationDate . FILTER(isLiteral(?publicationDate)) }
+    # For the cover of an album (data/coverArtArchive.ts): its MusicBrainz release group.
+    OPTIONAL { ?item wdt:P436 ?musicBrainzId . FILTER(isLiteral(?musicBrainzId)) }
+  }
+  UNION
+  {
+    # The paintings, sculptures and drawings (Q3305213, Q860861, Q93184) $subject made (P170
+    # creator): a painter can have well over a thousand, so only the best known 100, by the number
+    # of Wikimedia sites with an article about them (at least three).
+    {
+      SELECT ?item WHERE {
+        ?item wdt:P170 $subject ; wikibase:sitelinks ?sitelinks .
+        FILTER(isIRI(?item) && ?sitelinks >= 3)
+        FILTER EXISTS { VALUES ?artworkType { wd:Q3305213 wd:Q860861 wd:Q93184 } ?item wdt:P31 ?artworkType }
+      }
+      ORDER BY DESC(?sitelinks)
+      LIMIT 100
+    }
+    BIND("artworks" AS ?kind)
+    OPTIONAL { ?item wdt:P571 ?inception . FILTER(isLiteral(?inception)) }
   }
   UNION
   {

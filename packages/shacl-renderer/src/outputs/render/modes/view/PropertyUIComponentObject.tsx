@@ -5,6 +5,7 @@ import WidgetSlot from "@/outputs/render/modes/view/WidgetSlot.tsx";
 import Link, { insideLinkContext } from "@/outputs/render/components/Link/index.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { termKey } from "@/helpers/termKey.ts";
+import { termHueStyle } from "@/helpers/termHue.ts";
 import { propertyHref } from "@/structure/href.ts";
 import DiffText from "@/outputs/render/modes/view/DiffText.tsx";
 import type { DiffStatus } from "@/outputs/render/modes/view/propertyDiff.ts";
@@ -19,6 +20,8 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
  * With st:href (structure/href.ts) the value is a link to the href found on the focus node: the
  * viewer renders inside it, and a link of the viewer's own (components/Link) renders as plain
  * content there, as a link can not hold another one.
+ *
+ * Each value carries `--st-term-hue`, a hue of its own (helpers/termHue.ts), for stylesheets.
  */
 export default function PropertyUIComponentObject({
   propertyUIElement,
@@ -58,6 +61,7 @@ export default function PropertyUIComponentObject({
       className={clsx("st-property-object-wrapper", status && ["st-diff", `st-diff--${status}`])}
       data-diff={status}
       data-default={isDefault || undefined}
+      style={termHueStyle(object)}
     >
       {status && (
         <Localized id={`diff-${status}`}>

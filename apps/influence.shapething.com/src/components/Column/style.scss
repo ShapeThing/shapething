@@ -194,7 +194,7 @@
   flex: 1 1 auto;
   padding: 20px;
   overflow-y: auto;
-  // The lists of an opened person fill the column to the bottom (cqh units).
+  // The introduction of an opened person fills the column to the bottom (cqh units).
   container-type: size;
   scrollbar-width: none;
   @include scroll-fade;
@@ -265,5 +265,12 @@
   to {
     opacity: 1;
     max-width: var(--column-width);
+  }
+}
+
+// Room for the fixed menu, which floats over the left edge on wide screens.
+@media screen and (min-width: 720px) {
+  .column:first-child {
+    border-left-width: calc(var(--fixed-menu-width) + 30px);
   }
 }

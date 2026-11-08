@@ -25,7 +25,7 @@ const shareLink = async (): Promise<boolean> => {
 };
 
 /**
- * The info, timeline, start over, bookmark and share buttons of the columns page. Give it the path as key too: a
+ * The start over, timeline, bookmark, share and info buttons of the columns page. Give it the path as key too: a
  * message about one path does not belong to the next.
  */
 export default function FixedMenu({ path }: { path: string }) {
@@ -48,19 +48,14 @@ export default function FixedMenu({ path }: { path: string }) {
 
   return (
     <nav className="fixed-menu" aria-label="Menu">
-      <a className="fixed-button fixed-button--info" href="#info">
+      <a className="fixed-button fixed-button--restart" href="/">
         <span className="fixed-button__icon" aria-hidden="true" />
-        <span className="visually-hidden">About this app</span>
+        <span className="visually-hidden">Start over</span>
       </a>
 
       <a className="fixed-button fixed-button--timeline" href="#timeline">
         <span className="fixed-button__icon" aria-hidden="true" />
         <span className="visually-hidden">Timeline of this chain</span>
-      </a>
-
-      <a className="fixed-button fixed-button--restart" href="/">
-        <span className="fixed-button__icon" aria-hidden="true" />
-        <span className="visually-hidden">Start over</span>
       </a>
 
       <button
@@ -78,6 +73,7 @@ export default function FixedMenu({ path }: { path: string }) {
           }
         }}
       >
+        <span className="fixed-button__icon" aria-hidden="true" />
         <span className="fixed-button__text" aria-live="polite">
           {feedback === "added"
             ? "Bookmark added"
@@ -85,7 +81,6 @@ export default function FixedMenu({ path }: { path: string }) {
               ? "Bookmark removed"
               : ""}
         </span>
-        <span className="fixed-button__icon" aria-hidden="true" />
         <span className="visually-hidden">Bookmark</span>
       </button>
 
@@ -100,6 +95,7 @@ export default function FixedMenu({ path }: { path: string }) {
           );
         }}
       >
+        <span className="fixed-button__icon" aria-hidden="true" />
         <span className="fixed-button__text" aria-live="polite">
           {shareFeedback === "copied"
             ? "Link copied"
@@ -107,9 +103,13 @@ export default function FixedMenu({ path }: { path: string }) {
               ? "Could not copy the link"
               : ""}
         </span>
-        <span className="fixed-button__icon" aria-hidden="true" />
         <span className="visually-hidden">Share this chain</span>
       </button>
+
+      <a className="fixed-button fixed-button--info" href="#info">
+        <span className="fixed-button__icon" aria-hidden="true" />
+        <span className="visually-hidden">About this app</span>
+      </a>
     </nav>
   );
 }

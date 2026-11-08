@@ -132,3 +132,25 @@
   color: inherit;
   text-decoration: inherit;
 }
+
+/* st:groupBy: the groups below each other, each its key as a heading above its values (see
+   PropertyUIComponent). Their layout is left to the shapes' st:cssClass beyond this. */
+.st-property-items--grouped {
+  gap: var(--size-3);
+}
+
+.st-value-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+}
+
+.st-value-group__label {
+  font-weight: bold;
+}
+
+.st-value-group__items {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+}

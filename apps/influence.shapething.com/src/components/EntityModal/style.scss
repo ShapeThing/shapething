@@ -74,16 +74,35 @@
     border-radius: 8px;
   }
 
-  // On a narrow screen the side column is above the text: the image takes the full width of the
-  // modal, at its own height, instead of being held to the height of the wide layout.
+  // On a narrow screen the side column is above the text: the image is small, the short
+  // description beside it, the facts below both. Without an image the description takes the row.
   @media (max-width: 719.98px) {
+    > .st-property-group__body:has(> .image) {
+      display: grid;
+      grid-template-columns: 120px minmax(0, 1fr);
+      column-gap: 16px;
+      align-items: start;
+
+      > .image {
+        grid-column: 1;
+      }
+
+      > .summary {
+        grid-column: 2;
+        grid-row: 1;
+      }
+
+      > :not(.image, .summary) {
+        grid-column: 1 / -1;
+      }
+    }
+
     .image :is(.st-property-items, .st-property-object-wrapper, .st-property-object) {
       width: 100%;
     }
 
     .image .image-viewer {
-      max-height: none;
-      height: auto;
+      max-height: 200px;
     }
   }
 
@@ -628,6 +647,20 @@
   gap: 8px;
   overflow-x: auto;
   scrollbar-width: none;
+}
+
+// On a narrow screen the row reaches into the sides of the modal (--modal-gutter, Modal/style.scss),
+// so the tabs scroll from edge to edge instead of being cut off at the padding; at rest the first
+// tab still lines up with the text.
+@media (max-width: 719.98px) {
+  .entity-tabs {
+    margin-inline: calc(-1 * var(--modal-gutter));
+  }
+
+  .entity-tabs__list {
+    padding-inline: var(--modal-gutter);
+    scroll-padding-inline: var(--modal-gutter);
+  }
 }
 
 // The headings of the properties stick below the tabs, their top padding (the room the fade of the

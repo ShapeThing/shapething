@@ -17,6 +17,11 @@ inf:aboutHref
     rdfs:label "About"@en ;
     rdfs:comment "Where more about an entity is: the hash of the app that opens it in the modal."@en .
 
+inf:viewMore
+    a rdf:Property ;
+    rdfs:label "View more"@en ;
+    rdfs:comment "The text of the link from the introduction of an opened person in a column to the modal, where the rest of it is."@en .
+
 inf:fullName
     a rdf:Property ;
     rdfs:label "Full name"@en ;

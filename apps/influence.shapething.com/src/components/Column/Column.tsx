@@ -36,7 +36,7 @@ type Props = {
 
 /**
  * A column of people. While one of them is opened, the column shows only that person, scrolled to
- * the top, with their works, interests and ideas below.
+ * the top, with the introduction of their Wikipedia article below.
  */
 export default function Column({
   title,
@@ -163,7 +163,7 @@ export default function Column({
         {isLoading && <Spinner className="column__spinner" />}
         {isError && <ErrorMessage className="column__message" onRetry={onRetry} />}
         {!isLoading && !isError && people.length === 0 && (
-          <p className="column__message">No one known.</p>
+          <p className="column__message">Nothing found.</p>
         )}
         {normalizedFilter && !isActive && people.length > 0 && shownPeople.length === 0 && (
           <p className="column__message">No one matches “{filter.trim()}”.</p>

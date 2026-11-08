@@ -48,30 +48,124 @@
   text-align: center;
 }
 
+// The search bar: one white pill with the text field and, inside it on the right, the class
+// searched for (data/searchClasses.ts) as a purple pill of its own. One border and one focus ring
+// around both.
+.search-form__row {
+  --search-bar-inset: 5px;
+
+  display: flex;
+  // The class as high as the bar inside its padding, the same space on every side of it.
+  align-items: stretch;
+  gap: var(--search-bar-inset);
+  margin-bottom: 10px;
+  padding: var(--search-bar-inset);
+  border: 1px solid rgb(212 212 212);
+  border-radius: 50px;
+  background: white;
+  // The results are as wide as the bar (.search-dropdown, cqw units).
+  container-type: inline-size;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+
+  &:focus-within {
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px var(--color-button);
+  }
+}
+
 .search-form__field {
   position: relative;
   display: flex;
-  width: 100%;
-  margin-bottom: 10px;
+  align-items: center;
+  flex: 1 1 0;
+  min-width: 0;
 }
 
 .search-form__icon {
   position: absolute;
   top: 50%;
-  left: 12px;
-  width: 24px;
-  height: 24px;
+  left: 8px;
+  width: 22px;
+  height: 22px;
   transform: translateY(-50%);
   pointer-events: none;
 }
 
 .search-form__input {
   width: 100%;
-  padding: 12px 52px 12px 44px;
-  border: 1px solid rgb(212 212 212);
-  border-radius: 50px;
+  padding: 9px 40px 9px 38px;
+  border: 0;
+  background: transparent;
   font: inherit;
   font-size: 16px;
+
+  // The bar shows the focus (.search-form__row:focus-within).
+  &:focus-visible {
+    outline: none;
+  }
+}
+
+// Small, at the end of the text field, while the search waits for Wikidata.
+.search-form__spinner {
+  position: absolute;
+  top: 50%;
+  right: 4px;
+  width: 28px;
+  height: 28px;
+  padding: 4px;
+  transform: translateY(-50%);
+}
+
+.search-form__class {
+  position: relative;
+  // As wide as the class chosen (.search-form__class-select), but never more than about half of
+  // the bar.
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 45%;
+  display: flex;
+  color: var(--color-accent);
+
+  // A chevron of its own: the select has no arrow of the browser.
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    width: 7px;
+    height: 7px;
+    border-right: 2px solid currentcolor;
+    border-bottom: 2px solid currentcolor;
+    transform: translateY(-70%) rotate(45deg);
+    pointer-events: none;
+  }
+}
+
+.search-form__class-select {
+  display: block;
+  // As wide as the class chosen, not the longest one. Browsers without field-sizing (Firefox,
+  // Safari) keep the width of the longest.
+  field-sizing: content;
+  max-width: 100%;
+  height: 100%;
+  padding: 8px 38px 8px 16px;
+  border: 0;
+  border-radius: 50px;
+  background: var(--color-button);
+  color: var(--color-accent);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  appearance: none;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+
+  &:hover {
+    background: var(--color-button-hover);
+  }
 
   &:focus-visible {
     outline: 2px solid var(--color-accent);
@@ -79,21 +173,13 @@
   }
 }
 
-.search-form__spinner {
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: auto;
-  height: 100%;
-  aspect-ratio: 1;
-}
-
 // The results, as an autocomplete: a panel under the input, above the rest of the page.
 .search-dropdown {
   position: absolute;
-  top: calc(100% + 6px);
-  right: 0;
-  left: 0;
+  // Under the bar, as wide as it: the field is inside its padding and border.
+  top: calc(100% + var(--search-bar-inset) + 7px);
+  left: calc(-1 * var(--search-bar-inset) - 1px);
+  width: calc(100cqw + 2 * var(--search-bar-inset) + 2px);
   z-index: 10;
   max-height: min(420px, 60vh);
   overflow-y: auto;

@@ -1,14 +1,16 @@
 @prefix inf: <https://influence.shapething.com/ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
 @prefix st: <http://shapething.com/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
 
 ### One person in a column: the portrait, the years, the name and the relative influence, and
-### for the person that is opened their works, interests and ideas below. Those arrive later: they
-### are added to the person's live data graph (src/components/PersonRow), so the rest stays as it
-### is and the portrait is loaded once.
+### for the person that is opened the introduction of their Wikipedia article below. That arrives
+### later: it is added to the person's live data graph (src/components/PersonRow), so the rest stays
+### as it is and the portrait is loaded once. What they made, their ideas and their interests are in
+### the modal (src/components/EntityLists).
 
 inf:ColumnShape
     a sh:NodeShape ;
@@ -28,7 +30,8 @@ inf:ColumnShape
         st:cssClass "portrait" ;
     ] ;
     sh:property [
-        sh:path wdt:P569 ;
+        # Born, or (a band) formed.
+        sh:path [ sh:alternativePath ( wdt:P569 wdt:P571 ) ] ;
         sh:name "" ;
         sh:order 1 ;
         sh:maxCount 1 ;
@@ -36,7 +39,8 @@ inf:ColumnShape
         shui:viewer inf:YearViewer ;
     ] ;
     sh:property [
-        sh:path wdt:P570 ;
+        # Died, or (a band) broke up.
+        sh:path [ sh:alternativePath ( wdt:P570 wdt:P576 ) ] ;
         sh:name "" ;
         sh:order 2 ;
         sh:maxCount 1 ;
@@ -64,28 +68,22 @@ inf:ColumnShape
         st:cssClass "influence" ;
     ] ;
     sh:property [
-        sh:path [ sh:inversePath wdt:P50 ] ;
-        sh:name "Works"@en ;
-        sh:order 7 ;
-        sh:group inf:itemLists ;
-        sh:node inf:ItemShape ;
-        # By the year they were made (P571 inception), or else published (P577).
-        st:orderBy [ sh:alternativePath ( wdt:P571 wdt:P577 ) ] ;
-        shui:viewer shui:LabelViewer ;
-    ] ;
-    sh:property [
-        sh:path wdt:P101 ;
-        sh:name "Interests"@en ;
-        sh:order 6 ;
-        sh:group inf:itemLists ;
-        sh:node inf:ItemShape ;
-        shui:viewer shui:LabelViewer ;
-    ] ;
-    sh:property [
-        sh:path wdt:P800 ;
-        sh:name "Ideas"@en ;
+        sh:path schema:abstract ;
+        sh:name "" ;
         sh:order 5 ;
-        sh:group inf:itemLists ;
-        sh:node inf:ItemShape ;
-        shui:viewer shui:LabelViewer ;
+        sh:maxCount 1 ;
+        shui:viewer shui:LiteralViewer ;
+        # The opening lines only (PersonRow/style.scss): the whole of it is in the modal.
+        st:cssClass "abstract" ;
+    ] ;
+    sh:property [
+        sh:path inf:viewMore ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:order 6 ;
+        sh:maxCount 1 ;
+        shui:viewer shui:LiteralViewer ;
+        # The rest of the introduction, and everything else, is in the modal.
+        st:href inf:aboutHref ;
+        st:cssClass "view-more" ;
     ] .

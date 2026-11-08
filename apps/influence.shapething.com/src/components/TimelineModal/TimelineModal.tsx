@@ -1,10 +1,11 @@
 import type { CSSProperties } from "react";
-import type { PersonSummary } from "../../data/person.ts";
+import { endOf, type PersonSummary, startOf } from "../../data/person.ts";
 import { formatYear, yearOf } from "../../widgets/YearViewer/year.ts";
+import Avatar from "../Avatar/Avatar.tsx";
 import Modal from "../Modal/Modal.tsx";
 import "./style.scss";
 
-/** Someone born this long ago without a date of death is taken to be alive. */
+/** Someone born (a band formed) this long ago without a date of death is taken to be alive. */
 const LIFETIME = 110;
 
 type Lifespan = {
@@ -16,16 +17,45 @@ type Lifespan = {
 };
 
 const lifespanOf = (person: PersonSummary, now: number): Lifespan | undefined => {
-  const from = person.birthDate && yearOf(person.birthDate);
+  // A band from when it was formed to when it broke up.
+  const start = startOf(person);
+  const from = start && yearOf(start);
   if (from === undefined) return undefined;
-  const to = person.deathDate && yearOf(person.deathDate);
+  const end = endOf(person);
+  const to = end && yearOf(end);
   const isAlive = to === undefined && now - from < LIFETIME;
   return { person, from, to: isAlive ? now : to, isAlive };
 };
 
+// A portrait (wdt:P18) is a Commons "Special:FilePath" URL to the full original: Commons serves a
+// cached thumbnail of 120px wide instead.
+const thumbnailOf = (image: string) => {
+  const url = new URL(image);
+  if (url.hostname !== "commons.wikimedia.org" || url.pathname.toLowerCase().endsWith(".svg")) {
+    return image;
+  }
+  url.protocol = "https:";
+  url.search = new URLSearchParams({ width: "120" }).toString();
+  return url.href;
+};
+
+/**
+ * The round years between min and max to draw a line at: about five, a step of 1, 2 or 5 times a
+ * power of ten apart.
+ */
+const ticksBetween = (min: number, max: number): number[] => {
+  const rough = (max - min) / 5;
+  const power = 10 ** Math.floor(Math.log10(rough));
+  const step = [1, 2, 5, 10].map((factor) => factor * power).find((step) => step >= rough)!;
+  const ticks: number[] = [];
+  for (let year = Math.ceil(min / step) * step; year <= max; year += step) ticks.push(year);
+  return ticks;
+};
+
 /**
  * The lifespans of the people in the chain, in the order of the chain, on one time axis. The years
- * are given to the stylesheet as custom properties, which places the bars (style.scss).
+ * are given to the stylesheet as custom properties, which places the bars and the lines at round
+ * years (style.scss).
  */
 export default function TimelineModal({
   people,
@@ -41,6 +71,7 @@ export default function TimelineModal({
   const ends = known.map(({ from, to }) => to ?? from + 70);
   const min = Math.min(...known.map(({ from }) => from));
   const max = Math.max(...ends, min + 1);
+  const ticks = ticksBetween(min, max);
 
   return (
     <Modal title="Timeline" onClose={onClose}>
@@ -62,6 +93,13 @@ export default function TimelineModal({
                 }
               >
                 <a className="timeline__name" href={`#${person.id}`}>
+                  <span className="timeline__portrait">
+                    {person.image ? (
+                      <img src={thumbnailOf(person.image.value)} alt="" loading="lazy" />
+                    ) : (
+                      <Avatar name={person.name} />
+                    )}
+                  </span>
                   {person.name}
                 </a>
                 {lifespan ? (
@@ -84,9 +122,17 @@ export default function TimelineModal({
               </li>
             ))}
           </ol>
+          <div className="timeline__lines" aria-hidden="true">
+            {ticks.map((year) => (
+              <span key={year} style={{ "--year": year } as CSSProperties} />
+            ))}
+          </div>
           <div className="timeline__axis" aria-hidden="true">
-            <span>{formatYear(min)}</span>
-            <span>{formatYear(max)}</span>
+            {ticks.map((year) => (
+              <span key={year} style={{ "--year": year } as CSSProperties}>
+                {formatYear(year)}
+              </span>
+            ))}
           </div>
         </div>
       )}

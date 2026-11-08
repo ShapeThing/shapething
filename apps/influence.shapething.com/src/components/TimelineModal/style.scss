@@ -1,33 +1,108 @@
 // The bars are placed by the years the component gives as custom properties: --min and --max for
 // the whole chain, --from and --to for a person.
+//
+// Two columns: the names on the left, as wide as the longest one (up to 40%), the time axis on the
+// right. The list and its rows are subgrids, so every bar and the axis below share the right column.
 .timeline {
   --span: calc(var(--max) - var(--min));
+  display: grid;
+  grid-template-columns: fit-content(40%) minmax(0, 1fr);
+  column-gap: 16px;
+  // The lines (z-index -1) stay behind the rows, not behind the modal.
+  isolation: isolate;
 }
 
 .timeline__rows {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  grid-row: 1;
+  row-gap: 14px;
+  // The highlights of the rows (z-index -1) stay behind the rows, not behind the modal.
+  isolation: isolate;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
 .timeline__row {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  position: relative;
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
+  align-items: center;
+
+  // A highlight behind the whole row while it is hovered, as on the rows of a column. Translucent,
+  // so the bar shows through.
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -5px -8px;
+    z-index: -1;
+    border-radius: 21px 10px 10px 21px;
+    background: rgb(99 59 163 / 0.08);
+    opacity: 0;
+    transition: opacity 0.2s ease-in-out;
+    pointer-events: none;
+  }
+
+  &:hover::before,
+  &:has(.timeline__name:focus-visible)::before {
+    opacity: 1;
+  }
 }
 
 .timeline__name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: fit-content;
   font-size: 14px;
   font-weight: bold;
   color: inherit;
   text-decoration: none;
 
-  &:hover,
+  // The link covers the whole row, so the row is clicked as one (the row is the positioned element).
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -5px -8px;
+    border-radius: 21px 10px 10px 21px;
+  }
+
   &:focus-visible {
-    color: var(--color-accent);
+    outline: none;
+
+    &::after {
+      outline: 2px solid var(--color-accent);
+    }
+  }
+}
+
+.timeline__row:hover .timeline__name,
+.timeline__name:focus-visible {
+  color: var(--color-accent);
+}
+
+.timeline__portrait {
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: var(--color-background);
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    // Faces are mostly in the upper part of a portrait.
+    object-position: 50% 25%;
+  }
+
+  .avatar {
+    font-size: 12px;
   }
 }
 
@@ -54,12 +129,42 @@
   color: var(--color-muted);
 }
 
+// A line at each round year, from the top of the rows down to the axis, behind the rows and their
+// highlights. The lines and the labels on the axis are placed like the bars: by their --year.
+.timeline__lines {
+  position: relative;
+  grid-column: 2;
+  grid-row: 1;
+  z-index: -1;
+  margin-bottom: -16px;
+  pointer-events: none;
+
+  > span {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: calc((var(--year) - var(--min)) / var(--span) * 100%);
+    border-left: 1px dashed var(--color-border);
+  }
+}
+
 .timeline__axis {
-  display: flex;
-  justify-content: space-between;
+  position: relative;
+  grid-column: 2;
+  grid-row: 2;
+  // The labels are absolutely placed: the axis keeps a line of room for them below its padding.
+  box-sizing: content-box;
+  height: 1lh;
   margin-top: 16px;
   padding-top: 6px;
-  border-top: 1px dashed var(--color-border);
+  border-top: 1px solid var(--color-border);
   font-size: 11px;
   color: var(--color-muted);
+
+  > span {
+    position: absolute;
+    left: calc((var(--year) - var(--min)) / var(--span) * 100%);
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
 }

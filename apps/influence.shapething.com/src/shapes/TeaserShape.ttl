@@ -37,7 +37,8 @@ inf:TeaserShape
         st:cssClass "name" ;
     ] ;
     sh:property [
-        sh:path wdt:P569 ;
+        # Born, or (a band) formed.
+        sh:path [ sh:alternativePath ( wdt:P569 wdt:P571 ) ] ;
         sh:name "" ;
         sh:order 2 ;
         sh:maxCount 1 ;
@@ -45,7 +46,8 @@ inf:TeaserShape
         shui:viewer inf:YearViewer ;
     ] ;
     sh:property [
-        sh:path wdt:P570 ;
+        # Died, or (a band) broke up.
+        sh:path [ sh:alternativePath ( wdt:P570 wdt:P576 ) ] ;
         sh:name "" ;
         sh:order 3 ;
         sh:maxCount 1 ;

@@ -42,6 +42,8 @@ export const AllPropertiesShape = inf("AllPropertiesShape");
 /** The tabs of a person's modal beside "About", by list (see EntityLists). */
 export const PersonListShapes = {
   works: inf("PersonWorksShape"),
+  albums: inf("PersonAlbumsShape"),
+  artworks: inf("PersonArtworksShape"),
   ideas: inf("PersonIdeasShape"),
   interests: inf("PersonInterestsShape"),
 } as const;

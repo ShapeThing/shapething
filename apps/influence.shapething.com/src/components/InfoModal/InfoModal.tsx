@@ -5,15 +5,15 @@ export default function InfoModal({ onClose }: { onClose: () => void }) {
     <Modal title="About this app" onClose={onClose}>
       <div className="info-modal">
         <p>
-          The purple bars show the relative influence of a person compared to all the others
-          currently shown in the app.
+          The purple bars show how influential each entry is compared to everything else currently
+          on screen.
         </p>
         <p>
-          Click on the photo of a person to see more about them. Click on the name to open the
-          person and see who they influenced.
+          Click an image to learn more about an entry. Click a name to open it and see what it
+          influenced.
         </p>
         <p>
-          The data comes from{" "}
+          All data comes from{" "}
           <a href="https://www.wikidata.org/" target="_blank" rel="noreferrer">
             Wikidata
           </a>{" "}
@@ -24,15 +24,23 @@ export default function InfoModal({ onClose }: { onClose: () => void }) {
           .
         </p>
         <p>
-          This application uses{" "}
-          <a href="https://github.com/ShapeThing/shapething/tree/main/packages/shacl-renderer">
-            SHACL renderer
+          Built with{" "}
+          <a
+            href="https://github.com/ShapeThing/shapething/tree/main/packages/shacl-renderer"
+            target="_blank"
+            rel="noreferrer"
+          >
+            SHACL Renderer
           </a>{" "}
           and{" "}
-          <a href="https://github.com/ShapeThing/shapething/tree/main/packages/typed-sparql">
+          <a
+            href="https://github.com/ShapeThing/shapething/tree/main/packages/typed-sparql"
+            target="_blank"
+            rel="noreferrer"
+          >
             Typed SPARQL
           </a>
-          , two packages from{" "}
+          , two packages by{" "}
           <a href="https://shapething.com" target="_blank" rel="noreferrer">
             ShapeThing
           </a>

@@ -9,12 +9,13 @@ PREFIX mwapi: <https://www.mediawiki.org/ontology#API/>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
 PREFIX hint: <http://www.bigdata.com/queryHints#>
 
-# The people matching the search text who influenced someone, the most influential first. Made
-# in data/queries.ts: $search is the text as typed, $fullText the words of it for the full-text
-# search, and $namePattern a pattern of a name in which every word of it starts a word.
-SELECT ?person ?name ?mulName ?description ?image ?birthDate ?deathDate (xsd:integer(?count) AS ?influence) WHERE {
+# The people, bands, or other things of the class $class (data/searchClasses.ts) matching the
+# search text that influenced someone, the most influential first. Made in data/queries.ts: $search
+# is the text as typed, $fullText the words of it for the full-text search, and $namePattern a
+# pattern of a name in which every word of it starts a word.
+SELECT ?item ?name ?mulName ?description ?image ?birthDate ?deathDate ?inception ?dissolved (xsd:integer(?count) AS ?influence) WHERE {
   {
-    SELECT ?person (COUNT(DISTINCT ?influenced) AS ?count) WHERE {
+    SELECT ?item (COUNT(DISTINCT ?influenced) AS ?count) WHERE {
       # The searches first, then the people they found: the other way around Blazegraph starts
       # with every influence on Wikidata and takes half a minute.
       hint:Query hint:optimizer "None" .
@@ -27,7 +28,7 @@ SELECT ?person ?name ?mulName ?description ?image ?birthDate ?deathDate (xsd:int
           bd:serviceParam mwapi:search $search .
           bd:serviceParam mwapi:language "en" .
           bd:serviceParam wikibase:limit 50 .
-          ?person wikibase:apiOutputItem mwapi:item .
+          ?item wikibase:apiOutputItem mwapi:item .
         }
       } UNION {
         # The full-text search: the best known people for whole words ("john" finds John Locke,
@@ -40,30 +41,36 @@ SELECT ?person ?name ?mulName ?description ?image ?birthDate ?deathDate (xsd:int
           bd:serviceParam wikibase:limit 200 .
           ?title wikibase:apiOutput mwapi:title .
         }
-        BIND(IRI(CONCAT(STR(wd:), ?title)) AS ?person)
+        BIND(IRI(CONCAT(STR(wd:), ?title)) AS ?item)
       }
-      ?person wdt:P31 wd:Q5 .
-      # Always true (both searches give items), but it types ?person as an IRI.
-      FILTER(isIRI(?person))
+      # An instance of the class, or of a kind of it (a rock band is a kind of musical group); or
+      # with the occupation, or a kind of it (a physicist is a kind of scientist): $membership is
+      # wdt:P31 or wdt:P106 (data/searchClasses.ts).
+      FILTER EXISTS { ?item $membership ?kind . ?kind wdt:P279* $class }
+      # Always true (both searches give items), but it types ?item as an IRI.
+      FILTER(isIRI(?item))
       # Only people who influenced someone: the people the app can show chains of.
-      ?influenced wdt:P737 ?person .
+      ?influenced wdt:P737 ?item .
       # The full-text search also matches descriptions ("van go" would find Tagore): the search
       # text has to match a name.
       FILTER EXISTS {
-        ?person rdfs:label|skos:altLabel ?label .
+        ?item rdfs:label|skos:altLabel ?label .
         FILTER(LANG(?label) IN ("en", "mul"))
         FILTER(REGEX(LCASE(STR(?label)), $namePattern))
       }
     }
-    GROUP BY ?person
+    GROUP BY ?item
     ORDER BY DESC(?count)
     LIMIT 20
   }
-  OPTIONAL { ?person rdfs:label ?name . FILTER(LANG(?name) = "en") }
-  OPTIONAL { ?person rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
-  OPTIONAL { ?person schema:description ?description . FILTER(LANG(?description) = "en") }
-  OPTIONAL { ?person wdt:P18 ?image . FILTER(isIRI(?image)) }
-  OPTIONAL { ?person wdt:P569 ?birthDate . FILTER(isLiteral(?birthDate)) }
-  OPTIONAL { ?person wdt:P570 ?deathDate . FILTER(isLiteral(?deathDate)) }
+  OPTIONAL { ?item rdfs:label ?name . FILTER(LANG(?name) = "en") }
+  OPTIONAL { ?item rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
+  OPTIONAL { ?item schema:description ?description . FILTER(LANG(?description) = "en") }
+  OPTIONAL { ?item wdt:P18 ?image . FILTER(isIRI(?image)) }
+  OPTIONAL { ?item wdt:P569 ?birthDate . FILTER(isLiteral(?birthDate)) }
+  OPTIONAL { ?item wdt:P570 ?deathDate . FILTER(isLiteral(?deathDate)) }
+  # A band's dates: when it was formed (P571, inception) and when it broke up (P576, dissolved).
+  OPTIONAL { ?item wdt:P571 ?inception . FILTER(isLiteral(?inception)) }
+  OPTIONAL { ?item wdt:P576 ?dissolved . FILTER(isLiteral(?dissolved)) }
 }
 ORDER BY DESC(?count)

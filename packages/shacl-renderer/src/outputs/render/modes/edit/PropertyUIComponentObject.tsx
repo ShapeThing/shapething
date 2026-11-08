@@ -10,6 +10,7 @@ import { useCallback } from "react";
 import "./style.css";
 import { shui } from "@/helpers/namespaces.ts";
 import { worstSeverity } from "@/helpers/worstSeverity.ts";
+import { termHueStyle } from "@/helpers/termHue.ts";
 
 export default function PropertyUIComponentObject({
   propertyUIElement,
@@ -66,7 +67,7 @@ export default function PropertyUIComponentObject({
   const severity = worstSeverity(valueResults);
 
   return (
-    <div className="st-property-object-wrapper">
+    <div className="st-property-object-wrapper" style={termHueStyle(object)}>
       {/* Above the whole row rather than inside .st-property-object-main, so the remove button
           stays level with the input instead of with the message. */}
       <ResultMessages className="st-validation-messages--value" results={valueResults} />

@@ -60,3 +60,15 @@ test("people are sorted by birth year, without one last, or by name", () => {
   expect(sortPeople(people, "name").map((p) => p.name)).toEqual(["Kant", "Nobody", "Plato"]);
   expect(sortPeople(people, "influence")).toBe(people);
 });
+
+test("a band is sorted by the year it was formed", () => {
+  const band = {
+    ...person("The Beatles"),
+    inception: factory.literal(
+      "1960-01-01T00:00:00Z",
+      factory.namedNode("http://www.w3.org/2001/XMLSchema#dateTime"),
+    ),
+  };
+  const people = [person("Kant", "1724-04-22T00:00:00Z"), person("Nobody"), band];
+  expect(sortPeople(people, "born").map((p) => p.name)).toEqual(["Kant", "The Beatles", "Nobody"]);
+});

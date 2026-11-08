@@ -1,5 +1,6 @@
 import type { NamedNode } from "@rdfjs/types";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import { queryOptions, useQueries, useQuery } from "@tanstack/react-query";
+import { useMemo } from "react";
 import allPropertiesQuery from "../queries/allProperties.rq?raw";
 import entityQuery from "../queries/entity.rq";
 import influencedQuery from "../queries/influenced.rq";
@@ -9,10 +10,19 @@ import itemListsQuery from "../queries/itemLists.rq";
 import labelsQuery from "../queries/labels.rq";
 import occupationsQuery from "../queries/occupations.rq";
 import searchQuery from "../queries/search.rq";
-import { factory } from "../rdf/namespaces.ts";
+import { factory, wdt } from "../rdf/namespaces.ts";
 import { construct, select } from "../sparql/select.ts";
 import { entityId, entityIri } from "./entities.ts";
-import { entityFromRows, itemListsFromRows, summariesFromRows } from "./person.ts";
+import { getAlbumCover } from "./coverArtArchive.ts";
+import { getOpenLibraryCover } from "./openLibrary.ts";
+import {
+  entityFromRows,
+  type ItemKind,
+  type ItemLists,
+  itemListsFromRows,
+  summariesFromRows,
+} from "./person.ts";
+import type { SearchClass } from "./searchClasses.ts";
 import { getWikipediaAbstract } from "./wikipedia.ts";
 
 /** The shortest search text that is sent to Wikidata. */
@@ -31,7 +41,19 @@ export const entityOptions = (id: string) =>
         select(entityQuery, { entity: iri }),
         select(occupationsQuery, { entity: iri }),
       ]);
-      return entityFromRows(iri, rows, occupationRows);
+      const entity = entityFromRows(iri, rows, occupationRows);
+      // A book shows its Open Library cover, also when Wikidata has an image (often a photo of a
+      // copy, or a page). Another work without an image gets one from Open Library too, when it has
+      // one. The modal is still shown without it.
+      if (entity.kind === "work" && (entity.isBook || !entity.image)) {
+        const cover = await getOpenLibraryCover({
+          openLibraryId: entity.openLibraryId?.value,
+          title: entity.label?.value,
+          author: entity.authorName?.value,
+        }).catch(() => undefined);
+        entity.image = cover ?? entity.image;
+      }
+      return entity;
     },
   });
 
@@ -47,11 +69,23 @@ export const influenceOptions = (id: string, direction: InfluenceDirection) =>
       ),
   });
 
-/** The people who influenced many others (queries/influential.rq): where "Surprise me" starts. */
-export const influentialOptions = () =>
+/** How a thing has the class: wdt:P31 (instance of) or wdt:P106 (occupation). */
+const membership = (searchClass: SearchClass) => wdt(searchClass.property ?? "P31");
+
+/**
+ * The most influential of a class (queries/influential.rq): where "Surprise me" starts, for the
+ * class chosen in the search.
+ */
+export const influentialOptions = (searchClass: SearchClass) =>
   queryOptions({
-    queryKey: ["influential"],
-    queryFn: async () => summariesFromRows(await select(influentialQuery)),
+    queryKey: ["influential", searchClass.id],
+    queryFn: async () =>
+      summariesFromRows(
+        await select(influentialQuery, {
+          class: entityIri(searchClass.id),
+          membership: membership(searchClass),
+        }),
+      ),
   });
 
 export const useEntity = (id: string | undefined) =>
@@ -64,6 +98,79 @@ export const useItemLists = (id: string, enabled: boolean) =>
       itemListsFromRows(await select(itemListsQuery, { subject: entityIri(id) })),
     enabled,
   });
+
+/**
+ * Where the cover of a list item comes from, if anywhere: a book, and another work without an
+ * image, from Open Library (data/openLibrary.ts); an album from the Cover Art Archive
+ * (data/coverArtArchive.ts). A cover is preferred to the item's image on Wikidata, which for a book
+ * or an album is often a photo of a copy.
+ */
+const coverLookups = (lists: ItemLists, kind: ItemKind, author: string | undefined) => [
+  ...(kind === "works" ? lists.works : [])
+    .filter((work) => work.isBook || !work.image)
+    .map((work) => ({
+      item: work,
+      queryKey: ["cover", work.iri.value, author],
+      fetch: () =>
+        getOpenLibraryCover({
+          openLibraryId: work.openLibraryId?.value,
+          title: work.label?.value,
+          author,
+        }),
+    })),
+  ...(kind === "albums" ? lists.albums : []).flatMap((album) => {
+    const musicBrainzId = album.musicBrainzId?.value;
+    return musicBrainzId
+      ? [
+          {
+            item: album,
+            queryKey: ["albumCover", musicBrainzId],
+            fetch: () => getAlbumCover(musicBrainzId),
+          },
+        ]
+      : [];
+  }),
+];
+
+/**
+ * The covers of the items of one of a person's lists (coverLookups), the one shown, by item IRI.
+ * Each is added when it is found; the map only changes when another cover arrives.
+ */
+export const useCovers = (
+  lists: ItemLists,
+  kind: ItemKind,
+  author: string | undefined,
+): ReadonlyMap<string, NamedNode> => {
+  const lookups = coverLookups(lists, kind, author);
+  const results = useQueries({
+    queries: lookups.map(({ queryKey, fetch }) => ({
+      queryKey,
+      // Without a cover the item keeps its own image, or none.
+      queryFn: async () => (await fetch().catch(() => undefined)) ?? null,
+      staleTime: Infinity,
+    })),
+  });
+  // The covers found so far as text, so the map is only made again when another one arrives.
+  const covers = lookups
+    .flatMap(({ item }, index) => {
+      const cover = results[index]?.data;
+      return cover ? [`${item.iri.value} ${cover.value}`] : [];
+    })
+    .join("\n");
+
+  return useMemo(
+    () =>
+      new Map(
+        covers
+          ? covers.split("\n").map((line) => {
+              const [item, cover] = line.split(" ");
+              return [item, factory.namedNode(cover)] as const;
+            })
+          : [],
+      ),
+    [covers],
+  );
+};
 
 export const useAbstract = (article: NamedNode | undefined) =>
   useQuery({
@@ -91,22 +198,32 @@ const searchWords = (text: string) =>
     .split(/[^\p{L}\p{N}]+/u)
     .filter(Boolean);
 
-/** The parameters of search.rq for a search text (see there). */
-export const searchParameters = (text: string) => {
+/** The parameters of search.rq for a search text in a class (see there). */
+export const searchParameters = (text: string, searchClass: SearchClass) => {
   const words = searchWords(text);
+  // Only direct instances of the classes, when the class has them: the full-text search knows no
+  // subclasses. Without them the words alone, the query keeps the class.
+  const classes = searchClass.directClasses
+    ?.map((id) => `${searchClass.property ?? "P31"}=${id}`)
+    .join("|");
   return {
     search: factory.literal(text),
-    fullText: factory.literal(`${words.join(" ")} haswbstatement:P31=Q5`),
+    fullText: factory.literal(
+      classes ? `${words.join(" ")} haswbstatement:${classes}` : words.join(" "),
+    ),
+    class: entityIri(searchClass.id),
+    membership: membership(searchClass),
     // Every word starts a word of the name, in any order (Java regular expressions).
     namePattern: factory.literal(words.map((word) => `(?=.*(^|[^\\p{L}\\p{N}])${word})`).join("")),
   };
 };
 
-export const useSearch = (text: string) => {
+export const useSearch = (text: string, searchClass: SearchClass) => {
   const searchText = text.trim();
   return useQuery({
-    queryKey: ["search", searchText],
-    queryFn: async () => summariesFromRows(await select(searchQuery, searchParameters(searchText))),
+    queryKey: ["search", searchClass.id, searchText],
+    queryFn: async () =>
+      summariesFromRows(await select(searchQuery, searchParameters(searchText, searchClass))),
     enabled: searchText.length >= MINIMUM_SEARCH_LENGTH,
   });
 };

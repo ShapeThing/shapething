@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { BlankNode, Literal, NamedNode } from '@rdfjs/types'
-import type { Prettify, TypedQuery } from '@shapething/typed-sparql'
+import type { LiteralWithDatatype, Prettify, TypedQuery } from '@shapething/typed-sparql'
 
 interface QueryResult {
   kind: Literal
@@ -10,6 +10,9 @@ interface QueryResult {
   image?: NamedNode
   inception?: Literal
   publicationDate?: Literal
+  openLibraryId?: Literal
+  musicBrainzId?: Literal
+  isBook: LiteralWithDatatype<'xsd:boolean'>
 }
 
 declare const _default: TypedQuery<Prettify<QueryResult>>

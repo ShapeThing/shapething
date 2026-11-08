@@ -26,3 +26,10 @@
     justify-content: safe center;
   }
 }
+
+// Columns snap clear of the fixed menu, which floats over the left edge on wide screens.
+@media screen and (min-width: 720px) {
+  .columns-page {
+    scroll-padding-left: calc(var(--fixed-menu-width) + 30px);
+  }
+}

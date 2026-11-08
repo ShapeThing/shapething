@@ -1,4 +1,4 @@
-import type { PersonSummary } from "./data/person.ts";
+import { type PersonSummary, startOf } from "./data/person.ts";
 import { yearOf } from "./widgets/YearViewer/year.ts";
 
 /**
@@ -59,11 +59,14 @@ export const segmentsFor = (ids: readonly string[], sorts: Sorts): string[] =>
     return `${before ? `${before}:` : ""}${id}${after ? `:${after}` : ""}`;
   });
 
-/** The people in a sort order; people without a known birth year go last. */
+/** The people in a sort order; people (and bands) without a known birth year go last. */
 export const sortPeople = (people: readonly PersonSummary[], order: SortOrder) => {
   if (order === "influence") return people;
   if (order === "name") return people.toSorted((a, b) => a.name.localeCompare(b.name, "en"));
-  const born = (person: PersonSummary) =>
-    (person.birthDate && yearOf(person.birthDate)) ?? Number.POSITIVE_INFINITY;
+  // A band by the year it was formed.
+  const born = (person: PersonSummary) => {
+    const start = startOf(person);
+    return (start && yearOf(start)) ?? Number.POSITIVE_INFINITY;
+  };
   return people.toSorted((a, b) => born(a) - born(b));
 };

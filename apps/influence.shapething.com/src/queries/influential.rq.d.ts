@@ -3,7 +3,7 @@ import type { Literal, NamedNode } from '@rdfjs/types'
 import type { LiteralWithDatatype, LiteralWithLanguage, Prettify, TypedQuery } from '@shapething/typed-sparql'
 
 interface QueryResult {
-  person: NamedNode
+  item: NamedNode
   name?: LiteralWithLanguage<'en'>
   mulName?: LiteralWithLanguage<'mul'>
   influence: LiteralWithDatatype<'xsd:integer'>

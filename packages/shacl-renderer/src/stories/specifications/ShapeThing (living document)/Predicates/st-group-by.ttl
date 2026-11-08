@@ -1,0 +1,36 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+# st:groupBy on a property shape: in view mode its values are shown in groups, under the text the
+# path reaches from each of them. Here the books are grouped by the year they were written, or
+# else published (st:groupTemplate, in the syntax of st:mergeTemplate): two books of 1843 with
+# different dates share a group, and the book without a date is in a group without a heading.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:path [ sh:inversePath schema:author ] ;
+        sh:name "Books"@en ;
+        shui:viewer shui:LabelViewer ;
+        st:orderBy [ sh:alternativePath ( schema:dateCreated schema:datePublished ) ] ;
+        st:groupBy [ sh:alternativePath ( schema:dateCreated schema:datePublished ) ] ;
+        st:groupTemplate "[{0:year}|{1:year}]" ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:name "An author"@en .
+
+ex:either rdfs:label "Either/Or"@en ; schema:author <#data> ;
+    schema:datePublished "1843-02-20"^^xsd:date .
+ex:fear rdfs:label "Fear and Trembling"@en ; schema:author <#data> ;
+    schema:dateCreated "1843-10-16"^^xsd:date .
+ex:sickness rdfs:label "The Sickness unto Death"@en ; schema:author <#data> ;
+    schema:datePublished "1849-07-30"^^xsd:date .
+ex:undated rdfs:label "Papers"@en ; schema:author <#data> .

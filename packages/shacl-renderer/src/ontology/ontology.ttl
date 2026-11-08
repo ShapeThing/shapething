@@ -46,6 +46,19 @@ st:orderBy
     rdfs:comment "A property path, in the same syntax as sh:path. The property's values are sorted by the number this path reaches from each value. In edit mode, drag reordering writes the new order back through the path when the path is simple enough to write through."@en ;
     rdfs:domain sh:PropertyShape .
 
+st:groupBy
+    a rdf:Property ;
+    rdfs:label "group by"@en ;
+    rdfs:comment "A property path, in the same syntax as sh:path. In view mode the property's values are shown in groups: the values for which this path reaches the same text are together, under that text as a heading. The groups keep the order of the values (see st:orderBy): a group is where its first value is. The alternatives of an sh:alternativePath (or the path itself, without alternatives) are composed into the text as st:mergeTemplate composes them, shaped by st:groupTemplate. The values for which the path reaches nothing share one group without a heading. Edit mode lists the values without groups."@en ;
+    rdfs:domain sh:PropertyShape .
+
+st:groupTemplate
+    a rdf:Property ;
+    rdfs:label "group template"@en ;
+    rdfs:comment "On a property shape with st:groupBy: how the text a value is grouped by is composed, in the syntax of st:mergeTemplate. For example \"[{0:year}|{1:year}]\" over st:groupBy [ sh:alternativePath ( schema:dateCreated schema:datePublished ) ] groups by the year of the first date there is, so two dates in one year share a group."@en ;
+    rdfs:domain sh:PropertyShape ;
+    rdfs:range xsd:string .
+
 st:iriType
     a rdf:Property ;
     rdfs:label "IRI type"@en ;

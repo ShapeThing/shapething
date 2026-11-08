@@ -6,12 +6,13 @@
 @prefix st: <http://shapething.com/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
 
-### The tabs of a person's modal beside "About" (src/components/EntityLists): their works on a
-### timeline, and their ideas and interests as cards. Laid out by the class names
-### (EntityLists/style.scss).
+### The tabs of a person's modal beside "About" (src/components/EntityLists): what they made (their
+### works, albums or artworks) on a timeline, and their ideas and interests as cards. Laid out by
+### the class names (EntityLists/style.scss).
 
-# The works and the person's birth and death (inf:lifeEvent, src/data/graphs.ts) in one list, by
-# date: a work published after the death comes after it.
+# The works and the person's birth and death (a band's forming and breaking up: inf:lifeEvent,
+# src/data/graphs.ts) in one list, by date: a work published after the death comes after it. Those
+# of one year are a group, the year its heading: a row of the timeline.
 inf:PersonWorksShape
     a sh:NodeShape ;
     rdfs:label "Works"@en ;
@@ -22,6 +23,41 @@ inf:PersonWorksShape
         # A work by the date it was made (P571 inception), or else published (P577); an event by
         # its date (P585 point in time).
         st:orderBy [ sh:alternativePath ( wdt:P571 wdt:P577 wdt:P585 ) ] ;
+        st:groupBy [ sh:alternativePath ( wdt:P571 wdt:P577 wdt:P585 ) ] ;
+        st:groupTemplate "[{0:year}|{1:year}|{2:year}]" ;
+        shui:viewer shui:DetailsViewer ;
+        st:cssClass "timeline" ;
+    ] .
+
+# A musician's or a band's albums, like the works: on a timeline with the birth and the death, by
+# the date they were released (P577).
+inf:PersonAlbumsShape
+    a sh:NodeShape ;
+    rdfs:label "Albums"@en ;
+    sh:property [
+        sh:path [ sh:alternativePath ( [ sh:inversePath wdt:P175 ] inf:lifeEvent ) ] ;
+        sh:name "" ;
+        sh:node inf:TimelineEntryShape ;
+        st:orderBy [ sh:alternativePath ( wdt:P577 wdt:P585 ) ] ;
+        st:groupBy [ sh:alternativePath ( wdt:P577 wdt:P585 ) ] ;
+        st:groupTemplate "[{0:year}|{1:year}]" ;
+        shui:viewer shui:DetailsViewer ;
+        # An album cover is square: so is the place of a missing one (EntityLists/style.scss).
+        st:cssClass "timeline", "albums" ;
+    ] .
+
+# A painter's or a sculptor's artworks, like the works: on a timeline with the birth and the death,
+# by the date they were made (P571 inception).
+inf:PersonArtworksShape
+    a sh:NodeShape ;
+    rdfs:label "Artworks"@en ;
+    sh:property [
+        sh:path [ sh:alternativePath ( [ sh:inversePath wdt:P170 ] inf:lifeEvent ) ] ;
+        sh:name "" ;
+        sh:node inf:TimelineEntryShape ;
+        st:orderBy [ sh:alternativePath ( wdt:P571 wdt:P585 ) ] ;
+        st:groupBy [ sh:alternativePath ( wdt:P571 wdt:P585 ) ] ;
+        st:groupTemplate "[{0:year}|{1:year}]" ;
         shui:viewer shui:DetailsViewer ;
         st:cssClass "timeline" ;
     ] .
@@ -48,24 +84,14 @@ inf:PersonInterestsShape
         st:cssClass "cards" ;
     ] .
 
-# A row of the timeline: the year, and a work's name (a link that opens it in the modal) with its
-# picture below it, or the name of the event ("Born", "Died").
+# An entry of the timeline, in the row of its year (st:groupBy): a work's picture with its name (a
+# link that opens it in the modal) below it, or the name of the event ("Born", "Died").
 inf:TimelineEntryShape
     a sh:NodeShape ;
     sh:property [
-        sh:path [ sh:alternativePath ( wdt:P571 wdt:P577 wdt:P585 ) ] ;
-        st:mergeAlternatives true ;
-        st:mergeTemplate "[{0:year}|{1:year}|{2:year}]" ;
-        sh:name "" ;
-        sh:order 0 ;
-        sh:maxCount 1 ;
-        shui:viewer shui:LiteralViewer ;
-        st:cssClass "year" ;
-    ] ;
-    sh:property [
         sh:path rdfs:label ;
         sh:name "" ;
-        sh:order 1 ;
+        sh:order 2 ;
         sh:maxCount 1 ;
         shui:viewer inf:EntityLinkViewer ;
         shui:propertyRole shui:LabelRole ;
@@ -76,7 +102,7 @@ inf:TimelineEntryShape
         sh:name "" ;
         # No help icon from the rdfs:comment of inf:eventLabel in a header that has no label.
         sh:description "" ;
-        sh:order 1 ;
+        sh:order 2 ;
         sh:maxCount 1 ;
         shui:viewer shui:LiteralViewer ;
         st:cssClass "event" ;
@@ -84,11 +110,11 @@ inf:TimelineEntryShape
     sh:property [
         sh:path wdt:P18 ;
         sh:name "" ;
-        sh:order 2 ;
+        sh:order 1 ;
         sh:maxCount 1 ;
         sh:nodeKind sh:IRI ;
         shui:viewer shui:ImageViewer ;
-        st:imageWidth 720 ; # shown at most 160px high (EntityLists/style.scss), a wide one up to 360px wide
+        st:imageWidth 260 ; # shown 130px wide, in its own shape (EntityLists/style.scss)
         st:cssClass "picture" ;
     ] .
 

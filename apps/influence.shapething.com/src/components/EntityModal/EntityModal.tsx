@@ -24,8 +24,8 @@ import "./style.scss";
  * properties, sticky while they scroll (style.scss). A concept without an image or
  * a description has no facts either: its side group is empty, so the renderer leaves it out.
  *
- * A person has more tabs: their works, ideas and interests (components/EntityLists), each once it
- * is known they have any. The tabs take the place of the text and the properties; the side column
+ * A person (or a band) has more tabs: what they made (works, albums, artworks), their ideas and
+ * their interests (components/EntityLists), each once it is known they have any. The tabs take the place of the text and the properties; the side column
  * stays (style.scss). The tab is in the URL (#Q868/works, see routing.ts); switching tabs replaces
  * the history entry, so going back leaves the modal or returns to the entity before. The text and
  * the properties stay rendered while another tab shows, so going back to them loads nothing again.
@@ -35,6 +35,8 @@ import "./style.scss";
  */
 const LIST_TABS: ReadonlyArray<{ kind: ItemKind; label: string }> = [
   { kind: "works", label: "Works" },
+  { kind: "albums", label: "Albums" },
+  { kind: "artworks", label: "Artworks" },
   { kind: "ideas", label: "Ideas" },
   { kind: "interests", label: "Interests" },
 ];
@@ -53,9 +55,12 @@ export default function EntityModal({
   const itemLists = useItemLists(id, isPerson);
   const lists = itemLists.data;
   // A list's tab once the list is known to have something, so tabs do not come and go; opened on a
-  // tab (from the URL), it shows while the lists load.
+  // tab (from the URL), it shows while the lists load. The longest list first: a painter's
+  // artworks before their one book. Lists as long as each other keep the order of LIST_TABS.
   const listTabs = isPerson
-    ? LIST_TABS.filter(({ kind }) => (lists ? lists[kind].length > 0 : kind === tab))
+    ? LIST_TABS.filter(({ kind }) => (lists ? lists[kind].length > 0 : kind === tab)).sort(
+        (a, b) => (lists ? lists[b.kind].length - lists[a.kind].length : 0),
+      )
     : [];
   const activeList = listTabs.find(({ kind }) => kind === tab)?.kind;
   const selectTab = (next: EntityTab) =>

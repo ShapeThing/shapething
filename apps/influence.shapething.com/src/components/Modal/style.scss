@@ -154,13 +154,15 @@
 }
 
 // The content fades out under the top and bottom padding while it scrolls, like the columns.
-// Something sticky sticks below the fade: at --modal-fade from the top.
+// Something sticky sticks below the fade: at --modal-fade from the top. Its sides are
+// --modal-gutter wide, so content can reach into them.
 .modal__body {
   --modal-fade: 20px;
+  --modal-gutter: 20px;
 
   flex: 1 1 auto;
   min-height: 0;
-  padding: var(--modal-fade) 20px 20px;
+  padding: var(--modal-fade) var(--modal-gutter) 20px;
   overflow-y: auto;
   mask-image: linear-gradient(
     transparent,
@@ -188,7 +190,9 @@
   }
 
   .modal__body {
-    padding: var(--modal-fade) 40px 40px;
+    --modal-gutter: 40px;
+
+    padding: var(--modal-fade) var(--modal-gutter) 40px;
   }
 
   .modal__footer {

@@ -1,6 +1,13 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { type FocusEvent, type KeyboardEvent, useId, useRef, useState } from "react";
 import { influentialOptions, MINIMUM_SEARCH_LENGTH, useSearch } from "../../data/queries.ts";
+import {
+  DEFAULT_SEARCH_CLASS,
+  SEARCH_CLASSES,
+  type SearchClass,
+  storedSearchClass,
+  storeSearchClass,
+} from "../../data/searchClasses.ts";
 import { navigate, pathForIds } from "../../routing.ts";
 import { useDebouncedValue } from "../../useDebouncedValue.ts";
 import Bookmarks from "../Bookmarks/Bookmarks.tsx";
@@ -15,13 +22,13 @@ const resultLinks = (list: HTMLElement | null) => [
 ];
 
 /**
- * Starts a chain with someone who influenced many others, chosen at random. The list is asked for
- * as soon as the button is pointed at, so a click mostly does not wait.
+ * Starts a chain with one of the most influential of the class chosen in the search, at random.
+ * The list is asked for as soon as the button is pointed at, so a click mostly does not wait.
  */
-function SurpriseMe() {
+function SurpriseMe({ searchClass }: { searchClass: SearchClass }) {
   const queryClient = useQueryClient();
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
-  const prefetch = () => void queryClient.prefetchQuery(influentialOptions());
+  const prefetch = () => void queryClient.prefetchQuery(influentialOptions(searchClass));
 
   return (
     <button
@@ -33,7 +40,7 @@ function SurpriseMe() {
       onClick={async () => {
         setState("loading");
         try {
-          const people = await queryClient.fetchQuery(influentialOptions());
+          const people = await queryClient.fetchQuery(influentialOptions(searchClass));
           const person = people[Math.floor(Math.random() * people.length)];
           if (person) navigate(pathForIds([person.id]));
           else setState("idle");
@@ -47,11 +54,22 @@ function SurpriseMe() {
         <path d="M10.59 9.17L5.41 4 4 5.41l5.17 5.17 1.42-1.41zM14.5 4l2.04 2.04L4 18.59 5.41 20 17.96 7.46 20 9.5V4h-5.5zm.33 9.41l-1.41 1.41 3.13 3.13L14.5 20H20v-5.5l-2.04 2.04-3.13-3.13z" />
       </svg>
       {state === "loading"
-        ? "Choosing someone…"
+        ? "Choosing…"
         : state === "error"
           ? "Not available, try again"
           : "Surprise me"}
     </button>
+  );
+}
+
+/** Three well known ones of the class chosen in the search, to try (data/searchClasses.ts). */
+function Examples({ searchClass }: { searchClass: SearchClass }) {
+  const [first, second, third] = searchClass.examples;
+  return (
+    <p className="search-page__hint">
+      You can try <a href={`/${first.id}`}>{first.name}</a>,{" "}
+      <a href={`/${second.id}`}>{second.name}</a> or <a href={`/${third.id}`}>{third.name}</a>,
+    </p>
   );
 }
 
@@ -61,12 +79,15 @@ export default function SearchPage() {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
   const [text, setText] = useState("");
+  // What is searched for: people, bands, programming languages… (data/searchClasses.ts), kept for
+  // the tab.
+  const [searchClass, setSearchClass] = useState(storedSearchClass);
   // The dropdown closes with Escape or when the focus leaves the search, and opens again on typing
   // or when the input gets the focus back.
   const [isOpen, setIsOpen] = useState(true);
   const searchText = useDebouncedValue(text, 400).trim();
   const isSearchable = searchText.length >= MINIMUM_SEARCH_LENGTH;
-  const search = useSearch(searchText);
+  const search = useSearch(searchText, searchClass);
   const results = isSearchable ? search.data : undefined;
 
   const showsError = search.isError && isSearchable;
@@ -106,71 +127,99 @@ export default function SearchPage() {
 
       <form className="search-form" role="search" onSubmit={(event) => event.preventDefault()}>
         <label className="search-form__label" htmlFor={inputId}>
-          Search for a philosopher or an influential thinker
+          Find out how far influence reaches
         </label>
-        <div
-          className={`search-form__field${hasDropdown ? " search-form__field--open" : ""}`}
-          onKeyDown={onKeyDown}
-          onBlur={onBlur}
-        >
-          <img className="search-form__icon" src="/zoom.svg" alt="" />
-          <input
-            ref={inputRef}
-            id={inputId}
-            className="search-form__input"
-            type="search"
-            autoComplete="off"
-            aria-controls={resultsId}
-            aria-expanded={hasDropdown}
-            // Searching is what this page is for.
-            autoFocus
-            value={text}
-            onChange={(event) => {
-              setText(event.target.value);
-              setIsOpen(true);
-            }}
-            // Coming back to the search opens it again, but not the way back from Escape.
-            onFocus={(event) => {
-              if (!event.currentTarget.parentElement?.contains(event.relatedTarget))
+        <div className="search-form__row">
+          <div
+            className={`search-form__field${hasDropdown ? " search-form__field--open" : ""}`}
+            onKeyDown={onKeyDown}
+            onBlur={onBlur}
+          >
+            <img className="search-form__icon" src="/zoom.svg" alt="" />
+            <input
+              ref={inputRef}
+              id={inputId}
+              className="search-form__input"
+              type="search"
+              autoComplete="off"
+              placeholder="Search in"
+              aria-controls={resultsId}
+              aria-expanded={hasDropdown}
+              // Searching is what this page is for.
+              autoFocus
+              value={text}
+              onChange={(event) => {
+                setText(event.target.value);
                 setIsOpen(true);
-            }}
-            onClick={() => setIsOpen(true)}
-          />
-          {isSearchable && search.isFetching && (
-            <Spinner label="Searching" className="search-form__spinner" />
-          )}
-
-          <div className="search-dropdown" id={resultsId} hidden={!hasDropdown}>
-            {showsError && (
-              <ErrorMessage
-                className="search-dropdown__message"
-                onRetry={() => void search.refetch()}
-              />
+              }}
+              // Coming back to the search opens it again, but not the way back from Escape.
+              onFocus={(event) => {
+                if (!event.currentTarget.parentElement?.contains(event.relatedTarget))
+                  setIsOpen(true);
+              }}
+              onClick={() => setIsOpen(true)}
+            />
+            {isSearchable && search.isFetching && (
+              <Spinner label="Searching" className="search-form__spinner" />
             )}
 
-            {!showsError && results?.length === 0 && (
-              <p className="search-dropdown__message">No people found for “{searchText}”.</p>
-            )}
+            <div className="search-dropdown" id={resultsId} hidden={!hasDropdown}>
+              {showsError && (
+                <ErrorMessage
+                  className="search-dropdown__message"
+                  onRetry={() => void search.refetch()}
+                />
+              )}
 
-            {!showsError && results && results.length > 0 && (
-              <ul className="search-dropdown__results" aria-label="People found" ref={listRef}>
-                {results.map((person) => (
-                  <li key={person.id}>
-                    <Teaser person={person} />
-                  </li>
-                ))}
-              </ul>
-            )}
+              {!showsError && results?.length === 0 && (
+                <p className="search-dropdown__message">
+                  No {searchClass.label.toLowerCase()} found for “{searchText}”.
+                </p>
+              )}
+
+              {!showsError && results && results.length > 0 && (
+                <ul
+                  className="search-dropdown__results"
+                  aria-label={`${searchClass.label} found`}
+                  ref={listRef}
+                >
+                  {results.map((person) => (
+                    <li key={person.id}>
+                      <Teaser person={person} />
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
+          <label className="search-form__class">
+            <span className="visually-hidden">Search for</span>
+            <select
+              className="search-form__class-select"
+              value={searchClass.id}
+              onChange={(event) => {
+                const next =
+                  SEARCH_CLASSES.find(({ id }) => id === event.target.value) ??
+                  DEFAULT_SEARCH_CLASS;
+                setSearchClass(next);
+                storeSearchClass(next);
+                setIsOpen(true);
+                inputRef.current?.focus();
+              }}
+            >
+              {SEARCH_CLASSES.map(({ id, label }) => (
+                <option key={id} value={id}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
       </form>
 
-      <p className="search-page__hint">
-        You can try <a href="/Q6512">Søren Kierkegaard</a>, <a href="/Q859">Plato</a> or{" "}
-        <a href="/Q892">J. R. R. Tolkien</a>,
-      </p>
+      <Examples searchClass={searchClass} />
       <p className="search-page__hint search-page__chance">
-        or let chance decide: <SurpriseMe />
+        or let chance decide: <SurpriseMe searchClass={searchClass} />
       </p>
 
       <Bookmarks />

@@ -1,5 +1,6 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { isEntityId } from "./data/entities.ts";
+import { ITEM_KINDS } from "./data/person.ts";
 import { parseSegment, segmentsFor, type Sorts, sortsFromSegments } from "./sorting.ts";
 
 /**
@@ -7,8 +8,8 @@ import { parseSegment, segmentsFor, type Sorts, sortsFromSegments } from "./sort
  * - the path is the chain of opened people, as Wikidata identifiers: /Q859,Q868, with the sort
  *   orders of the columns beside the person they belong to: /n:Q859:b,Q868 (see sorting.ts)
  * - the hash is the modal: #Q868 for an entity, #info for the explanation of the app. A tab of the
- *   entity modal other than the first stands after the identifier: #Q868/works, #Q868/ideas, #Q868/interests (see
- *   entityModalOf)
+ *   entity modal other than the first stands after the identifier: #Q868/works, #Q1299/albums,
+ *   #Q868/ideas (see entityModalOf)
  */
 
 const NAVIGATE_EVENT = "influence:navigate";
@@ -89,9 +90,9 @@ export const pathForIds = (ids: readonly string[], sorts: Sorts = new Map()) =>
 /** The current URL without the modal. */
 export const withoutModal = () => `${window.location.pathname}${window.location.search}`;
 
-/** The tabs of the entity modal: everything about the entity, and a person's works, ideas and
- * interests (see EntityModal). */
-export const ENTITY_TABS = ["about", "works", "ideas", "interests"] as const;
+/** The tabs of the entity modal: everything about the entity, and a person's lists (their works,
+ * albums, artworks, ideas and interests, see EntityModal). */
+export const ENTITY_TABS = ["about", ...ITEM_KINDS] as const;
 export type EntityTab = (typeof ENTITY_TABS)[number];
 
 /**

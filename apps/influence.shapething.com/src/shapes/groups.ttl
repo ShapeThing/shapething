@@ -5,7 +5,6 @@
 ### Groups. They have no label, they bring together what is laid out together.
 
 inf:lifespan a sh:PropertyGroup ; sh:order 1 ; st:cssClass "lifespan" .
-inf:itemLists a sh:PropertyGroup ; sh:order 10 ; st:cssClass "item-lists" .
 
 # The two columns of the modal: the side column (the image and the facts) and the main one (the
 # text). Within them, nested groups.

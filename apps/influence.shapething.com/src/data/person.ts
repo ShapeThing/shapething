@@ -1,4 +1,5 @@
 import type { Literal, NamedNode, Term } from "@rdfjs/types";
+import { factory } from "../rdf/namespaces.ts";
 import { entityId } from "./entities.ts";
 
 /**
@@ -16,6 +17,10 @@ export type PersonSummary = {
   image?: NamedNode;
   birthDate?: Literal;
   deathDate?: Literal;
+  /** When a band was formed (P571, inception): its birth, so to speak. */
+  inception?: Literal;
+  /** When a band broke up (P576, dissolved): its death. */
+  dissolved?: Literal;
   /** How many people this person influenced, according to Wikidata. */
   influence: number;
 };
@@ -28,6 +33,8 @@ export type SummaryRow = {
   image?: NamedNode;
   birthDate?: Literal;
   deathDate?: Literal;
+  inception?: Literal;
+  dissolved?: Literal;
   influence: Literal;
 };
 
@@ -52,28 +59,52 @@ export const summarize = (iri: NamedNode, rows: readonly SummaryRow[]): PersonSu
     image: first("image"),
     birthDate: first("birthDate"),
     deathDate: first("deathDate"),
+    inception: first("inception"),
+    dissolved: first("dissolved"),
     influence: Number.isFinite(influence) ? influence : 0,
   };
 };
 
-/** Groups the rows by person, keeping the order of the query. */
+/** When a person was born, or a band formed. */
+export const startOf = (person: PersonSummary): Literal | undefined =>
+  person.birthDate ?? person.inception;
+
+/** When a person died, or a band broke up. */
+export const endOf = (person: PersonSummary): Literal | undefined =>
+  person.deathDate ?? person.dissolved;
+
+/**
+ * Wikidata's description without the years at the end ("English pop rock band (1960–1970)"): a
+ * person or a band shows the years from the dates, in a column, a search result and the summary of
+ * the modal (inf:ModalSummary).
+ */
+const withoutYears = (description: Literal | undefined): Literal | undefined => {
+  if (!description) return undefined;
+  const value = description.value.replace(/\s*\([^()]*\d{3,4}[^()]*\)\s*$/u, "");
+  return value === description.value ? description : factory.literal(value, description.language);
+};
+
+/** Groups the rows by item (?item in the queries), keeping the order of the query. */
 export const summariesFromRows = (
-  rows: ReadonlyArray<SummaryRow & { person: NamedNode }>,
+  rows: ReadonlyArray<SummaryRow & { item: NamedNode }>,
 ): PersonSummary[] => {
-  const groups = new Map<string, Array<SummaryRow & { person: NamedNode }>>();
+  const groups = new Map<string, Array<SummaryRow & { item: NamedNode }>>();
   for (const row of rows) {
-    const group = groups.get(row.person.value);
+    const group = groups.get(row.item.value);
     if (group) group.push(row);
-    else groups.set(row.person.value, [row]);
+    else groups.set(row.item.value, [row]);
   }
-  return [...groups.values()].map((group) => summarize(group[0].person, group));
+  return [...groups.values()].map((group) => {
+    const summary = summarize(group[0].item, group);
+    return { ...summary, description: withoutYears(summary.description) };
+  });
 };
 
 /** Everything shown in the modal: a person, but also a work, an interest or an idea. */
 /**
  * What an entity is, judged by what Wikidata says about the entity itself, not by the list it was
  * opened from (one item can be the work of one person and the idea of another):
- * - a person is an instance of human (P31 Q5),
+ * - a person is an instance of human (P31 Q5), or a band (a musical group, Q215380),
  * - a work has an author (P50) or a publication date (P577),
  * - a concept is anything else: the interests and the ideas that are not works.
  */
@@ -118,6 +149,12 @@ export type EntityDetails = PersonSummary & {
   occupations: Occupation[];
   /** The English Wikipedia article about the entity. */
   article?: NamedNode;
+  /** The Open Library ID (P648) of a work, for its cover (data/openLibrary.ts). */
+  openLibraryId?: Literal;
+  /** The English name of an author (P50) of a work, to search Open Library for its cover. */
+  authorName?: Literal;
+  /** A book: its Open Library cover is preferred to its image (data/queries.ts). */
+  isBook: boolean;
   kind: EntityKind;
 };
 
@@ -134,17 +171,26 @@ export type EntityRow = SummaryRow & {
   demonym?: Literal;
   demonymIsAdjective?: Literal;
   article?: NamedNode;
-  isHuman: Literal;
+  openLibraryId?: Literal;
+  authorName?: Literal;
+  isPerson: Literal;
+  isBook?: Literal;
   hasAuthor: Literal;
 };
 
 const isTrue = (literal: Literal) => literal.value === "true";
 
+/** The usual endings of an English demonym that is an adjective: "British", "Burmese", "Icelandic". */
+const adjectiveEnding = /(ish|ese|an|ic|i)$/;
+
 /**
  * The demonym of a country as an adjective, the same on every load: the one qualified as the
- * adjective (the first in alphabetical order, should there be several), else the only one there
- * is. A country with only nouns and adjectives that are not told apart ("British", "Briton") has
- * none.
+ * adjective (the first in alphabetical order, should there be several). Most countries with more
+ * than one demonym do not tell which is the adjective ("British", "Briton"): then a plural is
+ * left out ("Brazilians" next to "Brazilian") and so is the name of the country itself ("Taiwan"
+ * among Taiwan's), a capitalized one goes before a lowercase one, one
+ * with the ending of an adjective before a noun ("Spanish" before "Spaniard"), and else the first
+ * in alphabetical order.
  */
 const demonymOf = (rows: readonly EntityRow[]): Literal | undefined => {
   const byValue = (demonyms: Literal[]) =>
@@ -157,7 +203,19 @@ const demonymOf = (rows: readonly EntityRow[]): Literal | undefined => {
       row.demonym && row.demonymIsAdjective && isTrue(row.demonymIsAdjective) ? [row.demonym] : [],
     ),
   );
-  return adjectives[0] ?? (all.length === 1 ? all[0] : undefined);
+  if (adjectives[0]) return adjectives[0];
+  const values = new Set(all.map((demonym) => demonym.value));
+  const names = new Set(
+    rows.flatMap((row) => (row.citizenshipName ? [row.citizenshipName.value] : [])),
+  );
+  const singulars = all.filter(
+    (demonym) =>
+      !names.has(demonym.value) &&
+      !(demonym.value.endsWith("s") && values.has(demonym.value.slice(0, -1))),
+  );
+  const rank = (demonym: Literal) =>
+    (/^\p{Lu}/u.test(demonym.value) ? 0 : 2) + (adjectiveEnding.test(demonym.value) ? 0 : 1);
+  return singulars.sort((a, b) => rank(a) - rank(b))[0];
 };
 
 export const entityFromRows = (
@@ -191,8 +249,11 @@ export const entityFromRows = (
   for (const citizenship of citizenships.values()) {
     citizenship.demonym = demonymOf(rows.filter((row) => row.citizenship?.equals(citizenship.iri)));
   }
+  const isPerson = rows.some((row) => isTrue(row.isPerson));
+  const summary = summarize(iri, rows);
   return {
-    ...summarize(iri, rows),
+    ...summary,
+    description: isPerson ? withoutYears(summary.description) : summary.description,
     fullName: rows.find((row) => row.fullName)?.fullName,
     banner: rows.find((row) => row.banner)?.banner,
     publicationDate,
@@ -209,7 +270,10 @@ export const entityFromRows = (
           }
         : undefined,
     article: rows.find((row) => row.article)?.article,
-    kind: rows.some((row) => isTrue(row.isHuman))
+    openLibraryId: rows.find((row) => row.openLibraryId)?.openLibraryId,
+    authorName: rows.find((row) => row.authorName)?.authorName,
+    isBook: rows.some((row) => row.isBook && isTrue(row.isBook)),
+    kind: isPerson
       ? "person"
       : publicationDate || rows.some((row) => isTrue(row.hasAuthor))
         ? "work"
@@ -217,7 +281,12 @@ export const entityFromRows = (
   };
 };
 
-export type ItemKind = "works" | "interests" | "ideas";
+/**
+ * The lists of a person (queries/itemLists.rq): what they made, by the kind of maker (a writer's
+ * works, a musician's albums, a painter's artworks), and their ideas and interests.
+ */
+export const ITEM_KINDS = ["works", "albums", "artworks", "ideas", "interests"] as const;
+export type ItemKind = (typeof ITEM_KINDS)[number];
 
 export type ListItem = {
   iri: NamedNode;
@@ -228,6 +297,12 @@ export type ListItem = {
   /** When a work was made (P571 inception). */
   inception?: Literal;
   publicationDate?: Literal;
+  /** The Open Library ID (P648) of a work, for its cover (data/openLibrary.ts). */
+  openLibraryId?: Literal;
+  /** A book: its Open Library cover is preferred to its image (useCovers). */
+  isBook?: boolean;
+  /** The MusicBrainz release group (P436) of an album, for its cover (data/coverArtArchive.ts). */
+  musicBrainzId?: Literal;
 };
 
 export type ItemLists = Record<ItemKind, ListItem[]>;
@@ -241,13 +316,15 @@ export type ItemListRow = {
   image?: NamedNode;
   inception?: Literal;
   publicationDate?: Literal;
+  openLibraryId?: Literal;
+  musicBrainzId?: Literal;
+  isBook?: Literal;
 };
 
-const isItemKind = (kind: string): kind is ItemKind =>
-  kind === "works" || kind === "interests" || kind === "ideas";
+const isItemKind = (kind: string): kind is ItemKind => ITEM_KINDS.includes(kind as ItemKind);
 
 export const itemListsFromRows = (rows: readonly ItemListRow[]): ItemLists => {
-  const lists: ItemLists = { works: [], interests: [], ideas: [] };
+  const lists = Object.fromEntries(ITEM_KINDS.map((kind) => [kind, []])) as unknown as ItemLists;
   const seen = new Map<string, ListItem>();
 
   for (const row of rows) {
@@ -272,6 +349,9 @@ export const itemListsFromRows = (rows: readonly ItemListRow[]): ItemLists => {
     item.image ??= row.image;
     item.inception ??= row.inception;
     item.publicationDate ??= row.publicationDate;
+    item.openLibraryId ??= row.openLibraryId;
+    item.musicBrainzId ??= row.musicBrainzId;
+    if (row.isBook && isTrue(row.isBook)) item.isBook = true;
   }
 
   return lists;

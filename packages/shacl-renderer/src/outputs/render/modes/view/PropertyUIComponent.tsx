@@ -20,6 +20,7 @@ import { filterByContentLanguage } from "@/helpers/filterByContentLanguage.ts";
 import { primarySubtag } from "@/helpers/bestByLanguage.ts";
 import { rdf, sh, shui, st } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
+import { groupByPath, groupTemplate, groupValues } from "@/structure/groupByValues.ts";
 import { orderByPath, sortForView } from "@/structure/orderByValues.ts";
 import { valueNodeLabel } from "@/resolution/label.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
@@ -100,6 +101,31 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
       ),
   );
 
+  // st:groupBy: the values in groups by the key st:groupBy (and st:groupTemplate) gives each, in
+  // the order above - see structure/groupByValues.ts.
+  const groupPath = useMemo(() => groupByPath(propertyUIElement), [propertyUIElement]);
+  const groupKeyTemplate = useMemo(() => groupTemplate(propertyUIElement), [propertyUIElement]);
+  const groups = useReactiveRead(
+    propertyUIElement.dataGraph,
+    `group-by@${activeLanguage}@${listLocale}@${languageFilteredObjects.map(termKey).join("\n")}`,
+    () =>
+      groupPath
+        ? groupValues(languageFilteredObjects, {
+            path: groupPath,
+            template: groupKeyTemplate,
+            dataGraph: propertyUIElement.dataGraph,
+            languages: [activeLanguage],
+            locale: listLocale,
+            labelOf: (term) =>
+              valueNodeLabel({
+                term,
+                propertyShape: propertyUIElement,
+                languages: [activeLanguage],
+              }).value,
+          })
+        : undefined,
+  );
+
   // A singleUnifiedWidget (e.g. ValueTableViewer) renders once for the whole property and reads
   // every value itself via `shape` - see PropertyUIComponentValues' identical reasoning in edit
   // mode. Passing it every value here would render it once per value instead of once total.
@@ -159,7 +185,35 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
         ? "block"
         : viewModeLabelLayout;
 
-  const renderValues = (rowObjects: Term[], labelledBy: string) =>
+  const renderObject = (object: Term, key: string | number, labelledBy: string) => (
+    <PropertyUIComponentObject
+      key={key}
+      propertyUIElement={propertyUIElement}
+      object={object}
+      labelledBy={labelledBy}
+      isDefault={isDefault}
+      diffStatus={isDefault ? undefined : diff?.status(object)}
+      changedFrom={diff?.changedText?.added.equals(object) ? diff.changedText.removed : undefined}
+    />
+  );
+
+  // The groups of the values in this row, when st:groupBy applies: only to the values the data
+  // states, all of them in one row (not to defaults, a report's rows or a singleUnifiedWidget).
+  const groupsFor = (rowObjects: Term[]) =>
+    groups && !isDefault && !isReport && !isSingleUnifiedWidget && rowObjects === objects
+      ? groups
+          .map((group) => ({
+            ...group,
+            objects: group.objects.filter((object) => rowObjects.some((row) => row.equals(object))),
+          }))
+          .filter((group) => group.objects.length > 0)
+      : undefined;
+
+  const renderValues = (
+    rowObjects: Term[],
+    labelledBy: string,
+    rowGroups = groupsFor(rowObjects),
+  ) =>
     rowObjects.length === 0 ? (
       isReport ? (
         <Localized id="report-no-value">
@@ -172,21 +226,22 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
         memberShapeNodes={memberShapeNodes}
         labelledBy={labelledBy}
       />
+    ) : rowGroups ? (
+      // st:groupBy: each group in an element of its own, its key as the heading (none for the
+      // values without a key), its values below it.
+      <div className="st-property-items st-property-items--grouped">
+        {rowGroups.map((group) => (
+          <div key={group.key} className="st-value-group" data-group-key={group.key}>
+            {group.key && <div className="st-value-group__label">{group.key}</div>}
+            <div className="st-value-group__items">
+              {group.objects.map((object) => renderObject(object, termKey(object), labelledBy))}
+            </div>
+          </div>
+        ))}
+      </div>
     ) : (
       <div className="st-property-items">
-        {rowObjects.map((object, index) => (
-          <PropertyUIComponentObject
-            key={index}
-            propertyUIElement={propertyUIElement}
-            object={object}
-            labelledBy={labelledBy}
-            isDefault={isDefault}
-            diffStatus={isDefault ? undefined : diff?.status(object)}
-            changedFrom={
-              diff?.changedText?.added.equals(object) ? diff.changedText.removed : undefined
-            }
-          />
-        ))}
+        {rowObjects.map((object, index) => renderObject(object, index, labelledBy))}
       </div>
     );
 

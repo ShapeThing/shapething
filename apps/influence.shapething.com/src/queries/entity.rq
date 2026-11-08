@@ -9,9 +9,11 @@ PREFIX schema: <http://schema.org/>
 PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 # Everything shown about one entity: a person, but also a work, an interest or an idea.
-SELECT ?name ?mulName ?fullName ?description ?image ?banner ?birthDate ?deathDate ?birthPlace ?birthPlaceName ?birthPlaceLocation ?citizenship ?citizenshipName ?flag ?demonym ?demonymIsAdjective ?publicationDate ?article ?isHuman ?hasAuthor (xsd:integer(?count) AS ?influence) WHERE {
+SELECT ?name ?mulName ?fullName ?description ?image ?banner ?birthDate ?deathDate ?inception ?dissolved ?birthPlace ?birthPlaceName ?birthPlaceLocation ?citizenship ?citizenshipName ?flag ?demonym ?demonymIsAdjective ?publicationDate ?openLibraryId ?authorName ?article ?isPerson ?hasAuthor ?isBook (xsd:integer(?count) AS ?influence) WHERE {
   { SELECT (COUNT(DISTINCT ?influenced) AS ?count) WHERE { ?influenced wdt:P737 $entity } }
-  BIND(EXISTS { $entity wdt:P31 wd:Q5 } AS ?isHuman)
+  # A person: a human (Q5), or a band (an instance of Q215380 musical group, or of a kind of it),
+  # which has works, influences and a chain of its own like a person.
+  BIND(EXISTS { $entity wdt:P31 wd:Q5 } || EXISTS { $entity wdt:P31/wdt:P279* wd:Q215380 } AS ?isPerson)
   BIND(EXISTS { $entity wdt:P50 [] } AS ?hasAuthor)
   OPTIONAL { $entity rdfs:label ?name . FILTER(LANG(?name) = "en") }
   OPTIONAL { $entity rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
@@ -23,6 +25,9 @@ SELECT ?name ?mulName ?fullName ?description ?image ?banner ?birthDate ?deathDat
   OPTIONAL { $entity wdt:P948 ?banner . FILTER(isIRI(?banner)) }
   OPTIONAL { $entity wdt:P569 ?birthDate . FILTER(isLiteral(?birthDate)) }
   OPTIONAL { $entity wdt:P570 ?deathDate . FILTER(isLiteral(?deathDate)) }
+  # A band's dates: when it was formed (P571, inception) and when it broke up (P576, dissolved).
+  OPTIONAL { $entity wdt:P571 ?inception . FILTER(isLiteral(?inception)) }
+  OPTIONAL { $entity wdt:P576 ?dissolved . FILTER(isLiteral(?dissolved)) }
   # The place of birth, for the map in the modal: only one with coordinates (P625) can be shown.
   OPTIONAL {
     $entity wdt:P19 ?birthPlace .
@@ -48,6 +53,20 @@ SELECT ?name ?mulName ?fullName ?description ?image ?banner ?birthDate ?deathDat
     }
   }
   OPTIONAL { $entity wdt:P577 ?publicationDate . FILTER(isLiteral(?publicationDate)) }
+  # A book (data/openLibrary.ts prefers its Open Library cover to its image): one Open Library
+  # knows (P648), or an instance (P31) of a kind of book.
+  BIND((EXISTS { $entity wdt:P648 [] } || EXISTS {
+    VALUES ?bookType { wd:Q571 wd:Q7725634 wd:Q47461344 wd:Q8261 wd:Q5185279 wd:Q35760 wd:Q25379 wd:Q49084 }
+    $entity wdt:P31 ?bookType
+  }) AS ?isBook)
+  # For the cover of a work (data/openLibrary.ts): its Open Library ID (P648),
+  # else its title and author to search Open Library with.
+  OPTIONAL { $entity wdt:P648 ?openLibraryId . FILTER(isLiteral(?openLibraryId)) }
+  OPTIONAL {
+    $entity wdt:P50 ?author .
+    ?author rdfs:label ?authorName .
+    FILTER(LANG(?authorName) = "en")
+  }
   OPTIONAL {
     ?article schema:about $entity ;
       schema:isPartOf <https://en.wikipedia.org/> .

@@ -11,6 +11,8 @@ interface QueryResult {
   banner?: NamedNode
   birthDate?: Literal
   deathDate?: Literal
+  inception?: Literal
+  dissolved?: Literal
   birthPlace?: NamedNode
   birthPlaceName?: LiteralWithLanguage<'en'>
   birthPlaceLocation?: Literal
@@ -20,9 +22,12 @@ interface QueryResult {
   demonym?: LiteralWithLanguage<'en'>
   demonymIsAdjective?: LiteralWithDatatype<'xsd:boolean'>
   publicationDate?: Literal
+  openLibraryId?: Literal
+  authorName?: LiteralWithLanguage<'en'>
   article?: NamedNode
-  isHuman: LiteralWithDatatype<'xsd:boolean'>
+  isPerson: LiteralWithDatatype<'xsd:boolean'>
   hasAuthor: LiteralWithDatatype<'xsd:boolean'>
+  isBook: LiteralWithDatatype<'xsd:boolean'>
   influence: LiteralWithDatatype<'xsd:integer'>
 }
 

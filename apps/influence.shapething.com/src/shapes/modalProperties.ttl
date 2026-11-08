@@ -46,8 +46,11 @@ inf:ModalDescription
 # from every branch: the demonyms of the countries of citizenship, the occupations (by their
 # names), and the years of birth and death: "(1813–1855)", "(born 1980)" when only the birth is
 # known, "(died 1855)" when only the death is, and nothing, brackets and all, when neither is. The
-# demonym is only there when src/data/person.ts could tell which one is the
-# adjective.
+# demonym is the adjective that src/data/person.ts picks from the country's demonyms.
+#
+# A band has no citizenship or occupations: it reads as Wikidata describes it ("English rock band"),
+# with the years it was formed and broke up: "English rock band (1960–1970)", "(formed 1994)".
+# So does a person without occupations.
 inf:ModalSummary
     a sh:PropertyShape ;
     sh:path [ sh:alternativePath (
@@ -55,9 +58,12 @@ inf:ModalSummary
         wdt:P106 # {1} occupations
         wdt:P569 # {2} date of birth
         wdt:P570 # {3} date of death
+        wdt:P571 # {4} a band's inception
+        wdt:P576 # {5} a band's dissolution
+        schema:description # {6} Wikidata's own description
     ) ] ;
     st:mergeAlternatives true ;
-    st:mergeTemplate "{0} {1}[ ({2:year}–{3:year})| (born {2:year})| (died {3:year})]" ;
+    st:mergeTemplate "[{0} {1}|{1}|{6}][ ({2:year}–{3:year})| (born {2:year})| (died {3:year})| ({4:year}–{5:year})| (formed {4:year})| (disbanded {5:year})]" ;
     sh:name "" ;
     sh:order 0 ;
     sh:maxCount 1 ;

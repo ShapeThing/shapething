@@ -1,9 +1,10 @@
 import { makeReactive, type ResolveLink, untracked } from "@shapething/shacl-renderer";
 import { RdfStore } from "rdf-stores";
 import { type RefObject, useCallback, useEffect, useMemo } from "react";
-import { itemListQuads, summaryQuads } from "../../data/graphs.ts";
+import { summaryQuads } from "../../data/graphs.ts";
 import type { PersonSummary } from "../../data/person.ts";
-import { useItemLists } from "../../data/queries.ts";
+import { useAbstract, useEntity } from "../../data/queries.ts";
+import { factory, inf, schema } from "../../rdf/namespaces.ts";
 import { ColumnShape } from "../../shapes/shapes.ts";
 import { useInView } from "../../useInView.ts";
 import Display from "../Display/Display.tsx";
@@ -28,9 +29,12 @@ type Props = {
  * One person in a column, rendered with inf:ColumnShape. Its st:href links make it interactive: the
  * portrait opens the modal (inf:aboutHref), the name opens or closes the person (inf:openHref, here
  * pointed at the path of this column, see resolveLink) and covers the rest of the row (style.scss).
- * An opened person also shows their works, interests and ideas. They arrive later, so the data graph
- * is a live store: the lists are added to it when they arrive and removed when the person is
- * closed, and the renderer shows them in place without loading the portrait again.
+ * An opened person also shows the introduction of their Wikipedia article: who they are, to decide
+ * whether to follow them. It arrives later (the article is found with the entity, the same query as
+ * the modal's, then the introduction is fetched), so the data graph is a live store: the
+ * introduction is added to it when it arrives and removed when the person is closed, and the
+ * renderer shows it in place without loading the portrait again. What they made, their ideas and
+ * their interests are in the modal.
  */
 export default function PersonRow({
   person,
@@ -41,8 +45,14 @@ export default function PersonRow({
   onClose,
   scrollRoot,
 }: Props) {
-  const itemLists = useItemLists(person.id, isActive);
-  const lists = isActive ? itemLists.data : undefined;
+  const entity = useEntity(isActive ? person.id : undefined);
+  const article = isActive ? entity.data?.article : undefined;
+  const abstractQuery = useAbstract(article);
+  const abstract = article ? abstractQuery.data : undefined;
+  // Waiting for the entity, or for the introduction of its article. Without an article (or when
+  // either fails) the opened person has none, and nothing is waited for.
+  const isLoading =
+    isActive && (entity.isPending || (article !== undefined && abstractQuery.isPending));
 
   const dataGraph = useMemo(() => {
     const store = RdfStore.createDefault();
@@ -52,11 +62,20 @@ export default function PersonRow({
 
   // Data arriving, not an edit: untracked, so it never becomes an undo step.
   useEffect(() => {
-    if (!lists) return;
-    const quads = itemListQuads(person.iri, lists);
-    untracked(dataGraph, () => quads.forEach((quad) => dataGraph.addQuad(quad)));
-    return () => untracked(dataGraph, () => quads.forEach((quad) => dataGraph.removeQuad(quad)));
-  }, [dataGraph, person, lists]);
+    if (!abstract) return;
+    // With the introduction, the text of the link to the rest of it in the modal (inf:ColumnShape).
+    const quads = [
+      factory.quad(person.iri, schema("abstract"), abstract),
+      factory.quad(person.iri, inf("viewMore"), factory.literal("View more", "en")),
+    ];
+    untracked(dataGraph, () => {
+      quads.forEach((quad) => dataGraph.addQuad(quad));
+    });
+    return () =>
+      untracked(dataGraph, () => {
+        quads.forEach((quad) => dataGraph.removeQuad(quad));
+      });
+  }, [dataGraph, person, abstract]);
 
   const [ref, isInView] = useInView<HTMLElement>(scrollRoot, isActive);
 
@@ -97,8 +116,8 @@ export default function PersonRow({
       data-id={person.id}
       data-active={isActive || undefined}
       data-closing={isClosing || undefined}
-      // Wikidata knows no one this person influenced: opening them shows their works, interests
-      // and ideas, but no next column of people (style.scss mutes the row).
+      // Wikidata knows no one this person influenced: opening them shows who they are, but no
+      // next column of people (style.scss mutes the row).
       data-influence={person.influence ? undefined : "none"}
     >
       {isInView && (
@@ -113,7 +132,7 @@ export default function PersonRow({
           settleIndicator={false}
         />
       )}
-      {isActive && itemLists.isPending && <Spinner className="person__lists-spinner" />}
+      {isLoading && <Spinner className="person__abstract-spinner" />}
     </article>
   );
 }
