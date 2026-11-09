@@ -1,4 +1,5 @@
 @prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix schema: <http://schema.org/> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
@@ -6,18 +7,52 @@
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
 
 ### The modal: everything about a person, a work, or a concept (an interest or an idea). The kind is
-### judged from the entity itself (src/data/person.ts). The name is the title of the modal itself,
-### not a property.
+### judged from the classes of the entity itself (modalShapeFor in shapes.ts). The name is the title
+### of the modal itself, not a property.
 ###
-### The modal has two columns, the groups inf:side and inf:main (laid out by
+### The modal has two columns, the group inf:side and the tabs (src/shapes/groups.ttl, laid out by
 ### src/components/EntityModal). The side column, which stays in view while the rest scrolls, has
 ### the image, the short description and the facts: each kind has its own shape, as only a person
-### has a lifespan and an influence, only a work a publication date. The main column has the text,
+### has a lifespan and an influence, only a work a publication date. The first tab has the text,
 ### the same for every kind, and below it (a second renderer) every property.
 
+# The banner (P948, a wide image made for Wikivoyage) across the top.
+# What every modal shape has in common (sh:node from each): below the text, every other property
+# Wikidata states about the entity (src/queries/allProperties.rq), each a property of its own the
+# renderer generates (enableMissingShapesGeneration) in the group inf:allProperties, which each
+# modal shape names (st:missingPropertiesGroup). Not the predicates the modal shows otherwise, nor
+# these: the app's own, and the coordinates beside the coordinate location (P625) - the extreme
+# points, the geographic center, the sandbox - which would each be one more map.
+inf:ModalBase
+    a sh:NodeShape ;
+    sh:ignoredProperties (
+        rdfs:label # the title of the modal
+        inf:openHref # the links of the app
+        inf:aboutHref
+        inf:cover # the cover of a work: its image when it has none
+        inf:influenceCount # a work's or a concept's: a person's is a fact
+        wdt:P1332 # coordinates of northernmost point
+        wdt:P1333 # coordinates of southernmost point
+        wdt:P1334 # coordinates of easternmost point
+        wdt:P1335 # coordinates of westernmost point
+        wdt:P5140 # coordinates of geographic center
+        wdt:P626 # Sandbox-Geographic coordinates
+    ) .
+
+inf:ModalBanner
+    a sh:PropertyShape ;
+    sh:path wdt:P948 ;
+    sh:name "" ;
+    sh:order -1 ;
+    sh:maxCount 1 ;
+    shui:viewer shui:ImageViewer ;
+    st:imageWidth 1600 ;
+    st:cssClass "banner" .
+
+# The image, or else the cover of a book or an album (inf:cover, src/queries/entity.rq).
 inf:ModalImage
     a sh:PropertyShape ;
-    sh:path wdt:P18 ;
+    sh:path [ sh:alternativePath ( wdt:P18 inf:cover ) ] ;
     sh:name "" ;
     sh:order 0 ;
     sh:maxCount 1 ;
@@ -46,7 +81,7 @@ inf:ModalDescription
 # from every branch: the demonyms of the countries of citizenship, the occupations (by their
 # names), and the years of birth and death: "(1813–1855)", "(born 1980)" when only the birth is
 # known, "(died 1855)" when only the death is, and nothing, brackets and all, when neither is. The
-# demonym is the adjective that src/data/person.ts picks from the country's demonyms.
+# demonym is the adjective that src/queries/entity.rq picks from the country's demonyms.
 #
 # A band has no citizenship or occupations: it reads as Wikidata describes it ("English rock band"),
 # with the years it was formed and broke up: "English rock band (1960–1970)", "(formed 1994)".

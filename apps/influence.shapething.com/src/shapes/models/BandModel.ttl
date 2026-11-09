@@ -1,0 +1,22 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+### An entity model: a band (a musical group, or a kind of it such as a rock band). It starts when
+### it is formed and ends when it breaks up.
+
+inf:BandModel
+    a sh:NodeShape, inf:EntityModel ;
+    rdfs:label "Band"@en ;
+    sh:targetClass wd:Q215380 ;
+    sh:property [ sh:path rdfs:label ; shui:propertyRole shui:LabelRole ] ;
+    sh:property [ sh:path wdt:P18 ; shui:propertyRole shui:DepictionRole ] ;
+    sh:property [ sh:path schema:description ; shui:propertyRole shui:DescriptionRole ] ;
+    # Inception: when it was formed.
+    sh:property [ sh:path wdt:P571 ; shui:propertyRole inf:StartRole ] ;
+    # Dissolved: when it broke up.
+    sh:property [ sh:path wdt:P576 ; shui:propertyRole inf:EndRole ] .

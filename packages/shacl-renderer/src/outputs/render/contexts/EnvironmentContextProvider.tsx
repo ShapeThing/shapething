@@ -72,6 +72,8 @@ export default function EnvironmentContextProvider({
         id={instanceId}
         run={run}
         shapesGraph={initialEnvironment.shapesGraph}
+        // Missing shapes are generated from the data: a predicate it gains later needs them again.
+        dataGraph={initialEnvironment.enableMissingShapesGeneration ? liveDataGraph : undefined}
         liveProps={liveProps}
       >
         {children}
@@ -95,6 +97,9 @@ const SHAPE_INDEPENDENT_QUERIES = new Set([
 // several quads) is coalesced into one re-preprocessing pass.
 const SHAPES_WRITE_DEBOUNCE_MS = 100;
 
+const predicatesOf = (store: RdfStore) =>
+  new Set(store.getQuads().map((quad) => quad.predicate.value));
+
 /**
  * Preprocesses the Environment once per mount - and, when shapesGraph is a reactive store, again
  * after every write to it. The rest of the renderer treats shapesGraph as read-only for an
@@ -106,23 +111,52 @@ const SHAPES_WRITE_DEBOUNCE_MS = 100;
  *
  * The re-run happens in a transition, so this already-revealed Suspense boundary keeps showing the
  * previous Environment until the new one has resolved, instead of falling back to "Loading".
+ *
+ * With enableMissingShapesGeneration and a reactive dataGraph (`dataGraph`), the shapes depend on
+ * the data too: once a burst of data writes has settled and the data uses a predicate it did not
+ * before (data that arrives later, a value of a new property), the Environment is preprocessed
+ * again the same way, so that predicate gets its generated property. Writes to predicates already
+ * there change no shape and re-run nothing.
  */
 function PreprocessedEnvironmentProvider({
   id,
   children,
   run,
   shapesGraph,
+  dataGraph,
   liveProps,
 }: {
   id: string;
   children: React.ReactNode;
   run: (keepDataGraph?: RdfStore) => Promise<Environment>;
   shapesGraph: RawEnvironment["shapesGraph"];
+  dataGraph?: RdfStore;
   liveProps?: LiveProps;
 }) {
   const queryClient = useQueryClient();
   const [shapesRevision, setShapesRevision] = useState(0);
   const currentRef = useRef<Environment>(undefined);
+
+  useEffect(() => {
+    const reactivity = dataGraph ? getReactivity(dataGraph) : undefined;
+    if (!dataGraph || !reactivity) return;
+    let known = predicatesOf(dataGraph);
+    let timeout: ReturnType<typeof setTimeout> | undefined;
+    const wildcard = { subject: null, predicate: null, object: null, graph: null };
+    const unsubscribe = reactivity.subscribe([wildcard], () => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        const current = predicatesOf(dataGraph);
+        const isNew = [...current].some((predicate) => !known.has(predicate));
+        known = current;
+        if (isNew) startTransition(() => setShapesRevision((revision) => revision + 1));
+      }, SHAPES_WRITE_DEBOUNCE_MS);
+    });
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
+  }, [dataGraph]);
 
   useEffect(() => {
     const reactivity = shapesGraph instanceof RdfStore ? getReactivity(shapesGraph) : undefined;
@@ -169,7 +203,13 @@ function PreprocessedEnvironmentProvider({
     if (!previous || previous === preprocessed) return;
     const predicate = ({ queryKey }: { queryKey: readonly unknown[] }) =>
       !SHAPE_INDEPENDENT_QUERIES.has(queryKey[0] as string);
-    queryClient.removeQueries({ predicate, type: "inactive" });
+    // Not one that is fetching: one run with fetchQuery (inside another query, see
+    // useSlotResolution) has no observer, so it counts as inactive, and removed it would never
+    // settle the query awaiting it.
+    queryClient.removeQueries({
+      predicate: (query) => predicate(query) && query.state.fetchStatus !== "fetching",
+      type: "inactive",
+    });
     queryClient.invalidateQueries({ predicate, refetchType: "active" });
     queryClient.removeQueries({
       queryKey: ["preprocess-environment", id],

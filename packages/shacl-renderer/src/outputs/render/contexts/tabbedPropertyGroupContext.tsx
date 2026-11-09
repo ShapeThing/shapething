@@ -1,10 +1,10 @@
 import type { Term } from "@rdfjs/types";
-import { createContext, type Dispatch, type SetStateAction } from "react";
+import { createContext } from "react";
 import type { GroupUIElement } from "@/structure/GroupUIElement.ts";
 
 export type TabbedPropertyGroupContextValue = {
   activeTabIri: Term | undefined;
-  setActiveTabIri: Dispatch<SetStateAction<Term | undefined>>;
+  setActiveTabIri: (tab: Term | undefined) => void;
   // The full sibling tab list, computed once by TabbedPropertyGroupFamily - every family member
   // needs it now, not just the family wrapper, since whichever tab is active is the one that
   // renders the shared nav (over every tab, not just itself) immediately before its own panel -
@@ -21,3 +21,15 @@ export const tabbedPropertyGroupContext = createContext<TabbedPropertyGroupConte
   setActiveTabIri: () => {},
   tabs: [],
 });
+
+/**
+ * ShaclRenderer's `activeTab`/`onTabChange`: the st:TabbedPropertyGroup an embedder shows (its IRI),
+ * e.g. kept in its URL, and what to call when the user picks another. A tab the renderer does not
+ * show (no such group, or one without content) falls back to the first one.
+ */
+export type TabSelection = {
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
+};
+
+export const tabSelectionContext = createContext<TabSelection>({});

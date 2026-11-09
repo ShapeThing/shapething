@@ -261,12 +261,30 @@ export const addMissingShapes: Preprocessor = (environment) => {
     shapesGraph.addQuad(quad);
   }
 
+  const rootShapes =
+    environment.mode === "facet" || environment.mode === "report" ? [] : environment.nodeShapes;
+
+  // st:missingPropertiesGroup on a root shape: the focus node's predicates it does not cover go to
+  // that shape itself, in that group (e.g. a section "Everything else" below the shape's own
+  // properties) - first, so the class loop below finds them covered rather than giving them to
+  // another shape targeting the focus node's class. Targeted or not, as the shape is the one shown.
+  const groupedRootShapes = rootShapes.flatMap((shapeNode) => {
+    const group = shapesGraph.getQuads(shapeNode, st("missingPropertiesGroup"))[0]?.object;
+    return group ? [{ shapeNode, group }] : [];
+  });
+  for (const { shapeNode, group } of groupedRootShapes) {
+    const instances = [environment.focusNode];
+    const predicates = missingPredicates([shapeNode], instances, shapesGraph, dataGraph);
+    addBareProperties(shapeNode, predicates, instances, shapesGraph, dataGraph, group);
+  }
+
   // The untargeted root shapes, read before the class loop below can make any of them an implicit
   // class-shape by minting one under the same IRI.
-  const untargetedRootShapes =
-    environment.mode === "facet" || environment.mode === "report"
-      ? []
-      : environment.nodeShapes.filter((shapeNode) => !declaresTarget(shapeNode, shapesGraph));
+  const untargetedRootShapes = rootShapes.filter(
+    (shapeNode) =>
+      !declaresTarget(shapeNode, shapesGraph) &&
+      !groupedRootShapes.some((grouped) => grouped.shapeNode.equals(shapeNode)),
+  );
 
   for (const classIri of classesUsedInData(dataGraph)) {
     const shapeNodes = shapesForClass(classIri, shapesGraph);
@@ -316,10 +334,12 @@ function addBareProperties(
   instances: Quad_Subject[],
   shapesGraph: RdfStore,
   dataGraph: RdfStore,
+  group?: Quad_Object,
 ): void {
   for (const predicate of predicates) {
     const propertyNode = factory.blankNode();
     shapesGraph.addQuad(factory.quad(propertyNode, sh("path"), predicate));
+    if (group) shapesGraph.addQuad(factory.quad(propertyNode, sh("group"), group));
 
     const {
       nodeKind,

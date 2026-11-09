@@ -1,6 +1,12 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { type FocusEvent, type KeyboardEvent, useId, useRef, useState } from "react";
-import { influentialOptions, MINIMUM_SEARCH_LENGTH, useSearch } from "../../data/queries.ts";
+import type { ResolveLink } from "@shapething/shacl-renderer";
+import {
+  influentialOptions,
+  MINIMUM_SEARCH_LENGTH,
+  SEARCH_RESULTS,
+  useSearch,
+} from "../../data/queries.ts";
 import {
   DEFAULT_SEARCH_CLASS,
   SEARCH_CLASSES,
@@ -8,18 +14,24 @@ import {
   storedSearchClass,
   storeSearchClass,
 } from "../../data/searchClasses.ts";
+import { inf } from "../../rdf/namespaces.ts";
 import { navigate, pathForIds } from "../../routing.ts";
+import { SearchResultsShape } from "../../shapes/shapes.ts";
 import { useDebouncedValue } from "../../useDebouncedValue.ts";
 import Bookmarks from "../Bookmarks/Bookmarks.tsx";
+import Display from "../Display/Display.tsx";
 import ErrorMessage from "../ErrorMessage/ErrorMessage.tsx";
 import Spinner from "../Spinner/Spinner.tsx";
-import Teaser from "../Teaser/Teaser.tsx";
 import "./style.scss";
 
-/** The links of the results (the names, see Teaser), in the order they are shown. */
+/** The links of the results (their names, inf:TeaserShape), in the order they are shown. */
 const resultLinks = (list: HTMLElement | null) => [
-  ...(list?.querySelectorAll<HTMLAnchorElement>(".teaser .name a[href]") ?? []),
+  ...(list?.querySelectorAll<HTMLAnchorElement>(".name a[href]") ?? []),
 ];
+
+/** A result's portrait (inf:aboutHref, "#Q…") starts with it too: this page has no modal. */
+const resolveResultLink: ResolveLink = (href) =>
+  href.startsWith("#") ? { href: `/${href.slice(1)}` } : undefined;
 
 /**
  * Starts a chain with one of the most influential of the class chosen in the search, at random.
@@ -40,9 +52,9 @@ function SurpriseMe({ searchClass }: { searchClass: SearchClass }) {
       onClick={async () => {
         setState("loading");
         try {
-          const people = await queryClient.fetchQuery(influentialOptions(searchClass));
-          const person = people[Math.floor(Math.random() * people.length)];
-          if (person) navigate(pathForIds([person.id]));
+          const ids = await queryClient.fetchQuery(influentialOptions(searchClass));
+          const id = ids[Math.floor(Math.random() * ids.length)];
+          if (id) navigate(pathForIds([id]));
           else setState("idle");
         } catch {
           setState("error");
@@ -77,7 +89,7 @@ export default function SearchPage() {
   const inputId = useId();
   const resultsId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
-  const listRef = useRef<HTMLUListElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const [text, setText] = useState("");
   // What is searched for: people, bands, programming languages… (data/searchClasses.ts), kept for
   // the tab.
@@ -89,6 +101,7 @@ export default function SearchPage() {
   const isSearchable = searchText.length >= MINIMUM_SEARCH_LENGTH;
   const search = useSearch(searchText, searchClass);
   const results = isSearchable ? search.data : undefined;
+  const hasResults = results?.some((quad) => quad.predicate.equals(inf("result")));
 
   const showsError = search.isError && isSearchable;
   const hasDropdown = isOpen && (showsError || results !== undefined);
@@ -171,24 +184,28 @@ export default function SearchPage() {
                 />
               )}
 
-              {!showsError && results?.length === 0 && (
+              {!showsError && results && !hasResults && (
                 <p className="search-dropdown__message">
                   No {searchClass.label.toLowerCase()} found for “{searchText}”.
                 </p>
               )}
 
-              {!showsError && results && results.length > 0 && (
-                <ul
+              {!showsError && results && hasResults && (
+                <div
                   className="search-dropdown__results"
+                  role="group"
                   aria-label={`${searchClass.label} found`}
                   ref={listRef}
                 >
-                  {results.map((person) => (
-                    <li key={person.id}>
-                      <Teaser person={person} />
-                    </li>
-                  ))}
-                </ul>
+                  <Display
+                    shape={SearchResultsShape}
+                    focusNode={SEARCH_RESULTS}
+                    dataGraph={results}
+                    resolveLink={resolveResultLink}
+                    // The search input has its own spinner.
+                    settleIndicator={false}
+                  />
+                </div>
               )}
             </div>
           </div>

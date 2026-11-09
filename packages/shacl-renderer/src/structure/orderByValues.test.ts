@@ -126,3 +126,23 @@ test("sortForView - a content language Intl does not know still sorts", async ()
     "b",
   ]);
 });
+
+test("sortForView - descending: high positions first, missing positions still last", async () => {
+  const dataGraph = await parseRdf(
+    `${prefixes}
+    ex:low ex:meta [ ex:position 1 ] .
+    ex:highB ex:meta [ ex:position 2 ] .
+    ex:highA ex:meta [ ex:position 2 ] .
+    `,
+    "text/turtle",
+  );
+  const path = await sequencePath();
+  const label = (term: { value: string }) => term.value.replace(ex("").value, "");
+  const values = [ex("none"), ex("low"), ex("highB"), ex("highA")];
+  expect(sortForView(values, path, dataGraph, label, "en", true).map(label)).toEqual([
+    "highA",
+    "highB",
+    "low",
+    "none",
+  ]);
+});

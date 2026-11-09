@@ -27,6 +27,16 @@ export function orderByPath(propertyUIElement: PropertyUIElement): PropertyPath 
   return parsePathNode(node, propertyUIElement.shapesGraph);
 }
 
+/**
+ * st:orderDirection st:Descending on a property shape with st:orderBy: view mode lists the values
+ * from the highest position to the lowest (values without a position still last). Anything else,
+ * or nothing, is ascending. Edit mode ignores it: drag reordering writes positions 1..n.
+ */
+export function orderDescending(propertyUIElement: PropertyUIElement): boolean {
+  const node = propertyUIElement.get(st("orderDirection")) as unknown as Term | undefined;
+  return node?.equals(st("Descending")) ?? false;
+}
+
 // Only the path shapes insertPropertyPath/replacePropertyPath can write through - see their docs.
 export function isWritablePath(path: PropertyPath): boolean {
   switch (path.type) {
@@ -75,6 +85,9 @@ export function sortByOrderPath(objects: Term[], path: PropertyPath, dataGraph: 
  * readers of `locale` sort: "Émile" with the E's, "Book 2" before "Book 10". RDF values have no
  * order of their own, so without this they would be in whatever order the data happened to give.
  *
+ * With `descending` (st:orderDirection st:Descending) the positions go from high to low; values
+ * without one stay last, and equal positions stay alphabetical.
+ *
  * Edit mode keeps sortByOrderPath alone: there, without st:orderBy, values stay in the order they
  * were added in, and sorting by label would move a value away while it is being typed.
  */
@@ -84,6 +97,7 @@ export function sortForView(
   dataGraph: RdfStore,
   labelOf: (term: Term) => string,
   locale: string,
+  descending = false,
 ): Term[] {
   const collator = collatorFor(locale);
   const keys = new Map(
@@ -101,7 +115,7 @@ export function sortForView(
     if (keyA.position !== keyB.position) {
       if (keyA.position === undefined) return 1;
       if (keyB.position === undefined) return -1;
-      return keyA.position - keyB.position;
+      return descending ? keyB.position - keyA.position : keyA.position - keyB.position;
     }
     return collator.compare(keyA.label, keyB.label);
   });

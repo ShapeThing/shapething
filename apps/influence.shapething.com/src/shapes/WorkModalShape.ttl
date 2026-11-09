@@ -1,13 +1,21 @@
 @prefix inf: <https://influence.shapething.com/ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix st: <http://shapething.com/> .
 @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+### A work in the modal: anything Wikidata says is a creative work (Q17537576) or a work (Q386724), or
+### a kind of one, such as a novel, an album or a painting.
 
 inf:WorkModalShape
     a sh:NodeShape ;
     rdfs:label "Work"@en ;
-    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia ;
+    sh:node inf:ModalBase ;
+    st:missingPropertiesGroup inf:allProperties ;
+    sh:targetClass wd:Q17537576, wd:Q386724 ;
+    sh:property inf:ModalBanner, inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia ;
     sh:property [
         sh:path wdt:P577 ;
         sh:name "Published"@en ;

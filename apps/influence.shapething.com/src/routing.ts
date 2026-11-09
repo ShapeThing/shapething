@@ -1,6 +1,5 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { isEntityId } from "./data/entities.ts";
-import { ITEM_KINDS } from "./data/person.ts";
 import { parseSegment, segmentsFor, type Sorts, sortsFromSegments } from "./sorting.ts";
 
 /**
@@ -90,20 +89,18 @@ export const pathForIds = (ids: readonly string[], sorts: Sorts = new Map()) =>
 /** The current URL without the modal. */
 export const withoutModal = () => `${window.location.pathname}${window.location.search}`;
 
-/** The tabs of the entity modal: everything about the entity, and a person's lists (their works,
- * albums, artworks, ideas and interests, see EntityModal). */
-export const ENTITY_TABS = ["about", ...ITEM_KINDS] as const;
-export type EntityTab = (typeof ENTITY_TABS)[number];
+/** A tab of the entity modal: the local name of its group ("about", "works", src/shapes/groups.ttl). */
+export type EntityTab = string;
 
 /**
  * The entity modal in the hash (without the "#"): "Q868" is the first tab, "Q868/works" another
- * one. Undefined when the hash is not an entity (#info, #timeline), or names a tab that does not
- * exist.
+ * one. Undefined when the hash is not an entity (#info, #timeline). A tab the entity does not have
+ * shows the first one (the renderer falls back to it).
  */
 export const entityModalOf = (modal: string): { id: string; tab: EntityTab } | undefined => {
   const [id, tab = "about", ...rest] = modal.split("/");
   if (!isEntityId(id) || rest.length > 0) return undefined;
-  return ENTITY_TABS.includes(tab as EntityTab) ? { id, tab: tab as EntityTab } : undefined;
+  return /^[a-z]+$/.test(tab) ? { id, tab } : undefined;
 };
 
 /** The hash of an entity modal on a tab: the first tab is the identifier alone. */

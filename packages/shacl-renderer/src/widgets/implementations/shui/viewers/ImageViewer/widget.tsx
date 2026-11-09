@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { resizedImageUrl } from "@/helpers/resizedImageUrl.ts";
@@ -22,6 +23,11 @@ export default function ImageViewer({ shape, term }: WidgetProps) {
   const size = imageWidth && imageWidth > 0 ? { width: imageWidth } : defaultSize;
   const src = enableImageResizing ? resizedImageUrl(term.value, size) : term.value;
 
+  // An image that does not load (gone, or a URL made from an identifier, such as a cover that may
+  // not exist) is left out, rather than shown broken.
+  const [failedSrc, setFailedSrc] = useState<string>();
+  if (failedSrc === src) return null;
+
   // The image opens in a new tab when clicked: the value itself, at full size, not the resized one.
   // Its label is shown when hovered, too (a flag says which country it is).
   return (
@@ -32,7 +38,7 @@ export default function ImageViewer({ shape, term }: WidgetProps) {
       target="_blank"
       rel="noopener noreferrer"
     >
-      <img className="image-viewer" src={src} alt={alt} />
+      <img className="image-viewer" src={src} alt={alt} onError={() => setFailedSrc(src)} />
     </Link>
   );
 }

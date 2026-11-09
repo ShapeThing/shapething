@@ -1,13 +1,11 @@
 PREFIX wd: <http://www.wikidata.org/entity/>
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
-PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
 
 # The 50 most influential things of the class $class (data/searchClasses.ts): philosophers, bands,
 # programming languages and the like, by how many others they influenced
-# (wdt:P737 is "influenced by"). Where "Surprise me" on the search page starts. Only what one needs
-# to be opened: the rest comes with the chain.
-SELECT ?item ?name ?mulName (xsd:integer(?count) AS ?influence) WHERE {
+# (wdt:P737 is "influenced by"). Where "Surprise me" on the search page starts: only the item, the
+# rest comes with the chain.
+SELECT ?item WHERE {
   {
     SELECT ?item (COUNT(DISTINCT ?influenced) AS ?count) WHERE {
       # The class and its kinds, found once and joined on, so Wikidata does not walk the subclass
@@ -23,11 +21,7 @@ SELECT ?item ?name ?mulName (xsd:integer(?count) AS ?influence) WHERE {
       FILTER($class = wd:Q4964182 || NOT EXISTS { ?item wdt:P106 wd:Q4964182 })
     }
     GROUP BY ?item
-    # Ordered and cut here, so only these 50 get their labels.
     ORDER BY DESC(?count)
     LIMIT 50
   }
-  OPTIONAL { ?item rdfs:label ?name . FILTER(LANG(?name) = "en") }
-  OPTIONAL { ?item rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
 }
-ORDER BY DESC(?count)

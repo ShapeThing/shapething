@@ -1,7 +1,7 @@
 import type { StoryObj } from "@storybook/react-vite";
-import { expect, userEvent, within } from "storybook/test";
+import { expect, fn, userEvent, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
-import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
+import { argsByTestFile, fixtureUrl } from "@/helpers/argsByTestFile.ts";
 import { minimalEnvironment } from "@/environment.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
@@ -42,5 +42,27 @@ export const stTabbedPropertyGroup: Story = {
     expect(personalDetailsTab).toHaveAttribute("aria-selected", "false");
     expect(await canvas.findByDisplayValue("Dam 1")).toBeInTheDocument();
     expect(canvas.queryByDisplayValue("Hendrik")).not.toBeInTheDocument();
+  },
+};
+
+const tabArgs = argsByTestFile("st-tabbed-property-group.ttl", import.meta.url);
+const tabIri = (name: string) =>
+  fixtureUrl(`st-tabbed-property-group.ttl#${name}`, import.meta.url).href;
+
+export const stTabbedPropertyGroupControlled: Story = {
+  name: "The tab chosen by the embedder (activeTab), and told when the user picks another",
+  args: { ...tabArgs, activeTab: tabIri("address"), onTabChange: fn() },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    const tablist = await canvas.findByRole("tablist");
+    expect(within(tablist).getByRole("tab", { name: "Address" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(await canvas.findByDisplayValue("Dam 1")).toBeInTheDocument();
+
+    // The embedder is told, and decides: here it keeps its own choice.
+    await userEvent.click(within(tablist).getByRole("tab", { name: "Personal details" }));
+    expect(args.onTabChange).toHaveBeenCalledWith(tabIri("personalDetails"));
   },
 };

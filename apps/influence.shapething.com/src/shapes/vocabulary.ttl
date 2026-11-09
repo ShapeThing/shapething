@@ -22,11 +22,6 @@ inf:viewMore
     rdfs:label "View more"@en ;
     rdfs:comment "The text of the link from the introduction of an opened person in a column to the modal, where the rest of it is."@en .
 
-inf:fullName
-    a rdf:Property ;
-    rdfs:label "Full name"@en ;
-    rdfs:comment "The full name of a person: their name in their own language (P1559, name in native language), or else their name."@en .
-
 inf:influenceCount
     a rdf:Property ;
     rdfs:label "Influence"@en ;
@@ -59,12 +54,45 @@ inf:EntityLinkViewer
     rdfs:label "Link to the entity"@en ;
     rdfs:comment "A name as a link to the resource it belongs to, which opens it in the modal."@en .
 
-inf:lifeEvent
+inf:worksEvent
     a rdf:Property ;
     rdfs:label "Life event"@en ;
-    rdfs:comment "The birth or the death of a person, with its date (P585, point in time): a row of the timeline of their works."@en .
+    rdfs:comment "The birth or the death of someone who made works, with its date (P585, point in time): a row of the timeline of their works. inf:albumsEvent and inf:artworksEvent are the same for the timelines of their albums and artworks."@en .
+
+inf:albumsEvent a rdf:Property ; rdfs:label "Life event"@en .
+inf:artworksEvent a rdf:Property ; rdfs:label "Life event"@en .
+
+inf:cover
+    a rdf:Property ;
+    rdfs:label "Cover"@en ;
+    rdfs:comment "The cover of a book (Open Library) or an album (the Cover Art Archive), by the identifier Wikidata has of it: a URL only, the image may not exist."@en .
+
+inf:EntityModel
+    a rdfs:Class ;
+    rdfs:label "Entity model"@en ;
+    rdfs:comment "A node shape that says what the data of a kind of thing is (src/shapes/models): its property shapes' roles give the display shapes their paths (src/shapes/compile.ts)."@en .
 
 inf:eventLabel
     a rdf:Property ;
     rdfs:label "Event"@en ;
     rdfs:comment "What a life event is: \"Born\" or \"Died\"."@en .
+
+inf:StartRole
+    a shui:PropertyRole ;
+    rdfs:label "Start"@en ;
+    rdfs:comment "The role of the property that says when something started: a person's birth, a band's forming. Display shapes take its paths from the entity models (src/shapes/compile.ts)."@en .
+
+inf:EndRole
+    a shui:PropertyRole ;
+    rdfs:label "End"@en ;
+    rdfs:comment "The role of the property that says when something ended: a person's death, a band's breaking up."@en .
+
+inf:orderByRole
+    a rdf:Property ;
+    rdfs:label "Order by role"@en ;
+    rdfs:comment "On a property shape: its values are ordered (st:orderBy) by the paths the entity models give this role (src/shapes/compile.ts)."@en .
+
+inf:result
+    a rdf:Property ;
+    rdfs:label "Result"@en ;
+    rdfs:comment "A result of a search: from the result node of the search query to what it found."@en .

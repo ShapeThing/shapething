@@ -1,0 +1,29 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+
+# st:orderDirection st:Descending: the books by the number of citations, the most cited first. The
+# book without a count is still last.
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:path [ sh:inversePath schema:author ] ;
+        sh:name "Books"@en ;
+        shui:viewer shui:LabelViewer ;
+        st:orderBy ex:citations ;
+        st:orderDirection st:Descending ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:name "An author"@en .
+
+ex:rare rdfs:label "Rarely cited"@en ; schema:author <#data> ; ex:citations 3 .
+ex:famous rdfs:label "Famous"@en ; schema:author <#data> ; ex:citations 900 .
+ex:known rdfs:label "Well known"@en ; schema:author <#data> ; ex:citations 120 .
+ex:uncounted rdfs:label "Not counted"@en ; schema:author <#data> .

@@ -1,6 +1,9 @@
-import { useState, type ReactNode } from "react";
+import { useContext, useState, type ReactNode } from "react";
 import type { Term } from "@rdfjs/types";
-import { tabbedPropertyGroupContext } from "@/outputs/render/contexts/tabbedPropertyGroupContext.tsx";
+import {
+  tabbedPropertyGroupContext,
+  tabSelectionContext,
+} from "@/outputs/render/contexts/tabbedPropertyGroupContext.tsx";
 import { isTabbedPropertyGroup } from "@/structure/tabbedGroups.ts";
 import type { ChoiceElement } from "@/structure/ChoiceElement.ts";
 import type { GroupUIElement } from "@/structure/GroupUIElement.ts";
@@ -43,18 +46,23 @@ export default function TabbedPropertyGroupFamily({
   // `elements` is already sorted that way, see groupChildren.ts) before the user has touched the
   // nav, or once that pick no longer belongs to this exact family - same pin-with-fallback idiom as
   // ChoiceElementComponent's pinnedBranchKey.
+  // An embedder's own choice (ShaclRenderer's activeTab, see tabSelectionContext) comes before it.
   const [pinnedTabIri, setPinnedTabIri] = useState<Term | undefined>(undefined);
+  const { activeTab, onTabChange } = useContext(tabSelectionContext);
 
   if (tabs.length === 0) return <>{children}</>;
 
-  const activeTabIri = tabs.some((tab) => tab.node.equals(pinnedTabIri))
-    ? pinnedTabIri
-    : tabs[0].node;
+  const activeTabIri =
+    tabs.find((tab) => activeTab !== undefined && tab.node.value === activeTab)?.node ??
+    (tabs.some((tab) => tab.node.equals(pinnedTabIri)) ? pinnedTabIri : tabs[0].node);
+
+  const setActiveTabIri = (tab: Term | undefined) => {
+    setPinnedTabIri(tab);
+    if (tab) onTabChange?.(tab.value);
+  };
 
   return (
-    <tabbedPropertyGroupContext.Provider
-      value={{ tabs, activeTabIri, setActiveTabIri: setPinnedTabIri }}
-    >
+    <tabbedPropertyGroupContext.Provider value={{ tabs, activeTabIri, setActiveTabIri }}>
       {children}
     </tabbedPropertyGroupContext.Provider>
   );

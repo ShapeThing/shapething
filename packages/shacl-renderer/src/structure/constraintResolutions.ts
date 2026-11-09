@@ -287,6 +287,7 @@ export const resolutions = new Map<string, ResolutionFunction<any>>([
   [st("suggestedValues").value, keepAllListItems],
   // A property path (like sh:path), read by structure/orderByValues.ts - one per property.
   [st("orderBy").value, keepFirst],
+  [st("orderDirection").value, keepFirst],
   // A property path and its key template, read by structure/groupByValues.ts - one per property.
   [st("groupBy").value, keepFirst],
   [st("groupTemplate").value, keepFirst],

@@ -1,7 +1,5 @@
-import { DataFactory } from "rdf-data-factory";
 import { expect, test } from "vite-plus/test";
-import type { PersonSummary } from "./data/person.ts";
-import { parseSegment, segmentsFor, sortPeople, sortsFromSegments } from "./sorting.ts";
+import { parseSegment, segmentsFor, sortsFromSegments } from "./sorting.ts";
 
 test("a segment is an identifier with the sort orders of the columns beside it", () => {
   expect(parseSegment("n:Q6512:b")).toEqual({ id: "Q6512", before: "name", after: "born" });
@@ -37,38 +35,4 @@ test("the segments of a chain carry the sort orders of its columns only", () => 
   ] as const);
   expect(segmentsFor(["Q6512", "Q42156"], sorts)).toEqual(["n:Q6512:b", "Q42156"]);
   expect(segmentsFor(["Q6512"], new Map())).toEqual(["Q6512"]);
-});
-
-const factory = new DataFactory();
-const person = (name: string, born?: string): PersonSummary => ({
-  iri: factory.namedNode(`http://example.com/${name}`),
-  id: name,
-  name,
-  influence: 0,
-  birthDate: born
-    ? factory.literal(born, factory.namedNode("http://www.w3.org/2001/XMLSchema#dateTime"))
-    : undefined,
-});
-
-test("people are sorted by birth year, without one last, or by name", () => {
-  const people = [
-    person("Kant", "1724-04-22T00:00:00Z"),
-    person("Nobody"),
-    person("Plato", "-0426-01-01T00:00:00Z"),
-  ];
-  expect(sortPeople(people, "born").map((p) => p.name)).toEqual(["Plato", "Kant", "Nobody"]);
-  expect(sortPeople(people, "name").map((p) => p.name)).toEqual(["Kant", "Nobody", "Plato"]);
-  expect(sortPeople(people, "influence")).toBe(people);
-});
-
-test("a band is sorted by the year it was formed", () => {
-  const band = {
-    ...person("The Beatles"),
-    inception: factory.literal(
-      "1960-01-01T00:00:00Z",
-      factory.namedNode("http://www.w3.org/2001/XMLSchema#dateTime"),
-    ),
-  };
-  const people = [person("Kant", "1724-04-22T00:00:00Z"), person("Nobody"), band];
-  expect(sortPeople(people, "born").map((p) => p.name)).toEqual(["Kant", "The Beatles", "Nobody"]);
 });

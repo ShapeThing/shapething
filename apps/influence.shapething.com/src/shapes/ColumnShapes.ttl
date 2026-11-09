@@ -1,0 +1,108 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix st: <http://shapething.com/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+### The columns: the subject of a column (the person the chain starts with, or a person in the
+### chain) rendered with one of these shapes lists the ones that influenced them (wdt:P737,
+### "influenced by") or that they influenced (its inverse), each with inf:TeaserShape. One shape per
+### sort order (src/sorting.ts): by influence, the most influential first; by name (no st:orderBy:
+### the renderer then lists them by their label, shui:LabelRole of inf:TeaserShape); or by the year
+### they were born (inf:orderByRole inf:StartRole, compiled into st:orderBy by src/shapes/compile.ts).
+
+inf:InfluencedColumnInfluence
+    a sh:NodeShape ;
+    rdfs:label "Influenced by, by influence"@en ;
+    sh:property [
+        sh:path [ sh:inversePath wdt:P737 ] ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:TeaserShape ;
+        shui:viewer shui:DetailsViewer ;
+        st:orderBy inf:influenceCount ;
+        st:orderDirection st:Descending ;
+        st:cssClass "items" ;
+    ] .
+
+inf:InfluencedColumnName
+    a sh:NodeShape ;
+    rdfs:label "Influenced by, by name"@en ;
+    sh:property [
+        sh:path [ sh:inversePath wdt:P737 ] ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:TeaserShape ;
+        shui:viewer shui:DetailsViewer ;
+        st:cssClass "items" ;
+    ] .
+
+inf:InfluencedColumnBorn
+    a sh:NodeShape ;
+    rdfs:label "Influenced by, by born"@en ;
+    sh:property [
+        sh:path [ sh:inversePath wdt:P737 ] ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:TeaserShape ;
+        shui:viewer shui:DetailsViewer ;
+        inf:orderByRole inf:StartRole ;
+        st:cssClass "items" ;
+    ] .
+
+inf:InfluencersColumnInfluence
+    a sh:NodeShape ;
+    rdfs:label "Influencers of, by influence"@en ;
+    sh:property [
+        sh:path wdt:P737 ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:TeaserShape ;
+        shui:viewer shui:DetailsViewer ;
+        st:orderBy inf:influenceCount ;
+        st:orderDirection st:Descending ;
+        st:cssClass "items" ;
+    ] .
+
+inf:InfluencersColumnName
+    a sh:NodeShape ;
+    rdfs:label "Influencers of, by name"@en ;
+    sh:property [
+        sh:path wdt:P737 ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:TeaserShape ;
+        shui:viewer shui:DetailsViewer ;
+        st:cssClass "items" ;
+    ] .
+
+inf:InfluencersColumnBorn
+    a sh:NodeShape ;
+    rdfs:label "Influencers of, by born"@en ;
+    sh:property [
+        sh:path wdt:P737 ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:TeaserShape ;
+        shui:viewer shui:DetailsViewer ;
+        inf:orderByRole inf:StartRole ;
+        st:cssClass "items" ;
+    ] .
+
+### The search results (src/components/SearchPage): the result node of the search query
+### (queries/search.rq) has the results as inf:result, the most influential first.
+
+inf:SearchResultsShape
+    a sh:NodeShape ;
+    rdfs:label "Search results"@en ;
+    sh:property [
+        sh:path inf:result ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:TeaserShape ;
+        shui:viewer shui:DetailsViewer ;
+        st:orderBy inf:influenceCount ;
+        st:orderDirection st:Descending ;
+        st:cssClass "items" ;
+    ] .

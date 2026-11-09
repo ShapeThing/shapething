@@ -4,73 +4,129 @@ PREFIX p: <http://www.wikidata.org/prop/>
 PREFIX ps: <http://www.wikidata.org/prop/statement/>
 PREFIX pq: <http://www.wikidata.org/prop/qualifier/>
 PREFIX wikibase: <http://wikiba.se/ontology#>
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX schema: <http://schema.org/>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX inf: <https://influence.shapething.com/ns#>
 
-# Everything shown about one entity: a person, but also a work, an interest or an idea.
-SELECT ?name ?mulName ?fullName ?description ?image ?banner ?birthDate ?deathDate ?inception ?dissolved ?birthPlace ?birthPlaceName ?birthPlaceLocation ?citizenship ?citizenshipName ?flag ?demonym ?demonymIsAdjective ?publicationDate ?openLibraryId ?authorName ?article ?isPerson ?hasAuthor ?isBook (xsd:integer(?count) AS ?influence) WHERE {
+# Everything the modal shows about $entity (a person, a work, a concept), as Wikidata's own
+# triples: the modal shapes (src/shapes) decide what is shown, and which shape by the classes the
+# entity is typed with ($modelClass, the classes the shapes target). Of the entity's own values one
+# is kept (SAMPLE). Since Wikidata has "mul" labels, many have no English one: then the "mul" one.
+#
+# Besides Wikidata's triples:
+# - inf:influenceCount, how many others it influenced,
+# - inf:cover, the cover of a book (Open Library, by its P648 identifier) or an album (the Cover Art
+#   Archive, by its P436 MusicBrainz release group). Only a URL: the image viewer leaves it out when
+#   there is no such cover,
+# - inf:openHref and inf:aboutHref, the links of the app.
+CONSTRUCT {
+  $entity rdf:type $modelClass ;
+    rdfs:label ?label ;
+    schema:description ?description ;
+    wdt:P18 ?image ;
+    wdt:P948 ?banner ;
+    wdt:P569 ?birthDate ;
+    wdt:P570 ?deathDate ;
+    wdt:P571 ?inception ;
+    wdt:P576 ?dissolved ;
+    wdt:P577 ?publicationDate ;
+    inf:cover ?cover ;
+    inf:influenceCount ?count ;
+    inf:openHref ?openHref ;
+    inf:aboutHref ?aboutHref ;
+    wdt:P19 ?birthPlace ;
+    wdt:P27 ?citizenship ;
+    wdt:P106 ?occupation .
+  ?birthPlace rdfs:label ?birthPlaceName ;
+    wdt:P625 ?location .
+  ?citizenship wdt:P1549 ?demonym .
+  ?occupation rdfs:label ?occupationName .
+  ?article schema:about $entity .
+}
+WHERE {
   { SELECT (COUNT(DISTINCT ?influenced) AS ?count) WHERE { ?influenced wdt:P737 $entity } }
-  # A person: a human (Q5), or a band (an instance of Q215380 musical group, or of a kind of it),
-  # which has works, influences and a chain of its own like a person.
-  BIND(EXISTS { $entity wdt:P31 wd:Q5 } || EXISTS { $entity wdt:P31/wdt:P279* wd:Q215380 } AS ?isPerson)
-  BIND(EXISTS { $entity wdt:P50 [] } AS ?hasAuthor)
-  OPTIONAL { $entity rdfs:label ?name . FILTER(LANG(?name) = "en") }
-  OPTIONAL { $entity rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
-  OPTIONAL { $entity schema:description ?description . FILTER(LANG(?description) = "en") }
-  # The full name, in the person's own language (P1559, name in native language).
-  OPTIONAL { $entity wdt:P1559 ?fullName . FILTER(isLiteral(?fullName)) }
-  OPTIONAL { $entity wdt:P18 ?image . FILTER(isIRI(?image)) }
-  # The page banner (P948, a wide Commons image made for Wikivoyage), across the top of the modal.
-  OPTIONAL { $entity wdt:P948 ?banner . FILTER(isIRI(?banner)) }
-  OPTIONAL { $entity wdt:P569 ?birthDate . FILTER(isLiteral(?birthDate)) }
-  OPTIONAL { $entity wdt:P570 ?deathDate . FILTER(isLiteral(?deathDate)) }
-  # A band's dates: when it was formed (P571, inception) and when it broke up (P576, dissolved).
-  OPTIONAL { $entity wdt:P571 ?inception . FILTER(isLiteral(?inception)) }
-  OPTIONAL { $entity wdt:P576 ?dissolved . FILTER(isLiteral(?dissolved)) }
-  # The place of birth, for the map in the modal: only one with coordinates (P625) can be shown.
-  OPTIONAL {
-    $entity wdt:P19 ?birthPlace .
-    ?birthPlace wdt:P625 ?birthPlaceLocation .
-    FILTER(isIRI(?birthPlace) && isLiteral(?birthPlaceLocation))
-    OPTIONAL { ?birthPlace rdfs:label ?birthPlaceName . FILTER(LANG(?birthPlaceName) = "en") }
-  }
-  # The countries of citizenship, for their flags (P41) in the modal.
-  OPTIONAL {
-    $entity wdt:P27 ?citizenship .
-    ?citizenship wdt:P41 ?flag .
-    FILTER(isIRI(?citizenship) && isIRI(?flag))
-    OPTIONAL { ?citizenship rdfs:label ?citizenshipName . FILTER(LANG(?citizenshipName) = "en") }
-    # The English demonyms (P1549) of the country, for the summary of a person ("Danish"). A
-    # country often has a noun too ("Dane"): the adjective is qualified "applies to part"
-    # (P518) adjective (Q34698).
-    OPTIONAL {
-      ?citizenship p:P1549 ?demonymStatement .
-      ?demonymStatement ps:P1549 ?demonym .
-      FILTER(LANG(?demonym) = "en")
-      FILTER NOT EXISTS { ?demonymStatement wikibase:rank wikibase:DeprecatedRank }
-      BIND(EXISTS { ?demonymStatement pq:P518 wd:Q34698 } AS ?demonymIsAdjective)
+  {
+    SELECT (SAMPLE(?en) AS ?enLabel) (SAMPLE(?mul) AS ?mulLabel)
+      (SAMPLE(?aDescription) AS ?fullDescription)
+      (SAMPLE(?anImage) AS ?image) (SAMPLE(?aBanner) AS ?banner)
+      (SAMPLE(?aBirthDate) AS ?birthDate) (SAMPLE(?aDeathDate) AS ?deathDate)
+      (SAMPLE(?anInception) AS ?inception) (SAMPLE(?aDissolved) AS ?dissolved)
+      (SAMPLE(?aPublicationDate) AS ?publicationDate)
+      (SAMPLE(?anOpenLibraryId) AS ?openLibraryId) (SAMPLE(?aMusicBrainzId) AS ?musicBrainzId)
+    WHERE {
+      OPTIONAL { $entity rdfs:label ?en . FILTER(LANG(?en) = "en") }
+      OPTIONAL { $entity rdfs:label ?mul . FILTER(LANG(?mul) = "mul") }
+      OPTIONAL { $entity schema:description ?aDescription . FILTER(LANG(?aDescription) = "en") }
+      # An unknown value is a blank node (skolemized to an IRI): only real images and dates.
+      OPTIONAL { $entity wdt:P18 ?anImage . FILTER(isIRI(?anImage)) }
+      # The page banner (P948, a wide Commons image made for Wikivoyage).
+      OPTIONAL { $entity wdt:P948 ?aBanner . FILTER(isIRI(?aBanner)) }
+      OPTIONAL { $entity wdt:P569 ?aBirthDate . FILTER(isLiteral(?aBirthDate)) }
+      OPTIONAL { $entity wdt:P570 ?aDeathDate . FILTER(isLiteral(?aDeathDate)) }
+      OPTIONAL { $entity wdt:P571 ?anInception . FILTER(isLiteral(?anInception)) }
+      OPTIONAL { $entity wdt:P576 ?aDissolved . FILTER(isLiteral(?aDissolved)) }
+      OPTIONAL { $entity wdt:P577 ?aPublicationDate . FILTER(isLiteral(?aPublicationDate)) }
+      # A work (OL…W) or an edition (OL…M) on Open Library; an author (OL…A) has no cover.
+      OPTIONAL { $entity wdt:P648 ?anOpenLibraryId . FILTER(REGEX(STR(?anOpenLibraryId), "^OL[0-9]+[WM]$")) }
+      OPTIONAL { $entity wdt:P436 ?aMusicBrainzId . FILTER(isLiteral(?aMusicBrainzId)) }
     }
   }
-  OPTIONAL { $entity wdt:P577 ?publicationDate . FILTER(isLiteral(?publicationDate)) }
-  # A book (data/openLibrary.ts prefers its Open Library cover to its image): one Open Library
-  # knows (P648), or an instance (P31) of a kind of book.
-  BIND((EXISTS { $entity wdt:P648 [] } || EXISTS {
-    VALUES ?bookType { wd:Q571 wd:Q7725634 wd:Q47461344 wd:Q8261 wd:Q5185279 wd:Q35760 wd:Q25379 wd:Q49084 }
-    $entity wdt:P31 ?bookType
-  }) AS ?isBook)
-  # For the cover of a work (data/openLibrary.ts): its Open Library ID (P648),
-  # else its title and author to search Open Library with.
-  OPTIONAL { $entity wdt:P648 ?openLibraryId . FILTER(isLiteral(?openLibraryId)) }
+  BIND(COALESCE(?enLabel, ?mulLabel) AS ?label)
+  # The years at the end of a description ("English rock band (1960–1970)"): the modal shows them
+  # from the dates.
+  BIND(STRLANG(REPLACE(STR(?fullDescription), "\\s*\\([^()]*[0-9]{3,4}[^()]*\\)\\s*$", ""), "en") AS ?description)
+  BIND(COALESCE(
+    IRI(CONCAT("https://covers.openlibrary.org/", IF(STRENDS(STR(?openLibraryId), "W"), "w", "b"), "/olid/", STR(?openLibraryId), "-L.jpg?default=false")),
+    IRI(CONCAT("https://coverartarchive.org/release-group/", STR(?musicBrainzId), "/front-500"))
+  ) AS ?cover)
+  BIND(STRAFTER(STR($entity), STR(wd:)) AS ?id)
+  BIND(CONCAT("/", ?id) AS ?openHref)
+  BIND(CONCAT("#", ?id) AS ?aboutHref)
+
+  # The values of which there can be several, each in a branch of its own, so they do not multiply.
   OPTIONAL {
-    $entity wdt:P50 ?author .
-    ?author rdfs:label ?authorName .
-    FILTER(LANG(?authorName) = "en")
-  }
-  OPTIONAL {
-    ?article schema:about $entity ;
-      schema:isPartOf <https://en.wikipedia.org/> .
-    FILTER(isIRI(?article))
+    {
+      VALUES $modelClass { }
+      $entity wdt:P31/wdt:P279* $modelClass .
+    } UNION {
+      # The place of birth, for the map: only one with coordinates (P625) can be shown.
+      $entity wdt:P19 ?birthPlace .
+      ?birthPlace wdt:P625 ?location .
+      FILTER(isIRI(?birthPlace) && isLiteral(?location))
+      OPTIONAL { ?birthPlace rdfs:label ?birthPlaceName . FILTER(LANG(?birthPlaceName) = "en") }
+    } UNION {
+      # The countries of citizenship with the demonym that reads as an adjective, for the summary
+      # ("Danish theologian…", inf:ModalSummary): the one qualified "applies to part" (P518)
+      # adjective (Q34698), else one with the ending of an adjective ("Spanish", not "Spaniard"),
+      # else the first; never a plural.
+      $entity wdt:P27 ?citizenship .
+      FILTER(isIRI(?citizenship))
+      OPTIONAL {
+        SELECT ?citizenship (SAMPLE(?qualified) AS ?adjective) (SAMPLE(?shaped) AS ?likeAdjective) (MIN(STR(?any)) AS ?first) WHERE {
+          $entity wdt:P27 ?citizenship .
+          ?citizenship p:P1549 ?statement .
+          ?statement ps:P1549 ?any .
+          FILTER(LANG(?any) = "en" && !STRENDS(STR(?any), "s"))
+          FILTER NOT EXISTS { ?statement wikibase:rank wikibase:DeprecatedRank }
+          BIND(IF(EXISTS { ?statement pq:P518 wd:Q34698 }, ?any, ?none) AS ?qualified)
+          BIND(IF(REGEX(STR(?any), "(ish|ese|an|ic|i)$"), ?any, ?none) AS ?shaped)
+        }
+        GROUP BY ?citizenship
+      }
+      BIND(COALESCE(?adjective, ?likeAdjective, STRLANG(?first, "en")) AS ?demonym)
+    } UNION {
+      # The occupations with their names: only those with a readable one.
+      $entity wdt:P106 ?occupation .
+      FILTER(isIRI(?occupation))
+      OPTIONAL { ?occupation rdfs:label ?occupationEn . FILTER(LANG(?occupationEn) = "en") }
+      OPTIONAL { ?occupation rdfs:label ?occupationMul . FILTER(LANG(?occupationMul) = "mul") }
+      BIND(COALESCE(?occupationEn, ?occupationMul) AS ?occupationName)
+      FILTER(BOUND(?occupationName))
+    } UNION {
+      ?article schema:about $entity ;
+        schema:isPartOf <https://en.wikipedia.org/> .
+      FILTER(isIRI(?article))
+    }
   }
 }
-LIMIT 1000

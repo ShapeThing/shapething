@@ -1,8 +1,14 @@
 @prefix inf: <https://influence.shapething.com/ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix st: <http://shapething.com/> .
+
+### Anything else in the modal (an interest, an idea, a country): the shape of an entity no other
+### modal shape targets.
 
 inf:ConceptModalShape
     a sh:NodeShape ;
     rdfs:label "Concept"@en ;
-    sh:property inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia .
+    sh:node inf:ModalBase ;
+    st:missingPropertiesGroup inf:allProperties ;
+    sh:property inf:ModalBanner, inf:ModalImage, inf:ModalDescription, inf:ModalAbstract, inf:ModalWikipedia .

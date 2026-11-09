@@ -46,6 +46,23 @@ st:orderBy
     rdfs:comment "A property path, in the same syntax as sh:path. The property's values are sorted by the number this path reaches from each value. In edit mode, drag reordering writes the new order back through the path when the path is simple enough to write through."@en ;
     rdfs:domain sh:PropertyShape .
 
+st:missingPropertiesGroup
+    a rdf:Property ;
+    rdfs:label "missing properties group"@en ;
+    rdfs:comment "On a node shape rendered with enableMissingShapesGeneration: the property group the generated properties of the focus node go in, on this shape itself (for example a section with everything the shape does not show otherwise). Without it the generated properties have no group, and go to the first shape that targets the focus node's class."@en ;
+    rdfs:domain sh:NodeShape .
+
+st:orderDirection
+    a rdf:Property ;
+    rdfs:label "order direction"@en ;
+    rdfs:comment "On a property shape with st:orderBy: st:Descending lists the values in view mode from the highest number to the lowest, for example the most cited first. Values the path reaches no number for stay last. Without it the order is ascending. Edit mode ignores it."@en ;
+    rdfs:domain sh:PropertyShape .
+
+st:Descending
+    a rdfs:Resource ;
+    rdfs:label "descending"@en ;
+    rdfs:comment "The value of st:orderDirection that lists the highest number first."@en .
+
 st:groupBy
     a rdf:Property ;
     rdfs:label "group by"@en ;

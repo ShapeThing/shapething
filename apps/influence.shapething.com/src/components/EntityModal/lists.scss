@@ -1,8 +1,8 @@
-// The tabs of a person's modal beside "About" (shapes/PersonListShapes.ttl), laid out by the classes
+// The tabs of a person's modal beside "About" (shapes/PersonModalShape.ttl), laid out by the classes
 // the shapes give (st:cssClass): the works on a timeline (.timeline), the ideas and the interests
 // as cards (.cards).
 
-.entity-lists {
+.entity-modal__list {
   // The width of a work on the timeline, its name wrapping within it, and the shape of the
   // placeholder of a work without a picture: that of a book, 130 x 180.
   --entry-width: 130px;
@@ -48,9 +48,9 @@
 }
 
 // The timeline: a dashed line with a dot for each year, the year before it (st:groupBy, see
-// shapes/PersonListShapes.ttl). The works and events of one year are a row, side by side, each its
+// shapes/PersonModalShape.ttl). The works and events of one year are a row, side by side, each its
 // picture with its name below it. The birth and the death are in the row of their year too.
-.entity-lists .timeline[data-label-layout] {
+.entity-modal__list .timeline[data-label-layout] {
   display: block;
 
   // One grid for all the years, each year a row of it (subgrid): the column of the years is as wide
@@ -184,14 +184,14 @@
 }
 
 // Albums: the place of a missing cover is square, like an album cover.
-.entity-lists .timeline.albums {
+.entity-modal__list .timeline.albums {
   --entry-picture-ratio: 1;
 }
 
 // The cards of the ideas and the interests: as many beside each other as fit, each with its picture
 // on top, its name and its short description, flat on the page. The name is the link, and covers
 // the whole card.
-.entity-lists .cards[data-label-layout] {
+.entity-modal__list .cards[data-label-layout] {
   display: block;
 
   > .st-property-items {

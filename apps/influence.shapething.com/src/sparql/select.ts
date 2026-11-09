@@ -39,16 +39,27 @@ const toTerm = (term: SparqlJsonTerm): Term => {
   }
 };
 
+/** The query without its comment lines and indentation: less to send. */
+export const compact = (queryString: string): string =>
+  queryString
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line && !line.startsWith("#"))
+    .join("\n");
+
 /**
  * Runs a SPARQL query on the Wikidata query service: a row of terms by variable each. The query
  * service answers a CONSTRUCT in the same JSON, a row with a subject, predicate and object each.
  */
 const run = async (queryString: string): Promise<Array<Record<string, Term>>> => {
-  const url = `${ENDPOINT}?${new URLSearchParams({ query: queryString })}`;
+  // A POST: a query can be longer than the query service allows in a URL. The browser caches the
+  // answer under the URL of the query (see fetchJson).
+  const body = new URLSearchParams({ query: compact(queryString) });
   const json = await fetchJson(
-    url,
-    { headers: { Accept: "application/sparql-results+json" } },
+    ENDPOINT,
+    { method: "POST", body, headers: { Accept: "application/sparql-results+json" } },
     true,
+    `${ENDPOINT}?${body}`,
   );
   if (!isSparqlJsonResults(json))
     throw new Error("The query service did not answer with query results");

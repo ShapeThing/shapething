@@ -1,0 +1,471 @@
+// inf:TeaserShape, laid out by the classes of its shape (st:cssClass): .portrait, .lifespan, .name,
+// .influence, .description, .abstract, .view-more. Rendered as the root of a renderer (.st-view-mode)
+// or as a value of a list (.st-details-viewer__body, src/shapes/ColumnShapes.ttl): either way the
+// teaser is the element its portrait is in.
+$teaser: ":is(.st-view-mode, .st-details-viewer__body):has(> .portrait)";
+
+// The opened one of a column: its name links to closing it, as the current one (Column).
+$opened: ":has(> .name .st-href[aria-current='true'])";
+
+// A round portrait, faces mostly in the upper part of it.
+@mixin portrait($size) {
+  .avatar {
+    width: $size;
+    height: $size;
+  }
+
+  .image-viewer {
+    width: $size;
+    height: $size;
+    max-height: none;
+    border-radius: 50%;
+    object-fit: cover;
+    object-position: 50% 25%;
+    background: var(--color-background);
+  }
+}
+
+// In a column: the portrait on the left, the years, the name and the influence bar beside it, and
+// for the opened one the introduction of their Wikipedia article below.
+@mixin columns {
+  #{$teaser} {
+    --abstract-margin: 20px;
+    --view-more-height: 26px;
+    --view-more-margin: 12px;
+    // Room for the last line above the fade at the bottom, once scrolled to the end.
+    --abstract-fade: 18px;
+
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--portrait-size) minmax(0, 1fr);
+    // The renderer's room above a nested node.
+    margin: 0;
+    column-gap: 15px;
+    row-gap: 0;
+    align-content: center;
+    min-height: var(--portrait-size);
+    padding-right: 25px;
+
+    // A highlight behind the portrait row while it is hovered. Translucent, so it shows on a white
+    // column and on the tinted selected column alike.
+    &::before {
+      content: "";
+      position: absolute;
+      top: -6px;
+      right: -8px;
+      left: -6px;
+      height: calc(var(--portrait-size) + 12px);
+      border-radius: calc(var(--portrait-size) / 2 + 6px) 10px 10px
+        calc(var(--portrait-size) / 2 + 6px);
+      background: rgb(99 59 163 / 0.08);
+      opacity: 0;
+      transform: scale(0.98);
+      transition:
+        opacity 0.2s ease-in-out,
+        transform 0.2s ease-in-out;
+      pointer-events: none;
+    }
+
+    &:has(> .name .st-href:hover, > .name .st-href:focus-visible)::before {
+      opacity: 1;
+      transform: none;
+    }
+
+    // Everything is beside the portrait...
+    > * {
+      grid-column: 2;
+    }
+
+    // The years, the name and the bar sit tight together, centred beside the portrait.
+    > .st-form-element,
+    .lifespan .st-form-element {
+      gap: 0;
+      padding: 0;
+    }
+
+    // ...except the portrait itself.
+    > .portrait {
+      grid-column: 1;
+      grid-row: 1 / span 3;
+      align-self: start;
+    }
+
+    @include portrait(var(--portrait-size));
+
+    .lifespan .st-property-group__body {
+      display: flex;
+      flex-direction: row;
+      font-size: 10px;
+      font-weight: bold;
+      color: var(--color-muted);
+
+      > .st-form-element + .st-form-element::before {
+        content: " / ";
+        white-space: pre;
+      }
+    }
+
+    > .name .st-property-object__widget {
+      font-size: 14px;
+      font-weight: bold;
+      line-height: 18px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      display: block;
+    }
+
+    > .influence {
+      width: calc(100% - 20px);
+      margin-top: 7px;
+    }
+
+    // The count is in the accessible text of the bar, and in the modal.
+    .relative-influence__count {
+      display: none;
+    }
+
+    // A column has no room for descriptions.
+    > .description {
+      display: none;
+    }
+
+    // The introduction of the Wikipedia article of the opened one, below the portrait row. The
+    // opened one is at the top of the column (a size container): the introduction fills the rest of
+    // it, the column minus the portrait row, the margins and the button below (.view-more), and
+    // scrolls when it is longer.
+    > .abstract {
+      grid-column: 1 / -1;
+      // The full width of the row: the grid keeps room on the right for the cross of the name.
+      margin-right: -25px;
+      margin-top: var(--abstract-margin);
+      padding: 0 0 var(--abstract-fade);
+      max-height: calc(
+        100cqh - var(--portrait-size) - var(--abstract-margin) - var(--view-more-margin) -
+          var(--view-more-height) - 2px
+      );
+      overflow-y: auto;
+      scrollbar-width: none;
+      mask-image: linear-gradient(black calc(100% - var(--abstract-fade)), transparent);
+      font-size: 13px;
+      line-height: 20px;
+      color: rgb(49 49 49);
+
+      &::-webkit-scrollbar {
+        display: none;
+      }
+
+      .st-literal-viewer {
+        // The paragraphs on lines of their own, with room between them.
+        white-space: pre-line;
+      }
+    }
+
+    // The link to the modal below the introduction, a small button.
+    > .view-more {
+      grid-column: 1 / -1;
+      justify-self: start;
+      margin-top: var(--view-more-margin);
+      padding: 0;
+
+      .st-href {
+        // The text and the arrow on one line: the text is in a block of the renderer's own.
+        display: inline-flex;
+        align-items: center;
+        white-space: nowrap;
+        // The purple of the modal's button (EntityModal/style.scss, .entity-modal__start), smaller.
+        height: var(--view-more-height);
+        padding: 5px 14px;
+        border-radius: 999px;
+        background: var(--color-accent);
+        font-size: 12px;
+        font-weight: bold;
+        line-height: 16px;
+        color: white;
+        text-decoration: none;
+        transition: background-color 0.2s ease-in-out;
+
+        // An arrow after the text that moves along on hover: the button leads somewhere else.
+        &::after {
+          content: "→";
+          display: inline-block;
+          margin-left: 6px;
+          transition: transform 0.2s ease-in-out;
+        }
+
+        &:hover {
+          background: rgb(80 45 136);
+
+          &::after {
+            transform: translateX(3px);
+          }
+        }
+
+        &:focus-visible {
+          outline: 2px solid var(--color-accent);
+          outline-offset: 3px;
+        }
+      }
+    }
+
+    // The name is a link (open or close them) that covers the rest of the portrait row, the
+    // portrait a link of its own (the modal): both st:href links of the shape. They cover the top
+    // of the row only, not the introduction of the opened one below.
+    > .name .st-href {
+      &::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: calc(var(--portrait-size) + 5px);
+        right: 0;
+        height: var(--portrait-size);
+        z-index: 1;
+        border-radius: 6px;
+      }
+
+      &:focus-visible {
+        outline: none;
+
+        &::after {
+          outline: 2px solid var(--color-accent);
+          outline-offset: 2px;
+        }
+      }
+
+      // A plus at the end of the name's link that turns into a cross when they are opened: two
+      // bars, drawn as backgrounds. The cross is the plus turned a quarter, its bars longer.
+      &::before {
+        content: "";
+        position: absolute;
+        top: calc(var(--portrait-size) / 2);
+        right: 0;
+        width: 20px;
+        height: 20px;
+        background:
+          linear-gradient(black, black) center / 80% 2px no-repeat,
+          linear-gradient(black, black) center / 2px 80% no-repeat;
+        transform: translateY(-50%);
+        pointer-events: none;
+        opacity: 0;
+        transition:
+          opacity 0.3s ease-in-out,
+          transform 0.3s ease-in-out,
+          background-size 0.3s ease-in-out;
+      }
+
+      &:is(:hover, :focus-visible)::before {
+        opacity: 1;
+      }
+
+      &[aria-current="true"]::before {
+        opacity: 0.5;
+        background-size:
+          100% 2px,
+          2px 100%;
+        transform: translateY(-50%) rotate(45deg);
+      }
+
+      // The cross spins while the columns after them fold away.
+      &[aria-busy="true"]::before {
+        animation: teaser-closing 2.5s;
+      }
+    }
+
+    > .portrait .st-href {
+      position: relative;
+      z-index: 2;
+      display: block;
+      width: var(--portrait-size);
+      height: var(--portrait-size);
+      border-radius: 50%;
+      transition: box-shadow 0.2s ease-in-out;
+
+      // An info badge on the portrait: it opens something else than the row (the modal, not the
+      // next column), so it gets a sign of its own.
+      &::after {
+        content: "i";
+        position: absolute;
+        right: -2px;
+        bottom: -2px;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        border: 2px solid var(--color-background);
+        background: black;
+        color: white;
+        font:
+          italic bold 11px/1 Georgia,
+          serif;
+        opacity: 0;
+        transform: scale(0.6);
+        transition:
+          opacity 0.2s ease-in-out,
+          transform 0.2s ease-in-out;
+      }
+
+      &:hover,
+      &:focus-visible {
+        box-shadow:
+          0 0 0 3px var(--color-background),
+          0 0 0 5px black;
+
+        &::after {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      &:focus-visible {
+        outline: 2px solid var(--color-accent);
+        outline-offset: 2px;
+      }
+
+      // No hover on touch screens: the badge is always there.
+      @media (hover: none) {
+        &::after {
+          opacity: 1;
+          transform: none;
+        }
+      }
+
+      // The one open in the modal (Display marks the link to it as the current one): the hover
+      // ring of the portrait, in purple.
+      &[aria-current] {
+        box-shadow:
+          0 0 0 3px var(--color-background),
+          0 0 0 5px var(--color-accent);
+
+        &::after {
+          background: var(--color-accent);
+          opacity: 1;
+          transform: none;
+        }
+      }
+    }
+  }
+
+  @keyframes teaser-closing {
+    from {
+      transform: translateY(-50%) rotate(45deg);
+    }
+
+    to {
+      transform: translateY(-50%) rotate(-315deg);
+    }
+  }
+}
+
+// The renderer's room between the values of a list (the teasers): the teasers keep their own.
+@mixin list {
+  .items > .st-property-items {
+    gap: 0;
+  }
+}
+
+// A search result: the portrait, then the name, the years and the description beside it, one row
+// of an autocomplete. The name is a link that starts with them, covering the whole result.
+@mixin results {
+  --teaser-portrait: 36px;
+
+  #{$teaser} {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--teaser-portrait) minmax(0, 1fr);
+    margin: 0;
+    column-gap: 12px;
+    row-gap: 0;
+    min-height: var(--teaser-portrait);
+    align-content: center;
+    padding: 8px 16px;
+
+    // Highlighted under the pointer and the keyboard.
+    &:hover,
+    &:has(> .name .st-href:focus-visible) {
+      background: var(--color-selected);
+    }
+
+    > * {
+      grid-column: 2;
+    }
+
+    > .st-form-element {
+      gap: 0;
+      padding: 0;
+    }
+
+    > .portrait {
+      grid-column: 1;
+      grid-row: 1 / span 3;
+      align-self: start;
+    }
+
+    @include portrait(var(--teaser-portrait));
+
+    // The result is a link: the portrait too, and no influence bar, introduction or button.
+    > .portrait .st-href {
+      pointer-events: none;
+    }
+
+    > :is(.influence, .abstract, .view-more) {
+      display: none;
+    }
+
+    > .name {
+      font-size: 15px;
+      font-weight: bold;
+
+      .st-href {
+        &::after {
+          content: "";
+          position: absolute;
+          inset: 0;
+          // Above the values of the result, some of which are positioned themselves.
+          z-index: 1;
+        }
+
+        &:hover,
+        &:focus-visible {
+          text-decoration: underline;
+        }
+
+        &:focus-visible {
+          outline: none;
+
+          &::after {
+            outline: 2px solid var(--color-accent);
+            outline-offset: -2px;
+          }
+        }
+      }
+    }
+
+    .lifespan .st-property-group__body {
+      display: flex;
+      flex-direction: row;
+      font-size: 12px;
+      color: var(--color-muted);
+
+      > .st-form-element {
+        gap: 0;
+      }
+
+      > .st-form-element + .st-form-element::before {
+        content: "–";
+        padding-inline: 4px;
+      }
+    }
+
+    > .description {
+      overflow: hidden;
+      font-size: 13px;
+      font-weight: normal;
+      color: rgb(70 70 70);
+      // One line per result, as in an autocomplete.
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+}

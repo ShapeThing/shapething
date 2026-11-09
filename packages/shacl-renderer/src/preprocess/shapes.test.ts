@@ -59,6 +59,42 @@ test("addMissingShapes - mints an implicit class-shape (the class IRI itself) an
   expect(new Set(paths)).toEqual(new Set([ex("name").value, ex("age").value]));
 });
 
+test("addMissingShapes - st:missingPropertiesGroup puts the focus node's missing predicates on the root shape itself, in that group, before any other shape targeting its class", async () => {
+  const dataGraph = RdfStore.createDefault();
+  dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("name"), factory.literal("Tom")));
+  dataGraph.addQuad(factory.quad(ex("a"), ex("age"), factory.literal("3")));
+
+  const shapesGraph = RdfStore.createDefault();
+  // Another shape targets the class first: without the group, it would get the missing predicates.
+  shapesGraph.addQuad(factory.quad(ex("CatModel"), sh("targetClass"), ex("Cat")));
+  shapesGraph.addQuad(factory.quad(ex("CatView"), sh("targetClass"), ex("Cat")));
+  shapesGraph.addQuad(factory.quad(ex("CatView"), sh("property"), ex("nameProperty")));
+  shapesGraph.addQuad(factory.quad(ex("nameProperty"), sh("path"), ex("name")));
+  shapesGraph.addQuad(factory.quad(ex("CatView"), st("missingPropertiesGroup"), ex("rest")));
+
+  const result = await addMissingShapes(
+    rawEnvironment({
+      dataGraph,
+      shapesGraph,
+      enableMissingShapesGeneration: true,
+      nodeShapes: [ex("CatView")],
+      focusNode: ex("a"),
+    }),
+  );
+  const shapes = result.shapesGraph as RdfStore;
+
+  const generated = shapes
+    .getQuads(ex("CatView"), sh("property"))
+    .map((quad) => quad.object)
+    .filter((property) => !property.equals(ex("nameProperty")));
+  expect(
+    generated.map((property) => shapes.getQuads(property, sh("path"))[0].object.value),
+  ).toEqual([ex("age").value]);
+  expect(shapes.getQuads(generated[0], sh("group"), ex("rest"))).toHaveLength(1);
+  expect(shapes.getQuads(ex("CatModel"), sh("property"))).toHaveLength(0);
+});
+
 test("addMissingShapes - sets sh:nodeKind and sh:datatype when every instance's value for a predicate agrees", async () => {
   const dataGraph = RdfStore.createDefault();
   dataGraph.addQuad(factory.quad(ex("a"), rdf("type"), ex("Cat")));

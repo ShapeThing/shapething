@@ -33,9 +33,10 @@ test("the hash of an entity modal has its tab after the identifier, the first ta
   expect(entityModalHash("Q868", "works")).toBe("#Q868/works");
 });
 
-test("a hash that is not an entity, or names an unknown tab, is no entity modal", () => {
+test("a hash that is not an entity is no entity modal", () => {
   expect(entityModalOf("info")).toBeUndefined();
   expect(entityModalOf("timeline")).toBeUndefined();
-  expect(entityModalOf("Q868/nope")).toBeUndefined();
+  // A tab the entity does not have shows its first tab (the renderer's fallback).
+  expect(entityModalOf("Q868/nope")).toEqual({ id: "Q868", tab: "nope" });
   expect(entityModalOf("Q868/works/more")).toBeUndefined();
 });

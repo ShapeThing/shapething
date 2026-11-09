@@ -1,30 +1,61 @@
 PREFIX wdt: <http://www.wikidata.org/prop/direct/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+PREFIX wd: <http://www.wikidata.org/entity/>
+PREFIX inf: <https://influence.shapething.com/ns#>
 
-# The people $subject influenced (wdt:P737 is "influenced by"), the most influential first. The
-# count is computed first, in a sub query: grouping the outer query would have to aggregate the
-# optional values too, and an aggregate of an unbound value can not be typed as optional.
-SELECT ?item ?name ?mulName ?image ?birthDate ?deathDate ?inception ?dissolved (xsd:integer(?count) AS ?influence) WHERE {
-  {
-    SELECT ?item (COUNT(DISTINCT ?influenced) AS ?count) WHERE {
-      ?item wdt:P737 $subject .
-      FILTER(isIRI(?item))
-      OPTIONAL { ?influenced wdt:P737 ?item }
-    }
-    GROUP BY ?item
-    ORDER BY DESC(?count)
-    LIMIT 1000
-  }
-  # Since Wikidata has "mul" (default for all languages) labels, many people have no English one.
-  OPTIONAL { ?item rdfs:label ?name . FILTER(LANG(?name) = "en") }
-  OPTIONAL { ?item rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
-  OPTIONAL { ?item wdt:P18 ?image . FILTER(isIRI(?image)) }
-  # An unknown date is a blank node (skolemized to an IRI), not a literal.
-  OPTIONAL { ?item wdt:P569 ?birthDate . FILTER(isLiteral(?birthDate)) }
-  OPTIONAL { ?item wdt:P570 ?deathDate . FILTER(isLiteral(?deathDate)) }
-  # A band's dates: when it was formed (P571, inception) and when it broke up (P576, dissolved).
-  OPTIONAL { ?item wdt:P571 ?inception . FILTER(isLiteral(?inception)) }
-  OPTIONAL { ?item wdt:P576 ?dissolved . FILTER(isLiteral(?dissolved)) }
+# The ones $subject influenced (wdt:P737 is "influenced by"): their data for inf:TeaserShape, in
+# the column of inf:InfluencedColumn… (src/shapes/ColumnShapes.ttl). The data of $subject itself
+# too: the column of the person the chain starts with shows it. The count is computed first, in a
+# sub query, and only the 1000 most influential are kept.
+#
+# Of the values one is kept (SAMPLE): a person with two portraits or two birth dates shows one. A column shows no descriptions. Since
+# Wikidata has "mul" (default for all languages) labels, many have no English one: then the "mul"
+# one is the label.
+CONSTRUCT {
+  ?influencedOne wdt:P737 $subject .
+  ?item rdfs:label ?label ;
+    wdt:P18 ?image ;
+    wdt:P154 ?logo ;
+    wdt:P569 ?birthDate ;
+    wdt:P570 ?deathDate ;
+    wdt:P571 ?inception ;
+    wdt:P576 ?dissolved ;
+    inf:influenceCount ?count ;
+    inf:openHref ?openHref ;
+    inf:aboutHref ?aboutHref .
 }
-ORDER BY DESC(?count)
+WHERE {
+  {
+    SELECT ?item ?count (SAMPLE(?en) AS ?enLabel) (SAMPLE(?mul) AS ?mulLabel)
+      (SAMPLE(?anImage) AS ?image) (SAMPLE(?aLogo) AS ?logo)
+      (SAMPLE(?aBirthDate) AS ?birthDate) (SAMPLE(?aDeathDate) AS ?deathDate)
+      (SAMPLE(?anInception) AS ?inception) (SAMPLE(?aDissolved) AS ?dissolved)
+    WHERE {
+      {
+        SELECT ?item (COUNT(DISTINCT ?influenced) AS ?count) WHERE {
+          { ?item wdt:P737 $subject . FILTER(isIRI(?item)) } UNION { BIND($subject AS ?item) }
+          OPTIONAL { ?influenced wdt:P737 ?item }
+        }
+        GROUP BY ?item
+        ORDER BY DESC(?count)
+        LIMIT 1001
+      }
+      OPTIONAL { ?item rdfs:label ?en . FILTER(LANG(?en) = "en") }
+      OPTIONAL { ?item rdfs:label ?mul . FILTER(LANG(?mul) = "mul") }
+      # An unknown value is a blank node (skolemized to an IRI): only real images and dates.
+      OPTIONAL { ?item wdt:P18 ?anImage . FILTER(isIRI(?anImage)) }
+      OPTIONAL { ?item wdt:P154 ?aLogo . FILTER(isIRI(?aLogo)) }
+      OPTIONAL { ?item wdt:P569 ?aBirthDate . FILTER(isLiteral(?aBirthDate)) }
+      OPTIONAL { ?item wdt:P570 ?aDeathDate . FILTER(isLiteral(?aDeathDate)) }
+      OPTIONAL { ?item wdt:P571 ?anInception . FILTER(isLiteral(?anInception)) }
+      OPTIONAL { ?item wdt:P576 ?aDissolved . FILTER(isLiteral(?aDissolved)) }
+    }
+    GROUP BY ?item ?count
+  }
+  # Not $subject itself: it did not influence itself.
+  BIND(IF(?item != $subject, ?item, ?none) AS ?influencedOne)
+  BIND(COALESCE(?enLabel, ?mulLabel) AS ?label)
+  BIND(STRAFTER(STR(?item), STR(wd:)) AS ?id)
+  BIND(CONCAT("/", ?id) AS ?openHref)
+  BIND(CONCAT("#", ?id) AS ?aboutHref)
+}

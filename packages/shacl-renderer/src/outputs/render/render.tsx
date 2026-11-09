@@ -9,6 +9,7 @@ import {
 } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
 import { SettleGate } from "@/outputs/render/contexts/settleGate.tsx";
 import { type ResolveLink, resolveLinkContext } from "@/outputs/render/components/Link/index.tsx";
+import { tabSelectionContext } from "@/outputs/render/contexts/tabbedPropertyGroupContext.tsx";
 import InterfaceLanguageProvider from "@/outputs/render/contexts/InterfaceLanguageProvider.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { identityKey, pickLiveProps } from "@/outputs/render/environmentProps.ts";
@@ -56,6 +57,11 @@ export type ShaclRendererProps = Partial<RawEnvironment> & {
   // an IRI pointed at a route of the embedder's own, kept in the page, or marked as the current
   // one. Not part of the Environment either: a new function only re-renders the links.
   resolveLink?: ResolveLink;
+  // The st:TabbedPropertyGroup to show (its IRI), and what to call when the user picks another - so
+  // an embedder can keep the tab in its URL. Without it the renderer keeps the tab itself. Not part
+  // of the Environment: a new tab only re-renders the tabs.
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 };
 
 export type ModeProps = {
@@ -73,6 +79,8 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
     className,
     loadingIndicator,
     resolveLink,
+    activeTab,
+    onTabChange,
     settleTimeout = 3000,
     settleIndicator,
     ...environmentProps
@@ -80,6 +88,7 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
   // A renderer nested inside another one (a widget's own) keeps the outer one's links, unless given
   // its own.
   const outerResolveLink = useContext(resolveLinkContext);
+  const tabSelection = useMemo(() => ({ activeTab, onTabChange }), [activeTab, onTabChange]);
   const identity = identityKey({ ...environmentProps, preprocessors });
   const instanceId = `${baseId}:${identity}`;
 
@@ -120,20 +129,22 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
         >
           <loadingIndicatorContext.Provider value={loadingIndicator}>
             <resolveLinkContext.Provider value={resolveLink ?? outerResolveLink}>
-              <InterfaceLanguageProvider interfaceLanguage={interfaceLanguage}>
-                <L10nProvider interfaceLocales={interfaceLocales}>
-                  <EnvironmentContextProvider
-                    key={identity}
-                    {...environmentProps}
-                    preprocessors={preprocessors}
-                    onSubmit={onSubmit}
-                    liveProps={stableLiveProps}
-                    instanceId={instanceId}
-                  >
-                    <ShaclRendererInner className={className} />
-                  </EnvironmentContextProvider>
-                </L10nProvider>
-              </InterfaceLanguageProvider>
+              <tabSelectionContext.Provider value={tabSelection}>
+                <InterfaceLanguageProvider interfaceLanguage={interfaceLanguage}>
+                  <L10nProvider interfaceLocales={interfaceLocales}>
+                    <EnvironmentContextProvider
+                      key={identity}
+                      {...environmentProps}
+                      preprocessors={preprocessors}
+                      onSubmit={onSubmit}
+                      liveProps={stableLiveProps}
+                      instanceId={instanceId}
+                    >
+                      <ShaclRendererInner className={className} />
+                    </EnvironmentContextProvider>
+                  </L10nProvider>
+                </InterfaceLanguageProvider>
+              </tabSelectionContext.Provider>
             </resolveLinkContext.Provider>
           </loadingIndicatorContext.Provider>
         </SettleGate>

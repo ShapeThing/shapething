@@ -1,0 +1,20 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+### An entity model: a programming language. Its picture is its logo; it starts when it was made.
+
+inf:ProgrammingLanguageModel
+    a sh:NodeShape, inf:EntityModel ;
+    rdfs:label "Programming language"@en ;
+    sh:targetClass wd:Q9143 ;
+    sh:property [ sh:path rdfs:label ; shui:propertyRole shui:LabelRole ] ;
+    # Logo image.
+    sh:property [ sh:path wdt:P154 ; shui:propertyRole shui:DepictionRole ] ;
+    sh:property [ sh:path schema:description ; shui:propertyRole shui:DescriptionRole ] ;
+    # Inception.
+    sh:property [ sh:path wdt:P571 ; shui:propertyRole inf:StartRole ] .

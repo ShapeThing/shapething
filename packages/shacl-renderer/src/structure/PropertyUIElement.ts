@@ -3,7 +3,7 @@ import { RdfStore } from "rdf-stores";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
 import { hashString } from "@/helpers/hashString.ts";
-import { shui, st } from "@/helpers/namespaces.ts";
+import { sh, shui, st } from "@/helpers/namespaces.ts";
 import type { BCP47, LanguageRange } from "@/types/BCP47.ts";
 import { parsePropertyPath, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
@@ -153,6 +153,23 @@ export class PropertyUIElement {
     const path = this.propertyPath();
     if (!path) return [];
     return walkPropertyPath(path, this.focusNode, this.dataGraph);
+  }
+
+  /**
+   * The values view mode shows: getObjects(), except for a property of at most one value
+   * (sh:maxCount 1) with an sh:alternativePath, which shows the values of its first branch that
+   * has any - the alternatives are tried in order, as for a label (resolution/label.ts). A thing
+   * with both a photo and a logo, under [ sh:alternativePath ( schema:image schema:logo ) ], shows
+   * its photo only.
+   */
+  viewObjects(): Term[] {
+    const path = this.propertyPath();
+    if (path?.type !== "alternative" || this.get(sh("maxCount")) !== 1) return this.getObjects();
+    for (const branch of path.items) {
+      const values = walkPropertyPath(branch, this.focusNode, this.dataGraph);
+      if (values.length) return values;
+    }
+    return [];
   }
 
   /**

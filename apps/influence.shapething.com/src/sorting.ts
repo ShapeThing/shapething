@@ -1,9 +1,7 @@
-import { type PersonSummary, startOf } from "./data/person.ts";
-import { yearOf } from "./widgets/YearViewer/year.ts";
-
 /**
- * How the people of a column are sorted. "influence" (the order of the query, the most influential
- * first) is the default; the others are kept in the path, see parseSegment.
+ * How the people of a column are sorted: "influence" (the most influential first) is the default;
+ * the others are kept in the path, see parseSegment. Each has a column shape of its own
+ * (src/shapes/ColumnShapes.ttl) that orders the column.
  */
 export type SortOrder = "influence" | "born" | "name";
 
@@ -58,15 +56,3 @@ export const segmentsFor = (ids: readonly string[], sorts: Sorts): string[] =>
     const after = CODES[sorts.get(id) ?? "influence"];
     return `${before ? `${before}:` : ""}${id}${after ? `:${after}` : ""}`;
   });
-
-/** The people in a sort order; people (and bands) without a known birth year go last. */
-export const sortPeople = (people: readonly PersonSummary[], order: SortOrder) => {
-  if (order === "influence") return people;
-  if (order === "name") return people.toSorted((a, b) => a.name.localeCompare(b.name, "en"));
-  // A band by the year it was formed.
-  const born = (person: PersonSummary) => {
-    const start = startOf(person);
-    return (start && yearOf(start)) ?? Number.POSITIVE_INFINITY;
-  };
-  return people.toSorted((a, b) => born(a) - born(b));
-};

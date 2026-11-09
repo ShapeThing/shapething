@@ -22,6 +22,15 @@ import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 
 const EMPTY_STORE = RdfStore.createDefault();
 
+// A number per shapes graph, for the cache key below: a re-preprocessed Environment (its shapes or
+// its data gained a property) has a new shapes graph, and new elements under the same keys.
+const shapesGraphIds = new WeakMap<RdfStore, number>();
+let lastShapesGraphId = 0;
+const shapesGraphId = (shapesGraph: RdfStore) => {
+  if (!shapesGraphIds.has(shapesGraph)) shapesGraphIds.set(shapesGraph, ++lastShapesGraphId);
+  return shapesGraphIds.get(shapesGraph);
+};
+
 export default function UIElementChildren({
   elements: allElements,
 }: {
@@ -36,7 +45,7 @@ export default function UIElementChildren({
   const firstElement = allElements[0];
   const elements = useReactiveRead(
     firstElement?.dataGraph ?? EMPTY_STORE,
-    `${firstElement ? termKey(firstElement.focusNode) : ""}|${allElements.map(elementKey).join("|")}|${languageMode}|${activeLanguage}`,
+    `${firstElement ? `${termKey(firstElement.focusNode)}@${shapesGraphId(firstElement.shapesGraph)}` : ""}|${allElements.map(elementKey).join("|")}|${languageMode}|${activeLanguage}`,
     () =>
       allElements.filter(
         (element) =>

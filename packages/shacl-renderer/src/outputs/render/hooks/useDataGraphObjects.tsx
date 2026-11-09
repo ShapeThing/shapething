@@ -13,3 +13,13 @@ function cacheKey(property: PropertyUIElement): string {
 export function useDataGraphObjects(property: PropertyUIElement): Term[] {
   return useReactiveRead(property.dataGraph, cacheKey(property), () => property.getObjects());
 }
+
+/**
+ * The values view mode shows of this property (see PropertyUIElement.viewObjects: the first
+ * alternative with a value, for a property of at most one value), kept live.
+ */
+export function useViewObjects(property: PropertyUIElement): Term[] {
+  return useReactiveRead(property.dataGraph, `view@${cacheKey(property)}`, () =>
+    property.viewObjects(),
+  );
+}

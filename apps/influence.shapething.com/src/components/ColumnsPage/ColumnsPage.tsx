@@ -1,8 +1,11 @@
+import type { NamedNode, Quad } from "@rdfjs/types";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { entityOptions, influenceOptions } from "../../data/queries.ts";
-import type { PersonSummary } from "../../data/person.ts";
+import { entityIri } from "../../data/entities.ts";
+import { influenceOptions } from "../../data/queries.ts";
+import { useLiveStore } from "../../data/useLiveStore.ts";
 import { createInfluenceScale, InfluenceScaleContext } from "../../influence/influenceScale.ts";
+import { inf, shui, wdt } from "../../rdf/namespaces.ts";
 import {
   entityModalOf,
   navigate,
@@ -10,6 +13,7 @@ import {
   useAppLocation,
   withoutModal,
 } from "../../routing.ts";
+import { columnShape, TeaserShape, valueOf } from "../../shapes/shapes.ts";
 import type { SortOrder } from "../../sorting.ts";
 import Column from "../Column/Column.tsx";
 import EntityModal from "../EntityModal/EntityModal.tsx";
@@ -21,7 +25,13 @@ import "./style.scss";
 type ColumnModel = {
   key: string;
   title: string;
-  people: readonly PersonSummary[] | undefined;
+  /** What the column renders, with which shape (see Column). */
+  subject: NamedNode;
+  shape: NamedNode;
+  /** The answer of the column's query, once there is one. */
+  quads: readonly Quad[] | undefined;
+  /** Whether that answer has anyone in it (the triples wdt:P737 the column shape lists). */
+  isEmpty: boolean;
   isLoading: boolean;
   isError: boolean;
   onRetry: () => void;
@@ -35,27 +45,40 @@ type ColumnModel = {
   position: number;
 };
 
+/** Whether the answer of a column's query has anyone in it. */
+const isEmpty = (quads: readonly Quad[] | undefined) =>
+  quads !== undefined && !quads.some((quad) => quad.predicate.equals(wdt("P737")));
+
 /**
  * The chain of people: the influencers of the first person, the first person, and for every person
- * in the path the people they influenced.
+ * in the path the people they influenced. The answers of the queries of every column (triples, see
+ * data/queries.ts) go into one live store (useLiveStore), that every column renders from.
  */
 export default function ColumnsPage({ ids }: { ids: string[] }) {
   const { modal, sorts } = useAppLocation();
   const entityModal = entityModalOf(modal);
   const [start] = ids;
 
-  const entities = useQueries({ queries: ids.map((id) => entityOptions(id)) });
   const influencers = useQuery(influenceOptions(start, "influencers"));
   const influenced = useQueries({ queries: ids.map((id) => influenceOptions(id, "influenced")) });
 
-  const nameOf = (index: number) => entities[index]?.data?.name ?? "…";
-  const startEntity = entities[0];
+  // One live store for the page, that every column renders from. An answer stays when its column
+  // goes: what it says is still true, and a column that comes back has its people right away.
+  const dataGraph = useLiveStore([influencers.data, ...influenced.map((query) => query.data)]);
+  // The names in the titles: everyone in the chain is in the store (the first person's data comes
+  // with the people they influenced, the others are among the people before them).
+  const nameOf = (index: number) =>
+    valueOf(dataGraph, entityIri(ids[index]), shui("LabelRole"))?.value ?? "…";
+  const sortOf = (key: string) => sorts.get(key) ?? "influence";
 
   const columns: ColumnModel[] = [
     {
       key: `influencers ${start}`,
       title: `Influencers of ${nameOf(0)}`,
-      people: influencers.data,
+      subject: entityIri(start),
+      shape: columnShape("influencers", sortOf("influencers")),
+      quads: influencers.data,
+      isEmpty: isEmpty(influencers.data),
       isLoading: influencers.isPending,
       isError: influencers.isError,
       onRetry: () => void influencers.refetch(),
@@ -63,18 +86,25 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
       position: -1,
     },
     {
+      // The query of the people the first person influenced has the first person's data too.
       key: `start ${start}`,
       title: "Your starting selection:",
-      people: startEntity.data ? [startEntity.data] : undefined,
-      isLoading: startEntity.isPending,
-      isError: startEntity.isError,
-      onRetry: () => void startEntity.refetch(),
+      subject: entityIri(start),
+      shape: TeaserShape,
+      quads: influenced[0].data,
+      isEmpty: false,
+      isLoading: influenced[0].isPending,
+      isError: influenced[0].isError,
+      onRetry: () => void influenced[0].refetch(),
       position: 0,
     },
     ...ids.map((id, index) => ({
       key: `influenced ${index} ${id}`,
       title: `Influenced by ${nameOf(index)}`,
-      people: influenced[index].data,
+      subject: entityIri(id),
+      shape: columnShape("influenced", sortOf(id)),
+      quads: influenced[index].data,
+      isEmpty: isEmpty(influenced[index].data),
       isLoading: influenced[index].isPending,
       isError: influenced[index].isError,
       onRetry: () => void influenced[index].refetch(),
@@ -86,7 +116,12 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
   // The relative influence is measured against everyone shown.
   // Kept as one string, so the scale (and with it every bar) only changes when a count does.
   const countsKey = columns
-    .flatMap((column) => column.people?.map((person) => person.influence) ?? [])
+    .flatMap(
+      (column) =>
+        column.quads?.flatMap((quad) =>
+          quad.predicate.equals(inf("influenceCount")) ? [quad.object.value] : [],
+        ) ?? [],
+    )
     .join(",");
   const scale = useMemo(
     () => createInfluenceScale(countsKey ? countsKey.split(",").map(Number) : []),
@@ -96,7 +131,7 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
   // A new column scrolls into view: right away when the page opens, smoothly after.
   const scrollerRef = useRef<HTMLDivElement>(null);
   const hasScrolled = useRef(false);
-  const loadedColumns = columns.filter((column) => column.people !== undefined).length;
+  const loadedColumns = columns.filter((column) => column.quads !== undefined).length;
   useEffect(() => {
     const scroller = scrollerRef.current;
     if (!scroller) return;
@@ -133,7 +168,10 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
             <Column
               key={column.key}
               title={column.title}
-              people={column.people}
+              subject={column.subject}
+              shape={column.shape}
+              dataGraph={dataGraph}
+              isEmpty={column.isEmpty}
               isLoading={column.isLoading}
               isError={column.isError}
               onRetry={column.onRetry}
@@ -157,19 +195,12 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
                   ? (href) => setClosing({ path, position: column.position, href })
                   : undefined
               }
-              hrefFor={(person) =>
+              hrefFor={(id) =>
                 column.position < 0
-                  ? hrefForIds([person.id])
-                  : person.id === ids[column.position]
+                  ? hrefForIds([id])
+                  : id === ids[column.position]
                     ? hrefForIds(ids.slice(0, column.position))
-                    : hrefForIds([...ids.slice(0, column.position), person.id])
-              }
-              linkLabelFor={(person) =>
-                column.position < 0
-                  ? `Start with ${person.name}`
-                  : person.id === ids[column.position]
-                    ? `Close ${person.name}`
-                    : `Show who ${person.name} influenced`
+                    : hrefForIds([...ids.slice(0, column.position), id])
               }
             />
           ))}
@@ -180,10 +211,7 @@ export default function ColumnsPage({ ids }: { ids: string[] }) {
       {modal === "info" ? (
         <InfoModal onClose={closeModal} />
       ) : modal === "timeline" ? (
-        <TimelineModal
-          people={entities.flatMap((entity) => (entity.data ? [entity.data] : []))}
-          onClose={closeModal}
-        />
+        <TimelineModal dataGraph={dataGraph} people={ids.map(entityIri)} onClose={closeModal} />
       ) : entityModal ? (
         <EntityModal
           key={entityModal.id}

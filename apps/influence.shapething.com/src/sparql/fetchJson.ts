@@ -55,6 +55,7 @@ const fetchFromNetwork = async (
   url: string,
   init: RequestInit,
   isQuery: boolean,
+  cacheKey: string,
 ): Promise<unknown> => {
   const request = () => fetch(url, init);
   let response = await (isQuery ? withQuerySlot(request) : request());
@@ -78,7 +79,7 @@ const fetchFromNetwork = async (
   const cache = await openCache();
   cache
     ?.put(
-      url,
+      cacheKey,
       new Response(JSON.stringify(json), {
         headers: { "content-type": "application/json", [CACHED_AT_HEADER]: Date.now().toString() },
       }),
@@ -89,22 +90,24 @@ const fetchFromNetwork = async (
 };
 
 /**
- * Fetches JSON with a GET request, answered from the Cache API when it can be. `isQuery` marks a
- * request to the Wikidata query service, which is rate limited (see the top of this file).
+ * Fetches JSON, answered from the Cache API when it can be. `isQuery` marks a request to the
+ * Wikidata query service, which is rate limited (see the top of this file). The answer is cached
+ * under `cacheKey`, the URL unless given: a POST names what it asks for there.
  */
 export const fetchJson = async (
   url: string,
   init: RequestInit = {},
   isQuery = false,
+  cacheKey = url,
 ): Promise<unknown> => {
   const cache = await openCache();
-  const cached = await cache?.match(url).catch(() => undefined);
+  const cached = await cache?.match(cacheKey).catch(() => undefined);
 
   if (cached) {
     const age = Date.now() - Number.parseInt(cached.headers.get(CACHED_AT_HEADER) ?? "0", 10);
-    if (age > REVALIDATE_AFTER) fetchFromNetwork(url, init, isQuery).catch(() => {});
+    if (age > REVALIDATE_AFTER) fetchFromNetwork(url, init, isQuery, cacheKey).catch(() => {});
     return cached.json();
   }
 
-  return fetchFromNetwork(url, init, isQuery);
+  return fetchFromNetwork(url, init, isQuery, cacheKey);
 };

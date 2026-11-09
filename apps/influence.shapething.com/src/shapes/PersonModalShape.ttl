@@ -3,12 +3,84 @@
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix shui: <http://www.w3.org/ns/shacl-ui/> .
 @prefix st: <http://shapething.com/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
 @prefix wdt: <http://www.wikidata.org/prop/direct/> .
+@prefix schema: <http://schema.org/> .
+
+### A person or a band in the modal: the image and the facts, the text, and the tabs of what they
+### made (on a timeline) and their ideas and interests (as cards). The tabs are filled by
+### src/queries/itemLists.rq and laid out by the class names (EntityModal/lists.scss).
 
 inf:PersonModalShape
     a sh:NodeShape ;
     rdfs:label "Person"@en ;
-    sh:property inf:ModalImage, inf:ModalSummary, inf:ModalAbstract, inf:ModalWikipedia ;
+    sh:node inf:ModalBase ;
+    st:missingPropertiesGroup inf:allProperties ;
+    sh:targetClass wd:Q5, wd:Q215380 ;
+    sh:property inf:ModalBanner, inf:ModalImage, inf:ModalSummary, inf:ModalAbstract, inf:ModalWikipedia ;
+    # The works and the birth and death (a band's forming and breaking up: inf:worksEvent) in one
+    # list, by date: a work published after the death comes after it. A work by the date it was
+    # made (P571), or else published (P577); an event by its date (P585). Those of one year are a
+    # group, the year its heading: a row of the timeline. Only a person who made something has it.
+    sh:property [
+        sh:path [ sh:alternativePath ( [ sh:inversePath wdt:P50 ] inf:worksEvent ) ] ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:TimelineEntryShape ;
+        st:orderBy [ sh:alternativePath ( wdt:P571 wdt:P577 wdt:P585 ) ] ;
+        st:groupBy [ sh:alternativePath ( wdt:P571 wdt:P577 wdt:P585 ) ] ;
+        st:groupTemplate "[{0:year}|{1:year}|{2:year}]" ;
+        shui:viewer shui:DetailsViewer ;
+        st:cssClass "timeline" ;
+        sh:group inf:works ;
+    ] ;
+    # A musician's or a band's albums, like the works, by the date they were released (P577).
+    sh:property [
+        sh:path [ sh:alternativePath ( [ sh:inversePath wdt:P175 ] inf:albumsEvent ) ] ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:TimelineEntryShape ;
+        st:orderBy [ sh:alternativePath ( wdt:P577 wdt:P585 ) ] ;
+        st:groupBy [ sh:alternativePath ( wdt:P577 wdt:P585 ) ] ;
+        st:groupTemplate "[{0:year}|{1:year}]" ;
+        shui:viewer shui:DetailsViewer ;
+        # An album cover is square: so is the place of a missing one (EntityModal/lists.scss).
+        st:cssClass "timeline", "albums" ;
+        sh:group inf:albums ;
+    ] ;
+    # A painter's or a sculptor's artworks, like the works, by the date they were made (P571).
+    sh:property [
+        sh:path [ sh:alternativePath ( [ sh:inversePath wdt:P170 ] inf:artworksEvent ) ] ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:TimelineEntryShape ;
+        st:orderBy [ sh:alternativePath ( wdt:P571 wdt:P585 ) ] ;
+        st:groupBy [ sh:alternativePath ( wdt:P571 wdt:P585 ) ] ;
+        st:groupTemplate "[{0:year}|{1:year}]" ;
+        shui:viewer shui:DetailsViewer ;
+        st:cssClass "timeline" ;
+        sh:group inf:artworks ;
+    ] ;
+    # Their ideas (notable works, P800) as cards.
+    sh:property [
+        sh:path wdt:P800 ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:CardShape ;
+        shui:viewer shui:DetailsViewer ;
+        st:cssClass "cards" ;
+        sh:group inf:ideas ;
+    ] ;
+    # Their interests (fields of work, P101) as cards.
+    sh:property [
+        sh:path wdt:P101 ;
+        sh:name "" ;
+        sh:description "" ;
+        sh:node inf:CardShape ;
+        shui:viewer shui:DetailsViewer ;
+        st:cssClass "cards" ;
+        sh:group inf:interests ;
+    ] ;
     sh:property [
         sh:path inf:influenceCount ;
         sh:name "Influence"@en ;
@@ -31,4 +103,73 @@ inf:PersonModalShape
         shui:viewer st:MapViewer ;
         st:mapMaxZoom 5 ;
         st:cssClass "birth-place" ;
+    ] .
+
+# An entry of the timeline, in the row of its year (st:groupBy): a work's picture with its name (a
+# link that opens it in the modal) below it, or the name of the event ("Born", "Died").
+inf:TimelineEntryShape
+    a sh:NodeShape ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:name "" ;
+        sh:order 2 ;
+        sh:maxCount 1 ;
+        shui:viewer inf:EntityLinkViewer ;
+        shui:propertyRole shui:LabelRole ;
+        st:cssClass "title" ;
+    ] ;
+    sh:property [
+        sh:path inf:eventLabel ;
+        sh:name "" ;
+        # No help icon from the rdfs:comment of inf:eventLabel in a header that has no label.
+        sh:description "" ;
+        sh:order 2 ;
+        sh:maxCount 1 ;
+        shui:viewer shui:LiteralViewer ;
+        st:cssClass "event" ;
+    ] ;
+    sh:property [
+        # The picture, or else the cover of a book or an album (src/queries/itemLists.rq).
+        sh:path [ sh:alternativePath ( wdt:P18 inf:cover ) ] ;
+        sh:name "" ;
+        sh:order 1 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        shui:viewer shui:ImageViewer ;
+        st:imageWidth 260 ; # shown 130px wide, in its own shape (EntityModal/lists.scss)
+        st:cssClass "picture" ;
+    ] .
+
+# An idea or an interest: its picture, its name (a link that opens it in the modal, covering the
+# card) and its short description.
+inf:CardShape
+    a sh:NodeShape ;
+    sh:property [
+        # The picture, or else the cover of a book or an album (src/queries/itemLists.rq).
+        sh:path [ sh:alternativePath ( wdt:P18 inf:cover ) ] ;
+        sh:name "" ;
+        sh:order 0 ;
+        sh:maxCount 1 ;
+        sh:nodeKind sh:IRI ;
+        shui:viewer shui:ImageViewer ;
+        st:imageWidth 480 ; # a card is about 240px wide
+        st:cssClass "picture" ;
+    ] ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:name "" ;
+        sh:order 1 ;
+        sh:maxCount 1 ;
+        shui:viewer inf:EntityLinkViewer ;
+        shui:propertyRole shui:LabelRole ;
+        st:cssClass "title" ;
+    ] ;
+    sh:property [
+        sh:path schema:description ;
+        sh:name "" ;
+        sh:order 2 ;
+        sh:maxCount 1 ;
+        shui:viewer shui:LiteralViewer ;
+        shui:propertyRole shui:DescriptionRole ;
+        st:cssClass "description" ;
     ] .

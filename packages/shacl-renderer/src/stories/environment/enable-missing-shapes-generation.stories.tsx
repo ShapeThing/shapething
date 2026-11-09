@@ -1,7 +1,9 @@
 import type { StoryObj } from "@storybook/react-vite";
 import { expect, waitFor, within } from "storybook/test";
 import ShaclRenderer, { type ShaclRendererProps } from "@/outputs/render/render.tsx";
+import { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
+import { makeReactive } from "@/helpers/reactiveRdfStore.ts";
 
 type Story = StoryObj<ShaclRendererProps>;
 
@@ -53,5 +55,50 @@ export const enabled: Story = {
     const canvas = within(canvasElement);
     await canvas.findByDisplayValue("Tom", {}, { timeout: 5000 });
     await canvas.findByDisplayValue("3", {}, { timeout: 5000 });
+  },
+};
+
+// A live dataGraph (makeReactive): a predicate the data gains after the first render - data that
+// arrives later - gets its generated property too (EnvironmentContextProvider preprocesses again).
+// In view mode, with st:missingPropertiesGroup, the generated properties go in that group on the
+// shape that is shown.
+const liveDataGraph = makeReactive(RdfStore.createDefault());
+liveDataGraph.addQuad(
+  factory.quad(
+    factory.namedNode("http://example.org/data"),
+    factory.namedNode("http://schema.org/name"),
+    factory.literal("Tom"),
+  ),
+);
+
+export const laterData: Story = {
+  name: "On, in a group of the shape shown: data that arrives later gets its properties too",
+  args: {
+    mode: "view",
+    enableMissingShapesGeneration: true,
+    shapesGraph: `
+      @prefix ex: <http://example.org/> .
+      @prefix sh: <http://www.w3.org/ns/shacl#> .
+      @prefix st: <http://shapething.com/> .
+      ex:DogView a sh:NodeShape ; st:missingPropertiesGroup ex:rest .
+      ex:rest a sh:PropertyGroup ; sh:name "Everything else"@en ; st:cssClass "rest" .
+    `,
+    nodeShapes: [factory.namedNode("http://example.org/DogView")],
+    focusNode: factory.namedNode("http://example.org/data"),
+  } as ShaclRendererProps,
+  // The live store is not an arg: args are compared as JSON, which a store is not.
+  render: (args) => <ShaclRenderer {...args} dataGraph={liveDataGraph} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText("Tom", {}, { timeout: 5000 });
+    liveDataGraph.addQuad(
+      factory.quad(
+        factory.namedNode("http://example.org/data"),
+        factory.namedNode("http://example.org/age"),
+        factory.literal("3"),
+      ),
+    );
+    const age = await canvas.findByText("3", {}, { timeout: 5000 });
+    expect(age.closest(".rest")).not.toBeNull();
   },
 };

@@ -1,16 +1,26 @@
 @prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix st: <http://shapething.com/> .
 
-### Groups. They have no label, they bring together what is laid out together.
+### Groups. Most have no label, they bring together what is laid out together.
 
 inf:lifespan a sh:PropertyGroup ; sh:order 1 ; st:cssClass "lifespan" .
 
-# The two columns of the modal: the side column (the image and the facts) and the main one (the
-# text). Within them, nested groups.
+# The modal (src/components/EntityModal): the side column (the image and the facts) beside the tabs.
+# The first tab has the text, the others a person's lists. A tab shows when it has something; the
+# tab of the modal is its local name in the URL ("#Q868/works").
 inf:side a sh:PropertyGroup ; sh:order 0 ; st:cssClass "entity-modal__side" .
-inf:main a sh:PropertyGroup ; sh:order 1 ; st:cssClass "entity-modal__main" .
 # The short description in the side column, between the name and the facts.
 inf:summary a sh:PropertyGroup ; sh:group inf:side ; sh:order 1.5 ; st:cssClass "summary" .
 inf:facts a sh:PropertyGroup ; sh:group inf:side ; sh:order 2 ; st:cssClass "facts" .
-inf:text a sh:PropertyGroup ; sh:group inf:main ; sh:order 3 ; st:cssClass "text" .
+
+inf:about a st:TabbedPropertyGroup ; rdfs:label "About"@en ; sh:order 1 ; st:cssClass "entity-modal__main" .
+inf:text a sh:PropertyGroup ; sh:group inf:about ; sh:order 3 ; st:cssClass "text" .
+# Below the text, every other property (inf:ModalBase).
+inf:allProperties a sh:PropertyGroup ; sh:group inf:about ; sh:order 4 ; st:cssClass "entity-modal__all-properties" .
+inf:works a st:TabbedPropertyGroup ; rdfs:label "Works"@en ; sh:order 2 ; st:cssClass "entity-modal__list" .
+inf:albums a st:TabbedPropertyGroup ; rdfs:label "Albums"@en ; sh:order 3 ; st:cssClass "entity-modal__list" .
+inf:artworks a st:TabbedPropertyGroup ; rdfs:label "Artworks"@en ; sh:order 4 ; st:cssClass "entity-modal__list" .
+inf:ideas a st:TabbedPropertyGroup ; rdfs:label "Ideas"@en ; sh:order 5 ; st:cssClass "entity-modal__list" .
+inf:interests a st:TabbedPropertyGroup ; rdfs:label "Interests"@en ; sh:order 6 ; st:cssClass "entity-modal__list" .

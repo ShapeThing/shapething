@@ -13,7 +13,8 @@ const describe = (count: number) =>
  * inf:RelativeInfluenceViewer: an influence count (inf:influenceCount) as a bar, filled by how the
  * count ranks among the people shown in the app at the moment. That scale comes from the page
  * around the renderer (InfluenceScaleContext), so the bars change when a column is opened or
- * closed, without rendering the shapes again.
+ * closed, without rendering the shapes again. No influence at all is marked (data-influence), so a
+ * stylesheet can mute what it belongs to (Column/style.scss).
  */
 export default function RelativeInfluenceViewer({ term, labelledBy }: WidgetProps) {
   const scale = useInfluenceScale();
@@ -27,7 +28,11 @@ export default function RelativeInfluenceViewer({ term, labelledBy }: WidgetProp
   const description = describe(count);
 
   return (
-    <span className="relative-influence" title={description}>
+    <span
+      className="relative-influence"
+      title={description}
+      data-influence={count === 0 ? "none" : undefined}
+    >
       {relative !== undefined && (
         <span
           className="relative-influence__track"

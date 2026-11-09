@@ -1,0 +1,23 @@
+@prefix inf: <https://influence.shapething.com/ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <http://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix wd: <http://www.wikidata.org/entity/> .
+@prefix wdt: <http://www.wikidata.org/prop/direct/> .
+
+### An entity model: what a person's data is, not how it is shown. The roles say which property is
+### the name, the picture, the description and the start and end of a life. The display shapes
+### take their paths from the roles of all entity models (src/shapes/compile.ts).
+
+inf:PersonModel
+    a sh:NodeShape, inf:EntityModel ;
+    rdfs:label "Person"@en ;
+    sh:targetClass wd:Q5 ;
+    sh:property [ sh:path rdfs:label ; shui:propertyRole shui:LabelRole ] ;
+    sh:property [ sh:path wdt:P18 ; shui:propertyRole shui:DepictionRole ] ;
+    sh:property [ sh:path schema:description ; shui:propertyRole shui:DescriptionRole ] ;
+    # Date of birth.
+    sh:property [ sh:path wdt:P569 ; shui:propertyRole inf:StartRole ] ;
+    # Date of death.
+    sh:property [ sh:path wdt:P570 ; shui:propertyRole inf:EndRole ] .

@@ -1,5 +1,9 @@
+import type { NamedNode } from "@rdfjs/types";
+import type { RdfStore } from "rdf-stores";
 import type { CSSProperties } from "react";
-import { endOf, type PersonSummary, startOf } from "../../data/person.ts";
+import { entityId } from "../../data/entities.ts";
+import { inf, shui } from "../../rdf/namespaces.ts";
+import { valueOf } from "../../shapes/shapes.ts";
 import { formatYear, yearOf } from "../../widgets/YearViewer/year.ts";
 import Avatar from "../Avatar/Avatar.tsx";
 import Modal from "../Modal/Modal.tsx";
@@ -9,22 +13,22 @@ import "./style.scss";
 const LIFETIME = 110;
 
 type Lifespan = {
-  person: PersonSummary;
   from: number;
   /** Undefined when the date of death is not known. */
   to: number | undefined;
   isAlive: boolean;
 };
 
-const lifespanOf = (person: PersonSummary, now: number): Lifespan | undefined => {
-  // A band from when it was formed to when it broke up.
-  const start = startOf(person);
-  const from = start && yearOf(start);
+/** From the start to the end of a life (inf:StartRole, inf:EndRole): a band's from when it was
+ * formed to when it broke up. */
+const lifespanOf = (dataGraph: RdfStore, person: NamedNode, now: number): Lifespan | undefined => {
+  const start = valueOf(dataGraph, person, inf("StartRole"));
+  const from = start?.termType === "Literal" ? yearOf(start) : undefined;
   if (from === undefined) return undefined;
-  const end = endOf(person);
-  const to = end && yearOf(end);
+  const end = valueOf(dataGraph, person, inf("EndRole"));
+  const to = end?.termType === "Literal" ? yearOf(end) : undefined;
   const isAlive = to === undefined && now - from < LIFETIME;
-  return { person, from, to: isAlive ? now : to, isAlive };
+  return { from, to: isAlive ? now : to, isAlive };
 };
 
 // A portrait (wdt:P18) is a Commons "Special:FilePath" URL to the full original: Commons serves a
@@ -58,14 +62,22 @@ const ticksBetween = (min: number, max: number): number[] => {
  * years (style.scss).
  */
 export default function TimelineModal({
+  dataGraph,
   people,
   onClose,
 }: {
-  people: readonly PersonSummary[];
+  /** The data of the columns, the people in it (ColumnsPage). */
+  dataGraph: RdfStore;
+  people: readonly NamedNode[];
   onClose: () => void;
 }) {
   const now = new Date().getFullYear();
-  const lifespans = people.map((person) => ({ person, lifespan: lifespanOf(person, now) }));
+  const lifespans = people.map((person) => ({
+    id: entityId(person) ?? person.value,
+    name: valueOf(dataGraph, person, shui("LabelRole"))?.value ?? "…",
+    image: valueOf(dataGraph, person, shui("DepictionRole"))?.value,
+    lifespan: lifespanOf(dataGraph, person, now),
+  }));
   const known = lifespans.flatMap(({ lifespan }) => (lifespan ? [lifespan] : []));
   // An unknown end gets a bar of a usual lifetime, faded out (style.scss).
   const ends = known.map(({ from, to }) => to ?? from + 70);
@@ -80,9 +92,9 @@ export default function TimelineModal({
       ) : (
         <div className="timeline" style={{ "--min": min, "--max": max } as CSSProperties}>
           <ol className="timeline__rows">
-            {lifespans.map(({ person, lifespan }) => (
+            {lifespans.map(({ id, name, image, lifespan }) => (
               <li
-                key={person.id}
+                key={id}
                 className="timeline__row"
                 style={
                   lifespan &&
@@ -92,15 +104,15 @@ export default function TimelineModal({
                   } as CSSProperties)
                 }
               >
-                <a className="timeline__name" href={`#${person.id}`}>
+                <a className="timeline__name" href={`#${id}`}>
                   <span className="timeline__portrait">
-                    {person.image ? (
-                      <img src={thumbnailOf(person.image.value)} alt="" loading="lazy" />
+                    {image ? (
+                      <img src={thumbnailOf(image)} alt="" loading="lazy" />
                     ) : (
-                      <Avatar name={person.name} />
+                      <Avatar name={name} />
                     )}
                   </span>
-                  {person.name}
+                  {name}
                 </a>
                 {lifespan ? (
                   <span

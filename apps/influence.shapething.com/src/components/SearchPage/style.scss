@@ -1,3 +1,5 @@
+@use "../../styles/teaser";
+
 .search-page {
   display: flex;
   flex-direction: column;
@@ -193,10 +195,12 @@
   }
 }
 
+// The results (inf:SearchResultsShape): one renderer, each result inf:TeaserShape.
 .search-dropdown__results {
-  margin: 0;
   padding: 4px 0;
-  list-style: none;
+
+  @include teaser.results;
+  @include teaser.list;
 }
 
 .search-dropdown__message {

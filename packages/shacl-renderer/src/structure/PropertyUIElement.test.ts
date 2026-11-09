@@ -1279,3 +1279,33 @@ test("dataId() differs for the same path at different ancestorPath depths, but s
   expect(new Set([root, nestedViaAuthor, nestedViaPublisher]).size).toBe(3);
   expect(nestedViaAuthor).toEqual(nestedViaAuthorAgain);
 });
+
+const createAlternativeElement = async (maxCount: string) => {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}\n\nex:image sh:path [ sh:alternativePath ( ex:photo ex:logo ) ] ${maxCount} .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\n\nex:Alice ex:logo ex:aliceLogo ; ex:photo ex:alicePhoto .`,
+    "text/turtle",
+  );
+  return new PropertyUIElement({
+    widgetRegistry: defaultWidgets,
+    shapesGraph,
+    dataGraph,
+    focusNode: ex("Alice"),
+    propertyShapes: [ex("image")],
+  });
+};
+
+test("viewObjects() shows the first alternative with a value when there is at most one value", async () => {
+  const element = await createAlternativeElement("; sh:maxCount 1");
+  expect(element.viewObjects().map((term) => term.value)).toEqual([ex("alicePhoto").value]);
+  // The data itself keeps every alternative.
+  expect(element.getObjects()).toHaveLength(2);
+});
+
+test("viewObjects() shows every alternative without sh:maxCount 1", async () => {
+  const element = await createAlternativeElement("");
+  expect(element.viewObjects()).toHaveLength(2);
+});

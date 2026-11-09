@@ -7,70 +7,103 @@ PREFIX wikibase: <http://wikiba.se/ontology#>
 PREFIX bd: <http://www.bigdata.com/rdf#>
 PREFIX mwapi: <https://www.mediawiki.org/ontology#API/>
 PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX inf: <https://influence.shapething.com/ns#>
 PREFIX hint: <http://www.bigdata.com/queryHints#>
 
 # The people, bands, or other things of the class $class (data/searchClasses.ts) matching the
-# search text that influenced someone, the most influential first. Made in data/queries.ts: $search
+# search text that influenced someone: the results (inf:result) of the result node
+# <urn:influence:search>, with their data for inf:TeaserShape (inf:SearchResultsShape, src/shapes/
+# ColumnShapes.ttl lists them, the most influential first). Of the values one is kept
+# (SAMPLE), as in influenced.rq. Made in data/queries.ts: $search
 # is the text as typed, $fullText the words of it for the full-text search, and $namePattern a
 # pattern of a name in which every word of it starts a word.
-SELECT ?item ?name ?mulName ?description ?image ?birthDate ?deathDate ?inception ?dissolved (xsd:integer(?count) AS ?influence) WHERE {
-  {
-    SELECT ?item (COUNT(DISTINCT ?influenced) AS ?count) WHERE {
-      # The searches first, then the people they found: the other way around Blazegraph starts
-      # with every influence on Wikidata and takes half a minute.
-      hint:Query hint:optimizer "None" .
-      {
-        # The name search: a name as it is being typed ("kier" finds Kierkegaard). It gives no
-        # more than 50 people, by how well the name matches.
-        SERVICE wikibase:mwapi {
-          bd:serviceParam wikibase:api "EntitySearch" .
-          bd:serviceParam wikibase:endpoint "www.wikidata.org" .
-          bd:serviceParam mwapi:search $search .
-          bd:serviceParam mwapi:language "en" .
-          bd:serviceParam wikibase:limit 50 .
-          ?item wikibase:apiOutputItem mwapi:item .
-        }
-      } UNION {
-        # The full-text search: the best known people for whole words ("john" finds John Locke,
-        # who is not among the first 50 Johns of the name search).
-        SERVICE wikibase:mwapi {
-          bd:serviceParam wikibase:api "Search" .
-          bd:serviceParam wikibase:endpoint "www.wikidata.org" .
-          bd:serviceParam mwapi:srsearch $fullText .
-          bd:serviceParam mwapi:srnamespace "0" .
-          bd:serviceParam wikibase:limit 200 .
-          ?title wikibase:apiOutput mwapi:title .
-        }
-        BIND(IRI(CONCAT(STR(wd:), ?title)) AS ?item)
-      }
-      # An instance of the class, or of a kind of it (a rock band is a kind of musical group); or
-      # with the occupation, or a kind of it (a physicist is a kind of scientist): $membership is
-      # wdt:P31 or wdt:P106 (data/searchClasses.ts).
-      FILTER EXISTS { ?item $membership ?kind . ?kind wdt:P279* $class }
-      # Always true (both searches give items), but it types ?item as an IRI.
-      FILTER(isIRI(?item))
-      # Only people who influenced someone: the people the app can show chains of.
-      ?influenced wdt:P737 ?item .
-      # The full-text search also matches descriptions ("van go" would find Tagore): the search
-      # text has to match a name.
-      FILTER EXISTS {
-        ?item rdfs:label|skos:altLabel ?label .
-        FILTER(LANG(?label) IN ("en", "mul"))
-        FILTER(REGEX(LCASE(STR(?label)), $namePattern))
-      }
-    }
-    GROUP BY ?item
-    ORDER BY DESC(?count)
-    LIMIT 20
-  }
-  OPTIONAL { ?item rdfs:label ?name . FILTER(LANG(?name) = "en") }
-  OPTIONAL { ?item rdfs:label ?mulName . FILTER(LANG(?mulName) = "mul") }
-  OPTIONAL { ?item schema:description ?description . FILTER(LANG(?description) = "en") }
-  OPTIONAL { ?item wdt:P18 ?image . FILTER(isIRI(?image)) }
-  OPTIONAL { ?item wdt:P569 ?birthDate . FILTER(isLiteral(?birthDate)) }
-  OPTIONAL { ?item wdt:P570 ?deathDate . FILTER(isLiteral(?deathDate)) }
-  # A band's dates: when it was formed (P571, inception) and when it broke up (P576, dissolved).
-  OPTIONAL { ?item wdt:P571 ?inception . FILTER(isLiteral(?inception)) }
-  OPTIONAL { ?item wdt:P576 ?dissolved . FILTER(isLiteral(?dissolved)) }
+CONSTRUCT {
+  <urn:influence:search> inf:result ?item .
+  ?item rdfs:label ?label ;
+    schema:description ?description ;
+    wdt:P18 ?image ;
+    wdt:P154 ?logo ;
+    wdt:P569 ?birthDate ;
+    wdt:P570 ?deathDate ;
+    wdt:P571 ?inception ;
+    wdt:P576 ?dissolved ;
+    inf:influenceCount ?count ;
+    inf:openHref ?openHref ;
+    inf:aboutHref ?aboutHref .
 }
-ORDER BY DESC(?count)
+WHERE {
+  {
+    SELECT ?item ?count (SAMPLE(?en) AS ?enLabel) (SAMPLE(?mul) AS ?mulLabel)
+      (SAMPLE(?aDescription) AS ?fullDescription) (SAMPLE(?anImage) AS ?image) (SAMPLE(?aLogo) AS ?logo)
+      (SAMPLE(?aBirthDate) AS ?birthDate) (SAMPLE(?aDeathDate) AS ?deathDate)
+      (SAMPLE(?anInception) AS ?inception) (SAMPLE(?aDissolved) AS ?dissolved)
+    WHERE {
+      {
+        SELECT ?item (COUNT(DISTINCT ?influenced) AS ?count) WHERE {
+          # The searches first, then the people they found: the other way around Blazegraph starts
+          # with every influence on Wikidata and takes half a minute.
+          hint:Query hint:optimizer "None" .
+          {
+            # The name search: a name as it is being typed ("kier" finds Kierkegaard). It gives no
+            # more than 50 people, by how well the name matches.
+            SERVICE wikibase:mwapi {
+              bd:serviceParam wikibase:api "EntitySearch" .
+              bd:serviceParam wikibase:endpoint "www.wikidata.org" .
+              bd:serviceParam mwapi:search $search .
+              bd:serviceParam mwapi:language "en" .
+              bd:serviceParam wikibase:limit 50 .
+              ?item wikibase:apiOutputItem mwapi:item .
+            }
+          } UNION {
+            # The full-text search: the best known people for whole words ("john" finds John Locke,
+            # who is not among the first 50 Johns of the name search).
+            SERVICE wikibase:mwapi {
+              bd:serviceParam wikibase:api "Search" .
+              bd:serviceParam wikibase:endpoint "www.wikidata.org" .
+              bd:serviceParam mwapi:srsearch $fullText .
+              bd:serviceParam mwapi:srnamespace "0" .
+              bd:serviceParam wikibase:limit 200 .
+              ?title wikibase:apiOutput mwapi:title .
+            }
+            BIND(IRI(CONCAT(STR(wd:), ?title)) AS ?item)
+          }
+          # An instance of the class, or of a kind of it (a rock band is a kind of musical group); or
+          # with the occupation, or a kind of it (a physicist is a kind of scientist): $membership is
+          # wdt:P31 or wdt:P106 (data/searchClasses.ts).
+          FILTER EXISTS { ?item $membership ?kind . ?kind wdt:P279* $class }
+          # Always true (both searches give items), but it types ?item as an IRI.
+          FILTER(isIRI(?item))
+          # Only people who influenced someone: the people the app can show chains of.
+          ?influenced wdt:P737 ?item .
+          # The full-text search also matches descriptions ("van go" would find Tagore): the search
+          # text has to match a name.
+          FILTER EXISTS {
+            ?item rdfs:label|skos:altLabel ?label .
+            FILTER(LANG(?label) IN ("en", "mul"))
+            FILTER(REGEX(LCASE(STR(?label)), $namePattern))
+          }
+        }
+        GROUP BY ?item
+        ORDER BY DESC(?count)
+        LIMIT 20
+      }
+      OPTIONAL { ?item rdfs:label ?en . FILTER(LANG(?en) = "en") }
+      OPTIONAL { ?item rdfs:label ?mul . FILTER(LANG(?mul) = "mul") }
+      OPTIONAL { ?item schema:description ?aDescription . FILTER(LANG(?aDescription) = "en") }
+      OPTIONAL { ?item wdt:P18 ?anImage . FILTER(isIRI(?anImage)) }
+      OPTIONAL { ?item wdt:P154 ?aLogo . FILTER(isIRI(?aLogo)) }
+      OPTIONAL { ?item wdt:P569 ?aBirthDate . FILTER(isLiteral(?aBirthDate)) }
+      OPTIONAL { ?item wdt:P570 ?aDeathDate . FILTER(isLiteral(?aDeathDate)) }
+      OPTIONAL { ?item wdt:P571 ?anInception . FILTER(isLiteral(?anInception)) }
+      OPTIONAL { ?item wdt:P576 ?aDissolved . FILTER(isLiteral(?aDissolved)) }
+    }
+    GROUP BY ?item ?count
+  }
+  BIND(COALESCE(?enLabel, ?mulLabel) AS ?label)
+  # The years at the end of a description ("English rock band (1960–1970)"): the teaser shows them
+  # from the dates.
+  BIND(STRLANG(REPLACE(STR(?fullDescription), "\\s*\\([^()]*[0-9]{3,4}[^()]*\\)\\s*$", ""), "en") AS ?description)
+  BIND(STRAFTER(STR(?item), STR(wd:)) AS ?id)
+  BIND(CONCAT("/", ?id) AS ?openHref)
+  BIND(CONCAT("#", ?id) AS ?aboutHref)
+}

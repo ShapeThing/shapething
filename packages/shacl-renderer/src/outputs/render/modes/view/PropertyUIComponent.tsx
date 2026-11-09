@@ -8,7 +8,7 @@ import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.ts
 import { useRegisterContentLanguageSwitcherWidget } from "@/outputs/render/hooks/useRegisterContentLanguageSwitcherWidget.tsx";
 import { useInterfaceLanguage } from "@/outputs/render/hooks/useInterfaceLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
-import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
+import { useViewObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { useIsReport, useReportResults } from "@/outputs/render/hooks/useReportResults.tsx";
 import { Localized } from "@fluent/react";
@@ -21,7 +21,7 @@ import { primarySubtag } from "@/helpers/bestByLanguage.ts";
 import { rdf, sh, shui, st } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { groupByPath, groupTemplate, groupValues } from "@/structure/groupByValues.ts";
-import { orderByPath, sortForView } from "@/structure/orderByValues.ts";
+import { orderByPath, orderDescending, sortForView } from "@/structure/orderByValues.ts";
 import { valueNodeLabel } from "@/resolution/label.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import { cssClasses } from "@/structure/href.ts";
@@ -59,7 +59,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   const label = propertyUIElement.label([activeInterfaceLanguage]);
   const description = propertyUIElement.description([activeInterfaceLanguage]);
 
-  const dataGraphObjects = useDataGraphObjects(propertyUIElement);
+  const dataGraphObjects = useViewObjects(propertyUIElement);
   // st:mergeAlternatives: one value composed from every branch of the sh:alternativePath, in place
   // of the values of those branches. A branch's values are joined as a list in the content
   // language, or in the interface language when that is a regional form of it - content in "en"
@@ -86,9 +86,10 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
   // By st:orderBy, and otherwise (and between equal positions) alphabetically by the label each
   // value is shown with - see sortForView, and why edit mode only sorts by st:orderBy.
   const orderPath = useMemo(() => orderByPath(propertyUIElement), [propertyUIElement]);
+  const descending = useMemo(() => orderDescending(propertyUIElement), [propertyUIElement]);
   const languageFilteredObjects = useReactiveRead(
     propertyUIElement.dataGraph,
-    `order-by@${activeLanguage}@${listLocale}@${unorderedLanguageFilteredObjects.map(termKey).join("\n")}`,
+    `order-by@${descending}@${activeLanguage}@${listLocale}@${unorderedLanguageFilteredObjects.map(termKey).join("\n")}`,
     () =>
       sortForView(
         unorderedLanguageFilteredObjects,
@@ -98,6 +99,7 @@ export default function PropertyUIComponent({ propertyUIElement }: PropertyUICom
           valueNodeLabel({ term, propertyShape: propertyUIElement, languages: [activeLanguage] })
             .value,
         listLocale,
+        descending,
       ),
   );
 

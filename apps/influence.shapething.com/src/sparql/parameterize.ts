@@ -46,7 +46,8 @@ export const termToSparql = (term: ParameterTerm): string => {
  *
  * - One term replaces `$name` everywhere in the query.
  * - A list of terms turns `$name` into `?name`, bound by a VALUES clause at the start of the
- *   outermost WHERE block.
+ *   outermost WHERE block; or, when the query has an empty `VALUES $name { }` of its own, there
+ *   (so a list can bind a variable inside an OPTIONAL).
  */
 export const parameterize = (query: string, parameters: Parameters = {}): string => {
   let result = query;
@@ -59,8 +60,11 @@ export const parameterize = (query: string, parameters: Parameters = {}): string
 
     if (Array.isArray(value)) {
       const terms = value as readonly ParameterTerm[];
+      const clause = `VALUES ?${name} { ${terms.map(termToSparql).join(" ")} }`;
+      const ownClause = new RegExp(`VALUES\\s+\\$${name}\\s*\\{\\s*\\}`);
+      if (ownClause.test(result)) result = result.replace(ownClause, () => clause);
+      else valuesClauses.push(clause);
       result = result.replace(variable, `?${name}`);
-      valuesClauses.push(`VALUES ?${name} { ${terms.map(termToSparql).join(" ")} }`);
     } else {
       const term = termToSparql(value as ParameterTerm);
       // A function replacement, so "$" characters in the term are never read as patterns.

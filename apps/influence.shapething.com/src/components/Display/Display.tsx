@@ -19,7 +19,7 @@ type Props = {
   /** One of the display shapes of src/shapes. */
   shape: NamedNode;
   focusNode: NamedNode;
-  /** The data graph (see data/graphs.ts). Quads are compared by content: an equal array keeps the
+  /** The data graph (see src/queries). Quads are compared by content: an equal array keeps the
    * renderer, a different one starts it again. A live store (makeReactive) is kept as it is, and
    * what is added to it later shows up in place (see PersonRow). */
   dataGraph: Quad[] | RdfStore;
@@ -35,6 +35,9 @@ type Props = {
   labelLayout?: "block" | "inline" | "columns";
   /** What shows while the renderer holds back the first paint; the spinner unless given. */
   settleIndicator?: ReactNode;
+  /** The tab shown (st:TabbedPropertyGroup, its IRI), and what to call when another is picked. */
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 };
 
 /**
@@ -73,6 +76,8 @@ export default function Display({
   resolveLink,
   labelLayout = "inline",
   settleIndicator = <Spinner />,
+  activeTab,
+  onTabChange,
 }: Props) {
   const appLinks = useAppLinks();
   const resolve = useCallback<ResolveLink>(
@@ -110,6 +115,8 @@ export default function Display({
         loadingIndicator={null}
         settleIndicator={settleIndicator}
         resolveLink={resolve}
+        activeTab={activeTab}
+        onTabChange={onTabChange}
       />
     </div>
   );
