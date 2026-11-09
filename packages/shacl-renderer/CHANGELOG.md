@@ -1,5 +1,14 @@
 # @shapething/shacl-renderer
 
+## 2.2.0
+
+### Minor Changes
+
+- bacaee9: New `st:DateViewer`: shows `xsd:date`, `xsd:dateTime`, `xsd:dateTimeStamp`, `xsd:gYear` and `xsd:gYearMonth` values as the interface language writes them ("11 November 1855", "384 BC") instead of their lexical form. It is picked by score for any date value or `sh:datatype`, so generated shapes get it too. A dateTime at midnight reads as a date.
+- 9c3aa61: `st:mergeAlternatives` now also works on a property shape itself: view mode shows one value composed from every branch of its `sh:alternativePath`. Every value of a branch counts, joined as a list in the content language. The new `st:mergeTemplate` places the branches in the text (`{n}`, `{n:year}`, optional `[ … ]` sections, with `|` fallbacks such as `[ ({2:year}–{3:year})| (born {2:year})]`), on its own property or on a `shui:LabelRole` one.
+- bacaee9: `enableMissingShapesGeneration` now also fills a root shape (`nodeShapes`) that declares no target of its own. Such a generic shape gets a property for every predicate of the focus node that it does not cover or ignore (`sh:ignoredProperties`), so one shape can list everything about any resource, whatever its class. Shapes with a target are still filled class by class, as before.
+- bacaee9: View mode lists a property's values alphabetically by the label they are shown with, as the content language sorts ("Épopée" among the E's, "Book 2" before "Book 10"), where before they were in whatever order the data gave. With `st:orderBy` they are still listed by their position, and alphabetically between values that share one or have none. Edit mode is unchanged: without `st:orderBy` its values stay in the order they were added in.
+
 ## 2.1.0
 
 ### Minor Changes
