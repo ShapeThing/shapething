@@ -1,10 +1,9 @@
 import type { NamedNode } from "@rdfjs/types";
 import { select } from "@shapething/shacl-renderer";
-import { use } from "react";
 import type { RdfStore } from "rdf-stores";
 import { useDataModel } from "../data-model/dataModelContext.ts";
 import { termKey, type Resource } from "../data-model/rdf.ts";
-import { cached } from "../data-model/storeCache.ts";
+import { cached, useCached } from "../data-model/storeCache.ts";
 import { buildTree, type TreeNode } from "../data-model/tree.ts";
 import propertyIndexQuery from "./queries/propertyIndex.rq";
 
@@ -66,5 +65,5 @@ export function classPropertyTree(index: PropertyIndex, cls: Resource): TreeNode
 
 export function useClassPropertyTree(cls: Resource): TreeNode[] {
   const { store } = useDataModel();
-  return classPropertyTree(use(propertyIndex(store)), cls);
+  return classPropertyTree(useCached(propertyIndex(store)), cls);
 }

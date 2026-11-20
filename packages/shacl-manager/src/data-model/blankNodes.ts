@@ -3,7 +3,7 @@ import type { RdfStore } from "rdf-stores";
 
 // A parser makes up blank node labels on every load, so they can't go in a URL. A hash of the
 // node's content can: the same data gives the same id on every load. Nodes with identical content
-// share an id, and editing a blank node changes its id.
+// are told apart by a suffix (see idsOf), and editing a blank node changes its id.
 
 // Its "predicate object" pairs, sorted, with nested blank nodes written out in place.
 export function describeBlankNode(
@@ -43,31 +43,37 @@ function hash(text: string): string {
 }
 
 // Per store, which is never mutated in place, so neither goes stale.
-const ids = new WeakMap<RdfStore, Map<string, string>>();
-const byId = new WeakMap<RdfStore, Map<string, BlankNode>>();
+type Ids = { byNode: Map<string, string>; byId: Map<string, BlankNode> };
+const idsPerStore = new WeakMap<RdfStore, Ids>();
+
+// Separate nodes with identical content (say two `[ owl:unionOf (A B) ]`, each the domain of other
+// properties) are still separate pages: the first keeps the plain hash, the next ones get "-2",
+// "-3"… in the order the store lists them, which is the same on every load of the same data.
+function idsOf(store: RdfStore): Ids {
+  let ids = idsPerStore.get(store);
+  if (ids) return ids;
+  ids = { byNode: new Map(), byId: new Map() };
+  const seen = new Map<string, number>();
+  for (const quad of store.getQuads()) {
+    for (const term of [quad.subject, quad.object]) {
+      if (term.termType !== "BlankNode" || ids.byNode.has(term.value)) continue;
+      const base = hash(describeBlankNode(store, term));
+      const occurrence = (seen.get(base) ?? 0) + 1;
+      seen.set(base, occurrence);
+      const id = occurrence === 1 ? base : `${base}-${occurrence}`;
+      ids.byNode.set(term.value, id);
+      ids.byId.set(id, term);
+    }
+  }
+  idsPerStore.set(store, ids);
+  return ids;
+}
 
 export function blankNodeId(store: RdfStore, node: BlankNode): string {
-  const known = ids.get(store) ?? new Map<string, string>();
-  ids.set(store, known);
-  let id = known.get(node.value);
-  if (id === undefined) {
-    id = hash(describeBlankNode(store, node));
-    known.set(node.value, id);
-  }
-  return id;
+  // A node the store doesn't have (anymore) can only go by its content.
+  return idsOf(store).byNode.get(node.value) ?? hash(describeBlankNode(store, node));
 }
 
 export function findBlankNode(store: RdfStore, id: string): BlankNode | undefined {
-  let nodes = byId.get(store);
-  if (!nodes) {
-    nodes = new Map();
-    for (const { subject } of store.getQuads()) {
-      if (subject.termType !== "BlankNode") continue;
-      const subjectId = blankNodeId(store, subject);
-      // Identical content: the first one stands for all of them.
-      if (!nodes.has(subjectId)) nodes.set(subjectId, subject);
-    }
-    byId.set(store, nodes);
-  }
-  return nodes.get(id);
+  return idsOf(store).byId.get(id);
 }

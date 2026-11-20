@@ -1,39 +1,65 @@
+/* The manager's chrome, built on the renderer's theme (open-props and the --st-* tokens), so the
+   pages around the renderer read as one product with it. Rules stay scoped to the manager's own
+   elements: these rules are unlayered, so a bare `a` or `h2` rule here would beat the renderer's
+   layered widget styles inside the pages. */
 .st-manager-root {
+  --st-manager-surface: var(--gray-1);
+  --st-manager-text-muted: var(--gray-7);
+  --st-manager-gutter: var(--size-5);
+  --st-manager-row-hover: hsl(from var(--st-primary-color) h s l / 0.1);
+
+  /* The viewport's height, not more: every column scrolls on its own, the page never does. */
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  font-family: var(--st-font-family);
+  color: var(--st-color-text);
+  background-color: white;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
 }
 
 .st-manager {
   flex: 1;
   display: grid;
   grid-template-columns: 18rem minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   min-height: 0;
 }
 
 /* A third column only on pages that render the aside. */
 .st-manager:has(> .st-manager__aside) {
-  grid-template-columns: 18rem minmax(0, 1fr) 18rem;
+  grid-template-columns: 18rem minmax(0, 1fr) 17rem;
 }
 
-.st-manager__aside {
-  min-height: 0;
-  overflow: auto;
-  border-inline-start: 1px solid;
-  padding-inline: 1rem;
-}
-
-.st-related {
-  list-style: none;
+/* Small uppercase labels above the lists in the sidebar, the aside and a list column. */
+:is(.st-manager__sidebar-content, .st-manager__aside) h3,
+.st-list-detail__title {
   margin: 0;
-  padding: 0;
+  font-size: var(--st-font-size-smallest);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-8);
 }
+
+/* Empty states and loading text in the side columns. */
+:is(.st-manager__sidebar-content, .st-manager__aside, .st-list-detail__tabs) p {
+  margin: 0;
+  padding: var(--size-1) var(--size-2);
+  font-size: var(--st-font-size-small);
+  color: var(--st-manager-text-muted);
+}
+
+/* Sidebar */
 
 .st-manager__sidebar {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  border-inline-end: 1px solid;
+  background-color: var(--st-manager-surface);
+  border-inline-end: 1px solid var(--st-color-border);
 }
 
 .st-manager__tabs,
@@ -45,11 +71,13 @@
 .st-manager__tabs > a,
 .st-section__tabs > a {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: center;
-  gap: 0.5ch;
-  padding: 0.5rem 0.75rem;
-  color: var(--st-color-text-muted);
+  gap: 0.75ch;
+  padding: var(--size-2) var(--size-3);
+  color: var(--st-manager-text-muted);
+  font-size: var(--st-font-size-small);
+  font-weight: 600;
   text-decoration: none;
   white-space: nowrap;
   border-block-end: 2px solid transparent;
@@ -67,7 +95,6 @@
 .st-manager__tabs > a:hover,
 .st-section__tabs > a:hover {
   color: var(--st-color-text);
-  background-color: var(--st-primary-color-lighter);
 }
 
 .st-manager__tabs > a:focus-visible,
@@ -79,32 +106,58 @@
 .st-manager__tabs > a.active,
 .st-section__tabs > a.active {
   color: var(--st-primary-color);
-  font-weight: 600;
   border-block-end-color: currentColor;
 }
 
+/* Shapes / Knowledge: a segmented control above the origin tabs. */
+.st-manager__tabs--primary {
+  gap: 3px;
+  margin: var(--size-3) var(--size-2);
+  padding: 3px;
+  border: none;
+  /* Concentric with the tabs inside: their radius plus the padding. */
+  border-radius: calc(var(--radius-2) + 3px);
+  background-color: var(--gray-3);
+}
+
+/* Equal halves that may shrink, so a long label or count never pushes past the switch's edge. */
+.st-manager__tabs--primary > a {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: var(--size-1) var(--size-2);
+  margin: 0;
+  border: none;
+  border-radius: var(--radius-2);
+}
+
+.st-manager__tabs--primary > a:hover {
+  background-color: hsl(0 0% 100% / 0.6);
+}
+
+.st-manager__tabs--primary > a.active {
+  background-color: white;
+  box-shadow: var(--shadow-1);
+}
+
+.st-manager__tabs--primary > a:not(.active) > .st-manager__tab-count {
+  background-color: var(--gray-1);
+}
+
 .st-manager__tabs--secondary {
-  font-size: var(--st-font-size-small);
-}
-
-.st-manager__tabs--secondary > a {
-  padding-block: 0.35rem;
-}
-
-.st-section__tabs {
-  overflow-x: auto;
-  scrollbar-width: thin;
+  margin-inline: var(--size-3);
 }
 
 .st-manager__tab-count {
-  min-width: 1.5em;
-  padding-inline: 0.5ch;
-  border-radius: 999px;
-  background-color: var(--st-color-border);
-  color: var(--st-color-text);
+  min-width: 1.6em;
+  padding-inline: 0.5em;
+  border-radius: var(--radius-round);
+  background-color: var(--gray-3);
+  color: var(--gray-8);
   font-size: var(--st-font-size-smallest);
-  font-weight: normal;
+  font-weight: 600;
+  line-height: 1.6;
   text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .st-manager__tab-count:empty {
@@ -119,13 +172,214 @@ a.active > .st-manager__tab-count {
 .st-manager__sidebar-content {
   flex: 1;
   overflow: auto;
+  padding: var(--size-2) var(--size-2) var(--size-6);
 }
+
+.st-manager__sidebar-content > section + section {
+  margin-block-start: var(--size-4);
+}
+
+.st-manager__sidebar-content h3,
+.st-manager__aside h3 {
+  padding: var(--size-2);
+}
+
+.st-manager__section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--size-2);
+}
+
+.st-manager__section-header > .st-button {
+  flex: none;
+  white-space: nowrap;
+}
+
+/* Navigation rows: the sidebar tree, a list column's items and the related shapes. */
+
+.st-tree,
+.st-related {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--st-font-size-small);
+}
+
+/* One chevron gutter deeper per level, so children start right of their parent's chevron. */
+.st-tree .st-tree {
+  padding-inline-start: 1.25rem;
+}
+
+:is(.st-tree, .st-list-detail__tabs, .st-related) a:not(.st-button) {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75ch;
+  flex: 1;
+  min-width: 0;
+  padding: 0.3rem var(--size-2);
+  border-radius: var(--radius-2);
+  color: var(--st-color-text);
+  text-decoration: none;
+  overflow-wrap: anywhere;
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+}
+
+:is(.st-tree, .st-list-detail__tabs, .st-related) a:not(.st-button):hover {
+  background-color: var(--st-manager-row-hover);
+}
+
+:is(.st-tree, .st-list-detail__tabs, .st-related) a:not(.st-button):focus-visible {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: -2px;
+}
+
+:is(.st-tree, .st-list-detail__tabs, .st-related) a:not(.st-button).active {
+  background-color: var(--st-primary-color-lighter);
+  color: var(--st-primary-color);
+  font-weight: 600;
+}
+
+.st-tree__count {
+  margin-inline-start: auto;
+  padding-inline-start: var(--size-2);
+  color: var(--st-manager-text-muted);
+  font-size: var(--st-font-size-smallest);
+  font-weight: normal;
+  font-variant-numeric: tabular-nums;
+}
+
+.st-tree summary {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  cursor: pointer;
+}
+
+.st-tree summary::-webkit-details-marker {
+  display: none;
+}
+
+/* The disclosure chevron, in a gutter that leaf rows on the same level keep free too. */
+.st-tree summary::before {
+  content: "";
+  flex: none;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-inline: 0.4rem 0.45rem;
+  border-inline-end: 1.5px solid var(--st-manager-text-muted);
+  border-block-end: 1.5px solid var(--st-manager-text-muted);
+  rotate: -45deg;
+  transition: rotate 0.15s;
+}
+
+.st-tree details[open] > summary::before {
+  rotate: 45deg;
+}
+
+/* Only a flat top level goes without the gutter. */
+.st-tree:has(> li > details) > li > a:not(.st-button),
+.st-tree .st-tree > li > a:not(.st-button) {
+  margin-inline-start: 1.25rem;
+}
+
+/* Main column */
 
 .st-manager__main {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  min-height: 0;
   overflow: auto;
+}
+
+.st-manager__toolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--size-3);
+  min-height: 3.5rem;
+  padding-inline: var(--st-manager-gutter) var(--size-3);
+  border-block-end: 1px solid var(--st-color-border);
+}
+
+.st-breadcrumb {
+  min-width: 0;
+}
+
+.st-breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--st-font-size-small);
+}
+
+.st-breadcrumb li + li::before {
+  content: "/";
+  padding-inline: 0.9ch;
+  color: var(--gray-6);
+}
+
+.st-breadcrumb a {
+  color: var(--st-manager-text-muted);
+  text-decoration: none;
+}
+
+.st-breadcrumb a:hover {
+  color: var(--st-primary-color);
+}
+
+.st-breadcrumb li:last-child a {
+  color: var(--st-color-text);
+  font-weight: 600;
+}
+
+.st-manager__save-area {
+  display: flex;
+  align-items: center;
+  gap: var(--size-3);
+  margin-inline-start: auto;
+}
+
+.st-manager__status {
+  font-size: var(--st-font-size-small);
+  color: var(--st-manager-text-muted);
+  white-space: nowrap;
+}
+
+.st-manager__cancel {
+  font-family: var(--st-font-family);
+  white-space: nowrap;
+}
+
+.st-manager__save {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75ch;
+  font-family: var(--st-font-family);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* Filled, like the renderer's own submit button, as soon as there is something to save. */
+.st-manager__save:not([disabled]) {
+  border-color: var(--st-primary-color);
+  background-color: var(--st-primary-color);
+  color: white;
+}
+
+.st-manager__save:not([disabled]):is(:hover, :focus-visible) {
+  background-color: hsl(from var(--st-primary-color) h s calc(l - 8));
+  color: white;
+}
+
+.st-manager__save .st-manager__tab-count {
+  background-color: white;
+  color: var(--st-primary-color);
 }
 
 /* Passes the remaining height on, so the list/detail columns reach the bottom. */
@@ -136,56 +390,225 @@ a.active > .st-manager__tab-count {
   min-height: 0;
 }
 
-.st-tree {
-  list-style: none;
+.st-section > h2,
+.st-heading h2 {
   margin: 0;
-  padding-inline-start: 1rem;
+  font-size: var(--font-size-4);
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
 }
 
-.st-tree a {
-  display: inline-flex;
-  gap: 0.5ch;
+.st-section > h2 {
+  padding: var(--size-5) var(--st-manager-gutter) var(--size-3);
 }
 
-.st-tree a.active {
-  font-weight: bold;
-}
-
-.st-tree__count {
-  opacity: 0.6;
-}
-
-.st-breadcrumb ol {
-  list-style: none;
+/* A node's heading: its classes as chips before its label, and its IRI on a line below. */
+.st-heading {
   display: flex;
   flex-wrap: wrap;
-  margin: 0;
-  padding: 0.5rem;
+  align-items: center;
+  gap: var(--size-1) var(--size-2);
 }
 
-.st-breadcrumb li + li::before {
-  content: "/";
-  padding-inline: 0.75ch;
-  opacity: 0.6;
+.st-section > .st-heading {
+  padding: var(--size-5) var(--st-manager-gutter) var(--size-3);
 }
 
-.st-breadcrumb li:last-child {
-  font-weight: bold;
+/* Above the renderer on a detail page. */
+.st-meta > .st-heading {
+  margin-block-end: var(--size-4);
 }
 
-.st-manager__sidebar-actions {
+.st-meta > .st-heading h2 {
+  font-size: var(--font-size-3);
+}
+
+/* Edit, Delete, Disable or Enable, at the end of the heading's first line. */
+.st-heading__actions {
+  display: flex;
+  gap: var(--size-2);
+  margin-inline-start: auto;
+}
+
+.st-heading--deactivated h2 {
+  color: var(--st-manager-text-muted);
+  text-decoration: line-through;
+}
+
+.st-heading__types {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem;
-  padding: 0.5rem;
+  gap: var(--size-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.st-chip {
+  padding: 0.125rem var(--size-2);
+  border-radius: var(--radius-round);
+  background-color: hsl(from var(--st-primary-color) h s l / 0.1);
+  color: var(--st-primary-color);
+  font-size: var(--st-font-size-smallest);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+.st-heading__iri {
+  flex-basis: 100%;
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: var(--st-font-size-small);
+  color: var(--st-manager-text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* An origin's title only heads its own intro page; deeper down the breadcrumb already says it. */
+.st-section:has(.st-section) > :is(h2, .st-heading) {
+  display: none;
+}
+
+.st-section__tabs {
+  gap: var(--size-2);
+  padding-inline: calc(var(--st-manager-gutter) - var(--size-3));
+  overflow-x: auto;
+  /* The active tab's underline overlaps the border by 1px; that must not become a scrollbar. */
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+.st-meta {
+  position: relative;
+  padding: var(--size-4) var(--st-manager-gutter) var(--size-7);
 }
 
 .st-meta__actions {
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  padding-block: 0.5rem;
+  gap: var(--size-3);
+}
+
+/* Where a property shape is used: a row of links to the shapes holding it. */
+.st-usage {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--size-2);
+  margin-inline-end: auto;
+  font-size: var(--st-font-size-small);
+  color: var(--st-manager-text-muted);
+}
+
+.st-usage__label {
+  font-size: var(--st-font-size-smallest);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gray-8);
+}
+
+.st-usage__shapes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.st-usage__shapes a {
+  display: inline-block;
+  padding: 0.1rem var(--size-2);
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-round);
+  color: var(--st-color-text);
+  text-decoration: none;
+}
+
+.st-usage__shapes a:hover {
+  background-color: var(--st-manager-row-hover);
+}
+
+.st-usage__shapes a:focus-visible {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: 1px;
+}
+
+.st-usage__shapes a.active {
+  border-color: var(--st-primary-color);
+  background-color: var(--st-primary-color-lighter);
+  color: var(--st-primary-color);
+  font-weight: 600;
 }
 
 a.st-button {
   text-decoration: none;
+  font-family: var(--st-font-family);
+}
+
+/* Aside */
+
+.st-manager__aside {
+  min-height: 0;
+  overflow: auto;
+  padding: var(--size-3) var(--size-2);
+  background-color: var(--st-manager-surface);
+  border-inline-start: 1px solid var(--st-color-border);
+}
+
+/* A sh:deactivated shape, constraint or rule, wherever it is linked. The selected one keeps the
+   selection's colour. */
+:is(.st-tree, .st-list-detail__tabs, .st-related, .st-usage__shapes) a.st-deactivated {
+  text-decoration: line-through;
+}
+
+:is(.st-tree, .st-list-detail__tabs, .st-related, .st-usage__shapes) a.st-deactivated:not(.active) {
+  color: var(--st-manager-text-muted);
+}
+
+/* A question before a destructive action: its text, then Cancel and the action on the right. */
+.st-confirm {
+  max-width: min(90vw, 28rem);
+}
+
+.st-confirm .st-modal__content {
+  overflow-y: auto;
+}
+
+.st-confirm p {
+  margin: 0;
+}
+
+.st-confirm__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--size-2);
+  margin-block-start: var(--size-4);
+}
+
+/* Delete: red line and text, no red fill, so it doesn't outweigh Edit next to it. */
+.st-button.st-button--delete {
+  border-color: var(--st-severity-error);
+  color: var(--st-severity-error);
+
+  &:hover,
+  &:focus {
+    outline-color: var(--st-severity-error);
+    color: var(--st-severity-error);
+  }
+}
+
+/* Edit, Delete, Disable and Enable: one size and font, whether a <button> or a link, so they
+   line up and Disable/Enable don't jump. */
+:is(.st-heading__actions, .st-confirm__actions) > .st-button {
+  min-inline-size: 5.5rem;
+  justify-content: center;
+  padding: var(--size-1) var(--size-3);
+  font: inherit;
+  font-size: var(--st-font-size-small);
+  font-weight: 500;
+  line-height: 1.5;
 }

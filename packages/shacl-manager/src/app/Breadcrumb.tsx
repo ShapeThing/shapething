@@ -1,9 +1,10 @@
-import { Suspense, use } from "react";
+import { Suspense } from "react";
 import { Link, useMatch } from "react-router";
 import { useDataModel } from "../data-model/dataModelContext.ts";
 import type { DataModel } from "../data-model/loadDataModel.ts";
 import type { Resource } from "../data-model/rdf.ts";
 import { segmentToTerm, termToSegment } from "../data-model/segments.ts";
+import { useCached } from "../data-model/storeCache.ts";
 import { findTrail, type Sections, type TreeNode } from "../data-model/tree.ts";
 import { classSections } from "../owl/useClassTree.ts";
 import { findListTab, type ListTab } from "../shacl/listTabs.ts";
@@ -97,7 +98,21 @@ export function Breadcrumb() {
 
 function Trail({ selection }: { selection: Selection }) {
   const dataModel = useDataModel();
-  const sections = selection.sections && use(selection.sections(dataModel, selection.origin));
+  if (!selection.sections) return <Crumbs selection={selection} />;
+  return (
+    <TreeTrail selection={selection} sections={selection.sections(dataModel, selection.origin)} />
+  );
+}
+
+function TreeTrail({
+  selection,
+  sections: loading,
+}: {
+  selection: Selection;
+  sections: Promise<Sections>;
+}) {
+  const dataModel = useDataModel();
+  const sections = useCached(loading);
   const selected = segmentToTerm(selection.segment, dataModel);
   // The URL segment arrives decoded, so compare by term, and a blank node by its content id.
   const isTarget = (node: TreeNode) =>
@@ -106,7 +121,7 @@ function Trail({ selection }: { selection: Selection }) {
     (selected.termType === "NamedNode"
       ? node.term.value === selected.value
       : termToSegment(node.term, dataModel) === termToSegment(selected, dataModel));
-  const trail = sections && findTrail(sections.hierarchy, isTarget);
+  const trail = findTrail(sections.hierarchy, isTarget);
   return <Crumbs trail={trail?.map((node) => node.term)} selection={selection} />;
 }
 

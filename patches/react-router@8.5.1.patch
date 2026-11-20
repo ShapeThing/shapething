@@ -1,0 +1,52 @@
+diff --git a/dist/development/index-react-server.js b/dist/development/index-react-server.js
+index 8ac95cb..a2f46fa 100644
+--- a/dist/development/index-react-server.js
++++ b/dist/development/index-react-server.js
+@@ -1533,7 +1533,7 @@ function normalizeTo(location, matches, basename, to, fromRouteId, relative) {
+ 		contextualMatches = matches;
+ 		activeRouteMatch = matches[matches.length - 1];
+ 	}
+-	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
++	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
+ 	if (to == null) {
+ 		path.search = location.search;
+ 		path.hash = location.hash;
+diff --git a/dist/development/lib/router/router.js b/dist/development/lib/router/router.js
+index f9f3df2..f00daf5 100644
+--- a/dist/development/lib/router/router.js
++++ b/dist/development/lib/router/router.js
+@@ -1949,7 +1949,7 @@ function normalizeTo(location, matches, basename, to, fromRouteId, relative) {
+ 		contextualMatches = matches;
+ 		activeRouteMatch = matches[matches.length - 1];
+ 	}
+-	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
++	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
+ 	if (to == null) {
+ 		path.search = location.search;
+ 		path.hash = location.hash;
+diff --git a/dist/production/index-react-server.js b/dist/production/index-react-server.js
+index ee34148..17eba89 100644
+--- a/dist/production/index-react-server.js
++++ b/dist/production/index-react-server.js
+@@ -1524,7 +1524,7 @@ function normalizeTo(location, matches, basename, to, fromRouteId, relative) {
+ 		contextualMatches = matches;
+ 		activeRouteMatch = matches[matches.length - 1];
+ 	}
+-	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
++	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
+ 	if (to == null) {
+ 		path.search = location.search;
+ 		path.hash = location.hash;
+diff --git a/dist/production/lib/router/router.js b/dist/production/lib/router/router.js
+index f9f3df2..f00daf5 100644
+--- a/dist/production/lib/router/router.js
++++ b/dist/production/lib/router/router.js
+@@ -1949,7 +1949,7 @@ function normalizeTo(location, matches, basename, to, fromRouteId, relative) {
+ 		contextualMatches = matches;
+ 		activeRouteMatch = matches[matches.length - 1];
+ 	}
+-	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
++	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
+ 	if (to == null) {
+ 		path.search = location.search;
+ 		path.hash = location.hash;

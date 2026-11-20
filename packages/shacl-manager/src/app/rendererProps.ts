@@ -16,8 +16,11 @@ export function useRendererProps({ shapesGraph, nodeShape }: ShapeSource) {
     nodeShapes,
     enableMissingShapesGeneration: true,
     enableInterfaceLanguageSwitcher: false,
+    // Show every translation side by side instead of one at a time behind a content language switcher.
+    languageMode: "individual",
     // The data model's store already holds every import, loaded through the host's loadGraph.
     enableOwlImports: false,
+    enableShPathInLabelTitle: false,
     ...(language && { interfaceLanguage: language, contentLanguage: language }),
   } satisfies Partial<ShaclRendererProps>;
 }

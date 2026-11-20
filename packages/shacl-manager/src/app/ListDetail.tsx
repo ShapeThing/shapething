@@ -1,17 +1,21 @@
 import type { ReactNode } from "react";
-import { Navigate, Outlet, useOutlet } from "react-router";
+import { Navigate, useOutlet } from "react-router";
 import "./listDetail.css";
 
 // The list on the left acts as vertical tabs; the selected item's route renders on the right.
+// `empty` fills the right column while nothing is selected, e.g. when the list has no items.
 export function ListDetail({
   title,
   actions,
+  empty,
   children,
 }: {
   title: string;
   actions?: ReactNode;
+  empty?: ReactNode;
   children: ReactNode;
 }) {
+  const outlet = useOutlet();
   return (
     <div className="st-list-detail">
       <header className="st-list-detail__header">
@@ -22,7 +26,7 @@ export function ListDetail({
         {children}
       </nav>
       <div className="st-list-detail__content">
-        <Outlet />
+        {outlet ?? <div className="st-list-detail__empty">{empty}</div>}
       </div>
     </div>
   );

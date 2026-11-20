@@ -2,9 +2,10 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 PREFIX sh: <http://www.w3.org/ns/shacl#>
 
 # One row per (shape, parent) edge of the shapes sidebar, parent unbound for a root, most
-# sh:property first.
+# properties, queries and rules (as its tabs list them) together first.
 # Inputs: ?dataModel, ?origin, ?section ("hierarchy": shapes with an sh:targetClass, "other": the rest).
-SELECT ?shape ?parent (COUNT(DISTINCT ?property) AS ?propertyCount) WHERE {
+SELECT ?shape ?parent (COUNT(DISTINCT ?property) AS ?propertyCount)
+  (COUNT(DISTINCT ?query) AS ?queryCount) (COUNT(DISTINCT ?rule) AS ?ruleCount) WHERE {
   GRAPH ?graph {
     { ?shape a sh:NodeShape } UNION { ?shape sh:targetClass ?anyTargetClass }
   }
@@ -30,6 +31,8 @@ SELECT ?shape ?parent (COUNT(DISTINCT ?property) AS ?propertyCount) WHERE {
   }
 
   OPTIONAL { ?shape sh:property ?property }
+  OPTIONAL { ?shape sh:sparql|(sh:property/sh:sparql) ?query }
+  OPTIONAL { ?shape sh:rule ?rule }
 }
 GROUP BY ?shape ?parent
-ORDER BY DESC(?propertyCount) ?shape
+ORDER BY DESC(?propertyCount + ?queryCount + ?ruleCount) ?shape

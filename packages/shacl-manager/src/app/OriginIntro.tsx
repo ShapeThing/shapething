@@ -74,7 +74,7 @@ function ManagedText() {
   const { dataModelIRI } = useDataModel();
   return (
     <>
-      <h3>Managed</h3>
+      <h3>What managed means</h3>
       <p>
         Managed is what this data model declares itself, in its own graph{" "}
         <code>{dataModelIRI.value}</code>. This is the part you work on: it can be edited and added
@@ -90,7 +90,7 @@ function ImportedText() {
 
   return (
     <>
-      <h3>Imported</h3>
+      <h3>What imported means</h3>
       <p>
         Imported is what the data model takes from other sources through <code>owl:imports</code>,
         such as published standards and application profiles. It is shown read-only: it changes only

@@ -1,0 +1,10 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# The shapes that point to a node (a property shape, constraint or rule) through ?predicate
+# (sh:property, sh:sparql or sh:rule), and the origin each is declared in.
+# Inputs: ?node, ?predicate, ?dataModel.
+SELECT DISTINCT ?shape ?shapeOrigin WHERE {
+  GRAPH ?graph { ?shape ?predicate ?node }
+  BIND(IF(?graph = ?dataModel, "managed", "imported") AS ?shapeOrigin)
+}
+ORDER BY ?shapeOrigin ?shape

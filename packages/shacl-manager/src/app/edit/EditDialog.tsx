@@ -23,21 +23,25 @@ type EditDialogProps = EditFormProps & {
 };
 
 // The form is only mounted while open: every opening starts from the data model as it is then.
-export function EditDialog({ title, open, onClose, ...form }: EditDialogProps) {
+export function EditDialog({ title, open, onClose, onSubmit, ...form }: EditDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
+  // Hidden as soon as the form is submitted, without waiting for the edited data model to load.
+  const [submitted, setSubmitted] = useState(false);
+  if (!open && submitted) setSubmitted(false);
+  const shown = open && !submitted;
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (open && !dialog?.open) dialog?.showModal();
-    if (!open && dialog?.open) dialog.close();
-  }, [open]);
+    if (shown && !dialog?.open) dialog?.showModal();
+    if (!shown && dialog?.open) dialog.close();
+  }, [shown]);
 
   return (
     <dialog
       ref={dialogRef}
       className="st-modal st-modal--large st-edit-dialog"
       // The renderer's own modals are <dialog>s too, and their close events bubble up to here.
-      onClose={(event) => event.target === dialogRef.current && onClose()}
+      onClose={(event) => event.target === dialogRef.current && shown && onClose()}
     >
       <div className="st-modal__content">
         <header className="st-modal__header">
@@ -46,7 +50,15 @@ export function EditDialog({ title, open, onClose, ...form }: EditDialogProps) {
             ✕
           </button>
         </header>
-        {open && <EditForm {...form} />}
+        {shown && (
+          <EditForm
+            {...form}
+            onSubmit={(next, term) => {
+              setSubmitted(true);
+              onSubmit(next, term);
+            }}
+          />
+        )}
       </div>
     </dialog>
   );

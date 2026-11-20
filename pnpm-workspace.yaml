@@ -25,4 +25,5 @@ packageExtensions:
     dependencies:
       "@comunica/query-sparql": ^5.4.1
 patchedDependencies:
+  react-router@8.5.1: patches/react-router@8.5.1.patch
   shacl-engine@1.0.2: patches/shacl-engine@1.0.2.patch

@@ -131,6 +131,41 @@ const people = defineCollection({
 });
 ```
 
+### Building on the renderer
+
+Tools that show RDF next to the renderer can use its building blocks, so they behave the same way.
+The SHACL manager (`@shapething/shacl-manager`) is built on these.
+
+**Labels.** `termLabel({ term, shapesGraph, languages })` resolves a node's label with the same
+rules a form uses: `shui:labelPreference`, `shui:languagePreference` and the given languages. It
+returns `undefined` when nothing is found. `bestByLanguage(values, configuredLanguages(store,
+languages))` picks among other literals, such as `sh:message`, in the same way. `prefixedIri(term,
+prefixes)` gives the `prefix:local` form of an IRI, using the document's own prefixes first.
+
+**Queries.** `select(query, store, bindings?)` runs a SPARQL SELECT on a store, with the
+renderer's own Comunica engine, and returns the rows as plain objects of terms:
+
+```ts
+import { select } from "@shapething/shacl-renderer";
+
+const query = `
+  PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+  SELECT ?label WHERE { ?node rdfs:label ?label }
+`;
+const rows = await select(query, store, { node });
+```
+
+`bindings` pre-binds variables, blank nodes of the store included. Patterns outside `GRAPH {}` see
+all graphs. A query string branded with its row type, such as a `TypedQuery<Row>` from
+`@shapething/typed-sparql`, gives typed rows.
+
+**Vocabularies.** `rdf`, `rdfs`, `owl`, `sh`, `shui` and `xsd` build IRIs in their namespaces:
+`sh("NodeShape")`, `owl("imports")`.
+
+**Imports you load yourself.** The renderer follows `owl:imports` in its sources and merges what
+it finds. An application that has already loaded the imports into the stores it passes can turn
+this off with `enableOwlImports={false}`, so nothing is fetched twice.
+
 ## Funding
 
 This project is funded through [NGI0 Commons Fund](https://nlnet.nl/commonsfund), a fund

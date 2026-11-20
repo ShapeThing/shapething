@@ -5,6 +5,10 @@ import type { RouteObject } from "react-router";
 export const EDIT = "edit";
 export const NEW = "new";
 
-export const editRoute: RouteObject = { path: EDIT, handle: { hidden: true } };
+export const editRoute: RouteObject = { path: EDIT, element: null, handle: { hidden: true } };
 
-export const newRoute = (path: string = NEW): RouteObject => ({ path, handle: { hidden: true } });
+export const newRoute = (path: string = NEW): RouteObject => ({
+  path,
+  element: null,
+  handle: { hidden: true },
+});

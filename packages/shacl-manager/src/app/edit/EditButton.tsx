@@ -9,9 +9,16 @@ import { EditDialog } from "./EditDialog.tsx";
 import { EDIT } from "./routes.ts";
 import { safeDecode, useRouteDialog } from "./useRouteDialog.ts";
 
-// Must be rendered by the page's own route element, so "edit" resolves under it.
-export function EditButton({ term, ...shape }: ShapeSource & { term: Resource }) {
-  const dialog = useRouteDialog(EDIT);
+type EditButtonProps = ShapeSource & {
+  term: Resource;
+  // The node's page, relative to the calling component's route: its edit route is below it.
+  at?: string;
+  small?: boolean;
+};
+
+export function EditButton({ term, at = ".", small, ...shape }: EditButtonProps) {
+  // Opened from a list, the page before may be another item's: closing goes to the edited one.
+  const dialog = useRouteDialog(`${at}/${EDIT}`, at, true);
   const dataModel = useDataModel();
   const commit = useCommit();
   const termLabel = useTermLabel();
@@ -30,7 +37,7 @@ export function EditButton({ term, ...shape }: ShapeSource & { term: Resource })
 
   return (
     <>
-      <Link className="st-button" {...dialog.link}>
+      <Link className={small ? "st-button st-button-small" : "st-button"} {...dialog.link}>
         Edit
       </Link>
       <EditDialog

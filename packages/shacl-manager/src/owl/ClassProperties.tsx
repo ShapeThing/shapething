@@ -17,6 +17,13 @@ export function ClassProperties() {
   return (
     <ListDetail
       title="Properties"
+      empty={
+        term && (
+          <Suspense>
+            <EmptyMessage term={term} />
+          </Suspense>
+        )
+      }
       actions={
         // An rdf:Property to start with; the form's type field can make it an OWL property.
         term &&
@@ -43,8 +50,14 @@ export function ClassProperties() {
 
 function PropertyTree({ term }: { term: Resource }) {
   const nodes = useClassPropertyTree(term);
-  if (nodes.length === 0) return <p>No properties with this class as rdfs:domain.</p>;
+  if (nodes.length === 0) return null;
   return <Tree nodes={nodes} linkTo={(segment) => `./${segment}`} />;
+}
+
+// Shown in the detail column: an empty tree leaves nothing to select.
+function EmptyMessage({ term }: { term: Resource }) {
+  const nodes = useClassPropertyTree(term);
+  return nodes.length === 0 ? <p>No properties with this class as rdfs:domain.</p> : null;
 }
 
 export function ClassPropertiesCount() {

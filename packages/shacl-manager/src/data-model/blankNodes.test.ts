@@ -57,3 +57,22 @@ test("named nodes still go by prefixed name", () => {
   expect(termToSegment(iri("Person"), context)).toBe("ex:Person");
   expect(segmentToTerm("ex:Person", context)?.value).toBe("http://example.org/Person");
 });
+
+test("nodes with identical content still get their own id", () => {
+  const twins = (labels: string) => {
+    const store = RdfStore.createDefault();
+    for (const name of ["one", "two"]) {
+      const node = factory.blankNode(`${labels}${name}`);
+      store.addQuad(factory.quad(iri(name), iri("domain"), node, graph));
+      store.addQuad(factory.quad(node, rdf("type"), owl("Class"), graph));
+    }
+    return store;
+  };
+  const first = twins("a");
+  const second = twins("x");
+  const one = blankNodeId(first, factory.blankNode("aone"));
+  const two = blankNodeId(first, factory.blankNode("atwo"));
+  expect(one).not.toBe(two);
+  expect(findBlankNode(second, one)?.value).toBe("xone");
+  expect(findBlankNode(second, two)?.value).toBe("xtwo");
+});

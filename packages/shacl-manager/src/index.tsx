@@ -1,16 +1,40 @@
-import type { NamedNode, Quad } from "@rdfjs/types";
+import type { NamedNode } from "@rdfjs/types";
 import type { BCP47 } from "@shapething/shacl-renderer";
-import { startTransition, Suspense, use, useState, type ReactNode } from "react";
+import {
+  Suspense,
+  use,
+  useImperativeHandle,
+  useMemo,
+  useState,
+  useTransition,
+  type ReactNode,
+  type Ref,
+} from "react";
 import { RouterProvider } from "react-router";
 import "@shapething/shacl-renderer/style.css";
 import { createShaclManagerRouter } from "./app/router.tsx";
 import { LanguagesContext } from "./app/termLabel.ts";
-import { CommitContext, DataModelContext } from "./data-model/dataModelContext.ts";
-import { ownQuads } from "./data-model/editGraphs.ts";
+import { CommitContext, DataModelContext, SaveContext } from "./data-model/dataModelContext.ts";
+import {
+  changesSince,
+  commitEdit,
+  ownGraph,
+  withChanges,
+  type Changes,
+} from "./data-model/editGraphs.ts";
 import { loadDataModel, type DataModel, type LoadGraph } from "./data-model/loadDataModel.ts";
 
 export type { LoadGraph, DataModel } from "./data-model/loadDataModel.ts";
+export type { Changes } from "./data-model/editGraphs.ts";
 export { clearImportCache } from "./data-model/importCache.ts";
+
+// For a host that asks for the changes itself, e.g. from its own save button.
+export type ShaclManagerHandle = {
+  // The additions and deletions in the data model's own graph since it was loaded or last saved.
+  getChanges(): Changes;
+  // Tells the manager the changes were saved: they no longer count as pending.
+  markSaved(): void;
+};
 
 export type ShaclManagerProps = {
   dataModelIRI: NamedNode;
@@ -18,8 +42,10 @@ export type ShaclManagerProps = {
   fallback?: ReactNode;
   // Most preferred first; the browser's by default.
   languages?: BCP47[];
-  // Called after every edit with every quad of the data model's own graph, for the host to save.
-  onDataModelChange?: (quads: Quad[]) => void;
+  // Shows a save button. Return a promise to have the changes marked saved when it resolves;
+  // otherwise call markSaved() once they are.
+  onSubmit?: (changes: Changes) => void | Promise<unknown>;
+  ref?: Ref<ShaclManagerHandle>;
 };
 
 export function ShaclManager({
@@ -27,7 +53,8 @@ export function ShaclManager({
   loadGraph,
   fallback = "Loading…",
   languages = navigatorLanguages(),
-  onDataModelChange,
+  onSubmit,
+  ref,
 }: ShaclManagerProps) {
   // Started outside the Suspense boundary: a component that suspends before it ever mounted loses
   // its state, so a promise created inside it would be recreated on every retry.
@@ -46,7 +73,8 @@ export function ShaclManager({
         <DataModelView
           key={load.dataModelIRI.value}
           dataModelPromise={load.promise}
-          onDataModelChange={onDataModelChange}
+          onSubmit={onSubmit}
+          handle={ref}
         />
       </LanguagesContext>
     </Suspense>
@@ -58,25 +86,56 @@ const navigatorLanguages = (): BCP47[] =>
 
 type DataModelViewProps = {
   dataModelPromise: Promise<DataModel>;
-  onDataModelChange?: (quads: Quad[]) => void;
+  onSubmit?: ShaclManagerProps["onSubmit"];
+  handle?: Ref<ShaclManagerHandle>;
 };
 
-function DataModelView({ dataModelPromise, onDataModelChange }: DataModelViewProps) {
+function DataModelView({ dataModelPromise, onSubmit, handle }: DataModelViewProps) {
   const loaded = use(dataModelPromise);
-  // In a transition, so the pages stay on screen while the queries over the edited store run.
   const [dataModel, setDataModel] = useState(loaded);
-  const commit = (next: DataModel) => {
-    startTransition(() => setDataModel(next));
-    onDataModelChange?.(ownQuads(next));
+  const [saved, setSaved] = useState(() => ownGraph(loaded));
+  const [saving, setSaving] = useState(false);
+  const changes = useMemo(() => changesSince(saved, dataModel), [saved, dataModel]);
+
+  // In a transition, so the pages stay on screen while the queries over the edited store run.
+  const [updating, startUpdate] = useTransition();
+  const commit = (next: DataModel) => startUpdate(() => setDataModel(next));
+
+  useImperativeHandle(
+    handle,
+    () => ({ getChanges: () => changes, markSaved: () => setSaved(ownGraph(dataModel)) }),
+    [changes, dataModel],
+  );
+
+  const save = async () => {
+    const result = onSubmit?.(changes);
+    if (!(result instanceof Promise)) return;
+    setSaving(true);
+    try {
+      await result;
+      // Only what was handed out counts as saved, not edits made while saving.
+      setSaved((saved) => withChanges(saved, changes));
+    } catch (error) {
+      // The changes stay pending, to be saved again.
+      console.warn("[shacl-manager] Saving the changes failed:", error);
+    } finally {
+      setSaving(false);
+    }
   };
 
+  // Back to the data model as it was loaded or last saved.
+  const discard = () => commit(commitEdit(dataModel, saved));
+
   const [router] = useState(createShaclManagerRouter);
+  const pending = changes.additions.length + changes.deletions.length;
 
   return (
     <div className="st-manager-root">
       <DataModelContext value={dataModel}>
         <CommitContext value={commit}>
-          <RouterProvider router={router} />
+          <SaveContext value={{ pending, saving, updating, save: onSubmit && save, discard }}>
+            <RouterProvider router={router} />
+          </SaveContext>
         </CommitContext>
       </DataModelContext>
     </div>

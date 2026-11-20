@@ -1,11 +1,17 @@
 import type { Resource } from "./rdf.ts";
 
 // One (node, parent) edge of a hierarchy, parent unbound for a root.
-export type TreeRow = { parent?: Resource; propertyCount?: { value: string } };
+export type TreeRow = {
+  parent?: Resource;
+  propertyCount?: { value: string };
+  queryCount?: { value: string };
+  ruleCount?: { value: string };
+};
 
 export type TreeNode = {
   term: Resource;
-  propertyCount?: number;
+  // Its properties, queries and rules together, as far as the rows count them.
+  count?: number;
   children: TreeNode[];
 };
 
@@ -18,16 +24,20 @@ export function buildTree<Row extends TreeRow>(
   rows: Row[],
   termOf: (row: Row) => Resource,
 ): TreeNode[] {
-  const propertyCounts = new Map<string, number | undefined>();
+  const counts = new Map<string, number | undefined>();
   const terms = new Map<string, Resource>();
   const children = new Map<string, string[]>();
   const hasParent = new Set<string>();
 
   for (const row of rows) {
     const term = termOf(row);
-    const { parent, propertyCount } = row;
+    const { parent } = row;
+    const parts = [row.propertyCount, row.queryCount, row.ruleCount].filter((part) => part);
     terms.set(term.value, term);
-    propertyCounts.set(term.value, propertyCount && Number(propertyCount.value));
+    counts.set(
+      term.value,
+      parts.length ? parts.reduce((sum, part) => sum + Number(part!.value), 0) : undefined,
+    );
     if (!parent) continue;
     hasParent.add(term.value);
     const siblings = children.get(parent.value) ?? [];
@@ -41,7 +51,7 @@ export function buildTree<Row extends TreeRow>(
     const path = new Set(ancestors).add(id);
     return {
       term: terms.get(id)!,
-      propertyCount: propertyCounts.get(id),
+      count: counts.get(id),
       children: (children.get(id) ?? [])
         .filter((child) => !path.has(child))
         .map((child) => build(child, path)),

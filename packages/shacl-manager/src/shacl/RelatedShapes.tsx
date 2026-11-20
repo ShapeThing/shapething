@@ -1,13 +1,13 @@
 import { select } from "@shapething/shacl-renderer";
-import { use } from "react";
 import { NavLink } from "react-router";
 import { subjectPath, type Origin } from "../app/paths.ts";
 import { termTitle, useTermLabel } from "../app/termLabel.ts";
 import { useDataModel } from "../data-model/dataModelContext.ts";
+import { deactivatedClass } from "../data-model/editGraphs.ts";
 import type { DataModel } from "../data-model/loadDataModel.ts";
 import { termKey, type Resource } from "../data-model/rdf.ts";
 import { termToSegment } from "../data-model/segments.ts";
-import { cached } from "../data-model/storeCache.ts";
+import { cached, useCached } from "../data-model/storeCache.ts";
 import { subjectBindings } from "./listTabs.ts";
 import type { Subject } from "./useSubject.ts";
 import relatedShapes from "./queries/relatedShapes.rq";
@@ -37,7 +37,7 @@ function loadRelatedShapes(dataModel: DataModel, subject: Subject, origin: Origi
 export function RelatedShapes({ subject, origin }: { subject: Subject; origin: Origin }) {
   const dataModel = useDataModel();
   const termLabel = useTermLabel();
-  const related = use(loadRelatedShapes(dataModel, subject, origin));
+  const related = useCached(loadRelatedShapes(dataModel, subject, origin));
   if (related.length === 0) return <p>No related shapes.</p>;
 
   return (
@@ -47,6 +47,7 @@ export function RelatedShapes({ subject, origin }: { subject: Subject; origin: O
           <NavLink
             to={subjectPath(origin, "shape", termToSegment(shape, dataModel))}
             title={termTitle(shape, dataModel)}
+            className={deactivatedClass(dataModel, shape)}
           >
             {termLabel(shape)}
           </NavLink>

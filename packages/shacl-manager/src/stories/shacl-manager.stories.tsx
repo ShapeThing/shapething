@@ -1,6 +1,7 @@
 import type { StoryObj } from "@storybook/react-vite";
 import type { NamedNode, Quad } from "@rdfjs/types";
 import { DataFactory } from "rdf-data-factory";
+import { fn } from "storybook/test";
 import { dereferenceUrl } from "@shapething/shacl-renderer";
 import { ShaclManager, type LoadGraph } from "../index.tsx";
 import { CORS_PROXY_PATH } from "../../.storybook/corsProxy.ts";
@@ -59,6 +60,8 @@ type Story = StoryObj<typeof ShaclManager>;
 export default {
   title: "ShaclManager",
   component: ShaclManager,
+  // The manager is a whole app screen: no padding around it.
+  parameters: { layout: "fullscreen" },
 };
 
 export const Default: Story = {
@@ -66,6 +69,8 @@ export const Default: Story = {
   args: {
     dataModelIRI: factory.namedNode("https://data.norg.nl/def/begrippenkader#"),
     loadGraph,
+    // Resolving marks the changes saved.
+    onSubmit: fn(async () => {}),
   },
 };
 

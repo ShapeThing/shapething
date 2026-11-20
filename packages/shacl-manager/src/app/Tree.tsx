@@ -1,31 +1,40 @@
 import { NavLink } from "react-router";
 import { useDataModel } from "../data-model/dataModelContext.ts";
+import { deactivatedClass } from "../data-model/editGraphs.ts";
 import { termKey } from "../data-model/rdf.ts";
 import { termToSegment } from "../data-model/segments.ts";
 import type { TreeNode } from "../data-model/tree.ts";
 import { termTitle, useTermLabel } from "./termLabel.ts";
 
-type LinkTo = (segment: string) => string;
+type TreeProps = {
+  nodes: TreeNode[];
+  linkTo: (segment: string) => string;
+};
 
-export function Tree({ nodes, linkTo }: { nodes: TreeNode[]; linkTo: LinkTo }) {
+export function Tree({ nodes, ...props }: TreeProps) {
   return (
     <ul className="st-tree">
       {nodes.map((node, index) => (
-        <TreeItem key={`${termKey(node.term)} ${index}`} node={node} linkTo={linkTo} />
+        <TreeItem key={`${termKey(node.term)} ${index}`} node={node} {...props} />
       ))}
     </ul>
   );
 }
 
-function TreeItem({ node, linkTo }: { node: TreeNode; linkTo: LinkTo }) {
+function TreeItem({ node, linkTo }: Omit<TreeProps, "nodes"> & { node: TreeNode }) {
   const dataModel = useDataModel();
   const termLabel = useTermLabel();
-  const { term, propertyCount } = node;
+  const { term, count } = node;
 
+  const page = linkTo(termToSegment(term, dataModel));
   const entry = (
-    <NavLink to={linkTo(termToSegment(term, dataModel))} title={termTitle(term, dataModel)}>
+    <NavLink
+      to={page}
+      title={termTitle(term, dataModel)}
+      className={deactivatedClass(dataModel, term)}
+    >
       {termLabel(term)}
-      {propertyCount !== undefined && <span className="st-tree__count">{propertyCount}</span>}
+      {count !== undefined && <span className="st-tree__count">{count}</span>}
     </NavLink>
   );
 

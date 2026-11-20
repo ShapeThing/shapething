@@ -16,5 +16,8 @@ profile, which itself builds on the EU DCAT-AP baseline.
 - `imports/dcat-ap-eu-SHACL.ttl` - **read-only**. A vendored copy of the real DCAT-AP 3.0.0
   SHACL shapes (SEMICeu) that DCAT-AP-NL builds on.
 
+`model.ttl` also `owl:imports` the W3C DCAT 3 ontology (`http://www.w3.org/ns/dcat`), which
+isn't vendored: it's dereferenced live and in turn imports DCTERMS, SKOS and PROV-O.
+
 Neither file under `imports/` is edited by shacl-manager - they're loaded because `model.ttl`
 imports them, and changes belong upstream.

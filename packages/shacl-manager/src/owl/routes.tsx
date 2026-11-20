@@ -7,28 +7,41 @@ import { ClassProperties, ClassPropertiesCount } from "./ClassProperties.tsx";
 import { owlMeta } from "./metaShapes.ts";
 
 const classRoute = (): RouteObject =>
-  route(":class", "Class", [
-    { index: true, element: <Navigate to="meta" replace /> },
-    {
-      path: "meta",
-      element: <MetaPage param="class" shapes={owlMeta.class} />,
-      handle: { label: "Meta" },
-      children: [editRoute],
-    },
-    {
-      path: "properties",
-      element: <ClassProperties />,
-      handle: { label: "Properties", Count: ClassPropertiesCount },
-      children: [
-        {
-          path: ":property",
-          element: <MetaPage param="property" shapes={owlMeta.property} />,
-          children: [editRoute],
-        },
-        newRoute(),
-      ],
-    },
-  ]);
+  route(
+    ":class",
+    "Class",
+    [
+      { index: true, element: <Navigate to="meta" replace /> },
+      {
+        path: "meta",
+        element: <MetaPage param="class" shapes={owlMeta.class} />,
+        handle: { label: "Meta" },
+        children: [editRoute],
+      },
+      {
+        path: "properties",
+        element: <ClassProperties />,
+        handle: { label: "Properties", Count: ClassPropertiesCount },
+        children: [
+          {
+            path: ":property",
+            element: (
+              <MetaPage
+                param="property"
+                shapes={owlMeta.property}
+                heading
+                actions={{ delete: true }}
+              />
+            ),
+            children: [editRoute],
+          },
+          newRoute(),
+        ],
+      },
+    ],
+    // The class's Edit button is in the section's heading; its dialog's route is below the Meta tab.
+    { actions: { edit: { shapes: owlMeta.class.edit, at: "meta" }, delete: true } },
+  );
 
 export const owlRoutes: RouteObject = {
   path: "knowledge",

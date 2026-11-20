@@ -6,6 +6,8 @@ interface QueryResult {
   shape: NamedNode | BlankNode
   parent?: NamedNode | BlankNode
   propertyCount: LiteralWithDatatype<'xsd:integer'>
+  queryCount: LiteralWithDatatype<'xsd:integer'>
+  ruleCount: LiteralWithDatatype<'xsd:integer'>
 }
 
 declare const _default: TypedQuery<Prettify<QueryResult>>

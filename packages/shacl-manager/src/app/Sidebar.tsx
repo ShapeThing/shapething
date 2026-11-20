@@ -1,7 +1,9 @@
 import { owl, sh } from "@shapething/shacl-renderer";
-import { Suspense, use } from "react";
+import { Suspense } from "react";
 import { NavLink } from "react-router";
 import { useDataModel } from "../data-model/dataModelContext.ts";
+import type { DataModel } from "../data-model/loadDataModel.ts";
+import { cached, useCached } from "../data-model/storeCache.ts";
 import { countNodes } from "../data-model/tree.ts";
 import { owlMeta } from "../owl/metaShapes.ts";
 import { classSections, useClassSections } from "../owl/useClassTree.ts";
@@ -31,7 +33,7 @@ export function Sidebar() {
 
   return (
     <aside className="st-manager__sidebar">
-      <nav className="st-manager__tabs">
+      <nav className="st-manager__tabs st-manager__tabs--primary">
         {perspectives.map((tab) => (
           <NavLink key={tab.path} to={originPath(tab.path, origin)}>
             {tab.label}
@@ -73,13 +75,17 @@ function TabCount({ perspective, origins }: { perspective: Perspective; origins:
 }
 
 // The same (cached) queries that fill the sidebar, so a count always matches what is listed.
-function Count({ perspective, origins }: { perspective: Perspective; origins: Origin[] }) {
-  const dataModel = useDataModel();
-  const nodes = origins.flatMap((origin) => {
-    const { hierarchy, other } = use(sectionsOf[perspective](dataModel, origin));
-    return [...hierarchy, ...other];
+const countOf = (dataModel: DataModel, perspective: Perspective, origins: Origin[]) =>
+  cached(dataModel.store, `count ${perspective} ${origins.join(" ")}`, async () => {
+    const sections = await Promise.all(
+      origins.map((origin) => sectionsOf[perspective](dataModel, origin)),
+    );
+    return countNodes(sections.flatMap(({ hierarchy, other }) => [...hierarchy, ...other]));
   });
-  return <span className="st-manager__tab-count">{countNodes(nodes)}</span>;
+
+function Count({ perspective, origins }: { perspective: Perspective; origins: Origin[] }) {
+  const count = useCached(countOf(useDataModel(), perspective, origins));
+  return <span className="st-manager__tab-count">{count}</span>;
 }
 
 function ShapesSidebar({ origin }: { origin: Origin }) {
@@ -90,30 +96,21 @@ function ShapesSidebar({ origin }: { origin: Origin }) {
 
   return (
     <>
-      {origin === "managed" && (
-        <div className="st-manager__sidebar-actions">
-          <CreateButton
-            {...shaclMeta.shape.edit}
-            label="shape"
-            kind="shape"
-            type={sh("NodeShape")}
-            path="/shapes/managed/new/shape"
-            back="/shapes/managed"
-            to={shapeLink}
-          />
-          <CreateButton
-            {...shaclMeta.shape.edit}
-            label="property group"
-            kind="group"
-            type={sh("PropertyGroup")}
-            path="/shapes/managed/new/group"
-            back="/shapes/managed"
-            to={groupLink}
-          />
-        </div>
-      )}
       <section>
-        <h3>Hierarchy</h3>
+        <header className="st-manager__section-header">
+          <h3>Hierarchy</h3>
+          {origin === "managed" && (
+            <CreateButton
+              {...shaclMeta.shape.edit}
+              label="shape"
+              kind="shape"
+              type={sh("NodeShape")}
+              path="/shapes/managed/new/shape"
+              back="/shapes/managed"
+              to={shapeLink}
+            />
+          )}
+        </header>
         <Tree nodes={hierarchy} linkTo={shapeLink} />
       </section>
       <section>
@@ -121,7 +118,20 @@ function ShapesSidebar({ origin }: { origin: Origin }) {
         <Tree nodes={other} linkTo={shapeLink} />
       </section>
       <section>
-        <h3>Property groups</h3>
+        <header className="st-manager__section-header">
+          <h3>Groups</h3>
+          {origin === "managed" && (
+            <CreateButton
+              {...shaclMeta.shape.edit}
+              label="group"
+              kind="group"
+              type={sh("PropertyGroup")}
+              path="/shapes/managed/new/group"
+              back="/shapes/managed"
+              to={groupLink}
+            />
+          )}
+        </header>
         <Tree nodes={groups} linkTo={groupLink} />
       </section>
     </>
@@ -134,21 +144,21 @@ function ClassesSidebar({ origin }: { origin: Origin }) {
 
   return (
     <>
-      {origin === "managed" && (
-        <div className="st-manager__sidebar-actions">
-          <CreateButton
-            {...owlMeta.class.edit}
-            label="class"
-            kind="class"
-            type={owl("Class")}
-            path="/knowledge/managed/new"
-            back="/knowledge/managed"
-            to={linkTo}
-          />
-        </div>
-      )}
       <section>
-        <h3>Hierarchy</h3>
+        <header className="st-manager__section-header">
+          <h3>Hierarchy</h3>
+          {origin === "managed" && (
+            <CreateButton
+              {...owlMeta.class.edit}
+              label="class"
+              kind="class"
+              type={owl("Class")}
+              path="/knowledge/managed/new"
+              back="/knowledge/managed"
+              to={linkTo}
+            />
+          )}
+        </header>
         <Tree nodes={hierarchy} linkTo={linkTo} />
       </section>
       <section>

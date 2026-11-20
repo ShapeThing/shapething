@@ -17,3 +17,13 @@ export function useCommit(): (next: DataModel) => void {
   if (!commit) throw new Error("useCommit() needs a <CommitContext> provider");
   return commit;
 }
+
+// The pending changes, how to submit them (only when the host takes them) and how to discard them. `updating` is true
+// while the pages catch up with an edit.
+export const SaveContext = createContext<{
+  pending: number;
+  save?: () => void;
+  discard?: () => void;
+  saving: boolean;
+  updating: boolean;
+}>({ pending: 0, saving: false, updating: false });

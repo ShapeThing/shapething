@@ -1,8 +1,11 @@
 ### The data model - the one graph shacl-manager is allowed to write to.
 ###
 ### Its subject (`:`) is both an owl:Ontology and an sh:ShapesGraph - this is what makes it
-### *the* data model. owl:imports lists two additional graphs (both under imports/, both
+### *the* data model. owl:imports lists two additional shapes graphs (both under imports/, both
 ### read-only): the Dutch DCAT-AP-NL profile, which itself builds on the EU DCAT-AP baseline.
+### It also imports the W3C DCAT 3 ontology itself (dereferenced live, not vendored), which in
+### turn imports DCTERMS, SKOS and PROV-O - so the classes and properties the shapes talk about
+### are known as OWL/RDFS terms too.
 
 @prefix : <https://data.norg.nl/def/opendata#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
@@ -23,7 +26,8 @@
   owl:versionInfo "0.1.0" ;
   owl:imports
     <https://semiceu.github.io/DCAT-AP/releases/3.0.0/html/shacl/shapes.ttl> ,
-    dcatapnl-sh: ;
+    dcatapnl-sh: ,
+    <http://www.w3.org/ns/dcat> ;
   sh:declare
     [ sh:prefix "dcat" ; sh:namespace "http://www.w3.org/ns/dcat#"^^xsd:anyURI ] ,
     [ sh:prefix "dct" ; sh:namespace "http://purl.org/dc/terms/"^^xsd:anyURI ] .
