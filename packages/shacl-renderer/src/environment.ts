@@ -270,6 +270,9 @@ export type Environment = {
   // is skipped, not thrown. Off by default: this fires one HTTP request per otherwise-unnamed
   // property, which isn't free and depends on the ontology's own IRI actually being dereferenceable.
   enableMissingPropertyNameDereferencing?: boolean;
+  // When false, owl:imports in the sources are left as they are instead of being dereferenced and
+  // merged in. For an embedder that has already loaded the imports into the stores it passes.
+  enableOwlImports?: boolean;
   // Facet mode only. When true, preprocess/shapes.ts's mergeFacetTextSearchProperties folds every
   // sh:property of a facetable root shape (resolution/targets.ts's facetableRootShapes) that
   // declares sh:datatype xsd:string/rdf:langString and has no st:facet of its own into one combined
@@ -391,6 +394,7 @@ export const defaultEnvironment: Environment = {
   enableFacetOptionCounts: false,
   enableMissingShapesGeneration: false,
   enableMissingPropertyNameDereferencing: false,
+  enableOwlImports: true,
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
   enableImageResizing: true,

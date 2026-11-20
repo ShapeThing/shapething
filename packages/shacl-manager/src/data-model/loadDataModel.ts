@@ -1,5 +1,5 @@
 import type { NamedNode, Quad } from "@rdfjs/types";
-import { DataFactory } from "rdf-data-factory";
+import { owl } from "@shapething/shacl-renderer";
 import { RdfStore } from "rdf-stores";
 import {
   readCachedImport,
@@ -8,34 +8,26 @@ import {
   type CachedImport,
 } from "./importCache.ts";
 
-// How the manager gets its RDF is up to the host: a file on disk, a triple store, a fetch through
-// a proxy... The manager only asks for a graph by IRI and receives its quads, plus the prefixes
-// the source declared (Turtle's @prefix and the like) when the format has them.
+// The host loads a graph by IRI: its quads, tagged with that IRI as their graph, and the prefixes
+// the source declared.
 export type LoadedGraph = { quads: Quad[]; prefixes: Record<string, string> };
 export type LoadGraph = (graph: NamedNode) => Promise<LoadedGraph>;
 
 export type DataModel = {
   dataModelIRI: NamedNode;
-  // The data model's own graph plus everything it (transitively) owl:imports.
+  // The data model's own graph plus everything it transitively owl:imports.
   store: RdfStore;
-  // Every prefix declared by the data model and its imports, alias -> namespace IRI. On a clash
-  // the data model's own declaration wins; between imports, the first one loaded.
+  // On a clash the data model's own declaration wins; between imports, the first one loaded.
   prefixes: Record<string, string>;
   importedGraphIRIs: NamedNode[];
-  // The subset of importedGraphIRIs that came from the browser cache rather than loadGraph.
+  // The imports read from the browser cache rather than loadGraph.
   cachedGraphIRIs: NamedNode[];
-  // Imports that could not be loaded (now, or remembered from an earlier load); not in the store.
+  // Imports that could not be loaded, now or remembered from an earlier load.
   unresolvableGraphIRIs: NamedNode[];
 };
 
-const factory = new DataFactory();
-const owlImports = factory.namedNode("http://www.w3.org/2002/07/owl#imports");
-
-// Cache first, loadGraph second. A failed cache read (private window, blocked storage) just falls
-// through to loadGraph, and a failed cache write only costs speed next time - neither may break
-// the load itself. A loadGraph failure is remembered too, so a dead import (moved document,
-// expired domain) isn't fetched again on every load; it's someone else's problem, not this data
-// model's, so it never fails the load.
+// Cache first, loadGraph second. Cache failures (private window, blocked storage) never break the
+// load, and neither does a dead import.
 async function loadImport(
   graph: NamedNode,
   loadGraph: LoadGraph,
@@ -60,10 +52,7 @@ async function loadImport(
   }
 }
 
-// Loads the data model's own graph (always fresh - it's what gets edited), then follows every
-// owl:imports statement in the store until a pass turns up no new graph IRIs: an imported graph
-// can declare imports of its own (see examples/nl-sbb-begrippenkader's skosapnl.ttl). `visited`
-// makes an import cycle terminate.
+// The data model's own graph is always loaded fresh. Imports are followed transitively.
 export async function loadDataModel(
   dataModelIRI: NamedNode,
   loadGraph: LoadGraph,
@@ -80,7 +69,7 @@ export async function loadDataModel(
 
   while (true) {
     const pending = new Map<string, NamedNode>();
-    for (const { object } of store.getQuads(null, owlImports)) {
+    for (const { object } of store.getQuads(null, owl("imports"))) {
       if (object.termType === "NamedNode" && !visited.has(object.value)) {
         pending.set(object.value, object);
       }

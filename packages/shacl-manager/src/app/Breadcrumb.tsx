@@ -1,98 +1,92 @@
-import type { BlankNode, NamedNode } from "@rdfjs/types";
-import { Suspense } from "react";
+import { Suspense, use } from "react";
 import { Link, useMatch } from "react-router";
 import { useDataModel } from "../data-model/dataModelContext.ts";
+import type { DataModel } from "../data-model/loadDataModel.ts";
+import type { Resource } from "../data-model/rdf.ts";
 import { segmentToTerm, termToSegment } from "../data-model/segments.ts";
-import { findTrail, type TreeNode } from "../data-model/tree.ts";
-import { useClassSections } from "../owl/useClassTree.ts";
-import { useShapeSections, type Origin } from "../shacl/useShapeTree.ts";
-import { origins, perspectives } from "./Sidebar.tsx";
-import { termLabel, termTitle } from "./termLabel.ts";
+import { findTrail, type Sections, type TreeNode } from "../data-model/tree.ts";
+import { classSections } from "../owl/useClassTree.ts";
+import { findListTab, type ListTab } from "../shacl/listTabs.ts";
+import { useItemLabel } from "../shacl/subjectPages.tsx";
+import { shapeSections } from "../shacl/useShapeTree.ts";
+import { NEW } from "./edit/routes.ts";
+import {
+  classPath,
+  originPath,
+  origins,
+  perspectives,
+  subjectPath,
+  type Origin,
+  type SubjectKind,
+} from "./paths.ts";
+import { termTitle, useTermLabel } from "./termLabel.ts";
 
-type Sections = { hierarchy: TreeNode[]; other: TreeNode[] };
 type Selection = {
-  kind: "shape" | "shapeClass" | "group" | "class";
   segment: string;
-  linkTo: (segment: string) => string;
-  // Absent when the selection has no place in a sidebar tree, so its breadcrumb stays flat.
-  useSections?: (origin: Origin) => Sections;
   origin: Origin;
+  linkTo: (segment: string) => string;
+  // The sidebar tree it sits in, for its trail of ancestors; without one the crumb stays flat.
+  sections?: (dataModel: DataModel, origin: Origin) => Promise<Sections>;
+  // The open tab, and the item open in it.
+  tab?: { path: string; label: string; listTab?: ListTab };
+  item?: string;
 };
 
-// The sidebar selection, read from the URL like the sidebar itself does.
-function useSelection(): Selection | undefined {
-  const shape = useMatch("/shapes/:origin/shape/:segment/*");
-  const shapeClass = useMatch("/shapes/:origin/class/:segment/*");
-  const group = useMatch("/shapes/:origin/group/:segment/*");
-  const knowledge = useMatch("/knowledge/:origin/:segment/*");
+const notNew = (segment: string | undefined) => (segment === NEW ? undefined : segment);
 
-  if (shape) {
-    const origin = shape.params.origin as Origin;
+const kinds: readonly string[] = ["shape", "class", "group"] satisfies SubjectKind[];
+
+function useSelection(): Selection | undefined {
+  const shapes = useMatch("/shapes/:origin/:kind/:segment/:tab?/:item?/*")?.params;
+  const knowledge = useMatch("/knowledge/:origin/:segment/:tab?/:item?/*")?.params;
+
+  if (shapes?.kind && kinds.includes(shapes.kind) && shapes.segment) {
+    const origin = shapes.origin as Origin;
+    const kind = shapes.kind as SubjectKind;
+    const listTab = findListTab(shapes.tab);
     return {
-      kind: "shape",
-      segment: shape.params.segment!,
+      segment: shapes.segment,
       origin,
-      useSections: useShapeSections,
-      linkTo: (segment) => `/shapes/${origin}/shape/${segment}`,
+      linkTo: (segment) => subjectPath(origin, kind, segment),
+      sections: kind === "shape" ? shapeSections : undefined,
+      tab: listTab && { path: shapes.tab!, label: listTab.label, listTab },
+      item: notNew(shapes.item),
     };
   }
-  if (shapeClass) {
-    const origin = shapeClass.params.origin as Origin;
+  const segment = notNew(knowledge?.segment);
+  if (knowledge && segment) {
+    const origin = knowledge.origin as Origin;
     return {
-      kind: "shapeClass",
-      segment: shapeClass.params.segment!,
+      segment,
       origin,
-      linkTo: (segment) => `/shapes/${origin}/class/${segment}`,
-    };
-  }
-  if (group) {
-    const origin = group.params.origin as Origin;
-    return {
-      kind: "group",
-      segment: group.params.segment!,
-      origin,
-      linkTo: (segment) => `/shapes/${origin}/group/${segment}`,
-    };
-  }
-  if (knowledge) {
-    const origin = knowledge.params.origin as Origin;
-    return {
-      kind: "class",
-      segment: knowledge.params.segment!,
-      origin,
-      useSections: useClassSections,
-      linkTo: (segment) => `/knowledge/${origin}/${segment}`,
+      linkTo: (segment) => classPath(origin, segment),
+      sections: classSections,
+      tab: knowledge.tab === "properties" ? { path: "properties", label: "Properties" } : undefined,
+      item: notNew(knowledge.item),
     };
   }
   return undefined;
 }
 
-// Where the sidebar selection sits: its perspective and origin tab, then for a shape in the shapes
-// "Hierarchy" or a class in the knowledge "Hierarchy" its trail of ancestors down to itself; any
-// other selection is a single crumb.
 export function Breadcrumb() {
-  const tabs = useMatch("/:perspective/:origin/*");
+  const params = useMatch("/:perspective/:origin/*")?.params;
   const selection = useSelection();
-  const perspective = perspectives.find((tab) => tab.path === tabs?.params.perspective);
-  const origin = origins.find((tab) => tab.path === tabs?.params.origin);
+  const perspective = perspectives.find((tab) => tab.path === params?.perspective);
+  const origin = origins.find((tab) => tab.path === params?.origin);
   if (!perspective || !origin) return null;
+  const home = originPath(perspective.path, origin.path);
 
   return (
     <nav className="st-breadcrumb" aria-label="Breadcrumb">
       <ol>
         <li>
-          <Link to={`/${perspective.path}/${origin.path}`}>{perspective.label}</Link>
+          <Link to={home}>{perspective.label}</Link>
         </li>
         <li>
-          <Link to={`/${perspective.path}/${origin.path}`}>{origin.label}</Link>
+          <Link to={home}>{origin.label}</Link>
         </li>
         {selection && (
-          // Keyed by kind as well, so Trail remounts when useSections changes and its hooks keep
-          // their order; by segment, so a stale trail never shows while the next one loads.
-          <Suspense
-            key={`${selection.kind} ${selection.segment}`}
-            fallback={<Crumbs terms={[]} selection={selection} />}
-          >
+          <Suspense key={selection.segment} fallback={<Crumbs selection={selection} />}>
             <Trail selection={selection} />
           </Suspense>
         )}
@@ -102,12 +96,10 @@ export function Breadcrumb() {
 }
 
 function Trail({ selection }: { selection: Selection }) {
-  const { segment, origin, useSections } = selection;
   const dataModel = useDataModel();
-  const sections = useSections?.(origin);
-  // The route param arrives decoded while termToSegment encodes, so compare the terms themselves.
-  // A blank node is compared by its content id, the same in the URL and in the tree.
-  const selected = segmentToTerm(segment, dataModel);
+  const sections = selection.sections && use(selection.sections(dataModel, selection.origin));
+  const selected = segmentToTerm(selection.segment, dataModel);
+  // The URL segment arrives decoded, so compare by term, and a blank node by its content id.
   const isTarget = (node: TreeNode) =>
     !!selected &&
     node.term.termType === selected.termType &&
@@ -115,26 +107,54 @@ function Trail({ selection }: { selection: Selection }) {
       ? node.term.value === selected.value
       : termToSegment(node.term, dataModel) === termToSegment(selected, dataModel));
   const trail = sections && findTrail(sections.hierarchy, isTarget);
-  return <Crumbs terms={trail?.map((node) => node.term) ?? []} selection={selection} />;
+  return <Crumbs trail={trail?.map((node) => node.term)} selection={selection} />;
 }
 
-// The trail's terms, or - when it is empty - just the selection itself.
-function Crumbs({
-  terms,
-  selection: { segment, linkTo },
-}: {
-  terms: (NamedNode | BlankNode)[];
-  selection: Selection;
-}) {
+function Crumbs({ trail = [], selection }: { trail?: Resource[]; selection: Selection }) {
   const dataModel = useDataModel();
-  const self = segmentToTerm(segment, dataModel);
-  const crumbs = terms.length ? terms : self ? [self] : [];
+  const self = segmentToTerm(selection.segment, dataModel);
+  const crumbs = trail.length ? trail : self ? [self] : [];
 
-  return crumbs.map((term, index) => (
-    <li key={`${term.value}-${index}`}>
-      <Link to={linkTo(termToSegment(term, dataModel))} title={termTitle(term, dataModel)}>
-        {termLabel(term, dataModel)}
+  return (
+    <>
+      {crumbs.map((term, index) => (
+        <Crumb key={index} term={term} to={selection.linkTo(termToSegment(term, dataModel))} />
+      ))}
+      {self && selection.tab && <TabCrumbs self={self} selection={selection} />}
+    </>
+  );
+}
+
+function Crumb({ term, to, label }: { term: Resource; to: string; label?: string }) {
+  const dataModel = useDataModel();
+  const termLabel = useTermLabel();
+  return (
+    <li>
+      <Link to={to} title={termTitle(term, dataModel)}>
+        {label ?? termLabel(term)}
       </Link>
     </li>
-  ));
+  );
+}
+
+function TabCrumbs({ self, selection }: { self: Resource; selection: Selection }) {
+  const dataModel = useDataModel();
+  const itemLabel = useItemLabel(selection.tab?.listTab);
+  const tabPath = `${selection.linkTo(termToSegment(self, dataModel))}/${selection.tab!.path}`;
+  const item = selection.item ? segmentToTerm(selection.item, dataModel) : undefined;
+
+  return (
+    <>
+      <li>
+        <Link to={tabPath}>{selection.tab!.label}</Link>
+      </li>
+      {item && (
+        <Crumb
+          term={item}
+          to={`${tabPath}/${termToSegment(item, dataModel)}`}
+          label={itemLabel(item)}
+        />
+      )}
+    </>
+  );
 }

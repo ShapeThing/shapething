@@ -1,0 +1,15 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# The property groups of the sidebar, by sh:order, then most property shapes first.
+# Inputs: ?dataModel, ?origin.
+SELECT ?group (COUNT(DISTINCT ?property) AS ?propertyCount) (MIN(?anyOrder) AS ?order) WHERE {
+  GRAPH ?graph {
+    { ?group a sh:PropertyGroup } UNION { ?anyProperty sh:group ?group }
+  }
+  FILTER(IF(?graph = ?dataModel, "managed", "imported") = ?origin)
+
+  OPTIONAL { ?property sh:group ?group }
+  OPTIONAL { ?group sh:order ?anyOrder }
+}
+GROUP BY ?group
+ORDER BY (!BOUND(?order)) ?order DESC(?propertyCount) ?group

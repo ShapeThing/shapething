@@ -9,7 +9,11 @@ export function useDataModel(): DataModel {
   return dataModel;
 }
 
-// Every prefix declared by the data model and its imports, see loadDataModel.
-export function usePrefixes(): Record<string, string> {
-  return useDataModel().prefixes;
+// Replaces the data model with an edited one.
+export const CommitContext = createContext<((next: DataModel) => void) | null>(null);
+
+export function useCommit(): (next: DataModel) => void {
+  const commit = use(CommitContext);
+  if (!commit) throw new Error("useCommit() needs a <CommitContext> provider");
+  return commit;
 }

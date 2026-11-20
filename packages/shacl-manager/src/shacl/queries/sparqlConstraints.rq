@@ -1,0 +1,28 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# The SPARQL-based constraints of the queries tab: node-level ones first, then those on the
+# shape's property shapes.
+# Inputs: ?subject, ?kind ("shape" or "class"), ?dataModel, ?origin.
+SELECT ?shape ?propertyShape ?path ?constraint ?select ?message ?deactivated WHERE {
+  {
+    FILTER(?kind = "shape")
+    BIND(?subject AS ?shape)
+  } UNION {
+    FILTER(?kind = "class")
+    GRAPH ?graph { ?shape sh:targetClass ?subject }
+    FILTER(IF(?graph = ?dataModel, "managed", "imported") = ?origin)
+  }
+
+  # An OPTIONAL rather than a UNION, so the generated row type knows ?propertyShape may be unbound.
+  ?shape sh:sparql|(sh:property/sh:sparql) ?constraint .
+  OPTIONAL {
+    ?shape sh:property ?propertyShape .
+    ?propertyShape sh:sparql ?constraint .
+    OPTIONAL { ?propertyShape sh:path ?path }
+  }
+
+  OPTIONAL { ?constraint sh:select ?select }
+  OPTIONAL { ?constraint sh:message ?message }
+  OPTIONAL { ?constraint sh:deactivated ?deactivated }
+}
+ORDER BY ?shape BOUND(?propertyShape) ?propertyShape ?constraint

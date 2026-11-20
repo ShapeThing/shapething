@@ -1,0 +1,62 @@
+.st-sparql-viewer {
+  margin: 0;
+  padding: var(--size-2) var(--size-3);
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: var(--st-font-size-small);
+  line-height: var(--font-lineheight-3);
+  color: var(--st-code-text);
+  background: var(--st-code-background);
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+  tab-size: 2;
+}
+
+.st-sparql-viewer code {
+  font: inherit;
+}
+
+.st-sparql-viewer .token.comment {
+  color: var(--st-code-comment);
+  font-style: italic;
+}
+
+.st-sparql-viewer .token.keyword,
+.st-sparql-viewer .token.function {
+  color: var(--st-code-keyword);
+}
+
+.st-sparql-viewer .token.variable {
+  color: var(--st-code-variable);
+}
+
+.st-sparql-viewer .token.string,
+.st-sparql-viewer .token.char {
+  color: var(--st-code-string);
+}
+
+.st-sparql-viewer .token.url,
+.st-sparql-viewer .token.prefixed-name,
+.st-sparql-viewer .token.prefix,
+.st-sparql-viewer .token.local-name {
+  color: var(--st-code-iri);
+}
+
+.st-sparql-viewer .token.number,
+.st-sparql-viewer .token.boolean {
+  color: var(--st-code-number);
+}
+
+.st-sparql-viewer .token.punctuation,
+.st-sparql-viewer .token.operator {
+  color: var(--st-code-punctuation);
+}
+
+.st-sparql-viewer code {
+  display: block;
+}
+
+/* The PREFIX lines from sh:prefixes, not from the query text itself. */
+.st-sparql-viewer__declared {
+  opacity: 0.6;
+}

@@ -517,3 +517,23 @@ test("an owl:imports target is fetched once per page, not once per preprocessing
   expect(second.dataGraph.getQuads(ex("b"), ex("name")).length).toBe(1);
   expect(fetchCalls).toEqual(["http://example.org/b.ttl"]);
 });
+
+test("enableOwlImports: false leaves owl:imports unresolved", async () => {
+  fixtures["http://example.org/a.ttl"] = `
+    @prefix owl: <http://www.w3.org/2002/07/owl#> .
+    @prefix ex: <http://example.org/> .
+    ex:a owl:imports <http://example.org/b.ttl> .
+  `;
+  fixtures["http://example.org/b.ttl"] = `
+    @prefix ex: <http://example.org/> .
+    ex:b ex:name "B" .
+  `;
+
+  const environment = await resolveRdfSources(
+    rawEnvironment({ dataGraph: new URL("http://example.org/a.ttl"), enableOwlImports: false }),
+  );
+
+  expect(fetchCalls).toEqual(["http://example.org/a.ttl"]);
+  expect(environment.dataGraph.getQuads(ex("b")).length).toBe(0);
+  expect(environment.dataGraph.getQuads(ex("a"), owl("imports")).length).toBe(1);
+});

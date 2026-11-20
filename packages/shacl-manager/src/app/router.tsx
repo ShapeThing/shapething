@@ -1,10 +1,9 @@
 import { createHashRouter, Navigate } from "react-router";
-import { Layout } from "./Layout.tsx";
-import { shaclRoutes } from "../shacl/routes.tsx";
 import { owlRoutes } from "../owl/routes.tsx";
+import { shaclRoutes } from "../shacl/routes.tsx";
+import { Layout } from "./Layout.tsx";
 
-// The route lives in the URL after the hash, so the host page's own path and query stay untouched
-// while the current view survives reloads and can be linked to.
+// In the hash, so the host page's own path and query stay untouched.
 export function createShaclManagerRouter() {
   return createHashRouter([
     {

@@ -1,38 +1,39 @@
-import { Suspense } from "react";
-import { NavLink, useMatch } from "react-router";
-import { useClassSections } from "../owl/useClassTree.ts";
+import { owl, sh } from "@shapething/shacl-renderer";
+import { Suspense, use } from "react";
+import { NavLink } from "react-router";
+import { useDataModel } from "../data-model/dataModelContext.ts";
 import { countNodes } from "../data-model/tree.ts";
+import { owlMeta } from "../owl/metaShapes.ts";
+import { classSections, useClassSections } from "../owl/useClassTree.ts";
+import { shaclMeta } from "../shacl/metaShapes.ts";
 import { usePropertyGroups } from "../shacl/usePropertyGroups.ts";
-import { useShapeSections } from "../shacl/useShapeTree.ts";
+import { shapeSections, useShapeSections } from "../shacl/useShapeTree.ts";
+import { CreateButton } from "./edit/CreateButton.tsx";
+import {
+  classPath,
+  originPath,
+  origins,
+  perspectives,
+  subjectPath,
+  useOrigin,
+  usePerspective,
+  type Origin,
+  type Perspective,
+} from "./paths.ts";
 import { Tree } from "./Tree.tsx";
-
-export const perspectives = [
-  { path: "shapes", label: "Shapes" },
-  { path: "knowledge", label: "Knowledge" },
-] as const;
-
-export const origins = [
-  { path: "managed", label: "Managed" },
-  { path: "imported", label: "Imported" },
-] as const;
 
 const allOrigins: Origin[] = origins.map((tab) => tab.path);
 
-type Perspective = (typeof perspectives)[number]["path"];
-type Origin = (typeof origins)[number]["path"];
-
-// Both tab rows are derived from the URL (/:perspective/:origin/...), so the router stays the
-// single source of truth. Switching perspective keeps the current origin and vice versa.
+// Switching perspective keeps the current origin and vice versa.
 export function Sidebar() {
-  const match = useMatch("/:perspective/:origin/*");
-  const perspective = (match?.params.perspective ?? "shapes") as Perspective;
-  const origin = (match?.params.origin ?? "managed") as Origin;
+  const perspective = usePerspective();
+  const origin = useOrigin();
 
   return (
     <aside className="st-manager__sidebar">
       <nav className="st-manager__tabs">
         {perspectives.map((tab) => (
-          <NavLink key={tab.path} to={`/${tab.path}/${origin}`}>
+          <NavLink key={tab.path} to={originPath(tab.path, origin)}>
             {tab.label}
             <TabCount perspective={tab.path} origins={allOrigins} />
           </NavLink>
@@ -40,7 +41,7 @@ export function Sidebar() {
       </nav>
       <nav className="st-manager__tabs st-manager__tabs--secondary">
         {origins.map((tab) => (
-          <NavLink key={tab.path} to={`/${perspective}/${tab.path}`}>
+          <NavLink key={tab.path} to={originPath(perspective, tab.path)}>
             {tab.label}
             <TabCount perspective={perspective} origins={[tab.path]} />
           </NavLink>
@@ -61,11 +62,8 @@ export function Sidebar() {
   );
 }
 
-const useSections = { shapes: useShapeSections, knowledge: useClassSections };
+const sectionsOf = { shapes: shapeSections, knowledge: classSections };
 
-// The number of shapes or classes beneath a tab: a perspective tab counts both origins, an origin
-// tab only its own. It reuses the same (cached) queries that fill the sidebar, so a count always
-// matches what is listed. Blank until they are loaded.
 function TabCount({ perspective, origins }: { perspective: Perspective; origins: Origin[] }) {
   return (
     <Suspense key={perspective} fallback={null}>
@@ -74,52 +72,81 @@ function TabCount({ perspective, origins }: { perspective: Perspective; origins:
   );
 }
 
+// The same (cached) queries that fill the sidebar, so a count always matches what is listed.
 function Count({ perspective, origins }: { perspective: Perspective; origins: Origin[] }) {
-  const useOrigin = useSections[perspective];
-  // origins is a fixed list per tab, so the hooks are called in the same order on every render.
+  const dataModel = useDataModel();
   const nodes = origins.flatMap((origin) => {
-    const { hierarchy, other } = useOrigin(origin);
+    const { hierarchy, other } = use(sectionsOf[perspective](dataModel, origin));
     return [...hierarchy, ...other];
   });
   return <span className="st-manager__tab-count">{countNodes(nodes)}</span>;
 }
 
-// "Hierarchy" holds every shape with an sh:targetClass, nested by rdfs:subClassOf of the targeted
-// classes; "Other shapes" holds exactly the rest (see shacl/shapeHierarchy.rq). Both keep the
-// query's order: most sh:property first. "Property groups" lists the origin's sh:PropertyGroups
-// (see shacl/propertyGroups.rq), by sh:order.
 function ShapesSidebar({ origin }: { origin: Origin }) {
   const { hierarchy, other } = useShapeSections(origin);
   const groups = usePropertyGroups(origin);
-  const linkTo = (segment: string) => `/shapes/${origin}/shape/${segment}`;
+  const shapeLink = (segment: string) => subjectPath(origin, "shape", segment);
+  const groupLink = (segment: string) => subjectPath(origin, "group", segment);
 
   return (
     <>
+      {origin === "managed" && (
+        <div className="st-manager__sidebar-actions">
+          <CreateButton
+            {...shaclMeta.shape.edit}
+            label="shape"
+            kind="shape"
+            type={sh("NodeShape")}
+            path="/shapes/managed/new/shape"
+            back="/shapes/managed"
+            to={shapeLink}
+          />
+          <CreateButton
+            {...shaclMeta.shape.edit}
+            label="property group"
+            kind="group"
+            type={sh("PropertyGroup")}
+            path="/shapes/managed/new/group"
+            back="/shapes/managed"
+            to={groupLink}
+          />
+        </div>
+      )}
       <section>
         <h3>Hierarchy</h3>
-        <Tree nodes={hierarchy} linkTo={linkTo} />
+        <Tree nodes={hierarchy} linkTo={shapeLink} />
       </section>
       <section>
         <h3>Other shapes</h3>
-        <Tree nodes={other} linkTo={linkTo} />
+        <Tree nodes={other} linkTo={shapeLink} />
       </section>
       <section>
         <h3>Property groups</h3>
-        <Tree nodes={groups} linkTo={(segment) => `/shapes/${origin}/group/${segment}`} />
+        <Tree nodes={groups} linkTo={groupLink} />
       </section>
     </>
   );
 }
 
-// "Hierarchy" holds every named class, nested by rdfs:subClassOf; "Anonymous classes" holds exactly
-// the rest - restrictions, unionOf and other blank-node classes (see owl/classHierarchy.rq). Both
-// keep the query's order: most properties (by rdfs:domain) first.
 function ClassesSidebar({ origin }: { origin: Origin }) {
   const { hierarchy, other } = useClassSections(origin);
-  const linkTo = (segment: string) => `/knowledge/${origin}/${segment}`;
+  const linkTo = (segment: string) => classPath(origin, segment);
 
   return (
     <>
+      {origin === "managed" && (
+        <div className="st-manager__sidebar-actions">
+          <CreateButton
+            {...owlMeta.class.edit}
+            label="class"
+            kind="class"
+            type={owl("Class")}
+            path="/knowledge/managed/new"
+            back="/knowledge/managed"
+            to={linkTo}
+          />
+        </div>
+      )}
       <section>
         <h3>Hierarchy</h3>
         <Tree nodes={hierarchy} linkTo={linkTo} />

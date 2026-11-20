@@ -11,7 +11,7 @@
   min-height: 0;
 }
 
-/* A third column only on pages that render the aside (class and shape pages). */
+/* A third column only on pages that render the aside. */
 .st-manager:has(> .st-manager__aside) {
   grid-template-columns: 18rem minmax(0, 1fr) 18rem;
 }
@@ -36,24 +36,84 @@
   border-inline-end: 1px solid;
 }
 
-.st-manager__tabs {
+.st-manager__tabs,
+.st-section__tabs {
   display: flex;
+  border-block-end: 1px solid var(--st-color-border);
+}
+
+.st-manager__tabs > a,
+.st-section__tabs > a {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0.5ch;
+  padding: 0.5rem 0.75rem;
+  color: var(--st-color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  border-block-end: 2px solid transparent;
+  margin-block-end: -1px;
+  transition:
+    color 0.15s,
+    background-color 0.15s,
+    border-color 0.15s;
 }
 
 .st-manager__tabs > a {
   flex: 1;
-  display: flex;
-  justify-content: center;
-  gap: 0.5ch;
-  padding: 0.5rem;
+}
+
+.st-manager__tabs > a:hover,
+.st-section__tabs > a:hover {
+  color: var(--st-color-text);
+  background-color: var(--st-primary-color-lighter);
+}
+
+.st-manager__tabs > a:focus-visible,
+.st-section__tabs > a:focus-visible {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: -2px;
+}
+
+.st-manager__tabs > a.active,
+.st-section__tabs > a.active {
+  color: var(--st-primary-color);
+  font-weight: 600;
+  border-block-end-color: currentColor;
+}
+
+.st-manager__tabs--secondary {
+  font-size: var(--st-font-size-small);
+}
+
+.st-manager__tabs--secondary > a {
+  padding-block: 0.35rem;
+}
+
+.st-section__tabs {
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .st-manager__tab-count {
-  opacity: 0.6;
+  min-width: 1.5em;
+  padding-inline: 0.5ch;
+  border-radius: 999px;
+  background-color: var(--st-color-border);
+  color: var(--st-color-text);
+  font-size: var(--st-font-size-smallest);
+  font-weight: normal;
+  text-align: center;
 }
 
-.st-manager__tabs > a.active {
-  font-weight: bold;
+.st-manager__tab-count:empty {
+  display: none;
+}
+
+a.active > .st-manager__tab-count {
+  background-color: var(--st-primary-color);
+  color: white;
 }
 
 .st-manager__sidebar-content {
@@ -68,7 +128,7 @@
   overflow: auto;
 }
 
-/* Nested route sections pass the remaining height on, so the list/detail columns reach the bottom. */
+/* Passes the remaining height on, so the list/detail columns reach the bottom. */
 .st-section {
   flex: 1;
   display: flex;
@@ -111,4 +171,21 @@
 
 .st-breadcrumb li:last-child {
   font-weight: bold;
+}
+
+.st-manager__sidebar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.st-meta__actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-block: 0.5rem;
+}
+
+a.st-button {
+  text-decoration: none;
 }

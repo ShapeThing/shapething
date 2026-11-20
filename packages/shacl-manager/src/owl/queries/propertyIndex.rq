@@ -1,0 +1,13 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Every property's rdfs:domain and direct rdfs:subPropertyOf. propertyIndex.ts walks the
+# sub-properties itself: an rdfs:subPropertyOf* path per class is slow in Comunica.
+SELECT DISTINCT ?property ?domain ?superProperty WHERE {
+  {
+    ?property rdfs:domain ?domain .
+  } UNION {
+    ?property rdfs:subPropertyOf ?superProperty .
+    FILTER(isIRI(?superProperty) && ?superProperty != ?property)
+  }
+  FILTER(isIRI(?property))
+}

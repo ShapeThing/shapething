@@ -1,0 +1,38 @@
+PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# The shapes that also apply to the subject's focus nodes, through sh:targetSubjectsOf,
+# sh:targetObjectsOf or sh:targetNode, and the origin each is declared in.
+# Inputs: ?subject, ?kind ("shape" or "class"), ?dataModel, ?origin.
+SELECT DISTINCT ?shape ?shapeOrigin ?mechanism ?via WHERE {
+  {
+    FILTER(?kind = "shape")
+    BIND(?subject AS ?own)
+  } UNION {
+    FILTER(?kind = "class")
+    GRAPH ?ownGraph { ?own sh:targetClass ?subject }
+    FILTER(IF(?ownGraph = ?dataModel, "managed", "imported") = ?origin)
+  }
+
+  {
+    { ?own sh:property/sh:path ?via } UNION { ?own sh:targetSubjectsOf ?via }
+    FILTER(isIRI(?via))
+    GRAPH ?graph { ?shape sh:targetSubjectsOf ?via }
+    BIND("targetSubjectsOf" AS ?mechanism)
+  } UNION {
+    { ?own sh:property/sh:path/sh:inversePath ?via } UNION { ?own sh:targetObjectsOf ?via }
+    FILTER(isIRI(?via))
+    GRAPH ?graph { ?shape sh:targetObjectsOf ?via }
+    BIND("targetObjectsOf" AS ?mechanism)
+  } UNION {
+    { ?own sh:targetClass ?class . ?via rdf:type/rdfs:subClassOf* ?class }
+    UNION { ?own sh:targetNode ?via }
+    GRAPH ?graph { ?shape sh:targetNode ?via }
+    BIND("targetNode" AS ?mechanism)
+  }
+
+  FILTER(?shape != ?own)
+  BIND(IF(?graph = ?dataModel, "managed", "imported") AS ?shapeOrigin)
+}
+ORDER BY ?shape ?mechanism ?via

@@ -30,6 +30,16 @@
   --st-diff-removed-border: var(--red-6);
   --st-diff-removed-text: var(--red-9);
   --st-diff-changed-border: var(--yellow-6);
+  /* Code blocks (st:SparqlViewer) */
+  --st-code-background: var(--gray-0);
+  --st-code-text: var(--gray-9);
+  --st-code-comment: var(--gray-6);
+  --st-code-keyword: var(--violet-8);
+  --st-code-variable: var(--orange-8);
+  --st-code-string: var(--green-8);
+  --st-code-iri: var(--blue-8);
+  --st-code-number: var(--cyan-8);
+  --st-code-punctuation: var(--gray-7);
 
   /* z-index scale — named cascade layers (declared above) keep these tiers
      from being silently out-cascaded by a more specific or later-loaded rule;

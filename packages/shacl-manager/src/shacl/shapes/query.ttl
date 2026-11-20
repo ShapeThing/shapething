@@ -1,0 +1,115 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix meta: <http://shapething.com/shacl-manager/query-meta#>.
+
+# How a SPARQL-based constraint (sh:sparql) is shown. Predicates not declared here are generated
+# into meta:other.
+meta:shape
+    a sh:NodeShape ;
+    st:missingPropertiesGroup meta:other ;
+
+    # General
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path [ sh:alternativePath ( rdfs:label sh:name ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:path [ sh:alternativePath ( rdfs:comment sh:description ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+        sh:singleLine false ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Type"@en, "Type"@nl ;
+        sh:path rdf:type ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Message"@en, "Melding"@nl ;
+        sh:path sh:message ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Severity"@en, "Ernst"@nl ;
+        sh:path sh:severity ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "Deactivated"@en, "Gedeactiveerd"@nl ;
+        sh:path sh:deactivated ;
+        sh:group meta:general ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+    ] ;
+
+    # Query
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "SELECT query"@en, "SELECT-query"@nl ;
+        sh:path sh:select ;
+        shui:viewer st:SparqlViewer ;
+        sh:group meta:query ;
+        sh:datatype xsd:string ;
+        sh:singleLine false ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "ASK query"@en, "ASK-query"@nl ;
+        sh:path sh:ask ;
+        shui:viewer st:SparqlViewer ;
+        sh:group meta:query ;
+        sh:datatype xsd:string ;
+        sh:singleLine false ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Prefixes"@en, "Prefixen"@nl ;
+        sh:path sh:prefixes ;
+        sh:group meta:query ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    .
+
+meta:general
+    a sh:PropertyGroup ;
+    sh:name "General"@en, "Algemeen"@nl ;
+    sh:order 0 .
+
+meta:query
+    a sh:PropertyGroup ;
+    sh:name "Query"@en, "Query"@nl ;
+    sh:order 1 .
+
+meta:other
+    a sh:PropertyGroup ;
+    sh:name "Other properties"@en, "Overige eigenschappen"@nl ;
+    sh:order 2 .

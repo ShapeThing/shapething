@@ -25,8 +25,26 @@ export {
 // fallback groupLabel deliberately omits.
 export { groupLabel } from "@/resolution/label.ts";
 export { localName } from "@/helpers/localName.ts";
+// The same label + language resolution (shui:labelPreference, shui:languagePreference, 8.1/8.2)
+// for a bare term and store, no PropertyUIElement needed - for tools that list a shapes graph's
+// contents, e.g. the shacl-manager. termLabel picks the right one for the term; bestByLanguage +
+// configuredLanguages pick among any other literals (e.g. sh:message) the same way.
+export {
+  graphTermLabel,
+  nodeShapeLabel,
+  propertyShapeLabel,
+  termLabel,
+} from "@/resolution/label.ts";
+export { configuredLanguages } from "@/resolution/language.ts";
+export { bestByLanguage } from "@/helpers/bestByLanguage.ts";
+export { localNameLabel } from "@/helpers/localNameLabel.ts";
 
 export { dereferenceUrl, resolveRdfSource };
+
+// Building blocks for tools around the renderer (see "Building on the renderer" in the README).
+export { select, type QueryRow } from "@/helpers/queryEngine.ts";
+export { prefixedIri } from "@/helpers/prefixedIri.tsx";
+export { owl, rdf, rdfs, sh, shui, xsd } from "@/helpers/namespaces.ts";
 
 // A live store: passed as dataGraph (or shapesGraph) the renderer uses it in place and follows
 // every write to it, instead of copying it - see RawEnvironment.dataGraph.

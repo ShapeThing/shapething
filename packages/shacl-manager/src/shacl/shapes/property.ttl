@@ -1,0 +1,415 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix meta: <http://shapething.com/shacl-manager/property-meta#>.
+
+# How a property shape is shown. Predicates not declared here are generated into meta:other.
+meta:shape
+    a sh:NodeShape ;
+    st:missingPropertiesGroup meta:other ;
+
+    # General
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path [ sh:alternativePath ( sh:name rdfs:label ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:path [ sh:alternativePath ( sh:description rdfs:comment ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+        sh:singleLine false ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Path"@en, "Pad"@nl ;
+        sh:path sh:path ;
+        sh:group meta:general ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Type"@en, "Type"@nl ;
+        sh:path rdf:type ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Group"@en, "Groep"@nl ;
+        sh:path sh:group ;
+        sh:group meta:general ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "Order"@en, "Volgorde"@nl ;
+        sh:path sh:order ;
+        sh:group meta:general ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 6 ;
+        sh:name "Deactivated"@en, "Gedeactiveerd"@nl ;
+        sh:path sh:deactivated ;
+        sh:group meta:general ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 7 ;
+        sh:name "Severity"@en, "Ernst"@nl ;
+        sh:path sh:severity ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 8 ;
+        sh:name "Message"@en, "Melding"@nl ;
+        sh:path sh:message ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    # Value type (SHACL 1.2 Core 7.1)
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Class"@en, "Klasse"@nl ;
+        sh:path sh:class ;
+        sh:group meta:valueType ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Datatype"@en, "Datatype"@nl ;
+        sh:path sh:datatype ;
+        sh:group meta:valueType ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Node kind"@en, "Knoopsoort"@nl ;
+        sh:path sh:nodeKind ;
+        sh:group meta:valueType ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Node"@en, "Knoop"@nl ;
+        sh:path sh:node ;
+        sh:group meta:valueType ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    # Cardinality (7.2) and qualified value shapes (7.8.3)
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Minimum count"@en, "Minimum aantal"@nl ;
+        sh:path sh:minCount ;
+        sh:group meta:cardinality ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Maximum count"@en, "Maximum aantal"@nl ;
+        sh:path sh:maxCount ;
+        sh:group meta:cardinality ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Qualified value shape"@en, "Gekwalificeerde waardevorm"@nl ;
+        sh:path sh:qualifiedValueShape ;
+        sh:group meta:cardinality ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Qualified minimum count"@en, "Gekwalificeerd minimum aantal"@nl ;
+        sh:path sh:qualifiedMinCount ;
+        sh:group meta:cardinality ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Qualified maximum count"@en, "Gekwalificeerd maximum aantal"@nl ;
+        sh:path sh:qualifiedMaxCount ;
+        sh:group meta:cardinality ;
+        sh:maxCount 1 ;
+    ] ;
+
+    # Values: ranges (7.3), strings (7.4), lists of allowed values (7.8)
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Allowed values"@en, "Toegestane waarden"@nl ;
+        sh:path sh:in ;
+        sh:group meta:values ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Has value"@en, "Heeft waarde"@nl ;
+        sh:path sh:hasValue ;
+        sh:group meta:values ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Default value"@en, "Standaardwaarde"@nl ;
+        sh:path sh:defaultValue ;
+        sh:group meta:values ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Minimum (inclusive)"@en, "Minimum (inclusief)"@nl ;
+        sh:path sh:minInclusive ;
+        sh:group meta:values ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Minimum (exclusive)"@en, "Minimum (exclusief)"@nl ;
+        sh:path sh:minExclusive ;
+        sh:group meta:values ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "Maximum (inclusive)"@en, "Maximum (inclusief)"@nl ;
+        sh:path sh:maxInclusive ;
+        sh:group meta:values ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 6 ;
+        sh:name "Maximum (exclusive)"@en, "Maximum (exclusief)"@nl ;
+        sh:path sh:maxExclusive ;
+        sh:group meta:values ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 7 ;
+        sh:name "Minimum length"@en, "Minimale lengte"@nl ;
+        sh:path sh:minLength ;
+        sh:group meta:values ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 8 ;
+        sh:name "Maximum length"@en, "Maximale lengte"@nl ;
+        sh:path sh:maxLength ;
+        sh:group meta:values ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 9 ;
+        sh:name "Pattern"@en, "Patroon"@nl ;
+        sh:path sh:pattern ;
+        sh:group meta:values ;
+        sh:datatype xsd:string ;
+    ] ;
+
+    sh:property [
+        sh:order 10 ;
+        sh:name "Flags"@en, "Vlaggen"@nl ;
+        sh:path sh:flags ;
+        sh:group meta:values ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 11 ;
+        sh:name "Allowed languages"@en, "Toegestane talen"@nl ;
+        sh:path sh:languageIn ;
+        sh:group meta:values ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 12 ;
+        sh:name "Unique language"@en, "Unieke taal"@nl ;
+        sh:path sh:uniqueLang ;
+        sh:group meta:values ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+    ] ;
+
+    # Property pairs (7.5)
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Equals"@en, "Gelijk aan"@nl ;
+        sh:path sh:equals ;
+        sh:group meta:pairs ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Disjoint"@en, "Disjunct"@nl ;
+        sh:path sh:disjoint ;
+        sh:group meta:pairs ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Less than"@en, "Kleiner dan"@nl ;
+        sh:path sh:lessThan ;
+        sh:group meta:pairs ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Less than or equals"@en, "Kleiner dan of gelijk aan"@nl ;
+        sh:path sh:lessThanOrEquals ;
+        sh:group meta:pairs ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    # Logical constraints (7.6) and SPARQL-based constraints
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "And"@en, "En"@nl ;
+        sh:path sh:and ;
+        sh:group meta:logical ;
+        sh:memberShape [ sh:nodeKind sh:BlankNodeOrIRI ] ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Or"@en, "Of"@nl ;
+        sh:path sh:or ;
+        sh:group meta:logical ;
+        sh:memberShape [ sh:nodeKind sh:BlankNodeOrIRI ] ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Exactly one of"@en, "Precies één van"@nl ;
+        sh:path sh:xone ;
+        sh:group meta:logical ;
+        sh:memberShape [ sh:nodeKind sh:BlankNodeOrIRI ] ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Not"@en, "Niet"@nl ;
+        sh:path sh:not ;
+        sh:group meta:logical ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "SPARQL constraints"@en, "SPARQL-beperkingen"@nl ;
+        sh:path sh:sparql ;
+        sh:group meta:logical ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    # Presentation (SHACL UI)
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Editor"@en, "Editor"@nl ;
+        sh:path shui:editor ;
+        sh:group meta:presentation ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Viewer"@en, "Viewer"@nl ;
+        sh:path shui:viewer ;
+        sh:group meta:presentation ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Single line"@en, "Enkele regel"@nl ;
+        sh:path sh:singleLine ;
+        sh:group meta:presentation ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+    ] ;
+
+    .
+
+meta:general
+    a sh:PropertyGroup ;
+    sh:name "General"@en, "Algemeen"@nl ;
+    sh:order 0 .
+
+meta:valueType
+    a sh:PropertyGroup ;
+    sh:name "Value type"@en, "Waardetype"@nl ;
+    sh:order 1 .
+
+meta:cardinality
+    a sh:PropertyGroup ;
+    sh:name "Cardinality"@en, "Kardinaliteit"@nl ;
+    sh:order 2 .
+
+meta:values
+    a sh:PropertyGroup ;
+    sh:name "Values"@en, "Waarden"@nl ;
+    sh:order 3 .
+
+meta:pairs
+    a sh:PropertyGroup ;
+    sh:name "Property pairs"@en, "Eigenschapsparen"@nl ;
+    sh:order 4 .
+
+meta:logical
+    a sh:PropertyGroup ;
+    sh:name "Logical and SPARQL constraints"@en, "Logische en SPARQL-beperkingen"@nl ;
+    sh:order 5 .
+
+meta:presentation
+    a sh:PropertyGroup ;
+    sh:name "Presentation"@en, "Weergave"@nl ;
+    sh:order 6 .
+
+meta:other
+    a sh:PropertyGroup ;
+    sh:name "Other properties"@en, "Overige eigenschappen"@nl ;
+    sh:order 7 .

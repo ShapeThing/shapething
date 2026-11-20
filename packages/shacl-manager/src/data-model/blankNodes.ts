@@ -1,14 +1,11 @@
 import type { BlankNode, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 
-// A blank node's label is made up by the parser on every load, so it can't go in a URL. Its
-// content can: the id is a hash of its outgoing triples, nested blank nodes (an owl:unionOf list,
-// a restriction's class expression) written out in place, so the same data gives the same id on
-// every load. Two blank nodes with identical content share an id - they say the same thing - and
-// editing a blank node changes its id.
+// A parser makes up blank node labels on every load, so they can't go in a URL. A hash of the
+// node's content can: the same data gives the same id on every load. Nodes with identical content
+// share an id, and editing a blank node changes its id.
 
-// A blank node's content as one string: its "predicate object" pairs, sorted, with every nested
-// blank node replaced by its own content. A blank node already on the path (a cycle) is cut short.
+// Its "predicate object" pairs, sorted, with nested blank nodes written out in place.
 export function describeBlankNode(
   store: RdfStore,
   node: BlankNode,
@@ -45,9 +42,7 @@ function hash(text: string): string {
   return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
 }
 
-// Per store: label -> id, filled as ids are asked for, and id -> blank node, built on the first
-// lookup by hashing every blank subject once. The store is never mutated in place (a reload makes
-// a new one), so neither goes stale.
+// Per store, which is never mutated in place, so neither goes stale.
 const ids = new WeakMap<RdfStore, Map<string, string>>();
 const byId = new WeakMap<RdfStore, Map<string, BlankNode>>();
 

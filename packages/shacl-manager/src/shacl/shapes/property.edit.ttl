@@ -1,0 +1,12 @@
+@prefix st: <http://shapething.com/>.
+@prefix meta: <http://shapething.com/shacl-manager/property-meta#>.
+
+# The edit dialog shows the meta shape's groups as vertical tabs.
+meta:general a st:VerticalTabbedPropertyGroup .
+meta:valueType a st:VerticalTabbedPropertyGroup .
+meta:cardinality a st:VerticalTabbedPropertyGroup .
+meta:values a st:VerticalTabbedPropertyGroup .
+meta:pairs a st:VerticalTabbedPropertyGroup .
+meta:logical a st:VerticalTabbedPropertyGroup .
+meta:presentation a st:VerticalTabbedPropertyGroup .
+meta:other a st:VerticalTabbedPropertyGroup .

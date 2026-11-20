@@ -311,6 +311,7 @@ const dereferenceShapeTargets = async (
   quadCache: Map<string, Promise<Quad[]>>,
   corsProxyUrl: string | undefined,
   prefixSink?: Map<string, string>,
+  followOwlImports = true,
 ): Promise<RdfStore | undefined> => {
   const shapeIris = new Set<string>();
   for (const quad of dataGraph.getQuads(null, sh("shape"))) {
@@ -336,7 +337,9 @@ const dereferenceShapeTargets = async (
   }
   if (merged.size === 0) return undefined;
 
-  await resolveOwlImports(merged, quadCache, new Set<string>(), corsProxyUrl, prefixSink);
+  if (followOwlImports) {
+    await resolveOwlImports(merged, quadCache, new Set<string>(), corsProxyUrl, prefixSink);
+  }
   return merged;
 };
 
@@ -370,12 +373,20 @@ export const resolveRdfSource = async (
   corsProxyUrl: string | undefined,
   prefixSink?: Map<string, string>,
   importedSink?: RdfStore,
+  followOwlImports = true,
 ): Promise<RdfStore> => {
   if (isRdfSourceList(source)) {
     const sinks = source.map(() => RdfStore.createDefault());
     const stores = await Promise.all(
       source.map((nestedSource, index) =>
-        resolveRdfSource(nestedSource, quadCache, corsProxyUrl, prefixSink, sinks[index]),
+        resolveRdfSource(
+          nestedSource,
+          quadCache,
+          corsProxyUrl,
+          prefixSink,
+          sinks[index],
+          followOwlImports,
+        ),
       ),
     );
     const merged = RdfStore.createDefault();
@@ -408,14 +419,16 @@ export const resolveRdfSource = async (
             ? await parseRdfText(source, prefixSink)
             : storeFromQuads(source);
 
-  await resolveOwlImports(
-    store,
-    quadCache,
-    new Set<string>(),
-    corsProxyUrl,
-    prefixSink,
-    importedSink,
-  );
+  if (followOwlImports) {
+    await resolveOwlImports(
+      store,
+      quadCache,
+      new Set<string>(),
+      corsProxyUrl,
+      prefixSink,
+      importedSink,
+    );
+  }
   return store;
 };
 
@@ -426,9 +439,16 @@ export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environmen
   // `@prefix` declarations to the result - see dereferenceUrl's doc comment.
   const sourcePrefixes = new Map<string, string>();
   const { corsProxyUrl } = raw;
+  const followOwlImports = raw.enableOwlImports !== false;
   const importedDataGraph = RdfStore.createDefault();
+  const resolve = (
+    source: RdfSource,
+    prefixSink?: Map<string, string>,
+    importedSink?: RdfStore,
+  ): Promise<RdfStore> =>
+    resolveRdfSource(source, quadCache, corsProxyUrl, prefixSink, importedSink, followOwlImports);
   const optional = (source: RdfSource | undefined) =>
-    source !== undefined ? resolveRdfSource(source, quadCache, corsProxyUrl) : undefined;
+    source !== undefined ? resolve(source) : undefined;
   const [
     resolvedShapesGraph,
     dataGraph,
@@ -438,24 +458,27 @@ export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environmen
     deletionsGraph,
     validationReport,
   ] = await Promise.all([
-    resolveRdfSource(raw.shapesGraph, quadCache, corsProxyUrl, sourcePrefixes),
-    resolveRdfSource(raw.dataGraph, quadCache, corsProxyUrl, sourcePrefixes, importedDataGraph),
-    resolveRdfSource(raw.scoresGraph, quadCache, corsProxyUrl),
+    resolve(raw.shapesGraph, sourcePrefixes),
+    resolve(raw.dataGraph, sourcePrefixes, importedDataGraph),
+    resolve(raw.scoresGraph),
     optional(raw.readOnlyGraph),
     optional(raw.additionsGraph),
     optional(raw.deletionsGraph),
     // Its own prefixes count too: a report's sh:resultPath is rendered prefixed.
-    raw.validationReport !== undefined
-      ? resolveRdfSource(raw.validationReport, quadCache, corsProxyUrl, sourcePrefixes)
-      : undefined,
+    raw.validationReport !== undefined ? resolve(raw.validationReport, sourcePrefixes) : undefined,
   ]);
 
   // A report renders fine without shapes (see preprocess/validationReport.ts), so report mode never
   // goes looking for them through the data's own rdf:type/sh:shapesGraph.
   const shapesGraph =
     resolvedShapesGraph.size === 0 && raw.mode !== "report"
-      ? ((await dereferenceShapeTargets(dataGraph, quadCache, corsProxyUrl, sourcePrefixes)) ??
-        resolvedShapesGraph)
+      ? ((await dereferenceShapeTargets(
+          dataGraph,
+          quadCache,
+          corsProxyUrl,
+          sourcePrefixes,
+          followOwlImports,
+        )) ?? resolvedShapesGraph)
       : resolvedShapesGraph;
 
   // With no nodeShapes given but a real focusNode (not defaultEnvironment's placeholder), render

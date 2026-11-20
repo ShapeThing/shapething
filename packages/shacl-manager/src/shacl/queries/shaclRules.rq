@@ -1,0 +1,21 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# The SHACL rules of the rules tab, per shape in execution order (sh:order, default 0).
+# Inputs: ?subject, ?kind ("shape" or "class"), ?dataModel, ?origin.
+SELECT ?shape ?rule ?order ?label ?deactivated WHERE {
+  {
+    FILTER(?kind = "shape")
+    BIND(?subject AS ?shape)
+  } UNION {
+    FILTER(?kind = "class")
+    GRAPH ?graph { ?shape sh:targetClass ?subject }
+    FILTER(IF(?graph = ?dataModel, "managed", "imported") = ?origin)
+  }
+
+  ?shape sh:rule ?rule .
+  OPTIONAL { ?rule sh:order ?order }
+  OPTIONAL { ?rule rdfs:label ?label }
+  OPTIONAL { ?rule sh:deactivated ?deactivated }
+}
+ORDER BY ?shape COALESCE(?order, 0) ?rule

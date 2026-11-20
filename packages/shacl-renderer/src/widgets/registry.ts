@@ -34,7 +34,7 @@ import {
 // source of truth for which IRI a namespace folder resolves to.
 //
 // A handful of editors/viewers pull in dependencies heavy enough (MapViewer/GeoEditor's
-// maplibre-gl+geoman+maplibre-gl-geo-editor, RichTextEditor/HTMLViewer's tiptap+prosemirror) that
+// maplibre-gl+geoman+maplibre-gl-geo-editor, RichTextEditor/HTMLViewer's tiptap+prosemirror, SparqlViewer's Prism highlighter) that
 // bundling every widget eagerly forced every consumer to pay for all of them regardless of which
 // widgets their shapes actually use - these four are loaded lazily instead (one dynamic import
 // per widget, wrapped in React.lazy below). Every other editor/viewer is small enough that a
@@ -48,6 +48,7 @@ const lazyComponentLoaders = import.meta.glob([
   "/src/widgets/implementations/shui/editors/RichTextEditor/widget.tsx",
   "/src/widgets/implementations/shui/viewers/HTMLViewer/widget.tsx",
   "/src/widgets/implementations/st/editors/EditorJsEditor/widget.tsx",
+  "/src/widgets/implementations/st/viewers/SparqlViewer/widget.tsx",
 ]) as Record<string, () => Promise<{ default: WidgetComponent }>>;
 
 // MapFacet shares MapViewer/GeoEditor's own maplibre-gl+geoman+maplibre-gl-geo-editor footprint -
@@ -67,6 +68,7 @@ const eagerComponents = import.meta.glob(
     "!/src/widgets/implementations/shui/viewers/HTMLViewer/widget.tsx",
     "!/src/widgets/implementations/st/facets/MapFacet/widget.tsx",
     "!/src/widgets/implementations/st/editors/EditorJsEditor/widget.tsx",
+    "!/src/widgets/implementations/st/viewers/SparqlViewer/widget.tsx",
   ],
   { eager: true, import: "default" },
 ) as Record<string, WidgetComponent | GroupWidgetComponent | FacetWidgetComponent>;

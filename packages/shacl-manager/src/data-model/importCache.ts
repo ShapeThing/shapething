@@ -8,30 +8,23 @@ import type {
   Term,
 } from "@rdfjs/types";
 import { clear, createStore, get, set } from "idb-keyval";
-import { DataFactory } from "rdf-data-factory";
 import type { LoadedGraph } from "./loadDataModel.ts";
+import { factory } from "./rdf.ts";
 
-// Graphs reached through owl:imports are someone else's published standard (SKOS, DCTERMS, a
-// national profile...): large, slow to dereference and effectively static. So they are kept in
-// IndexedDB, keyed by graph IRI, and survive page reloads. The data model's own graph is never
-// cached - it is the one thing being edited.
-
-const factory = new DataFactory();
+// Imported graphs are published standards: large, slow to dereference and effectively static, so
+// they are kept in IndexedDB. The data model's own graph is never cached.
 
 // Bump when CacheEntry changes shape; older entries are then ignored and refetched.
 const CACHE_VERSION = 3;
 
-// A resolved import is kept until clearImportCache(). A failed one only for a day: the failure may
-// have been a network blip or a server that was briefly down, and that shouldn't hide the import
-// for good - but a dead URL also shouldn't cost a slow, failing fetch on every load.
+// A failure may have been a network blip, so it is only remembered for a day.
 const UNRESOLVABLE_TTL_MS = 24 * 60 * 60 * 1000;
 
 // Created lazily: IndexedDB doesn't exist outside the browser (tests, SSR).
 let idbStore: ReturnType<typeof createStore> | undefined;
 const getIdbStore = () => (idbStore ??= createStore("shacl-manager", "owl-imports"));
 
-// Terms are stored as compact tuples rather than RDF/JS objects: structured clone would drop the
-// factory's prototypes anyway, and tuples keep large vocabularies small on disk.
+// Compact tuples: structured clone drops the factory's prototypes anyway.
 type SerializedTerm =
   | ["N", string]
   | ["B", string]
@@ -79,9 +72,7 @@ const reviveTerm = (term: SerializedTerm, blankNodePrefix: string): Term => {
   }
 };
 
-// Blank node labels are only unique within one parse. A cached graph's labels could collide with
-// those of a freshly parsed graph (or another cached one) once they share a store, so each
-// revived graph gets labels of its own.
+// Blank node labels are only unique within one parse, so each revived graph gets its own.
 let reviveCounter = 0;
 
 export async function readCachedImport(graph: NamedNode): Promise<CachedImport | undefined> {
@@ -92,7 +83,6 @@ export async function readCachedImport(graph: NamedNode): Promise<CachedImport |
     return { status: "unresolvable", error: entry.error };
   }
   const prefix = `cached${reviveCounter++}_`;
-  // The tuples were written from a Quad's own positions, so each revives to a valid term there.
   const quads = entry.quads.map(([subject, predicate, object, graphTerm]) =>
     factory.quad(
       reviveTerm(subject, prefix) as Quad_Subject,
@@ -131,8 +121,7 @@ export async function writeUnresolvableImport(graph: NamedNode, error: unknown):
   await set(graph.value, entry, getIdbStore());
 }
 
-// Forgets every cached import (resolved and unresolvable), so the next load dereferences them all again (e.g. after an
-// upstream standard published a new version).
+// Forgets every cached import, e.g. after an upstream standard published a new version.
 export async function clearImportCache(): Promise<void> {
   await clear(getIdbStore());
 }

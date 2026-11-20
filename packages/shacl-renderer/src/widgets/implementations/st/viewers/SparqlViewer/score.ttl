@@ -1,0 +1,7 @@
+PREFIX st: <http://shapething.com/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# Opt-in only, via an explicit shui:viewer declaration: a SPARQL query is a plain xsd:string, with
+# nothing in the data to tell it apart from any other text. No WidgetScore rule at all, therefore -
+# select()'s own explicit-shui:viewer fast path is what makes it selectable (as st:ColorViewer).
+st:SparqlViewer rdfs:label "SPARQL query"@en, "SPARQL-query"@nl .

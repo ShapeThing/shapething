@@ -1,28 +1,25 @@
-import type { BlankNode, NamedNode } from "@rdfjs/types";
+import type { Resource } from "./rdf.ts";
 
-type Node = NamedNode | BlankNode;
-
-// One (node, parent) edge from a hierarchy query (shacl/shapeHierarchy.rq, owl/classHierarchy.rq),
-// parent unbound for a root.
-export type TreeRow = { parent?: Node; propertyCount: { value: string } };
+// One (node, parent) edge of a hierarchy, parent unbound for a root.
+export type TreeRow = { parent?: Resource; propertyCount?: { value: string } };
 
 export type TreeNode = {
-  term: Node;
-  propertyCount: number;
+  term: Resource;
+  propertyCount?: number;
   children: TreeNode[];
 };
 
-// Turns hierarchy query rows into a tree; `termOf` picks the row's node (its shape, its class).
-// Rows arrive most properties first, and every level keeps row order, so siblings stay sorted. A
-// node with several parents appears under each. A subClassOf cycle is cut where it closes, and
-// nodes only reachable through a cycle (no root above them) become roots themselves, so every node
-// shows up.
+// A sidebar's two sections: the nested hierarchy and everything outside it.
+export type Sections = { hierarchy: TreeNode[]; other: TreeNode[] };
+
+// Every level keeps row order. A node with several parents appears under each. A cycle is cut
+// where it closes; nodes only reachable through a cycle become roots, so every node shows up.
 export function buildTree<Row extends TreeRow>(
   rows: Row[],
-  termOf: (row: Row) => Node,
+  termOf: (row: Row) => Resource,
 ): TreeNode[] {
-  const propertyCounts = new Map<string, number>();
-  const terms = new Map<string, Node>();
+  const propertyCounts = new Map<string, number | undefined>();
+  const terms = new Map<string, Resource>();
   const children = new Map<string, string[]>();
   const hasParent = new Set<string>();
 
@@ -30,7 +27,7 @@ export function buildTree<Row extends TreeRow>(
     const term = termOf(row);
     const { parent, propertyCount } = row;
     terms.set(term.value, term);
-    propertyCounts.set(term.value, Number(propertyCount.value));
+    propertyCounts.set(term.value, propertyCount && Number(propertyCount.value));
     if (!parent) continue;
     hasParent.add(term.value);
     const siblings = children.get(parent.value) ?? [];
@@ -44,7 +41,7 @@ export function buildTree<Row extends TreeRow>(
     const path = new Set(ancestors).add(id);
     return {
       term: terms.get(id)!,
-      propertyCount: propertyCounts.get(id)!,
+      propertyCount: propertyCounts.get(id),
       children: (children.get(id) ?? [])
         .filter((child) => !path.has(child))
         .map((child) => build(child, path)),
@@ -60,8 +57,7 @@ export function buildTree<Row extends TreeRow>(
   return roots;
 }
 
-// How many distinct nodes these trees hold. A node with several parents appears under each, but
-// counts once.
+// Distinct nodes: one with several parents counts once.
 export function countNodes(trees: TreeNode[]): number {
   const seen = new Set<string>();
   const visit = (nodes: TreeNode[]) => {
@@ -74,9 +70,7 @@ export function countNodes(trees: TreeNode[]): number {
   return seen.size;
 }
 
-// The path from a root down to the first node matching `isTarget` (depth first, in tree order, so
-// the first place it shows in the sidebar), that node included. A node with several parents appears
-// under each; the first one wins. Undefined when no node matches.
+// The path from a root down to the first match, depth first: where it first shows in the sidebar.
 export function findTrail(
   trees: TreeNode[],
   isTarget: (node: TreeNode) => boolean,

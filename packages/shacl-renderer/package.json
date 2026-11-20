@@ -42,6 +42,7 @@
   },
   "dependencies": {
     "@comunica/query-sparql": "^5.4.1",
+    "@comunica/utils-bindings-factory": "^5.4.0",
     "@dnd-kit/core": "^6.3.1",
     "@dnd-kit/sortable": "^10.0.0",
     "@dnd-kit/utilities": "^3.2.2",
@@ -73,6 +74,7 @@
     "rdf-stores": "^2.5.1",
     "react-duration-control": "^2.0.2",
     "react-error-boundary": "^6.1.6",
+    "react-syntax-highlighter": "^16.1.1",
     "shacl-engine": "github:rdf-ext/shacl-engine#1d111fc772a71ec2118eed2974709c2b04f47510",
     "string-to-color-gradient": "^1.0.13",
     "string-to-stream": "^3.0.1",
@@ -104,7 +106,6 @@
     "prettier": "^3.9.9",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
-    "react-syntax-highlighter": "^16.1.1",
     "remark-gfm": "^4.0.1",
     "storybook": "^10.6.0",
     "ts-to-zod": "^5.1.0",

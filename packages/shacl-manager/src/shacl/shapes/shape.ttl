@@ -1,0 +1,230 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+@prefix meta: <http://shapething.com/shacl-manager/meta#>.
+
+# How a node shape, class or property group is shown. Predicates not declared here are generated
+# into meta:other.
+meta:shape
+    a sh:NodeShape ;
+    st:missingPropertiesGroup meta:other ;
+
+    # The other tabs show these: properties, queries and rules. They are not generated here.
+    sh:ignoredProperties ( sh:property sh:sparql sh:rule ) ;
+
+    # General
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path [ sh:alternativePath ( sh:name rdfs:label ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:path [ sh:alternativePath ( sh:description rdfs:comment ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+        sh:singleLine false ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Type"@en, "Type"@nl ;
+        sh:path rdf:type ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Subclass of"@en, "Subklasse van"@nl ;
+        sh:path rdfs:subClassOf ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Deactivated"@en, "Gedeactiveerd"@nl ;
+        sh:path sh:deactivated ;
+        sh:group meta:general ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "Severity"@en, "Ernst"@nl ;
+        sh:path sh:severity ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 6 ;
+        sh:name "Message"@en, "Melding"@nl ;
+        sh:path sh:message ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    # Targets (SHACL 1.2 Core 3.1.3)
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Target class"@en, "Doelklasse"@nl ;
+        sh:path sh:targetClass ;
+        sh:group meta:targets ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Target node"@en, "Doelknoop"@nl ;
+        sh:path sh:targetNode ;
+        sh:group meta:targets ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Target subjects of"@en, "Doel: subjecten van"@nl ;
+        sh:path sh:targetSubjectsOf ;
+        sh:group meta:targets ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Target objects of"@en, "Doel: objecten van"@nl ;
+        sh:path sh:targetObjectsOf ;
+        sh:group meta:targets ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Target where"@en, "Doel waar"@nl ;
+        sh:path sh:targetWhere ;
+        sh:group meta:targets ;
+    ] ;
+
+    # Node constraints
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Closed"@en, "Gesloten"@nl ;
+        sh:path sh:closed ;
+        sh:group meta:constraints ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Ignored properties"@en, "Genegeerde eigenschappen"@nl ;
+        sh:path sh:ignoredProperties ;
+        sh:group meta:constraints ;
+        sh:maxCount 1 ;
+        sh:memberShape [ sh:nodeKind sh:IRI ] ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Node"@en, "Knoop"@nl ;
+        sh:path sh:node ;
+        sh:group meta:constraints ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "And"@en, "En"@nl ;
+        sh:path sh:and ;
+        sh:group meta:constraints ;
+        sh:memberShape [ sh:nodeKind sh:BlankNodeOrIRI ] ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Or"@en, "Of"@nl ;
+        sh:path sh:or ;
+        sh:group meta:constraints ;
+        sh:memberShape [ sh:nodeKind sh:BlankNodeOrIRI ] ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "Exactly one of"@en, "Precies één van"@nl ;
+        sh:path sh:xone ;
+        sh:group meta:constraints ;
+        sh:memberShape [ sh:nodeKind sh:BlankNodeOrIRI ] ;
+    ] ;
+
+    sh:property [
+        sh:order 6 ;
+        sh:name "Not"@en, "Niet"@nl ;
+        sh:path sh:not ;
+        sh:group meta:constraints ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:order 7 ;
+        sh:name "Class"@en, "Klasse"@nl ;
+        sh:path sh:class ;
+        sh:group meta:constraints ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 8 ;
+        sh:name "Datatype"@en, "Datatype"@nl ;
+        sh:path sh:datatype ;
+        sh:group meta:constraints ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 9 ;
+        sh:name "Node kind"@en, "Knoopsoort"@nl ;
+        sh:path sh:nodeKind ;
+        sh:group meta:constraints ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 10 ;
+        sh:name "Allowed values"@en, "Toegestane waarden"@nl ;
+        sh:path sh:in ;
+        sh:group meta:constraints ;
+        sh:maxCount 1 ;
+    ] ;
+
+    .
+
+meta:general
+    a sh:PropertyGroup ;
+    sh:name "General"@en, "Algemeen"@nl ;
+    sh:order 0 .
+
+meta:targets
+    a sh:PropertyGroup ;
+    sh:name "Targets"@en, "Doelen"@nl ;
+    sh:order 1 .
+
+meta:constraints
+    a sh:PropertyGroup ;
+    sh:name "Constraints"@en, "Beperkingen"@nl ;
+    sh:order 2 .
+
+meta:other
+    a sh:PropertyGroup ;
+    sh:name "Other properties"@en, "Overige eigenschappen"@nl ;
+    sh:order 3 .

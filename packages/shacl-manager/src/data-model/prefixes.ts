@@ -1,13 +1,11 @@
 import type { NamedNode } from "@rdfjs/types";
-import { DataFactory } from "rdf-data-factory";
+import { factory } from "./rdf.ts";
 
-const factory = new DataFactory();
-
-// What may follow "prefix:" for the prefixed name to read back unambiguously (no "/", "#", "?").
+// A local name that reads back unambiguously: no "/", "#", "?".
 const LOCAL_NAME = /^[\w.-]*$/;
 
-// The shortest prefixed name for an IRI (longest matching namespace), or undefined when no
-// declared namespace fits.
+// The prefixed name with the longest matching namespace, using only the data model's own prefixes
+// so that segmentToIri can read it back.
 export function compactIri(iri: string, prefixes: Record<string, string>): string | undefined {
   let best: [alias: string, namespace: string] | undefined;
   for (const [alias, namespace] of Object.entries(prefixes)) {
@@ -18,10 +16,8 @@ export function compactIri(iri: string, prefixes: Record<string, string>): strin
   return best && `${best[0]}:${iri.slice(best[1].length)}`;
 }
 
-// A URL segment names an IRI as a prefixed name when one fits (skos:Concept), else as the full
-// IRI. Anything with "://" in it is a full IRI; everything else is read as a prefixed name, and
-// an unknown prefix falls back to the full IRI as written. ":" is valid in a path segment, so it
-// stays readable (#/shapes/managed/class/skos:Concept); "/", "#" and the like are encoded.
+// A URL segment names an IRI as a prefixed name when one fits (skos:Concept), else as the full IRI.
+// ":" is valid in a path segment, so it stays readable; "/", "#" and the like are encoded.
 export function iriToSegment(iri: string, prefixes: Record<string, string>): string {
   return encodeURIComponent(compactIri(iri, prefixes) ?? iri).replaceAll("%3A", ":");
 }

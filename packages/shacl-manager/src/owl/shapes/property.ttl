@@ -1,0 +1,163 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+@prefix meta: <http://shapething.com/shacl-manager/owl-property-meta#>.
+
+# How an RDF/OWL property is shown. Predicates not declared here are generated into meta:other.
+meta:property
+    a sh:NodeShape ;
+    st:missingPropertiesGroup meta:other ;
+
+    # General
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path [ sh:alternativePath ( rdfs:label skos:prefLabel ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:path [ sh:alternativePath ( rdfs:comment skos:definition ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+        sh:singleLine false ;
+    ] ;
+
+    # Also holds the property's characteristics: owl:FunctionalProperty, owl:TransitiveProperty...
+    sh:property [
+        sh:order 2 ;
+        sh:name "Type"@en, "Type"@nl ;
+        sh:path rdf:type ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Deprecated"@en, "Verouderd"@nl ;
+        sh:path owl:deprecated ;
+        sh:group meta:general ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Defined by"@en, "Gedefinieerd door"@nl ;
+        sh:path rdfs:isDefinedBy ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "See also"@en, "Zie ook"@nl ;
+        sh:path rdfs:seeAlso ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    # Domain and range
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Domain"@en, "Domein"@nl ;
+        sh:path rdfs:domain ;
+        sh:group meta:domainRange ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Range"@en, "Bereik"@nl ;
+        sh:path rdfs:range ;
+        sh:group meta:domainRange ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    # Hierarchy
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Subproperty of"@en, "Subeigenschap van"@nl ;
+        sh:path rdfs:subPropertyOf ;
+        sh:group meta:hierarchy ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Superproperty of"@en, "Supereigenschap van"@nl ;
+        sh:path [ sh:inversePath rdfs:subPropertyOf ] ;
+        sh:group meta:hierarchy ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    # Property axioms (OWL 2)
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Inverse of"@en, "Inverse van"@nl ;
+        sh:path owl:inverseOf ;
+        sh:group meta:axioms ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Equivalent property"@en, "Equivalente eigenschap"@nl ;
+        sh:path owl:equivalentProperty ;
+        sh:group meta:axioms ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Disjoint with"@en, "Disjunct met"@nl ;
+        sh:path owl:propertyDisjointWith ;
+        sh:group meta:axioms ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Property chain"@en, "Eigenschapsketen"@nl ;
+        sh:path owl:propertyChainAxiom ;
+        sh:group meta:axioms ;
+        sh:memberShape [ sh:nodeKind sh:BlankNodeOrIRI ] ;
+    ] ;
+
+    .
+
+meta:general
+    a sh:PropertyGroup ;
+    sh:name "General"@en, "Algemeen"@nl ;
+    sh:order 0 .
+
+meta:domainRange
+    a sh:PropertyGroup ;
+    sh:name "Domain and range"@en, "Domein en bereik"@nl ;
+    sh:order 1 .
+
+meta:hierarchy
+    a sh:PropertyGroup ;
+    sh:name "Hierarchy"@en, "Hiërarchie"@nl ;
+    sh:order 2 .
+
+meta:axioms
+    a sh:PropertyGroup ;
+    sh:name "Property axioms"@en, "Eigenschapsaxioma's"@nl ;
+    sh:order 3 .
+
+meta:other
+    a sh:PropertyGroup ;
+    sh:name "Other properties"@en, "Overige eigenschappen"@nl ;
+    sh:order 4 .

@@ -6,6 +6,7 @@ import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
 import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import {
   propertyLabel,
+  termLabel,
   valueNodeColor,
   valueNodeIcon,
   valueNodeLabel,
@@ -461,4 +462,39 @@ test("valueNodeIcon is undefined when no IconRole is declared", async () => {
   });
 
   expect(valueNodeIcon({ term: ex("texel"), propertyShape: shape })).toBeUndefined();
+});
+
+test("termLabel: bare-term label resolution for a whole shapes graph in one store", async () => {
+  const store = await parseRdf(
+    `${queryPrefixes}
+
+    ex:Config a shui:Configuration ; shui:languagePreference ( "nl" "en" ) .
+
+    ex:name rdfs:label "name"@en, "naam"@nl .
+    ex:Person rdfs:label "Person"@en, "Persoon"@nl .
+
+    ex:PersonShape a sh:NodeShape ;
+      sh:targetClass ex:Person ;
+      sh:property ex:NameShape, ex:AgeShape, ex:BirthDateShape .
+    ex:NameShape sh:path ex:name .
+    ex:AgeShape sh:path ex:age ; sh:name "Age"@en .
+    ex:BirthDateShape sh:path ex:birthDate .
+    ex:Group a sh:PropertyGroup ; rdfs:label "Basics"@en, "Basis"@nl .
+    `,
+    "text/turtle",
+  );
+  const label = (term: NamedNode, languages?: ("en" | "nl")[]) =>
+    termLabel({ term, shapesGraph: store, languages });
+
+  // Node shape: no own label, so its target class's, in the preferred language.
+  expect(label(ex("PersonShape"))).toBe("Persoon");
+  expect(label(ex("PersonShape"), ["en"])).toBe("Person");
+  // Property shape: its path's ontology label.
+  expect(label(ex("NameShape"))).toBe("naam");
+  // A wrong-language sh:name still beats the path's local name.
+  expect(label(ex("AgeShape"))).toBe("Age");
+  // Nothing at all: the path's humanized local name.
+  expect(label(ex("BirthDateShape"))).toBe("birth Date");
+  expect(label(ex("Group"))).toBe("Basis");
+  expect(label(ex("Person"), ["en"])).toBe("Person");
 });

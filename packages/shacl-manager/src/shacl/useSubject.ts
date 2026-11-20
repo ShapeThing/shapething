@@ -1,20 +1,18 @@
-import type { BlankNode, NamedNode } from "@rdfjs/types";
 import { useMatch } from "react-router";
+import type { SubjectKind } from "../app/paths.ts";
 import { useDataModel } from "../data-model/dataModelContext.ts";
+import type { Resource } from "../data-model/rdf.ts";
 import { segmentToTerm } from "../data-model/segments.ts";
 
-export type Subject = { kind: "class" | "shape"; term: NamedNode | BlankNode };
+export type Subject = { kind: SubjectKind; term: Resource };
 
-// The class or shape the current shapes page is about, read from class/:class or shape/:shape.
-// Matched against the whole URL rather than the route's params, so it also works outside those
-// routes (the layout's aside). Undefined when there is none, or the segment names a blank node the
-// data no longer has.
+const kinds: readonly string[] = ["shape", "class", "group"] satisfies SubjectKind[];
+
+// Matched against the whole URL, not the route's params, so the layout's aside can use it too.
 export function useSubject(): Subject | undefined {
-  const match = useMatch("/shapes/:origin/:kind/:segment/*");
+  const params = useMatch("/shapes/:origin/:kind/:segment/*")?.params;
   const dataModel = useDataModel();
-  const kind = match?.params.kind;
-  const segment = match?.params.segment;
-  if ((kind !== "class" && kind !== "shape") || !segment) return undefined;
-  const term = segmentToTerm(segment, dataModel);
-  return term ? { kind, term } : undefined;
+  if (!params?.kind || !kinds.includes(params.kind) || !params.segment) return undefined;
+  const term = segmentToTerm(params.segment, dataModel);
+  return term ? { kind: params.kind as SubjectKind, term } : undefined;
 }

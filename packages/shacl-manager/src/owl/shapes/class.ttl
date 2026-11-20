@@ -1,0 +1,176 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+@prefix meta: <http://shapething.com/shacl-manager/owl-meta#>.
+
+# How an OWL class is shown. Predicates not declared here are generated into meta:other.
+meta:class
+    a sh:NodeShape ;
+    st:missingPropertiesGroup meta:other ;
+
+    # General
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path [ sh:alternativePath ( rdfs:label skos:prefLabel ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:path [ sh:alternativePath ( rdfs:comment skos:definition ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+        sh:singleLine false ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Type"@en, "Type"@nl ;
+        sh:path rdf:type ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Deprecated"@en, "Verouderd"@nl ;
+        sh:path owl:deprecated ;
+        sh:group meta:general ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Defined by"@en, "Gedefinieerd door"@nl ;
+        sh:path rdfs:isDefinedBy ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "See also"@en, "Zie ook"@nl ;
+        sh:path rdfs:seeAlso ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    # Hierarchy
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Subclass of"@en, "Subklasse van"@nl ;
+        sh:path rdfs:subClassOf ;
+        sh:group meta:hierarchy ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Superclass of"@en, "Superklasse van"@nl ;
+        sh:path [ sh:inversePath rdfs:subClassOf ] ;
+        sh:group meta:hierarchy ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    # Class axioms (OWL 2 class expressions)
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Equivalent class"@en, "Equivalente klasse"@nl ;
+        sh:path owl:equivalentClass ;
+        sh:group meta:axioms ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Disjoint with"@en, "Disjunct met"@nl ;
+        sh:path owl:disjointWith ;
+        sh:group meta:axioms ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Union of"@en, "Vereniging van"@nl ;
+        sh:path owl:unionOf ;
+        sh:group meta:axioms ;
+        sh:maxCount 1 ;
+        sh:memberShape [ sh:nodeKind sh:BlankNodeOrIRI ] ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Intersection of"@en, "Doorsnede van"@nl ;
+        sh:path owl:intersectionOf ;
+        sh:group meta:axioms ;
+        sh:maxCount 1 ;
+        sh:memberShape [ sh:nodeKind sh:BlankNodeOrIRI ] ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Complement of"@en, "Complement van"@nl ;
+        sh:path owl:complementOf ;
+        sh:group meta:axioms ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "One of"@en, "Een van"@nl ;
+        sh:path owl:oneOf ;
+        sh:group meta:axioms ;
+        sh:maxCount 1 ;
+        sh:memberShape [ sh:nodeKind sh:IRI ] ;
+    ] ;
+
+    sh:property [
+        sh:order 6 ;
+        sh:name "Disjoint union of"@en, "Disjuncte vereniging van"@nl ;
+        sh:path owl:disjointUnionOf ;
+        sh:group meta:axioms ;
+        sh:maxCount 1 ;
+        sh:memberShape [ sh:nodeKind sh:BlankNodeOrIRI ] ;
+    ] ;
+
+    sh:property [
+        sh:order 7 ;
+        sh:name "Has key"@en, "Heeft sleutel"@nl ;
+        sh:path owl:hasKey ;
+        sh:group meta:axioms ;
+        sh:maxCount 1 ;
+        sh:memberShape [ sh:nodeKind sh:IRI ] ;
+    ] ;
+
+    .
+
+meta:general
+    a sh:PropertyGroup ;
+    sh:name "General"@en, "Algemeen"@nl ;
+    sh:order 0 .
+
+meta:hierarchy
+    a sh:PropertyGroup ;
+    sh:name "Hierarchy"@en, "Hiërarchie"@nl ;
+    sh:order 1 .
+
+meta:axioms
+    a sh:PropertyGroup ;
+    sh:name "Class axioms"@en, "Klasse-axioma's"@nl ;
+    sh:order 2 .
+
+meta:other
+    a sh:PropertyGroup ;
+    sh:name "Other properties"@en, "Overige eigenschappen"@nl ;
+    sh:order 3 .

@@ -1,0 +1,23 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# The property shapes of the properties tab, per shape in sh:order (unordered last), then by path.
+# Inputs: ?subject, ?kind ("shape", "class" or "group"), ?dataModel, ?origin.
+SELECT ?shape ?propertyShape ?path ?order ?name WHERE {
+  {
+    FILTER(?kind = "shape")
+    BIND(?subject AS ?shape)
+  } UNION {
+    FILTER(?kind = "class")
+    GRAPH ?graph { ?shape sh:targetClass ?subject }
+    FILTER(IF(?graph = ?dataModel, "managed", "imported") = ?origin)
+  } UNION {
+    FILTER(?kind = "group")
+    ?propertyShape sh:group ?subject .
+  }
+
+  ?shape sh:property ?propertyShape .
+  OPTIONAL { ?propertyShape sh:path ?path }
+  OPTIONAL { ?propertyShape sh:order ?order }
+  OPTIONAL { ?propertyShape sh:name ?name }
+}
+ORDER BY ?shape (!BOUND(?order)) ?order ?path ?propertyShape

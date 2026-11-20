@@ -151,6 +151,39 @@ export function ontologyLabel({
   languages,
 }: OntologyLabelOptions): string | undefined {
   const { scoresGraph, shapesGraph, dataGraph } = propertyShape;
+  const graphLabel = graphTermLabel({ term, shapesGraph, dataGraph, languages });
+  if (graphLabel) return graphLabel;
+
+  // Non-spec extension: scoresGraph (e.g. a widget registry entry's own rdfs:label) - tried after
+  // the spec's own data/shapes-graph steps, before falling back to the local name.
+  const scoresLabel = language(
+    scoresGraph.getQuads(term, rdfs("label")).map(({ object }) => object as Literal),
+    configuredLanguages(shapesGraph, languages ?? []),
+  );
+  if (scoresLabel) return scoresLabel.value;
+
+  return undefined;
+}
+
+type GraphTermLabelOptions = {
+  term: Term;
+  shapesGraph: RdfStore;
+  // Omitted when the data and the shapes live in one store (e.g. a shapes editor).
+  dataGraph?: RdfStore;
+  languages?: BCP47[];
+};
+
+/**
+ * 8.2.2 steps 2-3 on a bare term: its configured label path(s) (shui:labelPreference, default
+ * rdfs:label), DATA graph then SHAPES graph, best-matching language. No local-name fallback - see
+ * ontologyLabel, which adds the scoresGraph step on top of this for a PropertyUIElement.
+ */
+export function graphTermLabel({
+  term,
+  shapesGraph,
+  dataGraph,
+  languages,
+}: GraphTermLabelOptions): string | undefined {
   // Chrome (a label), not content - deliberately excludes sh:languageIn, see configuredLanguages.
   const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
   const termLabelPaths = effectiveLabelPredicates(shapesGraph, "term");
@@ -161,32 +194,17 @@ export function ontologyLabel({
   // across all of them - a higher-priority label predicate (e.g. skos:prefLabel) should win even if
   // only available in a non-preferred language, rather than losing to a lower-priority predicate
   // that happens to have a better-matching language.
-  for (const path of termLabelPaths) {
-    const literal = language(
-      walkPropertyPath(path, term, dataGraph).filter((v): v is Literal => v.termType === "Literal"),
-      effLanguages,
-    );
-    if (literal) return literal.value;
-  }
-
   // 3. SHAPES graph, subject P, configured label path(s).
-  for (const path of termLabelPaths) {
-    const literal = language(
-      walkPropertyPath(path, term, shapesGraph).filter(
-        (v): v is Literal => v.termType === "Literal",
-      ),
-      effLanguages,
-    );
-    if (literal) return literal.value;
+  const graphs = dataGraph && dataGraph !== shapesGraph ? [dataGraph, shapesGraph] : [shapesGraph];
+  for (const graph of graphs) {
+    for (const path of termLabelPaths) {
+      const literal = language(
+        walkPropertyPath(path, term, graph).filter((v): v is Literal => v.termType === "Literal"),
+        effLanguages,
+      );
+      if (literal) return literal.value;
+    }
   }
-
-  // Non-spec extension: scoresGraph (e.g. a widget registry entry's own rdfs:label) - tried after
-  // the spec's own data/shapes-graph steps, before falling back to the local name.
-  const scoresLabel = language(
-    scoresGraph.getQuads(term, rdfs("label")).map(({ object }) => object as Literal),
-    effLanguages,
-  );
-  if (scoresLabel) return scoresLabel.value;
 
   return undefined;
 }
@@ -214,16 +232,15 @@ export function propertyLabel({
   // is kept as `fallbackPropertyShapeValue` and only used once the ontology has also had its chance
   // (see the bottom of this function), so a translated ontology term still wins, but a shape that
   // simply has no ontology label at all still shows *something* better than the raw local name.
-  let fallbackPropertyShapeValue: string | undefined;
-  if (isPropertyPath) {
-    for (const path of effectiveLabelPredicates(shapesGraph, "propertyShape")) {
-      if (path.type !== "predicate") continue;
-      const values = orderedValues(propertyShape, path.predicate);
-      const value = bestByLanguage(values, effLanguages, { strict: true });
-      if (value) return value.value;
-      fallbackPropertyShapeValue ??= bestByLanguage(values, effLanguages)?.value;
-    }
-  }
+  const own = isPropertyPath
+    ? propertyShapeOwnLabel(
+        shapesGraph,
+        (predicate) => orderedValues(propertyShape, predicate),
+        effLanguages,
+      )
+    : {};
+  if (own.match) return own.match;
+  const fallbackPropertyShapeValue = own.fallback;
 
   // 2-4. The ontology's own label for P, across data graph / shapes graph / scoresGraph.
   const ontology = ontologyLabel({ term, propertyShape, languages });
@@ -236,6 +253,56 @@ export function propertyLabel({
   // 4/5. Local-name resolution of P (or, for a non-IRI/complex term, its own value), humanized by
   // splitting into words at camelCase/acronym and letter-digit boundaries.
   return localNameLabel(term) ?? term.value;
+}
+
+// propertyLabel's step 1, shared with propertyShapeLabel: the property shape's own configured
+// label-predicate value(s), as a strict language `match`, else a wrong-language `fallback` to use
+// only once the ontology has had its chance too (see propertyLabel for why).
+function propertyShapeOwnLabel(
+  shapesGraph: RdfStore,
+  valuesOf: (predicate: NamedNode) => Term[],
+  languages: LanguageRange[],
+): { match?: string; fallback?: string } {
+  let fallback: string | undefined;
+  for (const path of effectiveLabelPredicates(shapesGraph, "propertyShape")) {
+    if (path.type !== "predicate") continue;
+    const values = valuesOf(path.predicate);
+    const value = bestByLanguage(values, languages, { strict: true });
+    if (value) return { match: value.value };
+    fallback ??= bestByLanguage(values, languages)?.value;
+  }
+  return { fallback };
+}
+
+type PropertyShapeLabelOptions = {
+  propertyShape: Term;
+  shapesGraph: RdfStore;
+  dataGraph?: RdfStore;
+  languages?: BCP47[];
+};
+
+/**
+ * propertyLabel() for a bare property shape node rather than a PropertyUIElement: its own
+ * configured label (default sh:name), else its sh:path's ontology label (graphTermLabel), else a
+ * wrong-language own label, else its path's humanized local name. Undefined only for a complex
+ * (blank node) path with no label at all.
+ */
+export function propertyShapeLabel({
+  propertyShape,
+  shapesGraph,
+  dataGraph,
+  languages,
+}: PropertyShapeLabelOptions): string | undefined {
+  const effLanguages = configuredLanguages(shapesGraph, languages ?? []);
+  const valuesOf = (predicate: NamedNode) =>
+    shapesGraph.getQuads(propertyShape, predicate).map(({ object }) => object);
+
+  const own = propertyShapeOwnLabel(shapesGraph, valuesOf, effLanguages);
+  if (own.match) return own.match;
+
+  const path = valuesOf(sh("path"))[0];
+  const ontology = path && graphTermLabel({ term: path, shapesGraph, dataGraph, languages });
+  return ontology || own.fallback || (localNameLabel(path) ?? undefined);
 }
 
 type PropertyDescriptionOptions = {
@@ -1076,4 +1143,45 @@ export function focusNodeLabel({
     if (literal) return literal.value;
   }
   return undefined;
+}
+
+type TermLabelOptions = {
+  term: Term;
+  shapesGraph: RdfStore;
+  dataGraph?: RdfStore;
+  languages?: BCP47[];
+};
+
+const isPropertyShape = (term: Term, shapesGraph: RdfStore) =>
+  shapesGraph.getQuads(term, sh("path")).length > 0;
+
+const isNodeShape = (term: Term, shapesGraph: RdfStore) =>
+  shapesGraph.getQuads(term, rdf("type"), sh("NodeShape")).length > 0 ||
+  shapesGraph.getQuads(term, sh("targetClass")).length > 0 ||
+  shapesGraph.getQuads(term, sh("property")).length > 0;
+
+/**
+ * A label for any term in a shapes graph, with no PropertyUIElement around it - for tools that
+ * list shapes graph contents (a shapes editor's trees, breadcrumbs, links). Dispatches to the
+ * resolution matching what the term is: propertyShapeLabel for a property shape, nodeShapeLabel
+ * for a node shape, else groupLabel (rdfs:label, then sh:name - property groups, classes, rules),
+ * then graphTermLabel's data-graph lookup, then the humanized local name. Undefined for a blank
+ * node with no label at all.
+ */
+export function termLabel({
+  term,
+  shapesGraph,
+  dataGraph,
+  languages,
+}: TermLabelOptions): string | undefined {
+  if (isPropertyShape(term, shapesGraph))
+    return propertyShapeLabel({ propertyShape: term, shapesGraph, dataGraph, languages });
+  if (isNodeShape(term, shapesGraph) && term.termType !== "Literal")
+    return nodeShapeLabel({ nodeShapes: [term as Quad_Subject], shapesGraph, languages });
+  return (
+    groupLabel({ node: term, shapesGraph, languages }) ??
+    graphTermLabel({ term, shapesGraph, dataGraph, languages }) ??
+    localNameLabel(term) ??
+    undefined
+  );
 }

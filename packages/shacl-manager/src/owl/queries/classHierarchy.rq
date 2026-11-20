@@ -1,0 +1,33 @@
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# One row per (class, parent) edge of the knowledge sidebar, parent unbound for a root.
+# Inputs: ?dataModel, ?origin, ?section ("hierarchy": named classes, "other": anonymous ones).
+SELECT DISTINCT ?class ?parent WHERE {
+  # DISTINCT: a class declared several ways would otherwise run the parent search once per
+  # declaration, and Comunica stalls on that. The inputs are projected to reach the inner FILTERs.
+  {
+    SELECT DISTINCT ?class ?dataModel ?origin ?section WHERE {
+      GRAPH ?graph {
+        { ?class a owl:Class } UNION { ?class a rdfs:Class } UNION { ?class a owl:Restriction }
+        UNION { ?class rdfs:subClassOf ?anySuperClass }
+        UNION { ?class owl:unionOf|owl:intersectionOf|owl:complementOf|owl:oneOf ?anyMembers }
+      }
+      FILTER(IF(?graph = ?dataModel, "managed", "imported") = ?origin)
+      FILTER(isIRI(?class) = (?section = "hierarchy"))
+    }
+  }
+
+  # Only the direct superclass of the same origin: rdfs:subClassOf+ with a FILTER NOT EXISTS per
+  # candidate stalls Comunica with as few as a dozen imported classes.
+  OPTIONAL {
+    FILTER(?section = "hierarchy")
+    ?class rdfs:subClassOf ?parent .
+    FILTER(isIRI(?parent) && ?parent != ?class)
+    GRAPH ?parentGraph {
+      { ?parent a owl:Class } UNION { ?parent a rdfs:Class } UNION { ?parent rdfs:subClassOf ?anyParentSuperClass }
+    }
+    FILTER(IF(?parentGraph = ?dataModel, "managed", "imported") = ?origin)
+  }
+}
+ORDER BY ?class

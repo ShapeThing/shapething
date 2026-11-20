@@ -1,0 +1,136 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix meta: <http://shapething.com/shacl-manager/rule-meta#>.
+
+# How a SHACL rule (sh:SPARQLRule or sh:TripleRule) is shown. Predicates not declared here are
+# generated into meta:other.
+meta:shape
+    a sh:NodeShape ;
+    st:missingPropertiesGroup meta:other ;
+
+    # General
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path [ sh:alternativePath ( rdfs:label sh:name ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:path [ sh:alternativePath ( rdfs:comment sh:description ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+        sh:singleLine false ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Type"@en, "Type"@nl ;
+        sh:path rdf:type ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Order"@en, "Volgorde"@nl ;
+        sh:description "Rules run from the lowest order to the highest."@en, "Regels draaien van de laagste volgorde naar de hoogste."@nl ;
+        sh:path sh:order ;
+        sh:group meta:general ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
+        sh:name "Deactivated"@en, "Gedeactiveerd"@nl ;
+        sh:path sh:deactivated ;
+        sh:group meta:general ;
+        sh:datatype xsd:boolean ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 5 ;
+        sh:name "Condition"@en, "Voorwaarde"@nl ;
+        sh:description "Shapes a focus node must conform to for the rule to apply."@en, "Vormen waaraan een focusknoop moet voldoen voordat de regel geldt."@nl ;
+        sh:path sh:condition ;
+        sh:group meta:general ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    # SPARQL rule
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "CONSTRUCT query"@en, "CONSTRUCT-query"@nl ;
+        sh:path sh:construct ;
+        shui:viewer st:SparqlViewer ;
+        sh:group meta:sparqlRule ;
+        sh:datatype xsd:string ;
+        sh:singleLine false ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Prefixes"@en, "Prefixen"@nl ;
+        sh:path sh:prefixes ;
+        sh:group meta:sparqlRule ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+    ] ;
+
+    # Triple rule
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Subject"@en, "Subject"@nl ;
+        sh:path sh:subject ;
+        sh:group meta:tripleRule ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Predicate"@en, "Predicaat"@nl ;
+        sh:path sh:predicate ;
+        sh:group meta:tripleRule ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Object"@en, "Object"@nl ;
+        sh:path sh:object ;
+        sh:group meta:tripleRule ;
+        sh:maxCount 1 ;
+    ] ;
+
+    .
+
+meta:general
+    a sh:PropertyGroup ;
+    sh:name "General"@en, "Algemeen"@nl ;
+    sh:order 0 .
+
+meta:sparqlRule
+    a sh:PropertyGroup ;
+    sh:name "SPARQL rule"@en, "SPARQL-regel"@nl ;
+    sh:order 1 .
+
+meta:tripleRule
+    a sh:PropertyGroup ;
+    sh:name "Triple rule"@en, "Tripleregel"@nl ;
+    sh:order 2 .
+
+meta:other
+    a sh:PropertyGroup ;
+    sh:name "Other properties"@en, "Overige eigenschappen"@nl ;
+    sh:order 3 .

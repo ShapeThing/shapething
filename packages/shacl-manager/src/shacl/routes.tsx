@@ -1,61 +1,68 @@
 import { Navigate, type RouteObject } from "react-router";
+import { editRoute, newRoute } from "../app/edit/routes.ts";
+import { MetaPage } from "../app/MetaView.tsx";
+import { OriginIntro } from "../app/OriginIntro.tsx";
 import { route } from "../app/route.tsx";
-import { ShapeMeta } from "./pages/ShapeMeta/index.tsx";
-import { ShapeProperties } from "./pages/ShapeProperties/index.tsx";
-import { ShapeProperty } from "./pages/ShapeProperty/index.tsx";
-import { ShapeQueries } from "./pages/ShapeQueries/index.tsx";
-import { ShapeQuery } from "./pages/ShapeQuery/index.tsx";
-import { ShapeRule } from "./pages/ShapeRule/index.tsx";
-import { ShapeRules } from "./pages/ShapeRules/index.tsx";
-import { PropertiesCount, QueriesCount, RulesCount } from "./tabCounts.tsx";
+import { listTabs, type ListTab } from "./listTabs.ts";
+import {
+  PropertiesCount,
+  QueriesCount,
+  RulesCount,
+  SubjectList,
+  SubjectMeta,
+} from "./subjectPages.tsx";
 
-const propertiesRoute: RouteObject = {
-  path: "properties",
-  element: <ShapeProperties />,
-  handle: { Count: PropertiesCount },
-  children: [{ path: ":property", element: <ShapeProperty /> }],
+const metaRoute: RouteObject = {
+  path: "meta",
+  element: <SubjectMeta />,
+  handle: { label: "Meta" },
+  children: [editRoute],
 };
 
-// class/:class is everything this origin's shapes say about a class (read-only overview);
-// shape/:shape is one shape's own content, where editing happens. Both take an IRI as a prefixed
-// name when one fits (skos:Concept), else the full IRI - see data-model/prefixes.ts.
+const listRoute = (path: string, tab: ListTab, Count: () => React.ReactNode): RouteObject => ({
+  path,
+  element: <SubjectList tab={tab} />,
+  handle: { label: tab.label, Count },
+  children: [
+    {
+      path: `:${tab.param}`,
+      element: <MetaPage param={tab.param} shapes={tab.shapes} />,
+      children: [editRoute],
+    },
+    newRoute(),
+  ],
+});
+
+const propertiesRoute = listRoute("properties", listTabs.properties, PropertiesCount);
+
+// class/:class gathers what the origin's shapes say about a class; shape/:shape is one shape.
 const subjectRoute = (kind: "class" | "shape", title: string): RouteObject =>
   route(`${kind}/:${kind}`, title, [
     { index: true, element: <Navigate to="meta" replace /> },
-    { path: "meta", element: <ShapeMeta /> },
+    metaRoute,
     propertiesRoute,
-    {
-      path: "queries",
-      element: <ShapeQueries />,
-      handle: { Count: QueriesCount },
-      children: [{ path: ":constraint", element: <ShapeQuery /> }],
-    },
-    {
-      path: "rules",
-      element: <ShapeRules />,
-      handle: { Count: RulesCount },
-      children: [{ path: ":rule", element: <ShapeRule /> }],
-    },
+    listRoute("queries", listTabs.queries, QueriesCount),
+    listRoute("rules", listTabs.rules, RulesCount),
   ]);
 
-// group/:group is a property group (sh:PropertyGroup): its own subject beside classes and shapes,
-// not nested under a shape, since one group gathers property shapes from any shape.
+// A property group gathers property shapes from any shape, so it is a subject of its own.
 const groupRoute = (): RouteObject =>
   route("group/:group", "Property group", [
     { index: true, element: <Navigate to="meta" replace /> },
-    { path: "meta", element: <ShapeMeta /> },
+    metaRoute,
     propertiesRoute,
   ]);
 
 const originRoute = (origin: "managed" | "imported", title: string) =>
   route(origin, title, [
+    { index: true, element: <OriginIntro perspective="shapes" origin={origin} /> },
     subjectRoute("class", "Class"),
     subjectRoute("shape", "Shape"),
     groupRoute(),
+    ...(origin === "managed" ? [newRoute("new/shape"), newRoute("new/group")] : []),
   ]);
 
 export const shaclRoutes: RouteObject = {
-  // No element: the sidebar renders the managed/imported tabs.
   path: "shapes",
   children: [
     { index: true, element: <Navigate to="managed" replace /> },

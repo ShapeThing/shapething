@@ -1,0 +1,44 @@
+@prefix ex: <http://example.org/>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
+@prefix st: <http://shapething.com/>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass sh:SPARQLConstraint ;
+
+    sh:property [
+        sh:name "Message"@en, "Melding"@nl ;
+        sh:path sh:message ;
+    ] ;
+
+    sh:property [
+        sh:name "Query"@en, "Query"@nl ;
+        sh:path sh:select ;
+        shui:viewer st:SparqlViewer ;
+    ] ;
+    .
+
+# The prefixes the constraint's query may use without declaring them (sh:prefixes/sh:declare).
+<#prefixes>
+    sh:declare [
+        sh:prefix "skos" ;
+        sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ;
+    ] ;
+    .
+
+<#data>
+    a sh:SPARQLConstraint ;
+    sh:prefixes <#prefixes> ;
+    sh:message "A concept must not be broader than itself."@en ;
+    sh:select """
+        # Every concept that is its own (transitive) broader concept.
+        SELECT $this ?value
+        WHERE {
+          $this skos:broader+ ?value .
+          FILTER (?value = $this)
+        }
+    """ ;
+    .

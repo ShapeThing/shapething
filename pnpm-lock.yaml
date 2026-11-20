@@ -918,12 +918,6 @@ importers:
 
   packages/shacl-manager:
     dependencies:
-      '@comunica/query-sparql-rdfjs':
-        specifier: ^5.4.1
-        version: 5.4.1
-      '@comunica/utils-bindings-factory':
-        specifier: ^5.4.0
-        version: 5.4.0
       '@rdfjs/types':
         specifier: ^2.0.1
         version: 2.0.1
@@ -991,6 +985,9 @@ importers:
       '@comunica/query-sparql':
         specifier: ^5.4.1
         version: 5.4.1
+      '@comunica/utils-bindings-factory':
+        specifier: ^5.4.0
+        version: 5.4.0
       '@dnd-kit/core':
         specifier: ^6.3.1
         version: 6.3.1(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -1084,6 +1081,9 @@ importers:
       react-error-boundary:
         specifier: ^6.1.6
         version: 6.1.6(@types/react@19.3.0)(react@19.3.0)
+      react-syntax-highlighter:
+        specifier: ^16.1.1
+        version: 16.1.1(react@19.3.0)
       shacl-engine:
         specifier: github:rdf-ext/shacl-engine#1d111fc772a71ec2118eed2974709c2b04f47510
         version: https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510(patch_hash=91315241c7505fb891ad84c8e2344a3a5c2808b7400989948e373badde3aa7ea)
@@ -1172,9 +1172,6 @@ importers:
       react-dom:
         specifier: ^19.3.0
         version: 19.3.0(react@19.3.0)
-      react-syntax-highlighter:
-        specifier: ^16.1.1
-        version: 16.1.1(react@19.3.0)
       remark-gfm:
         specifier: ^4.0.1
         version: 4.0.1(supports-color@8.1.1)

@@ -1,0 +1,9 @@
+@prefix st: <http://shapething.com/>.
+@prefix meta: <http://shapething.com/shacl-manager/owl-property-meta#>.
+
+# The edit dialog shows the meta shape's groups as vertical tabs.
+meta:general a st:VerticalTabbedPropertyGroup .
+meta:domainRange a st:VerticalTabbedPropertyGroup .
+meta:hierarchy a st:VerticalTabbedPropertyGroup .
+meta:axioms a st:VerticalTabbedPropertyGroup .
+meta:other a st:VerticalTabbedPropertyGroup .

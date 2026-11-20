@@ -28,8 +28,13 @@ export default defineConfig({
         plugins: ["react"],
       },
       {
-        files: ["packages/shacl-renderer/**"],
+        files: ["packages/shacl-renderer/**", "packages/shacl-manager/**"],
         plugins: ["jsx-a11y"],
+      },
+      {
+        files: ["packages/shacl-manager/**"],
+        plugins: ["react"],
+        rules: { "react/rules-of-hooks": "error", "react/exhaustive-deps": "warn" },
       },
       {
         // Code samples shown verbatim on the website: they declare values to show the API's

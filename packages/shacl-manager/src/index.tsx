@@ -1,8 +1,12 @@
-import type { NamedNode } from "@rdfjs/types";
-import { Suspense, use, useState, type ReactNode } from "react";
+import type { NamedNode, Quad } from "@rdfjs/types";
+import type { BCP47 } from "@shapething/shacl-renderer";
+import { startTransition, Suspense, use, useState, type ReactNode } from "react";
 import { RouterProvider } from "react-router";
+import "@shapething/shacl-renderer/style.css";
 import { createShaclManagerRouter } from "./app/router.tsx";
-import { DataModelContext } from "./data-model/dataModelContext.ts";
+import { LanguagesContext } from "./app/termLabel.ts";
+import { CommitContext, DataModelContext } from "./data-model/dataModelContext.ts";
+import { ownQuads } from "./data-model/editGraphs.ts";
 import { loadDataModel, type DataModel, type LoadGraph } from "./data-model/loadDataModel.ts";
 
 export type { LoadGraph, DataModel } from "./data-model/loadDataModel.ts";
@@ -12,16 +16,21 @@ export type ShaclManagerProps = {
   dataModelIRI: NamedNode;
   loadGraph: LoadGraph;
   fallback?: ReactNode;
+  // Most preferred first; the browser's by default.
+  languages?: BCP47[];
+  // Called after every edit with every quad of the data model's own graph, for the host to save.
+  onDataModelChange?: (quads: Quad[]) => void;
 };
 
 export function ShaclManager({
   dataModelIRI,
   loadGraph,
   fallback = "Loading…",
+  languages = navigatorLanguages(),
+  onDataModelChange,
 }: ShaclManagerProps) {
-  // The load is started here, outside the Suspense boundary: a component that suspends before it
-  // ever mounted loses its state, so a promise created inside DataModelView would be recreated on
-  // every retry and never settle. A different data model (or loader) starts a fresh load.
+  // Started outside the Suspense boundary: a component that suspends before it ever mounted loses
+  // its state, so a promise created inside it would be recreated on every retry.
   const [load, setLoad] = useState(() => ({
     dataModelIRI,
     loadGraph,
@@ -33,26 +42,42 @@ export function ShaclManager({
 
   return (
     <Suspense fallback={fallback}>
-      <DataModelView key={load.dataModelIRI.value} dataModelPromise={load.promise} />
+      <LanguagesContext value={languages}>
+        <DataModelView
+          key={load.dataModelIRI.value}
+          dataModelPromise={load.promise}
+          onDataModelChange={onDataModelChange}
+        />
+      </LanguagesContext>
     </Suspense>
   );
 }
 
-function DataModelView({ dataModelPromise }: { dataModelPromise: Promise<DataModel> }) {
-  const dataModel = use(dataModelPromise);
-  const { dataModelIRI, store, importedGraphIRIs, cachedGraphIRIs, unresolvableGraphIRIs } =
-    dataModel;
+const navigatorLanguages = (): BCP47[] =>
+  typeof navigator === "undefined" ? [] : (navigator.languages as BCP47[]);
+
+type DataModelViewProps = {
+  dataModelPromise: Promise<DataModel>;
+  onDataModelChange?: (quads: Quad[]) => void;
+};
+
+function DataModelView({ dataModelPromise, onDataModelChange }: DataModelViewProps) {
+  const loaded = use(dataModelPromise);
+  // In a transition, so the pages stay on screen while the queries over the edited store run.
+  const [dataModel, setDataModel] = useState(loaded);
+  const commit = (next: DataModel) => {
+    startTransition(() => setDataModel(next));
+    onDataModelChange?.(ownQuads(next));
+  };
 
   const [router] = useState(createShaclManagerRouter);
 
   return (
     <div className="st-manager-root">
-      <div>
-        Loaded {store.size} quads from &lt;{dataModelIRI.value}&gt; and {importedGraphIRIs.length}{" "}
-        imports ({cachedGraphIRIs.length} from cache, {unresolvableGraphIRIs.length} unresolvable)
-      </div>
       <DataModelContext value={dataModel}>
-        <RouterProvider router={router} />
+        <CommitContext value={commit}>
+          <RouterProvider router={router} />
+        </CommitContext>
       </DataModelContext>
     </div>
   );

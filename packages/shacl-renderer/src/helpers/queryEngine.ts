@@ -1,6 +1,7 @@
-import type { Bindings } from "@rdfjs/types";
+import type { BlankNode, Bindings, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { withCorsProxy } from "@/helpers/corsProxy.ts";
+import { factory } from "@/helpers/factory.ts";
 import { geosparqlExtensionFunctions } from "@/helpers/geosparqlFunctions.ts";
 
 // The one Comunica engine every module in this package runs its SPARQL through - a local RDF/JS
@@ -67,4 +68,65 @@ export async function selectBindings(
     ...(fetchOverride ? { fetch: fetchOverride } : {}),
   } as never);
   return stream.toArray();
+}
+
+// The row type of a query string branded with one (e.g. a typed-sparql TypedQuery<Row>), else
+// a plain record of terms.
+type Brand<Query> = Exclude<keyof Query, keyof string>;
+export type QueryRow<Query> = [Brand<Query>] extends [never]
+  ? Record<string, Term>
+  : Query[Brand<Query>] extends infer Row extends object
+    ? Row
+    : never;
+
+/**
+ * Runs a SELECT `query` against a local store and returns its rows as plain objects, variable
+ * name to term. `bindings` pre-binds variables (blank nodes from `store` included). Patterns
+ * outside GRAPH {} see the union of all graphs. Blank nodes in the rows are the store's own.
+ */
+export async function select<Query extends string>(
+  query: Query,
+  store: RdfStore,
+  bindings: Record<string, Term> = {},
+): Promise<QueryRow<Query>[]> {
+  const engine = await getQueryEngine();
+  const { BindingsFactory } = await import("@comunica/utils-bindings-factory");
+  const initialBindings = new BindingsFactory(factory).fromRecord(
+    Object.fromEntries(Object.entries(bindings).map(([name, term]) => [name, toQueryTerm(term)])),
+  );
+  const stream = await engine.queryBindings(query, {
+    sources: [store],
+    unionDefaultGraph: true,
+    initialBindings,
+    extensionFunctions: geosparqlExtensionFunctions,
+  } as never);
+  const rows = await stream.toArray();
+  return rows.map(
+    (row) =>
+      Object.fromEntries(
+        [...row].map(([variable, term]) => [variable.value, toStoreTerm(term)]),
+      ) as QueryRow<Query>,
+  );
+}
+
+// Comunica scopes the blank nodes of a source: it hands them out labelled "bc_0_<label>", with
+// the store's own label on a skolem IRI. A raw store blank node as a binding would match nothing,
+// so it is given in that form; result blank nodes are turned back into the store's.
+const SKOLEM_PREFIX = /^urn:comunica_skolem:source_\d+:/;
+
+function toQueryTerm(term: Term): Term {
+  if (term.termType !== "BlankNode") return term;
+  const value = `bc_0_${term.value}`;
+  return {
+    termType: "BlankNode",
+    value,
+    skolemized: factory.namedNode(`urn:comunica_skolem:source_0:${term.value}`),
+    equals: (other?: Term | null) => other?.termType === "BlankNode" && other.value === value,
+  } as BlankNode;
+}
+
+function toStoreTerm(term: Term): Term {
+  const skolemized = (term as { skolemized?: Term }).skolemized;
+  if (term.termType !== "BlankNode" || skolemized?.termType !== "NamedNode") return term;
+  return factory.blankNode(skolemized.value.replace(SKOLEM_PREFIX, ""));
 }
