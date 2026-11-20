@@ -1,3 +1,6 @@
+# The project name keeps the volumes (Caddy's certificates) and containers of the existing deployment.
+name: cors
+
 services:
   cors:
     build:

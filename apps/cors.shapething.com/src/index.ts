@@ -18,6 +18,21 @@ function isAllowedOrigin(origin: string | null): origin is string {
   );
 }
 
+// git's smart HTTP protocol: GET .../info/refs?service=git-*-pack and POST .../git-*-pack.
+function isGitSmartHttp(targetUrl: string): boolean {
+  try {
+    const { protocol, pathname, searchParams } = new URL(targetUrl);
+    if (protocol !== "https:") return false;
+    if (/\/git-(upload|receive)-pack$/.test(pathname)) return true;
+    return (
+      pathname.endsWith("/info/refs") &&
+      /^git-(upload|receive)-pack$/.test(searchParams.get("service") ?? "")
+    );
+  } catch {
+    return false;
+  }
+}
+
 function corsHeaders(origin: string) {
   const headers = new Headers();
   headers.set("Access-Control-Allow-Origin", origin);
@@ -59,6 +74,10 @@ async function handleRequest(request: Request): Promise<Response> {
   const headers = new Headers();
   const accept = request.headers.get("Accept");
   if (accept) headers.set("Accept", accept);
+  // Pushing from the browser (shacl-manager.shapething.com) authenticates against the git host.
+  // Only git's smart HTTP endpoints get the client's Authorization, nothing else does.
+  const authorization = request.headers.get("Authorization");
+  if (authorization && isGitSmartHttp(targetUrl)) headers.set("Authorization", authorization);
   if (request.method !== "GET" && request.method !== "HEAD") {
     const contentType = request.headers.get("Content-Type") ?? "application/json";
     headers.set("Content-Type", contentType);
