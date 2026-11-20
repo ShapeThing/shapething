@@ -4,12 +4,12 @@ import { ShaclManager } from "@shapething/shacl-manager";
 import { DataFactory } from "n3";
 import { Suspense, use, useMemo, useState } from "react";
 import {
-  baseIriOf,
   dataModelSource,
-  graphLabel,
-  listGraphs,
+  fileLabel,
+  folderBase,
+  listDataModels,
   openFolder,
-  setBaseIri,
+  type DataModelFile,
   type Folder,
 } from "./folder.ts";
 import { ErrorBoundary } from "./ErrorBoundary.tsx";
@@ -18,10 +18,12 @@ import { GitPanel } from "./GitPanel.tsx";
 // The folder and data model are kept in the query string; the hash belongs to the manager.
 const readParam = (name: string) => new URLSearchParams(location.search).get(name) ?? undefined;
 
-function writeParams(params: { folder?: string; graph?: string }) {
+// graph is the file, iri the data model it holds: only needed until a new data model is saved.
+function writeParams(params: { folder?: string; graph?: string; iri?: string }) {
   const search = new URLSearchParams();
   if (params.folder) search.set("folder", params.folder);
   if (params.graph) search.set("graph", params.graph);
+  if (params.iri) search.set("iri", params.iri);
   const query = search.size ? `?${search}` : "";
   history.replaceState(
     null,
@@ -120,26 +122,26 @@ function FolderPicker({ onOpen, error }: { onOpen: (name?: string) => void; erro
   );
 }
 
+// The chosen file, with the IRI asked for when it is a new data model.
+type Selection = { file: NamedNode; iri?: NamedNode };
+
 function Workspace({ folder, onClose }: { folder: Folder; onClose: () => void }) {
-  const [baseIri, setBaseIriState] = useState(() => baseIriOf(folder.name));
-  const [graphsPromise, setGraphsPromise] = useState(() => listGraphs(folder));
-  const [graph, setGraph] = useState<NamedNode | undefined>(() => {
-    const value = readParam("graph");
-    return value ? DataFactory.namedNode(value) : undefined;
+  const [modelsPromise, setModelsPromise] = useState(() => listDataModels(folder));
+  const [selection, setSelection] = useState<Selection | undefined>(() => {
+    const file = readParam("graph");
+    const iri = readParam("iri");
+    return file
+      ? { file: DataFactory.namedNode(file), iri: iri ? DataFactory.namedNode(iri) : undefined }
+      : undefined;
   });
   // Bumped on every save, so the git panel looks at the files again.
   const [saves, setSaves] = useState(0);
 
-  const selectGraph = (next?: NamedNode) => {
-    writeParams({ folder: folder.name, graph: next?.value });
-    setGraph(next);
-  };
-
-  const changeBaseIri = (value: string) => {
-    setBaseIri(folder, value);
-    setBaseIriState(value);
-    setGraphsPromise(listGraphs(folder));
-    selectGraph(undefined);
+  const select = (next?: Selection) => {
+    writeParams({ folder: folder.name, graph: next?.file.value, iri: next?.iri?.value });
+    // Back at the list: files may have been added or declare another IRI by now.
+    if (!next) setModelsPromise(listDataModels(folder));
+    setSelection(next);
   };
 
   return (
@@ -149,9 +151,9 @@ function Workspace({ folder, onClose }: { folder: Folder; onClose: () => void })
         <span className="app-bar__folder" title="The connected folder">
           {folder.name}
         </span>
-        {graph && (
-          <button type="button" className="st-button app-bar__graph" onClick={() => selectGraph()}>
-            {graphLabel(graph, baseIri)}
+        {selection && (
+          <button type="button" className="st-button app-bar__graph" onClick={() => select()}>
+            {fileLabel(selection.file, folder.name)}
           </button>
         )}
         <span className="app-bar__spacer" />
@@ -160,30 +162,32 @@ function Workspace({ folder, onClose }: { folder: Folder; onClose: () => void })
           Close folder
         </button>
       </header>
-      {graph ? (
+      {selection ? (
         <ErrorBoundary
-          key={`${graph.value} ${baseIri}`}
+          key={selection.file.value}
           fallback={(error) => (
             <div className="app-start">
               <p className="app-error">
-                Could not open {graph.value}: {String(error)}
+                Could not open {fileLabel(selection.file, folder.name)}: {String(error)}
               </p>
-              <button type="button" className="st-button" onClick={() => selectGraph()}>
+              <button type="button" className="st-button" onClick={() => select()}>
                 Choose another data model
               </button>
             </div>
           )}
         >
-          <Manager folder={folder} graph={graph} onSaved={() => setSaves((saves) => saves + 1)} />
+          <Suspense fallback={<div className="app-message">Reading the folder…</div>}>
+            <Manager
+              folder={folder}
+              modelsPromise={modelsPromise}
+              selection={selection}
+              onSaved={() => setSaves((saves) => saves + 1)}
+            />
+          </Suspense>
         </ErrorBoundary>
       ) : (
         <Suspense fallback={<div className="app-message">Reading the folder…</div>}>
-          <GraphPicker
-            graphsPromise={graphsPromise}
-            baseIri={baseIri}
-            onBaseIriChange={changeBaseIri}
-            onSelect={selectGraph}
-          />
+          <GraphPicker folder={folder} modelsPromise={modelsPromise} onSelect={select} />
         </Suspense>
       )}
     </div>
@@ -191,27 +195,26 @@ function Workspace({ folder, onClose }: { folder: Folder; onClose: () => void })
 }
 
 type GraphPickerProps = {
-  graphsPromise: Promise<NamedNode[]>;
-  baseIri: string;
-  onBaseIriChange: (baseIri: string) => void;
-  onSelect: (graph: NamedNode) => void;
+  folder: Folder;
+  modelsPromise: Promise<DataModelFile[]>;
+  onSelect: (selection: Selection) => void;
 };
 
-function GraphPicker({ graphsPromise, baseIri, onBaseIriChange, onSelect }: GraphPickerProps) {
-  const graphs = use(graphsPromise);
+function GraphPicker({ folder, modelsPromise, onSelect }: GraphPickerProps) {
+  const models = use(modelsPromise);
 
   return (
     <div className="app-start">
       <h2>Choose the data model to edit</h2>
-      {graphs.length === 0 ? (
+      {models.length === 0 ? (
         <p>There are no Turtle (.ttl) files in this folder yet.</p>
       ) : (
         <ul className="app-graphs">
-          {graphs.map((graph) => (
-            <li key={graph.value}>
-              <button type="button" className="st-button" onClick={() => onSelect(graph)}>
-                <span>{graphLabel(graph, baseIri)}</span>
-                <code>{graph.value}</code>
+          {models.map(({ file, title }) => (
+            <li key={file.value}>
+              <button type="button" className="st-button" onClick={() => onSelect({ file })}>
+                <span>{fileLabel(file, folder.name)}</span>
+                {title && <span className="app-graphs__title">{title}</span>}
               </button>
             </li>
           ))}
@@ -221,75 +224,67 @@ function GraphPicker({ graphsPromise, baseIri, onBaseIriChange, onSelect }: Grap
         className="app-new-model"
         onSubmit={(event) => {
           event.preventDefault();
-          const name = (new FormData(event.currentTarget).get("name") as string).replace(
-            /\.ttl$/,
-            "",
-          );
-          onSelect(DataFactory.namedNode(baseIri + encodeURI(name)));
+          const data = new FormData(event.currentTarget);
+          const name = (data.get("name") as string).replace(/\.ttl$/, "");
+          onSelect({
+            file: DataFactory.namedNode(folderBase(folder.name) + encodeURI(name)),
+            iri: DataFactory.namedNode(data.get("iri") as string),
+          });
         }}
       >
-        <label htmlFor="new-model">New data model</label>
+        <h3>New data model</h3>
         <p className="app-hint">
           Starts empty. The file is created in this folder when you first save.
         </p>
-        <div className="app-base-iri__row">
-          <input
-            id="new-model"
-            name="name"
-            className="st-input"
-            required
-            pattern="[\w.\/\-]+"
-            placeholder="model.ttl"
-          />
-          <button type="submit" className="st-button st-button--primary">
-            Create
-          </button>
-        </div>
-      </form>
-      <form
-        className="app-base-iri"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const value = new FormData(event.currentTarget).get("baseIri") as string;
-          if (value !== baseIri) onBaseIriChange(value);
-        }}
-      >
-        <label htmlFor="base-iri">Base IRI</label>
-        <p className="app-hint">
-          Each file is named by adding its path to this IRI, which ends on a <code>/</code> or a{" "}
-          <code>#</code>: with <code>https://example.com/def/</code>, model.ttl is{" "}
-          <code>https://example.com/def/model</code>; with{" "}
-          <code>https://example.com/def/vocab#</code>, it is{" "}
-          <code>https://example.com/def/vocab#model</code>.
-        </p>
-        <div className="app-base-iri__row">
-          <input
-            id="base-iri"
-            name="baseIri"
-            className="st-input"
-            type="url"
-            required
-            pattern=".*[\/#]"
-            title="Ends on a / or a #"
-            defaultValue={baseIri}
-          />
-          <button type="submit" className="st-button">
-            Apply
-          </button>
-        </div>
+        <label htmlFor="new-model">File</label>
+        <input
+          id="new-model"
+          name="name"
+          className="st-input"
+          required
+          pattern="[\w.\/\-]+"
+          placeholder="model.ttl"
+        />
+        <label htmlFor="new-model-iri">IRI</label>
+        <input
+          id="new-model-iri"
+          name="iri"
+          className="st-input"
+          type="url"
+          required
+          placeholder="https://example.com/def/model"
+        />
+        <button type="submit" className="st-button st-button--primary">
+          Create
+        </button>
       </form>
     </div>
   );
 }
 
-type ManagerProps = { folder: Folder; graph: NamedNode; onSaved: () => void };
+type ManagerProps = {
+  folder: Folder;
+  modelsPromise: Promise<DataModelFile[]>;
+  selection: Selection;
+  onSaved: () => void;
+};
 
-function Manager({ folder, graph, onSaved }: ManagerProps) {
-  const source = useMemo(() => dataModelSource(folder, graph), [folder, graph]);
+function Manager({ folder, modelsPromise, selection, onSaved }: ManagerProps) {
+  const models = use(modelsPromise);
+  // An existing file decides its own IRI; a new one has the IRI it was created with.
+  const model = useMemo(
+    () =>
+      models.find(({ file }) => file.equals(selection.file)) ?? {
+        file: selection.file,
+        iri: selection.iri ?? selection.file,
+      },
+    [models, selection],
+  );
+  const source = useMemo(() => dataModelSource(folder, model, models), [folder, model, models]);
 
   return (
     <ShaclManager
-      dataModelIRI={graph}
+      dataModelIRI={model.iri}
       loadGraph={source.loadGraph}
       onSubmit={async (changes) => {
         await source.save(changes);

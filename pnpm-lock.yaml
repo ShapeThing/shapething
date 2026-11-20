@@ -675,6 +675,9 @@ importers:
       rdf-data-factory:
         specifier: ^2.1.0
         version: 2.1.0
+      rdf-stores:
+        specifier: ^2.5.1
+        version: 2.5.1
       react:
         specifier: ^19.3.0
         version: 19.3.0

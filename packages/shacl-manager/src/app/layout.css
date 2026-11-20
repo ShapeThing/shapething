@@ -6,6 +6,8 @@
   --st-manager-surface: var(--gray-1);
   --st-manager-text-muted: var(--gray-7);
   --st-manager-gutter: var(--size-5);
+  /* The data model link and the toolbar beside it: one line across the sidebar and the page. */
+  --st-manager-bar-height: 3.5rem;
   --st-manager-row-hover: hsl(from var(--st-primary-color) h s l / 0.1);
 
   /* The viewport's height, not more: every column scrolls on its own, the page never does. */
@@ -23,14 +25,14 @@
 .st-manager {
   flex: 1;
   display: grid;
-  grid-template-columns: 18rem minmax(0, 1fr);
+  grid-template-columns: 22rem minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
 }
 
 /* A third column only on pages that render the aside. */
 .st-manager:has(> .st-manager__aside) {
-  grid-template-columns: 18rem minmax(0, 1fr) 17rem;
+  grid-template-columns: 22rem minmax(0, 1fr) 17rem;
 }
 
 /* Small uppercase labels above the lists in the sidebar, the aside and a list column. */
@@ -65,7 +67,9 @@
 /* The data model's name above the tabs, leading to its own page. */
 .st-manager__data-model {
   display: grid;
-  padding: var(--size-2) var(--size-3);
+  align-content: center;
+  min-height: var(--st-manager-bar-height);
+  padding-inline: var(--size-3);
   border-block-end: 1px solid var(--st-color-border);
   color: var(--st-color-text);
   text-decoration: none;
@@ -333,7 +337,7 @@ a.active > .st-manager__tab-count {
   display: flex;
   align-items: center;
   gap: var(--size-3);
-  min-height: 3.5rem;
+  min-height: var(--st-manager-bar-height);
   padding-inline: var(--st-manager-gutter) var(--size-3);
   border-block-end: 1px solid var(--st-color-border);
 }

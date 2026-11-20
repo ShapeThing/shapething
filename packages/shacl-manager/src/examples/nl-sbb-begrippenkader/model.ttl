@@ -18,7 +18,7 @@
   a owl:Ontology, sh:ShapesGraph ;
   rdfs:label "Begrippenkader gemeente Norg"@nl, "Concept register of the Norg municipality"@en ;
   owl:versionInfo "0.1.0" ;
-  owl:imports skosapnl: ;
+  owl:imports <https://raw.githubusercontent.com/Geonovum/NL-SBB/refs/heads/main/profiles/skos-ap-nl.ttl> ;
   sh:declare [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] .
 
 ### Local extension: on top of the NL-SBB rules for every skos:Concept (imports/skosapnl.ttl),

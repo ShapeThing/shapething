@@ -18,8 +18,7 @@ import {
   origins,
   perspectives,
   subjectPath,
-  useOrigin,
-  usePerspective,
+  usePlace,
   type Origin,
   type Perspective,
 } from "./paths.ts";
@@ -27,38 +26,41 @@ import { Tree } from "./Tree.tsx";
 
 const allOrigins: Origin[] = origins.map((tab) => tab.path);
 
-// Switching perspective keeps the current origin and vice versa.
+// Switching perspective keeps the current origin and vice versa. Outside of a perspective and
+// origin, such as on the data model's page, only the perspectives, leading to their managed part.
 export function Sidebar() {
-  const perspective = usePerspective();
-  const origin = useOrigin();
+  const place = usePlace();
 
   return (
     <aside className="st-manager__sidebar">
       <DataModelLink />
       <nav className="st-manager__tabs st-manager__tabs--primary">
         {perspectives.map((tab) => (
-          <NavLink key={tab.path} to={originPath(tab.path, origin)}>
+          <NavLink key={tab.path} to={originPath(tab.path, place?.origin ?? "managed")}>
             {tab.label}
             <TabCount perspective={tab.path} origins={allOrigins} />
           </NavLink>
         ))}
       </nav>
-      <nav className="st-manager__tabs st-manager__tabs--secondary">
-        {origins.map((tab) => (
-          <NavLink key={tab.path} to={originPath(perspective, tab.path)}>
-            {tab.label}
-            <TabCount perspective={perspective} origins={[tab.path]} />
-          </NavLink>
-        ))}
-      </nav>
+      {place && (
+        <nav className="st-manager__tabs st-manager__tabs--secondary">
+          {origins.map((tab) => (
+            <NavLink key={tab.path} to={originPath(place.perspective, tab.path)}>
+              {tab.label}
+              <TabCount perspective={place.perspective} origins={[tab.path]} />
+            </NavLink>
+          ))}
+        </nav>
+      )}
       <div className="st-manager__sidebar-content">
-        {perspective === "shapes" ? (
+        {place?.perspective === "shapes" && (
           <Suspense fallback="Loading shapes…">
-            <ShapesSidebar origin={origin} />
+            <ShapesSidebar origin={place.origin} />
           </Suspense>
-        ) : (
+        )}
+        {place?.perspective === "knowledge" && (
           <Suspense fallback="Loading classes…">
-            <ClassesSidebar origin={origin} />
+            <ClassesSidebar origin={place.origin} />
           </Suspense>
         )}
       </div>

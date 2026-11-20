@@ -72,29 +72,30 @@ body {
   text-align: start;
 }
 
-.app-graphs code {
+.app-graphs__title {
   color: var(--st-color-text-muted);
   font-size: var(--st-font-size-small);
   overflow-wrap: anywhere;
 }
 
-.app-new-model,
-.app-base-iri {
+.app-new-model {
+  display: grid;
+  gap: var(--size-2);
+  justify-items: start;
   margin-block-start: var(--size-6);
 }
 
-.app-new-model label,
-.app-base-iri label {
+.app-new-model h3,
+.app-new-model .app-hint {
+  margin: 0;
+}
+
+.app-new-model label {
   font-weight: var(--font-weight-6);
 }
 
-.app-base-iri__row {
-  display: flex;
-  gap: var(--size-2);
-}
-
-.app-base-iri__row .st-input {
-  flex: 1;
+.app-new-model .st-input {
+  inline-size: 100%;
 }
 
 .app-hint {
