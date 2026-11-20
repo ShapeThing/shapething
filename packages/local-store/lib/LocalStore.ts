@@ -53,6 +53,23 @@ const usedPrefixes = (prefixes: Record<string, string>, quads: Quad[]): Record<s
   );
 };
 
+/**
+ * The graphs of the folder are named by appending their path to the base IRI: model.ttl is
+ * <{base}model>. So the base ends in a "/" (<http://example.org/model>) or a "#"
+ * (<http://example.org/vocab#model>).
+ */
+const assertBaseUri = (baseUri: URL) => {
+  if (!/[/#]$/.test(baseUri.toString())) throw new Error("The base IRI must end on a / or a #");
+};
+
+const safeDecodeURI = (value: string) => {
+  try {
+    return decodeURI(value);
+  } catch {
+    return value;
+  }
+};
+
 // Never holds graphs and walking them is slow, a git repository has thousands of objects.
 const SKIPPED_DIRECTORIES = [".git", "node_modules"];
 
@@ -84,7 +101,7 @@ export class LocalStore implements Source, RdfJsStore {
 
   constructor({ baseUri }: LocalStoreOptions) {
     this.#baseUri = baseUri;
-    if (!baseUri.toString().endsWith("/")) throw new Error("BaseIRI must end on a trailing slash");
+    assertBaseUri(baseUri);
   }
 
   /**
@@ -164,7 +181,7 @@ export class LocalStore implements Source, RdfJsStore {
    * Currently this does not rename previous data, it orphans it.
    */
   setBaseUri(baseUri: URL): void {
-    if (!baseUri.toString().endsWith("/")) throw new Error("BaseURI must end on a trailing slash");
+    assertBaseUri(baseUri);
     this.#baseUri = baseUri;
     this.#forgetGraphs();
   }
@@ -679,7 +696,10 @@ export class LocalStore implements Source, RdfJsStore {
     /**
      * Relative named graphs
      */
-    return factory.namedNode(new URL(cleanedPath, this.#baseUri).toString());
+    // Spaces and other characters an IRI can't hold are percent-encoded, as URL resolution did.
+    return factory.namedNode(
+      this.#baseUri.toString() + encodeURI(cleanedPath.replace(/^\.\//, "")),
+    );
   }
 
   /**
@@ -695,7 +715,7 @@ export class LocalStore implements Source, RdfJsStore {
      * Relative named graphs
      */
     if (graph.value.startsWith(this.#baseUri.toString())) {
-      const relativeGraph = graph.value.replace(this.#baseUri.toString(), "");
+      const relativeGraph = safeDecodeURI(graph.value.slice(this.#baseUri.toString().length));
       const cleanedRelativeGraph = relativeGraph.endsWith("/")
         ? relativeGraph.substring(0, relativeGraph.length - 1)
         : relativeGraph;

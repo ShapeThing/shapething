@@ -225,7 +225,7 @@ function GraphPicker({ graphsPromise, baseIri, onBaseIriChange, onSelect }: Grap
             /\.ttl$/,
             "",
           );
-          onSelect(DataFactory.namedNode(new URL(name, baseIri).href));
+          onSelect(DataFactory.namedNode(baseIri + encodeURI(name)));
         }}
       >
         <label htmlFor="new-model">New data model</label>
@@ -256,8 +256,11 @@ function GraphPicker({ graphsPromise, baseIri, onBaseIriChange, onSelect }: Grap
       >
         <label htmlFor="base-iri">Base IRI</label>
         <p className="app-hint">
-          Each file is a graph named after its path, relative to this IRI. Relative IRIs in the
-          files, such as <code>&lt;#Person&gt;</code>, resolve against it too.
+          Each file is named by adding its path to this IRI, which ends on a <code>/</code> or a{" "}
+          <code>#</code>: with <code>https://example.com/def/</code>, model.ttl is{" "}
+          <code>https://example.com/def/model</code>; with{" "}
+          <code>https://example.com/def/vocab#</code>, it is{" "}
+          <code>https://example.com/def/vocab#model</code>.
         </p>
         <div className="app-base-iri__row">
           <input
@@ -266,8 +269,8 @@ function GraphPicker({ graphsPromise, baseIri, onBaseIriChange, onSelect }: Grap
             className="st-input"
             type="url"
             required
-            pattern=".*/"
-            title="Ends with a slash"
+            pattern=".*[\/#]"
+            title="Ends on a / or a #"
             defaultValue={baseIri}
           />
           <button type="submit" className="st-button">
