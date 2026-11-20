@@ -30,17 +30,24 @@ export const httpsRemote = (url: string): string => {
   return scpLike ? `https://${scpLike[1]}/${scpLike[2]}` : url;
 };
 
-// isomorphic-git's errors name the HTTP status only.
+// isomorphic-git's errors are about HTTP statuses and refs; these are shown to people who don't
+// know git, so they say what happened and what to do.
+const OUTDATED =
+  "Someone else published changes in the meantime. Get their changes into this folder first, then publish again.";
+
 function explainPushError(error: unknown): Error {
-  const status = (error as { data?: { statusCode?: number } }).data?.statusCode;
+  const { code, data } = error as {
+    code?: string;
+    data?: { statusCode?: number; reason?: string };
+  };
+  const status = data?.statusCode;
   if (status === 401 || status === 404) {
     return new Error(
-      `The git host refused the access token (${status}). Check that it is valid and has write access to this repository.`,
+      "The access token was not accepted. Check that it is valid and may change this place.",
     );
   }
-  if (status === 403) {
-    return new Error("The access token has no write access to this repository (403).");
-  }
+  if (status === 403) return new Error("The access token may not change this place.");
+  if (code === "PushRejectedError") return new Error(OUTDATED);
   return error instanceof Error ? error : new Error(String(error));
 }
 
@@ -122,8 +129,8 @@ export class Repository {
   async push(credentials: { username?: string; token: string }): Promise<void> {
     const fs = this.#fs;
     const { branch, remoteUrl } = await this.info();
-    if (!branch) throw new Error("Not on a branch, there is nothing to push.");
-    if (!remoteUrl) throw new Error("The repository has no remote to push to.");
+    if (!branch) throw new Error("This folder is in a state that can't be published from here.");
+    if (!remoteUrl) throw new Error("This folder has no online copy to publish to.");
     const result = await git
       .push({
         fs,
@@ -140,7 +147,10 @@ export class Repository {
       .catch((error: unknown) => {
         throw explainPushError(error);
       });
-    if (!result.ok) throw new Error(result.error ?? "The push was rejected.");
+    if (!result.ok)
+      throw new Error(
+        result.error?.includes("fast-forward") ? OUTDATED : "Publishing was refused.",
+      );
     // Remember what the remote now has, so unpushedCount() is right without a fetch.
     const remote = (await git.getConfig({ fs, dir, path: `branch.${branch}.remote` })) || "origin";
     await git.writeRef({

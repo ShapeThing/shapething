@@ -186,3 +186,25 @@ body {
   justify-content: end;
   gap: var(--size-2);
 }
+
+/* Author and push settings, folded away once they are known. */
+.git-dialog__more {
+  display: grid;
+  gap: var(--size-2);
+  padding: var(--size-2) var(--size-3);
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+}
+
+.git-dialog__more summary {
+  cursor: pointer;
+  font-weight: var(--font-weight-6);
+}
+
+.git-dialog__more[open] summary {
+  margin-block-end: var(--size-2);
+}
+
+.git-dialog .app-error {
+  margin: 0;
+}
