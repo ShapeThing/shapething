@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from "react";
+import { useId, useMemo } from "react";
 import type { NamedNode, Term } from "@rdfjs/types";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
@@ -6,6 +6,7 @@ import { sh } from "@/helpers/namespaces.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { useDataGraphObjects } from "@/outputs/render/hooks/useDataGraphObjects.tsx";
 import { useOptionLookups } from "@/outputs/render/hooks/useOptionLookups.tsx";
+import { useResizedImage } from "@/outputs/render/hooks/useResizedImage.ts";
 import { depictionRolePropertyPaths } from "@/resolution/label.ts";
 import { shaclInstancesOfClass } from "@/resolution/targets.ts";
 import type { WidgetProps } from "@/widgets/types.ts";
@@ -106,9 +107,8 @@ type OptionProps = {
   onToggle: (checked: boolean) => void;
 };
 
-// A per-option image can 404 independently of the others - hasError is therefore per-instance
-// state, which is why this is its own component rather than inline JSX inside the map() above
-// (mirrors AutoCompleteOption's own hasError/isDirectRenderable handling).
+// A per-option image can fail independently of the others - useResizedImage keeps per-instance
+// state, which is why this is its own component rather than inline JSX inside the map() above.
 function RadiosCheckboxesOption({
   option,
   inputType,
@@ -117,7 +117,11 @@ function RadiosCheckboxesOption({
   showImage,
   onToggle,
 }: OptionProps) {
-  const [hasError, setHasError] = useState(false);
+  const depiction = useResizedImage(showImage ? option.depiction?.value : undefined, {
+    width: 96,
+    height: 96,
+    fit: "cover",
+  });
   const displayLabel = option.label ?? localNameLabel(option.term) ?? option.term.value;
 
   const input = (
@@ -138,22 +142,15 @@ function RadiosCheckboxesOption({
     );
   }
 
-  const isDirectRenderable =
-    option.depiction?.value.includes(".svg") || option.depiction?.value.includes("data:");
-
   return (
     <label className="st-radios-checkboxes__tile" data-checked={checked}>
       {input}
-      {option.depiction && !hasError ? (
+      {depiction ? (
         <img
           loading="lazy"
-          onError={() => setHasError(true)}
+          src={depiction.src}
+          onError={depiction.onError}
           className="st-radios-checkboxes__tile-depiction"
-          src={
-            isDirectRenderable
-              ? option.depiction.value
-              : `//wsrv.nl/?url=${encodeURIComponent(option.depiction.value)}&w=96&h=96&fit=cover`
-          }
           alt=""
         />
       ) : (

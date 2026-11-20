@@ -39,7 +39,7 @@ const itemFor = (anchor: HTMLAnchorElement, thumbnail: HTMLImageElement): Item =
 const imagesOnScreen = (anchor: HTMLAnchorElement) => {
   const dialog = anchor.closest("dialog[open]");
   const anchors = (dialog ?? document).querySelectorAll<HTMLAnchorElement>(
-    ".lightbox-image-viewer a.image-viewer__link",
+    "a.image-viewer__link[data-lightbox]",
   );
   const images = [...anchors].flatMap((link) => {
     const thumbnail = link.querySelector("img");
@@ -66,11 +66,8 @@ const imagesOnScreen = (anchor: HTMLAnchorElement) => {
  * the dialog to be shown on top of it, and Escape only closes PhotoSwipe, not the dialog as well.
  */
 export const openLightbox = async (anchor: HTMLAnchorElement, thumbnail: HTMLImageElement) => {
-  const [{ default: PhotoSwipe }] = await Promise.all([
-    import("photoswipe"),
-    import("photoswipe/style.css"),
-    import("./lightbox.scss"),
-  ]);
+  // Loaded on the first click only; its stylesheet is imported by widget.tsx.
+  const { default: PhotoSwipe } = await import("photoswipe");
 
   const { dialog, images, index } = imagesOnScreen(anchor);
   if (!images.length) images.push({ anchor, thumbnail });
@@ -128,8 +125,9 @@ export const openLightbox = async (anchor: HTMLAnchorElement, thumbnail: HTMLIma
   pswp.init();
 };
 
-// The radius of the corners of the image, on the screen (lightbox.scss has the same).
-const cornerRadius = 16;
+/** The radius of the corners of the image on the screen: --image-lightbox-radius (style.css). */
+const cornerRadius = (element: Element) =>
+  parseFloat(getComputedStyle(element).getPropertyValue("--image-lightbox-radius")) || 0;
 
 /**
  * Keeps the corners of the image in the lightbox at the same radius on the screen. PhotoSwipe
@@ -140,10 +138,11 @@ const cornerRadius = 16;
  */
 const keepCornersRound = (pswp: PhotoSwipe) => {
   let frame = requestAnimationFrame(function update() {
+    const radius = pswp.element ? cornerRadius(pswp.element) : 0;
     for (const img of pswp.element?.querySelectorAll<HTMLElement>(".pswp__img") ?? []) {
       const onScreen = img.getBoundingClientRect().width;
       if (!onScreen || !img.offsetWidth) continue;
-      img.style.borderRadius = `${(cornerRadius * img.offsetWidth) / onScreen}px`;
+      img.style.borderRadius = `${(radius * img.offsetWidth) / onScreen}px`;
     }
     frame = requestAnimationFrame(update);
   });

@@ -11,3 +11,14 @@
   max-height: 300px;
   border-radius: var(--radius-2);
 }
+
+/* The lightbox (enableImageLightbox, see lightbox.ts). PhotoSwipe puts it in <body> (or the open
+   <dialog>), outside the renderer, so it is styled on .pswp. lightbox.ts keeps the corners at this
+   radius on the screen while PhotoSwipe scales the image; override it on .pswp. */
+.pswp {
+  --image-lightbox-radius: 16px;
+}
+
+.pswp__img {
+  border-radius: var(--image-lightbox-radius);
+}

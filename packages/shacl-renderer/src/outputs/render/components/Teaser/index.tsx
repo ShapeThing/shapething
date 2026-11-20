@@ -1,4 +1,3 @@
-import { useState } from "react";
 import type { NamedNode, Term } from "@rdfjs/types";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
@@ -6,6 +5,7 @@ import {
   ClassificationChips,
   type Classification,
 } from "@/outputs/render/components/ClassificationChip/index.tsx";
+import { useResizedImage } from "@/outputs/render/hooks/useResizedImage.ts";
 import "./style.css";
 
 type Props = {
@@ -41,25 +41,22 @@ export default function Teaser({
   description,
   highlight,
 }: Props) {
-  const [hasError, setHasError] = useState<boolean | undefined>(undefined);
-  const [hasIconError, setHasIconError] = useState(false);
+  const depictionSource = useResizedImage(depiction?.value, {
+    width: 128,
+    height: 128,
+    fit: "cover",
+  });
+  const iconSource = useResizedImage(icon?.value, { width: 48, height: 48, fit: "contain" });
   const displayLabel = label ?? localNameLabel(term) ?? term.value;
-  const isDirectRenderable =
-    depiction?.value.includes(".svg") || depiction?.value.includes("data:");
 
   return (
     <span className="st-teaser">
-      {depiction && !hasError ? (
+      {depictionSource ? (
         <img
           loading="lazy"
-          onError={() => setHasError(true)}
-          onLoad={() => setHasError(false)}
+          src={depictionSource.src}
+          onError={depictionSource.onError}
           className="st-teaser__depiction"
-          src={
-            isDirectRenderable
-              ? depiction.value
-              : `//wsrv.nl/?url=${encodeURIComponent(depiction.value)}&w=128&h=128&fit=cover`
-          }
           alt=""
         />
       ) : (
@@ -67,16 +64,12 @@ export default function Teaser({
       )}
       <span className="st-teaser__body">
         <span className="st-teaser__heading">
-          {icon && !hasIconError && (
+          {iconSource && (
             <img
               loading="lazy"
-              onError={() => setHasIconError(true)}
+              src={iconSource.src}
+              onError={iconSource.onError}
               className="st-teaser__icon"
-              src={
-                icon.value.includes(".svg") || icon.value.includes("data:")
-                  ? icon.value
-                  : `//wsrv.nl/?url=${encodeURIComponent(icon.value)}&w=48&h=48&fit=contain`
-              }
               alt=""
             />
           )}

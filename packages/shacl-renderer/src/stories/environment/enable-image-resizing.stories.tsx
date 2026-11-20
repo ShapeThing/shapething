@@ -46,7 +46,7 @@ export const enabled: Story = {
     await waitFor(
       () =>
         expect(canvasElement.querySelector("img.image-viewer")?.getAttribute("src")).toBe(
-          `https://wsrv.nl/?url=${encodeURIComponent(image)}&w=1200&h=600&fit=inside&we=`,
+          `https://wsrv.nl/?url=${encodeURIComponent(image)}&w=1200&h=600&fit=inside&we=&default=1`,
         ),
       {
         timeout: 5000,

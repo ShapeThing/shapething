@@ -125,7 +125,7 @@ export default defineConfig({
     // the build instead of silently bloating dist.
     deps: {
       alwaysBundle: [/\.css$/, /\?worker&url$/],
-      onlyBundle: [/\.css$/, /\?worker&url$/, "maplibre-gl"],
+      onlyBundle: [/\.css$/, /\?worker&url$/, "maplibre-gl", "photoswipe"],
     },
   },
   test: {

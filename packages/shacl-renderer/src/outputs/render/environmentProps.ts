@@ -28,6 +28,7 @@ export const LIVE_PROPS = [
   "enableShPathInLabelTitle",
   "enablePropertyShapeSources",
   "enableFullLanguageRemoval",
+  "enableInterfaceLanguageSwitcher",
   "enableTitle",
   "enableEditInPlace",
   "enableCreateInPlace",
@@ -39,6 +40,7 @@ export const LIVE_PROPS = [
   "enableFacetOptionCounts",
   "enableFacetSearchForAutocomplete",
   "enableImageResizing",
+  "enableImageLightbox",
   "enableDefaultValuesInViewMode",
   "mapStyleUrl",
 ] as const satisfies readonly (keyof RawEnvironment)[];

@@ -458,9 +458,6 @@ importers:
       '@tanstack/react-query':
         specifier: ^5.103.2
         version: 5.103.2(react@19.3.0)
-      photoswipe:
-        specifier: ^5.4.4
-        version: 5.4.4
       rdf-data-factory:
         specifier: ^2.1.0
         version: 2.1.0
@@ -1087,6 +1084,9 @@ importers:
       maplibre-gl-geo-editor:
         specifier: ^0.11.1
         version: 0.11.1(@geoman-io/maplibre-geoman-free@0.10.0(maplibre-gl@6.11.2))(maplibre-gl@6.11.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      photoswipe:
+        specifier: ^5.4.4
+        version: 5.4.4
       rdf-data-factory:
         specifier: ^2.1.0
         version: 2.1.0

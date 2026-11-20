@@ -919,3 +919,42 @@ test("select() picks AutoCompleteEditor over EnumSelectEditor/InstancesSelectEdi
   );
   expect(result?.value).toBe(shui("AutoCompleteEditor").value);
 });
+
+async function selectBundledViewer(propertyShapeTurtle: string, valueTurtle: string) {
+  const shapesGraph = await parseRdf(
+    `${queryPrefixes}
+    ex:property ${propertyShapeTurtle} .`,
+    "text/turtle",
+  );
+  const dataGraph = await parseRdf(
+    `${queryPrefixes}\nex:Alice ex:value ${valueTurtle} .`,
+    "text/turtle",
+  );
+  const [valueQuad] = dataGraph.getQuads(ex("Alice"), ex("value"));
+  return select({
+    focusNode: valueQuad.object,
+    dataGraph,
+    shapeNode: ex("property"),
+    shapesGraph,
+    scoringGraph: await getScoringGraph("view", defaultWidgets),
+    widgetPredicate: shui("viewer"),
+  });
+}
+
+// An image URL is shown as the image, also when it is an xsd:anyURI literal - which HyperlinkViewer
+// matches too, at a lower score.
+test("select() picks ImageViewer over HyperlinkViewer for an xsd:anyURI image URL", async () => {
+  const result = await selectBundledViewer(
+    `sh:path ex:value`,
+    `"https://example.org/picture.jpg"^^xsd:anyURI`,
+  );
+  expect(result?.value).toBe(shui("ImageViewer").value);
+});
+
+test("select() still picks HyperlinkViewer for an xsd:anyURI that is not an image", async () => {
+  const result = await selectBundledViewer(
+    `sh:path ex:value`,
+    `"https://example.org/page"^^xsd:anyURI`,
+  );
+  expect(result?.value).toBe(shui("HyperlinkViewer").value);
+});

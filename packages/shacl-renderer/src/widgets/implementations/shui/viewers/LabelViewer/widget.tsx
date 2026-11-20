@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useContentLanguage } from "@/outputs/render/hooks/useContentLanguage.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { useResizedImage } from "@/outputs/render/hooks/useResizedImage.ts";
 import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { useResolvedValueNode } from "@/outputs/render/hooks/useResolvedValueNode.tsx";
 import { ClassificationChips } from "@/outputs/render/components/ClassificationChip/index.tsx";
@@ -43,15 +44,12 @@ import "./style.css";
 export default function LabelViewer({ shape, term }: WidgetProps) {
   const { activeLanguage } = useContentLanguage();
   const { enableViewInPlace } = useEnvironment();
-  const [hasImageError, setHasImageError] = useState(false);
   const [open, setOpen] = useState(false);
   const { label, classifications, depiction, icon } = useResolvedValueNode(shape, term, [
     activeLanguage,
   ]);
   const image = icon ?? depiction;
-  // SVGs/data URIs render directly; anything else goes through wsrv.nl to resize a (typically
-  // much larger) hotlinked source image down to icon size - same reasoning as AutoCompleteOption.
-  const isDirectRenderable = image?.value.includes(".svg") || image?.value.includes("data:");
+  const imageSource = useResizedImage(image?.value, { width: 48, height: 48, fit: "cover" });
 
   const nodeShapes = useReactiveRead(
     shape.dataGraph,
@@ -73,17 +71,13 @@ export default function LabelViewer({ shape, term }: WidgetProps) {
 
   const classificationChip = <ClassificationChips classifications={classifications} />;
 
-  const imageElement = image && !hasImageError && (
+  const imageElement = imageSource && (
     <img
       loading="lazy"
-      onError={() => setHasImageError(true)}
+      src={imageSource.src}
+      onError={imageSource.onError}
       className={
         icon ? "st-label-viewer__depiction st-label-viewer__icon" : "st-label-viewer__depiction"
-      }
-      src={
-        isDirectRenderable
-          ? image.value
-          : `//wsrv.nl/?url=${encodeURIComponent(image.value)}&w=48&h=48&fit=cover`
       }
       alt=""
     />

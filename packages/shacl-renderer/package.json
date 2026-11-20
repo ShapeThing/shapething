@@ -67,6 +67,7 @@
     "clsx": "^2.1.1",
     "maplibre-gl": "^6.11.2",
     "maplibre-gl-geo-editor": "^0.11.1",
+    "photoswipe": "^5.4.4",
     "rdf-data-factory": "^2.1.0",
     "rdf-parse": "^5.0.0",
     "rdf-stores": "^2.5.1",
@@ -124,6 +125,7 @@
     }
   },
   "inlinedDependencies": {
-    "maplibre-gl": "6.11.2"
+    "maplibre-gl": "6.11.2",
+    "photoswipe": "5.4.4"
   }
 }

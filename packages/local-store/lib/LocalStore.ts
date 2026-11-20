@@ -195,11 +195,16 @@ export class LocalStore implements Source, RdfJsStore {
     const graphTerm = (typeof graph === "string" ? factory.namedNode(graph) : graph) as NamedNode;
     this.#cache.deleteGraph(graph);
     this.#forgetGraphs();
-    this.#graphToFileHandle(graphTerm).then(async (fileHandle) => {
-      /** @ts-expect-error Somehow the typings are off. Chrome really has this method */
-      fileHandle?.remove();
-      eventEmitter.emit("end");
-    });
+    this.#graphToFileHandle(graphTerm)
+      .then(async (fileHandle) => {
+        /** @ts-expect-error Somehow the typings are off. Chrome really has this method */
+        await fileHandle?.remove();
+        // Listing may have started while the file was still there.
+        this.#forgetGraphs();
+        this.#inFlightCachePromises.delete(graphTerm.value);
+        eventEmitter.emit("end");
+      })
+      .catch((error) => eventEmitter.emit("error", error));
 
     return eventEmitter;
   }

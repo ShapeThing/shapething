@@ -3,9 +3,9 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 shui:ImageViewer rdfs:label "Image"@en, "Afbeelding"@nl .
 
-shui:imageViewerScore20
+shui:imageViewerScore30
     a shui:WidgetScore ;
     shui:viewer shui:ImageViewer ;
-    shui:score 20 ;
+    shui:score 30 ;
     shui:dataGraphShape shui:hasImageFileExtension ;
 .

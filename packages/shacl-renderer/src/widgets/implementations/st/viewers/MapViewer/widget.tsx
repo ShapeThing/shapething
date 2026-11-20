@@ -119,14 +119,29 @@ export default function MapViewer({ shape }: WidgetProps) {
           layout: { "line-join": "round", "line-cap": "round" },
           paint: { "line-color": "#ff7e00", "line-width": 4 },
         });
+        // Points get a soft dark halo underneath the marker itself, so the white-ringed marker
+        // stands out on light and dark basemaps alike. The halo is purely decorative and isn't in
+        // LAYER_IDS, so hovering is driven by the marker layer only.
+        map.addLayer({
+          id: "st-map-viewer-points-halo",
+          type: "circle",
+          source: SOURCE_ID,
+          filter: ["==", ["geometry-type"], "Point"],
+          paint: {
+            "circle-radius": 14,
+            "circle-color": "#000",
+            "circle-opacity": 0.25,
+            "circle-blur": 0.6,
+          },
+        });
         map.addLayer({
           id: "st-map-viewer-points",
           type: "circle",
           source: SOURCE_ID,
           paint: {
-            "circle-radius": 6,
-            "circle-color": "#007cbf",
-            "circle-stroke-width": 2,
+            "circle-radius": 9,
+            "circle-color": "#0062a3",
+            "circle-stroke-width": 3,
             "circle-stroke-color": "#fff",
           },
         });
@@ -134,7 +149,7 @@ export default function MapViewer({ shape }: WidgetProps) {
         // One shared popup, reused across all three layers - registered once here (alongside the
         // layers themselves), not in the effect below, so it isn't torn down/rebuilt on every data
         // update.
-        const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 12 });
+        const popup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 16 });
         for (const layerId of LAYER_IDS) {
           map.on("mouseenter", layerId, (event) => {
             const feature = event.features?.[0];
@@ -165,7 +180,13 @@ export default function MapViewer({ shape }: WidgetProps) {
           map.once("resize", fit);
           return;
         }
-        map.fitBounds(bounds, { padding, animate: false, maxZoom: mapMaxZoom });
+        // maxZoom is only passed when set: MapLibre merges these options over its own defaults, so
+        // an explicit `maxZoom: undefined` replaces the map's maxZoom and the fit yields a NaN camera.
+        map.fitBounds(bounds, {
+          padding,
+          animate: false,
+          ...(mapMaxZoom !== undefined && { maxZoom: mapMaxZoom }),
+        });
       };
       fit();
     };

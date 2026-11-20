@@ -48,7 +48,10 @@ export default function ContentLanguageSwitcher() {
   // for a single global switcher to pick between, and nowhere for a newly created language to be
   // shown either, so the whole thing (switcher and creation) stays hidden.
   const enabled = languageMode !== "individual";
-  const showCreateOption = enabled && Boolean(enableContentLanguageCreation);
+  // Creating a language is an edit (it adds a new, empty slot to fill in) - view/report modes are
+  // read-only, so the "add language" row must not appear there even if the embedder enabled it
+  // for edit mode. Without it, a single-language view has nothing to switch to and hides entirely.
+  const showCreateOption = enabled && Boolean(enableContentLanguageCreation) && mode === "edit";
   // Removing a language deletes data (deleteLiteralsByLanguage) - view mode is read-only, so the
   // delete affordance (row button and Delete-key shortcut) must not appear there even if the
   // embedder enabled it for edit mode.

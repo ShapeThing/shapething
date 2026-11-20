@@ -25,6 +25,7 @@
   justify-content: space-between;
   background-color: white;
   cursor: pointer;
+  font: inherit;
 
   &:hover,
   &:focus {

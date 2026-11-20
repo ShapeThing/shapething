@@ -96,6 +96,8 @@ export default function Display({
         // Wikidata images are Commons originals; the display shapes' st:imageWidth loads Commons
         // thumbnails instead.
         enableImageResizing
+        // Images open in a lightbox, as a gallery of the images on the screen.
+        enableImageLightbox
         // The portraits' sh:defaultValue inf:Initials: people without a portrait get their
         // initials (see widgets/PortraitViewer).
         enableDefaultValuesInViewMode

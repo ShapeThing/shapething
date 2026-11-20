@@ -5,7 +5,7 @@ const size = { width: 1200, height: 600 };
 
 test("resizes a remote image through wsrv.nl without enlarging it", () => {
   expect(resizedImageUrl("https://example.org/photos/chef.jpg?v=2", size)).toBe(
-    "https://wsrv.nl/?url=https%3A%2F%2Fexample.org%2Fphotos%2Fchef.jpg%3Fv%3D2&w=1200&h=600&fit=inside&we=",
+    "https://wsrv.nl/?url=https%3A%2F%2Fexample.org%2Fphotos%2Fchef.jpg%3Fv%3D2&w=1200&h=600&fit=inside&we=&default=1",
   );
 });
 
@@ -25,7 +25,15 @@ test("keeps images wsrv.nl can not fetch or would not improve", () => {
 
 test("resizes to a width alone when no height is given", () => {
   expect(resizedImageUrl("https://example.org/photos/chef.jpg", { width: 240 })).toBe(
-    "https://wsrv.nl/?url=https%3A%2F%2Fexample.org%2Fphotos%2Fchef.jpg&w=240&fit=inside&we=",
+    "https://wsrv.nl/?url=https%3A%2F%2Fexample.org%2Fphotos%2Fchef.jpg&w=240&fit=inside&we=&default=1",
+  );
+});
+
+test("crops or pads to the box with another fit", () => {
+  expect(
+    resizedImageUrl("https://example.org/photos/chef.jpg", { width: 48, height: 48, fit: "cover" }),
+  ).toBe(
+    "https://wsrv.nl/?url=https%3A%2F%2Fexample.org%2Fphotos%2Fchef.jpg&w=48&h=48&fit=cover&we=&default=1",
   );
 });
 

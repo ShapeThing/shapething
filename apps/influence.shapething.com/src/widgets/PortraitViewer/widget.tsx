@@ -1,7 +1,8 @@
-import type { WidgetProps } from "@shapething/shacl-renderer";
+import { defaultWidgets, type WidgetProps } from "@shapething/shacl-renderer";
 import Avatar from "../../components/Avatar/Avatar.tsx";
 import { inf, rdfs } from "../../rdf/namespaces.ts";
-import ImageViewer from "../LightboxImageViewer/widget.tsx";
+
+const ImageViewer = defaultWidgets.viewers.ImageViewer.Component;
 
 /**
  * inf:PortraitViewer: the portrait of a person (wdt:P18), or their initials when Wikidata has no

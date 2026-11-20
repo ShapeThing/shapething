@@ -42,6 +42,7 @@ const webComponentProps = {
   enableShPathInLabelTitle: "boolean",
   enablePropertyShapeSources: "boolean",
   enableFullLanguageRemoval: "boolean",
+  enableInterfaceLanguageSwitcher: "boolean",
   enableTitle: "boolean",
   enableInterfaceLanguageWithShapesLabelsOnly: "boolean",
   enableEditInPlace: "boolean",
@@ -57,6 +58,7 @@ const webComponentProps = {
   enableFacetTextSearchMerging: "boolean",
   enableFacetSearchForAutocomplete: "boolean",
   enableImageResizing: "boolean",
+  enableImageLightbox: "boolean",
   enableDefaultValuesInViewMode: "boolean",
 } as const;
 
@@ -133,6 +135,7 @@ function Wrapper(props: WrapperProps) {
     enableShPathInLabelTitle: attributes.enableShPathInLabelTitle,
     enablePropertyShapeSources: attributes.enablePropertyShapeSources,
     enableFullLanguageRemoval: attributes.enableFullLanguageRemoval,
+    enableInterfaceLanguageSwitcher: attributes.enableInterfaceLanguageSwitcher,
     enableInterfaceLanguageWithShapesLabelsOnly:
       attributes.enableInterfaceLanguageWithShapesLabelsOnly,
     enableEditInPlace: attributes.enableEditInPlace,
@@ -148,6 +151,7 @@ function Wrapper(props: WrapperProps) {
     enableFacetTextSearchMerging: attributes.enableFacetTextSearchMerging,
     enableFacetSearchForAutocomplete: attributes.enableFacetSearchForAutocomplete,
     enableImageResizing: attributes.enableImageResizing,
+    enableImageLightbox: attributes.enableImageLightbox,
     enableDefaultValuesInViewMode: attributes.enableDefaultValuesInViewMode,
     onSubmit,
   };

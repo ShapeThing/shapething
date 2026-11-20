@@ -159,6 +159,11 @@ export type Environment = {
   // merged into it (all sharing its sh:path), the node shape(s) declaring each, and each one's own
   // triples - for tracing a merged constraint back to where it was declared.
   enablePropertyShapeSources?: boolean;
+  // When false, the renderer never shows its own interface language switcher - for an embedder
+  // that controls the interface language itself (an app-wide switcher passing `interfaceLanguage`
+  // in) while still keeping several interface locales available. When true (the default), the
+  // switcher shows whenever there is more than one interface language to pick from.
+  enableInterfaceLanguageSwitcher?: boolean;
   // When true, shows a trash icon inside the content language switcher.
   enableFullLanguageRemoval?: boolean;
   // When true, renders a heading above the form: "Edit {resource label}" / "Create {shape label}"
@@ -289,11 +294,19 @@ export type Environment = {
   // search icon always just opens the ordinary inline typeahead, same as before this option
   // existed.
   enableFacetSearchForAutocomplete?: boolean;
-  // shui:ImageViewer loads remote images through https://wsrv.nl, resized to about the size they
-  // are shown at, instead of downloading the full original. Images wsrv.nl can not reach (data and
-  // blob URLs, local hosts) and SVGs are always loaded directly - see helpers/resizedImageUrl.ts.
-  // On in defaultEnvironment; turn it off to never send image URLs to wsrv.nl.
+  // Every image the renderer shows (shui:ImageViewer, and the depictions and icons next to labels,
+  // in dropdowns, teasers and option tiles) is loaded through https://wsrv.nl, resized to about
+  // the size it is shown at, instead of downloading the full original. When the resized image
+  // fails, the original is loaded instead (hooks/useResizedImage.ts). Images wsrv.nl can not reach
+  // (data and blob URLs, local hosts) and SVGs are always loaded directly - see
+  // helpers/resizedImageUrl.ts. On in defaultEnvironment; turn it off to never send image URLs to
+  // wsrv.nl.
   enableImageResizing?: boolean;
+  // shui:ImageViewer opens the image in a PhotoSwipe lightbox when clicked, instead of following
+  // its link to a new tab: zooming from the thumbnail, as a gallery of every image on the screen
+  // (inside the open <dialog> when the image is in one). Clicks with a modifier key still follow
+  // the link. PhotoSwipe itself is only loaded on the first click. On in defaultEnvironment.
+  enableImageLightbox?: boolean;
   // View mode shows a property's sh:defaultValue values when the data states none, instead of
   // leaving the property out. They are only shown, never written to the data graph, and are marked
   // with data-default="true". Not in report mode, where a missing value is what's being reported.
@@ -364,6 +377,7 @@ export const defaultEnvironment: Environment = {
   enableContentLanguageCreation: true,
   enableShPathInLabelTitle: true,
   enableFullLanguageRemoval: true,
+  enableInterfaceLanguageSwitcher: true,
   enableTitle: false,
   enableInterfaceLanguageWithShapesLabelsOnly: true,
   enableEditInPlace: true,
@@ -380,6 +394,7 @@ export const defaultEnvironment: Environment = {
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
   enableImageResizing: true,
+  enableImageLightbox: true,
   enableDefaultValuesInViewMode: false,
   mapStyleUrl: "https://tiles.openfreemap.org/styles/bright",
 };
@@ -404,6 +419,7 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableContentLanguageCreation: false,
   enableShPathInLabelTitle: false,
   enableFullLanguageRemoval: false,
+  enableInterfaceLanguageSwitcher: true,
   enableTitle: false,
   enableInterfaceLanguageWithShapesLabelsOnly: false,
   enableEditInPlace: false,
@@ -420,6 +436,7 @@ export const minimalEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
   enableImageResizing: false,
+  enableImageLightbox: false,
   enableDefaultValuesInViewMode: false,
   mapStyleUrl: "https://tiles.openfreemap.org/styles/bright",
 };
@@ -451,6 +468,7 @@ export const testingEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableContentLanguageCreation: true,
   enableShPathInLabelTitle: true,
   enableFullLanguageRemoval: true,
+  enableInterfaceLanguageSwitcher: true,
   enableTitle: false,
   enableInterfaceLanguageWithShapesLabelsOnly: true,
   enableEditInPlace: true,
@@ -466,5 +484,6 @@ export const testingEnvironment: Omit<Environment, "scoresGraph" | "shapesGraph"
   enableFacetTextSearchMerging: false,
   enableFacetSearchForAutocomplete: false,
   enableImageResizing: false,
+  enableImageLightbox: false,
   enableDefaultValuesInViewMode: false,
 };

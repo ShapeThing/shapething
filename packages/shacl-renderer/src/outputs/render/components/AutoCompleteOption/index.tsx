@@ -1,10 +1,10 @@
 import type { NamedNode, Term } from "@rdfjs/types";
 import "./style.css";
-import { useState } from "react";
 import { Link } from "@/helpers/icons.tsx";
 import { highlightMatches } from "@/helpers/highlightMatches.tsx";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
+import { useResizedImage } from "@/outputs/render/hooks/useResizedImage.ts";
 import {
   ClassificationChips,
   type Classification,
@@ -40,28 +40,22 @@ export default function AutoCompleteOption({
   highlight,
   resourceEditor,
 }: Props) {
-  const [hasError, setHasError] = useState<boolean | undefined>(undefined);
   const { enableLinksToResources } = useEnvironment();
   const displayLabel = label ?? localNameLabel(term) ?? term.value;
   const image = icon ?? depiction;
-  const isDirectRenderable = image?.value.includes(".svg") || image?.value.includes("data:");
+  const imageSource = useResizedImage(image?.value, { width: 64, height: 64, fit: "cover" });
 
   return (
     <span className="st-autocomplete-option">
-      {image && !hasError ? (
+      {imageSource ? (
         <img
           loading="lazy"
-          onError={() => setHasError(true)}
-          onLoad={() => setHasError(false)}
+          src={imageSource.src}
+          onError={imageSource.onError}
           className={
             icon
               ? "st-autocomplete-option__depiction st-autocomplete-option__icon"
               : "st-autocomplete-option__depiction"
-          }
-          src={
-            isDirectRenderable
-              ? image.value
-              : `//wsrv.nl/?url=${encodeURIComponent(image.value)}&w=64&h=64&fit=cover&default=${encodeURIComponent(image.value)}`
           }
           alt=""
         />

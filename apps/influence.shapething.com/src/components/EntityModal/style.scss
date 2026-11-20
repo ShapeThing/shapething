@@ -60,7 +60,7 @@
     line-height: 22px;
   }
 
-  // The image is a link to the original (it opens in PhotoSwipe, see widgets/LightboxImageViewer):
+  // The image is a link to the original (it opens in the renderer's lightbox, enableImageLightbox):
   // as wide as the column.
   .image .image-viewer__link {
     display: block;
