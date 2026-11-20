@@ -23,7 +23,10 @@
   owl:versionInfo "0.1.0" ;
   owl:imports
     <https://semiceu.github.io/DCAT-AP/releases/3.0.0/html/shacl/shapes.ttl> ,
-    dcatapnl-sh: .
+    dcatapnl-sh: ;
+  sh:declare
+    [ sh:prefix "dcat" ; sh:namespace "http://www.w3.org/ns/dcat#"^^xsd:anyURI ] ,
+    [ sh:prefix "dct" ; sh:namespace "http://purl.org/dc/terms/"^^xsd:anyURI ] .
 
 ### Local extension: on top of the national DCAT-AP-NL rules for every dcat:Catalog
 ### (imports/dcat-ap-nl-SHACL.ttl), this data model additionally requires its own internal
@@ -33,7 +36,8 @@
   a sh:NodeShape ;
   sh:targetClass dcat:Catalog ;
   sh:node dcatapnl-sh:CatalogShape ;
-  sh:property :Catalog-interneVerwijzing .
+  sh:property :Catalog-interneVerwijzing ;
+  sh:rule :Catalog-datasetPublisher .
 
 :Catalog-interneVerwijzing
   a sh:PropertyShape ;
@@ -45,6 +49,43 @@
   sh:datatype xsd:string ;
   sh:minCount 1 ;
   sh:maxCount 1 .
+
+### Rules (SHACL-AF): fill in what DCAT-AP-NL requires but this catalogue doesn't want to
+### repeat on every resource.
+
+### Datasets without their own publisher inherit the catalogue's publisher.
+:Catalog-datasetPublisher
+  a sh:SPARQLRule ;
+  rdfs:label "uitgever van dataset via catalogus"@nl, "dataset publisher via catalogue"@en ;
+  rdfs:comment
+    "Een dataset zonder eigen uitgever krijgt de uitgever van de catalogus waarin hij staat."@nl,
+    "A dataset without its own publisher gets the publisher of the catalogue it is listed in."@en ;
+  sh:prefixes : ;
+  sh:construct """
+    CONSTRUCT { ?dataset dct:publisher ?publisher . }
+    WHERE {
+      $this dct:publisher ?publisher ;
+        dcat:dataset ?dataset .
+      FILTER NOT EXISTS { ?dataset dct:publisher ?any }
+    }
+  """ .
+
+### Every dcat:downloadURL is also a valid dcat:accessURL (DCAT-AP requires an accessURL).
+:DistributionShape
+  a sh:NodeShape ;
+  sh:targetClass dcat:Distribution ;
+  sh:rule :Distribution-accessURLFromDownloadURL .
+
+:Distribution-accessURLFromDownloadURL
+  a sh:TripleRule ;
+  rdfs:label "toegangs-URL via download-URL"@nl, "access URL via download URL"@en ;
+  rdfs:comment
+    "Een download-URL is ook een toegangs-URL van de distributie."@nl,
+    "A download URL is also an access URL of the distribution."@en ;
+  sh:condition [ sh:property [ sh:path dcat:downloadURL ; sh:minCount 1 ] ] ;
+  sh:subject sh:this ;
+  sh:predicate dcat:accessURL ;
+  sh:object [ sh:path dcat:downloadURL ] .
 
 ### Example data, conforming to the combined EU/NL DCAT-AP constraints plus the local
 ### :interneVerwijzing extension above. :GemeenteNorg, :DataTeamNorg and :OpenDataTeam are named

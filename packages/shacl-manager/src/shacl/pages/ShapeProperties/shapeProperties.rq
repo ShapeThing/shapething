@@ -1,0 +1,33 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# The property shapes (sh:property) for the properties tab. One row per (property shape, name); a
+# property shape without sh:name gets one row with ?name unbound. Rows come per shape, in sh:order
+# (unordered last), then by path.
+#
+# Input variables, bound by the caller (Comunica initialBindings):
+#   ?subject    the class, shape or property group the page is about
+#   ?kind       "shape": the property shapes of ?subject itself
+#               "class": the property shapes of every shape of ?origin with sh:targetClass ?subject
+#               "group": every property shape with sh:group ?subject, whichever shape it is on
+#   ?dataModel  the data model's graph IRI
+#   ?origin     "managed" (shapes declared in the data model's own graph) or "imported" (any other);
+#               only used for "class"
+SELECT ?shape ?propertyShape ?path ?order ?name WHERE {
+  {
+    FILTER(?kind = "shape")
+    BIND(?subject AS ?shape)
+  } UNION {
+    FILTER(?kind = "class")
+    GRAPH ?graph { ?shape sh:targetClass ?subject }
+    FILTER(IF(?graph = ?dataModel, "managed", "imported") = ?origin)
+  } UNION {
+    FILTER(?kind = "group")
+    ?propertyShape sh:group ?subject .
+  }
+
+  ?shape sh:property ?propertyShape .
+  OPTIONAL { ?propertyShape sh:path ?path }
+  OPTIONAL { ?propertyShape sh:order ?order }
+  OPTIONAL { ?propertyShape sh:name ?name }
+}
+ORDER BY ?shape (!BOUND(?order)) ?order ?path ?propertyShape

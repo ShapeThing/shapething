@@ -1,0 +1,55 @@
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+# The classes for one section of the knowledge sidebar: one row per (class, parent) edge, parent
+# unbound for a root. A class with several parents gets one row per parent. Rows come most
+# properties (by rdfs:domain) first, so building the tree in row order sorts every level by
+# property count.
+#
+# Input variables, bound by the caller (Comunica initialBindings):
+#   ?dataModel  the data model's graph IRI
+#   ?origin     "managed" (classes declared in the data model's own graph) or "imported" (any other)
+#   ?section    "hierarchy": every named (IRI) class, nested by rdfs:subClassOf
+#               "other":     every anonymous (blank-node) class - restrictions, unionOf, ... - flat
+#
+# Both sections select classes by the same test - is the class an IRI? - one keeping true, the
+# other false, so together they show every class of the origin exactly once.
+SELECT ?class ?parent (COUNT(DISTINCT ?property) AS ?propertyCount) WHERE {
+  # A class is a declared owl:Class, rdfs:Class or owl:Restriction, anything with an
+  # rdfs:subClassOf (RDFS makes that a class whether or not it is typed), or a class expression
+  # (unionOf, intersectionOf, complementOf, oneOf), which is often left untyped. Its origin is the
+  # graph that declares it.
+  # DISTINCT matters: a class declared several ways would otherwise run the parent search below once
+  # per declaration, and Comunica stalls on those concurrent property paths. The input variables
+  # are projected so the caller's bindings still reach the inner FILTERs.
+  {
+    SELECT DISTINCT ?class ?dataModel ?origin ?section WHERE {
+      GRAPH ?graph {
+        { ?class a owl:Class } UNION { ?class a rdfs:Class } UNION { ?class a owl:Restriction }
+        UNION { ?class rdfs:subClassOf ?anySuperClass }
+        UNION { ?class owl:unionOf|owl:intersectionOf|owl:complementOf|owl:oneOf ?anyMembers }
+      }
+      FILTER(IF(?graph = ?dataModel, "managed", "imported") = ?origin)
+      FILTER(isIRI(?class) = (?section = "hierarchy"))
+    }
+  }
+
+  # Parent: a direct named superclass of the same origin. A superclass from the other origin is left
+  # out, so its subclasses become roots here. Anonymous classes stay flat.
+  # Only the direct rdfs:subClassOf, no rdfs:subClassOf+: finding the nearest superclass of the
+  # same origin through a property path needs a FILTER NOT EXISTS per candidate, and Comunica
+  # stalls on that with as few as a dozen imported classes.
+  OPTIONAL {
+    FILTER(?section = "hierarchy")
+    ?class rdfs:subClassOf ?parent .
+    FILTER(isIRI(?parent) && ?parent != ?class)
+    GRAPH ?parentGraph {
+      { ?parent a owl:Class } UNION { ?parent a rdfs:Class } UNION { ?parent rdfs:subClassOf ?anyParentSuperClass }
+    }
+    FILTER(IF(?parentGraph = ?dataModel, "managed", "imported") = ?origin)
+  }
+
+  OPTIONAL { ?property rdfs:domain ?class }
+}
+GROUP BY ?class ?parent
+ORDER BY DESC(?propertyCount) ?class

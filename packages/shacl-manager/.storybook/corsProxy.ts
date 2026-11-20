@@ -1,12 +1,11 @@
-import type { Plugin } from "vite";
+import type { Plugin } from "vite-plus";
 
 // A same-origin stand-in for a paid CORS proxy service (corsproxy.io now requires an API key).
 // The browser refuses to read a cross-origin response that lacks permissive CORS headers, but
 // this dev-server middleware runs in Node, where CORS doesn't apply at all - it fetches the
 // target itself, server to server, and hands the bytes back same-origin, so the browser never
-// sees a cross-origin response in the first place. Point a loadGraph's corsProxyUrl at
-// `${CORS_PROXY_PATH}` (a relative path resolves against the page's own origin) to use it - see
-// src/stories/shacl-manager.stories.tsx.
+// sees a cross-origin response in the first place. The stories' loadGraph routes every non-local
+// graph through `${CORS_PROXY_PATH}?url=...` - see src/stories/shacl-manager.stories.tsx.
 export const CORS_PROXY_PATH = "/cors-proxy";
 
 // Ontology namespace IRIs (skos:, dct:, foaf:, ...) are content-negotiated: without an RDF-shaped

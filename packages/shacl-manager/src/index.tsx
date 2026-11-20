@@ -1,50 +1,59 @@
-import type { NamedNode, Quad } from "@rdfjs/types";
-import { useState } from "react";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { RouterProvider } from "@tanstack/react-router";
-import { Localized } from "@fluent/react";
-import "@shapething/shacl-renderer/style.css";
-import DataModelProvider from "@/data-model/DataModelProvider.tsx";
-import { createShaclManagerRouter } from "@/app/router.tsx";
-import InterfaceLanguageProvider from "@/app/InterfaceLanguageProvider.tsx";
-import L10nProvider from "@/app/L10nProvider.tsx";
-import { DEFAULT_LOCALE, type LocaleLoaderOverrides } from "@/app/l10n/locales.ts";
+import type { NamedNode } from "@rdfjs/types";
+import { Suspense, use, useState, type ReactNode } from "react";
+import { RouterProvider } from "react-router";
+import { createShaclManagerRouter } from "./app/router.tsx";
+import { DataModelContext } from "./data-model/dataModelContext.ts";
+import { loadDataModel, type DataModel, type LoadGraph } from "./data-model/loadDataModel.ts";
+
+export type { LoadGraph, DataModel } from "./data-model/loadDataModel.ts";
+export { clearImportCache } from "./data-model/importCache.ts";
 
 export type ShaclManagerProps = {
   dataModelIRI: NamedNode;
-  loadGraph: (graph: NamedNode) => Promise<Quad[]>;
-  corsProxyUrl?: string;
-  interfaceLanguage?: string;
-  interfaceLocales?: LocaleLoaderOverrides;
+  loadGraph: LoadGraph;
+  fallback?: ReactNode;
 };
 
 export function ShaclManager({
   dataModelIRI,
   loadGraph,
-  corsProxyUrl,
-  interfaceLanguage = DEFAULT_LOCALE,
-  interfaceLocales,
+  fallback = "Loading…",
 }: ShaclManagerProps) {
-  const [queryClient] = useState(() => new QueryClient());
-  const [router] = useState(() => createShaclManagerRouter({ corsProxyUrl }, dataModelIRI.value));
+  // The load is started here, outside the Suspense boundary: a component that suspends before it
+  // ever mounted loses its state, so a promise created inside DataModelView would be recreated on
+  // every retry and never settle. A different data model (or loader) starts a fresh load.
+  const [load, setLoad] = useState(() => ({
+    dataModelIRI,
+    loadGraph,
+    promise: loadDataModel(dataModelIRI, loadGraph),
+  }));
+  if (load.dataModelIRI.value !== dataModelIRI.value || load.loadGraph !== loadGraph) {
+    setLoad({ dataModelIRI, loadGraph, promise: loadDataModel(dataModelIRI, loadGraph) });
+  }
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <InterfaceLanguageProvider interfaceLanguage={interfaceLanguage}>
-        <L10nProvider interfaceLocales={interfaceLocales}>
-          <DataModelProvider
-            dataModelIRI={dataModelIRI}
-            loadGraph={loadGraph}
-            fallback={
-              <Localized id="shacl-manager-loading">
-                <div>Loading…</div>
-              </Localized>
-            }
-          >
-            <RouterProvider router={router} />
-          </DataModelProvider>
-        </L10nProvider>
-      </InterfaceLanguageProvider>
-    </QueryClientProvider>
+    <Suspense fallback={fallback}>
+      <DataModelView key={load.dataModelIRI.value} dataModelPromise={load.promise} />
+    </Suspense>
+  );
+}
+
+function DataModelView({ dataModelPromise }: { dataModelPromise: Promise<DataModel> }) {
+  const dataModel = use(dataModelPromise);
+  const { dataModelIRI, store, importedGraphIRIs, cachedGraphIRIs, unresolvableGraphIRIs } =
+    dataModel;
+
+  const [router] = useState(createShaclManagerRouter);
+
+  return (
+    <div className="st-manager-root">
+      <div>
+        Loaded {store.size} quads from &lt;{dataModelIRI.value}&gt; and {importedGraphIRIs.length}{" "}
+        imports ({cachedGraphIRIs.length} from cache, {unresolvableGraphIRIs.length} unresolvable)
+      </div>
+      <DataModelContext value={dataModel}>
+        <RouterProvider router={router} />
+      </DataModelContext>
+    </div>
   );
 }

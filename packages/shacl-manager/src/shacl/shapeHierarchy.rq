@@ -1,0 +1,49 @@
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# The shapes for one section of the sidebar: one row per (shape, parent) edge, parent unbound for
+# a root. A shape with several parents gets one row per parent. Rows come most sh:property first,
+# so building the tree in row order sorts every level by property count.
+#
+# Input variables, bound by the caller (Comunica initialBindings):
+#   ?dataModel  the data model's graph IRI
+#   ?origin     "managed" (shapes declared in the data model's own graph) or "imported" (any other)
+#   ?section    "hierarchy": every shape with an sh:targetClass, nested by rdfs:subClassOf
+#               "other":     every other shape, flat
+#
+# Both sections select shapes by the same test - does the shape have an sh:targetClass? - one
+# keeping true, the other false, so together they show every shape of the origin exactly once.
+SELECT ?shape ?parent (COUNT(DISTINCT ?property) AS ?propertyCount) WHERE {
+  # A shape is a declared sh:NodeShape, or anything with an sh:targetClass (SHACL makes that a
+  # shape whether or not it is typed). Its origin is the graph that declares it.
+  GRAPH ?graph {
+    { ?shape a sh:NodeShape } UNION { ?shape sh:targetClass ?anyTargetClass }
+  }
+  FILTER(IF(?graph = ?dataModel, "managed", "imported") = ?origin)
+  FILTER(EXISTS { ?shape sh:targetClass ?someTargetClass } = (?section = "hierarchy"))
+
+  # Parent: a shape of the same origin that targets the nearest superclass of one of this shape's
+  # target classes that has a shape at all. With C rdfs:subClassOf B rdfs:subClassOf A and shapes
+  # only for C and A, A's shape is the parent of C's. Several shapes targeting the same class are
+  # siblings. A parent from the other origin is left out, so its children become roots.
+  OPTIONAL {
+    FILTER(?section = "hierarchy")
+    ?shape sh:targetClass ?class .
+    ?class rdfs:subClassOf+ ?superClass .
+    FILTER(?superClass != ?class)
+    GRAPH ?parentGraph { ?parent sh:targetClass ?superClass }
+    FILTER(IF(?parentGraph = ?dataModel, "managed", "imported") = ?origin)
+    FILTER(?parent != ?shape)
+    FILTER NOT EXISTS {
+      ?class rdfs:subClassOf+ ?between .
+      ?between rdfs:subClassOf+ ?superClass .
+      FILTER(?between != ?class && ?between != ?superClass)
+      GRAPH ?betweenGraph { ?betweenShape sh:targetClass ?between }
+      FILTER(IF(?betweenGraph = ?dataModel, "managed", "imported") = ?origin)
+    }
+  }
+
+  OPTIONAL { ?shape sh:property ?property }
+}
+GROUP BY ?shape ?parent
+ORDER BY DESC(?propertyCount) ?shape

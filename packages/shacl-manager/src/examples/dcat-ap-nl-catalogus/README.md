@@ -8,6 +8,9 @@ profile, which itself builds on the EU DCAT-AP baseline.
   `sh:ShapesGraph`, and it `owl:imports` both additional graphs below. It adds one local rule
   of its own (every catalog needs an `:interneVerwijzing` case reference) on top of the
   imported `dcatapnl-sh:CatalogShape`, and ships an example catalog/dataset/distribution.
+  It also has SHACL-AF rules (`sh:rule`): a `sh:SPARQLRule` on `:CatalogShape` that gives
+  datasets without a publisher the catalog's publisher, and a `sh:TripleRule` (with an
+  `sh:condition`) on `:DistributionShape` that derives `dcat:accessURL` from `dcat:downloadURL`.
 - `imports/dcat-ap-nl-SHACL.ttl` - **read-only**. A vendored copy of the real DCAT-AP-NL 3.0
   SHACL shapes (Geonovum).
 - `imports/dcat-ap-eu-SHACL.ttl` - **read-only**. A vendored copy of the real DCAT-AP 3.0.0

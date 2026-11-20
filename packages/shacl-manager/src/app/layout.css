@@ -1,0 +1,114 @@
+.st-manager-root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.st-manager {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 18rem minmax(0, 1fr);
+  min-height: 0;
+}
+
+/* A third column only on pages that render the aside (class and shape pages). */
+.st-manager:has(> .st-manager__aside) {
+  grid-template-columns: 18rem minmax(0, 1fr) 18rem;
+}
+
+.st-manager__aside {
+  min-height: 0;
+  overflow: auto;
+  border-inline-start: 1px solid;
+  padding-inline: 1rem;
+}
+
+.st-related {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.st-manager__sidebar {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border-inline-end: 1px solid;
+}
+
+.st-manager__tabs {
+  display: flex;
+}
+
+.st-manager__tabs > a {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 0.5ch;
+  padding: 0.5rem;
+}
+
+.st-manager__tab-count {
+  opacity: 0.6;
+}
+
+.st-manager__tabs > a.active {
+  font-weight: bold;
+}
+
+.st-manager__sidebar-content {
+  flex: 1;
+  overflow: auto;
+}
+
+.st-manager__main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: auto;
+}
+
+/* Nested route sections pass the remaining height on, so the list/detail columns reach the bottom. */
+.st-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.st-tree {
+  list-style: none;
+  margin: 0;
+  padding-inline-start: 1rem;
+}
+
+.st-tree a {
+  display: inline-flex;
+  gap: 0.5ch;
+}
+
+.st-tree a.active {
+  font-weight: bold;
+}
+
+.st-tree__count {
+  opacity: 0.6;
+}
+
+.st-breadcrumb ol {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0.5rem;
+}
+
+.st-breadcrumb li + li::before {
+  content: "/";
+  padding-inline: 0.75ch;
+  opacity: 0.6;
+}
+
+.st-breadcrumb li:last-child {
+  font-weight: bold;
+}

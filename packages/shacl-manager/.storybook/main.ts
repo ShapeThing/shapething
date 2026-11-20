@@ -1,9 +1,6 @@
 import type { StorybookConfig } from "@storybook/react-vite";
-
 import { dirname } from "path";
-
 import { fileURLToPath } from "url";
-import { typedSparql } from "@shapething/typed-sparql";
 import { corsProxy } from "./corsProxy.ts";
 
 /**
@@ -13,18 +10,14 @@ import { corsProxy } from "./corsProxy.ts";
 function getAbsolutePath(value: string) {
   return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));
 }
+
 const config: StorybookConfig = {
   stories: ["../src/**/*.mdx", "../src/**/*.stories.@(js|jsx|mjs|ts|tsx)"],
-  addons: [
-    getAbsolutePath("@chromatic-com/storybook"),
-    getAbsolutePath("@storybook/addon-vitest"),
-    getAbsolutePath("@storybook/addon-a11y"),
-    getAbsolutePath("@storybook/addon-docs"),
-  ],
+  addons: [getAbsolutePath("@storybook/addon-a11y"), getAbsolutePath("@storybook/addon-docs")],
   framework: getAbsolutePath("@storybook/react-vite"),
   async viteFinal(config) {
     config.plugins ??= [];
-    config.plugins.push(corsProxy(), typedSparql());
+    config.plugins.push(corsProxy());
     return config;
   },
 };

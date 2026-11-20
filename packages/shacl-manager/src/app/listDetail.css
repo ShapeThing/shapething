@@ -1,0 +1,44 @@
+.st-list-detail {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+  grid-template-rows: auto 1fr;
+  min-height: 0;
+}
+
+.st-list-detail__title {
+  grid-column: 1 / -1;
+}
+
+.st-list-detail__tabs {
+  min-height: 0;
+  overflow: auto;
+  border-inline-end: 1px solid;
+}
+
+.st-list-detail__tabs ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.st-list-detail__tabs a {
+  display: block;
+  padding: 0.5rem 1rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-inline-end: 3px solid transparent;
+  margin-inline-end: -1px;
+}
+
+.st-list-detail__tabs a.active {
+  font-weight: bold;
+  border-inline-end-color: currentColor;
+}
+
+.st-list-detail__content {
+  min-width: 0;
+  overflow: auto;
+  padding-inline: 1rem;
+}

@@ -7,7 +7,9 @@ SKOS application profile.
 - `model.ttl` - **the data model** (writable). Its `:` subject is `owl:Ontology` +
   `sh:ShapesGraph`, and it `owl:imports` the NL-SBB profile. It adds one local rule of its
   own (every concept needs a `:beleidsdomein`) on top of the imported `skosapnl:Concept`
-  shape, and ships two example concepts.
+  shape, and ships three example concepts. `:ConceptShape` also carries two SHACL-AF rules
+  (`sh:rule`): a `sh:TripleRule` that derives `skos:inScheme` from `skos:topConceptOf`, and a
+  `sh:SPARQLRule` that materialises `skos:narrower` from `skos:broader`.
 - `imports/skosapnl.ttl` - **read-only**. A vendored copy of the real NL-SBB / SKOS-AP-NL
   profile (Geonovum). shacl-manager does not edit this file - it's loaded because `model.ttl`
   imports it, and changes belong upstream.

@@ -7,8 +7,7 @@
   "type": "module",
   "exports": {
     ".": "./dist/index.mjs",
-    "./package.json": "./package.json",
-    "./style.css": "./dist/style.css"
+    "./package.json": "./package.json"
   },
   "publishConfig": {
     "access": "public"
@@ -24,34 +23,32 @@
   },
   "dependencies": {
     "@comunica/query-sparql-rdfjs": "^5.4.1",
-    "@fluent/bundle": "^0.19.1",
-    "@fluent/react": "^0.15.2",
-    "@rdfjs/namespace": "^2.0.1",
+    "@comunica/utils-bindings-factory": "^5.4.0",
     "@rdfjs/types": "^2.0.1",
-    "@shapething/shacl-renderer": "workspace:*",
-    "@tanstack/react-query": "^5.103.2",
-    "@tanstack/react-router": "^1.170.39",
-    "@types/rdfjs__namespace": "^2.0.10",
+    "idb-keyval": "^6.3.0",
     "rdf-data-factory": "^2.1.0",
     "rdf-stores": "^2.5.1",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0"
+    "react-router": "^8.5.1"
   },
   "devDependencies": {
-    "@chromatic-com/storybook": "latest",
+    "@shapething/shacl-renderer": "workspace:*",
     "@shapething/typed-sparql": "workspace:*",
     "@storybook/addon-a11y": "^10.6.0",
     "@storybook/addon-docs": "^10.6.0",
-    "@storybook/addon-vitest": "^10.6.0",
     "@storybook/react-vite": "^10.6.0",
     "@types/node": "^26.6.2",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
-    "@vitest/browser-playwright": "4.1.11",
-    "playwright": "latest",
+    "fake-indexeddb": "^6.2.8",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "storybook": "^10.6.0",
     "typescript": "^7.0.2",
     "vite-plus": "^0.3.3",
     "vitest": "4.1.11"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
   }
 }

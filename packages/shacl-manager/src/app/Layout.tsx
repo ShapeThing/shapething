@@ -1,22 +1,18 @@
-import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
-import { useDataModel } from "@/data-model/useDataModel.ts";
-import { useLabels } from "@/data-model/useLabels.ts";
-import "./style.css";
+import { Outlet } from "react-router";
+import { Aside } from "./Aside.tsx";
+import { Breadcrumb } from "./Breadcrumb.tsx";
+import { Sidebar } from "./Sidebar.tsx";
+import "./layout.css";
 
-export default function Layout({ children }: { children: ReactNode }) {
-  const { dataModelIRI } = useDataModel();
-  const labels = useLabels();
-
+export function Layout() {
   return (
     <div className="st-manager">
-      <header className="st-manager__header">
-        <Link to="/" className="st-manager__title">
-          {labels.display(dataModelIRI)}
-        </Link>
-        <code className="st-manager__iri">{dataModelIRI.value}</code>
-      </header>
-      <main className="st-manager__main">{children}</main>
+      <Sidebar />
+      <main className="st-manager__main">
+        <Breadcrumb />
+        <Outlet />
+      </main>
+      <Aside />
     </div>
   );
 }

@@ -10,6 +10,7 @@
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix dct: <http://purl.org/dc/terms/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix skosapnl: <http://nlbegrip.nl/def/skosapnl#> .
 
@@ -17,7 +18,8 @@
   a owl:Ontology, sh:ShapesGraph ;
   rdfs:label "Begrippenkader gemeente Norg"@nl, "Concept register of the Norg municipality"@en ;
   owl:versionInfo "0.1.0" ;
-  owl:imports skosapnl: .
+  owl:imports skosapnl: ;
+  sh:declare [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] .
 
 ### Local extension: on top of the NL-SBB rules for every skos:Concept (imports/skosapnl.ttl),
 ### this data model additionally requires its own :beleidsdomein property.
@@ -26,7 +28,8 @@
   a sh:NodeShape ;
   sh:targetClass skos:Concept ;
   sh:node skosapnl:Concept ;
-  sh:property :Concept-beleidsdomein .
+  sh:property :Concept-beleidsdomein ;
+  sh:rule :Concept-inSchemeFromTopConcept, :Concept-narrowerFromBroader .
 
 :Concept-beleidsdomein
   a sh:PropertyShape ;
@@ -38,6 +41,35 @@
   sh:datatype rdf:langString ;
   sh:minCount 1 ;
   sh:nodeKind sh:Literal .
+
+### Rules (SHACL-AF): derive the triples SKOS leaves implicit, so consumers of the
+### begrippenkader don't have to apply the SKOS entailments themselves.
+
+### skos:topConceptOf is a sub-property of skos:inScheme: every top concept is in its scheme.
+:Concept-inSchemeFromTopConcept
+  a sh:TripleRule ;
+  rdfs:label "in schema via topbegrip"@nl, "in scheme via top concept"@en ;
+  rdfs:comment
+    "Een topbegrip van een begrippenkader zit ook in dat begrippenkader."@nl,
+    "A top concept of a concept scheme is also in that scheme."@en ;
+  sh:order 1 ;
+  sh:subject sh:this ;
+  sh:predicate skos:inScheme ;
+  sh:object [ sh:path skos:topConceptOf ] .
+
+### skos:narrower is the inverse of skos:broader: materialise it on the broader concept.
+:Concept-narrowerFromBroader
+  a sh:SPARQLRule ;
+  rdfs:label "smaller begrip via breder begrip"@nl, "narrower via broader"@en ;
+  rdfs:comment
+    "Als een begrip een breder begrip heeft, is het een smaller begrip van dat bredere begrip."@nl,
+    "If a concept has a broader concept, it is a narrower concept of that broader concept."@en ;
+  sh:order 2 ;
+  sh:prefixes : ;
+  sh:construct """
+    CONSTRUCT { ?broader skos:narrower $this . }
+    WHERE { $this skos:broader ?broader . }
+  """ .
 
 ### Example data, conforming to both the imported skosapnl:Concept shape and the local
 ### :ConceptShape extension above.
@@ -62,3 +94,11 @@
   skos:prefLabel "Melding"@nl ;
   skos:definition "Een kennisgeving van een inwoner of bedrijf aan de gemeente over een situatie die aandacht behoeft."@nl ;
   :beleidsdomein "Openbare Ruimte"@nl .
+
+:Omgevingsvergunning
+  a skos:Concept ;
+  skos:inScheme :Begrippenkader ;
+  skos:broader :Vergunning ;
+  skos:prefLabel "Omgevingsvergunning"@nl ;
+  skos:definition "Een vergunning voor activiteiten die gevolgen hebben voor de fysieke leefomgeving."@nl ;
+  :beleidsdomein "Vergunningen, Toezicht en Handhaving"@nl .
