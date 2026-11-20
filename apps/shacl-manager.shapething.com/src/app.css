@@ -1,0 +1,188 @@
+/* The app's own chrome around the manager, on the renderer's theme tokens (open-props, --st-*). */
+:root {
+  --app-gutter: var(--size-3, 1rem);
+}
+
+body {
+  margin: 0;
+  font-family: var(--st-font-family);
+  color: var(--st-color-text);
+  background: white;
+}
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+}
+
+/* The manager sizes itself to the viewport; here it shares it with the bar above. */
+.app > .st-manager-root {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+
+.app-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--size-2);
+  padding: var(--size-2) var(--app-gutter);
+  border-bottom: 1px solid var(--st-color-border);
+}
+
+.app-logo {
+  height: 1.5rem;
+}
+
+.app-bar__folder {
+  font-weight: var(--font-weight-6);
+}
+
+.app-bar__spacer {
+  flex: 1;
+}
+
+.app-message,
+.app-start {
+  padding: var(--size-6) var(--app-gutter);
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.app-start__title {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+}
+
+.app-start__recent ul,
+.app-graphs {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--size-2);
+}
+
+.app-graphs .st-button {
+  display: grid;
+  justify-items: start;
+  width: 100%;
+  text-align: start;
+}
+
+.app-graphs code {
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+  overflow-wrap: anywhere;
+}
+
+.app-new-model,
+.app-base-iri {
+  margin-block-start: var(--size-6);
+}
+
+.app-new-model label,
+.app-base-iri label {
+  font-weight: var(--font-weight-6);
+}
+
+.app-base-iri__row {
+  display: flex;
+  gap: var(--size-2);
+}
+
+.app-base-iri__row .st-input {
+  flex: 1;
+}
+
+.app-hint {
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+}
+
+.app-error {
+  color: var(--st-severity-error);
+}
+
+.git-panel {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  min-width: 0;
+}
+
+.git-panel__branch {
+  font-family: var(--font-mono);
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text-muted);
+}
+
+.git-panel__count {
+  margin-inline-start: var(--size-1);
+  padding-inline: var(--size-1);
+  border-radius: var(--radius-round);
+  background: var(--st-primary-color);
+  color: white;
+  font-size: var(--st-font-size-smallest);
+}
+
+.git-panel__error {
+  max-width: 24rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--st-severity-error);
+  font-size: var(--st-font-size-small);
+}
+
+.git-dialog {
+  width: min(36rem, 100% - 2 * var(--app-gutter));
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-3);
+  padding: var(--size-4);
+}
+
+.git-dialog form,
+.git-dialog label {
+  display: grid;
+  gap: var(--size-2);
+}
+
+.git-dialog h2 {
+  margin: 0;
+}
+
+.git-dialog__files {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-family: var(--font-mono);
+  font-size: var(--st-font-size-small);
+}
+
+.git-dialog__files span {
+  display: inline-block;
+  min-width: 5em;
+}
+
+.git-dialog__files [data-change="added"] span {
+  color: var(--st-diff-added-text);
+}
+
+.git-dialog__files [data-change="deleted"] span {
+  color: var(--st-diff-removed-text);
+}
+
+.git-dialog__row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: var(--size-2);
+}
+
+.git-dialog__actions {
+  display: flex;
+  justify-content: end;
+  gap: var(--size-2);
+}

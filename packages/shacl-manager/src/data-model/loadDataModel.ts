@@ -1,6 +1,7 @@
 import type { NamedNode, Quad } from "@rdfjs/types";
 import { owl } from "@shapething/shacl-renderer";
 import { RdfStore } from "rdf-stores";
+import { replaceStore } from "./storeCache.ts";
 import {
   readCachedImport,
   writeCachedImport,
@@ -19,6 +20,8 @@ export type DataModel = {
   store: RdfStore;
   // On a clash the data model's own declaration wins; between imports, the first one loaded.
   prefixes: Record<string, string>;
+  // The prefixes the data model's own source declared.
+  ownPrefixes: Record<string, string>;
   importedGraphIRIs: NamedNode[];
   // The imports read from the browser cache rather than loadGraph.
   cachedGraphIRIs: NamedNode[];
@@ -57,9 +60,38 @@ export async function loadDataModel(
   dataModelIRI: NamedNode,
   loadGraph: LoadGraph,
 ): Promise<DataModel> {
-  const store = RdfStore.createDefault();
   const own = await loadGraph(dataModelIRI);
-  for (const quad of own.quads) store.addQuad(quad);
+  return resolveImports(dataModelIRI, own.quads, own.prefixes, loadGraph);
+}
+
+// The own graph's owl:imports, the ones that decide what else is loaded.
+export const ownImports = ({ store, dataModelIRI }: DataModel): string[] =>
+  store
+    .getQuads(null, owl("imports"), null, dataModelIRI)
+    .flatMap(({ object }) => (object.termType === "NamedNode" ? [object.value] : []))
+    .sort();
+
+// After an edit that changed the own owl:imports: the same own graph, with the imports it now
+// asks for. Imports that were loaded before mostly come from the cache.
+export async function reloadImports(
+  dataModel: DataModel,
+  loadGraph: LoadGraph,
+): Promise<DataModel> {
+  const { dataModelIRI, store, ownPrefixes } = dataModel;
+  const ownQuads = store.getQuads(null, null, null, dataModelIRI);
+  const next = await resolveImports(dataModelIRI, ownQuads, ownPrefixes, loadGraph);
+  replaceStore(store, next.store);
+  return next;
+}
+
+async function resolveImports(
+  dataModelIRI: NamedNode,
+  ownQuads: Quad[],
+  ownPrefixes: Record<string, string>,
+  loadGraph: LoadGraph,
+): Promise<DataModel> {
+  const store = RdfStore.createDefault();
+  for (const quad of ownQuads) store.addQuad(quad);
   const importedPrefixes: Record<string, string> = {};
 
   const visited = new Set([dataModelIRI.value]);
@@ -98,7 +130,8 @@ export async function loadDataModel(
   return {
     dataModelIRI,
     store,
-    prefixes: { ...importedPrefixes, ...own.prefixes },
+    prefixes: { ...importedPrefixes, ...ownPrefixes },
+    ownPrefixes,
     importedGraphIRIs,
     cachedGraphIRIs,
     unresolvableGraphIRIs,

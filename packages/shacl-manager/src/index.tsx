@@ -1,6 +1,7 @@
 import type { NamedNode } from "@rdfjs/types";
 import type { BCP47 } from "@shapething/shacl-renderer";
 import {
+  startTransition,
   Suspense,
   use,
   useImperativeHandle,
@@ -22,7 +23,13 @@ import {
   withChanges,
   type Changes,
 } from "./data-model/editGraphs.ts";
-import { loadDataModel, type DataModel, type LoadGraph } from "./data-model/loadDataModel.ts";
+import {
+  loadDataModel,
+  ownImports,
+  reloadImports,
+  type DataModel,
+  type LoadGraph,
+} from "./data-model/loadDataModel.ts";
 
 export type { LoadGraph, DataModel } from "./data-model/loadDataModel.ts";
 export type { Changes } from "./data-model/editGraphs.ts";
@@ -73,6 +80,7 @@ export function ShaclManager({
         <DataModelView
           key={load.dataModelIRI.value}
           dataModelPromise={load.promise}
+          loadGraph={load.loadGraph}
           onSubmit={onSubmit}
           handle={ref}
         />
@@ -86,20 +94,27 @@ const navigatorLanguages = (): BCP47[] =>
 
 type DataModelViewProps = {
   dataModelPromise: Promise<DataModel>;
+  loadGraph: LoadGraph;
   onSubmit?: ShaclManagerProps["onSubmit"];
   handle?: Ref<ShaclManagerHandle>;
 };
 
-function DataModelView({ dataModelPromise, onSubmit, handle }: DataModelViewProps) {
+function DataModelView({ dataModelPromise, loadGraph, onSubmit, handle }: DataModelViewProps) {
   const loaded = use(dataModelPromise);
   const [dataModel, setDataModel] = useState(loaded);
   const [saved, setSaved] = useState(() => ownGraph(loaded));
   const [saving, setSaving] = useState(false);
   const changes = useMemo(() => changesSince(saved, dataModel), [saved, dataModel]);
 
-  // In a transition, so the pages stay on screen while the queries over the edited store run.
+  // In a transition, so the pages stay on screen while the queries over the edited store run. An
+  // edit of the own owl:imports first loads what is now imported, and drops what no longer is.
   const [updating, startUpdate] = useTransition();
-  const commit = (next: DataModel) => startUpdate(() => setDataModel(next));
+  const commit = (next: DataModel) =>
+    startUpdate(async () => {
+      const importsChanged = ownImports(next).join(" ") !== ownImports(dataModel).join(" ");
+      const resolved = importsChanged ? await reloadImports(next, loadGraph) : next;
+      startTransition(() => setDataModel(resolved));
+    });
 
   useImperativeHandle(
     handle,

@@ -1,0 +1,77 @@
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>.
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+@prefix owl: <http://www.w3.org/2002/07/owl#>.
+@prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix st: <http://shapething.com/>.
+@prefix meta: <http://shapething.com/shacl-manager/data-model-meta#>.
+
+# How the data model itself is shown: the subject of its own graph, an owl:Ontology and
+# sh:ShapesGraph. Predicates not declared here are generated into meta:other.
+meta:dataModel
+    a sh:NodeShape ;
+    st:missingPropertiesGroup meta:other ;
+
+    # General
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Name"@en, "Naam"@nl ;
+        sh:path [ sh:alternativePath ( rdfs:label dcterms:title ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+    ] ;
+
+    sh:property [
+        sh:order 1 ;
+        sh:name "Description"@en, "Beschrijving"@nl ;
+        sh:path [ sh:alternativePath ( rdfs:comment dcterms:description ) ] ;
+        sh:group meta:general ;
+        sh:datatype ( xsd:string rdf:langString ) ;
+        sh:singleLine false ;
+    ] ;
+
+    sh:property [
+        sh:order 2 ;
+        sh:name "Version"@en, "Versie"@nl ;
+        sh:path owl:versionInfo ;
+        sh:group meta:general ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 3 ;
+        sh:name "Type"@en, "Type"@nl ;
+        sh:path rdf:type ;
+        sh:group meta:general ;
+        sh:nodeKind sh:IRI ;
+    ] ;
+
+    # Imports
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Imports"@en, "Importeert"@nl ;
+        sh:description "Ontologies and shapes graphs this data model builds on, by their IRI. Their shapes and classes appear under Imported."@en,
+            "Ontologieën en shapes graphs waar dit datamodel op voortbouwt, op hun IRI. Hun shapes en klassen staan onder Geïmporteerd."@nl ;
+        sh:path owl:imports ;
+        sh:group meta:imports ;
+        sh:nodeKind sh:IRI ;
+    ] .
+
+meta:general
+    a sh:PropertyGroup ;
+    sh:name "General"@en, "Algemeen"@nl ;
+    sh:order 0 .
+
+meta:imports
+    a sh:PropertyGroup ;
+    sh:name "Imports"@en, "Imports"@nl ;
+    sh:order 1 .
+
+meta:other
+    a sh:PropertyGroup ;
+    sh:name "Other"@en, "Overig"@nl ;
+    sh:order 2 .

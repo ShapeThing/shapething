@@ -12,7 +12,8 @@ import type {
 import EventEmitter from "events";
 import Hex from "hex-encoding";
 import { get, set } from "idb-keyval";
-import { Parser, Store, Writer, type OTerm } from "n3";
+import { write } from "@jeswr/pretty-turtle";
+import { Parser, Store, type OTerm } from "n3";
 /** @ts-expect-error readable-stream ships no type declarations */
 import { Readable } from "readable-stream";
 import { getAllFilesFromDirectory } from "./helpers/getAllFilesFromDirectory.ts";
@@ -52,6 +53,9 @@ const usedPrefixes = (prefixes: Record<string, string>, quads: Quad[]): Record<s
   );
 };
 
+// Never holds graphs and walking them is slow, a git repository has thousands of objects.
+const SKIPPED_DIRECTORIES = [".git", "node_modules"];
+
 type LocalStoreOptions = {
   baseUri: URL;
 };
@@ -81,6 +85,14 @@ export class LocalStore implements Source, RdfJsStore {
   constructor({ baseUri }: LocalStoreOptions) {
     this.#baseUri = baseUri;
     if (!baseUri.toString().endsWith("/")) throw new Error("BaseIRI must end on a trailing slash");
+  }
+
+  /**
+   * The names of the folders that were connected before, each can be given to mount().
+   */
+  static async listMounts(): Promise<string[]> {
+    const mounts: Set<string> | undefined = await get("mounts");
+    return [...(mounts ?? [])];
   }
 
   /**
@@ -137,6 +149,14 @@ export class LocalStore implements Source, RdfJsStore {
    */
   getFolderName(): string | undefined {
     return this.#directoryHandle?.name;
+  }
+
+  /**
+   * Returns the handle of the currently mounted folder, for example to ask for permission again
+   * after a reload or to read files that are not graphs.
+   */
+  getDirectoryHandle(): FileSystemDirectoryHandle | undefined {
+    return this.#directoryHandle;
   }
 
   /**
@@ -351,14 +371,11 @@ export class LocalStore implements Source, RdfJsStore {
     prefixes: Record<string, string> = {},
   ) {
     this.prefixes = { ...this.prefixes, ...prefixes };
-    const writer = new Writer({
-      baseIRI: graph.value,
+    // Pretty-printed: subjects grouped, blank nodes nested and lists written as ( ), so the file
+    // reads well and its diffs stay small.
+    const result = await write(quads, {
+      baseIri: graph.termType === "NamedNode" ? graph.value : undefined,
       prefixes: usedPrefixes({ ...this.prefixes, ...prefixes }, quads),
-    });
-    writer.addQuads(quads);
-
-    const result = await new Promise<string>((resolve, reject) => {
-      writer.end((error: Error, result: string) => (error ? reject(error) : resolve(result)));
     });
 
     const writable = await fileHandle.createWritable();
@@ -541,7 +558,11 @@ export class LocalStore implements Source, RdfJsStore {
       const version = this.#graphsVersion;
       this.#graphsWithFileHandles = (async () => {
         const graphsWithFileHandles: [NamedNode | DefaultGraph, FileSystemFileHandle][] = [];
-        for await (const [path, entry] of getAllFilesFromDirectory(directoryHandle)) {
+        for await (const [path, entry] of getAllFilesFromDirectory(
+          directoryHandle,
+          ".",
+          SKIPPED_DIRECTORIES,
+        )) {
           graphsWithFileHandles.push([this.#pathAndFileHandleToGraph(path), entry]);
         }
         // Only keep the result when no file was added or removed in the meantime.

@@ -38,3 +38,11 @@
   font-size: 0.85em;
   overflow-wrap: anywhere;
 }
+
+/* Shown on top while the data model's own graph is still empty. */
+.st-origin-intro__empty {
+  margin-block-start: var(--size-3);
+  padding: var(--size-1) var(--size-3);
+  border-inline-start: 3px solid var(--st-primary-color);
+  background-color: var(--st-manager-row-hover);
+}

@@ -16,7 +16,10 @@ export function SaveButton() {
           type="button"
           className="st-button st-manager__cancel"
           disabled={saving}
-          onClick={discard}
+          onClick={() => {
+            const count = pending === 1 ? "1 change" : `${pending} changes`;
+            if (confirm(`Discard ${count}? This cannot be undone.`)) discard();
+          }}
         >
           Cancel
         </button>

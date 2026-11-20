@@ -1,3 +1,4 @@
+import type { Quad } from "@rdfjs/types";
 import { Link } from "react-router";
 import { useCommit, useDataModel } from "../../data-model/dataModelContext.ts";
 import type { DataModel } from "../../data-model/loadDataModel.ts";
@@ -14,9 +15,11 @@ type EditButtonProps = ShapeSource & {
   // The node's page, relative to the calling component's route: its edit route is below it.
   at?: string;
   small?: boolean;
+  // Triples the node gets when the form is submitted, e.g. the type of a node that has none yet.
+  startingQuads?: Quad[];
 };
 
-export function EditButton({ term, at = ".", small, ...shape }: EditButtonProps) {
+export function EditButton({ term, at = ".", small, startingQuads, ...shape }: EditButtonProps) {
   // Opened from a list, the page before may be another item's: closing goes to the edited one.
   const dialog = useRouteDialog(`${at}/${EDIT}`, at, true);
   const dataModel = useDataModel();
@@ -46,6 +49,7 @@ export function EditButton({ term, at = ".", small, ...shape }: EditButtonProps)
         open={dialog.open}
         onClose={dialog.close}
         term={term}
+        startingQuads={startingQuads}
         onSubmit={onSubmit}
       />
     </>

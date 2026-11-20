@@ -81,3 +81,17 @@ export const DcatApNl: Story = {
     dataModelIRI: factory.namedNode("https://data.norg.nl/def/opendata#"),
   },
 };
+
+// A data model that does not exist yet: its own graph is empty. Describing it and adding
+// owl:imports on the Data model page loads those imports.
+const cleanSlateIRI = "https://example.com/def/my-model#";
+
+export const CleanSlate: Story = {
+  name: "Clean slate",
+  args: {
+    ...Default.args,
+    dataModelIRI: factory.namedNode(cleanSlateIRI),
+    loadGraph: async (graph) =>
+      graph.value === cleanSlateIRI ? { quads: [], prefixes: {} } : loadGraph(graph),
+  },
+};

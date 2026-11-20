@@ -33,6 +33,7 @@ function dataModel(): DataModel {
     dataModelIRI: main,
     store,
     prefixes: {},
+    ownPrefixes: {},
     importedGraphIRIs: [imported],
     cachedGraphIRIs: [],
     unresolvableGraphIRIs: [],

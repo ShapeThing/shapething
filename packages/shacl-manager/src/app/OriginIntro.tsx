@@ -1,5 +1,7 @@
 import type { NamedNode } from "@rdfjs/types";
 import type { ReactNode } from "react";
+import { Link } from "react-router";
+import { DATA_MODEL_PATH } from "./DataModelPage.tsx";
 import { useDataModel } from "../data-model/dataModelContext.ts";
 import type { Origin, Perspective } from "./paths.ts";
 import "./originIntro.css";
@@ -71,9 +73,20 @@ export function OriginIntro({ perspective, origin }: { perspective: Perspective;
 }
 
 function ManagedText() {
-  const { dataModelIRI } = useDataModel();
+  const { dataModelIRI, store } = useDataModel();
+  const empty = store.countQuads(null, null, null, dataModelIRI) === 0;
   return (
     <>
+      {empty && (
+        <div className="st-origin-intro__empty">
+          <h3>An empty data model</h3>
+          <p>
+            Nothing is declared here yet. Start by{" "}
+            <Link to={DATA_MODEL_PATH}>describing the data model</Link> and choosing the ontologies
+            and shapes it imports, or create a shape or class with the buttons in the sidebar.
+          </p>
+        </div>
+      )}
       <h3>What managed means</h3>
       <p>
         Managed is what this data model declares itself, in its own graph{" "}

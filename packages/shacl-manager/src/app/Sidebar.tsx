@@ -10,6 +10,7 @@ import { classSections, useClassSections } from "../owl/useClassTree.ts";
 import { shaclMeta } from "../shacl/metaShapes.ts";
 import { usePropertyGroups } from "../shacl/usePropertyGroups.ts";
 import { shapeSections, useShapeSections } from "../shacl/useShapeTree.ts";
+import { DataModelLink } from "./DataModelPage.tsx";
 import { CreateButton } from "./edit/CreateButton.tsx";
 import {
   classPath,
@@ -33,6 +34,7 @@ export function Sidebar() {
 
   return (
     <aside className="st-manager__sidebar">
+      <DataModelLink />
       <nav className="st-manager__tabs st-manager__tabs--primary">
         {perspectives.map((tab) => (
           <NavLink key={tab.path} to={originPath(tab.path, origin)}>

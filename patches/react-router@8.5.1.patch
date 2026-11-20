@@ -1,5 +1,5 @@
 diff --git a/dist/development/index-react-server.js b/dist/development/index-react-server.js
-index 8ac95cb..a2f46fa 100644
+index 8ac95cbbe86b8554727b594e28f86d209796f484..bc64ea457a98f36f2b1121c21e284ee012bb1a28 100644
 --- a/dist/development/index-react-server.js
 +++ b/dist/development/index-react-server.js
 @@ -1533,7 +1533,7 @@ function normalizeTo(location, matches, basename, to, fromRouteId, relative) {
@@ -7,12 +7,27 @@ index 8ac95cb..a2f46fa 100644
  		activeRouteMatch = matches[matches.length - 1];
  	}
 -	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
-+	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
++	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%(?!2F)/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
  	if (to == null) {
  		path.search = location.search;
  		path.hash = location.hash;
+diff --git a/dist/development/lib/hooks.js b/dist/development/lib/hooks.js
+index 287e312465268212891d06d692b75762204450ba..8b8e41429cf8e0d0775eee508bee0aba8c4afc4d 100644
+--- a/dist/development/lib/hooks.js
++++ b/dist/development/lib/hooks.js
+@@ -607,8 +607,8 @@ function useRoutesImpl(routes, locationArg, dataRouterOpts) {
+ 	warning(matches == null || matches[matches.length - 1].route.element !== void 0 || matches[matches.length - 1].route.Component !== void 0 || matches[matches.length - 1].route.lazy !== void 0, `Matched leaf route at location "${location.pathname}${location.search}${location.hash}" does not have an element or Component. This means it will render an <Outlet /> with a null value by default resulting in an "empty" page.`);
+ 	let renderedMatches = _renderMatches(matches && matches.map((match) => Object.assign({}, match, {
+ 		params: Object.assign({}, parentParams, match.params),
+-		pathname: joinPaths([parentPathnameBase, navigator.encodeLocation ? navigator.encodeLocation(match.pathname.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")).pathname : match.pathname]),
+-		pathnameBase: match.pathnameBase === "/" ? parentPathnameBase : joinPaths([parentPathnameBase, navigator.encodeLocation ? navigator.encodeLocation(match.pathnameBase.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")).pathname : match.pathnameBase])
++		pathname: joinPaths([parentPathnameBase, navigator.encodeLocation ? navigator.encodeLocation(match.pathname.replace(/%(?!2F)/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")).pathname : match.pathname]),
++		pathnameBase: match.pathnameBase === "/" ? parentPathnameBase : joinPaths([parentPathnameBase, navigator.encodeLocation ? navigator.encodeLocation(match.pathnameBase.replace(/%(?!2F)/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")).pathname : match.pathnameBase])
+ 	})), parentMatches, dataRouterOpts);
+ 	if (locationArg && renderedMatches) return /* @__PURE__ */ React$1.createElement(LocationContext.Provider, { value: {
+ 		location: {
 diff --git a/dist/development/lib/router/router.js b/dist/development/lib/router/router.js
-index f9f3df2..f00daf5 100644
+index f9f3df2dd8fbc4c1fbb6d2fbb2fa52409d663188..58a3224b3bafff6140fd2e837ad683866ee15e3c 100644
 --- a/dist/development/lib/router/router.js
 +++ b/dist/development/lib/router/router.js
 @@ -1949,7 +1949,7 @@ function normalizeTo(location, matches, basename, to, fromRouteId, relative) {
@@ -20,12 +35,12 @@ index f9f3df2..f00daf5 100644
  		activeRouteMatch = matches[matches.length - 1];
  	}
 -	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
-+	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
++	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%(?!2F)/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
  	if (to == null) {
  		path.search = location.search;
  		path.hash = location.hash;
 diff --git a/dist/production/index-react-server.js b/dist/production/index-react-server.js
-index ee34148..17eba89 100644
+index ee3414874658327f8b7c9af0a4ab5deb5c69bc3a..77a5c3e679ea080fc06f3b639b2f30532676e4f8 100644
 --- a/dist/production/index-react-server.js
 +++ b/dist/production/index-react-server.js
 @@ -1524,7 +1524,7 @@ function normalizeTo(location, matches, basename, to, fromRouteId, relative) {
@@ -33,12 +48,27 @@ index ee34148..17eba89 100644
  		activeRouteMatch = matches[matches.length - 1];
  	}
 -	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
-+	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
++	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%(?!2F)/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
  	if (to == null) {
  		path.search = location.search;
  		path.hash = location.hash;
+diff --git a/dist/production/lib/hooks.js b/dist/production/lib/hooks.js
+index b5e7bf3057c42a27e534db24e280ff9738954b7b..36beeadd35a911b08c511f9e1c5930ff6abc6252 100644
+--- a/dist/production/lib/hooks.js
++++ b/dist/production/lib/hooks.js
+@@ -601,8 +601,8 @@ function useRoutesImpl(routes, locationArg, dataRouterOpts) {
+ 	else matches = matchRoutes(routes, { pathname: remainingPathname });
+ 	let renderedMatches = _renderMatches(matches && matches.map((match) => Object.assign({}, match, {
+ 		params: Object.assign({}, parentParams, match.params),
+-		pathname: joinPaths([parentPathnameBase, navigator.encodeLocation ? navigator.encodeLocation(match.pathname.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")).pathname : match.pathname]),
+-		pathnameBase: match.pathnameBase === "/" ? parentPathnameBase : joinPaths([parentPathnameBase, navigator.encodeLocation ? navigator.encodeLocation(match.pathnameBase.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")).pathname : match.pathnameBase])
++		pathname: joinPaths([parentPathnameBase, navigator.encodeLocation ? navigator.encodeLocation(match.pathname.replace(/%(?!2F)/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")).pathname : match.pathname]),
++		pathnameBase: match.pathnameBase === "/" ? parentPathnameBase : joinPaths([parentPathnameBase, navigator.encodeLocation ? navigator.encodeLocation(match.pathnameBase.replace(/%(?!2F)/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")).pathname : match.pathnameBase])
+ 	})), parentMatches, dataRouterOpts);
+ 	if (locationArg && renderedMatches) return /* @__PURE__ */ React$1.createElement(LocationContext.Provider, { value: {
+ 		location: {
 diff --git a/dist/production/lib/router/router.js b/dist/production/lib/router/router.js
-index f9f3df2..f00daf5 100644
+index f9f3df2dd8fbc4c1fbb6d2fbb2fa52409d663188..58a3224b3bafff6140fd2e837ad683866ee15e3c 100644
 --- a/dist/production/lib/router/router.js
 +++ b/dist/production/lib/router/router.js
 @@ -1949,7 +1949,7 @@ function normalizeTo(location, matches, basename, to, fromRouteId, relative) {
@@ -46,7 +76,7 @@ index f9f3df2..f00daf5 100644
  		activeRouteMatch = matches[matches.length - 1];
  	}
 -	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
-+	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
++	let path = resolveTo(to ? to : ".", getResolveToMatches(contextualMatches).map((pathname) => pathname.replace(/%(?!2F)/g, "%25").replace(/\?/g, "%3F").replace(/#/g, "%23")), stripBasename(location.pathname, basename) || location.pathname, relative === "path");
  	if (to == null) {
  		path.search = location.search;
  		path.hash = location.hash;

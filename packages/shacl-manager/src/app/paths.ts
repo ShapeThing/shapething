@@ -21,11 +21,17 @@ export const subjectPath = (origin: Origin, kind: SubjectKind, segment: string) 
 
 export const classPath = (origin: Origin, segment: string) => `/knowledge/${origin}/${segment}`;
 
+const isPerspective = (path?: string): path is Perspective =>
+  perspectives.some((tab) => tab.path === path);
+const isOrigin = (path?: string): path is Origin => origins.some((tab) => tab.path === path);
+
+// Outside of a perspective and origin, such as on the data model's page, the defaults.
 function usePlace() {
   const params = useMatch("/:perspective/:origin/*")?.params;
+  const inPlace = isPerspective(params?.perspective) && isOrigin(params?.origin);
   return {
-    perspective: (params?.perspective ?? "shapes") as Perspective,
-    origin: (params?.origin ?? "managed") as Origin,
+    perspective: inPlace ? (params!.perspective as Perspective) : "shapes",
+    origin: inPlace ? (params!.origin as Origin) : "managed",
   };
 }
 

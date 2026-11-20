@@ -1,4 +1,4 @@
-import type { Term } from "@rdfjs/types";
+import type { Quad, Term } from "@rdfjs/types";
 import { rdf } from "@shapething/shacl-renderer";
 import type { RdfStore } from "rdf-stores";
 import { useDataModel } from "../data-model/dataModelContext.ts";
@@ -26,7 +26,7 @@ export type HeadingFallbacks = {
 // shape (its dialog's route is `at`/edit, relative to the heading's route), deleting a managed
 // node, and disabling or enabling an imported shape, constraint or rule.
 export type HeadingActions = {
-  edit?: { shapes: ShapeSource; at?: string };
+  edit?: { shapes: ShapeSource; at?: string; startingQuads?: Quad[] };
   delete?: boolean;
   deactivate?: boolean;
 };
@@ -80,7 +80,12 @@ export function SubjectHeading({
       <h2>{termLabel(term, fallbacks.label?.(term, dataModel.store, bestByLanguage))}</h2>
       <div className="st-heading__actions">
         {origin === "managed" && actions.edit && (
-          <EditButton term={term} at={actions.edit.at} {...actions.edit.shapes} />
+          <EditButton
+            term={term}
+            at={actions.edit.at}
+            startingQuads={actions.edit.startingQuads}
+            {...actions.edit.shapes}
+          />
         )}
         {origin === "managed" && actions.delete && <DeleteButton term={term} />}
         {origin === "imported" && actions.deactivate && <DeactivateButton term={term} />}
