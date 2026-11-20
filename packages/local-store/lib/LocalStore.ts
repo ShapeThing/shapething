@@ -18,6 +18,7 @@ import { Parser, Store, type OTerm } from "n3";
 import { Readable } from "readable-stream";
 import { getAllFilesFromDirectory } from "./helpers/getAllFilesFromDirectory.ts";
 import { getFileHandleByPath } from "./helpers/getFileHandleByPath.ts";
+import { stripRelativeTtlExtensions } from "./helpers/fileReferences.ts";
 import { repairLangStrings } from "./helpers/langString.ts";
 import { toTriple } from "./helpers/toTriple.ts";
 
@@ -519,9 +520,7 @@ export class LocalStore implements Source, RdfJsStore {
     try {
       const parser = new Parser({ baseIRI: graph.value });
       const contents = await (await fileHandle.getFile()).text();
-      const strippedContents = repairLangStrings(
-        contents.replace(/<(.|\/)(.*)\.ttl(.*)>/g, "<$1$2>"),
-      );
+      const strippedContents = repairLangStrings(stripRelativeTtlExtensions(contents));
       const quads = await parser.parse(strippedContents);
       /** @ts-expect-error an internal property of the parser */
       const prefixes = parser._prefixes;
