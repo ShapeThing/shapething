@@ -1,6 +1,10 @@
 /* The app's own chrome around the manager, on the renderer's theme tokens (open-props, --st-*). */
 :root {
   --app-gutter: var(--size-3, 1rem);
+  /* Shared with the manager, so the bar's columns line up with its sidebar and page. */
+  --st-sidebar-width: 22rem;
+  /* Room for the logo and the app's name above the sidebar. */
+  --st-sidebar-min-width: 18rem;
 }
 
 body {
@@ -23,25 +27,128 @@ body {
   min-height: 0;
 }
 
+/* The app's name over the sidebar, the path over the page, the actions at the end. */
 .app-bar {
+  display: grid;
+  grid-template-columns:
+    max(var(--st-sidebar-min-width), var(--st-sidebar-width))
+    minmax(0, 1fr) auto auto;
+  align-items: center;
+  min-height: var(--st-manager-bar-height, 3.5rem);
+  padding-inline-end: var(--app-gutter);
+  border-bottom: 1px solid var(--st-color-border);
+}
+
+.app-bar > :nth-child(n + 3) {
+  margin-inline-start: var(--size-2);
+}
+
+/* Full height, its border running on into the sidebar's below. */
+.app-brand {
+  align-self: stretch;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
   gap: var(--size-2);
-  padding: var(--size-2) var(--app-gutter);
-  border-bottom: 1px solid var(--st-color-border);
+  padding-inline: var(--size-3);
+  border-inline-end: 1px solid var(--st-color-border);
+  font-weight: var(--font-weight-6);
+  white-space: nowrap;
 }
 
 .app-logo {
   height: 1.5rem;
 }
 
-.app-bar__folder {
-  font-weight: var(--font-weight-6);
+/* folder / dir / model.ttl */
+/* Indented like the manager's toolbar, so it starts where the page does. */
+.app-path {
+  min-width: 0;
+  padding-inline-start: var(--size-5);
 }
 
-.app-bar__spacer {
-  flex: 1;
+.app-path ol {
+  display: flex;
+  align-items: baseline;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  white-space: nowrap;
+}
+
+.app-path li {
+  display: flex;
+  align-items: baseline;
+  min-width: 0;
+}
+
+/* The folder's settings, right behind its name. */
+.app-path__settings {
+  appearance: none;
+  align-self: center;
+  display: inline-flex;
+  margin-inline-start: 0.4ch;
+  padding: var(--size-1);
+  border: 0;
+  border-radius: var(--radius-2);
+  background: none;
+  color: var(--gray-6);
+  cursor: pointer;
+}
+
+.app-path__settings svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.app-path__settings:hover {
+  color: var(--st-color-text);
+  background-color: var(--gray-2);
+}
+
+.app-path__settings:focus-visible {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: -2px;
+}
+
+.app-path li + li::before {
+  content: "/";
+  padding-inline: 0.6ch;
+  color: var(--gray-5);
+}
+
+.app-path__segment {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: var(--gray-7);
+}
+
+button.app-path__segment {
+  cursor: pointer;
+}
+
+button.app-path__segment:hover {
+  color: var(--st-primary-color);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+button.app-path__segment:focus-visible {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: 2px;
+  border-radius: var(--radius-1);
+}
+
+.app-path__segment[aria-current="page"] {
+  color: var(--st-color-text);
+  font-weight: var(--font-weight-6);
 }
 
 .app-message,
@@ -82,15 +189,6 @@ body {
 }
 
 .app-new-model h3,
-.app-new-model .app-bar__base {
-  max-width: 24rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: var(--st-font-size-small);
-}
-
 .app-base-iri h2 {
   margin: 0;
 }
@@ -110,15 +208,6 @@ body {
 
 .app-new-model .st-input {
   inline-size: 100%;
-}
-
-.app-bar__base {
-  max-width: 24rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-family: var(--font-mono);
-  font-size: var(--st-font-size-small);
 }
 
 .app-base-iri h2 {

@@ -1,0 +1,16 @@
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# One row per (shape, target class) of the sidebar, class unbound for a shape without a target
+# class, across the data model and everything it imports. Counted as the shape's tabs count its
+# properties, queries and rules; most first.
+SELECT ?shape ?class (COUNT(DISTINCT ?property) AS ?propertyCount)
+  (COUNT(DISTINCT ?query) AS ?queryCount) (COUNT(DISTINCT ?rule) AS ?ruleCount) WHERE {
+  { ?shape a sh:NodeShape } UNION { ?shape sh:targetClass ?anyTargetClass }
+
+  OPTIONAL { ?shape sh:targetClass ?class }
+  OPTIONAL { ?shape sh:property ?property }
+  OPTIONAL { ?shape sh:sparql|(sh:property/sh:sparql) ?query }
+  OPTIONAL { ?shape sh:rule ?rule }
+}
+GROUP BY ?shape ?class
+ORDER BY DESC(?propertyCount + ?queryCount + ?ruleCount) ?shape

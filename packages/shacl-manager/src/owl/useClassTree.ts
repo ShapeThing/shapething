@@ -1,9 +1,8 @@
 import { select } from "@shapething/shacl-renderer";
 import type { Origin } from "../app/paths.ts";
-import { useDataModel } from "../data-model/dataModelContext.ts";
 import type { DataModel } from "../data-model/loadDataModel.ts";
 import { factory } from "../data-model/rdf.ts";
-import { cached, useCached } from "../data-model/storeCache.ts";
+import { cached } from "../data-model/storeCache.ts";
 import { buildTree, countNodes, type Sections } from "../data-model/tree.ts";
 import classHierarchy from "./queries/classHierarchy.rq";
 import { classPropertyTree, propertyIndex } from "./propertyIndex.ts";
@@ -30,8 +29,4 @@ export function classSections({ store, dataModelIRI }: DataModel, origin: Origin
     const [hierarchy, other] = await Promise.all([section("hierarchy"), section("other")]);
     return { hierarchy, other };
   });
-}
-
-export function useClassSections(origin: Origin): Sections {
-  return useCached(classSections(useDataModel(), origin));
 }

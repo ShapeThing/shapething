@@ -3,6 +3,11 @@
    elements: these rules are unlayered, so a bare `a` or `h2` rule here would beat the renderer's
    layered widget styles inside the pages. */
 .st-manager-root {
+  /* Set it above the root to line up chrome around the manager with its columns. */
+  --st-manager-sidebar-width: max(
+    var(--st-sidebar-min-width, 14rem),
+    var(--st-sidebar-width, 22rem)
+  );
   --st-manager-surface: var(--gray-1);
   --st-manager-text-muted: var(--gray-7);
   --st-manager-gutter: var(--size-5);
@@ -25,14 +30,14 @@
 .st-manager {
   flex: 1;
   display: grid;
-  grid-template-columns: 22rem minmax(0, 1fr);
+  grid-template-columns: var(--st-manager-sidebar-width) minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
 }
 
 /* A third column only on pages that render the aside. */
 .st-manager:has(> .st-manager__aside) {
-  grid-template-columns: 22rem minmax(0, 1fr) 17rem;
+  grid-template-columns: var(--st-manager-sidebar-width) minmax(0, 1fr) 17rem;
 }
 
 /* Small uppercase labels above the lists in the sidebar, the aside and a list column. */
@@ -57,6 +62,7 @@
 /* Sidebar */
 
 .st-manager__sidebar {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-height: 0;
@@ -64,25 +70,184 @@
   border-inline-end: 1px solid var(--st-color-border);
 }
 
-/* The data model's name above the tabs, leading to its own page. */
-.st-manager__data-model {
-  display: grid;
-  align-content: center;
-  min-height: var(--st-manager-bar-height);
-  padding-inline: var(--size-3);
-  border-block-end: 1px solid var(--st-color-border);
-  color: var(--st-color-text);
-  text-decoration: none;
+/* A strip over the sidebar's border to drag it wider or narrower; it lights up on hover. */
+.st-manager__resizer {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-end: -4px;
+  z-index: 1;
+  width: 7px;
+  cursor: col-resize;
+  touch-action: none;
 }
 
-.st-manager__data-model:hover,
-.st-manager__data-model.active {
+.st-manager__resizer::after {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 2px;
+  width: 3px;
+  background-color: transparent;
+  transition: background-color 0.15s;
+}
+
+.st-manager__resizer:hover::after,
+.st-manager__resizer:active::after,
+.st-manager__resizer:focus-visible::after {
+  background-color: var(--st-primary-color);
+}
+
+.st-manager__resizer:focus-visible {
+  outline: none;
+}
+
+/* While dragging, the pointer may cross text: don't select it, and keep the resize cursor. */
+:root:has(.st-manager__resizer:active) {
+  cursor: col-resize;
+  user-select: none;
+}
+
+/* The data model's name at the top of the sidebar, with a cog leading to its own page. */
+.st-manager__data-model {
+  display: flex;
+  align-items: center;
+  gap: var(--size-2);
+  min-height: var(--st-manager-bar-height);
+  padding-inline: var(--size-3) var(--size-2);
+  border-block-end: 1px solid var(--st-color-border);
+  color: var(--st-color-text);
+}
+
+.st-manager__data-model-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
+.st-manager__icon-button {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--radius-2);
+  color: var(--st-manager-text-muted);
+  transition:
+    color 0.15s,
+    background-color 0.15s;
+}
+
+.st-manager__icon-button svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.75;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.st-manager__icon-button:hover {
+  color: var(--st-color-text);
   background-color: var(--st-manager-row-hover);
 }
 
-.st-manager__data-model:focus-visible {
+.st-manager__icon-button.active {
+  color: var(--st-primary-color);
+  background-color: var(--st-primary-color-lighter);
+}
+
+.st-manager__icon-button:focus-visible {
   outline: 2px solid var(--st-primary-color);
   outline-offset: -2px;
+}
+
+/* The filter under the header: a text field, and which origins to show. */
+.st-manager__filter {
+  display: grid;
+  gap: var(--size-2);
+  padding: var(--size-3) var(--size-2) var(--size-2);
+  border-block-end: 1px solid var(--st-color-border);
+}
+
+.st-manager__filter-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--size-1) var(--size-2);
+  font: inherit;
+  font-size: var(--st-font-size-small);
+  color: var(--st-color-text);
+  background-color: white;
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+}
+
+.st-manager__filter-input:focus-visible {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: -1px;
+}
+
+/* A row of chips per question, its label in front; the labels share a column so the chips line up. */
+.st-manager__filter-rows {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: var(--size-2);
+}
+
+.st-manager__filter-label {
+  font-size: var(--st-font-size-smallest);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--st-manager-text-muted);
+}
+
+/* Knowledge and Shapes, Managed and Imported: toggles, each on or off on its own. */
+.st-manager__filter-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-1);
+}
+
+.st-manager__filter-chips > button {
+  display: flex;
+  align-items: center;
+  padding: 2px var(--size-2);
+  font: inherit;
+  font-size: var(--st-font-size-small);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--st-manager-text-muted);
+  background-color: white;
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-round);
+  cursor: pointer;
+  /* Slow enough to see a row turn back on by itself. */
+  transition:
+    color 0.3s,
+    background-color 0.3s,
+    border-color 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .st-manager__filter-chips > button {
+    transition: none;
+  }
+}
+
+.st-manager__filter-chips > button:hover {
+  color: var(--st-color-text);
+}
+
+.st-manager__filter-chips > button[aria-pressed="true"] {
+  color: var(--st-primary-color);
+  border-color: currentColor;
+  background-color: color-mix(in srgb, var(--st-primary-color) 8%, white);
+}
+
+.st-manager__filter-chips > button:focus-visible {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: 1px;
 }
 
 .st-manager__data-model-kind {
@@ -100,13 +265,11 @@
   white-space: nowrap;
 }
 
-.st-manager__tabs,
 .st-section__tabs {
   display: flex;
   border-block-end: 1px solid var(--st-color-border);
 }
 
-.st-manager__tabs > a,
 .st-section__tabs > a {
   display: flex;
   align-items: center;
@@ -126,63 +289,18 @@
     border-color 0.15s;
 }
 
-.st-manager__tabs > a {
-  flex: 1;
-}
-
-.st-manager__tabs > a:hover,
 .st-section__tabs > a:hover {
   color: var(--st-color-text);
 }
 
-.st-manager__tabs > a:focus-visible,
 .st-section__tabs > a:focus-visible {
   outline: 2px solid var(--st-primary-color);
   outline-offset: -2px;
 }
 
-.st-manager__tabs > a.active,
 .st-section__tabs > a.active {
   color: var(--st-primary-color);
   border-block-end-color: currentColor;
-}
-
-/* Shapes / Knowledge: a segmented control above the origin tabs. */
-.st-manager__tabs--primary {
-  gap: 3px;
-  margin: var(--size-3) var(--size-2);
-  padding: 3px;
-  border: none;
-  /* Concentric with the tabs inside: their radius plus the padding. */
-  border-radius: calc(var(--radius-2) + 3px);
-  background-color: var(--gray-3);
-}
-
-/* Equal halves that may shrink, so a long label or count never pushes past the switch's edge. */
-.st-manager__tabs--primary > a {
-  flex: 1 1 0;
-  min-width: 0;
-  padding: var(--size-1) var(--size-2);
-  margin: 0;
-  border: none;
-  border-radius: var(--radius-2);
-}
-
-.st-manager__tabs--primary > a:hover {
-  background-color: hsl(0 0% 100% / 0.6);
-}
-
-.st-manager__tabs--primary > a.active {
-  background-color: white;
-  box-shadow: var(--shadow-1);
-}
-
-.st-manager__tabs--primary > a:not(.active) > .st-manager__tab-count {
-  background-color: var(--gray-1);
-}
-
-.st-manager__tabs--secondary {
-  margin-inline: var(--size-3);
 }
 
 .st-manager__tab-count {
@@ -321,6 +439,123 @@ a.active > .st-manager__tab-count {
 .st-tree:has(> li > details) > li > a:not(.st-button),
 .st-tree .st-tree > li > a:not(.st-button) {
   margin-inline-start: 1.25rem;
+}
+
+/* The sidebar mixes classes, shapes and groups: a small mark says which. A class is a circle, a
+   shape a square, a group a square with a line through it. */
+.st-tree__icon {
+  flex: none;
+  align-self: center;
+  width: 0.55rem;
+  height: 0.55rem;
+  box-sizing: border-box;
+  border: 1.5px solid currentColor;
+  opacity: 0.7;
+}
+
+.st-tree__icon--class {
+  border-radius: 50%;
+}
+
+.st-tree__icon--shape {
+  border-radius: 1px;
+}
+
+.st-tree__icon--group {
+  border-radius: 1px;
+  background: linear-gradient(currentColor, currentColor) center / 100% 1.5px no-repeat;
+}
+
+.st-tree__label {
+  min-width: 0;
+}
+
+/* Imported (and only referenced) rows step back; the data model's own read as normal text. */
+:is(.st-tree) a.st-tree__item--imported:not(.active) {
+  color: var(--st-manager-text-muted);
+}
+
+/* Shown only as the way to a match. */
+:is(.st-tree) a.st-tree__item--context:not(.active) {
+  opacity: 0.6;
+}
+
+/* Which import a row comes from. */
+.st-tree__source {
+  flex: none;
+  align-self: center;
+  max-width: 8rem;
+  margin-inline-start: auto;
+  padding: 0 0.45em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--st-font-size-smallest);
+  font-weight: normal;
+  line-height: 1.6;
+  color: var(--st-manager-text-muted);
+  background-color: var(--gray-3);
+  border-radius: var(--radius-1, 3px);
+}
+
+/* The data model's own prefix, set apart from the imports'. */
+.st-tree__source--own {
+  color: var(--st-primary-color);
+  background-color: var(--st-primary-color-lighter);
+}
+
+/* The active row already has that background. */
+:is(.st-tree) a.active .st-tree__source--own {
+  color: var(--st-manager-surface);
+  background-color: var(--st-primary-color);
+}
+
+.st-tree__source + .st-tree__count {
+  margin-inline-start: 0;
+}
+
+/* Two create buttons side by side in a section's header. */
+.st-manager__section-actions {
+  display: flex;
+  flex: none;
+  gap: var(--size-1);
+}
+
+.st-manager__section-actions > .st-button {
+  white-space: nowrap;
+}
+
+.st-manager__section-count {
+  margin-inline-start: 0.5ch;
+  font-weight: normal;
+  color: var(--st-manager-text-muted);
+}
+
+/* A secondary section that folds away, its header the toggle. */
+.st-manager__collapsible > summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.st-manager__collapsible > summary::-webkit-details-marker {
+  display: none;
+}
+
+.st-manager__collapsible > summary > h3::before {
+  content: "";
+  display: inline-block;
+  width: 0.35rem;
+  height: 0.35rem;
+  margin-inline-end: 0.6rem;
+  vertical-align: 0.15em;
+  border-inline-end: 1.5px solid currentColor;
+  border-block-end: 1.5px solid currentColor;
+  rotate: -45deg;
+  transition: rotate 0.15s;
+}
+
+.st-manager__collapsible[open] > summary > h3::before {
+  rotate: 45deg;
 }
 
 /* Main column */

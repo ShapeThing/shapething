@@ -1,174 +1,282 @@
 import { owl, sh } from "@shapething/shacl-renderer";
-import { Suspense } from "react";
-import { NavLink } from "react-router";
+import { Suspense, useDeferredValue, useEffect, useId, useState, type ReactNode } from "react";
 import { useDataModel } from "../data-model/dataModelContext.ts";
-import type { DataModel } from "../data-model/loadDataModel.ts";
-import { cached, useCached } from "../data-model/storeCache.ts";
-import { countNodes } from "../data-model/tree.ts";
+import type { TreeNode } from "../data-model/tree.ts";
 import { owlMeta } from "../owl/metaShapes.ts";
-import { classSections, useClassSections } from "../owl/useClassTree.ts";
 import { shaclMeta } from "../shacl/metaShapes.ts";
-import { usePropertyGroups } from "../shacl/usePropertyGroups.ts";
-import { shapeSections, useShapeSections } from "../shacl/useShapeTree.ts";
-import { DataModelLink } from "./DataModelPage.tsx";
+import { DataModelHeader } from "./DataModelPage.tsx";
 import { CreateButton } from "./edit/CreateButton.tsx";
-import {
-  classPath,
-  originPath,
-  origins,
-  perspectives,
-  subjectPath,
-  usePlace,
-  type Origin,
-  type Perspective,
-} from "./paths.ts";
+import { filterTree, useNavigation } from "./navigation/navigation.ts";
+import { classPath, subjectPath } from "./paths.ts";
+import { termTitle, useTermLabel } from "./termLabel.ts";
+import { SidebarResizer } from "./SidebarResizer.tsx";
 import { Tree } from "./Tree.tsx";
 
-const allOrigins: Origin[] = origins.map((tab) => tab.path);
+// What to show, each toggled on its own: knowledge (OWL classes) and shapes (SHACL shapes and
+// groups), from the data model itself (managed) and from its imports.
+type Toggles = { owl: boolean; shacl: boolean; managed: boolean; imported: boolean };
+type Toggle = keyof Toggles;
+type Chip = { value: Toggle; label: string; title: string };
 
-// Switching perspective keeps the current origin and vice versa. Outside of a perspective and
-// origin, such as on the data model's page, only the perspectives, leading to their managed part.
+// One row of chips for what something is, one for where it comes from.
+const chipRows: { label: string; chips: Chip[] }[] = [
+  {
+    label: "Show",
+    chips: [
+      { value: "owl", label: "Knowledge", title: "Classes (OWL)" },
+      { value: "shacl", label: "Shapes", title: "Shapes and property groups (SHACL)" },
+    ],
+  },
+  {
+    label: "From",
+    chips: [
+      { value: "managed", label: "Managed", title: "What the data model itself declares" },
+      { value: "imported", label: "Imported", title: "What the imports declare" },
+    ],
+  },
+];
+
+const kindOf = (node: TreeNode): "owl" | "shacl" => (node.kind === "class" ? "owl" : "shacl");
+
+// A class only a shape refers to isn't the data model's own, so it goes with the imports.
+const matchesOrigin = (toggles: Toggles) => (node: TreeNode) =>
+  node.origin === "managed" ? toggles.managed : toggles.imported;
+
+const matchesKind = (toggles: Toggles) => (node: TreeNode) => toggles[kindOf(node)];
+
+// A row with nothing on would show nothing at all, so it counts as all on: the tree shows that
+// straight away, the chips follow after a moment.
+function filled(toggles: Toggles): Toggles {
+  const next = { ...toggles };
+  for (const row of chipRows) {
+    if (row.chips.some((chip) => next[chip.value])) continue;
+    for (const chip of row.chips) next[chip.value] = true;
+  }
+  return next;
+}
+
+const fillDelay = 1000;
+
+// One tree for classes and shapes, from the data model and its imports together. Where something
+// comes from is a marker on its row and a filter, not a separate tab.
 export function Sidebar() {
-  const place = usePlace();
+  const [toggles, setToggles] = useState<Toggles>({
+    owl: true,
+    shacl: true,
+    managed: true,
+    imported: false,
+  });
+  const toggle = (key: Toggle) => setToggles((current) => ({ ...current, [key]: !current[key] }));
+  const empty = chipRows.some((row) => row.chips.every((chip) => !toggles[chip.value]));
+  useEffect(() => {
+    if (!empty) return;
+    const timer = setTimeout(() => setToggles(filled), fillDelay);
+    return () => clearTimeout(timer);
+  }, [empty, toggles]);
+  const [text, setText] = useState("");
+  const query = useDeferredValue(text.trim().toLowerCase());
 
   return (
     <aside className="st-manager__sidebar">
-      <DataModelLink />
-      <nav className="st-manager__tabs st-manager__tabs--primary">
-        {perspectives.map((tab) => (
-          <NavLink key={tab.path} to={originPath(tab.path, place?.origin ?? "managed")}>
-            {tab.label}
-            <TabCount perspective={tab.path} origins={allOrigins} />
-          </NavLink>
-        ))}
-      </nav>
-      {place && (
-        <nav className="st-manager__tabs st-manager__tabs--secondary">
-          {origins.map((tab) => (
-            <NavLink key={tab.path} to={originPath(place.perspective, tab.path)}>
-              {tab.label}
-              <TabCount perspective={place.perspective} origins={[tab.path]} />
-            </NavLink>
-          ))}
-        </nav>
-      )}
-      <div className="st-manager__sidebar-content">
-        {place?.perspective === "shapes" && (
-          <Suspense fallback="Loading shapes…">
-            <ShapesSidebar origin={place.origin} />
-          </Suspense>
-        )}
-        {place?.perspective === "knowledge" && (
-          <Suspense fallback="Loading classes…">
-            <ClassesSidebar origin={place.origin} />
-          </Suspense>
-        )}
+      <DataModelHeader />
+      <div className="st-manager__filter">
+        <input
+          type="search"
+          className="st-manager__filter-input"
+          placeholder="Filter classes and shapes"
+          aria-label="Filter classes and shapes"
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+        />
+        <Chips toggles={toggles} onToggle={toggle} />
       </div>
+      <div className="st-manager__sidebar-content">
+        <Suspense fallback={<p>Loading the data model…</p>}>
+          <Sections toggles={filled(toggles)} query={query} />
+        </Suspense>
+      </div>
+      <SidebarResizer />
     </aside>
   );
 }
 
-const sectionsOf = { shapes: shapeSections, knowledge: classSections };
-
-function TabCount({ perspective, origins }: { perspective: Perspective; origins: Origin[] }) {
+function Chips({ toggles, onToggle }: { toggles: Toggles; onToggle: (key: Toggle) => void }) {
+  const id = useId();
   return (
-    <Suspense key={perspective} fallback={null}>
-      <Count perspective={perspective} origins={origins} />
-    </Suspense>
+    <div className="st-manager__filter-rows">
+      {chipRows.map((row) => (
+        <ChipRow
+          key={row.label}
+          id={`${id}-${row.label}`}
+          row={row}
+          toggles={toggles}
+          onToggle={onToggle}
+        />
+      ))}
+    </div>
   );
 }
 
-// The same (cached) queries that fill the sidebar, so a count always matches what is listed.
-const countOf = (dataModel: DataModel, perspective: Perspective, origins: Origin[]) =>
-  cached(dataModel.store, `count ${perspective} ${origins.join(" ")}`, async () => {
-    const sections = await Promise.all(
-      origins.map((origin) => sectionsOf[perspective](dataModel, origin)),
-    );
-    return countNodes(sections.flatMap(({ hierarchy, other }) => [...hierarchy, ...other]));
-  });
-
-function Count({ perspective, origins }: { perspective: Perspective; origins: Origin[] }) {
-  const count = useCached(countOf(useDataModel(), perspective, origins));
-  return <span className="st-manager__tab-count">{count}</span>;
+function ChipRow({
+  id,
+  row,
+  toggles,
+  onToggle,
+}: {
+  id: string;
+  row: (typeof chipRows)[number];
+  toggles: Toggles;
+  onToggle: (key: Toggle) => void;
+}) {
+  return (
+    <>
+      <span id={id} className="st-manager__filter-label">
+        {row.label}
+      </span>
+      <div className="st-manager__filter-chips" role="group" aria-labelledby={id}>
+        {row.chips.map((chip) => (
+          <button
+            key={chip.value}
+            type="button"
+            title={chip.title}
+            aria-pressed={toggles[chip.value]}
+            onClick={() => onToggle(chip.value)}
+          >
+            {chip.label}
+          </button>
+        ))}
+      </div>
+    </>
+  );
 }
 
-function ShapesSidebar({ origin }: { origin: Origin }) {
-  const { hierarchy, other } = useShapeSections(origin);
-  const groups = usePropertyGroups(origin);
-  const shapeLink = (segment: string) => subjectPath(origin, "shape", segment);
-  const groupLink = (segment: string) => subjectPath(origin, "group", segment);
+// The node's page, in the origin it is declared in. A class only a shape refers to has no page of
+// its own in either; it opens with what the imports say about it.
+const linkTo = (segment: string, node: TreeNode) => {
+  const origin = node.origin ?? "imported";
+  if (node.kind === "class") return classPath(origin, segment);
+  return subjectPath(origin, node.kind ?? "shape", segment);
+};
+
+function Sections({ toggles, query }: { toggles: Toggles; query: string }) {
+  const navigation = useNavigation();
+  const dataModel = useDataModel();
+  const termLabel = useTermLabel();
+
+  const matches = (node: TreeNode) =>
+    matchesOrigin(toggles)(node) &&
+    matchesKind(toggles)(node) &&
+    (!query ||
+      termLabel(node.term).toLowerCase().includes(query) ||
+      termTitle(node.term, dataModel).toLowerCase().includes(query));
+  const filtering = Object.values(toggles).some((on) => !on) || !!query;
+  const filter = (nodes: TreeNode[]) => (filtering ? filterTree(nodes, matches) : nodes);
+
+  const classes = filter(navigation.classes);
+  const shapesWithoutClass = filter(navigation.shapesWithoutClass);
+  const groups = filter(navigation.groups);
+  const anonymousClasses = filter(navigation.anonymousClasses);
+  const empty = [classes, shapesWithoutClass, groups, anonymousClasses].every(
+    (nodes) => nodes.length === 0,
+  );
 
   return (
     <>
       <section>
         <header className="st-manager__section-header">
-          <h3>Hierarchy</h3>
-          {origin === "managed" && (
-            <CreateButton
-              {...shaclMeta.shape.edit}
-              label="shape"
-              kind="shape"
-              type={sh("NodeShape")}
-              path="/shapes/managed/new/shape"
-              back="/shapes/managed"
-              to={shapeLink}
-            />
-          )}
+          <h3>
+            {toggles.owl && !toggles.shacl
+              ? "Classes"
+              : toggles.shacl && !toggles.owl
+                ? "Shapes"
+                : "Classes and shapes"}
+          </h3>
+          <div className="st-manager__section-actions">
+            {toggles.owl && (
+              <CreateButton
+                {...owlMeta.class.edit}
+                label="class"
+                kind="class"
+                type={owl("Class")}
+                path="/knowledge/managed/new"
+                back="/knowledge/managed"
+                to={(segment) => classPath("managed", segment)}
+              />
+            )}
+            {toggles.shacl && (
+              <CreateButton
+                {...shaclMeta.shape.edit}
+                label="shape"
+                kind="shape"
+                type={sh("NodeShape")}
+                path="/shapes/managed/new/shape"
+                back="/shapes/managed"
+                to={(segment) => subjectPath("managed", "shape", segment)}
+              />
+            )}
+          </div>
         </header>
-        <Tree nodes={hierarchy} linkTo={shapeLink} />
+        {empty && filtering ? (
+          <p>Nothing matches the filter.</p>
+        ) : classes.length ? (
+          <Tree nodes={classes} linkTo={linkTo} />
+        ) : (
+          !filtering && <p>No classes yet.</p>
+        )}
       </section>
-      <section>
-        <h3>Other shapes</h3>
-        <Tree nodes={other} linkTo={shapeLink} />
-      </section>
-      <section>
-        <header className="st-manager__section-header">
-          <h3>Groups</h3>
-          {origin === "managed" && (
-            <CreateButton
-              {...shaclMeta.shape.edit}
-              label="group"
-              kind="group"
-              type={sh("PropertyGroup")}
-              path="/shapes/managed/new/group"
-              back="/shapes/managed"
-              to={groupLink}
-            />
-          )}
-        </header>
-        <Tree nodes={groups} linkTo={groupLink} />
-      </section>
+      <Section title="Shapes without a class" nodes={shapesWithoutClass} filtering={filtering} />
+      <Section
+        title="Property groups"
+        nodes={groups}
+        filtering={filtering}
+        action={
+          <CreateButton
+            {...shaclMeta.shape.edit}
+            label="group"
+            kind="group"
+            type={sh("PropertyGroup")}
+            path="/shapes/managed/new/group"
+            back="/shapes/managed"
+            to={(segment) => subjectPath("managed", "group", segment)}
+          />
+        }
+      />
+      <Section title="Anonymous classes" nodes={anonymousClasses} filtering={filtering} />
     </>
   );
 }
 
-function ClassesSidebar({ origin }: { origin: Origin }) {
-  const { hierarchy, other } = useClassSections(origin);
-  const linkTo = (segment: string) => classPath(origin, segment);
+const hasManaged = (nodes: TreeNode[]): boolean =>
+  nodes.some((node) => node.origin === "managed" || hasManaged(node.children));
+
+// A secondary section: collapsed, unless the data model has something of its own in it or a
+// filter is on. Without anything to show and nothing to create, it is left out.
+function Section({
+  title,
+  nodes,
+  filtering,
+  action,
+}: {
+  title: string;
+  nodes: TreeNode[];
+  filtering: boolean;
+  action?: ReactNode;
+}) {
+  if (!nodes.length && (filtering || !action)) return null;
+  const open = filtering || hasManaged(nodes);
 
   return (
-    <>
-      <section>
-        <header className="st-manager__section-header">
-          <h3>Hierarchy</h3>
-          {origin === "managed" && (
-            <CreateButton
-              {...owlMeta.class.edit}
-              label="class"
-              kind="class"
-              type={owl("Class")}
-              path="/knowledge/managed/new"
-              back="/knowledge/managed"
-              to={linkTo}
-            />
-          )}
-        </header>
-        <Tree nodes={hierarchy} linkTo={linkTo} />
-      </section>
-      <section>
-        <h3>Anonymous classes</h3>
-        <Tree nodes={other} linkTo={linkTo} />
-      </section>
-    </>
+    <section>
+      {/* Remounted when the filter turns on or off, so it opens and closes with it. */}
+      <details key={String(open)} open={open} className="st-manager__collapsible">
+        <summary className="st-manager__section-header">
+          <h3>
+            {title} <span className="st-manager__section-count">{nodes.length}</span>
+          </h3>
+          {action}
+        </summary>
+        <Tree nodes={nodes} linkTo={linkTo} />
+      </details>
+    </section>
   );
 }

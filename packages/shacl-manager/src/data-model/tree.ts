@@ -1,3 +1,4 @@
+import type { NamedNode } from "@rdfjs/types";
 import type { Resource } from "./rdf.ts";
 
 // One (node, parent) edge of a hierarchy, parent unbound for a root.
@@ -13,6 +14,14 @@ export type TreeNode = {
   // Its properties, queries and rules together, as far as the rows count them.
   count?: number;
   children: TreeNode[];
+  // In the sidebar, which mixes them: what the node is, and where it is declared. A class that is
+  // only referenced, such as a target class of a shape whose ontology isn't imported, has no origin.
+  kind?: "class" | "shape" | "group";
+  origin?: "managed" | "imported";
+  // The imported graph that declares it.
+  source?: NamedNode;
+  // Shown only because something below it matches the sidebar's filter.
+  context?: boolean;
 };
 
 // A sidebar's two sections: the nested hierarchy and everything outside it.

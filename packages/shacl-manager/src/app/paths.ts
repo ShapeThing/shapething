@@ -26,12 +26,11 @@ const isPerspective = (path?: string): path is Perspective =>
 const isOrigin = (path?: string): path is Origin => origins.some((tab) => tab.path === path);
 
 // The perspective and origin in the route, undefined outside of them, such as on the data model's page.
-export function usePlace(): { perspective: Perspective; origin: Origin } | undefined {
+function usePlace(): { perspective: Perspective; origin: Origin } | undefined {
   const params = useMatch("/:perspective/:origin/*")?.params;
   if (!isPerspective(params?.perspective) || !isOrigin(params?.origin)) return undefined;
   return { perspective: params.perspective, origin: params.origin };
 }
 
-// Outside of a perspective and origin, the defaults.
-export const usePerspective = (): Perspective => usePlace()?.perspective ?? "shapes";
+// Outside of an origin, the data model's own.
 export const useOrigin = (): Origin => usePlace()?.origin ?? "managed";

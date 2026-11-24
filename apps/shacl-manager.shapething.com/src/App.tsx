@@ -20,18 +20,15 @@ import { GitPanel } from "./GitPanel.tsx";
 // The folder and data model are kept in the query string; the hash belongs to the manager.
 const readParam = (name: string) => new URLSearchParams(location.search).get(name) ?? undefined;
 
-// graph is the file, iri the data model it holds: only needed until a new data model is saved.
-function writeParams(params: { folder?: string; graph?: string; iri?: string }) {
+// file is the path of the file in the folder, iri the data model it holds: only needed until a
+// new data model is saved. The path, not the file's graph name, so it follows the base IRI.
+function writeParams(params: { folder?: string; file?: string; iri?: string }) {
   const search = new URLSearchParams();
   if (params.folder) search.set("folder", params.folder);
-  if (params.graph) search.set("graph", params.graph);
+  if (params.file) search.set("file", params.file);
   if (params.iri) search.set("iri", params.iri);
   const query = search.size ? `?${search}` : "";
-  history.replaceState(
-    null,
-    "",
-    `${location.pathname}${query}${params.graph ? location.hash : ""}`,
-  );
+  history.replaceState(null, "", `${location.pathname}${query}${params.file ? location.hash : ""}`);
 }
 
 const supported = typeof globalThis.showDirectoryPicker === "function";
@@ -274,17 +271,21 @@ type WorkspaceProps = { folder: Folder; onClose: () => void; onEditBaseIri: () =
 function Workspace({ folder, onClose, onEditBaseIri }: WorkspaceProps) {
   const [modelsPromise, setModelsPromise] = useState(() => listDataModels(folder));
   const [selection, setSelection] = useState<Selection | undefined>(() => {
-    const file = readParam("graph");
+    const path = readParam("file");
     const iri = readParam("iri");
-    return file
-      ? { file: DataFactory.namedNode(file), iri: iri ? DataFactory.namedNode(iri) : undefined }
+    return path
+      ? { file: fileGraph(folder, path), iri: iri ? DataFactory.namedNode(iri) : undefined }
       : undefined;
   });
   // Bumped on every save, so the git panel looks at the files again.
   const [saves, setSaves] = useState(0);
 
   const select = (next?: Selection) => {
-    writeParams({ folder: folder.name, graph: next?.file.value, iri: next?.iri?.value });
+    writeParams({
+      folder: folder.name,
+      file: next && fileLabel(next.file, folder),
+      iri: next?.iri?.value,
+    });
     // Back at the list: files may have been added or declare another IRI by now.
     if (!next) setModelsPromise(listDataModels(folder));
     setSelection(next);
@@ -293,24 +294,16 @@ function Workspace({ folder, onClose, onEditBaseIri }: WorkspaceProps) {
   return (
     <div className="app">
       <header className="app-bar">
-        <img src="/logo.svg" alt="" className="app-logo" />
-        <span className="app-bar__folder" title="The connected folder">
-          {folder.name}
+        <span className="app-brand">
+          <img src="/logo.svg" alt="" className="app-logo" />
+          SHACL manager
         </span>
-        <button
-          type="button"
-          className="st-button app-bar__base"
-          title="The base IRI of the folder, click to change it"
-          onClick={onEditBaseIri}
-        >
-          {folder.store.getBaseUri().toString()}
-        </button>
-        {selection && (
-          <button type="button" className="st-button app-bar__graph" onClick={() => select()}>
-            {fileLabel(selection.file, folder)}
-          </button>
-        )}
-        <span className="app-bar__spacer" />
+        <FilePath
+          folder={folder}
+          file={selection && fileLabel(selection.file, folder)}
+          onFolder={() => select()}
+          onSettings={onEditBaseIri}
+        />
         {folder.repository && <GitPanel repository={folder.repository} refresh={saves} />}
         <button type="button" className="st-button" onClick={onClose}>
           Close folder
@@ -345,6 +338,70 @@ function Workspace({ folder, onClose, onEditBaseIri }: WorkspaceProps) {
         </Suspense>
       )}
     </div>
+  );
+}
+
+// Where you are, as a path: the folder's base IRI, then the file in it. The base IRI leads back to
+// the files, the cog behind it to the folder's settings.
+function FilePath({
+  folder,
+  file,
+  onFolder,
+  onSettings,
+}: {
+  folder: Folder;
+  file?: string;
+  onFolder: () => void;
+  onSettings: () => void;
+}) {
+  // A file outside the base IRI is labeled by its full IRI, which is not split up.
+  const segments = !file ? [] : file.includes("://") ? [file] : file.split("/");
+  // Its trailing slash is the path's first separator.
+  const base = folder.store.getBaseUri().toString().replace(/\/$/, "");
+
+  return (
+    <nav className="app-path" aria-label="Location">
+      <ol>
+        <li>
+          {file ? (
+            <button
+              type="button"
+              className="app-path__segment"
+              title={`${folder.name}, choose another data model`}
+              onClick={onFolder}
+            >
+              {base}
+            </button>
+          ) : (
+            <span className="app-path__segment" title={folder.name} aria-current="page">
+              {base}
+            </span>
+          )}
+          <button
+            type="button"
+            className="app-path__settings"
+            title="Change the base IRI"
+            aria-label="Folder settings"
+            onClick={onSettings}
+          >
+            <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+              <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" />
+              <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+            </svg>
+          </button>
+        </li>
+        {segments.map((segment, index) => (
+          <li key={index}>
+            <span
+              className="app-path__segment"
+              aria-current={index === segments.length - 1 ? "page" : undefined}
+            >
+              {segment}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </nav>
   );
 }
 

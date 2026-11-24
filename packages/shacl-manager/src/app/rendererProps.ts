@@ -21,6 +21,9 @@ export function useRendererProps({ shapesGraph, nodeShape }: ShapeSource) {
     // The data model's store already holds every import, loaded through the host's loadGraph.
     enableOwlImports: false,
     enableShPathInLabelTitle: false,
+    // The shapes decide each property's widget and branch; the manager offers no switching.
+    enableWidgetSwitching: false,
+    enableLogicalBranchSwitching: false,
     ...(language && { interfaceLanguage: language, contentLanguage: language }),
   } satisfies Partial<ShaclRendererProps>;
 }

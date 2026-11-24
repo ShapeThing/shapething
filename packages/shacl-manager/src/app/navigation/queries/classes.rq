@@ -1,0 +1,25 @@
+PREFIX owl: <http://www.w3.org/2002/07/owl#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+PREFIX sh: <http://www.w3.org/ns/shacl#>
+
+# One row per (class, parent) edge of the sidebar's class tree, parent unbound for a root, across
+# the data model and everything it imports. A class is any named class, or anything a shape
+# targets, so every sh:targetClass has a place for its shapes, even without an ontology loaded.
+SELECT DISTINCT ?class ?parent WHERE {
+  # DISTINCT first: a class declared several ways would otherwise run the parent search once per
+  # declaration, and Comunica stalls on that.
+  {
+    SELECT DISTINCT ?class WHERE {
+      { ?class a owl:Class } UNION { ?class a rdfs:Class } UNION { ?class rdfs:subClassOf ?anySuperClass }
+      UNION { ?anyShape sh:targetClass ?class }
+      FILTER(isIRI(?class))
+    }
+  }
+
+  # Only the direct superclass, of any origin: a managed class sits under the imported one it extends.
+  OPTIONAL {
+    ?class rdfs:subClassOf ?parent .
+    FILTER(isIRI(?parent) && ?parent != ?class)
+  }
+}
+ORDER BY ?class

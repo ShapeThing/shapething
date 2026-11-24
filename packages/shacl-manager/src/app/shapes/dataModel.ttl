@@ -3,7 +3,9 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
 @prefix owl: <http://www.w3.org/2002/07/owl#>.
 @prefix dcterms: <http://purl.org/dc/terms/>.
+@prefix vann: <http://purl.org/vocab/vann/>.
 @prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix shui: <http://www.w3.org/ns/shacl-ui/>.
 @prefix st: <http://shapething.com/>.
 @prefix meta: <http://shapething.com/shacl-manager/data-model-meta#>.
 
@@ -43,6 +45,17 @@ meta:dataModel
 
     sh:property [
         sh:order 3 ;
+        sh:name "Prefix"@en, "Prefix"@nl ;
+        sh:description "A short name for this data model, such as \"dcat\". The sidebar marks the data model's own classes and shapes with it."@en,
+            "Een korte naam voor dit datamodel, zoals \"dcat\". De zijbalk markeert de eigen klassen en shapes van het datamodel ermee."@nl ;
+        sh:path vann:preferredNamespacePrefix ;
+        sh:group meta:general ;
+        sh:datatype xsd:string ;
+        sh:maxCount 1 ;
+    ] ;
+
+    sh:property [
+        sh:order 4 ;
         sh:name "Type"@en, "Type"@nl ;
         sh:path rdf:type ;
         sh:group meta:general ;
@@ -59,7 +72,51 @@ meta:dataModel
         sh:path owl:imports ;
         sh:group meta:imports ;
         sh:nodeKind sh:IRI ;
+    ] ;
+
+    # Prefixes
+
+    sh:property [
+        sh:order 0 ;
+        sh:name "Prefix declarations"@en, "Prefixdeclaraties"@nl ;
+        sh:description "Prefixes the SPARQL constraints and rules in this data model may use, each a prefix and its namespace."@en,
+            "Prefixen die de SPARQL-constraints en -regels in dit datamodel mogen gebruiken, elk een prefix en zijn namespace."@nl ;
+        sh:path sh:declare ;
+        sh:group meta:prefixes ;
+        sh:nodeKind sh:BlankNodeOrIRI ;
+        shui:editor shui:DetailsEditor ;
+        shui:viewer shui:DetailsViewer ;
+        sh:node meta:prefixDeclaration ;
     ] .
+
+meta:prefixDeclaration
+    a sh:NodeShape ;
+    sh:property [
+        sh:order 0 ;
+        sh:name "Prefix"@en, "Prefix"@nl ;
+        sh:path sh:prefix ;
+        sh:group meta:prefixDeclarationFields ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        shui:propertyRole shui:LabelRole ;
+    ] ;
+    sh:property [
+        sh:order 1 ;
+        sh:name "Namespace"@en, "Namespace"@nl ;
+        sh:path sh:namespace ;
+        sh:group meta:prefixDeclarationFields ;
+        sh:datatype xsd:anyURI ;
+        # No editor scores xsd:anyURI literals; a text field writes them back with the datatype.
+        shui:editor shui:TextFieldEditor ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] .
+
+# A prefix and its namespace side by side.
+meta:prefixDeclarationFields
+    a st:HorizontalPropertyGroup ;
+    sh:order 0 .
 
 meta:general
     a sh:PropertyGroup ;
@@ -71,7 +128,12 @@ meta:imports
     sh:name "Imports"@en, "Imports"@nl ;
     sh:order 1 .
 
+meta:prefixes
+    a sh:PropertyGroup ;
+    sh:name "Prefixes"@en, "Prefixen"@nl ;
+    sh:order 2 .
+
 meta:other
     a sh:PropertyGroup ;
     sh:name "Other"@en, "Overig"@nl ;
-    sh:order 2 .
+    sh:order 3 .

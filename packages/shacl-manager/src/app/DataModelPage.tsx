@@ -45,14 +45,29 @@ export const dataModelRoute: RouteObject = {
   children: [editRoute],
 };
 
-// At the top of the sidebar: the data model's name, leading to its page.
-export function DataModelLink() {
+// At the top of the sidebar: the data model's name, and a cog leading to its page.
+export function DataModelHeader() {
   const { dataModelIRI } = useDataModel();
   const termLabel = useTermLabel();
   return (
-    <NavLink to={DATA_MODEL_PATH} className="st-manager__data-model">
-      <span className="st-manager__data-model-kind">Data model</span>
-      <span className="st-manager__data-model-label">{termLabel(dataModelIRI)}</span>
-    </NavLink>
+    <div className="st-manager__data-model">
+      <div className="st-manager__data-model-text">
+        <span className="st-manager__data-model-kind">Data model</span>
+        <span className="st-manager__data-model-label" title={dataModelIRI.value}>
+          {termLabel(dataModelIRI)}
+        </span>
+      </div>
+      <NavLink
+        to={DATA_MODEL_PATH}
+        className="st-manager__icon-button"
+        aria-label="Data model settings"
+        title="Data model settings"
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+          <path d="M10.325 4.317c.426 -1.756 2.924 -1.756 3.35 0a1.724 1.724 0 0 0 2.573 1.066c1.543 -.94 3.31 .826 2.37 2.37a1.724 1.724 0 0 0 1.065 2.572c1.756 .426 1.756 2.924 0 3.35a1.724 1.724 0 0 0 -1.066 2.573c.94 1.543 -.826 3.31 -2.37 2.37a1.724 1.724 0 0 0 -2.572 1.065c-.426 1.756 -2.924 1.756 -3.35 0a1.724 1.724 0 0 0 -2.573 -1.066c-1.543 .94 -3.31 -.826 -2.37 -2.37a1.724 1.724 0 0 0 -1.065 -2.572c-1.756 -.426 -1.756 -2.924 0 -3.35a1.724 1.724 0 0 0 1.066 -2.573c-.94 -1.543 .826 -3.31 2.37 -2.37c1 .608 2.296 .07 2.572 -1.065z" />
+          <path d="M9 12a3 3 0 1 0 6 0a3 3 0 0 0 -6 0" />
+        </svg>
+      </NavLink>
+    </div>
   );
 }
