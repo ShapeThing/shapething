@@ -239,7 +239,7 @@ export function propertyLabel({
         effLanguages,
       )
     : {};
-  if (own.match) return own.match;
+  if (own.match !== undefined) return own.match;
   const fallbackPropertyShapeValue = own.fallback;
 
   // 2-4. The ontology's own label for P, across data graph / shapes graph / scoresGraph.
@@ -298,7 +298,7 @@ export function propertyShapeLabel({
     shapesGraph.getQuads(propertyShape, predicate).map(({ object }) => object);
 
   const own = propertyShapeOwnLabel(shapesGraph, valuesOf, effLanguages);
-  if (own.match) return own.match;
+  if (own.match !== undefined) return own.match;
 
   const path = valuesOf(sh("path"))[0];
   const ontology = path && graphTermLabel({ term: path, shapesGraph, dataGraph, languages });

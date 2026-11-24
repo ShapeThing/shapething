@@ -34,7 +34,9 @@ export const recipesAndChefs: Story = {
   // confirms the actual <link> lands in document.head, not just that cssImportsForShapes()
   // resolves the URL correctly.
   play: async ({ canvasElement }) => {
-    await within(canvasElement).findByText("Gordon Ramsay", {}, { timeout: 5000 });
+    // The whole recipe form (every chef, ingredient and facet) loads before this shows: under a
+    // full, parallel test run that takes longer than 5s now and then.
+    await within(canvasElement).findByText("Gordon Ramsay", {}, { timeout: 15000 });
     const link = document.head.querySelector(
       'link[rel="stylesheet"][href$="recipes-and-chefs.css"]',
     );

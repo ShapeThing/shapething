@@ -161,6 +161,11 @@ export default defineConfig({
           // can take close to 10s. Missing elements still fail fast through each query's own
           // timeout. This limit is only the overall cap per story.
           testTimeout: 60000,
+          // One page for all story files instead of a fresh one per file: every story file
+          // otherwise loads the renderer, its widgets and the Storybook preview again, which took
+          // most of the run (~100s -> ~30s). Each story still mounts its own renderer; module-level
+          // state in a story file must be reset in a beforeEach, not in play.
+          isolate: false,
           browser: {
             enabled: true,
             headless: true,

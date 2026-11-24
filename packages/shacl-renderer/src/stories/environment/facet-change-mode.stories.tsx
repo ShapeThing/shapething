@@ -37,6 +37,13 @@ const onSubmit = (result: SubmitResult) => {
   lastResult = result;
 };
 
+// Reset before the story renders, not in play: the on-mount call of "live" can come before play
+// starts, and a reset there would wipe it out.
+const resetSubmits = () => {
+  submitCount = 0;
+  lastResult = undefined;
+};
+
 const baseArgs = {
   shapesGraph,
   dataGraph,
@@ -48,8 +55,8 @@ const baseArgs = {
 export const liveMode: Story = {
   name: '"live" (the default): onSubmit fires on mount, then again (debounced) whenever a facet changes',
   args: { ...baseArgs, facetChangeMode: "live" } as ShaclRendererProps,
+  beforeEach: resetSubmits,
   play: async ({ canvasElement }) => {
-    submitCount = 0;
     const canvas = within(canvasElement);
     const search = await canvas.findByLabelText("Search", {}, { timeout: 5000 });
     await waitFor(() => {
@@ -69,8 +76,8 @@ export const liveMode: Story = {
 export const submitMode: Story = {
   name: '"submit": typing into a facet never calls onSubmit until "Apply filters" is clicked',
   args: { ...baseArgs, facetChangeMode: "submit" } as ShaclRendererProps,
+  beforeEach: resetSubmits,
   play: async ({ canvasElement }) => {
-    submitCount = 0;
     const canvas = within(canvasElement);
     const search = await canvas.findByLabelText("Search", {}, { timeout: 5000 });
 

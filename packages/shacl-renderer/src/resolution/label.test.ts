@@ -53,6 +53,20 @@ test("propertyLabel step 1: the property shape's own sh:name, only when isProper
   );
 });
 
+test("propertyLabel step 1: an empty sh:name is a label too - it hides the header rather than falling through to the path's label", async () => {
+  const shape = await createShape({
+    shapes: `
+      ex:property1 a sh:PropertyShape ; sh:path ex:givenName ; sh:name "" .
+      ex:givenName rdfs:label "Should not be used" .
+    `,
+    propertyShapes: [ex("property1")],
+  });
+
+  expect(propertyLabel({ term: ex("givenName"), propertyShape: shape, isPropertyPath: true })).toBe(
+    "",
+  );
+});
+
 test("propertyLabel does not leak the property shape's own sh:name when isPropertyPath is not set (e.g. labeling an unrelated term)", async () => {
   const shape = await createShape({
     shapes: `

@@ -91,6 +91,23 @@ div[class^="st-"][class*="-suffix"] {
   opacity: 0;
 }
 
+/*
+ * An empty editor has nothing to focus, so its lone add button (the first step) is always shown,
+ * sitting in the flow instead of overlapping neighbours it doesn't have.
+ */
+.st-property-path-editor:has(> .st-add-button:only-child) {
+  margin-left: 0;
+  padding-inline: 0;
+
+  > .st-add-button {
+    pointer-events: auto;
+    opacity: 1;
+    margin: 0;
+    width: 38px;
+    height: 38px;
+  }
+}
+
 .st-predicate-path {
   border-radius: var(--st-radius);
   background-color: var(--predicate-path-background-color);

@@ -1,0 +1,23 @@
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix ex: <http://example.org/> .
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass sh:PropertyShape ;
+
+    sh:property [
+        sh:name "Path"@en, "Pad"@nl ;
+        sh:path sh:path ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+
+<#data>
+    a sh:PropertyShape ;
+    .
+
+ex:parent
+    rdfs:label "parent"@en, "ouder"@nl .

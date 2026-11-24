@@ -17,6 +17,65 @@ export const stPropertyPathEditor: Story = {
   args: argsByTestFile("st-property-path-editor.ttl", import.meta.url),
 };
 
+export const stPropertyPathEditorEmpty: Story = {
+  name: "Starting empty and adding the first steps",
+  args: argsByTestFile("st-property-path-editor-empty.ttl", import.meta.url),
+  play: async ({ canvasElement }) => {
+    const editor = await waitFor(() => {
+      const element = canvasElement.querySelector<HTMLElement>(".st-property-path-editor");
+      if (!element) throw new Error("Could not find the property path editor");
+      return element;
+    });
+
+    // Nothing to focus yet, so the lone add button is shown and clickable straight away.
+    const add = editor.querySelector<HTMLElement>(":scope > .st-add-button")!;
+    expect(editor.children).toHaveLength(1);
+    expect(getComputedStyle(add).opacity).toBe("1");
+    expect(getComputedStyle(add).pointerEvents).toBe("auto");
+
+    const pick = async (iri: string) => {
+      const dialog = await within(canvasElement).findByRole("dialog");
+      const input = within(dialog).getByRole("combobox");
+      await waitFor(() => expect(input).toHaveFocus());
+      await userEvent.type(input, iri);
+      await userEvent.click(within(dialog).getByRole("button", { name: "Save" }));
+      await waitFor(() => expect(canvasElement.querySelector("dialog[open]")).toBeNull());
+    };
+
+    await userEvent.click(add);
+    await pick("http://example.org/parent");
+
+    const predicate = await waitFor(() => {
+      const element = editor.querySelector<HTMLElement>(":scope > .st-predicate-path");
+      if (!element) throw new Error("The first step was not added");
+      return element;
+    });
+    expect(predicate).toHaveAttribute("title", "http://example.org/parent");
+
+    // From here on it behaves like a filled editor: the focused step offers its add buttons.
+    predicate.focus();
+    const addAfter = predicate.nextElementSibling as HTMLElement;
+    await waitFor(() => expect(getComputedStyle(addAfter).opacity).toBe("1"));
+    await userEvent.click(addAfter);
+    await pick("http://example.org/firstName");
+
+    await waitFor(() => {
+      const sequence = editor.querySelector(":scope > .st-sequence-path");
+      expect(sequence).not.toBeNull();
+      expect(sequence?.querySelectorAll(".st-predicate-path")).toHaveLength(2);
+    });
+
+    // Removing the only steps again goes back to the empty state with its visible add button.
+    const prefix = editor.querySelector<HTMLElement>(".st-sequence-path-prefix")!;
+    await userEvent.pointer([{ keys: "[MouseRight]", target: prefix }]);
+    const menu = await within(canvasElement).findByRole("menu");
+    await userEvent.click(within(menu).getByRole("menuitem", { name: "Remove" }));
+    await waitFor(() => expect(editor.querySelector(".st-path-segment")).toBeNull());
+    const addAgain = editor.querySelector<HTMLElement>(":scope > .st-add-button")!;
+    expect(getComputedStyle(addAgain).opacity).toBe("1");
+  },
+};
+
 export const stPropertyPathEditorAddPredicate: Story = {
   name: "Adding a step through the predicate modal",
   args: argsByTestFile("st-property-path-editor.ttl", import.meta.url),
