@@ -22,9 +22,12 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
+  useState,
 } from "react";
 import { ErrorBoundary, getErrorMessage } from "react-error-boundary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { RdfStore } from "rdf-stores";
+import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
 import "@/theme/index.css";
 import "./style.css";
 
@@ -94,9 +97,37 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
 
   // A fresh cache per identity, too: most query keys (e.g. useWidget's) are scoped by property
   // shape IRI rather than by Environment, so a new shapesGraph reusing the same IRIs would
-  // otherwise get the previous session's widget picks back.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const queryClient = useMemo(() => new QueryClient(), [identity]);
+  // otherwise get the previous session's widget picks back. When only the focusNode changed (an
+  // embedder showing one node after another with the same shapes and data), the previous cache is
+  // handed down, to carry over if the graphs come out of preprocessing the same - see
+  // rendererSession.ts. Not in edit mode, where the previous session's dataGraph may hold edits,
+  // nor for a live dataGraph, which may have changed since without a new identity.
+  const liveDataGraph =
+    environmentProps.dataGraph instanceof RdfStore &&
+    getReactivity(environmentProps.dataGraph) !== undefined;
+  const mode = environmentProps.mode ?? defaultEnvironment.mode;
+  const focuslessIdentity =
+    mode !== "edit" && !liveDataGraph
+      ? identityKey({ ...environmentProps, focusNode: undefined, preprocessors })
+      : undefined;
+  const [session, setSession] = useState(() => ({
+    identity,
+    focuslessIdentity,
+    queryClient: new QueryClient(),
+    previousClient: undefined as QueryClient | undefined,
+  }));
+  if (session.identity !== identity) {
+    setSession({
+      identity,
+      focuslessIdentity,
+      queryClient: new QueryClient(),
+      previousClient:
+        focuslessIdentity !== undefined && focuslessIdentity === session.focuslessIdentity
+          ? session.queryClient
+          : undefined,
+    });
+  }
+  const { queryClient, previousClient } = session;
   const liveProps = pickLiveProps(environmentProps);
   const liveSignature = JSON.stringify(liveProps);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -139,6 +170,7 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
                       onSubmit={onSubmit}
                       liveProps={stableLiveProps}
                       instanceId={instanceId}
+                      previousClient={previousClient}
                     >
                       <ShaclRendererInner className={className} />
                     </EnvironmentContextProvider>

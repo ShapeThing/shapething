@@ -2,7 +2,7 @@ import React, { Suspense, startTransition, useEffect, useMemo, useRef, useState 
 import { RdfStore } from "rdf-stores";
 import { Loading } from "@/helpers/icons.tsx";
 import { LoadingFallback } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { type QueryClient, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import type { Environment, RawEnvironment } from "@/environment.ts";
 import { defaultEnvironment } from "@/environment.ts";
 import {
@@ -17,6 +17,7 @@ import ContentLanguageProvider from "@/outputs/render/contexts/ContentLanguagePr
 import { Localized } from "@fluent/react";
 import { noRefetch } from "@/helpers/noRefetch.ts";
 import type { LiveProps } from "@/outputs/render/environmentProps.ts";
+import { continueSession } from "@/outputs/render/rendererSession.ts";
 import "./style.css";
 
 type Props = Partial<RawEnvironment> & {
@@ -29,6 +30,9 @@ type Props = Partial<RawEnvironment> & {
   // reactive shapesGraph (see reactiveRdfStore.ts) written to in place: the same store, so no
   // remount, but every write re-preprocesses - see PreprocessedEnvironmentProvider.
   liveProps?: LiveProps;
+  // The QueryClient of the mount this one replaces, when only the focusNode changed: its results
+  // carry over if the graphs come out of preprocessing the same - see rendererSession.ts.
+  previousClient?: QueryClient;
 };
 
 export default function EnvironmentContextProvider({
@@ -36,6 +40,7 @@ export default function EnvironmentContextProvider({
   preprocessors,
   instanceId,
   liveProps,
+  previousClient,
   ...props
 }: Props) {
   const steps = preprocessors ?? defaultPreprocessors;
@@ -75,6 +80,7 @@ export default function EnvironmentContextProvider({
         // Missing shapes are generated from the data: a predicate it gains later needs them again.
         dataGraph={initialEnvironment.enableMissingShapesGeneration ? liveDataGraph : undefined}
         liveProps={liveProps}
+        previousClient={previousClient}
       >
         {children}
       </PreprocessedEnvironmentProvider>
@@ -125,6 +131,7 @@ function PreprocessedEnvironmentProvider({
   shapesGraph,
   dataGraph,
   liveProps,
+  previousClient,
 }: {
   id: string;
   children: React.ReactNode;
@@ -132,6 +139,7 @@ function PreprocessedEnvironmentProvider({
   shapesGraph: RawEnvironment["shapesGraph"];
   dataGraph?: RdfStore;
   liveProps?: LiveProps;
+  previousClient?: QueryClient;
 }) {
   const queryClient = useQueryClient();
   const [shapesRevision, setShapesRevision] = useState(0);
@@ -181,9 +189,9 @@ function PreprocessedEnvironmentProvider({
     ...noRefetch,
     queryFn: async () => {
       const current = currentRef.current;
-      if (!current) return run();
+      if (!current) return continueSession(queryClient, previousClient, await run());
       try {
-        return await run(current.dataGraph);
+        return continueSession(queryClient, undefined, await run(current.dataGraph));
       } catch (error) {
         // A shape half-way through being edited may not preprocess (yet) - keep showing the last
         // one that did rather than replacing the whole form with an error.

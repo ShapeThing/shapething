@@ -1,7 +1,6 @@
 import type { NamedNode } from "@rdfjs/types";
 import { LocalStore } from "@shapething/localstore";
 import { ShaclManager } from "@shapething/shacl-manager";
-import { DataFactory } from "n3";
 import { Suspense, use, useMemo, useState } from "react";
 import {
   configuredBaseIri,
@@ -20,13 +19,11 @@ import { GitPanel } from "./GitPanel.tsx";
 // The folder and data model are kept in the query string; the hash belongs to the manager.
 const readParam = (name: string) => new URLSearchParams(location.search).get(name) ?? undefined;
 
-// file is the path of the file in the folder, iri the data model it holds: only needed until a
-// new data model is saved. The path, not the file's graph name, so it follows the base IRI.
-function writeParams(params: { folder?: string; file?: string; iri?: string }) {
+// file is the path of the file in the folder, not its graph name, so it follows the base IRI.
+function writeParams(params: { folder?: string; file?: string }) {
   const search = new URLSearchParams();
   if (params.folder) search.set("folder", params.folder);
   if (params.file) search.set("file", params.file);
-  if (params.iri) search.set("iri", params.iri);
   const query = search.size ? `?${search}` : "";
   history.replaceState(null, "", `${location.pathname}${query}${params.file ? location.hash : ""}`);
 }
@@ -263,8 +260,8 @@ function FolderPicker({ onOpen, error }: { onOpen: (name?: string) => void; erro
   );
 }
 
-// The chosen file, with the IRI asked for when it is a new data model.
-type Selection = { file: NamedNode; iri?: NamedNode };
+// The chosen file, by its graph name in the folder.
+type Selection = { file: NamedNode };
 
 type WorkspaceProps = { folder: Folder; onClose: () => void; onEditBaseIri: () => void };
 
@@ -272,10 +269,7 @@ function Workspace({ folder, onClose, onEditBaseIri }: WorkspaceProps) {
   const [modelsPromise, setModelsPromise] = useState(() => listDataModels(folder));
   const [selection, setSelection] = useState<Selection | undefined>(() => {
     const path = readParam("file");
-    const iri = readParam("iri");
-    return path
-      ? { file: fileGraph(folder, path), iri: iri ? DataFactory.namedNode(iri) : undefined }
-      : undefined;
+    return path ? { file: fileGraph(folder, path) } : undefined;
   });
   // Bumped on every save, so the git panel looks at the files again.
   const [saves, setSaves] = useState(0);
@@ -284,7 +278,6 @@ function Workspace({ folder, onClose, onEditBaseIri }: WorkspaceProps) {
     writeParams({
       folder: folder.name,
       file: next && fileLabel(next.file, folder),
-      iri: next?.iri?.value,
     });
     // Back at the list: files may have been added or declare another IRI by now.
     if (!next) setModelsPromise(listDataModels(folder));
@@ -429,14 +422,13 @@ function GraphPicker({ folder, modelsPromise, onSelect }: GraphPickerProps) {
           onSubmit={(event) => {
             event.preventDefault();
             const data = new FormData(event.currentTarget);
-            onSelect({
-              file: fileGraph(folder, data.get("name") as string),
-              iri: DataFactory.namedNode(data.get("iri") as string),
-            });
+            onSelect({ file: fileGraph(folder, data.get("name") as string) });
           }}
         >
           <p className="app-hint">
-            Starts empty. The file is created in this folder when you first save.
+            Starts empty. The file is created in this folder when you first save. Its IRI is the
+            base IRI followed by its path: <code>model.ttl</code> is{" "}
+            <code>&lt;{fileGraph(folder, "model.ttl").value}&gt;</code>.
           </p>
           <label htmlFor="new-model">File</label>
           <input
@@ -446,15 +438,6 @@ function GraphPicker({ folder, modelsPromise, onSelect }: GraphPickerProps) {
             required
             pattern="[\w.\/\-]+"
             placeholder="model.ttl"
-          />
-          <label htmlFor="new-model-iri">IRI</label>
-          <input
-            id="new-model-iri"
-            name="iri"
-            className="st-input"
-            type="url"
-            required
-            placeholder="https://example.com/def/model"
           />
           <button type="submit" className="st-button st-button--primary">
             Create
@@ -474,12 +457,12 @@ type ManagerProps = {
 
 function Manager({ folder, modelsPromise, selection, onSaved }: ManagerProps) {
   const models = use(modelsPromise);
-  // An existing file decides its own IRI; a new one has the IRI it was created with.
+  // An existing file decides its own IRI; a new one is named after its file.
   const model = useMemo(
     () =>
       models.find(({ file }) => file.equals(selection.file)) ?? {
         file: selection.file,
-        iri: selection.iri ?? selection.file,
+        iri: selection.file,
       },
     [models, selection],
   );

@@ -6,6 +6,7 @@ import { factory } from "@/helpers/factory.ts";
 import { rdf, rdfs, sh, st, xsd } from "@/helpers/namespaces.ts";
 import { getRdfList, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { termKey } from "@/helpers/termKey.ts";
+import { hashString } from "@/helpers/hashString.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import type { Widgets } from "@/widgets/types.ts";
 import { facetableRootShapes, shapesForClass, withSuperClassShapes } from "@/resolution/targets.ts";
@@ -326,6 +327,19 @@ function missingPredicates(
   );
 }
 
+// A generated property shape's blank node, named after its shape and path rather than freshly
+// minted: preprocessing the same shapes and data again then yields the very same quads, so a
+// renderer can tell nothing changed (see outputs/render/rendererSession.ts). Numbered on when
+// the shape already got one for that path.
+function barePropertyNode(shapeNode: Quad_Subject, predicate: NamedNode, shapesGraph: RdfStore) {
+  const base = `st-missing-${hashString(`${termKey(shapeNode)} ${predicate.value}`)}`;
+  let node = factory.blankNode(base);
+  for (let n = 2; shapesGraph.countQuads(node, null, null, null) > 0; n++) {
+    node = factory.blankNode(`${base}-${n}`);
+  }
+  return node;
+}
+
 // One bare sh:property/sh:path on `shapeNode` per predicate, narrowed by what the values of
 // `instances` agree on (inferredConstraints).
 function addBareProperties(
@@ -337,7 +351,7 @@ function addBareProperties(
   group?: Quad_Object,
 ): void {
   for (const predicate of predicates) {
-    const propertyNode = factory.blankNode();
+    const propertyNode = barePropertyNode(shapeNode, predicate, shapesGraph);
     shapesGraph.addQuad(factory.quad(propertyNode, sh("path"), predicate));
     if (group) shapesGraph.addQuad(factory.quad(propertyNode, sh("group"), group));
 

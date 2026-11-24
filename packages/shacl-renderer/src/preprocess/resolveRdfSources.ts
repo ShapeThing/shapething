@@ -228,9 +228,29 @@ const dereferenceImport = async (
   return storeFromQuads(quads);
 };
 
-const parseRdfText = (text: string, prefixSink?: Map<string, string>): Promise<RdfStore> => {
+// The quads of a Turtle text, kept for the few texts parsed last: parsing the same text again
+// would not only redo the work but also mint new blank nodes, so the same shapes would no longer
+// come out of preprocessing as the very same quads (see outputs/render/rendererSession.ts).
+const parsedTexts = new Map<string, Promise<Quad[]>>();
+const PARSED_TEXTS_KEPT = 8;
+
+const parseRdfText = async (text: string, prefixSink?: Map<string, string>): Promise<RdfStore> => {
   extractSourcePrefixes(text, prefixSink);
-  return storeFromStream(rdfParser.parse(stringToStream(text), { contentType: "text/turtle" }));
+  let quads = parsedTexts.get(text);
+  if (quads) {
+    // Most recently used last.
+    parsedTexts.delete(text);
+  } else {
+    quads = storeFromStream(
+      rdfParser.parse(stringToStream(text), { contentType: "text/turtle" }),
+    ).then((store) => store.getQuads());
+    quads.catch(() => parsedTexts.get(text) === quads && parsedTexts.delete(text));
+    const oldest = parsedTexts.keys().next();
+    if (parsedTexts.size >= PARSED_TEXTS_KEPT && !oldest.done) parsedTexts.delete(oldest.value);
+  }
+  parsedTexts.set(text, quads);
+  // A store of its own: the caller adds to it (imports, missing shapes).
+  return storeFromQuads(await quads);
 };
 
 // owl:imports is resolved transitively: importing graph B into A can itself declare further
