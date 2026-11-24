@@ -11,7 +11,7 @@ import type {
 } from "@rdfjs/types";
 import EventEmitter from "events";
 import Hex from "hex-encoding";
-import { get, set } from "idb-keyval";
+import { del, get, set } from "idb-keyval";
 import { write } from "@jeswr/pretty-turtle";
 import { Parser, Store, type OTerm } from "n3";
 /** @ts-expect-error readable-stream ships no type declarations */
@@ -74,7 +74,17 @@ const safeDecodeURI = (value: string) => {
 // Never holds graphs and walking them is slow, a git repository has thousands of objects.
 const SKIPPED_DIRECTORIES = [".git", "node_modules"];
 
+// Settings of a folder, kept in the folder itself so they travel with it (and with its git repository).
+export const CONFIG_FILE = ".config";
+
+export type LocalStoreConfig = {
+  // The base IRI of the folder's graphs, overrides the base IRI the store was given.
+  baseIri?: string;
+  [key: string]: unknown;
+};
+
 type LocalStoreOptions = {
+  // Used when the folder's .config gives no base IRI.
   baseUri: URL;
 };
 /**
@@ -84,7 +94,9 @@ type LocalStoreOptions = {
 export class LocalStore implements Source, RdfJsStore {
   public prefixes: Record<string, string> = {};
   #directoryHandle?: FileSystemDirectoryHandle;
-  #baseUri: URL;
+  // The base IRI given to the store, and the one from the folder's .config which wins over it.
+  #defaultBaseUri: URL;
+  #configuredBaseUri?: URL;
   #cache: Store = new Store();
   #inFlightCachePromises: Map<string, Promise<void>> = new Map();
   // Walking the folder is slow and Comunica asks for all graphs for every pattern without a graph.
@@ -101,8 +113,12 @@ export class LocalStore implements Source, RdfJsStore {
   features = { indexDistinctTerms: true };
 
   constructor({ baseUri }: LocalStoreOptions) {
-    this.#baseUri = baseUri;
     assertBaseUri(baseUri);
+    this.#defaultBaseUri = baseUri;
+  }
+
+  get #baseUri(): URL {
+    return this.#configuredBaseUri ?? this.#defaultBaseUri;
   }
 
   /**
@@ -123,8 +139,7 @@ export class LocalStore implements Source, RdfJsStore {
 
       if (name && mounts.has(name)) {
         this.#directoryHandle = await get(name);
-        this.#forgetGraphs();
-        this.#listGraphs().catch(() => this.#forgetGraphs());
+        await this.#mounted();
         return;
       }
 
@@ -133,15 +148,26 @@ export class LocalStore implements Source, RdfJsStore {
       }
 
       this.#directoryHandle = await globalThis.showDirectoryPicker({ mode: "readwrite" });
-      this.#forgetGraphs();
       if (!this.#directoryHandle) throw new Error("Could not save the folder");
       await set(name ?? this.#directoryHandle.name, this.#directoryHandle);
       mounts.add(name ?? this.#directoryHandle.name);
       set("mounts", mounts);
-      this.#listGraphs().catch(() => this.#forgetGraphs());
+      await this.#mounted();
     } catch (error) {
       console.error(error);
     }
+  }
+
+  /**
+   * A folder was mounted: its .config decides the base IRI, then the graphs are listed ahead of the
+   * first query. Without permission to read the folder yet (after a reload) neither works; call
+   * loadConfig() once permission is given.
+   */
+  async #mounted() {
+    this.#configuredBaseUri = undefined;
+    this.#forgetGraphs();
+    await this.loadConfig().catch(() => undefined);
+    this.#listGraphs().catch(() => this.#forgetGraphs());
   }
 
   /**
@@ -152,14 +178,24 @@ export class LocalStore implements Source, RdfJsStore {
     try {
       if (this.#directoryHandle) {
         this.#directoryHandle = undefined;
+        this.#configuredBaseUri = undefined;
         this.#forgetGraphs();
-        const mounts: Set<string> = (await get("mounts")) ?? new Set();
-        mounts.delete(name);
-        set("mounts", mounts);
+        await LocalStore.removeMount(name);
       }
     } catch (error) {
       console.error(error);
     }
+  }
+
+  /**
+   * Forgets a folder that was connected before, so listMounts() no longer gives it.
+   * This does not delete the folder on disk, only the connection to it.
+   */
+  static async removeMount(name: string) {
+    const mounts: Set<string> = (await get("mounts")) ?? new Set();
+    mounts.delete(name);
+    await set("mounts", mounts);
+    await del(name);
   }
 
   /**
@@ -178,12 +214,90 @@ export class LocalStore implements Source, RdfJsStore {
   }
 
   /**
+   * The base IRI the graphs of the folder are named with: the one in the folder's .config,
+   * otherwise the one given to the store.
+   */
+  getBaseUri(): URL {
+    return this.#baseUri;
+  }
+
+  /**
+   * The base IRI from the folder's .config, undefined when the folder does not set one.
+   */
+  getConfiguredBaseUri(): URL | undefined {
+    return this.#configuredBaseUri;
+  }
+
+  /**
+   * Changes the base IRI given to the store, used when the folder's .config does not set one.
    * Only use this when there is no data yet in the local folder attached to the previous baseURI.
    * Currently this does not rename previous data, it orphans it.
    */
   setBaseUri(baseUri: URL): void {
     assertBaseUri(baseUri);
-    this.#baseUri = baseUri;
+    this.#defaultBaseUri = baseUri;
+    this.#baseUriChanged();
+  }
+
+  /**
+   * Reads the folder's .config again and uses its base IRI. Needed when the folder was mounted
+   * before there was permission to read it. Returns the config, empty when there is no .config.
+   */
+  async loadConfig(): Promise<LocalStoreConfig> {
+    const config = await this.#readConfig();
+    const baseUri = typeof config.baseIri === "string" ? new URL(config.baseIri) : undefined;
+    if (baseUri) assertBaseUri(baseUri);
+    if (baseUri?.toString() !== this.#configuredBaseUri?.toString()) {
+      this.#configuredBaseUri = baseUri;
+      this.#baseUriChanged();
+    }
+    return config;
+  }
+
+  /**
+   * Writes the base IRI to the folder's .config, so the folder keeps it, and uses it from now on.
+   * Other settings in the .config are kept. The files are not changed: relative IRIs in them now
+   * resolve against the new base.
+   */
+  async saveBaseUri(baseUri: URL): Promise<void> {
+    assertBaseUri(baseUri);
+    await this.#writeConfig({ ...(await this.#readConfig()), baseIri: baseUri.toString() });
+    this.#configuredBaseUri = baseUri;
+    this.#baseUriChanged();
+  }
+
+  async #readConfig(): Promise<LocalStoreConfig> {
+    if (!this.#directoryHandle) throw new Error(`Local store not mounted`);
+    let contents: string;
+    try {
+      const fileHandle = await this.#directoryHandle.getFileHandle(CONFIG_FILE);
+      contents = await (await fileHandle.getFile()).text();
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "NotFoundError") return {};
+      throw error;
+    }
+    if (!contents.trim()) return {};
+    const config = JSON.parse(contents);
+    if (!config || typeof config !== "object" || Array.isArray(config)) {
+      throw new Error(`${CONFIG_FILE} must hold a JSON object`);
+    }
+    return config;
+  }
+
+  async #writeConfig(config: LocalStoreConfig) {
+    if (!this.#directoryHandle) throw new Error(`Local store not mounted`);
+    const fileHandle = await this.#directoryHandle.getFileHandle(CONFIG_FILE, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(`${JSON.stringify(config, null, 2)}\n`);
+    await writable.close();
+  }
+
+  /**
+   * The graphs are named after the base IRI, so what was read under the previous one is forgotten.
+   */
+  #baseUriChanged() {
+    this.#cache = new Store();
+    this.#inFlightCachePromises.clear();
     this.#forgetGraphs();
   }
 

@@ -1,9 +1,3 @@
-### The data model - the one graph shacl-manager is allowed to write to.
-###
-### Its subject (`:`) is both an owl:Ontology and an sh:ShapesGraph - this is what makes it
-### *the* data model. owl:imports points at imports/skosapnl.ttl's own subject (`skosapnl:`),
-### which is loaded alongside this graph but is never written to.
-
 @prefix : <https://data.norg.nl/def/begrippenkader#> .
 @prefix owl: <http://www.w3.org/2002/07/owl#> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
@@ -14,91 +8,71 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 @prefix skosapnl: <http://nlbegrip.nl/def/skosapnl#> .
 
-:
-  a owl:Ontology, sh:ShapesGraph ;
+<> a owl:Ontology, sh:ShapesGraph ;
+  rdfs:label "test" ;
+  rdfs:comment "woooopp" .
+
+: a owl:Ontology, sh:ShapesGraph ;
   rdfs:label "Begrippenkader gemeente Norg"@nl, "Concept register of the Norg municipality"@en ;
   owl:versionInfo "0.1.0" ;
   owl:imports <https://raw.githubusercontent.com/Geonovum/NL-SBB/refs/heads/main/profiles/skos-ap-nl.ttl> ;
-  sh:declare [ sh:prefix "skos" ; sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI ] .
+  sh:declare [
+    sh:prefix "skos" ;
+    sh:namespace "http://www.w3.org/2004/02/skos/core#"^^xsd:anyURI
+  ] .
 
-### Local extension: on top of the NL-SBB rules for every skos:Concept (imports/skosapnl.ttl),
-### this data model additionally requires its own :beleidsdomein property.
-
-:ConceptShape
-  a sh:NodeShape ;
+:ConceptShape a sh:NodeShape ;
   sh:targetClass skos:Concept ;
   sh:node skosapnl:Concept ;
   sh:property :Concept-beleidsdomein ;
   sh:rule :Concept-inSchemeFromTopConcept, :Concept-narrowerFromBroader .
 
-:Concept-beleidsdomein
-  a sh:PropertyShape ;
+:Concept-beleidsdomein a sh:PropertyShape ;
   sh:path :beleidsdomein ;
   sh:name "beleidsdomein"@nl, "policy domain"@en ;
-  sh:description
-    "Het beleidsdomein van de gemeente Norg waarbinnen dit begrip wordt gebruikt."@nl,
-    "The Norg municipality policy domain within which this concept is used."@en ;
+  sh:description "Het beleidsdomein van de gemeente Norg waarbinnen dit begrip wordt gebruikt."@nl, "The Norg municipality policy domain within which this concept is used."@en ;
   sh:datatype rdf:langString ;
   sh:minCount 1 ;
   sh:nodeKind sh:Literal .
 
-### Rules (SHACL-AF): derive the triples SKOS leaves implicit, so consumers of the
-### begrippenkader don't have to apply the SKOS entailments themselves.
-
-### skos:topConceptOf is a sub-property of skos:inScheme: every top concept is in its scheme.
-:Concept-inSchemeFromTopConcept
-  a sh:TripleRule ;
+:Concept-inSchemeFromTopConcept a sh:TripleRule ;
   rdfs:label "in schema via topbegrip"@nl, "in scheme via top concept"@en ;
-  rdfs:comment
-    "Een topbegrip van een begrippenkader zit ook in dat begrippenkader."@nl,
-    "A top concept of a concept scheme is also in that scheme."@en ;
+  rdfs:comment "Een topbegrip van een begrippenkader zit ook in dat begrippenkader."@nl, "A top concept of a concept scheme is also in that scheme."@en ;
   sh:order 1 ;
   sh:subject sh:this ;
   sh:predicate skos:inScheme ;
-  sh:object [ sh:path skos:topConceptOf ] .
+  sh:object [
+    sh:path skos:topConceptOf
+  ] .
 
-### skos:narrower is the inverse of skos:broader: materialise it on the broader concept.
-:Concept-narrowerFromBroader
-  a sh:SPARQLRule ;
+:Concept-narrowerFromBroader a sh:SPARQLRule ;
   rdfs:label "smaller begrip via breder begrip"@nl, "narrower via broader"@en ;
-  rdfs:comment
-    "Als een begrip een breder begrip heeft, is het een smaller begrip van dat bredere begrip."@nl,
-    "If a concept has a broader concept, it is a narrower concept of that broader concept."@en ;
+  rdfs:comment "Als een begrip een breder begrip heeft, is het een smaller begrip van dat bredere begrip."@nl, "If a concept has a broader concept, it is a narrower concept of that broader concept."@en ;
   sh:order 2 ;
   sh:prefixes : ;
-  sh:construct """
-    CONSTRUCT { ?broader skos:narrower $this . }
-    WHERE { $this skos:broader ?broader . }
-  """ .
+  sh:construct "\n    CONSTRUCT { ?broader skos:narrower $this . }\n    WHERE { $this skos:broader ?broader . }\n  " .
 
-### Example data, conforming to both the imported skosapnl:Concept shape and the local
-### :ConceptShape extension above.
-
-:Begrippenkader
-  a skos:ConceptScheme ;
+:Begrippenkader a skos:ConceptScheme ;
   dct:title "Begrippenkader gemeente Norg"@nl ;
   skos:hasTopConcept :Vergunning, :Melding .
 
-:Vergunning
-  a skos:Concept ;
+:Vergunning a skos:Concept ;
+  :beleidsdomein "Vergunningen, Toezicht en Handhaving"@nl ;
   skos:inScheme :Begrippenkader ;
   skos:topConceptOf :Begrippenkader ;
   skos:prefLabel "Vergunning"@nl ;
-  skos:definition "Een door het bevoegd gezag verleende toestemming om een bepaalde activiteit uit te voeren."@nl ;
-  :beleidsdomein "Vergunningen, Toezicht en Handhaving"@nl .
+  skos:definition "Een door het bevoegd gezag verleende toestemming om een bepaalde activiteit uit te voeren."@nl .
 
-:Melding
-  a skos:Concept ;
+:Melding a skos:Concept ;
+  :beleidsdomein "Openbare Ruimte"@nl ;
   skos:inScheme :Begrippenkader ;
   skos:topConceptOf :Begrippenkader ;
   skos:prefLabel "Melding"@nl ;
-  skos:definition "Een kennisgeving van een inwoner of bedrijf aan de gemeente over een situatie die aandacht behoeft."@nl ;
-  :beleidsdomein "Openbare Ruimte"@nl .
+  skos:definition "Een kennisgeving van een inwoner of bedrijf aan de gemeente over een situatie die aandacht behoeft."@nl .
 
-:Omgevingsvergunning
-  a skos:Concept ;
+:Omgevingsvergunning a skos:Concept ;
+  :beleidsdomein "Vergunningen, Toezicht en Handhaving"@nl ;
   skos:inScheme :Begrippenkader ;
-  skos:broader :Vergunning ;
   skos:prefLabel "Omgevingsvergunning"@nl ;
   skos:definition "Een vergunning voor activiteiten die gevolgen hebben voor de fysieke leefomgeving."@nl ;
-  :beleidsdomein "Vergunningen, Toezicht en Handhaving"@nl .
+  skos:broader :Vergunning .

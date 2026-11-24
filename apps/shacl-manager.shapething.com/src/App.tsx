@@ -4,15 +4,17 @@ import { ShaclManager } from "@shapething/shacl-manager";
 import { DataFactory } from "n3";
 import { Suspense, use, useMemo, useState } from "react";
 import {
+  configuredBaseIri,
   dataModelSource,
+  fileGraph,
   fileLabel,
-  folderBase,
   listDataModels,
   openFolder,
   type DataModelFile,
   type Folder,
 } from "./folder.ts";
 import { ErrorBoundary } from "./ErrorBoundary.tsx";
+import { FileBrowser } from "./FileBrowser.tsx";
 import { GitPanel } from "./GitPanel.tsx";
 
 // The folder and data model are kept in the query string; the hash belongs to the manager.
@@ -53,6 +55,9 @@ export function App() {
 function Shell() {
   const [folder, setFolder] = useState<Folder | undefined>(use(initialFolder));
   const [error, setError] = useState<string>();
+  // The base IRI from the folder's .config, kept here so the workspace starts over when it changes.
+  const [baseIri, setBaseIri] = useState(() => folder && configuredBaseIri(folder));
+  const [editingBaseIri, setEditingBaseIri] = useState(false);
 
   const open = async (name?: string) => {
     setError(undefined);
@@ -63,22 +68,151 @@ function Shell() {
     if (!opened) return;
     writeParams({ folder: opened.name });
     setFolder(opened);
+    setBaseIri(configuredBaseIri(opened));
+    setEditingBaseIri(false);
   };
 
   const close = () => {
     writeParams({});
     setFolder(undefined);
+    setBaseIri(undefined);
+    setEditingBaseIri(false);
   };
 
   if (!folder) return <FolderPicker onOpen={open} error={error} />;
-  return <Workspace key={folder.name} folder={folder} onClose={close} />;
+
+  // Asked for once per folder: after that it is in the folder's .config.
+  if (!baseIri || editingBaseIri) {
+    return (
+      <BaseIriForm
+        folder={folder}
+        current={baseIri}
+        onSaved={(saved) => {
+          // The files are other graphs now, a chosen one is chosen again.
+          writeParams({ folder: folder.name });
+          setBaseIri(saved);
+          setEditingBaseIri(false);
+        }}
+        onCancel={baseIri ? () => setEditingBaseIri(false) : close}
+      />
+    );
+  }
+
+  return (
+    <Workspace
+      key={`${folder.name} ${baseIri}`}
+      folder={folder}
+      onClose={close}
+      onEditBaseIri={() => setEditingBaseIri(true)}
+    />
+  );
+}
+
+const endsOnSlashOrHash = /[/#]$/;
+
+type BaseIriFormProps = {
+  folder: Folder;
+  // The base IRI the folder has, when it is changed.
+  current?: string;
+  onSaved: (baseIri: string) => void;
+  onCancel: () => void;
+};
+
+function BaseIriForm({ folder, current, onSaved, onCancel }: BaseIriFormProps) {
+  const [value, setValue] = useState(current ?? "");
+  const [error, setError] = useState<string>();
+  const [saving, setSaving] = useState(false);
+  const valid = URL.canParse(value) && endsOnSlashOrHash.test(value);
+
+  return (
+    <div className="app-start">
+      <h1 className="app-start__title">
+        <img src="/logo.svg" alt="" className="app-logo" /> {folder.name}
+      </h1>
+      <form
+        className="app-new-model app-base-iri"
+        onSubmit={async (event) => {
+          event.preventDefault();
+          setError(undefined);
+          setSaving(true);
+          try {
+            const baseUri = new URL(value);
+            await folder.store.saveBaseUri(baseUri);
+            onSaved(baseUri.toString());
+          } catch (error) {
+            setError(String(error));
+          } finally {
+            setSaving(false);
+          }
+        }}
+      >
+        <h2>{current ? "Change the base IRI" : "Set the base IRI of this folder"}</h2>
+        <p className="app-hint">
+          The Turtle files in this folder are named by appending their path to the base IRI, and
+          relative IRIs in them, such as <code>&lt;#Shape&gt;</code>, resolve against that name. It
+          is saved in <code>.config</code> in the folder, so it is only asked once and travels with
+          the folder.
+        </p>
+        <label htmlFor="base-iri">Base IRI</label>
+        <input
+          id="base-iri"
+          className="st-input"
+          type="url"
+          required
+          autoFocus
+          pattern=".*[/#]"
+          title="An IRI that ends on a / or a #"
+          placeholder="https://example.com/def/"
+          value={value}
+          onChange={(event) => setValue(event.currentTarget.value)}
+        />
+        {valid ? (
+          <p className="app-hint">
+            <code>model.ttl</code> is <code>&lt;{new URL(value).toString()}model&gt;</code>
+          </p>
+        ) : (
+          value && <p className="app-hint">The base IRI ends on a / or a #.</p>
+        )}
+        {current && (
+          <p className="app-hint">
+            The files are not changed, their relative IRIs resolve against the new base IRI.
+          </p>
+        )}
+        <div className="app-base-iri__actions">
+          <button type="submit" className="st-button st-button--primary" disabled={saving}>
+            Save
+          </button>
+          <button type="button" className="st-button" onClick={onCancel}>
+            {current ? "Cancel" : "Choose another folder"}
+          </button>
+        </div>
+        {error && <p className="app-error">{error}</p>}
+      </form>
+    </div>
+  );
 }
 
 const mountsPromise = supported ? LocalStore.listMounts().catch(() => []) : Promise.resolve([]);
 
 function FolderPicker({ onOpen, error }: { onOpen: (name?: string) => void; error?: string }) {
-  const mounts = use(mountsPromise);
-  const last = readParam("folder");
+  const [mounts, setMounts] = useState(use(mountsPromise));
+  const [last, setLast] = useState(() => readParam("folder"));
+  const [removeError, setRemoveError] = useState<string>();
+
+  // Only the connection is forgotten, the folder on disk stays as it is.
+  const remove = async (name: string) => {
+    setRemoveError(undefined);
+    try {
+      await LocalStore.removeMount(name);
+      setMounts((mounts) => mounts.filter((mount) => mount !== name));
+      if (name === last) {
+        writeParams({});
+        setLast(undefined);
+      }
+    } catch (error) {
+      setRemoveError(String(error));
+    }
+  };
 
   return (
     <div className="app-start">
@@ -105,10 +239,19 @@ function FolderPicker({ onOpen, error }: { onOpen: (name?: string) => void; erro
               <h2>Recent folders</h2>
               <ul>
                 {mounts.map((name) => (
-                  <li key={name}>
+                  <li key={name} className="app-start__recent-item">
                     <button type="button" className="st-button" onClick={() => onOpen(name)}>
                       {name}
                       {name === last && " (last opened)"}
+                    </button>
+                    <button
+                      type="button"
+                      className="st-button app-start__remove"
+                      title={`Remove ${name} from the recent folders, the folder itself is kept`}
+                      aria-label={`Remove ${name} from the recent folders`}
+                      onClick={() => remove(name)}
+                    >
+                      Remove
                     </button>
                   </li>
                 ))}
@@ -118,6 +261,7 @@ function FolderPicker({ onOpen, error }: { onOpen: (name?: string) => void; erro
         </>
       )}
       {error && <p className="app-error">{error}</p>}
+      {removeError && <p className="app-error">{removeError}</p>}
     </div>
   );
 }
@@ -125,7 +269,9 @@ function FolderPicker({ onOpen, error }: { onOpen: (name?: string) => void; erro
 // The chosen file, with the IRI asked for when it is a new data model.
 type Selection = { file: NamedNode; iri?: NamedNode };
 
-function Workspace({ folder, onClose }: { folder: Folder; onClose: () => void }) {
+type WorkspaceProps = { folder: Folder; onClose: () => void; onEditBaseIri: () => void };
+
+function Workspace({ folder, onClose, onEditBaseIri }: WorkspaceProps) {
   const [modelsPromise, setModelsPromise] = useState(() => listDataModels(folder));
   const [selection, setSelection] = useState<Selection | undefined>(() => {
     const file = readParam("graph");
@@ -151,9 +297,17 @@ function Workspace({ folder, onClose }: { folder: Folder; onClose: () => void })
         <span className="app-bar__folder" title="The connected folder">
           {folder.name}
         </span>
+        <button
+          type="button"
+          className="st-button app-bar__base"
+          title="The base IRI of the folder, click to change it"
+          onClick={onEditBaseIri}
+        >
+          {folder.store.getBaseUri().toString()}
+        </button>
         {selection && (
           <button type="button" className="st-button app-bar__graph" onClick={() => select()}>
-            {fileLabel(selection.file, folder.name)}
+            {fileLabel(selection.file, folder)}
           </button>
         )}
         <span className="app-bar__spacer" />
@@ -168,7 +322,7 @@ function Workspace({ folder, onClose }: { folder: Folder; onClose: () => void })
           fallback={(error) => (
             <div className="app-start">
               <p className="app-error">
-                Could not open {fileLabel(selection.file, folder.name)}: {String(error)}
+                Could not open {fileLabel(selection.file, folder)}: {String(error)}
               </p>
               <button type="button" className="st-button" onClick={() => select()}>
                 Choose another data model
@@ -204,60 +358,52 @@ function GraphPicker({ folder, modelsPromise, onSelect }: GraphPickerProps) {
   const models = use(modelsPromise);
 
   return (
-    <div className="app-start">
+    <div className="app-start app-start--wide">
       <h2>Choose the data model to edit</h2>
       {models.length === 0 ? (
         <p>There are no Turtle (.ttl) files in this folder yet.</p>
       ) : (
-        <ul className="app-graphs">
-          {models.map(({ file, title }) => (
-            <li key={file.value}>
-              <button type="button" className="st-button" onClick={() => onSelect({ file })}>
-                <span>{fileLabel(file, folder.name)}</span>
-                {title && <span className="app-graphs__title">{title}</span>}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <FileBrowser folder={folder} models={models} onOpen={(file) => onSelect({ file })} />
       )}
-      <form
-        className="app-new-model"
-        onSubmit={(event) => {
-          event.preventDefault();
-          const data = new FormData(event.currentTarget);
-          const name = (data.get("name") as string).replace(/\.ttl$/, "");
-          onSelect({
-            file: DataFactory.namedNode(folderBase(folder.name) + encodeURI(name)),
-            iri: DataFactory.namedNode(data.get("iri") as string),
-          });
-        }}
-      >
-        <h3>New data model</h3>
-        <p className="app-hint">
-          Starts empty. The file is created in this folder when you first save.
-        </p>
-        <label htmlFor="new-model">File</label>
-        <input
-          id="new-model"
-          name="name"
-          className="st-input"
-          required
-          pattern="[\w.\/\-]+"
-          placeholder="model.ttl"
-        />
-        <label htmlFor="new-model-iri">IRI</label>
-        <input
-          id="new-model-iri"
-          name="iri"
-          className="st-input"
-          type="url"
-          required
-          placeholder="https://example.com/def/model"
-        />
-        <button type="submit" className="st-button st-button--primary">
-          Create
-        </button>
-      </form>
+      <details className="app-new-model-toggle" open={models.length === 0}>
+        <summary>New data model…</summary>
+        <form
+          className="app-new-model"
+          onSubmit={(event) => {
+            event.preventDefault();
+            const data = new FormData(event.currentTarget);
+            onSelect({
+              file: fileGraph(folder, data.get("name") as string),
+              iri: DataFactory.namedNode(data.get("iri") as string),
+            });
+          }}
+        >
+          <p className="app-hint">
+            Starts empty. The file is created in this folder when you first save.
+          </p>
+          <label htmlFor="new-model">File</label>
+          <input
+            id="new-model"
+            name="name"
+            className="st-input"
+            required
+            pattern="[\w.\/\-]+"
+            placeholder="model.ttl"
+          />
+          <label htmlFor="new-model-iri">IRI</label>
+          <input
+            id="new-model-iri"
+            name="iri"
+            className="st-input"
+            type="url"
+            required
+            placeholder="https://example.com/def/model"
+          />
+          <button type="submit" className="st-button st-button--primary">
+            Create
+          </button>
+        </form>
+      </details>
     </div>
   );
 }

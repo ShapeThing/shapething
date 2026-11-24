@@ -1,7 +1,7 @@
 import type { NamedNode, Quad } from "@rdfjs/types";
 import { LocalStore } from "@shapething/localstore";
 import type { LoadGraph } from "@shapething/shacl-manager";
-import { dereferenceUrl, owl, rdf, sh, termLabel } from "@shapething/shacl-renderer";
+import { type BCP47, dereferenceUrl, owl, rdf, sh, termLabel } from "@shapething/shacl-renderer";
 import { DataFactory, Store } from "n3";
 import { RdfStore } from "rdf-stores";
 import { CORS_PROXY_URL } from "./corsProxy.ts";
@@ -14,8 +14,10 @@ export type Folder = {
   repository?: Repository;
 };
 
-// The files of a folder are graphs named after their path: model.ttl is <file:///{folder}/model>.
-// That name only finds the file again; the data model's IRI comes from what the file declares.
+// The files of a folder are graphs named after their path, appended to the folder's base IRI:
+// model.ttl is <{base}model>. The base IRI is kept in the folder's .config; until one is set the
+// graphs are named <file:///{folder}/model>, a name that only finds the file again. The data
+// model's IRI comes from what the file declares.
 export const folderBase = (folder: string) => `file:///${encodeURIComponent(folder)}/`;
 
 // Mounts a folder that was connected before (by name) or asks for a new one. Reading and writing
@@ -37,6 +39,8 @@ export async function openFolder(
   if (permission !== "granted") return undefined;
 
   store.setBaseUri(new URL(folderBase(handle.name)));
+  // The .config could not be read while mounting when permission was only given just now.
+  await store.loadConfig();
   return { name: handle.name, store, repository: await Repository.open(handle) };
 }
 
@@ -50,7 +54,11 @@ async function titleOf(store: LocalStore, file: NamedNode, iri: NamedNode) {
   if (iri.equals(file)) return undefined;
   const graph = RdfStore.createDefault();
   for (const quad of await readGraph(store, file)) graph.addQuad(quad);
-  return termLabel({ term: iri, shapesGraph: graph, languages: [...navigator.languages] });
+  return termLabel({
+    term: iri,
+    shapesGraph: graph,
+    languages: [...navigator.languages] as BCP47[],
+  });
 }
 
 async function declaredIri(store: LocalStore, file: NamedNode): Promise<NamedNode | undefined> {
@@ -84,9 +92,16 @@ export async function listDataModels({ store }: Folder): Promise<DataModelFile[]
   return models.sort((a, b) => a.file.value.localeCompare(b.file.value));
 }
 
+// The base IRI the folder sets in its .config, undefined until it is given one.
+export const configuredBaseIri = ({ store }: Folder) => store.getConfiguredBaseUri()?.toString();
+
+// The graph of a file in the folder, by its path: model.ttl is <{base}model>.
+export const fileGraph = ({ store }: Folder, path: string) =>
+  DataFactory.namedNode(store.getBaseUri().toString() + encodeURI(path.replace(/\.ttl$/, "")));
+
 // What the user recognizes a file by: its path in the folder.
-export const fileLabel = (file: NamedNode, folder: string) => {
-  const base = folderBase(folder);
+export const fileLabel = (file: NamedNode, { store }: Folder) => {
+  const base = store.getBaseUri().toString();
   return file.value.startsWith(base)
     ? `${decodeURI(file.value.slice(base.length))}.ttl`
     : file.value;

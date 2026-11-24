@@ -57,25 +57,21 @@ body {
   gap: var(--size-2);
 }
 
-.app-start__recent ul,
-.app-graphs {
+.app-start__recent ul {
   list-style: none;
   padding: 0;
   display: grid;
   gap: var(--size-2);
 }
 
-.app-graphs .st-button {
-  display: grid;
-  justify-items: start;
-  width: 100%;
-  text-align: start;
+.app-start__recent-item {
+  display: flex;
+  gap: var(--size-2);
 }
 
-.app-graphs__title {
-  color: var(--st-color-text-muted);
-  font-size: var(--st-font-size-small);
-  overflow-wrap: anywhere;
+.app-start__recent-item > .st-button:first-child {
+  flex: 1;
+  text-align: start;
 }
 
 .app-new-model {
@@ -86,7 +82,25 @@ body {
 }
 
 .app-new-model h3,
-.app-new-model .app-hint {
+.app-new-model .app-bar__base {
+  max-width: 24rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--st-font-size-small);
+}
+
+.app-base-iri h2 {
+  margin: 0;
+}
+
+.app-base-iri__actions {
+  display: flex;
+  gap: var(--size-2);
+}
+
+.app-hint {
   margin: 0;
 }
 
@@ -96,6 +110,24 @@ body {
 
 .app-new-model .st-input {
   inline-size: 100%;
+}
+
+.app-bar__base {
+  max-width: 24rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--st-font-size-small);
+}
+
+.app-base-iri h2 {
+  margin: 0;
+}
+
+.app-base-iri__actions {
+  display: flex;
+  gap: var(--size-2);
 }
 
 .app-hint {
@@ -208,4 +240,159 @@ body {
 
 .git-dialog .app-error {
   margin: 0;
+}
+
+.app-start--wide {
+  max-width: 64rem;
+}
+
+/* The folder's data models as a file tree: name on the left, what the file holds on the right. */
+.file-browser {
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+}
+
+.file-browser__head,
+.file-browser__row {
+  display: grid;
+  grid-template-columns: minmax(12rem, 2fr) 3fr;
+  align-items: center;
+  gap: var(--size-3);
+  padding: var(--size-1) var(--size-3);
+}
+
+.file-browser__head {
+  background: var(--st-color-surface, #f6f7f9);
+  border-bottom: 1px solid var(--st-color-border);
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+  font-weight: var(--font-weight-6);
+}
+
+.file-browser__row {
+  min-height: 2rem;
+  border: 0;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: start;
+  cursor: pointer;
+  list-style: none;
+}
+
+.file-browser__row::-webkit-details-marker {
+  display: none;
+}
+
+.file-browser__row:hover {
+  background: var(--st-color-hover, #f1f3f6);
+}
+
+.file-browser__row:focus-visible {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: -2px;
+}
+
+.file-browser__file {
+  width: 100%;
+}
+
+.file-browser__name {
+  padding-inline-start: calc(var(--depth, 0) * 1.25rem);
+  display: flex;
+  align-items: center;
+  gap: var(--size-1);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-browser__dir > .file-browser__row .file-browser__name {
+  font-weight: var(--font-weight-6);
+}
+
+.file-browser__icon,
+.file-browser__chevron,
+.file-browser__spacer {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--st-color-text-muted);
+}
+
+.file-browser__icon--folder {
+  color: var(--st-primary-color);
+}
+
+.file-browser__chevron {
+  transition: rotate 0.15s;
+}
+
+.file-browser__dir[open] > summary .file-browser__chevron {
+  rotate: 90deg;
+}
+
+.file-browser__model {
+  display: flex;
+  align-items: baseline;
+  gap: var(--size-2);
+  min-width: 0;
+}
+
+.file-browser__title {
+  flex: none;
+  max-width: 50%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-browser__iri,
+.file-browser__meta {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--st-color-text-muted);
+  font-size: var(--st-font-size-small);
+}
+
+.file-browser__iri {
+  font-family: var(--font-mono);
+}
+
+@media (max-width: 40rem) {
+  .file-browser__head {
+    display: none;
+  }
+
+  .file-browser__row {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+
+  .file-browser__meta {
+    display: none;
+  }
+
+  .file-browser__model {
+    padding-inline-start: calc(var(--depth, 0) * 1.25rem + 32px + 2 * var(--size-1));
+  }
+}
+
+.app-new-model-toggle {
+  margin-block-start: var(--size-4);
+}
+
+.app-new-model-toggle > summary {
+  cursor: pointer;
+  font-weight: var(--font-weight-6);
+  color: var(--st-primary-color);
+}
+
+.app-new-model-toggle > .app-new-model {
+  max-width: 32rem;
+  margin-block-start: var(--size-3);
 }
