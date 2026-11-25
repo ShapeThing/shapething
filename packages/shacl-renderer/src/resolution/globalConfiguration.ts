@@ -1,6 +1,7 @@
 import type { Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { expandListOrTerm } from "@/helpers/expandListOrTerm.ts";
+import { createReactiveCache } from "@/helpers/reactiveCache.ts";
 import { rdf, sh, shui } from "@/helpers/namespaces.ts";
 import { parsePathNode, type PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import type { LanguageRange } from "@/types/BCP47.ts";
@@ -16,15 +17,23 @@ function configurationSubject(shapesGraph: RdfStore): Term | undefined {
   );
 }
 
+// The two preferences every label resolution asks for, once per value per render - read from the
+// shapes graph once instead (cleared on a write to a live shapesGraph, see reactiveCache.ts).
+const preferenceCache = createReactiveCache<readonly unknown[]>();
+
 /**
  * shui:languagePreference (3.4): an ordered list of BCP47 tags, highest-priority first. A "" entry
  * means "no language" (8.1) and is kept as "" (not mapped to a sentinel) so bestByLanguage's own ""
  * handling can consume it directly. Returns [] when unconfigured.
  */
 export function getLanguagePreference(shapesGraph: RdfStore): LanguageRange[] {
-  const subject = configurationSubject(shapesGraph);
-  const head = subject && shapesGraph.getQuads(subject, shui("languagePreference"))[0]?.object;
-  return head ? expandListOrTerm(head, shapesGraph).map((term) => term.value as LanguageRange) : [];
+  return preferenceCache.getOrCompute(shapesGraph, "languagePreference", () => {
+    const subject = configurationSubject(shapesGraph);
+    const head = subject && shapesGraph.getQuads(subject, shui("languagePreference"))[0]?.object;
+    return Object.freeze(
+      head ? expandListOrTerm(head, shapesGraph).map((term) => term.value as LanguageRange) : [],
+    ) as LanguageRange[];
+  }) as LanguageRange[];
 }
 
 /**
@@ -35,11 +44,15 @@ export function getLanguagePreference(shapesGraph: RdfStore): LanguageRange[] {
  * context-specific default (see resolution/label.ts's effectiveLabelPredicates).
  */
 export function getLabelPreference(shapesGraph: RdfStore): PropertyPath[] {
-  const subject = configurationSubject(shapesGraph);
-  const head = subject && shapesGraph.getQuads(subject, shui("labelPreference"))[0]?.object;
-  return head
-    ? expandListOrTerm(head, shapesGraph).map((term) => parsePathNode(term, shapesGraph))
-    : [];
+  return preferenceCache.getOrCompute(shapesGraph, "labelPreference", () => {
+    const subject = configurationSubject(shapesGraph);
+    const head = subject && shapesGraph.getQuads(subject, shui("labelPreference"))[0]?.object;
+    return Object.freeze(
+      head
+        ? expandListOrTerm(head, shapesGraph).map((term) => parsePathNode(term, shapesGraph))
+        : [],
+    ) as PropertyPath[];
+  }) as PropertyPath[];
 }
 
 /**

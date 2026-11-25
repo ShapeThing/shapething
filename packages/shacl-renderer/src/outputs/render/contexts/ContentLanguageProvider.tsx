@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
 import { contentLanguageContext } from "@/outputs/render/contexts/contentLanguageContext.tsx";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { primarySubtag } from "@/helpers/bestByLanguage.ts";
@@ -33,18 +33,21 @@ export default function ContentLanguageProvider({ children }: { children: ReactN
   // enableContentLanguageCreation live in local state here rather than trying to mutate it.
   const [languages, setLanguages] = useState<BCP47[]>(initialLanguages);
 
-  const addLanguage = (language: BCP47) => {
+  const addLanguage = useCallback((language: BCP47) => {
     setLanguages((current) => (current.includes(language) ? current : [...current, language]));
     setActiveLanguage(language);
-  };
+  }, []);
 
-  const removeLanguage = (language: BCP47) => {
-    const remaining = languages.filter((candidate) => candidate !== language);
-    setLanguages(remaining);
-    // Only touches activeLanguage if it was the one just removed - otherwise whatever's currently
-    // active stays active regardless of what else changed in the list.
-    if (activeLanguage === language) setActiveLanguage(remaining[0] ?? language);
-  };
+  const removeLanguage = useCallback(
+    (language: BCP47) => {
+      const remaining = languages.filter((candidate) => candidate !== language);
+      setLanguages(remaining);
+      // Only touches activeLanguage if it was the one just removed - otherwise whatever's
+      // currently active stays active regardless of what else changed in the list.
+      if (activeLanguage === language) setActiveLanguage(remaining[0] ?? language);
+    },
+    [languages, activeLanguage],
+  );
 
   // Ref-counted rather than a Set of ids - callers don't have a stable identity to key by, and
   // "how many" is all ContentLanguageSwitcher needs (see hasLanguageSwitcherWidget below).
@@ -54,19 +57,32 @@ export default function ContentLanguageProvider({ children }: { children: ReactN
     return () => setLanguageSwitcherWidgetCount((count) => count - 1);
   }, []);
 
+  // Memoized on the boolean, not the count: every widget registering itself (one effect per
+  // property that needs the switcher, landing in batches as widget queries resolve) changes the
+  // count, and a fresh value object each time re-rendered every useContentLanguage() consumer in
+  // the form.
+  const hasLanguageSwitcherWidget = languageSwitcherWidgetCount > 0;
+  const value = useMemo(
+    () => ({
+      activeLanguage,
+      setActiveLanguage,
+      languages,
+      addLanguage,
+      removeLanguage,
+      registerLanguageSwitcherWidget,
+      hasLanguageSwitcherWidget,
+    }),
+    [
+      activeLanguage,
+      languages,
+      addLanguage,
+      removeLanguage,
+      registerLanguageSwitcherWidget,
+      hasLanguageSwitcherWidget,
+    ],
+  );
+
   return (
-    <contentLanguageContext.Provider
-      value={{
-        activeLanguage,
-        setActiveLanguage,
-        languages,
-        addLanguage,
-        removeLanguage,
-        registerLanguageSwitcherWidget,
-        hasLanguageSwitcherWidget: languageSwitcherWidgetCount > 0,
-      }}
-    >
-      {children}
-    </contentLanguageContext.Provider>
+    <contentLanguageContext.Provider value={value}>{children}</contentLanguageContext.Provider>
   );
 }

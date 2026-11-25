@@ -1,7 +1,6 @@
-import { useContext } from "react";
+import { lazy, Suspense, useContext } from "react";
 import type { Term } from "@rdfjs/types";
 import clsx from "clsx";
-import { Icon } from "@iconify/react";
 import EditUIElementChildren from "@/outputs/render/modes/edit/UIElementChildren.tsx";
 import ViewUIElementChildren from "@/outputs/render/modes/view/UIElementChildren.tsx";
 import { verticalTabbedPropertyGroupContext } from "@/outputs/render/contexts/verticalTabbedPropertyGroupContext.tsx";
@@ -25,11 +24,18 @@ function isIconifyIconTerm(term: Term): boolean {
   return term.termType === "Literal" && term.datatype.equals(iconifyDatatype);
 }
 
+// Groups load eagerly (see registry.ts), so @iconify/react is pulled in only once a tab actually
+// has an Iconify icon. Iconify fetches the icon's own data asynchronously anyway, so an icon slot
+// already starts out empty - the fallback just keeps it that way a moment longer.
+const Icon = lazy(() => import("@iconify/react").then((module) => ({ default: module.Icon })));
+
 function TabIcon({ tab }: { tab: GroupUIElement }) {
   const icon = tab.icon();
   if (!icon) return null;
   return isIconifyIconTerm(icon) ? (
-    <Icon icon={icon.value} className="st-vertical-tabbed-group-nav__icon" aria-hidden="true" />
+    <Suspense fallback={<span className="st-vertical-tabbed-group-nav__icon" aria-hidden="true" />}>
+      <Icon icon={icon.value} className="st-vertical-tabbed-group-nav__icon" aria-hidden="true" />
+    </Suspense>
   ) : (
     <img className="st-vertical-tabbed-group-nav__icon" src={icon.value} alt="" />
   );

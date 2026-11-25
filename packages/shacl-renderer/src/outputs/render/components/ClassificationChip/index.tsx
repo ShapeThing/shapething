@@ -1,5 +1,5 @@
 import type { Term } from "@rdfjs/types";
-import { stringToGradient } from "string-to-color-gradient";
+import { stringToGradient } from "@/helpers/stringToGradient.ts";
 import Tooltip from "@/outputs/render/components/Tooltip/index.tsx";
 import ValueChip from "@/outputs/render/components/ValueChip/index.tsx";
 import "./style.css";
@@ -18,7 +18,7 @@ type Props = {
 export default function ClassificationChip({ classification, size = "small" }: Props) {
   const colors = classification.color
     ? [classification.color]
-    : stringToGradient(classification.label, { brightness: "light" });
+    : stringToGradient(classification.label);
 
   return (
     <ValueChip

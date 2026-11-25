@@ -89,7 +89,7 @@ export const doneWritesTheNewInstanceAndLinksIt: Story = {
     const canvas = within(canvasElement);
     const dialog = await openCreateDialog(canvasElement);
 
-    await userEvent.type(within(dialog).getByRole("textbox"), "Umbrella Corp");
+    await userEvent.type(await within(dialog).findByRole("textbox"), "Umbrella Corp");
     await userEvent.tab();
     await userEvent.click(within(dialog).getByRole("button", { name: "Done" }));
     await waitFor(() => expect(canvas.queryByRole("dialog")).toBeNull());
@@ -129,7 +129,7 @@ export const closingTheDialogDiscardsTheDraft: Story = {
     const canvas = within(canvasElement);
     const dialog = await openCreateDialog(canvasElement);
 
-    await userEvent.type(within(dialog).getByRole("textbox"), "Never saved");
+    await userEvent.type(await within(dialog).findByRole("textbox"), "Never saved");
     await userEvent.tab();
     await userEvent.click(dialog.querySelector<HTMLButtonElement>('button[aria-label="Close"]')!);
     await waitFor(() => expect(canvas.queryByRole("dialog")).toBeNull());

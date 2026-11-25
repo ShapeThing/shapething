@@ -1,5 +1,6 @@
 import type { Quad, Term } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
+import { termKey } from "@/helpers/termKey.ts";
 
 /** A getQuads() pattern - a `null` field is a wildcard, matching any term in that position. */
 export type Pattern = {
@@ -9,13 +10,27 @@ export type Pattern = {
   graph: Term | null;
 };
 
-type Subscriber = { patterns: Pattern[]; listener: () => void };
+type Subscriber = {
+  patterns: Pattern[];
+  listener: () => void;
+  // Subscription order: listeners still fire in the order they subscribed, as they did before
+  // subscribers were indexed (see makeReactive's notify).
+  order: number;
+  // The index buckets this subscriber is currently filed under (see indexKey).
+  keys: string[];
+};
 
 export type Reactivity = {
   /** Runs `read`, recording every getQuads() pattern this store sees while it runs. */
   track: <T>(read: () => T) => { result: T; patterns: Pattern[] };
   /** Calls `listener` for every future write whose quad matches at least one of `patterns`. */
   subscribe: (patterns: Pattern[], listener: () => void) => () => void;
+  /**
+   * For a caller that updates a subscribed `patterns` array in place (see useReactiveRead) rather
+   * than re-subscribing: re-files its subscriber(s) under the array's new contents. Without this a
+   * write matching only a newly added pattern would go unnoticed.
+   */
+  patternsChanged: (patterns: Pattern[]) => void;
 };
 
 /** One inverse write - the operation that undoes a single addQuad()/removeQuad() call. */
@@ -73,6 +88,28 @@ function matches(pattern: Pattern, quad: Quad): boolean {
   );
 }
 
+// Which index bucket a pattern is filed under: its most selective bound position - a subscriber
+// is only ever checked against a write whose quad shares that term, or, for an all-wildcard
+// pattern, against every write. The full pattern is still matched afterwards; the bucket only
+// narrows down which subscribers are worth matching at all.
+function indexKey(pattern: Pattern): string {
+  if (pattern.subject) return `s ${termKey(pattern.subject)}`;
+  if (pattern.predicate) return `p ${termKey(pattern.predicate)}`;
+  if (pattern.object) return `o ${termKey(pattern.object)}`;
+  if (pattern.graph) return `g ${termKey(pattern.graph)}`;
+  return "*";
+}
+
+function quadIndexKeys(quad: Quad): string[] {
+  return [
+    `s ${termKey(quad.subject)}`,
+    `p ${termKey(quad.predicate)}`,
+    `o ${termKey(quad.object)}`,
+    `g ${termKey(quad.graph)}`,
+    "*",
+  ];
+}
+
 /**
  * Wraps `store` so that reads and writes going through the same instance can stay in sync with
  * React without a blanket "re-render everything" on every change: getQuads() calls made inside
@@ -85,9 +122,46 @@ function matches(pattern: Pattern, quad: Quad): boolean {
 export function makeReactive(store: RdfStore): RdfStore {
   let tracking: Pattern[] | null = null;
   const subscribers = new Set<Subscriber>();
+  // Subscribers filed by indexKey, so a write only matches against the subscribers that could
+  // possibly care about it - not against every pattern every component on the page tracks.
+  const index = new Map<string, Set<Subscriber>>();
+  // Subscribers by their patterns array, for patternsChanged().
+  const byPatterns = new Map<Pattern[], Set<Subscriber>>();
+  let nextOrder = 0;
+
+  function file(subscriber: Subscriber) {
+    subscriber.keys = [...new Set(subscriber.patterns.map(indexKey))];
+    for (const key of subscriber.keys) {
+      let bucket = index.get(key);
+      if (!bucket) index.set(key, (bucket = new Set()));
+      bucket.add(subscriber);
+    }
+  }
+
+  function unfile(subscriber: Subscriber) {
+    for (const key of subscriber.keys) {
+      const bucket = index.get(key);
+      bucket?.delete(subscriber);
+      if (bucket?.size === 0) index.delete(key);
+    }
+    subscriber.keys = [];
+  }
 
   function notify(quad: Quad) {
-    for (const subscriber of subscribers) {
+    const candidates: Subscriber[] = [];
+    const seen = new Set<Subscriber>();
+    for (const key of quadIndexKeys(quad)) {
+      for (const subscriber of index.get(key) ?? []) {
+        if (!seen.has(subscriber)) {
+          seen.add(subscriber);
+          candidates.push(subscriber);
+        }
+      }
+    }
+    if (candidates.length > 1) candidates.sort((a, b) => a.order - b.order);
+    for (const subscriber of candidates) {
+      // A listener earlier in this same notification may have unsubscribed this one.
+      if (!subscribers.has(subscriber)) continue;
       if (subscriber.patterns.some((pattern) => matches(pattern, quad))) subscriber.listener();
     }
   }
@@ -186,9 +260,24 @@ export function makeReactive(store: RdfStore): RdfStore {
       }
     },
     subscribe: (patterns, listener) => {
-      const subscriber: Subscriber = { patterns, listener };
+      const subscriber: Subscriber = { patterns, listener, order: nextOrder++, keys: [] };
       subscribers.add(subscriber);
-      return () => subscribers.delete(subscriber);
+      file(subscriber);
+      let sharing = byPatterns.get(patterns);
+      if (!sharing) byPatterns.set(patterns, (sharing = new Set()));
+      sharing.add(subscriber);
+      return () => {
+        if (!subscribers.delete(subscriber)) return;
+        unfile(subscriber);
+        sharing.delete(subscriber);
+        if (sharing.size === 0) byPatterns.delete(patterns);
+      };
+    },
+    patternsChanged: (patterns) => {
+      for (const subscriber of byPatterns.get(patterns) ?? []) {
+        unfile(subscriber);
+        file(subscriber);
+      }
     },
   });
 

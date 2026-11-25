@@ -1,4 +1,5 @@
 import { expect, test } from "vite-plus/test";
+import { storeFromGraphSources } from "@/helpers/quadTuples.ts";
 import {
   defaultWidgets,
   getGroupWidget,
@@ -224,7 +225,7 @@ test("getGroupWidget prefers a more specific registered type (st:CollapsibleProp
 test("every bundled group widget declares itself a subclass of sh:PropertyGroup in its meta.ttl", async () => {
   for (const entry of Object.values(defaultWidgets.groups)) {
     if (entry.widget.equals(sh("PropertyGroup"))) continue;
-    const metaGraph = await parseRdf(entry.metaGraph ?? "", "text/turtle");
+    const metaGraph = await storeFromGraphSources([entry.metaGraph]);
     expect(
       metaGraph.getQuads(entry.widget, rdfs("subClassOf"), sh("PropertyGroup")),
       entry.widget.value,

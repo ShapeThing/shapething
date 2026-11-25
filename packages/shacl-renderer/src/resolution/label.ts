@@ -1,4 +1,5 @@
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
+import { memoByShapes } from "@/structure/shapeMemo.ts";
 import { hslToHex } from "@/helpers/colorBuckets.ts";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { descriptionText } from "@/helpers/descriptionText.ts";
@@ -382,6 +383,12 @@ type ValueNodeLabelOptions = {
  * referenced resource's own fields (e.g. editInPlace/createInPlace).
  */
 export function valueNodeShapes(propertyShape: PropertyUIElement): Quad_Subject[] {
+  return memoByShapes(propertyShape, "valueNodeShapes", () =>
+    computeValueNodeShapes(propertyShape),
+  );
+}
+
+function computeValueNodeShapes(propertyShape: PropertyUIElement): Quad_Subject[] {
   const { shapesGraph } = propertyShape;
   const explicitNodes = propertyShape.get(sh("node")) as Quad_Subject[];
   const classNodes = propertyShape
@@ -471,10 +478,12 @@ export function propertyPathsByRole(
   propertyShape: PropertyUIElement,
   role: NamedNode,
 ): PropertyPath[] {
-  return propertyPathsByRoleForNodeShapes(
-    valueNodeShapes(propertyShape),
-    propertyShape.shapesGraph,
-    role,
+  return memoByShapes(propertyShape, `propertyPathsByRole ${role.value}`, () =>
+    propertyPathsByRoleForNodeShapes(
+      valueNodeShapes(propertyShape),
+      propertyShape.shapesGraph,
+      role,
+    ),
   );
 }
 
@@ -529,6 +538,12 @@ type LabelRolePath = {
  * still validate the property against.
  */
 function labelRolePathEntries(propertyShape: PropertyUIElement): LabelRolePath[] {
+  return memoByShapes(propertyShape, "labelRolePathEntries", () =>
+    computeLabelRolePathEntries(propertyShape),
+  );
+}
+
+function computeLabelRolePathEntries(propertyShape: PropertyUIElement): LabelRolePath[] {
   const { shapesGraph } = propertyShape;
 
   return valueNodeShapes(propertyShape).flatMap((node) =>
@@ -930,14 +945,16 @@ export function iconRolePropertyPaths(propertyShape: PropertyUIElement): Propert
  */
 function iconRolePropertyShapes(propertyShape: PropertyUIElement): Quad_Subject[] {
   const { shapesGraph } = propertyShape;
-  return valueNodeShapes(propertyShape).flatMap((node) =>
-    shapesGraph
-      .getQuads(node, sh("property"))
-      .map(({ object }) => object as Quad_Subject)
-      .filter(
-        (property) =>
-          shapesGraph.getQuads(property, shui("propertyRole"), shui("IconRole")).length > 0,
-      ),
+  return memoByShapes(propertyShape, "iconRolePropertyShapes", () =>
+    valueNodeShapes(propertyShape).flatMap((node) =>
+      shapesGraph
+        .getQuads(node, sh("property"))
+        .map(({ object }) => object as Quad_Subject)
+        .filter(
+          (property) =>
+            shapesGraph.getQuads(property, shui("propertyRole"), shui("IconRole")).length > 0,
+        ),
+    ),
   );
 }
 

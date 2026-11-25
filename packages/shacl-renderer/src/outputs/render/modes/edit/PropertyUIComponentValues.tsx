@@ -62,6 +62,8 @@ import {
  * new value added" from here, so it still lands at the end unless replaceInOrder() below has
  * already patched previousOrder in place for it.
  */
+
+const NOT_A_MEMBER_SHAPE_TABLE = { hideLabels: false, labelledByForColumn: () => undefined };
 function reconcileOrder(
   previousOrder: string[],
   current: Term[],
@@ -244,7 +246,18 @@ export default function PropertyUIComponentValues({
   );
   const tableColumns = isDetailsEditor && !isSingleUnifiedWidget ? shapeColumns : undefined;
   const tableIdBase = useId();
-  const columnLabelId = (index: number) => `${tableIdBase}-col-${index}`;
+  const columnLabelId = useCallback(
+    (index: number) => `${tableIdBase}-col-${index}`,
+    [tableIdBase],
+  );
+  const isTable = Boolean(tableColumns);
+  // One identity per table/non-table state, so every value below doesn't re-render on each render
+  // of this list just because the context value was a fresh object literal.
+  const tableContextValue = useMemo(
+    () =>
+      isTable ? { hideLabels: true, labelledByForColumn: columnLabelId } : NOT_A_MEMBER_SHAPE_TABLE,
+    [isTable, columnLabelId],
+  );
 
   const sensors = useSensors(
     useSensor(MouseSensor),
@@ -315,13 +328,7 @@ export default function PropertyUIComponentValues({
             sortable={isSortable}
           />
         )}
-        <memberShapeTableContext.Provider
-          value={
-            tableColumns
-              ? { hideLabels: true, labelledByForColumn: columnLabelId }
-              : { hideLabels: false, labelledByForColumn: () => undefined }
-          }
-        >
+        <memberShapeTableContext.Provider value={tableContextValue}>
           {isSortable ? (
             <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
               <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>

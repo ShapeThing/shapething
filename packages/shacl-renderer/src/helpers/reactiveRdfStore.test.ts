@@ -1,6 +1,11 @@
 import { expect, test } from "vite-plus/test";
 import { RdfStore } from "rdf-stores";
-import { getHistory, getReactivity, makeReactive } from "@/helpers/reactiveRdfStore.ts";
+import {
+  getHistory,
+  getReactivity,
+  makeReactive,
+  type Pattern,
+} from "@/helpers/reactiveRdfStore.ts";
 import { factory } from "@/helpers/factory.ts";
 import { ex } from "@/helpers/namespaces.ts";
 
@@ -276,4 +281,51 @@ test("an effect() inside transaction() undoes/redoes together with the quads aro
   expect(history.redo()).toBe(true);
   expect(reactive.getQuads(ex("Alice")).length).toBe(1);
   expect(sideEffectActive).toBe(true);
+});
+
+test("an in-place pattern update is picked up after patternsChanged", () => {
+  const store = makeReactive(RdfStore.createDefault());
+  const reactivity = getReactivity(store)!;
+  const patterns: Pattern[] = [{ subject: ex("a"), predicate: null, object: null, graph: null }];
+  let calls = 0;
+  reactivity.subscribe(patterns, () => calls++);
+
+  store.addQuad(factory.quad(ex("b"), ex("p"), ex("o")));
+  expect(calls).toBe(0);
+
+  patterns[0] = { subject: ex("b"), predicate: null, object: null, graph: null };
+  reactivity.patternsChanged(patterns);
+  store.addQuad(factory.quad(ex("b"), ex("p"), ex("o2")));
+  expect(calls).toBe(1);
+  store.addQuad(factory.quad(ex("a"), ex("p"), ex("o")));
+  expect(calls).toBe(1);
+});
+
+test("listeners fire in subscription order, whichever bucket matched them", () => {
+  const store = makeReactive(RdfStore.createDefault());
+  const reactivity = getReactivity(store)!;
+  const order: string[] = [];
+  reactivity.subscribe([{ subject: null, predicate: ex("p"), object: null, graph: null }], () =>
+    order.push("predicate"),
+  );
+  reactivity.subscribe([{ subject: null, predicate: null, object: null, graph: null }], () =>
+    order.push("wildcard"),
+  );
+  reactivity.subscribe([{ subject: ex("s"), predicate: null, object: null, graph: null }], () =>
+    order.push("subject"),
+  );
+  store.addQuad(factory.quad(ex("s"), ex("p"), ex("o")));
+  expect(order).toEqual(["predicate", "wildcard", "subject"]);
+});
+
+test("a subscriber unsubscribed by an earlier listener in the same write isn't called", () => {
+  const store = makeReactive(RdfStore.createDefault());
+  const reactivity = getReactivity(store)!;
+  const all = [{ subject: null, predicate: null, object: null, graph: null }];
+  let unsubscribeSecond = () => {};
+  let secondCalls = 0;
+  reactivity.subscribe(all, () => unsubscribeSecond());
+  unsubscribeSecond = reactivity.subscribe(all, () => secondCalls++);
+  store.addQuad(factory.quad(ex("s"), ex("p"), ex("o")));
+  expect(secondCalls).toBe(0);
 });

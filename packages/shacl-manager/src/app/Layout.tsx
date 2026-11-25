@@ -1,6 +1,6 @@
-import { Outlet } from "react-router";
 import { Aside } from "./Aside.tsx";
 import { Breadcrumb } from "./Breadcrumb.tsx";
+import { KeepAliveOutlet } from "./KeepAliveOutlet.tsx";
 import { SaveButton } from "./SaveButton.tsx";
 import { Sidebar } from "./Sidebar.tsx";
 import "./layout.css";
@@ -14,7 +14,7 @@ export function Layout() {
           <Breadcrumb />
           <SaveButton />
         </div>
-        <Outlet />
+        <KeepAliveOutlet />
       </main>
       <Aside />
     </div>

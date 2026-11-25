@@ -1,5 +1,5 @@
 import type { NamedNode, Term } from "@rdfjs/types";
-import { useEffect, useId, useMemo, useRef } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef } from "react";
 import {
   closestCenter,
   DndContext,
@@ -105,7 +105,14 @@ export default function MemberShapeList({
   const tableColumns = useMemo(() => horizontalTableColumns(memberElement), [memberElement]);
 
   const tableIdBase = useId();
-  const columnLabelId = (index: number) => `${tableIdBase}-col-${index}`;
+  const columnLabelId = useCallback(
+    (index: number) => `${tableIdBase}-col-${index}`,
+    [tableIdBase],
+  );
+  const tableContextValue = useMemo(
+    () => ({ hideLabels: true, labelledByForColumn: columnLabelId }),
+    [columnLabelId],
+  );
 
   const minListLength = propertyUIElement.get(sh("minListLength")) ?? 0;
   const maxListLength = propertyUIElement.get(sh("maxListLength")) ?? Infinity;
@@ -188,9 +195,7 @@ export default function MemberShapeList({
         >
           <ul className="st-member-shape-list__items">
             {tableColumns ? (
-              <memberShapeTableContext.Provider
-                value={{ hideLabels: true, labelledByForColumn: columnLabelId }}
-              >
+              <memberShapeTableContext.Provider value={tableContextValue}>
                 {items}
               </memberShapeTableContext.Provider>
             ) : (

@@ -28,15 +28,7 @@ export const resolveScoresGraph: Preprocessor = async (environment) => {
   const mode = widgetModeForEnvironment(environment.mode);
   const modes: WidgetMode[] = mode === "edit" && needsViewerScores ? ["edit", "view"] : [mode];
 
-  if (modes.length === 1) {
-    return { ...environment, scoresGraph: await getScoringGraph(modes[0], widgets) };
-  }
-
-  const scoresGraph = RdfStore.createDefault();
-  for (const mode of modes) {
-    for (const quad of (await getScoringGraph(mode, widgets)).getQuads()) {
-      scoresGraph.addQuad(quad);
-    }
-  }
-  return { ...environment, scoresGraph };
+  // One shared store per (widgets, modes) - see getScoringGraph - rather than a fresh merged copy
+  // per preprocessing pass, so the scoring ShaclEngine compiled for it is reused too.
+  return { ...environment, scoresGraph: await getScoringGraph(modes, widgets) };
 };

@@ -16,6 +16,8 @@ import {
 import { dereferenceMissingPropertyNames } from "@/preprocess/ontologyLabels.ts";
 import { assertValidEnvironment } from "@/preprocess/configuration.ts";
 import { getReactivity, makeReactive } from "@/helpers/reactiveRdfStore.ts";
+import { internGraph } from "@/preprocess/internGraph.ts";
+import { LIVE_PROPS } from "@/outputs/render/environmentProps.ts";
 import type { RdfStore } from "rdf-stores";
 
 export type Preprocessor = (
@@ -60,7 +62,13 @@ export const runPreprocessors = async (
     result = await step(result);
   }
 
-  const environment = assertValidEnvironment(result);
+  const validated = assertValidEnvironment(result);
+  // The same shapes as an earlier pass (e.g. the previous resource's) - share its store, and with
+  // it everything cached against it. See internGraph.ts.
+  const environment = {
+    ...validated,
+    shapesGraph: internGraph(validated.shapesGraph),
+  };
   if (keepDataGraph) return { ...environment, dataGraph: keepDataGraph };
   // Only dataGraph is written to at runtime (e.g. PropertyUIElement.addObject) - shapesGraph and
   // scoresGraph are read-only for the lifetime of an Environment, so they don't need reactivity.
@@ -90,8 +98,14 @@ const idFor = (value: unknown): string => {
   return `obj:${id}`;
 };
 
+// Live props (environmentProps.ts) are never read by preprocessing, so they stay out of the key -
+// above all onSubmit, which ShaclRenderer always replaces with its own stable wrapper (render.tsx),
+// so a key including it could never match any other caller's.
+const ignoredInKey = new Set<string>(LIVE_PROPS);
+
 const buildKey = (raw: RawEnvironment, steps: readonly Preprocessor[]): string =>
   Object.keys(raw)
+    .filter((key) => !ignoredInKey.has(key))
     .sort()
     .map((key) => `${key}=${idFor((raw as Record<string, unknown>)[key])}`)
     .concat(`__steps=${idFor(steps)}`)

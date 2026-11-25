@@ -196,6 +196,19 @@ export function resolveReport(
     return propertyShape && !generated.has(termKey(propertyShape)) ? propertyShape : undefined;
   };
 
+  // Many results share a focus node - which shapes target it is looked up once per focus node.
+  // (dataGraph isn't written to until every result has been matched, see reportedValues below.)
+  const targetingShapes = new Map<string, Quad_Subject[]>();
+  const shapesTargeting = (focusNode: Term): Quad_Subject[] => {
+    const key = termKey(focusNode);
+    let shapes = targetingShapes.get(key);
+    if (!shapes) {
+      shapes = shapesTargetingNode(focusNode, shapesGraph, dataGraph);
+      targetingShapes.set(key, shapes);
+    }
+    return shapes;
+  };
+
   const propertyShapeFor = (result: ReportResult): Quad_Subject | undefined => {
     if (!result.path) return undefined;
     if (result.sourceShape && isPropertyShape(result.sourceShape, shapesGraph)) {
@@ -207,7 +220,7 @@ export function resolveReport(
     const nodeShapes =
       result.sourceShape && isNodeShapeLike(result.sourceShape, shapesGraph)
         ? [result.sourceShape]
-        : shapesTargetingNode(result.focusNode, shapesGraph, dataGraph);
+        : shapesTargeting(result.focusNode);
     const ownPropertyShapes = nodeShapes.flatMap((nodeShape) =>
       shapesGraph.getQuads(nodeShape, sh("property")).map((quad) => quad.object),
     );
@@ -300,15 +313,20 @@ export function resolveReport(
     }
   }
 
-  // Worst focus node first; the report's own order otherwise (sort is stable).
+  // Worst focus node first; the report's own order otherwise (sort is stable). Each focus node's
+  // worst severity is computed once up front, not per comparison.
+  const worstByFocusNode = new Map<string, number>();
+  const raise = (focusNode: Term, result: ValidationResult) => {
+    const key = termKey(focusNode);
+    const rank = severityRank(localName(result.severity) ?? "");
+    worstByFocusNode.set(key, Math.max(worstByFocusNode.get(key) ?? -1, rank));
+  };
+  for (const result of results) raise(result.focusNode, result);
+  for (const { focusNode, nodeResults } of focusNodes.values()) {
+    for (const result of nodeResults) raise(focusNode, result);
+  }
   const worst = (focusNode: ReportFocusNode) =>
-    Math.max(
-      -1,
-      ...[
-        ...focusNode.nodeResults,
-        ...results.filter((r) => r.focusNode.equals(focusNode.focusNode)),
-      ].map((r) => severityRank(localName(r.severity) ?? "")),
-    );
+    worstByFocusNode.get(termKey(focusNode.focusNode)) ?? -1;
   const sortedFocusNodes = [...focusNodes.values()]
     // eslint-disable-next-line no-unused-vars -- dropping propertyShapes from the rest object
     .map(({ propertyShapes: _, ...focusNode }) => ({

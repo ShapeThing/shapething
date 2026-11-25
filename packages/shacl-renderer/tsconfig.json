@@ -21,5 +21,5 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["src", ".storybook", "vite-env.d.ts"]
+  "include": ["src", "build", ".storybook", "vite-env.d.ts"]
 }

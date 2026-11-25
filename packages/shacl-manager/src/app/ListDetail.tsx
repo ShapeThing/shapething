@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Navigate, useOutlet } from "react-router";
+import { useKeepAliveOutlet } from "./KeepAliveOutlet.tsx";
 import "./listDetail.css";
 
 // The list on the left acts as vertical tabs; the selected item's route renders on the right.
@@ -15,7 +16,7 @@ export function ListDetail({
   empty?: ReactNode;
   children: ReactNode;
 }) {
-  const outlet = useOutlet();
+  const { outlet, kept } = useKeepAliveOutlet();
   return (
     <div className="st-list-detail">
       <header className="st-list-detail__header">
@@ -26,7 +27,8 @@ export function ListDetail({
         {children}
       </nav>
       <div className="st-list-detail__content">
-        {outlet ?? <div className="st-list-detail__empty">{empty}</div>}
+        {kept}
+        {!outlet && <div className="st-list-detail__empty">{empty}</div>}
       </div>
     </div>
   );

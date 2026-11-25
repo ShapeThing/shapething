@@ -7,7 +7,8 @@ import { rdf, rdfs, sh, st, xsd } from "@/helpers/namespaces.ts";
 import { getRdfList, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { hashString } from "@/helpers/hashString.ts";
-import { parseRdf } from "@/helpers/rdf.ts";
+import { storeFromGraphSources } from "@/helpers/quadTuples.ts";
+import { isOwned, markOwned } from "@/preprocess/ownedStores.ts";
 import type { Widgets } from "@/widgets/types.ts";
 import { facetableRootShapes, shapesForClass, withSuperClassShapes } from "@/resolution/targets.ts";
 
@@ -514,17 +515,14 @@ export const dropShapesWithMultiplePaths: Preprocessor = (environment) => {
   return { ...environment, shapesGraph };
 };
 
-// Parsing every group's meta.ttl is pure and scoped to the `widgets` object - keyed by its
+// Building every group's meta graph is pure and scoped to the `widgets` object - keyed by its
 // identity, same as registry.ts's scoringGraphCache.
 const groupTypeGraphCache = new WeakMap<Widgets, Promise<RdfStore>>();
 
 function groupTypeGraph(widgets: Widgets): Promise<RdfStore> {
   let graph = groupTypeGraphCache.get(widgets);
   if (!graph) {
-    const turtle = Object.values(widgets.groups)
-      .map((entry) => entry.metaGraph ?? "")
-      .join("\n");
-    graph = parseRdf(turtle, "text/turtle");
+    graph = storeFromGraphSources(Object.values(widgets.groups).map((entry) => entry.metaGraph));
     groupTypeGraphCache.set(widgets, graph);
   }
   return graph;
@@ -537,16 +535,22 @@ function groupTypeGraph(widgets: Widgets): Promise<RdfStore> {
  * rdfs:subClassOf in the shapes graph: structure/groupTypes.ts (group detection, group widget
  * selection) and resolution/targets.ts (a `sh:targetClass sh:PropertyGroup` shape targets it).
  *
- * Must run after resolveWidgets. Copies shapesGraph only when there's something to add - see
- * addMissingShapes on not mutating the caller-supplied store in place.
+ * Must run after resolveWidgets. Adds to shapesGraph in place when this preprocessing pass built
+ * that store itself (see ownedStores.ts), else copies it first - see addMissingShapes on not
+ * mutating the caller-supplied store in place.
  */
 export const addGroupTypeHierarchy: Preprocessor = async (environment) => {
   if (!environment.widgets) return environment;
   const additions = (await groupTypeGraph(environment.widgets)).getQuads();
   if (additions.length === 0) return environment;
 
+  const source = environment.shapesGraph as RdfStore;
+  if (isOwned(source)) {
+    for (const quad of additions) source.addQuad(quad);
+    return environment;
+  }
   const shapesGraph = RdfStore.createDefault();
-  for (const quad of (environment.shapesGraph as RdfStore).getQuads()) shapesGraph.addQuad(quad);
+  for (const quad of source.getQuads()) shapesGraph.addQuad(quad);
   for (const quad of additions) shapesGraph.addQuad(quad);
-  return { ...environment, shapesGraph };
+  return { ...environment, shapesGraph: markOwned(shapesGraph) };
 };

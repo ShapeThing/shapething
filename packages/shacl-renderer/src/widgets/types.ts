@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 import type { GroupUIElement } from "@/structure/GroupUIElement.ts";
-import type { NamedNode, Term } from "@rdfjs/types";
+import type { NamedNode, Quad, Term } from "@rdfjs/types";
 import type { BCP47 } from "@/types/BCP47.ts";
 
 export type WidgetProps = {
@@ -95,15 +95,20 @@ export type GroupWidgetComponent = ComponentType<GroupWidgetProps>;
  * human-readable label for override purposes, e.g. `{ ...defaultWidgets.editors, TextFieldEditor:
  * MyWidget }`).
  */
+/** A small static graph a widget registry entry carries: turtle, or already parsed quads. */
+export type GraphSource = string | Quad[];
+
 export type WidgetRegistryEntry = {
   widget: NamedNode;
   Component: WidgetComponent;
   meta?: WidgetMeta;
-  // Raw turtle shui:WidgetScore rules for this widget (see scoring/score.ts) - omit for a widget
-  // only ever chosen via an explicit shui:editor/shui:viewer value on the shape: select() returns
-  // a shape's own declared widget directly (subject only to its WidgetAcceptMatcher, if any), no
-  // scoring rule needed. Such a widget just won't appear among score()'s ranked alternatives.
-  scoringGraph?: string;
+  // The shui:WidgetScore rules for this widget (see scoring/score.ts), as turtle or as already
+  // parsed quads (the bundled widgets ship quads, parsed at build time - see build/ttlQuadsPlugin.ts
+  // - so no turtle parser runs for them). Omit for a widget only ever chosen via an explicit
+  // shui:editor/shui:viewer value on the shape: select() returns a shape's own declared widget
+  // directly (subject only to its WidgetAcceptMatcher, if any), no scoring rule needed. Such a
+  // widget just won't appear among score()'s ranked alternatives.
+  scoringGraph?: GraphSource;
 };
 
 /**
@@ -114,7 +119,7 @@ export type WidgetRegistryEntry = {
 export type FacetWidgetRegistryEntry = {
   widget: NamedNode;
   Component: FacetWidgetComponent;
-  scoringGraph?: string;
+  scoringGraph?: GraphSource;
 };
 
 /**
@@ -124,10 +129,10 @@ export type FacetWidgetRegistryEntry = {
 export type GroupWidgetRegistryEntry = {
   widget: NamedNode;
   Component: GroupWidgetComponent;
-  // Raw turtle describing this group type itself - at least `rdfs:subClassOf sh:PropertyGroup`, so
+  // Turtle (or already parsed quads, see WidgetRegistryEntry.scoringGraph) describing this group type itself - at least `rdfs:subClassOf sh:PropertyGroup`, so
   // a group typed only with this widget's IRI still counts as a sh:PropertyGroup. Merged into the
   // shapes graph by preprocess/shapes.ts's addGroupTypeHierarchy.
-  metaGraph?: string;
+  metaGraph?: GraphSource;
 };
 
 /**

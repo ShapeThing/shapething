@@ -23,13 +23,31 @@ export function useConformingCandidates<T extends Term>(
 ): T[] | undefined {
   const [revision, setRevision] = useState(0);
   const [conforming, setConforming] = useState<T[]>();
+  // Nothing to check (e.g. AutoCompleteEditor with facet search off): no subscription to every
+  // dataGraph write, and no validation pass per write either.
+  const hasCandidates = candidates.length > 0;
 
   useEffect(
-    () => getReactivity(shape.dataGraph)?.subscribe(EVERY_WRITE, () => setRevision((r) => r + 1)),
-    [shape.dataGraph],
+    () =>
+      hasCandidates
+        ? getReactivity(shape.dataGraph)?.subscribe(EVERY_WRITE, () => setRevision((r) => r + 1))
+        : undefined,
+    [shape.dataGraph, hasCandidates],
   );
 
   useEffect(() => {
+    // An unchanged outcome keeps the previous array, so a write that doesn't affect any
+    // candidate's conformance doesn't re-render the picker.
+    const publish = (next: T[]) =>
+      setConforming((previous) =>
+        previous?.length === next.length && previous.every((term, i) => term.equals(next[i]!))
+          ? previous
+          : next,
+      );
+    if (!hasCandidates) {
+      publish([]);
+      return;
+    }
     let cancelled = false;
     filterConformingResults(
       shape,
@@ -37,12 +55,12 @@ export function useConformingCandidates<T extends Term>(
     ).then((kept) => {
       if (cancelled) return;
       const keptValues = new Set(kept.map((result) => result.term.value));
-      setConforming(candidates.filter((candidate) => keptValues.has(candidate.value)));
+      publish(candidates.filter((candidate) => keptValues.has(candidate.value)));
     });
     return () => {
       cancelled = true;
     };
-  }, [shape, candidates, revision]);
+  }, [shape, candidates, revision, hasCandidates]);
 
   return conforming;
 }

@@ -1,9 +1,7 @@
-import "@/polyfills/ensureProcess.ts";
-import "@/polyfills/ensureBuffer.ts";
-import type { Quad, Quad_Subject, Stream } from "@rdfjs/types";
+import type { Quad, Quad_Subject } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
-import { rdfParser, type ParseOptions } from "rdf-parse";
-import stringToStream from "string-to-stream";
+import { parseRdfText as parseText } from "@/helpers/parseRdfText.ts";
+import { markOwned } from "@/preprocess/ownedStores.ts";
 import { defaultEnvironment, type Environment, type RawEnvironment } from "@/environment.ts";
 import { shapesTargetingNode } from "@/resolution/targets.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
@@ -32,16 +30,6 @@ const extractSourcePrefixes = (text: string, sink: Map<string, string> | undefin
   if (!sink) return;
   for (const match of text.matchAll(AT_PREFIX_PATTERN)) sink.set(match[1] ?? "", match[2]);
   for (const match of text.matchAll(SPARQL_PREFIX_PATTERN)) sink.set(match[1] ?? "", match[2]);
-};
-
-const storeFromStream = (stream: Stream<Quad>): Promise<RdfStore> => {
-  const store = RdfStore.createDefault();
-  return new Promise((resolve, reject) => {
-    store
-      .import(stream)
-      .on("end", () => resolve(store))
-      .on("error", reject);
-  });
 };
 
 const storeFromQuads = (quads: Iterable<Quad>): RdfStore => {
@@ -158,17 +146,17 @@ const fetchAndParse = async (
   const { text, contentType } = await fetchText(hashlessUrl, corsProxyUrl);
   extractSourcePrefixes(text, prefixSink);
   // Content-negotiated ontology namespace IRIs (skos:, dct:, foaf:, ...) have no file
-  // extension for rdf-parse to detect a format from, so the server's own declared
-  // Content-Type is used instead in that case - the corsProxy explicitly requests one via an
-  // RDF-shaped Accept header. A URL with a real extension (.ttl, .jsonld, ...) keeps using
-  // that, since it's a more reliable signal than whatever a plain static file server happens
-  // to default its Content-Type header to.
-  const parseOptions: ParseOptions =
-    rdfParser.getContentTypeFromExtension(hashlessUrl.href) || !contentType
-      ? { path: hashlessUrl.href, baseIRI: url.href }
-      : { contentType: contentType.split(";")[0].trim(), baseIRI: url.href };
-  const store = await storeFromStream(rdfParser.parse(stringToStream(text), parseOptions));
-  return store.getQuads();
+  // extension to detect a format from, so the server's own declared Content-Type is used instead
+  // in that case - the corsProxy explicitly requests one via an RDF-shaped Accept header. A URL
+  // with a real extension (.ttl, .jsonld, ...) keeps using that, since it's a more reliable signal
+  // than whatever a plain static file server happens to default its Content-Type header to.
+  //
+  // Always refetched (the document may have changed), but a response with the very same text as
+  // last time reuses that parse - same quads, same blank nodes - so a shapes graph loaded from a URL
+  // comes out identical for the next resource and can share its store (see internGraph.ts).
+  return parsedOnce(`${hashlessUrl.href}\u0000${contentType ?? ""}\u0000${url.href}`, text, () =>
+    parseText(text, { path: hashlessUrl.href, contentType, baseIRI: url.href }),
+  );
 };
 
 export const dereferenceUrl = async (
@@ -228,6 +216,22 @@ const dereferenceImport = async (
   return storeFromQuads(quads);
 };
 
+// The quads of the last text fetched from each URL (key: URL plus everything else the parse
+// depends on), reused while the URL keeps serving that same text. A few URLs only.
+const fetchedTexts = new Map<string, { text: string; quads: Promise<Quad[]> }>();
+const FETCHED_TEXTS_KEPT = 16;
+
+const parsedOnce = (key: string, text: string, parse: () => Promise<Quad[]>): Promise<Quad[]> => {
+  const cached = fetchedTexts.get(key);
+  fetchedTexts.delete(key);
+  const quads = cached?.text === text ? cached.quads : parse();
+  quads.catch(() => fetchedTexts.get(key)?.quads === quads && fetchedTexts.delete(key));
+  fetchedTexts.set(key, { text, quads });
+  const oldest = fetchedTexts.keys().next();
+  if (fetchedTexts.size > FETCHED_TEXTS_KEPT && !oldest.done) fetchedTexts.delete(oldest.value);
+  return quads;
+};
+
 // The quads of a Turtle text, kept for the few texts parsed last: parsing the same text again
 // would not only redo the work but also mint new blank nodes, so the same shapes would no longer
 // come out of preprocessing as the very same quads (see outputs/render/rendererSession.ts).
@@ -241,9 +245,7 @@ const parseRdfText = async (text: string, prefixSink?: Map<string, string>): Pro
     // Most recently used last.
     parsedTexts.delete(text);
   } else {
-    quads = storeFromStream(
-      rdfParser.parse(stringToStream(text), { contentType: "text/turtle" }),
-    ).then((store) => store.getQuads());
+    quads = parseText(text, { contentType: "text/turtle" });
     quads.catch(() => parsedTexts.get(text) === quads && parsedTexts.delete(text));
     const oldest = parsedTexts.keys().next();
     if (parsedTexts.size >= PARSED_TEXTS_KEPT && !oldest.done) parsedTexts.delete(oldest.value);
@@ -519,7 +521,8 @@ export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environmen
 
   return {
     ...raw,
-    shapesGraph,
+    // Built by this pass from the caller's source(s), never the caller's own store - see ownedStores.ts.
+    shapesGraph: markOwned(shapesGraph),
     dataGraph,
     scoresGraph,
     readOnlyGraph,

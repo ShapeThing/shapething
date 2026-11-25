@@ -60,7 +60,12 @@ export default function EnvironmentContextProvider({
   const run = (keepDataGraph: RdfStore | undefined = liveDataGraph): Promise<Environment> =>
     keepDataGraph
       ? runPreprocessors(initialEnvironment, steps, { keepDataGraph })
-      : runPreprocessorsDeduped(initialEnvironment, steps);
+      : // A deduped run may be shared with another caller (its key leaves live props out), and
+        // onSubmit is the one live prop liveProps doesn't carry - so this renderer's own is put back.
+        runPreprocessorsDeduped(initialEnvironment, steps).then((environment) => ({
+          ...environment,
+          onSubmit: initialEnvironment.onSubmit,
+        }));
 
   return (
     <Suspense

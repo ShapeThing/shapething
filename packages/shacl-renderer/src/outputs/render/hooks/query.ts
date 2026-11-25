@@ -3,8 +3,12 @@ import { queryPrefixes, sh } from "@/helpers/namespaces.ts";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { descriptionText } from "@/helpers/descriptionText.ts";
 import { escapeSparqlLiteral } from "@/helpers/sparqlLiteral.ts";
-import { fetchWithCorsProxyFallback, getQueryEngine } from "@/helpers/queryEngine.ts";
-import { geosparqlExtensionFunctions } from "@/helpers/geosparqlFunctions.ts";
+import {
+  fetchWithCorsProxyFallback,
+  fetchWithSignal,
+  getGeosparqlExtensionFunctions,
+  getQueryEngine,
+} from "@/helpers/queryEngine.ts";
 import {
   classificationRolePropertyPaths,
   asIconIri,
@@ -323,7 +327,10 @@ export async function runQuery(
   propertyShape: PropertyUIElement,
   corsProxyUrl?: string,
   explicitEndpoint?: string,
+  // From react-query's queryFn context: aborts once the query is superseded or unmounted.
+  signal?: AbortSignal,
 ): Promise<ResolvedTerm[]> {
+  signal?.throwIfAborted();
   const unwrapped = explicitEndpoint ? undefined : unwrapSoleService(rawQuery);
   const query = unwrapped?.query ?? rawQuery;
   const endpoint = explicitEndpoint ?? unwrapped?.endpoint;
@@ -334,15 +341,24 @@ export async function runQuery(
     // shape-authored sh:select/shui:searchQuery body is arbitrary text this module never inspects
     // up front, so there's no cheaper way to know a geof: function is needed before the engine
     // itself hits it. An endpoint evaluates geof: itself.
-    ...(endpoint ? {} : { extensionFunctions: geosparqlExtensionFunctions }),
-    ...(corsProxyUrl ? { fetch: fetchWithCorsProxyFallback(corsProxyUrl) } : {}),
+    ...(endpoint ? {} : { extensionFunctions: await getGeosparqlExtensionFunctions() }),
+    ...queryFetch(corsProxyUrl, signal),
   } as never);
   if (result.resultType !== "bindings") return [];
 
   const [valueVariable] = (await result.metadata()).variables;
   if (!valueVariable) return [];
 
-  const bindings = await (await result.execute()).toArray();
+  const stream = await result.execute();
+  // A superseded query also stops evaluating locally, not just its HTTP requests.
+  const stop = () => stream.destroy(signal?.reason);
+  signal?.addEventListener("abort", stop, { once: true });
+  let bindings;
+  try {
+    bindings = await stream.toArray();
+  } finally {
+    signal?.removeEventListener("abort", stop);
+  }
   return toResolvedTerms(bindings, valueVariable.value).map((resolved) =>
     withIconFallback(withClassificationColor(resolved, propertyShape), propertyShape),
   );
@@ -566,6 +582,12 @@ async function resolveRoles(
   return runRoleLookupQuery(values, propertyShape, rolePathsFor(propertyShape), options);
 }
 
+function queryFetch(corsProxyUrl: string | undefined, signal: AbortSignal | undefined) {
+  const base = corsProxyUrl ? fetchWithCorsProxyFallback(corsProxyUrl) : undefined;
+  if (!signal) return base ? { fetch: base } : {};
+  return { fetch: fetchWithSignal(base ?? ((input, init) => fetch(input, init)), signal) };
+}
+
 /**
  * Instances of this property's sh:class whose IRI or LabelRole label matches `search`, found via
  * Comunica against the already-loaded dataGraph - shacl-renderer preprocesses every configured
@@ -576,13 +598,14 @@ export async function searchInstances(
   shape: PropertyUIElement,
   search: string,
   corsProxyUrl?: string,
+  signal?: AbortSignal,
 ): Promise<SearchResult[]> {
   const classIri = shape.get(sh("class"))[0] as NamedNode | undefined;
   if (!classIri) return [];
 
   const query = buildSearchQuery(classIri, rolePathsFor(shape), search);
 
-  return toSearchResults(await runQuery(query, shape, corsProxyUrl));
+  return toSearchResults(await runQuery(query, shape, corsProxyUrl, undefined, signal));
 }
 
 type RoleLookupBatchEntry = {
@@ -724,8 +747,9 @@ export async function runFederatedQuery(
   propertyShape: PropertyUIElement,
   uiLanguage: string,
   corsProxyUrl?: string,
+  signal?: AbortSignal,
 ): Promise<ResolvedTerm[]> {
-  const values = await runQuery(rawQuery, propertyShape, corsProxyUrl);
+  const values = await runQuery(rawQuery, propertyShape, corsProxyUrl, undefined, signal);
   if (values.length === 0) return [];
 
   return resolveRoles(

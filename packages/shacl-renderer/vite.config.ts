@@ -10,9 +10,11 @@ import { serveAbsoluteStoryFixtures } from "./.storybook/serveAbsoluteStoryFixtu
 const dirname =
   typeof __dirname !== "undefined" ? __dirname : path.dirname(fileURLToPath(import.meta.url));
 import Icons from "unplugin-icons/vite";
-import react from "@vitejs/plugin-react";
+import react, { reactCompilerPreset } from "@vitejs/plugin-react";
+import babel from "@rolldown/plugin-babel";
 import { corsProxy } from "./.storybook/corsProxy.ts";
 import { sparqlCopyPage } from "./.storybook/sparqlCopyPage.ts";
+import { ttlQuadsPlugin } from "./build/ttlQuadsPlugin.ts";
 
 // Vite's dev server understands the `?raw` suffix (import a file's contents as a string)
 // natively, but `vp pack`'s tsdown/rolldown bundler doesn't - it has no equivalent to Vite's
@@ -94,9 +96,21 @@ function workerUrlFallback() {
   };
 }
 
+// The React Compiler memoizes every component and hook automatically. Applied to the published
+// build (pack) as well as to dev/Storybook/tests, so what's tested is what ships: a consuming app's
+// own bundler never runs Babel over a dependency, so this is the only place it can happen.
+const reactCompiler = () => babel({ presets: [reactCompilerPreset()] });
+
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
-  plugins: [react(), Icons({ compiler: "jsx", jsx: "react" }), corsProxy(), sparqlCopyPage()],
+  plugins: [
+    ttlQuadsPlugin(dirname),
+    react(),
+    reactCompiler(),
+    Icons({ compiler: "jsx", jsx: "react" }),
+    corsProxy(),
+    sparqlCopyPage(),
+  ],
   resolve: {
     alias: {
       "@": path.join(dirname, "src"),
@@ -115,7 +129,13 @@ export default defineConfig({
       generator: "tsgo",
     },
     exports: true,
-    plugins: [Icons({ compiler: "jsx", jsx: "react" }), rawImportFallback(), workerUrlFallback()],
+    plugins: [
+      ttlQuadsPlugin(dirname),
+      reactCompiler(),
+      Icons({ compiler: "jsx", jsx: "react" }),
+      rawImportFallback(),
+      workerUrlFallback(),
+    ],
     // Third-party CSS a widget imports for its side effect (e.g. maplibre-gl/dist/maplibre-gl.css)
     // is bundled into dist/style.css alongside this package's own styles, instead of surviving
     // as a bare `import "pkg/x.css"` in a lazy chunk - which only a CSS-aware bundler can load,

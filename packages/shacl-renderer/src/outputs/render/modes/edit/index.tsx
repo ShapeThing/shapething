@@ -125,6 +125,10 @@ export default function EditModeWrapper({ children, className }: Props) {
   // queries fresh cache keys for every property, remounting widgets mid-edit and stealing focus.
   const [hasAttemptedSubmit, setHasAttemptedSubmit] = useState(!isNew);
   const markSubmitAttempted = useCallback(() => setHasAttemptedSubmit(true), []);
+  const submitAttempt = useMemo(
+    () => ({ hasAttemptedSubmit, markSubmitAttempted }),
+    [hasAttemptedSubmit, markSubmitAttempted],
+  );
 
   // Latest live-validation results (see ValidationContextProvider), written on every revalidation
   // without ever causing *this* component to re-render - handleSubmit reads it imperatively at
@@ -258,7 +262,7 @@ export default function EditModeWrapper({ children, className }: Props) {
 
   return (
     <undoRedoScopeContext.Provider value={undoRedoScope}>
-      <submitAttemptContext.Provider value={{ hasAttemptedSubmit, markSubmitAttempted }}>
+      <submitAttemptContext.Provider value={submitAttempt}>
         <ValidationContextProvider latestResultsRef={latestValidationResultsRef} isDirty={isDirty}>
           <form
             onSubmit={handleSubmit}

@@ -10,8 +10,9 @@ type Story = StoryObj<ShaclRendererProps>;
 // Render-cost regression coverage for WidgetSlot: moving focus from one value to the next must only
 // re-render the slots whose own focus state actually changed (see hooks/useActiveElement.tsx's
 // shared focus store), not every value slot in the form. Measured through a test-only widget that
-// counts its own renders - a widget re-renders whenever its WidgetSlot does (neither is memoized),
-// so this is a direct proxy for "how many slots re-rendered".
+// counts its own renders. The React Compiler memoizes the widget element a WidgetSlot renders, so
+// this counts the renders that actually reach the widget - the expensive part - rather than every
+// render of the slot around it.
 export default {
   title: "Tests/Interaction/Value slot render isolation",
   component: ShaclRenderer,
@@ -155,8 +156,8 @@ export const revalidationOnlyRerendersTheSlotsWhoseResultsChanged: Story = {
     const delta = rendersSince(before);
     console.info("[slot-render-isolation] renders per slot for one revalidation run:", delta);
 
-    // The new violation belongs to "a" alone - only its slot re-renders to show it.
-    expect(delta.a).toBeGreaterThan(0);
+    // The new violation belongs to "a" alone - no other value re-renders for it. ("a"'s own widget
+    // needn't re-render either: the message renders in its slot, next to the memoized widget.)
     for (const letter of letters.slice(1)) expect(delta[letter]).toBe(0);
     expect(canvasElement.querySelectorAll(".st-validation-message")).toHaveLength(1);
 

@@ -41,11 +41,12 @@ async function runSearchQuery(
   search: string,
   uiLanguage: string,
   corsProxyUrl: string | undefined,
+  signal: AbortSignal,
 ): Promise<SearchResult[]> {
   const substituted = substituteSearchParameters(query, search, uiLanguage);
   const results = await filterConformingResults(
     shape,
-    await runFederatedQuery(substituted, shape, uiLanguage, corsProxyUrl),
+    await runFederatedQuery(substituted, shape, uiLanguage, corsProxyUrl, signal),
   );
 
   return results
@@ -84,8 +85,9 @@ async function searchConformingInstances(
   shape: PropertyUIElement,
   search: string,
   corsProxyUrl: string | undefined,
+  signal: AbortSignal,
 ): Promise<SearchResult[]> {
-  const results = await searchInstances(shape, search, corsProxyUrl);
+  const results = await searchInstances(shape, search, corsProxyUrl, signal);
   const conforming = await filterConformingResults(
     shape,
     results.map((result) => ({ ...result, term: result.iri })),
@@ -131,11 +133,20 @@ export function useInstanceSearch(shape: PropertyUIElement): {
       debounced,
       activeInterfaceLanguage,
     ],
-    queryFn: () =>
+    // `signal` aborts a search the next keystroke has superseded - see runQuery.
+    queryFn: ({ signal }) =>
       (searchQuery
-        ? runSearchQuery(shape, searchQuery, debounced ?? "", activeInterfaceLanguage, corsProxyUrl)
-        : searchConformingInstances(shape, debounced ?? "", corsProxyUrl)
+        ? runSearchQuery(
+            shape,
+            searchQuery,
+            debounced ?? "",
+            activeInterfaceLanguage,
+            corsProxyUrl,
+            signal,
+          )
+        : searchConformingInstances(shape, debounced ?? "", corsProxyUrl, signal)
       ).catch((cause) => {
+        if (signal.aborted) throw cause;
         console.error("[shacl-renderer] instance search failed", cause);
         throw cause;
       }),

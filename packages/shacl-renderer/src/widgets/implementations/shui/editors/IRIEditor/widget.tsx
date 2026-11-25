@@ -89,7 +89,14 @@ export default function IRIEditor({ shape, term, setTerm, labelledBy, autoFocus 
   // st:iriType (see iriType.ts) lets the shape scope suggestions to just classes or just
   // properties; undefined (the default) searches LOV for both.
   const lovTypes = iriTypesFor(shape);
-  const candidates = knownIris(shape.dataGraph, shape.shapesGraph);
+  // A full scan of both graphs - only worth doing once a search actually starts (an empty query
+  // matches no local candidates, see useLovSuggestions), and then once per search rather than per
+  // keystroke: nothing is written to the graphs while typing, the value commits on blur.
+  const isSearching = searchQuery !== "";
+  const candidates = useMemo(
+    () => (isSearching ? knownIris(shape.dataGraph, shape.shapesGraph) : []),
+    [isSearching, shape.dataGraph, shape.shapesGraph],
+  );
   // st:suggestedValues (only when there's no sh:in, same as AutoCompleteEditor/EnumSelectEditor):
   // offered first, all of them on a bare focus. Only NamedNodes - this editor only writes IRIs.
   const suggestedValues = useMemo(

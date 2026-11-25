@@ -106,6 +106,10 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
     environmentProps.dataGraph instanceof RdfStore &&
     getReactivity(environmentProps.dataGraph) !== undefined;
   const mode = environmentProps.mode ?? defaultEnvironment.mode;
+  // The mode's chunk is only rendered once the interface strings and preprocessing are done, but
+  // `mode` is known right now - so its download starts now, in parallel with both, instead of
+  // after them. (import() is idempotent; the lazy() below then finds the module already loading.)
+  void modeLoaders[mode]?.();
   const focuslessIdentity =
     mode !== "edit" && !liveDataGraph
       ? identityKey({ ...environmentProps, focusNode: undefined, preprocessors })
@@ -185,11 +189,21 @@ export default function ShaclRenderer(inputProps: ShaclRendererProps) {
   );
 }
 
+const modeLoaders: Record<
+  Environment["mode"],
+  () => Promise<{ default: React.ComponentType<ModeProps> }>
+> = {
+  edit: () => import("@/outputs/render/modes/edit/index.tsx"),
+  view: () => import("@/outputs/render/modes/view/index.tsx"),
+  facet: () => import("@/outputs/render/modes/facet/index.tsx"),
+  report: () => import("@/outputs/render/modes/report/index.tsx"),
+};
+
 const modesComponents: Record<Environment["mode"], React.ComponentType<ModeProps>> = {
-  edit: lazy(() => import("@/outputs/render/modes/edit/index.tsx")),
-  view: lazy(() => import("@/outputs/render/modes/view/index.tsx")),
-  facet: lazy(() => import("@/outputs/render/modes/facet/index.tsx")),
-  report: lazy(() => import("@/outputs/render/modes/report/index.tsx")),
+  edit: lazy(modeLoaders.edit),
+  view: lazy(modeLoaders.view),
+  facet: lazy(modeLoaders.facet),
+  report: lazy(modeLoaders.report),
 };
 
 function ShaclRendererInner({ className }: ModeProps) {

@@ -51,7 +51,7 @@ export default function TextSearchFacet({ shape, setConstraint, labelledBy }: Fa
       activeInterfaceLanguage,
       facetsEndpoint,
     ],
-    queryFn: async (): Promise<Term[]> =>
+    queryFn: async ({ signal }): Promise<Term[]> =>
       dedupeTerms(
         (
           await runQuery(
@@ -60,6 +60,7 @@ export default function TextSearchFacet({ shape, setConstraint, labelledBy }: Fa
             corsProxyUrl,
             // The search runs over the same data the facets query - the endpoint, when set.
             facetsEndpoint,
+            signal,
           )
         ).map(({ term }) => term),
       ),

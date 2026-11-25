@@ -1,5 +1,4 @@
 import type { NamedNode, Quad_Object, Term } from "@rdfjs/types";
-import { RdfStore } from "rdf-stores";
 import { Engine as ShaclEngine } from "shacl-engine";
 import { datasetWithQuads } from "@/helpers/datasetWithQuads.ts";
 import { factory } from "@/helpers/factory.ts";
@@ -37,10 +36,10 @@ const CARDINALITY_PREDICATES: Set<string> = new Set([sh("minCount").value, sh("m
 
 type CompiledChecker = { shaclEngine: ShaclEngine; nodeShapeNode: Term; path: NamedNode };
 
-// Compiled checkers, per shapesGraph and per set of property shapes - building one copies the whole
-// shapesGraph and compiles a ShaclEngine from it, which is far too costly to repeat on every
-// candidate list (useConformingCandidates re-checks on every dataGraph write). Cleared whenever a
-// reactive shapesGraph is written to (see createReactiveCache); null caches "nothing to check".
+// Compiled checkers, per shapesGraph and per set of property shapes - cheap to build now (a view
+// over shapesGraph, no copy), but still not worth rebuilding on every candidate list
+// (useConformingCandidates re-checks on every dataGraph write). Cleared whenever a reactive
+// shapesGraph is written to (see createReactiveCache); null caches "nothing to check".
 const compiledCheckerCache = createReactiveCache<CompiledChecker | null>();
 
 function compileChecker(shape: PropertyUIElement): CompiledChecker | null {
@@ -55,23 +54,23 @@ function compileChecker(shape: PropertyUIElement): CompiledChecker | null {
     shape.propertyShapes.map((propertyShape) => propertyShape.value),
   );
 
-  const isolatedShapesGraph = RdfStore.createDefault();
-  for (const quad of shape.shapesGraph.getQuads()) {
-    const isOwnCardinality =
-      propertyShapeValues.has(quad.subject.value) &&
-      CARDINALITY_PREDICATES.has(quad.predicate.value);
-    if (isOwnCardinality) continue;
-
-    isolatedShapesGraph.addQuad(quad);
-  }
-
+  // A view of the real shapesGraph without this property's own cardinality, plus a synthetic node
+  // shape wrapping it - no copy of the (possibly large) shapes graph per property.
   const nodeShapeNode = factory.blankNode();
-  isolatedShapesGraph.addQuad(factory.quad(nodeShapeNode, rdf("type"), sh("NodeShape")));
-  for (const propertyShape of shape.propertyShapes) {
-    isolatedShapesGraph.addQuad(factory.quad(nodeShapeNode, sh("property"), propertyShape));
-  }
+  const isolatedShapes = datasetWithQuads(
+    shape.shapesGraph.asDataset(),
+    [
+      factory.quad(nodeShapeNode, rdf("type"), sh("NodeShape")),
+      ...shape.propertyShapes.map((propertyShape) =>
+        factory.quad(nodeShapeNode, sh("property"), propertyShape),
+      ),
+    ],
+    (quad) =>
+      propertyShapeValues.has(quad.subject.value) &&
+      CARDINALITY_PREDICATES.has(quad.predicate.value),
+  );
 
-  const shaclEngine = new ShaclEngine(isolatedShapesGraph.asDataset(), { factory });
+  const shaclEngine = new ShaclEngine(isolatedShapes, { factory });
   return { shaclEngine, nodeShapeNode, path };
 }
 

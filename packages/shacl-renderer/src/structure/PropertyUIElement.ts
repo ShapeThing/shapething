@@ -1,4 +1,5 @@
 import type { Literal, NamedNode, Quad_Subject, Term } from "@rdfjs/types";
+import { memoByShapes } from "@/structure/shapeMemo.ts";
 import { RdfStore } from "rdf-stores";
 import { bestByLanguage } from "@/helpers/bestByLanguage.ts";
 import { factory } from "@/helpers/factory.ts";
@@ -122,12 +123,17 @@ export class PropertyUIElement {
   get<Iri extends string>(predicate: NamedNode<Iri>): PredicateReturn<Iri>;
   get(predicate: NamedNode, languages: LanguageRange[] | undefined): Term | undefined;
   get(predicate: NamedNode, languages?: LanguageRange[]): unknown {
-    const values = orderedValues(this, predicate);
     if (languages !== undefined) {
+      const values = orderedValues(this, predicate);
       return languages.length ? bestByLanguage(values, languages) : values[0];
     }
-    const resolve = resolutions.get(predicate.value);
-    return resolve ? resolve(values, this, predicate) : dedupeTerms(values);
+    // Every resolution reads the shapes graph alone (see constraintResolutions.ts), so the result
+    // is shared by every focus node rendering these same property shapes.
+    return memoByShapes(this, `get ${predicate.value}`, () => {
+      const values = orderedValues(this, predicate);
+      const resolve = resolutions.get(predicate.value);
+      return resolve ? resolve(values, this, predicate) : dedupeTerms(values);
+    });
   }
 
   /**
@@ -515,6 +521,15 @@ export class PropertyUIElement {
       return this.#widgetShapeSource;
     }
 
+    // Shared by every element on these same property shapes (every focus node, every resource
+    // rendered with this shapes graph), not just this one - same identity-for-caching reason.
+    this.#widgetShapeSource = memoByShapes(this, "widgetShapeSource", () =>
+      this.#mergedWidgetShapeSource(),
+    );
+    return this.#widgetShapeSource;
+  }
+
+  #mergedWidgetShapeSource(): { shapeNode: Term; shapesGraph: RdfStore } {
     const synthetic = factory.blankNode();
     const merged = RdfStore.createDefault();
     const copied = new Set<string>();
@@ -535,8 +550,7 @@ export class PropertyUIElement {
       }
     }
 
-    this.#widgetShapeSource = { shapeNode: synthetic, shapesGraph: merged };
-    return this.#widgetShapeSource;
+    return { shapeNode: synthetic, shapesGraph: merged };
   }
 }
 

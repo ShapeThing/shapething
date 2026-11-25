@@ -48,7 +48,8 @@ export const creatingANewReferenceInPlace: Story = {
     // The freshly minted subject has no fields yet - fill in its Name (organizationShape's own
     // LabelRole property) before adopting it. TextFieldEditor only commits on blur (see
     // useDeferredInput), hence the trailing tab.
-    await userEvent.type(dialogScope.getByRole("textbox"), "Umbrella Corp");
+    // The field resolves its widget asynchronously (scoring + loading its code), like any slot.
+    await userEvent.type(await dialogScope.findByRole("textbox"), "Umbrella Corp");
     await userEvent.tab();
 
     await userEvent.click(dialogScope.getByRole("button", { name: "Done" }));

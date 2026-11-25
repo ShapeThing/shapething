@@ -1,5 +1,6 @@
 import { type ComponentType, Suspense } from "react";
-import { NavLink, Outlet, useParams, type RouteObject } from "react-router";
+import { NavLink, useParams, type RouteObject } from "react-router";
+import { KeepAliveOutlet } from "./KeepAliveOutlet.tsx";
 import { SubjectHeading, type HeadingActions } from "./SubjectHeading.tsx";
 import { useTermParam } from "./useTermParam.ts";
 
@@ -55,7 +56,7 @@ function Section({ title, param, tabs, actions }: SectionProps) {
           ))}
         </nav>
       )}
-      <Outlet />
+      <KeepAliveOutlet />
     </section>
   );
 }

@@ -12,6 +12,7 @@ import {
 import type { FacetWidgetComponent, WidgetComponent, WidgetMeta } from "@/widgets/types.ts";
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { noRefetch } from "@/helpers/noRefetch.ts";
+import { preloadWidget } from "@/widgets/lazyWidget.ts";
 
 /**
  * The query behind useWidget - also run (via queryClient.fetchQuery: same key, same cache entry)
@@ -32,8 +33,15 @@ export function widgetQueryOptions(
     ],
     // react-query treats a resolved `undefined` as an error ("Query data cannot be undefined"),
     // so the no-match case is represented as `null` instead.
-    queryFn: async (): Promise<Term | null> =>
-      (await property.widget({ widgetPredicate, valueNode })) ?? null,
+    queryFn: async (): Promise<Term | null> => {
+      const widget = await property.widget({ widgetPredicate, valueNode });
+      // The picked widget's code is loaded before this resolves (see widgets/lazyWidget.ts), so
+      // the slot rendering it never suspends - and every value's download runs in parallel.
+      if (widget?.termType === "NamedNode") {
+        await preloadWidget(getWidgetComponent(mode, widget, property.widgetRegistry));
+      }
+      return widget ?? null;
+    },
     ...noRefetch,
   };
 }

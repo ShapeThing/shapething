@@ -16,12 +16,12 @@ export type ValidateProps = {
   shapesGraph: RdfStore;
 };
 
-// Compiling a ShaclEngine parses every shape in shapesGraph up front (see shacl-engine's
-// Engine constructor), which is wasted work when repeated for the same shapesGraph - as
-// happens in scoring, since a matcher always validates against the same scoringGraph, once or
-// twice per candidate widget. Keyed by object identity (every graph passed here is a stable
-// instance for its Environment's lifetime), so this never serves a stale engine for a graph
-// that's actually changed.
+// Constructing a ShaclEngine is cheap (~0.1 ms), but it compiles each shape lazily on first
+// validation and keeps the compiled shape - so reusing one engine per shapesGraph is what lets
+// repeat validations against the same graph skip that work, as happens in scoring, where a matcher
+// always validates against the same scoringGraph, once or twice per candidate widget. Keyed by
+// object identity (every graph passed here is a stable instance for its Environment's lifetime),
+// so this never serves a stale engine for a graph that's actually changed.
 const shaclEngineCache = new WeakMap<RdfStore, ShaclEngine>();
 
 export function getShaclEngine(shapesGraph: RdfStore): ShaclEngine {

@@ -1,5 +1,6 @@
 import { Navigate, type RouteObject } from "react-router";
 import { editRoute, newRoute } from "../app/edit/routes.ts";
+import { KeepAliveOutlet } from "../app/KeepAliveOutlet.tsx";
 import { MetaPage } from "../app/MetaView.tsx";
 import { OriginIntro } from "../app/OriginIntro.tsx";
 import { route } from "../app/route.tsx";
@@ -85,6 +86,7 @@ const originRoute = (origin: "managed" | "imported", title: string) =>
 
 export const shaclRoutes: RouteObject = {
   path: "shapes",
+  element: <KeepAliveOutlet />,
   children: [
     { index: true, element: <Navigate to="managed" replace /> },
     originRoute("managed", "Managed"),

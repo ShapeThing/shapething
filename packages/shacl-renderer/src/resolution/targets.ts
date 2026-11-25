@@ -1,4 +1,4 @@
-import type { Quad_Subject, Term } from "@rdfjs/types";
+import type { Quad_Object, Quad_Subject, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { dedupeTerms } from "@/helpers/dedupeTerms.ts";
 import { rdf, rdfs, sh } from "@/helpers/namespaces.ts";
@@ -232,8 +232,59 @@ export function shapesTargetingNode(
     ...dataGraph.getQuads(null, sh("shape")).map((quad) => quad.object),
   ]) as Quad_Subject[];
 
-  return candidateShapes.filter((shapeNode) =>
-    targetsOfShape(shapeNode, shapesGraph, dataGraph).some((target) => target.equals(node)),
+  // Checked from the node's side rather than by building every candidate's whole target set
+  // (targetsOfShape) and searching it - that's every instance of every targeted class, per call,
+  // and this runs once per IRI value LabelViewer/IRIEditor render. Same answer: `node` is a SHACL
+  // instance of class C exactly when C is one of its own rdf:types or one of their ancestors.
+  const isResource = node.termType === "NamedNode" || node.termType === "BlankNode";
+  let classKeys: Set<string> | undefined;
+  const isInstanceOf = (classIri: Term): boolean => {
+    if (!isResource) return false;
+    if (!classKeys) {
+      const types = dataGraph.getQuads(node as Quad_Subject, rdf("type")).map((q) => q.object);
+      classKeys = new Set(
+        types
+          .flatMap((type) => [type, ...ancestorClasses(type, [dataGraph, shapesGraph])])
+          .map((type) => type.value),
+      );
+    }
+    return classKeys.has(classIri.value);
+  };
+
+  return candidateShapes.filter((shapeNode) => {
+    // 3.1.3.1 Node targets
+    if (shapesGraph.getQuads(shapeNode, sh("targetNode"), node).length > 0) return true;
+    // 3.1.3.2 Class-based targets
+    for (const quad of shapesGraph.getQuads(shapeNode, sh("targetClass"))) {
+      if (isInstanceOf(quad.object)) return true;
+    }
+    // 3.1.3.3 Implicit class targets / sh:ShapeClass (see targetsOfShape)
+    if (isResource && isInstanceOf(shapeNode) && isImplicitClassShape(shapeNode, shapesGraph)) {
+      return true;
+    }
+    // 3.1.3.4 Subjects-of / 3.1.3.5 Objects-of targets
+    for (const quad of shapesGraph.getQuads(shapeNode, sh("targetSubjectsOf"))) {
+      if (quad.object.termType !== "NamedNode" || !isResource) continue;
+      if (dataGraph.getQuads(node as Quad_Subject, quad.object).length > 0) return true;
+    }
+    for (const quad of shapesGraph.getQuads(shapeNode, sh("targetObjectsOf"))) {
+      if (quad.object.termType !== "NamedNode") continue;
+      if (dataGraph.getQuads(null, quad.object, node as Quad_Object).length > 0) return true;
+    }
+    // 3.1.3.7 Explicit shape targets
+    return (
+      isResource && dataGraph.getQuads(node as Quad_Subject, sh("shape"), shapeNode).length > 0
+    );
+  });
+}
+
+function isImplicitClassShape(shapeNode: Term, shapesGraph: RdfStore): boolean {
+  const isShapeClass = shapesGraph.getQuads(shapeNode, rdf("type"), sh("ShapeClass")).length > 0;
+  return (
+    isShapeClass ||
+    ((shapesGraph.getQuads(shapeNode, rdf("type"), sh("NodeShape")).length > 0 ||
+      shapesGraph.getQuads(shapeNode, rdf("type"), sh("PropertyShape")).length > 0) &&
+      shapesGraph.getQuads(shapeNode, rdf("type"), rdfs("Class")).length > 0)
   );
 }
 

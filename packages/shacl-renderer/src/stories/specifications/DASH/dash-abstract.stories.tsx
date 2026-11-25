@@ -92,7 +92,7 @@ export const createInPlaceOffersConcreteSubclasses: Story = {
     // The new Dog's form has its own field plus the one inherited from the abstract ex:Animal.
     await expect(within(dialog).findByText("Breed")).resolves.toBeVisible();
     expect(within(dialog).getByText("Name")).toBeVisible();
-    await userEvent.type(within(dialog).getAllByRole("textbox")[0], "Rex");
+    await userEvent.type((await within(dialog).findAllByRole("textbox"))[0]!, "Rex");
     await userEvent.click(within(dialog).getByRole("button", { name: "Done" }));
 
     await userEvent.click(await canvas.findByRole("button", { name: "Update" }));

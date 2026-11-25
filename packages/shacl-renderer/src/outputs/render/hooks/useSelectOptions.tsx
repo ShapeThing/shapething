@@ -20,13 +20,18 @@ export function useSelectOptions(
   const { corsProxyUrl } = useEnvironment();
   const { data, isLoading, error } = useQuery({
     queryKey: ["select-options", query, activeInterfaceLanguage],
-    queryFn: () =>
-      runFederatedQuery(query as string, shape, activeInterfaceLanguage, corsProxyUrl).catch(
-        (cause) => {
-          console.error("[shacl-renderer] sh:select query failed", cause);
-          throw cause;
-        },
-      ),
+    queryFn: ({ signal }) =>
+      runFederatedQuery(
+        query as string,
+        shape,
+        activeInterfaceLanguage,
+        corsProxyUrl,
+        signal,
+      ).catch((cause) => {
+        if (signal.aborted) throw cause;
+        console.error("[shacl-renderer] sh:select query failed", cause);
+        throw cause;
+      }),
     enabled: query !== undefined,
     ...noRefetch,
   });

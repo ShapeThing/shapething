@@ -1,8 +1,8 @@
-import type { NamedNode, Term } from "@rdfjs/types";
-import { lazy } from "react";
-import { RdfStore } from "rdf-stores";
+import type { NamedNode, Quad, Term } from "@rdfjs/types";
+import { lazyWidget } from "@/widgets/lazyWidget.ts";
+import type { RdfStore } from "rdf-stores";
 import { factory } from "@/helpers/factory.ts";
-import { parseRdf } from "@/helpers/rdf.ts";
+import { decodeQuads, storeFromGraphSources, type EncodedQuads } from "@/helpers/quadTuples.ts";
 import { prefixes } from "@/helpers/namespaces.ts";
 import type {
   FacetWidgetComponent,
@@ -14,7 +14,8 @@ import type {
   WidgetRegistryEntry,
   Widgets,
 } from "@/widgets/types.ts";
-import widgetScoringTtl from "@/scoring/widget-scoring.ttl?raw";
+// Turtle parsed at build time (see build/ttlQuadsPlugin.ts) - no parser runs for these in the browser.
+import widgetScoringEncoded from "@/scoring/widget-scoring.ttl?quads";
 import {
   categoryFor,
   getGroupWidget as lookupGroupWidget,
@@ -33,51 +34,38 @@ import {
 // helpers/namespaces.ts's `prefixes` (its own alias, e.g. "sh"/"shui"/"st") - that's the single
 // source of truth for which IRI a namespace folder resolves to.
 //
-// A handful of editors/viewers pull in dependencies heavy enough (MapViewer/GeoEditor's
-// maplibre-gl+geoman+maplibre-gl-geo-editor, RichTextEditor/HTMLViewer's tiptap+prosemirror, SparqlViewer's Prism highlighter) that
-// bundling every widget eagerly forced every consumer to pay for all of them regardless of which
-// widgets their shapes actually use - these four are loaded lazily instead (one dynamic import
-// per widget, wrapped in React.lazy below). Every other editor/viewer is small enough that a
-// dynamic-import round trip would only add latency (see WidgetSlot's Suspense boundary) for no
-// real size win, so they - and groups, which have no heavy outliers of their own - stay eager,
-// same as before. If a future widget turns out to pull in something similarly heavy, add its path
-// to both lists below.
-const lazyComponentLoaders = import.meta.glob([
-  "/src/widgets/implementations/st/viewers/MapViewer/widget.tsx",
-  "/src/widgets/implementations/st/editors/GeoEditor/widget.tsx",
-  "/src/widgets/implementations/shui/editors/RichTextEditor/widget.tsx",
-  "/src/widgets/implementations/shui/viewers/HTMLViewer/widget.tsx",
-  "/src/widgets/implementations/st/editors/EditorJsEditor/widget.tsx",
-  "/src/widgets/implementations/st/viewers/SparqlViewer/widget.tsx",
-]) as Record<string, () => Promise<{ default: WidgetComponent }>>;
+// Editors, viewers and facets are each loaded on demand (one dynamic import per widget, see
+// lazyWidget.ts): a form only ever downloads the widgets its shapes actually resolve to - view
+// mode none of the editors, an edit form without durations not the Temporal polyfill, and so on.
+// That costs no extra round trip: widget resolution preloads the picked widget's code while
+// scoring the rest of the form, so it's in by the time the slot renders. Picking a widget never
+// needs its code - scoring reads only score.ttl (and meta.ts, which stays eager and small).
+const componentLoaders = import.meta.glob([
+  "/src/widgets/implementations/*/editors/*/widget.tsx",
+  "/src/widgets/implementations/*/viewers/*/widget.tsx",
+  "/src/widgets/implementations/*/facets/*/widget.tsx",
+]) as Record<string, () => Promise<{ default: WidgetComponent | FacetWidgetComponent }>>;
 
-// MapFacet shares MapViewer/GeoEditor's own maplibre-gl+geoman+maplibre-gl-geo-editor footprint -
-// same "don't force it on every consumer" reasoning as the editors/viewers above, kept as its own
-// typed glob (rather than folded into lazyComponentLoaders) since a facet's Component is a
-// FacetWidgetComponent, not a WidgetComponent - see buildFacetEntries below.
-const lazyFacetComponentLoaders = import.meta.glob([
-  "/src/widgets/implementations/st/facets/MapFacet/widget.tsx",
-]) as Record<string, () => Promise<{ default: FacetWidgetComponent }>>;
-
-const eagerComponents = import.meta.glob(
-  [
-    "/src/widgets/implementations/*/*/*/widget.tsx",
-    "!/src/widgets/implementations/st/viewers/MapViewer/widget.tsx",
-    "!/src/widgets/implementations/st/editors/GeoEditor/widget.tsx",
-    "!/src/widgets/implementations/shui/editors/RichTextEditor/widget.tsx",
-    "!/src/widgets/implementations/shui/viewers/HTMLViewer/widget.tsx",
-    "!/src/widgets/implementations/st/facets/MapFacet/widget.tsx",
-    "!/src/widgets/implementations/st/editors/EditorJsEditor/widget.tsx",
-    "!/src/widgets/implementations/st/viewers/SparqlViewer/widget.tsx",
-  ],
-  { eager: true, import: "default" },
-) as Record<string, WidgetComponent | GroupWidgetComponent | FacetWidgetComponent>;
-
-const scoringGraphs = import.meta.glob("/src/widgets/implementations/*/*/*/score.ttl", {
+// Groups render synchronously from the element tree (see GroupUIElementComponent), with no
+// resolution query to preload through, and are small - so they stay eager.
+const groupComponents = import.meta.glob("/src/widgets/implementations/*/groups/*/widget.tsx", {
   eager: true,
-  query: "?raw",
   import: "default",
-}) as Record<string, string>;
+}) as Record<string, GroupWidgetComponent>;
+
+const scoringGraphs = decodeAll(
+  import.meta.glob("/src/widgets/implementations/*/*/*/score.ttl", {
+    eager: true,
+    query: "?quads",
+    import: "default",
+  }) as Record<string, EncodedQuads>,
+);
+
+const widgetScoringQuads = decodeQuads(widgetScoringEncoded);
+
+function decodeAll(encoded: Record<string, EncodedQuads>): Record<string, Quad[]> {
+  return Object.fromEntries(Object.entries(encoded).map(([path, e]) => [path, decodeQuads(e)]));
+}
 
 // Only editors ever produce a fresh/empty term for a property, so meta.ts (and createTerm) is an
 // editor-only concept in practice - viewers/groups have nothing to create - but is discovered the
@@ -115,20 +103,11 @@ function widgetIri(path: string): NamedNode {
 
 function buildEntries(category: "editors" | "viewers"): Record<string, WidgetRegistryEntry> {
   const entries: Record<string, WidgetRegistryEntry> = {};
-  for (const [path, Component] of Object.entries(eagerComponents)) {
+  for (const [path, load] of Object.entries(componentLoaders)) {
     if (categorySegment(path) !== category) continue;
     entries[folderName(path)] = {
       widget: widgetIri(path),
-      Component: Component as WidgetComponent,
-      meta: meta[path.replace(/widget\.tsx$/, "meta.ts")],
-      scoringGraph: scoringGraphs[path.replace(/widget\.tsx$/, "score.ttl")],
-    };
-  }
-  for (const [path, load] of Object.entries(lazyComponentLoaders)) {
-    if (categorySegment(path) !== category) continue;
-    entries[folderName(path)] = {
-      widget: widgetIri(path),
-      Component: lazy(load),
+      Component: lazyWidget(load as () => Promise<{ default: WidgetComponent }>),
       meta: meta[path.replace(/widget\.tsx$/, "meta.ts")],
       scoringGraph: scoringGraphs[path.replace(/widget\.tsx$/, "score.ttl")],
     };
@@ -140,18 +119,11 @@ function buildEntries(category: "editors" | "viewers"): Record<string, WidgetReg
 // are all editor/viewer-only) - just widget + scoringGraph, same as buildEntries above minus meta.
 function buildFacetEntries(): Record<string, FacetWidgetRegistryEntry> {
   const entries: Record<string, FacetWidgetRegistryEntry> = {};
-  for (const [path, Component] of Object.entries(eagerComponents)) {
+  for (const [path, load] of Object.entries(componentLoaders)) {
     if (categorySegment(path) !== "facets") continue;
     entries[folderName(path)] = {
       widget: widgetIri(path),
-      Component: Component as FacetWidgetComponent,
-      scoringGraph: scoringGraphs[path.replace(/widget\.tsx$/, "score.ttl")],
-    };
-  }
-  for (const [path, load] of Object.entries(lazyFacetComponentLoaders)) {
-    entries[folderName(path)] = {
-      widget: widgetIri(path),
-      Component: lazy(load),
+      Component: lazyWidget(load as () => Promise<{ default: FacetWidgetComponent }>),
       scoringGraph: scoringGraphs[path.replace(/widget\.tsx$/, "score.ttl")],
     };
   }
@@ -160,19 +132,20 @@ function buildFacetEntries(): Record<string, FacetWidgetRegistryEntry> {
 
 // A group's meta.ttl describes the group type itself (its rdfs:subClassOf sh:PropertyGroup, see
 // GroupWidgetRegistryEntry.metaGraph) - it carries no score, groups don't score.
-const groupMetaGraphs = import.meta.glob("/src/widgets/implementations/*/groups/*/meta.ttl", {
-  eager: true,
-  query: "?raw",
-  import: "default",
-}) as Record<string, string>;
+const groupMetaGraphs = decodeAll(
+  import.meta.glob("/src/widgets/implementations/*/groups/*/meta.ttl", {
+    eager: true,
+    query: "?quads",
+    import: "default",
+  }) as Record<string, EncodedQuads>,
+);
 
 function buildGroupEntries(): Record<string, GroupWidgetRegistryEntry> {
   const entries: Record<string, GroupWidgetRegistryEntry> = {};
-  for (const [path, Component] of Object.entries(eagerComponents)) {
-    if (categorySegment(path) !== "groups") continue;
+  for (const [path, Component] of Object.entries(groupComponents)) {
     entries[folderName(path)] = {
       widget: widgetIri(path),
-      Component: Component as GroupWidgetComponent,
+      Component,
       metaGraph: groupMetaGraphs[path.replace(/widget\.tsx$/, "meta.ttl")],
     };
   }
@@ -196,38 +169,42 @@ export const defaultWidgets: Widgets = {
 export type { WidgetMode } from "@/widgets/lookup.ts";
 export { categoryFor, widgetModeForEnvironment, widgetModeForPredicate } from "@/widgets/lookup.ts";
 
-// widget-scoring.ttl and every score.ttl are static bundle contents - parsing them into an
-// RdfStore is pure and (mode, widgets)-scoped, so repeat calls (one per property, on every render)
-// reuse the same parsed graph instead of re-parsing the same turtle every time. Keyed by the
-// `widgets` object's own identity (a WeakMap, same idiom as validation/validate.ts's shaclEngineCache):
-// `defaultWidgets` is a stable module singleton so the common case caches exactly as before: a
-// caller-supplied `widgets` object should likewise be constructed once and reused, not rebuilt on
-// every render, or it never benefits from this cache.
-const scoringGraphCache = new WeakMap<Widgets, Map<WidgetMode, Promise<RdfStore>>>();
+// widget-scoring.ttl and every score.ttl are static bundle contents - building them into an
+// RdfStore is pure and (modes, widgets)-scoped, so every caller (one per property, on every
+// render, and every renderer instance on the page) shares the same store. That shared identity
+// matters beyond the build itself: validation/validate.ts caches the compiled ShaclEngine per
+// store identity, so a stable scoring store means the scoring engine compiles once per page
+// instead of once per renderer. Keyed by the `widgets` object's own identity (a WeakMap):
+// `defaultWidgets` is a stable module singleton so the common case always hits; a caller-supplied
+// `widgets` object should likewise be constructed once and reused, not rebuilt on every render.
+const scoringGraphCache = new WeakMap<Widgets, Map<string, Promise<RdfStore>>>();
 
 /**
  * Combines the shared widget-scoring.ttl shape definitions with every editor's/viewer's/facet's
- * own scoringGraph (see Widgets) for the given mode into a single scoring graph. Groups never
- * contribute here - group widget selection doesn't score at all (see getGroupWidget).
+ * own scoringGraph (see Widgets) for the given mode - or several modes, e.g. edit mode that also
+ * needs viewer rules for read-only values - into a single scoring graph. Groups never contribute
+ * here - group widget selection doesn't score at all (see getGroupWidget).
  */
 export function getScoringGraph(
-  mode: WidgetMode,
+  modes: WidgetMode | WidgetMode[],
   widgets: Widgets = defaultWidgets,
 ): Promise<RdfStore> {
-  const modeCache = scoringGraphCache.get(widgets) ?? new Map<WidgetMode, Promise<RdfStore>>();
+  const modeList = Array.isArray(modes) ? modes : [modes];
+  const key = modeList.join("+");
+  const modeCache = scoringGraphCache.get(widgets) ?? new Map<string, Promise<RdfStore>>();
   scoringGraphCache.set(widgets, modeCache);
 
-  const cached = modeCache.get(mode);
+  const cached = modeCache.get(key);
   if (cached) return cached;
 
-  const categoryEntries = Object.values(categoryFor(mode, widgets));
-  const turtle = [
-    widgetScoringTtl,
-    ...categoryEntries.map((entry) => entry.scoringGraph ?? ""),
-  ].join("\n");
-  const graph = parseRdf(turtle, "text/turtle");
+  const graph = storeFromGraphSources([
+    widgetScoringQuads,
+    ...modeList.flatMap((mode) =>
+      Object.values(categoryFor(mode, widgets)).map((entry) => entry.scoringGraph),
+    ),
+  ]);
 
-  modeCache.set(mode, graph);
+  modeCache.set(key, graph);
   return graph;
 }
 

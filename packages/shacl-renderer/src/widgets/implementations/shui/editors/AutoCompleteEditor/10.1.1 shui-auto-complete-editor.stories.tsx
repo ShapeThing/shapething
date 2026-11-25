@@ -286,7 +286,7 @@ export const shuiAutoCompleteEditorFacetSearchCreate: Story = {
 
     // countryShape's LabelRole property ("Search") is its first field. TextFieldEditor only
     // commits on blur (see useDeferredInput), hence the trailing tab.
-    await userEvent.type(createScope.getAllByRole("textbox")[0], "Atlantis");
+    await userEvent.type((await createScope.findAllByRole("textbox"))[0]!, "Atlantis");
     await userEvent.tab();
 
     await userEvent.click(createScope.getByRole("button", { name: "Done" }));
