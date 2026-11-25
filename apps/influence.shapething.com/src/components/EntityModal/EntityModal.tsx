@@ -55,8 +55,13 @@ export default function EntityModal({
   const abstract = useAbstract(article?.termType === "NamedNode" ? article : undefined);
   const itemLists = useItemLists(id, entity.data !== undefined && shape.equals(PersonModalShape));
   const allProperties = useAllProperties(id);
-  // The introduction is waited for, so the modal does not change while it is read.
-  const isComplete = entity.data !== undefined && (article === undefined || !abstract.isPending);
+  // The introduction is waited for, so the modal does not change while it is read. Every property
+  // too: without it the renderer only knows the bare predicates and items of the entity query
+  // (P27: Q142), and it lists them, unlabelled, until the labels have come in and it has caught up.
+  const isComplete =
+    entity.data !== undefined &&
+    (article === undefined || !abstract.isPending) &&
+    !allProperties.isPending;
 
   const abstractQuads = useMemo(
     () => (abstract.data ? [factory.quad(iri, schema("abstract"), abstract.data)] : undefined),
