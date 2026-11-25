@@ -2,8 +2,7 @@ import { memo, useEffect, useMemo, useState } from "react";
 import type { StoryObj } from "@storybook/react-vite";
 import type { NamedNode, Quad_Subject } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
-import { rdfParser } from "rdf-parse";
-import stringToStream from "string-to-stream";
+import { parseRdfText } from "@/helpers/parseRdfText.ts";
 import ShaclRenderer from "@/outputs/render/render.tsx";
 import { argsByTestFile } from "@/helpers/argsByTestFile.ts";
 import { testingEnvironment, type SubmitResult } from "@/environment.ts";
@@ -23,26 +22,16 @@ const viewShapeNode = factory.namedNode(new URL("webshop.ttl#viewShape", import.
 const viewNodeShapes = [viewShapeNode];
 const interfaceLocales = { "nl-NL": null };
 
-// helpers/rdf.ts's own parseRdf has no baseIRI parameter (every existing caller is a unit test
-// using only absolute IRIs), so it can't be reused here: <#shape>/<#viewShape>/<#data>/... are
-// relative IRIs, and without an explicit baseIRI they'd resolve against rdf-parse's own default
-// base instead of this fixture's real URL - silently mismatching viewShapeNode above (built
-// straight off that real URL) and leaving every result card's shapesGraph lookup empty. This
-// mirrors preprocess/resolveRdfSources.ts's own dereferenceUrl, which sets baseIRI: url.href for
-// exactly this reason.
+// The fixture's <#shape>/<#viewShape>/<#data>/... are relative IRIs, so it is parsed with its real
+// URL as baseIRI - the same as preprocess/resolveRdfSources.ts's dereferenceUrl - or viewShapeNode
+// above (built straight off that URL) would match nothing. parseRdfText parses Turtle with N3
+// directly: no stream polyfills (Buffer, process) needed, so this story doesn't depend on another
+// story having loaded Comunica (and with it those polyfills) first.
 async function fetchTurtleStore(url: URL): Promise<RdfStore> {
   const text = await fetch(url).then((response) => response.text());
   const store = RdfStore.createDefault();
-  const quadStream = rdfParser.parse(stringToStream(text), {
-    contentType: "text/turtle",
-    baseIRI: url.href,
-  });
-  return new Promise((resolve, reject) => {
-    store
-      .import(quadStream)
-      .on("end", () => resolve(store))
-      .on("error", reject);
-  });
+  store.addQuads(await parseRdfText(text, { contentType: "text/turtle", baseIRI: url.href }));
+  return store;
 }
 
 /**

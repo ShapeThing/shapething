@@ -15,7 +15,7 @@
     "@shapething/shacl-renderer": "workspace:*",
     "@tanstack/react-query": "^5.103.2",
     "rdf-data-factory": "^2.1.0",
-    "rdf-stores": "^2.5.1",
+    "rdf-stores": "^2.10.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },

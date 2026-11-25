@@ -22,7 +22,7 @@
     "@uidotdev/usehooks": "^2.4.1",
     "codemirror": "^6.0.2",
     "comment-json": "^4.2.5",
-    "rdf-stores": "^2.5.1",
+    "rdf-stores": "^2.10.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "react-error-boundary": "^6.1.6",

@@ -72,7 +72,7 @@
     "photoswipe": "^5.4.4",
     "rdf-data-factory": "^2.1.0",
     "rdf-parse": "^5.0.0",
-    "rdf-stores": "^2.5.1",
+    "rdf-stores": "^2.10.3",
     "rdf-validation": "^0.1.1",
     "react-duration-control": "^2.0.2",
     "react-error-boundary": "^6.1.6",

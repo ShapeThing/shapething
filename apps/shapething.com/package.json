@@ -30,7 +30,7 @@
     "codemirror": "^6.0.2",
     "flexsearch": "^0.8.212",
     "n3": "^2.13.12",
-    "rdf-stores": "^2.5.1",
+    "rdf-stores": "^2.10.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },

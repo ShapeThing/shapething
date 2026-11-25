@@ -463,8 +463,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       rdf-stores:
-        specifier: ^2.5.1
-        version: 2.5.1
+        specifier: ^2.10.3
+        version: 2.10.3
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -539,8 +539,8 @@ importers:
         specifier: ^4.2.5
         version: 4.6.2
       rdf-stores:
-        specifier: ^2.5.1
-        version: 2.5.1
+        specifier: ^2.10.3
+        version: 2.10.3
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -676,8 +676,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       rdf-stores:
-        specifier: ^2.5.1
-        version: 2.5.1
+        specifier: ^2.10.3
+        version: 2.10.3
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -831,8 +831,8 @@ importers:
         specifier: ^2.13.12
         version: 2.13.12
       rdf-stores:
-        specifier: ^2.5.1
-        version: 2.5.1
+        specifier: ^2.10.3
+        version: 2.10.3
       react:
         specifier: ^19.3.0
         version: 19.3.0
@@ -999,8 +999,8 @@ importers:
         specifier: ^2.1.0
         version: 2.1.0
       rdf-stores:
-        specifier: ^2.5.1
-        version: 2.5.1
+        specifier: ^2.10.3
+        version: 2.10.3
       react-router:
         specifier: ^8.5.1
         version: 8.5.1(patch_hash=56da0dd444a906009daadb63ba631c57385240029cbfe3a2f955ec568f991464)(@types/react-dom@19.3.0(@types/react@19.3.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -1144,8 +1144,8 @@ importers:
         specifier: ^5.0.0
         version: 5.0.0
       rdf-stores:
-        specifier: ^2.5.1
-        version: 2.5.1
+        specifier: ^2.10.3
+        version: 2.10.3
       rdf-validation:
         specifier: ^0.1.1
         version: 0.1.1
@@ -9732,6 +9732,9 @@ packages:
 
   rdf-store-stream@3.0.0:
     resolution: {integrity: sha512-y30MHEyEnS1SjMzPhioZRvZ9yz4e6FL96TFq6YcMCUSDvT8zONotAfz28kMbOUAcKCncmrCJiukjP7Q1bJT4aw==}
+
+  rdf-stores@2.10.3:
+    resolution: {integrity: sha512-Ewg9UfWR3nzLcxZM70ccsBOsoYulLqm7LIjPenLoBUT/N+OFEd69JS8Sj/Cc0bUJLfEzJ5P8+BgLr/i3VtW9vw==}
 
   rdf-stores@2.5.1:
     resolution: {integrity: sha512-kk7aSauyh+BqRVx+yxrqtQ1pRC3FmJtPMN5tovd0Y+qWSW4QkmzBYMgMhUZ/VwLteansEvsoNWxHL/Wr9FwFRA==}
@@ -24505,6 +24508,13 @@ snapshots:
     dependencies:
       rdf-stores: 2.5.1
 
+  rdf-stores@2.10.3:
+    dependencies:
+      asynciterator: 3.10.0
+      rdf-data-factory: 2.1.0
+      rdf-string: 2.0.1
+      rdf-terms: 2.0.0
+
   rdf-stores@2.5.1:
     dependencies:
       asynciterator: 3.10.0
@@ -26252,7 +26262,7 @@ snapshots:
       vite: '@voidzero-dev/vite-plus-core@0.3.3(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.105.0)(sass@1.105.0)(terser@5.51.2)(typescript@7.0.2)(yaml@2.9.1)'
       vitest: 4.1.11(@types/node@26.6.2)(@vitest/browser-playwright@4.1.11)(@vitest/browser-preview@4.1.11)(@vitest/coverage-v8@4.1.11)(@voidzero-dev/vite-plus-core@0.3.3(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.105.0)(sass@1.105.0)(terser@5.51.2)(typescript@7.0.2)(yaml@2.9.1))
     optionalDependencies:
-      '@vitest/browser-playwright': 4.1.11(playwright@1.63.0)(vite@8.3.1(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.105.0)(sass@1.105.0)(terser@5.51.2)(yaml@2.9.1))(vitest@4.1.11)
+      '@vitest/browser-playwright': 4.1.11(playwright@1.64.1)(vite@8.3.1(@types/node@26.6.2)(esbuild@0.28.2)(jiti@2.7.0)(sass-embedded@1.105.0)(sass@1.105.0)(terser@5.51.2)(yaml@2.9.1))(vitest@4.1.11)
       '@voidzero-dev/vite-plus-darwin-arm64': 0.3.3
       '@voidzero-dev/vite-plus-darwin-x64': 0.3.3
       '@voidzero-dev/vite-plus-linux-arm64-gnu': 0.3.3

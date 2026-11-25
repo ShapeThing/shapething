@@ -17,7 +17,7 @@
     "isomorphic-git": "^1.37.0",
     "n3": "^2.7.12",
     "rdf-data-factory": "^2.1.0",
-    "rdf-stores": "^2.5.1",
+    "rdf-stores": "^2.10.3",
     "react": "^19.3.0",
     "react-dom": "^19.3.0"
   },

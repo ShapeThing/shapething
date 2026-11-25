@@ -27,7 +27,7 @@
     "@shapething/shacl-renderer": "workspace:*",
     "idb-keyval": "^6.3.0",
     "rdf-data-factory": "^2.1.0",
-    "rdf-stores": "^2.5.1",
+    "rdf-stores": "^2.10.3",
     "react-router": "^8.5.1"
   },
   "devDependencies": {
