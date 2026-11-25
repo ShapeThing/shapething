@@ -130,6 +130,12 @@ $opened: ":has(> .name .st-href[aria-current='true'])";
       display: none;
     }
 
+    // The introduction is in the one data graph of the page, so the opened one has it in every
+    // column they are in: it is shown only where they are opened.
+    &:not(#{$opened}) > :is(.abstract, .view-more) {
+      display: none;
+    }
+
     // The introduction of the Wikipedia article of the opened one, below the portrait row. The
     // opened one is at the top of the column (a size container): the introduction fills the rest of
     // it, the column minus the portrait row, the margins and the button below (.view-more), and

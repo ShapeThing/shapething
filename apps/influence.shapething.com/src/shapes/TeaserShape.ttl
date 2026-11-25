@@ -9,7 +9,8 @@
 ### Only how it is shown: the properties with a role have no sh:path of their own, they get the
 ### paths of that role in every entity model (src/shapes/models, compiled in src/shapes/compile.ts).
 ### For the opened person of a column the introduction of their Wikipedia article and a link to the
-### rest of it are added to the data (src/components/Column); nobody else has them.
+### rest of it are added to the data (src/components/Column), the one data graph of the page: the
+### stylesheet shows them only where that person is opened (src/styles/_teaser.scss).
 
 inf:TeaserShape
     a sh:NodeShape ;
