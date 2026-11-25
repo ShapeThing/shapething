@@ -195,6 +195,33 @@ test("searchInstances()/fetchOptions() key results on ?value, not on whichever v
   expect(fetched?.depiction?.value).toBe("http://example.org/gordon.jpg");
 });
 
+// The language filter the SPARQL role lookup applied: a label in the interface language's primary
+// subtag (exactly - "en", not "en-gb") or untagged. Of the two, the one in the interface language
+// wins - the query's sample() returned either, in practice the untagged one.
+test("fetchOptions() picks a label in the interface language's primary subtag, else an untagged one", async () => {
+  const shape = await createShape(
+    `
+      ex:property1 a sh:PropertyShape ; sh:class ex:Person ; sh:node ex:PersonShape .
+      ex:PersonShape sh:property ex:nameProperty .
+      ex:nameProperty sh:path ex:name ; shui:propertyRole shui:LabelRole .
+    `,
+    `
+      ex:p1 ex:name "Anna"@nl, "Ann (GB)"@en-gb, "Plain Ann", "Ann"@en .
+      ex:p2 ex:name "Bob"@nl, "Bobby" .
+      ex:p3 ex:name "Carola"@nl .
+    `,
+  );
+
+  const results = await fetchOptions(shape, [ex("p1"), ex("p2"), ex("p3")], {
+    uiLanguage: "en-GB",
+  });
+  const labelOf = (name: string) => results.find((result) => result.iri.equals(ex(name)))?.label;
+
+  expect(labelOf("p1")).toBe("Ann");
+  expect(labelOf("p2")).toBe("Bobby");
+  expect(labelOf("p3")).toBeUndefined();
+});
+
 test("fetchOptions() returns nothing for an empty iri list", async () => {
   const shape = await createShape(`ex:property1 a sh:PropertyShape ; sh:class ex:Person .`, ``);
 
@@ -217,7 +244,7 @@ test("fetchOptions() keeps concurrent calls on the same shape scoped to their ow
   );
 
   // Two calls issued back to back (no await between them) on the same shape fall into the same
-  // ROLE_LOOKUP_BATCH_DELAY_MS window and get merged into one query - each call must still resolve
+  // roleLookupBatchDelay() window and get merged into one query - each call must still resolve
   // to exactly its own requested iris, never the other call's.
   const [first, second] = await Promise.all([
     fetchOptions(shape, [ex("p1"), ex("p2")]),

@@ -33,6 +33,6 @@
 .st-color-editor__hex {
   flex: 1;
   min-width: 0;
-  font-family: var(--font-mono);
+  font-family: var(--st-font-mono);
   text-transform: lowercase;
 }

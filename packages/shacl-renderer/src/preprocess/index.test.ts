@@ -1,6 +1,13 @@
 import { expect, test } from "vite-plus/test";
 import { RdfStore } from "rdf-stores";
-import { runPreprocessorsDeduped, type Preprocessor } from "@/preprocess/index.ts";
+import {
+  runPreprocessors,
+  runPreprocessorsDeduped,
+  type Preprocessor,
+} from "@/preprocess/index.ts";
+import { resolveRdfSources } from "@/preprocess/resolveRdfSources.ts";
+import { factory } from "@/helpers/factory.ts";
+import { ex } from "@/helpers/namespaces.ts";
 import { defaultEnvironment, type RawEnvironment } from "@/environment.ts";
 
 const rawEnvironment = (overrides: Partial<RawEnvironment> = {}): RawEnvironment => ({
@@ -56,4 +63,46 @@ test("runPreprocessorsDeduped - concurrent calls with different environments don
   ]);
 
   expect(calls.count).toBe(2);
+});
+
+// A re-preprocess carries its live dataGraph over (keepDataGraph) - resolveRdfSources takes that
+// store as it is rather than copying it, since the copy would only be thrown away.
+test("runPreprocessors - a kept dataGraph reaches the steps as is, not copied", async () => {
+  const live = RdfStore.createDefault();
+  live.addQuad(factory.quad(ex("a"), ex("p"), ex("b")));
+  let seen: unknown;
+  const spy: Preprocessor = (environment) => {
+    seen = environment.dataGraph;
+    return environment;
+  };
+
+  const environment = await runPreprocessors(
+    rawEnvironment({ dataGraph: live }),
+    [resolveRdfSources, spy],
+    {
+      keepDataGraph: live,
+    },
+  );
+
+  expect(seen).toBe(live);
+  expect(environment.dataGraph).toBe(live);
+});
+
+// Only for that one pass: the same store handed to a renderer as its plain dataGraph is still
+// copied, so editing that renderer's dataGraph never writes into the caller's store.
+test("runPreprocessors - the same store as a plain dataGraph is still copied", async () => {
+  const shared = RdfStore.createDefault();
+  shared.addQuad(factory.quad(ex("a"), ex("p"), ex("b")));
+  await runPreprocessors(rawEnvironment({ dataGraph: shared }), [resolveRdfSources], {
+    keepDataGraph: shared,
+  });
+
+  const environment = await runPreprocessors(rawEnvironment({ dataGraph: shared }), [
+    resolveRdfSources,
+  ]);
+
+  environment.dataGraph.addQuad(factory.quad(ex("a"), ex("p"), ex("c")));
+
+  expect(environment.dataGraph.size).toBe(2);
+  expect(shared.size).toBe(1);
 });

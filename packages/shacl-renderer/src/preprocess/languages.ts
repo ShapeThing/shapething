@@ -1,3 +1,4 @@
+import type { NamedNode } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import type { Preprocessor } from "@/preprocess/index.ts";
 import type { BCP47 } from "@/types/BCP47.ts";
@@ -7,22 +8,28 @@ import { primarySubtag } from "@/helpers/bestByLanguage.ts";
 import { canonicalizeBCP47 } from "@/helpers/parseBCP47.ts";
 
 // Every distinct rdf:langString language tag actually used in `store`, in first-seen order.
-// With `predicates`, only quads whose predicate is in that set are considered - used to restrict
-// the scan to just sh:name/sh:description (label languages) rather than every literal.
+// With `predicates`, only quads with one of those predicates are considered (found through the
+// store's predicate index) - used to restrict the scan to just sh:name/sh:description (label
+// languages) rather than every literal.
 // A tag outside the subset BCP47 models (a variant like Wikidata's "be-tarask", a private-use
 // tag) is left out: the derived list has to pass validateEnvironment like a configured one, and
 // would otherwise reject the whole environment over one literal. The literal itself still shows.
-function usedLanguages(store: RdfStore, predicates?: Set<string>): BCP47[] {
+function usedLanguages(store: RdfStore, predicates?: NamedNode[]): BCP47[] {
   const seen = new Set<string>();
+  // Raw tags already looked at - most literals share a handful of tags, so each one is
+  // canonicalized once rather than once per literal.
+  const seenTags = new Set<string>();
   const languages: BCP47[] = [];
 
-  for (const quad of store.getQuads()) {
-    if (predicates && !predicates.has(quad.predicate.value)) continue;
-    const { object } = quad;
-    const language =
-      object.termType === "Literal" && object.language
-        ? canonicalizeBCP47(object.language)
-        : undefined;
+  const quads = predicates
+    ? predicates.flatMap((predicate) => store.getQuads(null, predicate))
+    : store.getQuads();
+  for (const { object } of quads) {
+    if (object.termType !== "Literal" || !object.language || seenTags.has(object.language)) {
+      continue;
+    }
+    seenTags.add(object.language);
+    const language = canonicalizeBCP47(object.language);
     if (language) {
       const key = language.toLowerCase();
       if (!seen.has(key)) {
@@ -35,7 +42,7 @@ function usedLanguages(store: RdfStore, predicates?: Set<string>): BCP47[] {
   return languages;
 }
 
-const LABEL_PREDICATES = new Set([sh("name").value, sh("description").value]);
+const LABEL_PREDICATES = [sh("name"), sh("description")];
 
 // Runs after resolveRdfSources, so dataGraph is always a resolved RdfStore here even though
 // RawEnvironment's type still allows an unresolved RdfSource.
@@ -98,11 +105,14 @@ export const distillInterfaceLanguages = ((environment) => {
   const seen = new Set<string>();
   const interfaceLanguages: BCP47[] = [];
 
-  const shapeLanguages = usedLanguages(environment.shapesGraph as RdfStore, LABEL_PREDICATES);
+  // Only scanned when used.
+  const shapeLanguages = enableInterfaceLanguageWithShapesLabelsOnly
+    ? usedLanguages(environment.shapesGraph as RdfStore, LABEL_PREDICATES)
+    : [];
 
   for (const language of [
     ...Object.keys(mergeLocaleLoaders(environment.interfaceLocales)),
-    ...(enableInterfaceLanguageWithShapesLabelsOnly ? shapeLanguages : []),
+    ...shapeLanguages,
   ] as BCP47[]) {
     const key = primarySubtag(language);
     if (!seen.has(key)) {

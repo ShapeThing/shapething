@@ -1,7 +1,7 @@
 import type { Quad, Quad_Subject } from "@rdfjs/types";
 import { RdfStore } from "rdf-stores";
 import { parseRdfText as parseText } from "@/helpers/parseRdfText.ts";
-import { markOwned } from "@/preprocess/ownedStores.ts";
+import { KEPT_DATA_GRAPH, markOwned } from "@/preprocess/ownedStores.ts";
 import { defaultEnvironment, type Environment, type RawEnvironment } from "@/environment.ts";
 import { shapesTargetingNode } from "@/resolution/targets.ts";
 import type { RdfSource } from "@/types/RdfSource.ts";
@@ -454,6 +454,11 @@ export const resolveRdfSource = async (
   return store;
 };
 
+const keptDataGraph = (raw: RawEnvironment): Promise<RdfStore> | undefined => {
+  const kept = (raw as { [KEPT_DATA_GRAPH]?: RdfStore })[KEPT_DATA_GRAPH];
+  return kept !== undefined && kept === raw.dataGraph ? Promise.resolve(kept) : undefined;
+};
+
 export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environment> => {
   const quadCache = new Map<string, Promise<Quad[]>>();
   // Shared by both graphs (rather than one Map each) so a source URL dereferenced once for, say,
@@ -481,7 +486,8 @@ export const resolveRdfSources = async (raw: RawEnvironment): Promise<Environmen
     validationReport,
   ] = await Promise.all([
     resolve(raw.shapesGraph, sourcePrefixes),
-    resolve(raw.dataGraph, sourcePrefixes, importedDataGraph),
+    // The live dataGraph of a re-preprocess is taken as it is - see ownedStores.ts's KEPT_DATA_GRAPH.
+    keptDataGraph(raw) ?? resolve(raw.dataGraph, sourcePrefixes, importedDataGraph),
     resolve(raw.scoresGraph),
     optional(raw.readOnlyGraph),
     optional(raw.additionsGraph),

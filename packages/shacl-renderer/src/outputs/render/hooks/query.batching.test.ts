@@ -141,3 +141,23 @@ test("runQuery() runs a query that is just one SERVICE block against that endpoi
   expect(recordedQueries[0].query).not.toMatch(/\bSERVICE\b/);
   expect(recordedQueries[0].query).toContain("FILTER NOT EXISTS { ?value ex:yearEnd ?end }");
 });
+
+// A local lookup reads the store directly (resolveRolesLocally) - no SPARQL query at all, so no
+// Comunica to load and no batching delay - while a remote one is still a batched query.
+test("fetchOptions() resolves local lookups without a SPARQL query", async () => {
+  const shape = await createShape(
+    `
+      ex:property1 a sh:PropertyShape ; sh:class ex:Person ; sh:node ex:PersonShape .
+      ex:PersonShape sh:property ex:nameProperty .
+      ex:nameProperty sh:path ex:name ; shui:propertyRole shui:LabelRole .
+    `,
+    `ex:p1 ex:name "Ann" .`,
+  );
+
+  const [local] = await fetchOptions(shape, [ex("p1")]);
+  await fetchOptions(shape, [ex("p2")], { endpoint: "https://endpoint-a.example/sparql" });
+
+  expect(local.label).toBe("Ann");
+  expect(recordedQueries).toHaveLength(1);
+  expect(recordedQueries[0].endpoint).toBe("https://endpoint-a.example/sparql");
+});

@@ -14,7 +14,6 @@ import InterfaceLanguageProvider from "@/outputs/render/contexts/InterfaceLangua
 import { useEnvironment } from "@/outputs/render/hooks/useEnvironment.tsx";
 import { identityKey, pickLiveProps } from "@/outputs/render/environmentProps.ts";
 import {
-  lazy,
   Suspense,
   useCallback,
   useContext,
@@ -25,7 +24,8 @@ import {
   useState,
 } from "react";
 import { ErrorBoundary, getErrorMessage } from "react-error-boundary";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { noRefetch } from "@/helpers/noRefetch.ts";
 import { RdfStore } from "rdf-stores";
 import { getReactivity } from "@/helpers/reactiveRdfStore.ts";
 import "@/theme/index.css";
@@ -199,17 +199,21 @@ const modeLoaders: Record<
   report: () => import("@/outputs/render/modes/report/index.tsx"),
 };
 
-const modesComponents: Record<Environment["mode"], React.ComponentType<ModeProps>> = {
-  edit: lazy(modeLoaders.edit),
-  view: lazy(modeLoaders.view),
-  facet: lazy(modeLoaders.facet),
-  report: lazy(modeLoaders.report),
-};
-
+// The mode's chunk is waited for through a query rather than React.lazy: lazy() suspends on first
+// render even when the chunk is already in (its download starts in ShaclRenderer, see above), and
+// React holds back revealing suspended content until 300ms after its fallback appeared - on a first
+// load that is otherwise done sooner, the form would wait for nothing. The query counts as pending
+// for the SettleGate the same way.
 function ShaclRendererInner({ className }: ModeProps) {
   const { mode } = useEnvironment();
-  const ModeComponent = modesComponents[mode];
-  // Its own boundary inside the SettleGate, so the mode's chunk loading counts as pending there.
+  const { data: ModeComponent } = useQuery({
+    queryKey: ["mode-component", mode],
+    queryFn: async () => (await modeLoaders[mode]()).default,
+    ...noRefetch,
+    throwOnError: true,
+  });
+  if (!ModeComponent) return <LoadingFallback />;
+  // Still its own boundary inside the SettleGate, for anything below that does suspend.
   return (
     <Suspense fallback={<LoadingFallback />}>
       <ModeComponent className={className} />

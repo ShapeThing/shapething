@@ -48,3 +48,41 @@ test("shacl-engine - validates a blank-node sh:memberShape (with shui:editor/vie
   expect(report.conforms).toBe(false);
   expect(report.results.map((result) => result.focusNode.term.value)).toEqual([ex("recipe").value]);
 });
+
+// patches/shacl-engine@1.0.2.patch also keeps an engine's compiled shapes across validate() calls
+// (unpatched, every call recompiled them). The compiled shapes must carry nothing of a run with
+// them: each call reports only on its own data.
+test("shacl-engine - reuses compiled shapes across validate() calls without carrying results over", async () => {
+  const shapesGraph = await parseRdf(
+    `
+        @prefix sh: <http://www.w3.org/ns/shacl#> .
+        @prefix ex: <http://example.org/> .
+
+        ex:PersonShape a sh:NodeShape ;
+            sh:property [ sh:path ex:name ; sh:minCount 1 ] .
+    `,
+    "text/turtle",
+  );
+  const engine = getShaclEngine(shapesGraph);
+  const run = async (turtle: string) => {
+    const dataGraph = await parseRdf(
+      `@prefix ex: <http://example.org/> .\n${turtle}`,
+      "text/turtle",
+    );
+    return engine.validate({ dataset: dataGraph.asDataset(), terms: [ex("p")] }, [
+      { terms: [ex("PersonShape")] },
+    ]);
+  };
+
+  const invalid = await run(`ex:p ex:age 3 .`);
+  const valid = await run(`ex:p ex:name "Ann" .`);
+  const invalidAgain = await run(`ex:p ex:age 4 .`);
+
+  expect(invalid.results).toHaveLength(1);
+  expect(valid.conforms).toBe(true);
+  expect(valid.results).toHaveLength(0);
+  expect(invalidAgain.results).toHaveLength(1);
+  expect(
+    (engine as unknown as { _compiledShapes: Map<unknown, unknown> })._compiledShapes.size,
+  ).toBeGreaterThan(0);
+});

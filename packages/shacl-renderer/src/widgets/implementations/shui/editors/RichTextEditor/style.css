@@ -63,7 +63,7 @@
       font-style: italic;
     }
     code {
-      font-family: var(--font-mono);
+      font-family: var(--st-font-mono);
       font-size: 0.9em;
     }
     blockquote {

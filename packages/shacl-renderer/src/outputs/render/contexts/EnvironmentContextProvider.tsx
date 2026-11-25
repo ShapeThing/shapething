@@ -2,7 +2,12 @@ import React, { Suspense, startTransition, useEffect, useMemo, useRef, useState 
 import { RdfStore } from "rdf-stores";
 import { Loading } from "@/helpers/icons.tsx";
 import { LoadingFallback } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
-import { type QueryClient, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import {
+  keepPreviousData,
+  type QueryClient,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import type { Environment, RawEnvironment } from "@/environment.ts";
 import { defaultEnvironment } from "@/environment.ts";
 import {
@@ -68,16 +73,7 @@ export default function EnvironmentContextProvider({
         }));
 
   return (
-    <Suspense
-      fallback={
-        <LoadingFallback>
-          <div className="st-environment-context-provider__loading">
-            <Localized id="loading" />
-            <Loading />
-          </div>
-        </LoadingFallback>
-      }
-    >
+    <Suspense fallback={<EnvironmentLoading />}>
       <PreprocessedEnvironmentProvider
         id={instanceId}
         run={run}
@@ -99,6 +95,7 @@ export default function EnvironmentContextProvider({
 const SHAPE_INDEPENDENT_QUERIES = new Set([
   "preprocess-environment",
   "l10n-bundles",
+  "mode-component",
   "iconify-search",
   "address-search",
   "lov-term-search",
@@ -107,6 +104,17 @@ const SHAPE_INDEPENDENT_QUERIES = new Set([
 // How long a burst of shapesGraph writes (one gesture on the renderer editing that store is often
 // several quads) is coalesced into one re-preprocessing pass.
 const SHAPES_WRITE_DEBOUNCE_MS = 100;
+
+function EnvironmentLoading() {
+  return (
+    <LoadingFallback>
+      <div className="st-environment-context-provider__loading">
+        <Localized id="loading" />
+        <Loading />
+      </div>
+    </LoadingFallback>
+  );
+}
 
 const predicatesOf = (store: RdfStore) =>
   new Set(store.getQuads().map((quad) => quad.predicate.value));
@@ -120,8 +128,12 @@ const predicatesOf = (store: RdfStore) =>
  * tree stays mounted and reconciles by elementKey.ts's keys, and the live dataGraph - with its
  * edits, subscriptions and undo history - is carried over as-is.
  *
- * The re-run happens in a transition, so this already-revealed Suspense boundary keeps showing the
- * previous Environment until the new one has resolved, instead of falling back to "Loading".
+ * The re-run keeps showing the previous Environment (placeholderData) until the new one has
+ * resolved, instead of falling back to "Loading".
+ *
+ * Not a suspending query: React holds back revealing suspended content until 300ms after its
+ * fallback appeared, so on a first load that preprocesses sooner the form would wait for nothing.
+ * A plain loading state commits as soon as the Environment is in.
  *
  * With enableMissingShapesGeneration and a reactive dataGraph (`dataGraph`), the shapes depend on
  * the data too: once a burst of data writes has settled and the data uses a predicate it did not
@@ -189,9 +201,11 @@ function PreprocessedEnvironmentProvider({
     };
   }, [shapesGraph]);
 
-  const { data: preprocessed } = useSuspenseQuery({
+  const { data: preprocessed } = useQuery({
     queryKey: ["preprocess-environment", id, shapesRevision],
     ...noRefetch,
+    placeholderData: keepPreviousData,
+    throwOnError: true,
     queryFn: async () => {
       const current = currentRef.current;
       if (!current) return continueSession(queryClient, previousClient, await run());
@@ -211,6 +225,7 @@ function PreprocessedEnvironmentProvider({
   // shapes: refetched in the background while still showing the old result where mounted, dropped
   // where not (noRefetch's refetchOnMount: false would otherwise hand a later mount the stale one).
   useEffect(() => {
+    if (!preprocessed) return;
     const previous = currentRef.current;
     currentRef.current = preprocessed;
     if (!previous || previous === preprocessed) return;
@@ -231,10 +246,11 @@ function PreprocessedEnvironmentProvider({
   }, [preprocessed, queryClient, id, shapesRevision]);
 
   const environment = useMemo(
-    () => (liveProps ? { ...preprocessed, ...liveProps } : preprocessed),
+    () => (preprocessed && liveProps ? { ...preprocessed, ...liveProps } : preprocessed),
     [preprocessed, liveProps],
   );
 
+  if (!environment) return <EnvironmentLoading />;
   return (
     <environmentContext.Provider value={environment}>
       <ContentLanguageProvider>{children}</ContentLanguageProvider>

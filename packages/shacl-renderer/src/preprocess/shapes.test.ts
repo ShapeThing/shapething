@@ -13,6 +13,7 @@ import { ex, rdf, rdfs, sh, st, xsd } from "@/helpers/namespaces.ts";
 import { getRdfList, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { defaultWidgets } from "@/widgets/registry.ts";
 import { isPropertyGroup } from "@/structure/groupTypes.ts";
+import { markOwned } from "@/preprocess/ownedStores.ts";
 
 const rawEnvironment = (overrides: Partial<RawEnvironment>): RawEnvironment => ({
   ...defaultEnvironment,
@@ -730,6 +731,42 @@ test("dropShapesWithMultiplePaths - drops a shape with two sh:path values and ev
   // The caller's own store is never mutated.
   expect(shapesGraph.getQuads(ex("broken"))).toHaveLength(3);
   info.mockRestore();
+});
+
+test("dropShapesWithMultiplePaths - removes from a store this preprocessing pass owns in place, without copying it", async () => {
+  const shapesGraph = markOwned(RdfStore.createDefault());
+  shapesGraph.addQuad(factory.quad(ex("Shape"), sh("property"), ex("name")));
+  shapesGraph.addQuad(factory.quad(ex("name"), sh("path"), ex("name")));
+  shapesGraph.addQuad(factory.quad(ex("Shape"), sh("property"), ex("broken")));
+  shapesGraph.addQuad(factory.quad(ex("broken"), sh("path"), ex("a")));
+  shapesGraph.addQuad(factory.quad(ex("broken"), sh("path"), ex("b")));
+
+  const info = vi.spyOn(console, "info").mockImplementation(() => {});
+  const result = await dropShapesWithMultiplePaths(rawEnvironment({ shapesGraph }));
+  info.mockRestore();
+
+  expect(result.shapesGraph).toBe(shapesGraph);
+  expect(shapesGraph.getQuads(ex("broken"))).toHaveLength(0);
+  expect(shapesGraph.getQuads(null, null, ex("broken"))).toHaveLength(0);
+  expect(shapesGraph.size).toBe(2);
+});
+
+test("dropShapesWithMultiplePaths - its copy of a caller's store is owned, so a later step adds to it in place", async () => {
+  const source = RdfStore.createDefault();
+  source.addQuad(factory.quad(ex("broken"), sh("path"), ex("a")));
+  source.addQuad(factory.quad(ex("broken"), sh("path"), ex("b")));
+  source.addQuad(factory.quad(ex("group"), rdf("type"), st("DrawerPropertyGroup")));
+
+  const info = vi.spyOn(console, "info").mockImplementation(() => {});
+  const dropped = await dropShapesWithMultiplePaths(
+    rawEnvironment({ shapesGraph: source, widgets: defaultWidgets }),
+  );
+  info.mockRestore();
+  const withGroups = await addGroupTypeHierarchy(dropped);
+
+  expect(dropped.shapesGraph).not.toBe(source);
+  expect(withGroups.shapesGraph).toBe(dropped.shapesGraph);
+  expect(source.size).toBe(3);
 });
 
 test("addGroupTypeHierarchy - a group typed only with a bundled group type becomes a sh:PropertyGroup", async () => {

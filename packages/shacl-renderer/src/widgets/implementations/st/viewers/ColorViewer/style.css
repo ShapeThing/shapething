@@ -14,6 +14,6 @@
 }
 
 .st-color-viewer__hex {
-  font-family: var(--font-mono);
+  font-family: var(--st-font-mono);
   text-transform: lowercase;
 }

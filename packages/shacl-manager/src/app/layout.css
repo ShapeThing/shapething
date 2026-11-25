@@ -732,7 +732,7 @@ a.active > .st-manager__tab-count {
 .st-heading__iri {
   flex-basis: 100%;
   margin: 0;
-  font-family: var(--font-mono);
+  font-family: var(--st-font-mono);
   font-size: var(--st-font-size-small);
   color: var(--st-manager-text-muted);
   overflow-wrap: anywhere;

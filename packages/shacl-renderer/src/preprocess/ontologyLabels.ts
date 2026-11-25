@@ -5,6 +5,7 @@ import { factory } from "@/helpers/factory.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import { fetchWithCorsProxyFallback, getQueryEngine } from "@/helpers/queryEngine.ts";
 import { effectiveLabelPredicates } from "@/resolution/label.ts";
+import { writableStore } from "@/preprocess/ownedStores.ts";
 
 // Comunica (rather than a hand-rolled fetch) is what actually dereferences each predicate's IRI:
 // given as a bare URL `source`, it performs real HTTP content negotiation (an Accept header covering
@@ -103,8 +104,9 @@ async function fetchPropertyLabelBindings(
  * for itself) is skipped silently and logged - the same posture as owl:imports
  * (resolveRdfSources.ts): one bad/unreachable ontology term must not fail the whole environment.
  *
- * Copies shapesGraph into a fresh RdfStore rather than mutating the caller-supplied one in place -
- * same non-mutating reasoning as addMissingShapes/mergeFacetTextSearchProperties (shapes.ts).
+ * Never mutates a caller-supplied shapesGraph in place: adds to it only when this preprocessing
+ * pass built it, else to a copy - see ownedStores.ts's writableStore and addMissingShapes
+ * (shapes.ts).
  *
  * Runs after resolveRdfSources (needs a materialized shapesGraph to scan) and after
  * addMissingShapes, so a bare property shape minted there (which never has an sh:name to begin
@@ -126,8 +128,7 @@ export const dereferenceMissingPropertyNames: Preprocessor = async (environment)
     ),
   );
 
-  const merged = RdfStore.createDefault();
-  for (const quad of shapesGraph.getQuads()) merged.addQuad(quad);
+  const merged = writableStore(shapesGraph);
 
   for (const [index, result] of results.entries()) {
     const predicate = predicates[index];

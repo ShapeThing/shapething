@@ -1,5 +1,5 @@
 import React, { Suspense, useMemo } from "react";
-import { useSuspenseQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { LocalizationProvider, ReactLocalization } from "@fluent/react";
 import { LoadingFallback } from "@/outputs/render/contexts/loadingIndicatorContext.tsx";
 import type { BCP47 } from "@/types/BCP47.ts";
@@ -12,15 +12,14 @@ type Props = {
   children: React.ReactNode;
   // Caller-supplied locales (ShaclRenderer's `interfaceLocales` prop), layered over the built-in
   // ones. Threaded in directly rather than read via useEnvironment, since this provider sits
-  // above EnvironmentContextProvider in the tree (its own Suspense fallback needs Localized ids
+  // above EnvironmentContextProvider in the tree (its own loading state needs Localized ids
   // to already be available).
   interfaceLocales?: LocaleLoaderOverrides;
 };
 
 // Reads the active interface language from context (see InterfaceLanguageProvider) rather than
 // a static prop, so switching it via InterfaceLanguageSwitcher re-negotiates and loads the newly
-// active locale's bundle - the Suspense boundary below covers that reload the same way it covers
-// the very first load.
+// active locale's bundle - the current one stays up meanwhile.
 export default function L10nProvider({ children, interfaceLocales }: Props) {
   const { activeInterfaceLanguage } = useInterfaceLanguage();
   return (
@@ -40,12 +39,18 @@ function NegotiatedLocalizationProvider({
   interfaceLocales,
   children,
 }: Props & { interfaceLanguage: BCP47 }) {
-  const { data: bundles } = useSuspenseQuery({
+  // Not a suspending query: React holds back revealing suspended content until 300ms after its
+  // fallback appeared, so on a first load that resolves sooner the form would wait for nothing.
+  // A plain loading state commits as soon as the bundles are in.
+  const { data: bundles } = useQuery({
     queryKey: ["l10n-bundles", interfaceLanguage],
     ...noRefetch,
     queryFn: () => loadBundles(interfaceLanguage, interfaceLocales),
+    placeholderData: keepPreviousData,
+    throwOnError: true,
   });
 
-  const l10n = useMemo(() => new ReactLocalization(bundles), [bundles]);
+  const l10n = useMemo(() => bundles && new ReactLocalization(bundles), [bundles]);
+  if (!l10n) return <LoadingFallback />;
   return <LocalizationProvider l10n={l10n}>{children}</LocalizationProvider>;
 }

@@ -43,3 +43,46 @@ index 7e2fed5..ac5330d 100644
      const reports = []
  
      for (const shape of shapes) {
+diff --git a/Engine.js b/Engine.js
+index 5f5ce40..f6efe16 100644
+--- a/Engine.js
++++ b/Engine.js
+@@ -1,3 +1,4 @@
++import TermMap from '@rdfjs/term-map'
+ import TermSet from '@rdfjs/term-set'
+ import { PathList } from 'grapoi'
+ import constraints from './lib/constraints.js'
+@@ -56,9 +57,7 @@
+       ...this.shapesPtr.hasOut([ns.rdf.type], [ns.sh.ShapeClass])
+     ]
+ 
+-    for (const shapePtr of shapePtrs) {
+-      context.getShape(shapePtr)
+-    }
++    return shapePtrs.map(shapePtr => context.getShape(shapePtr))
+   }
+ 
+   async eval (data, expression) {
+@@ -87,15 +86,19 @@
+       functionRegistry: this.functionRegistry,
+       options: this.options,
+       validationRegistry: this.validationRegistry,
+-      variables: this.options.variables
++      variables: this.options.variables,
++      // Compiled shapes depend only on the shapes graph, never on the data or the run, so they are
++      // kept on the engine rather than recompiled by every validate() call.
++      shapes: this._compiledShapes ??= new TermMap()
+     })
+ 
+     if (shapes) {
+       // if shapes are given, use only the term for the lookup in the ptr from the constructor
+       shapes = shapes.map(shape => context.getShape(this.shapesPtr.node(shape.terms)))
+     } else {
+-      this._initShapes(context)
+-      shapes = [...context.shapes.values()]
++      // The shapes graph's own top-level shapes - the shared map also holds nested ones, which select
++      // no focus nodes of their own, so validating them here would only cost time.
++      shapes = [...new Set(this._initShapes(context).filter(Boolean))]
+     }
+ 
+     for (const shape of shapes) {

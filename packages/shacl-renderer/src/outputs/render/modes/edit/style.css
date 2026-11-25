@@ -31,7 +31,7 @@
 .st-property-search-endpoints {
   display: block;
   margin-block-start: var(--size-1);
-  font-family: var(--font-mono, monospace);
+  font-family: var(--st-font-mono);
   font-size: var(--st-font-size-small);
   white-space: nowrap;
 }

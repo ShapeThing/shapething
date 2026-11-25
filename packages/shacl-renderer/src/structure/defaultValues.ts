@@ -1,5 +1,5 @@
 import type { Quad, Term } from "@rdfjs/types";
-import { diffQuads } from "@/helpers/diffQuads.ts";
+import { snapshotStore } from "@/helpers/snapshotStore.ts";
 import { sh } from "@/helpers/namespaces.ts";
 import type { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { isWritablePath } from "@/structure/orderByValues.ts";
@@ -22,14 +22,26 @@ import { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
  * data that simply doesn't state the property.
  */
 export function seedDefaultValues(node: NodeUIElement): Quad[] {
-  const before = node.dataGraph.getQuads();
+  const toSeed: { child: PropertyUIElement; defaults: Term[] }[] = [];
   for (const child of node.children()) {
     if (!(child instanceof PropertyUIElement)) continue;
     const defaults = child.get(sh("defaultValue")) as Term[];
     if (defaults.length === 0 || child.getObjects().length > 0) continue;
     const path = child.propertyPath();
     if (!path || !(isWritablePath(path) || switchableAlternativeBranches(path))) continue;
-    for (const value of defaults) child.addObject(value);
+    toSeed.push({ child, defaults });
   }
-  return diffQuads(before, node.dataGraph.getQuads()).additions;
+  // Nothing to seed (the usual case): no snapshot of the dataGraph needed at all.
+  if (toSeed.length === 0) return [];
+
+  // What addObject writes isn't one quad per value (an rdf:List, an alternative path's branch,
+  // ...), so the additions are found by comparing against a snapshot - one sharing the store's
+  // term dictionary, so it costs id tuples only.
+  const before = snapshotStore(node.dataGraph);
+  for (const { child, defaults } of toSeed) for (const value of defaults) child.addObject(value);
+  return node.dataGraph
+    .getQuads()
+    .filter(
+      (quad) => before.countQuads(quad.subject, quad.predicate, quad.object, quad.graph) === 0,
+    );
 }

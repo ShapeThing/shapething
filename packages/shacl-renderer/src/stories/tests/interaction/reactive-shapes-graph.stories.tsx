@@ -74,3 +74,28 @@ export const shapeWritesUpdateInPlace: Story = {
     expect(canvas.getByDisplayValue("SK-A-2344-bis")).toBeVisible();
   },
 };
+
+// Live validation follows a shapesGraph write too: the re-preprocessed shapes reach
+// ValidationContextProvider without remounting it, and it validates against them rather than
+// against the engine it built from the first shapesGraph.
+export const shapeWritesRevalidate: Story = {
+  name: "Writing to a reactive shapesGraph revalidates against the new shapes",
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByDisplayValue("SK-A-2344", {}, { timeout: 15000 });
+    const violations = () =>
+      canvasElement.querySelectorAll('.st-validation-message[data-severity="Violation"]');
+    expect(violations()).toHaveLength(0);
+
+    const inventoryNumber = factory.namedNode(
+      `${(args.shapesGraph as URL).href.split("#")[0]}#inventoryNumber`,
+    );
+    transact(shapesGraph, () => {
+      shapesGraph.addQuad(
+        factory.quad(inventoryNumber, sh("minLength"), factory.literal("20", xsd("integer"))),
+      );
+    });
+
+    await waitFor(() => expect(violations()).toHaveLength(1), { timeout: 15000 });
+  },
+};

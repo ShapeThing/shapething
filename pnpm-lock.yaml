@@ -166,7 +166,7 @@ packageExtensionsChecksum: sha256-Lkkv5MUjjvcr7LtxO/Wi4q0OuNVFNpAimDabS4iqV3E=
 
 patchedDependencies:
   react-router@8.5.1: 56da0dd444a906009daadb63ba631c57385240029cbfe3a2f955ec568f991464
-  shacl-engine@1.0.2: 91315241c7505fb891ad84c8e2344a3a5c2808b7400989948e373badde3aa7ea
+  shacl-engine@1.0.2: 64444a7b1c07e14483245ce758a2fc1870104a9f7d93c7ebee1a6df183d301c5
 
 importers:
 
@@ -1160,7 +1160,7 @@ importers:
         version: 16.1.1(react@19.3.0)
       shacl-engine:
         specifier: github:rdf-ext/shacl-engine#1d111fc772a71ec2118eed2974709c2b04f47510
-        version: https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510(patch_hash=91315241c7505fb891ad84c8e2344a3a5c2808b7400989948e373badde3aa7ea)
+        version: https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510(patch_hash=64444a7b1c07e14483245ce758a2fc1870104a9f7d93c7ebee1a6df183d301c5)
       string-to-stream:
         specifier: ^3.0.1
         version: 3.0.1
@@ -25202,7 +25202,7 @@ snapshots:
       safe-buffer: 5.2.1
       to-buffer: 1.2.2
 
-  shacl-engine@https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510(patch_hash=91315241c7505fb891ad84c8e2344a3a5c2808b7400989948e373badde3aa7ea):
+  shacl-engine@https://codeload.github.com/rdf-ext/shacl-engine/tar.gz/1d111fc772a71ec2118eed2974709c2b04f47510(patch_hash=64444a7b1c07e14483245ce758a2fc1870104a9f7d93c7ebee1a6df183d301c5):
     dependencies:
       '@comunica/query-sparql': 5.4.1
       '@comunica/query-sparql-rdfjs-lite': 5.4.1

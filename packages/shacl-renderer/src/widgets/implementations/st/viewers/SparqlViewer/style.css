@@ -2,7 +2,7 @@
   margin: 0;
   padding: var(--size-2) var(--size-3);
   overflow-x: auto;
-  font-family: var(--font-mono);
+  font-family: var(--st-font-mono);
   font-size: var(--st-font-size-small);
   line-height: var(--font-lineheight-3);
   color: var(--st-code-text);

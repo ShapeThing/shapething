@@ -1,5 +1,6 @@
-import type { Bindings, NamedNode, Term } from "@rdfjs/types";
-import { queryPrefixes, sh } from "@/helpers/namespaces.ts";
+import type { Bindings, Literal, NamedNode, Term } from "@rdfjs/types";
+import { queryPrefixes, rdfs, sh } from "@/helpers/namespaces.ts";
+import { factory } from "@/helpers/factory.ts";
 import { localNameLabel } from "@/helpers/localNameLabel.ts";
 import { descriptionText } from "@/helpers/descriptionText.ts";
 import { escapeSparqlLiteral } from "@/helpers/sparqlLiteral.ts";
@@ -21,6 +22,8 @@ import {
   valueNodeIcon,
 } from "@/resolution/label.ts";
 import { toSparql } from "@/structure/paths/toSparql.ts";
+import { walkPropertyPath } from "@/structure/paths/walkPropertyPath.ts";
+import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 import type { PropertyUIElement } from "@/structure/PropertyUIElement.ts";
 
 // Caps how many candidate values a single search-as-you-type or shui:searchQuery round trip
@@ -34,10 +37,12 @@ const LABEL_MATCH_WEIGHT = 2;
 const IRI_MATCH_WEIGHT = 1;
 const EXACT_MATCH_WEIGHT = 100;
 
-// How long batchRoleLookup waits after its first call before running the merged query - long
-// enough that a form mounting many properties at once (each hydrating its own sh:in options/
-// current value via fetchOptions) piles its requests into the same window instead of firing one
-// HTTP round trip per property, short enough to be imperceptible as added latency.
+// How long batchRoleLookup waits after its first call before running the merged query against a
+// remote endpoint - long enough that a form mounting many properties at once (each hydrating its
+// own sh:in options/current value via fetchOptions) piles its requests into the same window
+// instead of firing one HTTP round trip per property, short enough to be imperceptible as added
+// latency. A local lookup is never batched: it reads the store directly (see
+// resolveRolesLocally).
 const ROLE_LOOKUP_BATCH_DELAY_MS = 100;
 
 type ResolvedClassification = { term: Term; label: string; color?: string };
@@ -706,9 +711,11 @@ function batchRoleLookup(
 
 /**
  * Resolves every one of `iris` (e.g. this property's currently applied value, or its sh:in options)
- * to its LabelRole label and DepictionRole image via a batched query (see batchRoleLookup), rather
- * than one per iri *or* one per property - callers within the same ROLE_LOOKUP_BATCH_DELAY_MS
- * window that would otherwise run an identical query share a single request. Lets AutoCompleteOption
+ * to its LabelRole label and DepictionRole image. Against the local dataGraph that is a direct read
+ * of the store (resolveRolesLocally); against a remote endpoint a batched query (see
+ * batchRoleLookup), rather than one per iri *or* one per property - callers within the same
+ * ROLE_LOOKUP_BATCH_DELAY_MS window that would otherwise run an identical query share a single
+ * request. Lets AutoCompleteOption
  * stay a plain presentational component that never reads the data graph itself. `endpoint`, when the
  * shape's `sh:in` is itself federated (see extractServiceEndpoint), resolves against that remote
  * endpoint instead of the local dataGraph - without it, an IRI whose roles only exist on a remote
@@ -721,8 +728,81 @@ export async function fetchOptions(
   options: RoleLookupOptions = {},
 ): Promise<SearchResult[]> {
   if (iris.length === 0) return [];
+  if (!options.endpoint)
+    return toSearchResults(resolveRolesLocally(iris, shape, options.uiLanguage));
 
   return toSearchResults(await batchRoleLookup(iris, shape, rolePathsFor(shape), options));
+}
+
+/**
+ * The local counterpart of buildRoleLookupQuery + runQuery: the same role paths walked straight
+ * through the dataGraph, with the same rules - each role's first value, a label or description
+ * only in the interface language's primary subtag or untagged, a classification labelled by its
+ * own label (else its lexical form, else its local name), then the same icon and color
+ * post-processing. Running it through Comunica instead costs loading and starting the engine
+ * (hundreds of ms on a first load) for what are a few indexed store reads. Like that query - whose
+ * patterns outside GRAPH {} only match the default graph - it reads the default graph only.
+ */
+export function resolveRolesLocally(
+  values: NamedNode[],
+  propertyShape: PropertyUIElement,
+  uiLanguage: string | undefined,
+): ResolvedTerm[] {
+  const { dataGraph } = propertyShape;
+  const defaultGraph = factory.defaultGraph();
+  const store = {
+    getQuads: (...[subject, predicate, object]: Parameters<typeof dataGraph.getQuads>) =>
+      dataGraph.getQuads(subject, predicate, object, defaultGraph),
+  };
+  const language = uiLanguage ? primaryLanguageSubtag(uiLanguage).toLowerCase() : undefined;
+  const inLanguage = (term: Term): term is Literal =>
+    term.termType === "Literal" &&
+    (language === undefined || term.language === "" || term.language.toLowerCase() === language);
+  const walk = (paths: PropertyPath[], from: Term) =>
+    paths.flatMap((path) => walkPropertyPath(path, from, store));
+  // An untagged literal only when there is none in the language - the query's sample() picks either.
+  const bestLiteral = (terms: Term[]) => {
+    const literals = terms.filter(inLanguage);
+    return literals.find((literal) => literal.language !== "") ?? literals[0];
+  };
+
+  const labelPaths = labelPathsFor(propertyShape);
+  const classificationPaths = classificationRolePropertyPaths(propertyShape);
+  const classificationLabelPaths = [
+    ...new Map(
+      [...labelPaths, { type: "predicate", predicate: rdfs("label") } as PropertyPath].map(
+        (path) => [toSparql(path), path],
+      ),
+    ).values(),
+  ];
+  const depictionPaths = depictionRolePropertyPaths(propertyShape);
+  const iconPaths = iconRolePropertyPaths(propertyShape);
+  const descriptionPaths = descriptionRolePropertyPaths(propertyShape);
+
+  return values.map((term) => {
+    const resolved: ResolvedTerm = { term };
+    const label = bestLiteral(walk(labelPaths, term));
+    if (label) resolved.label = label.value;
+    const depiction = walk(depictionPaths, term).find((value) => value.termType === "NamedNode");
+    if (depiction) resolved.depiction = depiction as NamedNode;
+    const [icon] = walk(iconPaths, term);
+    if (icon) resolved.icon = asIconIri(icon);
+    const description = bestLiteral(walk(descriptionPaths, term));
+    if (description) resolved.description = descriptionText(description);
+    const classifications = walk(classificationPaths, term).map((classification) => {
+      const classificationLabel = bestLiteral(walk(classificationLabelPaths, classification));
+      return {
+        term: classification,
+        label:
+          classificationLabel?.value ??
+          (classification.termType === "Literal"
+            ? classification.value
+            : (localNameLabel(classification) ?? classification.value)),
+      };
+    });
+    if (classifications.length > 0) resolved.classifications = classifications;
+    return withIconFallback(withClassificationColor(resolved, propertyShape), propertyShape);
+  });
 }
 
 /**

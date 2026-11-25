@@ -8,7 +8,7 @@ import { getRdfList, rebuildRdfList } from "@/helpers/rdfList.ts";
 import { termKey } from "@/helpers/termKey.ts";
 import { hashString } from "@/helpers/hashString.ts";
 import { storeFromGraphSources } from "@/helpers/quadTuples.ts";
-import { isOwned, markOwned } from "@/preprocess/ownedStores.ts";
+import { writableStore } from "@/preprocess/ownedStores.ts";
 import type { Widgets } from "@/widgets/types.ts";
 import { facetableRootShapes, shapesForClass, withSuperClassShapes } from "@/resolution/targets.ts";
 
@@ -244,9 +244,10 @@ function inferredConstraints(
  * show. A predicate with no values yet, genuinely mixed ones, or resource values that don't agree
  * on a single class, gets none of these.
  *
- * Copies shapesGraph into a fresh RdfStore rather than mutating the caller-supplied one in place -
- * shapesGraph is frequently a shared, module-level fixture reused across multiple
- * stories/renders/tests, so mutating it directly would leak generated shapes into unrelated runs.
+ * Never mutates a caller-supplied shapesGraph in place - it is frequently a shared, module-level
+ * fixture reused across multiple stories/renders/tests, so mutating it directly would leak
+ * generated shapes into unrelated runs. Adds to it only when this preprocessing pass built it (see
+ * ownedStores.ts's writableStore), else to a copy.
  *
  * Runs after resolveRdfSources (so both graphs are resolved RdfStores, even though RawEnvironment's
  * type still allows an unresolved RdfSource). Widget scoring evaluates property shapes per property
@@ -258,10 +259,7 @@ export const addMissingShapes: Preprocessor = (environment) => {
 
   const dataGraph = environment.dataGraph as RdfStore;
 
-  const shapesGraph = RdfStore.createDefault();
-  for (const quad of (environment.shapesGraph as RdfStore).getQuads()) {
-    shapesGraph.addQuad(quad);
-  }
+  const shapesGraph = writableStore(environment.shapesGraph as RdfStore);
 
   const rootShapes =
     environment.mode === "facet" || environment.mode === "report" ? [] : environment.nodeShapes;
@@ -411,17 +409,16 @@ function mergeableTextSearchPath(propertyNode: Term, shapesGraph: RdfStore): Nam
  * sh:alternativePath (see terminalPredicate()) - without it the facet would otherwise label itself
  * with the generated property shape's own blank node id.
  *
- * Copies shapesGraph into a fresh RdfStore first, same non-mutating reasoning as addMissingShapes
- * above. Runs after addMissingShapes, so a class that arrived at facet mode with literally no
- * shape at all still gets a real (implicit-class) root shape whose addMissingShapes-minted bare
+ * Writes to a copy of a caller-supplied shapesGraph, same non-mutating reasoning as
+ * addMissingShapes above. Runs after addMissingShapes, so a class that arrived at facet mode with
+ * literally no shape at all still gets a real (implicit-class) root shape whose addMissingShapes-minted bare
  * properties (no sh:datatype at all) simply don't qualify here either - this preprocessor only
  * ever touches properties that do declare sh:datatype.
  */
 export const mergeFacetTextSearchProperties: Preprocessor = (environment) => {
   if (environment.mode !== "facet" || !environment.enableFacetTextSearchMerging) return environment;
 
-  const shapesGraph = RdfStore.createDefault();
-  for (const quad of (environment.shapesGraph as RdfStore).getQuads()) shapesGraph.addQuad(quad);
+  const shapesGraph = writableStore(environment.shapesGraph as RdfStore);
 
   for (const rootShape of facetableRootShapes(shapesGraph)) {
     const toMerge: { link: Quad; path: NamedNode }[] = [];
@@ -484,8 +481,8 @@ export const addSuperClassShapes: Preprocessor = (environment) => {
  * path arbitrarily. Blank nodes reachable only from a dropped shape (its own sh:node subtree,
  * ...) are left in place - unreferenced, so nothing ever renders or validates against them.
  *
- * Copies shapesGraph only when there's actually something to drop - see addMissingShapes on not
- * mutating the caller-supplied store in place.
+ * Writes only when there's actually something to drop, and then to a copy of a caller-supplied
+ * shapesGraph - see addMissingShapes on not mutating the caller-supplied store in place.
  */
 export const dropShapesWithMultiplePaths: Preprocessor = (environment) => {
   const source = environment.shapesGraph as RdfStore;
@@ -500,11 +497,12 @@ export const dropShapesWithMultiplePaths: Preprocessor = (environment) => {
   const invalid = [...pathCounts.values()].filter((entry) => entry.count > 1);
   if (invalid.length === 0) return environment;
 
-  const invalidKeys = new Set(invalid.map((entry) => termKey(entry.shape)));
-  const shapesGraph = RdfStore.createDefault();
-  for (const quad of source.getQuads()) {
-    if (invalidKeys.has(termKey(quad.subject)) || invalidKeys.has(termKey(quad.object))) continue;
-    shapesGraph.addQuad(quad);
+  // Every quad with an invalid shape as its subject or object, found through the store's indexes
+  // rather than by filtering a full copy.
+  const shapesGraph = writableStore(source);
+  for (const { shape } of invalid) {
+    for (const quad of shapesGraph.getQuads(shape)) shapesGraph.removeQuad(quad);
+    for (const quad of shapesGraph.getQuads(null, null, shape)) shapesGraph.removeQuad(quad);
   }
 
   console.info(
@@ -536,21 +534,15 @@ function groupTypeGraph(widgets: Widgets): Promise<RdfStore> {
  * selection) and resolution/targets.ts (a `sh:targetClass sh:PropertyGroup` shape targets it).
  *
  * Must run after resolveWidgets. Adds to shapesGraph in place when this preprocessing pass built
- * that store itself (see ownedStores.ts), else copies it first - see addMissingShapes on not
- * mutating the caller-supplied store in place.
+ * that store itself, else to a copy (see ownedStores.ts's writableStore) - see addMissingShapes on
+ * not mutating the caller-supplied store in place.
  */
 export const addGroupTypeHierarchy: Preprocessor = async (environment) => {
   if (!environment.widgets) return environment;
   const additions = (await groupTypeGraph(environment.widgets)).getQuads();
   if (additions.length === 0) return environment;
 
-  const source = environment.shapesGraph as RdfStore;
-  if (isOwned(source)) {
-    for (const quad of additions) source.addQuad(quad);
-    return environment;
-  }
-  const shapesGraph = RdfStore.createDefault();
-  for (const quad of source.getQuads()) shapesGraph.addQuad(quad);
+  const shapesGraph = writableStore(environment.shapesGraph as RdfStore);
   for (const quad of additions) shapesGraph.addQuad(quad);
-  return { ...environment, shapesGraph: markOwned(shapesGraph) };
+  return { ...environment, shapesGraph };
 };

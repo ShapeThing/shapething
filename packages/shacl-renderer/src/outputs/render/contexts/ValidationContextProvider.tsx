@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Engine as ShaclEngine, type ValidateResult } from "shacl-engine";
 import {
   constraints as sparqlConstraints,
@@ -64,24 +64,28 @@ export default function ValidationContextProvider({ children, latestResultsRef, 
   const { shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl } = useEnvironment();
   const [store] = useState<ValidationStore>(createValidationStore);
 
-  // shapesGraph is read-only for the lifetime of an Environment (see preprocess/index.ts), so a
-  // single Validator compiled from it up front stays valid for every subsequent revalidation -
-  // same one-engine-per-shapesGraph reasoning as score.ts's own getShaclEngine/shaclEngineCache.
+  // shapesGraph is read-only for the lifetime of an Environment (see preprocess/index.ts), so one
+  // engine per shapesGraph - which keeps its compiled shapes (see the shacl-engine patch) - serves
+  // every revalidation - same one-engine-per-shapesGraph reasoning as validate.ts's getShaclEngine.
+  // A re-preprocess (e.g. a live shapesGraph edited) hands down a new shapesGraph without
+  // remounting this provider, so the engine is rebuilt for it rather than kept from the first one.
   // Built from shapesGraphWithoutDynamicIn's filtered copy, not the raw shapesGraph, so a dynamic
   // sh:in [ sh:select ] is never evaluated here - that would pull its entire (possibly enormous)
   // remote baseline set just to check one value's membership; validateDynamicInProperties below
   // checks those properties itself instead, scoped to just their own current value(s).
-  const engineRef = useRef<ShaclEngine | null>(null);
-  engineRef.current ??= new ShaclEngine(shapesGraphWithoutDynamicIn(shapesGraph).asDataset(), {
-    factory,
-    functions: sparqlFunctions,
-    constraints: [...sparqlConstraints, ...dirtyConstraints(isDirty ?? (() => false))],
-  });
+  const engine = useMemo(
+    () =>
+      new ShaclEngine(shapesGraphWithoutDynamicIn(shapesGraph).asDataset(), {
+        factory,
+        functions: sparqlFunctions,
+        constraints: [...sparqlConstraints, ...dirtyConstraints(isDirty ?? (() => false))],
+      }),
+    [shapesGraph, isDirty],
+  );
 
   // Federated dynamic sh:in results, reused across revalidations - see validateDynamicInProperties.
   const dynamicInCacheRef = useRef(new Map<string, Promise<Set<string>>>());
-  const federatedShapesRef = useRef<Set<string> | null>(null);
-  federatedShapesRef.current ??= federatedPropertyShapes(shapesGraph);
+  const federatedShapes = useMemo(() => federatedPropertyShapes(shapesGraph), [shapesGraph]);
 
   useEffect(() => {
     let cancelled = false;
@@ -96,7 +100,7 @@ export default function ValidationContextProvider({ children, latestResultsRef, 
       const isCurrent = () => !cancelled && run === latestRun;
       store.setIsValidating(true);
       try {
-        const report = await engineRef.current!.validate(
+        const report = await engine.validate(
           { dataset: dataGraph.asDataset(), terms: [focusNode] },
           nodeShapes.map((nodeShape) => ({ terms: [nodeShape] })),
         );
@@ -111,7 +115,7 @@ export default function ValidationContextProvider({ children, latestResultsRef, 
         if (isCurrent()) {
           const localResults = withoutUncheckableRemoteValueResults(
             report.results,
-            federatedShapesRef.current!,
+            federatedShapes,
             dataGraph,
           );
           const combined = [...flattenResults(localResults), ...dynamicInResults];
@@ -150,7 +154,17 @@ export default function ValidationContextProvider({ children, latestResultsRef, 
       clearTimeout(timeout);
       unsubscribe?.();
     };
-  }, [shapesGraph, dataGraph, focusNode, nodeShapes, corsProxyUrl, store, latestResultsRef]);
+  }, [
+    engine,
+    federatedShapes,
+    shapesGraph,
+    dataGraph,
+    focusNode,
+    nodeShapes,
+    corsProxyUrl,
+    store,
+    latestResultsRef,
+  ]);
 
   return <validationContext.Provider value={store}>{children}</validationContext.Provider>;
 }

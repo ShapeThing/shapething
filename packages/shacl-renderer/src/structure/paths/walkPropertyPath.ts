@@ -3,19 +3,27 @@ import type { RdfStore } from "rdf-stores";
 import { termKey } from "@/helpers/termKey.ts";
 import type { PropertyPath } from "@/structure/paths/parsePropertyPath.ts";
 
+// Only getQuads is read - so a caller can also walk a view over part of a store (e.g. just its
+// default graph, see query.ts's local role lookup).
+type QuadReader = Pick<RdfStore, "getQuads">;
+
 /**
  * Walks a parsed SHACL property path from `focusNode` through `dataGraph`, returning every term
  * reachable at the end of the path - the actual value(s) this property currently holds, as
  * opposed to `toSparql`/`toGrapoi` which only describe the path itself without executing it.
  */
-export function walkPropertyPath(path: PropertyPath, focusNode: Term, dataGraph: RdfStore): Term[] {
+export function walkPropertyPath(
+  path: PropertyPath,
+  focusNode: Term,
+  dataGraph: QuadReader,
+): Term[] {
   return dedupe(step(path, [focusNode], dataGraph, false));
 }
 
 // `inverse` tracks whether the current subtree is being traversed backwards - it flips on every
 // nested sh:inversePath (so an inverse of an inverse is forwards again) and, for a sequence,
 // additionally reverses step order (the inverse of a/b is ^b/^a, not ^a/^b).
-function step(path: PropertyPath, nodes: Term[], dataGraph: RdfStore, inverse: boolean): Term[] {
+function step(path: PropertyPath, nodes: Term[], dataGraph: QuadReader, inverse: boolean): Term[] {
   switch (path.type) {
     case "predicate":
       return dedupe(
@@ -57,7 +65,7 @@ function step(path: PropertyPath, nodes: Term[], dataGraph: RdfStore, inverse: b
 function closure(
   path: PropertyPath,
   frontier: Term[],
-  dataGraph: RdfStore,
+  dataGraph: QuadReader,
   inverse: boolean,
   seed: Term[],
 ): Term[] {

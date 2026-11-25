@@ -17,6 +17,7 @@ import { dereferenceMissingPropertyNames } from "@/preprocess/ontologyLabels.ts"
 import { assertValidEnvironment } from "@/preprocess/configuration.ts";
 import { getReactivity, makeReactive } from "@/helpers/reactiveRdfStore.ts";
 import { internGraph } from "@/preprocess/internGraph.ts";
+import { KEPT_DATA_GRAPH } from "@/preprocess/ownedStores.ts";
 import { LIVE_PROPS } from "@/outputs/render/environmentProps.ts";
 import type { RdfStore } from "rdf-stores";
 
@@ -56,7 +57,9 @@ export const runPreprocessors = async (
   steps: readonly Preprocessor[] = defaultPreprocessors,
   { keepDataGraph }: RunPreprocessorsOptions = {},
 ): Promise<Environment> => {
-  let result = keepDataGraph ? { ...raw, dataGraph: keepDataGraph } : raw;
+  let result = keepDataGraph
+    ? { ...raw, dataGraph: keepDataGraph, [KEPT_DATA_GRAPH]: keepDataGraph }
+    : raw;
 
   for (const step of steps) {
     result = await step(result);

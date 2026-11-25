@@ -12,7 +12,11 @@
   --font-size-0: 0.9rem;
 
   /* ShapeThing */
-  --st-font-family: var(--font-rounded-sans);
+  /* Only font names every platform resolves. Each name a browser has to look up and doesn't find
+     (open-props' stacks list many: ui-rounded, Hiragino Maru Gothic ProN, Segoe UI, Menlo, ...)
+     costs a slow system font lookup - on Linux about 100 ms per name in a form's first layout. */
+  --st-font-family: system-ui, sans-serif;
+  --st-font-mono: monospace;
   --st-primary-color: var(--indigo-9);
   --st-color-border: var(--gray-4);
   --st-color-text: var(--gray-9);
