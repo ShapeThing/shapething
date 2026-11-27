@@ -1,4 +1,4 @@
-import type { BlankNode, Bindings, Term } from "@rdfjs/types";
+import type { BlankNode, Bindings, Source, Term } from "@rdfjs/types";
 import type { RdfStore } from "rdf-stores";
 import { withCorsProxy } from "@/helpers/corsProxy.ts";
 import { factory } from "@/helpers/factory.ts";
@@ -114,12 +114,14 @@ export type QueryRow<Query> = [Brand<Query>] extends [never]
 
 /**
  * Runs a SELECT `query` against a local store and returns its rows as plain objects, variable
- * name to term. `bindings` pre-binds variables (blank nodes from `store` included). Patterns
- * outside GRAPH {} see the union of all graphs. Blank nodes in the rows are the store's own.
+ * name to term. The store is any RDF/JS source: an RdfStore, or one that wraps another store, such
+ * as a TextStore (@shapething/textstore) or a LocalStore (@shapething/localstore). `bindings`
+ * pre-binds variables (blank nodes from `store` included). Patterns outside GRAPH {} see the union
+ * of all graphs. Blank nodes in the rows are the store's own.
  */
 export async function select<Query extends string>(
   query: Query,
-  store: RdfStore,
+  store: Source,
   bindings: Record<string, Term> = {},
 ): Promise<QueryRow<Query>[]> {
   const engine = await getQueryEngine();

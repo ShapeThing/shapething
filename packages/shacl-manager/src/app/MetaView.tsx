@@ -27,9 +27,11 @@ type MetaViewProps = {
   // A heading above the view, for a page the section's own heading doesn't already name. Without
   // it the section's heading holds the actions.
   heading?: boolean | HeadingFallbacks;
+  // Shown beside the view, when it renders anything.
+  aside?: ReactNode;
 };
 
-export function MetaView({ term, shapes, actions, children, heading }: MetaViewProps) {
+export function MetaView({ term, shapes, actions, children, heading, aside }: MetaViewProps) {
   const { store } = useDataModel();
   const rendererProps = useRendererProps(shapes.view);
 
@@ -43,13 +45,16 @@ export function MetaView({ term, shapes, actions, children, heading }: MetaViewP
         />
       )}
       {children && <div className="st-meta__actions">{children}</div>}
-      <ShaclRenderer
-        {...rendererProps}
-        mode="view"
-        dataGraph={store}
-        focusNode={term}
-        viewModeLabelLayout="columns"
-      />
+      <div className="st-meta__body">
+        <ShaclRenderer
+          {...rendererProps}
+          mode="view"
+          dataGraph={store}
+          focusNode={term}
+          viewModeLabelLayout="columns"
+        />
+        {aside}
+      </div>
     </div>
   );
 }

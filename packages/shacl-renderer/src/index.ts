@@ -45,6 +45,9 @@ export { dereferenceUrl, resolveRdfSource };
 export { select, type QueryRow } from "@/helpers/queryEngine.ts";
 export { prefixedIri } from "@/helpers/prefixedIri.tsx";
 export { owl, rdf, rdfs, sh, shui, xsd } from "@/helpers/namespaces.ts";
+// Which property shapes the renderer combines into one property: every property shape reachable
+// from the applicable shapes (through sh:node and sh:and), grouped by canonical path.
+export { groupShapesByPath, walkShapeComposition } from "@/structure/shapeComposition.ts";
 
 // A live store: passed as dataGraph (or shapesGraph) the renderer uses it in place and follows
 // every write to it, instead of copying it - see RawEnvironment.dataGraph.

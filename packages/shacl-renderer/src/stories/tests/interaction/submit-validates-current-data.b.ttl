@@ -1,0 +1,21 @@
+@prefix schema: <http://schema.org/>.
+@prefix sh: <http://www.w3.org/ns/shacl#>.
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#>.
+
+<#shape>
+    a sh:NodeShape ;
+    sh:targetClass schema:Person ;
+    sh:property [
+        sh:name "Name"@en ;
+        sh:path schema:name ;
+        sh:datatype xsd:string ;
+        sh:minCount 1 ;
+        sh:minLength 1 ;
+        sh:maxCount 1 ;
+    ] ;
+    .
+
+<#data>
+    a schema:Person ;
+    schema:name "Ada" ;
+    .

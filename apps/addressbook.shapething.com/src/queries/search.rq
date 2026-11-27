@@ -1,0 +1,14 @@
+PREFIX schema: <https://schema.org/>
+PREFIX tsst: <https://textstore.shapething.com/>
+
+# The contacts with any text in their graph that matches $search, fuzzy: the TextStore
+# (@shapething/textstore) answers tsst:search. $search is bound when the query runs.
+SELECT DISTINCT ?graph ?contact ?name ?tag WHERE {
+  GRAPH ?graph {
+    ?value tsst:search $search .
+    ?contact a schema:Person .
+    FILTER(isIRI(?contact))
+    OPTIONAL { ?contact schema:name ?name . FILTER(isLiteral(?name)) }
+    OPTIONAL { ?contact schema:keywords ?tag . FILTER(isLiteral(?tag)) }
+  }
+}

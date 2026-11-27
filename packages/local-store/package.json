@@ -31,25 +31,25 @@
   },
   "dependencies": {
     "@jeswr/pretty-turtle": "^1.8.2",
-    "@rdfjs/data-model": "^2.1.0",
+    "@rdfjs/data-model": "^2.1.2",
     "events": "^3.3.0",
     "hex-encoding": "^2.0.3",
     "idb-keyval": "^6.3.0",
-    "n3": "^2.7.12",
-    "readable-stream": "^4.7.0"
+    "n3": "^2.13.12",
+    "readable-stream": "^4.8.0"
   },
   "devDependencies": {
     "@comunica/query-sparql": "^5.4.1",
     "@rdfjs/types": "^2.0.1",
     "@testing-library/dom": "^10.4.2",
     "@types/events": "^3.0.3",
-    "@types/n3": "^1.26.4",
-    "@types/node": "^22.20.4",
+    "@types/n3": "^1.26.6",
+    "@types/node": "^22.20.5",
     "@types/rdfjs__data-model": "^2.0.9",
-    "@types/wicg-file-system-access": "^2023.10.6",
+    "@types/wicg-file-system-access": "^2023.10.7",
     "@vitest/browser-preview": "5.0.1",
     "typescript": "~5.8.3",
-    "vite": "^6.4.3",
+    "vite": "^6.4.6",
     "vitest": "5.0.1"
   }
 }

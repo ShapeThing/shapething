@@ -12,7 +12,6 @@ import type {
 import EventEmitter from "events";
 import Hex from "hex-encoding";
 import { del, get, set } from "idb-keyval";
-import { write } from "@jeswr/pretty-turtle";
 import { Parser, Store, type OTerm } from "n3";
 /** @ts-expect-error readable-stream ships no type declarations */
 import { Readable } from "readable-stream";
@@ -21,6 +20,7 @@ import { getFileHandleByPath } from "./helpers/getFileHandleByPath.ts";
 import { stripRelativeTtlExtensions } from "./helpers/fileReferences.ts";
 import { repairLangStrings } from "./helpers/langString.ts";
 import { toTriple } from "./helpers/toTriple.ts";
+import { writeTurtle } from "./helpers/writeTurtle.ts";
 
 type QuadTermName = "subject" | "predicate" | "object" | "graph";
 
@@ -504,11 +504,13 @@ export class LocalStore implements Source, RdfJsStore {
   ) {
     this.prefixes = { ...this.prefixes, ...prefixes };
     // Pretty-printed: subjects grouped, blank nodes nested and lists written as ( ), so the file
-    // reads well and its diffs stay small.
-    const result = await write(quads, {
-      baseIri: graph.termType === "NamedNode" ? graph.value : undefined,
-      prefixes: usedPrefixes({ ...this.prefixes, ...prefixes }, quads),
-    });
+    // reads well and its diffs stay small. IRIs are relative to the graph where they can be, <>
+    // for the graph itself, so the file keeps its meaning under another base IRI.
+    const result = await writeTurtle(
+      quads,
+      graph.termType === "NamedNode" ? graph.value : undefined,
+      usedPrefixes({ ...this.prefixes, ...prefixes }, quads),
+    );
 
     const writable = await fileHandle.createWritable();
     await writable.write(result);
@@ -753,7 +755,6 @@ export class LocalStore implements Source, RdfJsStore {
       }
     }
 
-    /** @ts-expect-error the N3 Store#countQuads typings don't accept undefined term filters */
     return Math.max(this.#cache.countQuads(subject, predicate, object, graph), 1);
   }
 

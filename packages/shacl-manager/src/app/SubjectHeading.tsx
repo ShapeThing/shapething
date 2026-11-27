@@ -7,6 +7,7 @@ import { termKey, type Resource } from "../data-model/rdf.ts";
 import { DeactivateButton } from "./edit/DeactivateButton.tsx";
 import { DeleteButton } from "./edit/DeleteButton.tsx";
 import { EditButton } from "./edit/EditButton.tsx";
+import { PreviewButton } from "../owl/PreviewButton.tsx";
 import { useOrigin } from "./paths.ts";
 import type { ShapeSource } from "./rendererProps.ts";
 import { termTitle, useBestByLanguage, useTermLabel } from "./termLabel.ts";
@@ -29,6 +30,8 @@ export type HeadingActions = {
   edit?: { shapes: ShapeSource; at?: string; startingQuads?: Quad[] };
   delete?: boolean;
   deactivate?: boolean;
+  // An example instance of the class, generated from the shapes that apply to it.
+  preview?: boolean;
 };
 
 // A node's heading: the classes it is an instance of as chips before its label, its IRI below.
@@ -89,6 +92,7 @@ export function SubjectHeading({
         )}
         {origin === "managed" && actions.delete && <DeleteButton term={term} />}
         {origin === "imported" && actions.deactivate && <DeactivateButton term={term} />}
+        {actions.preview && <PreviewButton term={term} />}
       </div>
       {term.termType === "NamedNode" && <p className="st-heading__iri">{term.value}</p>}
     </header>

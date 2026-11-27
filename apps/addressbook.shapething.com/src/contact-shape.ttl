@@ -1,0 +1,269 @@
+# The shape of a contact in this address book.
+#
+# The address book wrote this file when it first opened this folder, and from then on it is yours:
+# the address book never overwrites it. Every contact is shown and edited through this shape, so
+# adding a property shape here adds a field to every contact. Reopen the folder to see a change.
+#
+# A contact is a schema:Person, in a file of its own in contacts/. The list shows its schema:name.
+# Importing a vCard file (.vcf) fills the properties below; see the comment on each for the vCard
+# field it comes from.
+
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix schema: <https://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix shui: <http://www.w3.org/ns/shacl-ui/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<#Contact>
+  a sh:NodeShape ;
+  # A new contact gets this class as its rdf:type, which is how the address book finds it.
+  sh:targetClass schema:Person ;
+  sh:property
+    <#name>, <#honorificPrefix>, <#givenName>, <#additionalName>, <#familyName>,
+    <#honorificSuffix>, <#alternateName>,
+    <#email>, <#telephone>, <#faxNumber>, <#url>,
+    <#address>,
+    <#worksFor>, <#jobTitle>,
+    <#birthDate>, <#description>,
+    <#keywords> .
+
+# Name
+
+<#nameGroup> a sh:PropertyGroup ; rdfs:label "Name" ; sh:order 1 .
+
+# vCard FN, the name as it is shown. Made from the parts below when a card has none.
+<#name>
+  a sh:PropertyShape ;
+  sh:path schema:name ;
+  sh:name "Name" ;
+  sh:datatype xsd:string ;
+  sh:minCount 1 ;
+  sh:maxCount 1 ;
+  sh:group <#nameGroup> ;
+  sh:order 1 .
+
+# vCard N, its prefix, given, additional, family and suffix parts.
+<#honorificPrefix>
+  a sh:PropertyShape ;
+  sh:path schema:honorificPrefix ;
+  sh:name "Title" ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:group <#nameGroup> ;
+  sh:order 2 .
+
+<#givenName>
+  a sh:PropertyShape ;
+  sh:path schema:givenName ;
+  sh:name "First name" ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:group <#nameGroup> ;
+  sh:order 3 .
+
+<#additionalName>
+  a sh:PropertyShape ;
+  sh:path schema:additionalName ;
+  sh:name "Middle name" ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:group <#nameGroup> ;
+  sh:order 4 .
+
+<#familyName>
+  a sh:PropertyShape ;
+  sh:path schema:familyName ;
+  sh:name "Last name" ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:group <#nameGroup> ;
+  sh:order 5 .
+
+<#honorificSuffix>
+  a sh:PropertyShape ;
+  sh:path schema:honorificSuffix ;
+  sh:name "Suffix" ;
+  sh:datatype xsd:string ;
+  sh:maxCount 1 ;
+  sh:group <#nameGroup> ;
+  sh:order 6 .
+
+# vCard NICKNAME.
+<#alternateName>
+  a sh:PropertyShape ;
+  sh:path schema:alternateName ;
+  sh:name "Nickname" ;
+  sh:datatype xsd:string ;
+  sh:group <#nameGroup> ;
+  sh:order 7 .
+
+# Contact
+
+<#contactGroup> a sh:PropertyGroup ; rdfs:label "Contact" ; sh:order 2 .
+
+# vCard EMAIL.
+<#email>
+  a sh:PropertyShape ;
+  sh:path schema:email ;
+  sh:name "E-mail" ;
+  sh:datatype xsd:string ;
+  sh:group <#contactGroup> ;
+  sh:order 1 .
+
+# vCard TEL, except fax numbers.
+<#telephone>
+  a sh:PropertyShape ;
+  sh:path schema:telephone ;
+  sh:name "Phone" ;
+  sh:datatype xsd:string ;
+  sh:group <#contactGroup> ;
+  sh:order 2 .
+
+# vCard TEL with the type fax.
+<#faxNumber>
+  a sh:PropertyShape ;
+  sh:path schema:faxNumber ;
+  sh:name "Fax" ;
+  sh:datatype xsd:string ;
+  sh:group <#contactGroup> ;
+  sh:order 3 .
+
+# vCard URL.
+<#url>
+  a sh:PropertyShape ;
+  sh:path schema:url ;
+  sh:name "Website" ;
+  sh:nodeKind sh:IRI ;
+  sh:group <#contactGroup> ;
+  sh:order 4 .
+
+# Address
+
+<#addressGroup> a sh:PropertyGroup ; rdfs:label "Address" ; sh:order 3 .
+
+# vCard ADR, each address a form of its own.
+<#address>
+  a sh:PropertyShape ;
+  sh:path schema:address ;
+  sh:name "Address" ;
+  sh:nodeKind sh:BlankNode ;
+  shui:editor shui:DetailsEditor ;
+  # Every part of the address, not only its street.
+  shui:viewer shui:DetailsViewer ;
+  sh:node <#PostalAddress> ;
+  sh:group <#addressGroup> ;
+  sh:order 1 .
+
+<#PostalAddress>
+  a sh:NodeShape ;
+  sh:property [
+    sh:path schema:streetAddress ;
+    sh:name "Street" ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    shui:propertyRole shui:LabelRole ;
+    sh:order 1 ;
+  ], [
+    sh:path schema:postOfficeBoxNumber ;
+    sh:name "PO box" ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:order 2 ;
+  ], [
+    sh:path schema:postalCode ;
+    sh:name "Postal code" ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:order 3 ;
+  ], [
+    sh:path schema:addressLocality ;
+    sh:name "City" ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:order 4 ;
+  ], [
+    sh:path schema:addressRegion ;
+    sh:name "Region" ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:order 5 ;
+  ], [
+    sh:path schema:addressCountry ;
+    sh:name "Country" ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    sh:order 6 ;
+  ] .
+
+# Work
+
+<#workGroup> a sh:PropertyGroup ; rdfs:label "Work" ; sh:order 4 .
+
+# vCard ORG, its organization name.
+<#worksFor>
+  a sh:PropertyShape ;
+  sh:path schema:worksFor ;
+  sh:name "Organization" ;
+  sh:nodeKind sh:BlankNode ;
+  shui:editor shui:DetailsEditor ;
+  sh:node <#Organization> ;
+  sh:group <#workGroup> ;
+  sh:order 1 .
+
+<#Organization>
+  a sh:NodeShape ;
+  # Not required: an organization's form is there for every contact, also for one without.
+  sh:property [
+    sh:path schema:name ;
+    sh:name "Name" ;
+    sh:datatype xsd:string ;
+    sh:maxCount 1 ;
+    shui:propertyRole shui:LabelRole ;
+  ] .
+
+# vCard TITLE.
+<#jobTitle>
+  a sh:PropertyShape ;
+  sh:path schema:jobTitle ;
+  sh:name "Job title" ;
+  sh:datatype xsd:string ;
+  sh:group <#workGroup> ;
+  sh:order 2 .
+
+# Personal
+
+<#personalGroup> a sh:PropertyGroup ; rdfs:label "Personal" ; sh:order 5 .
+
+# vCard BDAY, when it has a year.
+<#birthDate>
+  a sh:PropertyShape ;
+  sh:path schema:birthDate ;
+  sh:name "Birthday" ;
+  sh:datatype xsd:date ;
+  sh:maxCount 1 ;
+  sh:group <#personalGroup> ;
+  sh:order 1 .
+
+# vCard NOTE.
+<#description>
+  a sh:PropertyShape ;
+  sh:path schema:description ;
+  sh:name "Notes" ;
+  sh:datatype xsd:string ;
+  sh:singleLine false ;
+  sh:group <#personalGroup> ;
+  sh:order 2 .
+
+# Tags
+
+<#tagsGroup> a sh:PropertyGroup ; rdfs:label "Tags" ; sh:order 6 .
+
+# vCard CATEGORIES. Words to group people by, such as "family" or "book club": the list can be
+# filtered by them, and a tag can be given to many people at once.
+<#keywords>
+  a sh:PropertyShape ;
+  sh:path schema:keywords ;
+  sh:name "Tags" ;
+  sh:datatype xsd:string ;
+  sh:group <#tagsGroup> ;
+  sh:order 1 .

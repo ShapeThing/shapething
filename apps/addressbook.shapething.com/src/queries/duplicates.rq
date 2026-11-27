@@ -1,0 +1,13 @@
+PREFIX schema: <https://schema.org/>
+
+# What tells two contacts are the same person: their names, email addresses and phone numbers. A
+# row per name, address and number.
+SELECT ?graph ?contact ?name ?email ?telephone WHERE {
+  GRAPH ?graph {
+    ?contact a schema:Person .
+    FILTER(isIRI(?contact))
+    OPTIONAL { ?contact schema:name ?name . FILTER(isLiteral(?name)) }
+    OPTIONAL { ?contact schema:email ?email . FILTER(isLiteral(?email)) }
+    OPTIONAL { ?contact schema:telephone ?telephone . FILTER(isLiteral(?telephone)) }
+  }
+}

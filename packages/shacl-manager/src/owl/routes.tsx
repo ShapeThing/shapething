@@ -41,7 +41,7 @@ const classRoute = (): RouteObject =>
       },
     ],
     // The class's Edit button is in the section's heading; its dialog's route is below the Meta tab.
-    { actions: { edit: { shapes: owlMeta.class.edit, at: "meta" }, delete: true } },
+    { actions: { edit: { shapes: owlMeta.class.edit, at: "meta" }, delete: true, preview: true } },
   );
 
 export const owlRoutes: RouteObject = {

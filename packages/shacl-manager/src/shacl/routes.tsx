@@ -6,6 +6,7 @@ import { OriginIntro } from "../app/OriginIntro.tsx";
 import { route } from "../app/route.tsx";
 import { listTabs, type ListTab } from "./listTabs.ts";
 import { shaclMeta } from "./metaShapes.ts";
+import { RelatedProperties } from "./RelatedProperties.tsx";
 import { ShapeUsage } from "./ShapeUsage.tsx";
 import {
   PropertiesCount,
@@ -38,6 +39,7 @@ const listRoute = (path: string, tab: ListTab, Count: () => React.ReactNode): Ro
           shapes={tab.shapes}
           actions={{ deactivate: true, delete: true }}
           heading={{ type: tab.create.type, label: tab.fallbackLabel }}
+          aside={tab === listTabs.properties && <RelatedProperties param={tab.param} />}
         >
           <ShapeUsage tab={tab} path={path} />
         </MetaPage>

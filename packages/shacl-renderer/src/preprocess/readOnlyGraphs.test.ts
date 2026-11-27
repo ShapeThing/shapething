@@ -2,7 +2,7 @@ import { expect, test } from "vite-plus/test";
 import { RdfStore } from "rdf-stores";
 import { defaultEnvironment, type RawEnvironment } from "@/environment.ts";
 import { factory } from "@/helpers/factory.ts";
-import { ex, queryPrefixes } from "@/helpers/namespaces.ts";
+import { ex, queryPrefixes, rdf } from "@/helpers/namespaces.ts";
 import { parseRdf } from "@/helpers/rdf.ts";
 import { resolveReadOnlyGraphs } from "@/preprocess/readOnlyGraphs.ts";
 
@@ -56,4 +56,19 @@ test("resolveReadOnlyGraphs keeps a caller-supplied readOnlyGraph alongside, wit
     "Supplied",
   ]);
   expect(supplied.size).toBe(1);
+});
+
+test("resolveReadOnlyGraphs makes the rdf:type of a root node shape's class target read-only in edit mode", async () => {
+  const shapes = `ex:PersonShape a sh:NodeShape ; sh:targetClass ex:Person .`;
+  const overrides = { focusNode: ex("item"), nodeShapes: [ex("PersonShape")] };
+
+  const edit = await resolveReadOnlyGraphs(await rawEnvironment(shapes, overrides));
+  const quads = (edit.readOnlyGraph as RdfStore).getQuads();
+  expect(quads).toHaveLength(1);
+  expect(quads[0].equals(factory.quad(ex("item"), rdf("type"), ex("Person")))).toBe(true);
+
+  const view = await resolveReadOnlyGraphs(
+    await rawEnvironment(shapes, { ...overrides, mode: "view" }),
+  );
+  expect(view.readOnlyGraph).toBeUndefined();
 });

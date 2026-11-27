@@ -287,7 +287,7 @@ function Workspace({ folder, onClose, onEditBaseIri }: WorkspaceProps) {
   return (
     <div className="app">
       <header className="app-bar">
-        <span className="app-brand">
+        <span className="app-brand" onClick={onClose}>
           <img src="/logo.svg" alt="" className="app-logo" />
           SHACL manager
         </span>

@@ -52,6 +52,7 @@ body {
   padding-inline: var(--size-3);
   border-inline-end: 1px solid var(--st-color-border);
   font-weight: var(--font-weight-6);
+  cursor: pointer;
   white-space: nowrap;
 }
 

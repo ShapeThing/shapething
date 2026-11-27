@@ -47,7 +47,12 @@ export const newResourceStartsWithDefaults: Story = {
       if (!submitted) throw new Error("onSubmit has not fired yet");
       return submitted;
     });
-    expect(result.additions.map((quad) => quad.object.value).sort()).toEqual(["0", "Netherlands"]);
+    // Along with its shape's class target as its rdf:type (see structure/targetClassTypes.ts).
+    expect(result.additions.map((quad) => quad.object.value).sort()).toEqual([
+      "0",
+      "Netherlands",
+      "http://schema.org/Person",
+    ]);
   },
 };
 

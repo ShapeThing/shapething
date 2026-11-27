@@ -270,7 +270,7 @@
   border-block-end: 1px solid var(--st-color-border);
 }
 
-.st-section__tabs > a {
+.st-section__tabs > :is(a, [role="tab"]) {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -289,16 +289,16 @@
     border-color 0.15s;
 }
 
-.st-section__tabs > a:hover {
+.st-section__tabs > :is(a, [role="tab"]):hover {
   color: var(--st-color-text);
 }
 
-.st-section__tabs > a:focus-visible {
+.st-section__tabs > :is(a, [role="tab"]):focus-visible {
   outline: 2px solid var(--st-primary-color);
   outline-offset: -2px;
 }
 
-.st-section__tabs > a.active {
+.st-section__tabs > :is(a.active, [aria-selected="true"]) {
   color: var(--st-primary-color);
   border-block-end-color: currentColor;
 }
@@ -755,6 +755,8 @@ a.active > .st-manager__tab-count {
 .st-meta {
   position: relative;
   padding: var(--size-4) var(--st-manager-gutter) var(--size-7);
+  /* The aside beside the view needs room, see .st-meta__body. */
+  container-type: inline-size;
 }
 
 .st-meta__actions {
@@ -762,6 +764,71 @@ a.active > .st-manager__tab-count {
   align-items: center;
   justify-content: flex-end;
   gap: var(--size-3);
+}
+
+/* The view, with an aside next to it when there is one; below it when there is no room. */
+/* A grid rather than flex: the renderer's wrappers are display: contents once it has loaded, so
+   which element ends up as the item differs while loading and after. */
+.st-meta__body {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: var(--size-5);
+}
+
+.st-meta__aside {
+  padding: var(--size-3);
+  border: 1px solid var(--st-color-border);
+  border-radius: var(--radius-2);
+}
+
+/* With room, the aside sits next to the view; without, below it. */
+@container (min-width: 40rem) {
+  .st-meta__body:has(> .st-meta__aside) {
+    grid-template-columns: minmax(0, 1fr) minmax(12rem, 18rem);
+  }
+
+  .st-meta__aside {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+.st-related-properties h3 {
+  margin: 0 0 var(--size-2);
+}
+
+.st-related-properties ul {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--st-font-size-small);
+}
+
+.st-related-properties a {
+  display: flex;
+  flex-direction: column;
+  padding: var(--size-1) var(--size-2);
+  border-radius: var(--radius-2);
+  color: var(--st-color-text);
+  text-decoration: none;
+}
+
+.st-related-properties a:hover {
+  background-color: var(--st-manager-row-hover);
+}
+
+.st-related-properties a:focus-visible {
+  outline: 2px solid var(--st-primary-color);
+  outline-offset: -2px;
+}
+
+.st-related-properties__shape {
+  font-size: var(--st-font-size-smallest);
+  color: var(--st-manager-text-muted);
 }
 
 /* Where a property shape is used: a row of links to the shapes holding it. */
@@ -888,4 +955,37 @@ a.st-button {
   font-size: var(--st-font-size-small);
   font-weight: 500;
   line-height: 1.5;
+}
+
+/* Tabs that switch in place rather than navigate. */
+.st-section__tabs > [role="tab"] {
+  background: none;
+  border-inline: none;
+  border-block-start: none;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+/* The panel scrolls on its own, so the tabs stay in view above it. */
+.st-preview-dialog .st-modal__content {
+  overflow-y: hidden;
+}
+
+.st-preview-dialog .st-section__tabs {
+  flex: none;
+  padding-inline: 0;
+}
+
+.st-preview-dialog__panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* A margin, not padding: sticky property group titles stick inside the padding. */
+  margin-block-start: var(--size-3);
+}
+
+/* Every modal in the manager, the renderer's own included, stays a readable width. */
+.st-manager-root .st-modal {
+  max-width: min(90vw, 800px);
 }

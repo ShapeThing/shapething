@@ -9,11 +9,18 @@ export type ShapeSource = { shapesGraph: string; nodeShape: NamedNode };
 // What every renderer in the manager shares. The shape declares the well-known properties; every
 // other predicate is generated into its st:missingPropertiesGroup.
 export function useRendererProps({ shapesGraph, nodeShape }: ShapeSource) {
-  const [language] = use(LanguagesContext);
   const nodeShapes = useMemo(() => [nodeShape], [nodeShape]);
   return {
     shapesGraph,
     nodeShapes,
+    ...useRendererSettings(),
+  } satisfies Partial<ShaclRendererProps>;
+}
+
+// The settings without the shapes, for a renderer whose shapes come from elsewhere.
+export function useRendererSettings() {
+  const [language] = use(LanguagesContext);
+  return {
     enableMissingShapesGeneration: true,
     enableInterfaceLanguageSwitcher: false,
     // Show every translation side by side instead of one at a time behind a content language switcher.

@@ -1,0 +1,12 @@
+PREFIX schema: <https://schema.org/>
+
+# Every contact: a schema:Person, each in a graph (a file in the folder) of its own, with its
+# tags (schema:keywords): a row per name and tag.
+SELECT ?graph ?contact ?name ?tag WHERE {
+  GRAPH ?graph {
+    ?contact a schema:Person .
+    FILTER(isIRI(?contact))
+    OPTIONAL { ?contact schema:name ?name . FILTER(isLiteral(?name)) }
+    OPTIONAL { ?contact schema:keywords ?tag . FILTER(isLiteral(?tag)) }
+  }
+}

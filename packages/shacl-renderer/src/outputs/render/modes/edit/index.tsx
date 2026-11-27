@@ -17,6 +17,7 @@ import { useReactiveRead } from "@/outputs/render/hooks/useReactiveRead.tsx";
 import { orphanedTargetWhereObjects, shapesWhereTargetingFocusNode } from "@/resolution/targets.ts";
 import { removePropertyPath } from "@/structure/paths/removePropertyPath.ts";
 import { seedDefaultValues } from "@/structure/defaultValues.ts";
+import { seedTargetClassTypes } from "@/structure/targetClassTypes.ts";
 import { NodeUIElement } from "@/structure/NodeUIElement.ts";
 import { NO_WIDGETS } from "@/widgets/lookup.ts";
 import ContentLanguageSwitcher from "@/outputs/render/components/ContentLanguageSwitcher/index.tsx";
@@ -89,8 +90,8 @@ export default function EditModeWrapper({ children, className }: Props) {
   // The title's Create/Edit pick, fixed at mount (unlike the submit button's live hasTriples) so
   // "Create Person" doesn't turn into "Edit A" as soon as the user starts typing a name.
   const [isNew] = useState(() => dataGraph.getQuads(focusNode, null, null).length === 0);
-  // A brand-new resource starts out with its shapes' sh:defaultValue values (see
-  // structure/defaultValues.ts) - written after the mount-time snapshot above, so they're part of
+  // A brand-new resource starts out with the rdf:type of its shapes' class target and their
+  // sh:defaultValue values (see structure/targetClassTypes.ts and defaultValues.ts) - written after the mount-time snapshot above, so they're part of
   // what onSubmit reports as additions, but untracked, so Ctrl+Z can't undo past where the form
   // started. Runs before any widget mounts, so nothing has subscribed yet to re-render mid-render.
   const [seededQuadKeys] = useState(() => {
@@ -103,7 +104,13 @@ export default function EditModeWrapper({ children, className }: Props) {
       focusNode,
       nodeShapes,
     });
-    return new Set(untracked(dataGraph, () => seedDefaultValues(node)).map(quadKey));
+    // The class its shape targets (see structure/targetClassTypes.ts) too: without its rdf:type a
+    // new resource isn't found through that shape's sh:targetClass once it is saved.
+    return new Set(
+      untracked(dataGraph, () => [...seedTargetClassTypes(node), ...seedDefaultValues(node)]).map(
+        quadKey,
+      ),
+    );
   });
 
   // Whether the focus node holds anything beyond its own seeded defaults - an untouched new
@@ -136,15 +143,27 @@ export default function EditModeWrapper({ children, className }: Props) {
   // component sits above NodeUIComponent, and re-rendering from up here on every keystroke would
   // remount widgets mid-edit (see submitAttemptContext's own comment).
   const latestValidationResultsRef = useRef<ValidationResult[]>([]);
+  // Validates the data as it is at submit time - see ValidationContextProvider's validateNowRef.
+  const validateNowRef = useRef<(() => Promise<ValidationResult[]>) | undefined>(undefined);
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+    // A value typed just now is only written when its field loses focus (see useDeferredInput),
+    // and Enter submits without that happening. So the field is left and entered again: its value
+    // is written before the data is validated and submitted, and the focus stays where it was.
+    const active = document.activeElement;
+    if (active instanceof HTMLElement && event.currentTarget.contains(active)) {
+      active.blur();
+      active.focus({ preventScroll: true });
+    }
     // Unlocks display of validation results already computed by ValidationContextProvider's live
     // validation, so an sh:minCount-violating field now shows its error.
     markSubmitAttempted();
     // sh:Warning/sh:Info don't affect SHACL conformance - only an sh:Violation blocks submission,
-    // same rule shacl-engine itself uses for report.conforms.
-    if (worstSeverity(latestValidationResultsRef.current) === "Violation") return;
+    // same rule shacl-engine itself uses for report.conforms. Validated afresh: the live results
+    // may still be those of before the last edit (a value typed just now, then Enter).
+    const results = (await validateNowRef.current?.()) ?? latestValidationResultsRef.current;
+    if (worstSeverity(results) === "Violation") return;
 
     // A sh:targetWhere fragment (see NodeUIComponent's own effectiveNodeShapes) that no longer
     // matches has already stopped rendering its fields - but nothing else prunes the triples those
@@ -263,7 +282,11 @@ export default function EditModeWrapper({ children, className }: Props) {
   return (
     <undoRedoScopeContext.Provider value={undoRedoScope}>
       <submitAttemptContext.Provider value={submitAttempt}>
-        <ValidationContextProvider latestResultsRef={latestValidationResultsRef} isDirty={isDirty}>
+        <ValidationContextProvider
+          latestResultsRef={latestValidationResultsRef}
+          validateNowRef={validateNowRef}
+          isDirty={isDirty}
+        >
           <form
             onSubmit={handleSubmit}
             onFocusCapture={claimUndo}
