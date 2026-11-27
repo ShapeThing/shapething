@@ -1,5 +1,14 @@
 # @shapething/localstore
 
+## 0.3.0
+
+### Minor Changes
+
+- aad98fc: A folder can set its own base IRI in a `.config` file (JSON, `{ "baseIri": "…" }`) at its root, which overrides the base IRI given to the store. Adds `getBaseUri()`, `getConfiguredBaseUri()`, `saveBaseUri()` to write it to `.config`, and `loadConfig()` to read it again once permission to the folder is given.
+- 1df835a: Adds `getDirectoryHandle()` and `LocalStore.listMounts()`, skips `.git` and `node_modules` when listing the graphs of a folder, and writes pretty-printed Turtle (grouped subjects, nested blank nodes, lists) with `@jeswr/pretty-turtle`.
+- c2deed6: Files are written with IRIs relative to their graph where they can be (`<>` for the graph itself, `<#name>`, `<other>`, `<../other>`), now also under the default `file:` base IRI, which the Turtle writer did not relativize. A file keeps its meaning when the folder gets another base IRI. IRIs of `.ttl` files stay absolute, as a relative one is read as that file's graph.
+- aad98fc: Adds `LocalStore.removeMount(name)`, which forgets a folder that was connected before (and its stored handle) without needing it mounted. `unmount()` now also removes the stored handle.
+
 ## 0.2.0
 
 ### Minor Changes
